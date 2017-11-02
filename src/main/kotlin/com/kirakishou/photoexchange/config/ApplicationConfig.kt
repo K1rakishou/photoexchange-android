@@ -1,10 +1,9 @@
 package com.kirakishou.photoexchange.config
 
+import com.kirakishou.photoexchange.handlers.UploadPhotoHandler
+import com.kirakishou.photoexchange.routers.Router
 import com.mongodb.ConnectionString
 import com.samskivert.mustache.Mustache
-import com.kirakishou.photoexchange.repository.FilesRepository
-import com.kirakishou.photoexchange.routers.Router
-import com.kirakishou.photoexchange.service.GeneratorServiceImpl
 import org.springframework.boot.autoconfigure.mustache.MustacheResourceTemplateLoader
 import org.springframework.boot.web.reactive.result.view.MustacheViewResolver
 import org.springframework.context.support.beans
@@ -18,10 +17,7 @@ const val DB_SERVER_ADDRESS = "192.168.99.100:27017"
 
 fun myBeans() = beans {
     bean<Router>()
-    bean<GeneratorServiceImpl>()
-    bean {
-        FilesRepository(ref())
-    }
+    bean<UploadPhotoHandler>()
     bean {
         ReactiveMongoRepositoryFactory(ref())
     }
