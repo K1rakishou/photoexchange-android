@@ -1,7 +1,11 @@
 package com.kirakishou.photoexchange.config
 
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.kirakishou.photoexchange.handlers.UploadPhotoHandler
 import com.kirakishou.photoexchange.routers.Router
+import com.kirakishou.photoexchange.service.JsonConverterService
+import com.kirakishou.photoexchange.service.JsonConverterServiceImpl
 import com.mongodb.ConnectionString
 import com.samskivert.mustache.Mustache
 import org.springframework.boot.autoconfigure.mustache.MustacheResourceTemplateLoader
@@ -18,6 +22,12 @@ const val DB_SERVER_ADDRESS = "192.168.99.100:27017"
 fun myBeans() = beans {
     bean<Router>()
     bean<UploadPhotoHandler>()
+    bean<Gson> {
+        GsonBuilder().create()
+    }
+    bean<JsonConverterService> {
+        JsonConverterServiceImpl(ref())
+    }
     bean {
         ReactiveMongoRepositoryFactory(ref())
     }
