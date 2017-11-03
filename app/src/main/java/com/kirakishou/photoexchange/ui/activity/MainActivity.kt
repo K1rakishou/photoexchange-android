@@ -14,6 +14,7 @@ import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerMainActivityComponent
 import com.kirakishou.photoexchange.di.module.NetworkModule
 import com.kirakishou.photoexchange.helper.api.ApiService
+import com.kirakishou.photoexchange.mvvm.model.LonLat
 import com.kirakishou.photoexchange.mvvm.viewmodel.MainActivityViewModel
 import com.kirakishou.photoexchange.mvvm.viewmodel.factory.MainActivityViewModelFactory
 import io.fotoapparat.Fotoapparat
@@ -21,9 +22,14 @@ import io.fotoapparat.parameter.ScaleType
 import io.fotoapparat.parameter.selector.LensPositionSelectors.back
 import io.fotoapparat.parameter.selector.SizeSelectors.biggestSize
 import io.fotoapparat.view.CameraView
+import io.nlopez.smartlocation.SmartLocation
+import io.reactivex.FlowableEmitter
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.schedulers.Schedulers
+import io.reactivex.subjects.PublishSubject
 import java.io.File
 import javax.inject.Inject
 
@@ -41,26 +47,23 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
 
     lateinit var fotoapparat: Fotoapparat
 
+    private val photoAvailabilitySubject = PublishSubject.create<File>()
+    private val locationSubject = PublishSubject.create<LonLat>()
+
     override fun initViewModel() =
             ViewModelProviders.of(this, viewModelFactory).get(MainActivityViewModel::class.java)
 
     override fun getContentView(): Int = R.layout.activity_main
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
-        fotoapparat = Fotoapparat
-                .with(this)
-                .into(cameraView)
-                .previewScaleType(ScaleType.CENTER_CROP)
-                .photoSize(biggestSize())
-                .lensPosition(back())
-                .build()
-
-        compositeDisposable += RxView.clicks(takePhotoButton)
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe({ takePhoto() })
+        initRx()
+        initCamera()
     }
 
     override fun onActivityDestroy() {
+        SmartLocation.with(this)
+                .location()
+                .stop()
     }
 
     override fun onStart() {
@@ -73,13 +76,46 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
         fotoapparat.stop()
     }
 
+    private fun initCamera() {
+        fotoapparat = Fotoapparat
+                .with(this)
+                .into(cameraView)
+                .previewScaleType(ScaleType.CENTER_CROP)
+                .photoSize(biggestSize())
+                .lensPosition(back())
+                .build()
+    }
+
+    private fun initRx() {
+        compositeDisposable += RxView.clicks(takePhotoButton)
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .subscribe({ takePhoto() })
+
+        compositeDisposable += Observables.zip(locationSubject, photoAvailabilitySubject)
+                .subscribeOn(Schedulers.io())
+                .doOnError { unknownErrorsSubject.onNext(it) }
+                .subscribe({ (location, photoFile) ->
+                    getViewModel().inputs.sendPhoto(photoFile, location)
+                })
+    }
+
     fun takePhoto() {
         val tempFile = File.createTempFile("temp", "file")
 
         fotoapparat.takePicture()
                 .saveToFile(tempFile)
                 .whenAvailable {
+                    photoAvailabilitySubject.onNext(tempFile)
+                }
+    }
 
+    fun getLocation() {
+        SmartLocation.with(this)
+                .location()
+                .oneFix()
+                .start {
+                    val lonlat = LonLat(it.longitude, it.latitude)
+                    locationSubject.onNext(lonlat)
                 }
     }
 

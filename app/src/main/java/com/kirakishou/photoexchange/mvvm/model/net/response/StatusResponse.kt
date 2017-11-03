@@ -7,7 +7,7 @@ import com.kirakishou.photoexchange.mvvm.model.ErrorCode
 /**
  * Created by kirakishou on 11/3/2017.
  */
-class StatusResponse(
+open class StatusResponse(
         @Expose
         @SerializedName("server_error_code")
         var errorCode: ErrorCode

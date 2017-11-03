@@ -62,6 +62,7 @@ dependencies {
     compile 'com.jakewharton.timber:timber:4.5.1'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
     compile 'io.fotoapparat.fotoapparat:library:1.4.1'
+    compile 'io.nlopez.smartlocation:library:3.3.3'
 
     debugCompile 'com.squareup.leakcanary:leakcanary-android:1.5.1'
     releaseCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.1'

@@ -6,4 +6,4 @@ import com.kirakishou.photoexchange.mvvm.model.ErrorCode
 /**
  * Created by kirakishou on 8/25/2017.
  */
-class ApiException(val errorCode: ErrorCode) : RuntimeException()
+class ApiException(val errorCode: ErrorCode) : Exception()

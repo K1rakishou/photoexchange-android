@@ -11,7 +11,10 @@ import butterknife.ButterKnife
 import butterknife.Unbinder
 import com.kirakishou.fixmypc.fixmypcapp.helper.extension.myAddListener
 import com.kirakishou.photoexchange.mvvm.model.Fickle
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.subjects.PublishSubject
 
 
 /**
@@ -26,6 +29,8 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
     override fun getLifecycle(): LifecycleRegistry = registry
 
     protected val compositeDisposable = CompositeDisposable()
+    protected val unknownErrorsSubject = PublishSubject.create<Throwable>()
+
     private lateinit var viewModel: T
     private var unBinder: Fickle<Unbinder> = Fickle.empty()
 
@@ -36,6 +41,10 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
     @Suppress("UNCHECKED_CAST")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        compositeDisposable += unknownErrorsSubject
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onUnknownError)
 
         resolveDaggerDependency()
         viewModel = initViewModel()
