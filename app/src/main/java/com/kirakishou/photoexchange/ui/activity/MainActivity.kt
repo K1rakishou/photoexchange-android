@@ -1,5 +1,7 @@
 package com.kirakishou.photoexchange.ui.activity
 
+import android.arch.lifecycle.ViewModelProviders
+import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.support.v7.app.AppCompatActivity
@@ -7,6 +9,11 @@ import butterknife.BindView
 import butterknife.ButterKnife
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.PhotoExchangeApplication
+import com.kirakishou.photoexchange.base.BaseActivity
+import com.kirakishou.photoexchange.helper.api.ApiService
+import com.kirakishou.photoexchange.mvvm.viewmodel.MainActivityViewModel
+import com.kirakishou.photoexchange.mvvm.viewmodel.factory.MainActivityViewModelFactory
 import io.fotoapparat.Fotoapparat
 import io.fotoapparat.parameter.ScaleType
 import io.fotoapparat.parameter.selector.LensPositionSelectors.back
@@ -16,9 +23,10 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import java.io.File
+import javax.inject.Inject
 
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity<MainActivityViewModel>() {
 
     @BindView(R.id.camera_view)
     lateinit var cameraView: CameraView
@@ -26,16 +34,17 @@ class MainActivity : AppCompatActivity() {
     @BindView(R.id.take_photo_button)
     lateinit var takePhotoButton: FloatingActionButton
 
-    private val mCompositeDisposable = CompositeDisposable()
+    @Inject
+    lateinit var viewModelFactory: MainActivityViewModelFactory
 
     lateinit var fotoapparat: Fotoapparat
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+    override fun initViewModel() =
+            ViewModelProviders.of(this, viewModelFactory).get(MainActivityViewModel::class.java)
 
-        ButterKnife.bind(this)
+    override fun getContentView(): Int = R.layout.activity_main
 
+    override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         fotoapparat = Fotoapparat
                 .with(this)
                 .into(cameraView)
@@ -44,9 +53,12 @@ class MainActivity : AppCompatActivity() {
                 .lensPosition(back())
                 .build()
 
-        mCompositeDisposable += RxView.clicks(takePhotoButton)
+        compositeDisposable += RxView.clicks(takePhotoButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .subscribe({ takePhoto() })
+    }
+
+    override fun onActivityDestroy() {
     }
 
     override fun onStart() {
@@ -59,11 +71,6 @@ class MainActivity : AppCompatActivity() {
         fotoapparat.stop()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        mCompositeDisposable.clear()
-    }
-
     fun takePhoto() {
         val tempFile = File.createTempFile("temp", "file")
 
@@ -72,6 +79,13 @@ class MainActivity : AppCompatActivity() {
                 .whenAvailable {
 
                 }
+    }
+
+    override fun resolveDaggerDependency() {
+        /*DaggerMainActivityComponent.builder()
+                .applicationComponent(PhotoExchangeApplication.applicationComponent)
+                .build()
+                .inject(this)*/
     }
 }
 

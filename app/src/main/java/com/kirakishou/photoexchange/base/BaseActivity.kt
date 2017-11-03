@@ -10,8 +10,7 @@ import android.widget.Toast
 import butterknife.ButterKnife
 import butterknife.Unbinder
 import com.kirakishou.fixmypc.fixmypcapp.helper.extension.myAddListener
-import com.kirakishou.fixmypc.fixmypcapp.mvvm.model.Fickle
-import com.kirakishou.photoexchange.helper.extension.hideKeyboard
+import com.kirakishou.photoexchange.mvvm.model.Fickle
 import io.reactivex.disposables.CompositeDisposable
 
 
@@ -20,36 +19,18 @@ import io.reactivex.disposables.CompositeDisposable
  */
 abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
 
-    private val mRegistry by lazy {
+    private val registry by lazy {
         LifecycleRegistry(this)
     }
 
-    override fun getLifecycle(): LifecycleRegistry = mRegistry
+    override fun getLifecycle(): LifecycleRegistry = registry
 
-    protected val mCompositeDisposable = CompositeDisposable()
-    private var mViewModel: Fickle<T> = Fickle.empty()
-    private var mUnBinder: Fickle<Unbinder> = Fickle.empty()
+    protected val compositeDisposable = CompositeDisposable()
+    private lateinit var viewModel: T
+    private var unBinder: Fickle<Unbinder> = Fickle.empty()
 
     protected fun getViewModel(): T {
-        return mViewModel.get()
-    }
-
-    private fun overridePendingTransitionEnter() {
-        overridePendingTransition(0, 0)
-    }
-
-    private fun overridePendingTransitionExit() {
-        overridePendingTransition(0, 0)
-    }
-
-    override fun startActivity(intent: Intent) {
-        super.startActivity(intent)
-        overridePendingTransitionEnter()
-    }
-
-    override fun finish() {
-        overridePendingTransitionExit()
-        super.finish()
+        return viewModel
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -57,48 +38,23 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         resolveDaggerDependency()
-        mViewModel = Fickle.of(initViewModel())
+        viewModel = initViewModel()
 
         setContentView(getContentView())
-        mUnBinder = Fickle.of(ButterKnife.bind(this))
+        unBinder = Fickle.of(ButterKnife.bind(this))
         //Fabric.with(this, Crashlytics())
 
         onActivityCreate(savedInstanceState, intent)
-    }
-
-    override fun onStart() {
-        super.onStart()
-
-        animateActivityStart()
-    }
-
-    override fun onStop() {
-        super.onStop()
-
-        hideKeyboard()
-        animateActivityStop()
     }
 
     override fun onDestroy() {
         super.onDestroy()
 
         onActivityDestroy()
-        mCompositeDisposable.clear()
+        compositeDisposable.clear()
 
-        mUnBinder.ifPresent {
+        unBinder.ifPresent {
             it.unbind()
-        }
-    }
-
-    private fun animateActivityStop() {
-        runCallbackAfterAnimation(loadExitAnimations()) {
-            onActivityStop()
-        }
-    }
-
-    private fun animateActivityStart() {
-        runCallbackAfterAnimation(loadStartAnimations()) {
-            onActivityStart()
         }
     }
 
@@ -151,13 +107,9 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
         }
     }
 
-    protected abstract fun initViewModel(): T?
+    protected abstract fun initViewModel(): T
     protected abstract fun getContentView(): Int
-    protected abstract fun loadStartAnimations(): AnimatorSet
-    protected abstract fun loadExitAnimations(): AnimatorSet
     protected abstract fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent)
     protected abstract fun onActivityDestroy()
-    protected abstract fun onActivityStart()
-    protected abstract fun onActivityStop()
     protected abstract fun resolveDaggerDependency()
 }

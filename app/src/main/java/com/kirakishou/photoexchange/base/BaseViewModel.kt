@@ -1,8 +1,19 @@
 package com.kirakishou.photoexchange.base
 
 import android.arch.lifecycle.ViewModel
+import android.support.annotation.CallSuper
+import io.reactivex.disposables.CompositeDisposable
 
 /**
  * Created by kirakishou on 9/8/2017.
  */
-abstract class BaseViewModel : ViewModel()
+abstract class BaseViewModel : ViewModel() {
+    protected val mCompositeDisposable = CompositeDisposable()
+
+    @CallSuper
+    override fun onCleared() {
+        mCompositeDisposable.clear()
+
+        super.onCleared()
+    }
+}

@@ -1,4 +1,4 @@
-package com.kirakishou.fixmypc.fixmypcapp.mvvm.model
+package com.kirakishou.photoexchange.mvvm.model
 
 /**
  * Created by kirakishou on 7/21/2017.
