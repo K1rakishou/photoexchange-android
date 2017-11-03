@@ -10,11 +10,13 @@ import android.widget.Toast
 import butterknife.ButterKnife
 import butterknife.Unbinder
 import com.kirakishou.fixmypc.fixmypcapp.helper.extension.myAddListener
+import com.kirakishou.photoexchange.mvvm.model.ErrorCode
 import com.kirakishou.photoexchange.mvvm.model.Fickle
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
+import timber.log.Timber
 
 
 /**
@@ -83,7 +85,13 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
         }
     }
 
+    open fun onBadResponse(errorCode: ErrorCode) {
+        Timber.d("ErrorCode: $errorCode")
+    }
+
     open fun onUnknownError(error: Throwable) {
+        Timber.e(error)
+
         if (error.message != null) {
             onShowToast(error.message!!)
         } else {

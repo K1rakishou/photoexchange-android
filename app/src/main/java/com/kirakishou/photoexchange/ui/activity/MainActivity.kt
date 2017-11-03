@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.support.v7.app.AppCompatActivity
+import android.widget.Toast
 import butterknife.BindView
 import butterknife.ButterKnife
 import com.jakewharton.rxbinding2.view.RxView
@@ -14,6 +15,7 @@ import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerMainActivityComponent
 import com.kirakishou.photoexchange.di.module.NetworkModule
 import com.kirakishou.photoexchange.helper.api.ApiService
+import com.kirakishou.photoexchange.mvvm.model.ErrorCode
 import com.kirakishou.photoexchange.mvvm.model.LonLat
 import com.kirakishou.photoexchange.mvvm.viewmodel.MainActivityViewModel
 import com.kirakishou.photoexchange.mvvm.viewmodel.factory.MainActivityViewModelFactory
@@ -97,6 +99,14 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
                 .subscribe({ (location, photoFile) ->
                     getViewModel().inputs.sendPhoto(photoFile, location)
                 })
+
+        compositeDisposable += getViewModel().errors.onBadResponse()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onBadResponse)
+
+        compositeDisposable += getViewModel().errors.onUnknownError()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onUnknownError)
     }
 
     fun takePhoto() {
@@ -117,6 +127,15 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
                     val lonlat = LonLat(it.longitude, it.latitude)
                     locationSubject.onNext(lonlat)
                 }
+    }
+
+    override fun onBadResponse(errorCode: ErrorCode) {
+        /*val message = ErrorMessage.getRemoteErrorMessage(activity, errorCode)
+        showToast(message, Toast.LENGTH_LONG)*/
+    }
+
+    override fun onUnknownError(error: Throwable) {
+        super.onUnknownError(error)
     }
 
     override fun resolveDaggerDependency() {

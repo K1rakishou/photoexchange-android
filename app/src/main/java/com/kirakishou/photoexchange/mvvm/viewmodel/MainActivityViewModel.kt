@@ -11,6 +11,7 @@ import com.kirakishou.photoexchange.mvvm.model.net.response.StatusResponse
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.error.MainActivityViewModelErrors
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.input.MainActivityViewModelInputs
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.output.MainActivityViewModelOutpus
+import io.reactivex.Observable
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
@@ -35,6 +36,8 @@ class MainActivityViewModel
     val errors: MainActivityViewModelErrors = this
 
     private val sendPhotoSubject = PublishSubject.create<PhotoWithLocation>()
+    private val onBadResponse = PublishSubject.create<ErrorCode>()
+    private val unknownErrorSubject = PublishSubject.create<Throwable>()
 
     init {
         compositeDisposable += sendPhotoSubject
@@ -43,10 +46,8 @@ class MainActivityViewModel
                 .subscribe(this::handleResponse, this::handleError)
     }
 
-    override fun onCleared() {
-        Timber.e("ClientMainActivityViewModel.onCleared()")
-
-        super.onCleared()
+    override fun sendPhoto(photoFile: File, location: LonLat) {
+        sendPhotoSubject.onNext(PhotoWithLocation(photoFile, location))
     }
 
     private fun handleResponse(response: StatusResponse) {
@@ -67,9 +68,16 @@ class MainActivityViewModel
 
     private fun handleError(error: Throwable) {
         Timber.e(error)
+
+        unknownErrorSubject.onNext(error)
     }
 
-    override fun sendPhoto(photoFile: File, location: LonLat) {
-        sendPhotoSubject.onNext(PhotoWithLocation(photoFile, location))
+    override fun onCleared() {
+        Timber.e("ClientMainActivityViewModel.onCleared()")
+
+        super.onCleared()
     }
+
+    override fun onBadResponse(): Observable<ErrorCode> = onBadResponse
+    override fun onUnknownError(): Observable<Throwable> = unknownErrorSubject
 }
