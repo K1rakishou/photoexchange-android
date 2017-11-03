@@ -3,9 +3,7 @@ package com.kirakishou.photoexchange
 import android.app.Application
 import com.kirakishou.photoexchange.di.component.ApplicationComponent
 import com.kirakishou.photoexchange.di.component.DaggerApplicationComponent
-import com.kirakishou.photoexchange.di.module.ApplicationModule
-import com.kirakishou.photoexchange.di.module.GsonModule
-import com.kirakishou.photoexchange.di.module.NetworkModule
+import com.kirakishou.photoexchange.di.module.*
 import timber.log.Timber
 
 /**
@@ -22,6 +20,8 @@ class PhotoExchangeApplication : Application() {
                 .applicationModule(ApplicationModule(this, databaseName))
                 .networkModule(NetworkModule(baseUrl))
                 .gsonModule(GsonModule())
+                .apiClientModule(ApiClientModule())
+                .schedulerProviderModule(SchedulerProviderModule())
                 .build()
 
         initTimber()

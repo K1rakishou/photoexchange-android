@@ -11,6 +11,8 @@ import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
+import com.kirakishou.photoexchange.di.component.DaggerMainActivityComponent
+import com.kirakishou.photoexchange.di.module.NetworkModule
 import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.mvvm.viewmodel.MainActivityViewModel
 import com.kirakishou.photoexchange.mvvm.viewmodel.factory.MainActivityViewModelFactory
@@ -82,10 +84,10 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
     }
 
     override fun resolveDaggerDependency() {
-        /*DaggerMainActivityComponent.builder()
+        DaggerMainActivityComponent.builder()
                 .applicationComponent(PhotoExchangeApplication.applicationComponent)
                 .build()
-                .inject(this)*/
+                .inject(this)
     }
 }
 

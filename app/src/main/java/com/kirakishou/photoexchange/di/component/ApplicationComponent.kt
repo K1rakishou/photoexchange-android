@@ -1,10 +1,10 @@
 package com.kirakishou.photoexchange.di.component
 
 import android.content.Context
-import com.kirakishou.photoexchange.di.module.ApplicationModule
-import com.kirakishou.photoexchange.di.module.GsonModule
-import com.kirakishou.photoexchange.di.module.NetworkModule
+import com.kirakishou.photoexchange.di.module.*
+import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.api.ApiService
+import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import dagger.Component
 import javax.inject.Singleton
 
@@ -13,8 +13,15 @@ import javax.inject.Singleton
  */
 
 @Singleton
-@Component(modules = arrayOf(ApplicationModule::class, NetworkModule::class, GsonModule::class))
+@Component(modules = arrayOf(
+        ApplicationModule::class,
+        NetworkModule::class,
+        GsonModule::class,
+        ApiClientModule::class,
+        SchedulerProviderModule::class))
 interface ApplicationComponent {
     fun exposeContext(): Context
     fun exposeApiService(): ApiService
+    fun exposeApiClient(): ApiClient
+    fun exposeSchedulers(): SchedulerProvider
 }
