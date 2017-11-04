@@ -11,11 +11,10 @@ import javax.inject.Inject
  * Created by kirakishou on 11/3/2017.
  */
 class MainActivityViewModelFactory
-@Inject constructor(val apiClient: ApiClient,
-                    val mSchedulers: SchedulerProvider): ViewModelProvider.Factory {
+@Inject constructor(): ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return MainActivityViewModel(apiClient, mSchedulers) as T
+        return MainActivityViewModel() as T
     }
 }

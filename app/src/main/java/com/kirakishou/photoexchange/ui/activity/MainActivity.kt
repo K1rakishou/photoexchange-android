@@ -4,19 +4,15 @@ import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
-import android.support.v7.app.AppCompatActivity
-import android.widget.Toast
 import butterknife.BindView
-import butterknife.ButterKnife
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerMainActivityComponent
-import com.kirakishou.photoexchange.di.module.NetworkModule
-import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
+import com.kirakishou.photoexchange.helper.service.SendPhotoService
 import com.kirakishou.photoexchange.helper.util.Utils
 import com.kirakishou.photoexchange.mvvm.model.ErrorCode
 import com.kirakishou.photoexchange.mvvm.model.LonLat
@@ -29,9 +25,7 @@ import io.fotoapparat.parameter.selector.SizeSelectors.biggestSize
 import io.fotoapparat.view.CameraView
 import io.nlopez.smartlocation.SmartLocation
 import io.nlopez.smartlocation.location.config.LocationParams
-import io.reactivex.FlowableEmitter
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
@@ -67,6 +61,8 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
     override fun getContentView(): Int = R.layout.activity_main
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
+        userInfoPreference.load()
+
         initUserInfo()
         initRx()
         initCamera()
@@ -88,14 +84,9 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
         fotoapparat.stop()
     }
 
-    override fun onResume() {
-        super.onResume()
-        userInfoPreference.save()
-    }
-
     override fun onPause() {
         super.onPause()
-        userInfoPreference.load()
+        userInfoPreference.save()
     }
 
     private fun initCamera() {
@@ -116,7 +107,7 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
                     takePhoto()
                 })
 
-        compositeDisposable += Observables.zip(locationSubject, photoAvailabilitySubject)
+        /*compositeDisposable += Observables.zip(locationSubject, photoAvailabilitySubject)
                 .subscribeOn(Schedulers.io())
                 .doOnError { unknownErrorsSubject.onNext(it) }
                 .subscribe({ (location, photoFile) ->
@@ -130,7 +121,7 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
 
         compositeDisposable += getViewModel().errors.onUnknownError()
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onUnknownError)
+                .subscribe(this::onUnknownError)*/
     }
 
     private fun initUserInfo() {

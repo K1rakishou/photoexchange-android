@@ -47,9 +47,6 @@ class SendPhotoRequest(private val info: PhotoWithInfo,
                     .build()
         }
     }
-
-    data class PhotoAndPacketBody(val packet: RequestBody,
-                                  val photo: MultipartBody.Part)
 }
 
 

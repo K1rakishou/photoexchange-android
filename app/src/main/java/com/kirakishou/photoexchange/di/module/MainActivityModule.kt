@@ -16,7 +16,7 @@ class MainActivityModule {
 
     @PerActivity
     @Provides
-    fun provideViewModelFactory(apiClient: ApiClient, schedulers: SchedulerProvider): MainActivityViewModelFactory {
-        return MainActivityViewModelFactory(apiClient, schedulers)
+    fun provideViewModelFactory(): MainActivityViewModelFactory {
+        return MainActivityViewModelFactory()
     }
 }

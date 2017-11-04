@@ -7,5 +7,4 @@ import java.io.File
  * Created by kirakishou on 11/3/2017.
  */
 interface MainActivityViewModelInputs {
-    fun sendPhoto(photoFile: File, location: LonLat, userId: String)
 }

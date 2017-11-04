@@ -28,7 +28,7 @@ class UserInfoPreference(private val sharedPreferences: SharedPreferences) : Bas
                 it.putString(userIdSharedPrefKey, userId.get())
             }
 
-            it.commit()
+            it.apply()
         }
     }
 

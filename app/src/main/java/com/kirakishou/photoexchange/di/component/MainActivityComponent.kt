@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.di.component
 
 import com.kirakishou.photoexchange.di.module.MainActivityModule
 import com.kirakishou.photoexchange.di.scope.PerActivity
+import com.kirakishou.photoexchange.helper.service.SendPhotoService
 import com.kirakishou.photoexchange.ui.activity.MainActivity
 import dagger.Component
 
@@ -13,4 +14,5 @@ import dagger.Component
 @Component(modules = arrayOf(MainActivityModule::class), dependencies = arrayOf(ApplicationComponent::class))
 interface MainActivityComponent {
     fun inject(activity: MainActivity)
+    fun inject(service: SendPhotoService)
 }
