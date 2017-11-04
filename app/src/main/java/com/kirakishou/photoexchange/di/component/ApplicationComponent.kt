@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.di.component
 
 import android.content.Context
+import android.content.SharedPreferences
 import com.kirakishou.photoexchange.di.module.*
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.api.ApiService
@@ -18,10 +19,12 @@ import javax.inject.Singleton
         NetworkModule::class,
         GsonModule::class,
         ApiClientModule::class,
-        SchedulerProviderModule::class))
+        SchedulerProviderModule::class,
+        AppSharedPreferenceModule::class))
 interface ApplicationComponent {
     fun exposeContext(): Context
     fun exposeApiService(): ApiService
     fun exposeApiClient(): ApiClient
     fun exposeSchedulers(): SchedulerProvider
+    fun exposeSharedPreferences(): SharedPreferences
 }

@@ -15,6 +15,8 @@ import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerMainActivityComponent
 import com.kirakishou.photoexchange.di.module.NetworkModule
 import com.kirakishou.photoexchange.helper.api.ApiService
+import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
+import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.mvvm.model.ErrorCode
 import com.kirakishou.photoexchange.mvvm.model.LonLat
 import com.kirakishou.photoexchange.mvvm.viewmodel.MainActivityViewModel
@@ -25,6 +27,7 @@ import io.fotoapparat.parameter.selector.LensPositionSelectors.back
 import io.fotoapparat.parameter.selector.SizeSelectors.biggestSize
 import io.fotoapparat.view.CameraView
 import io.nlopez.smartlocation.SmartLocation
+import io.nlopez.smartlocation.location.config.LocationParams
 import io.reactivex.FlowableEmitter
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -47,8 +50,12 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
     @Inject
     lateinit var viewModelFactory: MainActivityViewModelFactory
 
+    @Inject
+    lateinit var appSharedPreference: AppSharedPreference
+
     lateinit var fotoapparat: Fotoapparat
 
+    private val userInfoPreference by lazy { appSharedPreference.prepare<UserInfoPreference>() }
     private val photoAvailabilitySubject = PublishSubject.create<File>()
     private val locationSubject = PublishSubject.create<LonLat>()
 
@@ -91,7 +98,10 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
     private fun initRx() {
         compositeDisposable += RxView.clicks(takePhotoButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe({ takePhoto() })
+                .subscribe({
+                    getLocation()
+                    takePhoto()
+                })
 
         compositeDisposable += Observables.zip(locationSubject, photoAvailabilitySubject)
                 .subscribeOn(Schedulers.io())
@@ -109,7 +119,7 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
                 .subscribe(this::onUnknownError)
     }
 
-    fun takePhoto() {
+    private fun takePhoto() {
         val tempFile = File.createTempFile("temp", "file")
 
         fotoapparat.takePicture()
@@ -119,17 +129,19 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
                 }
     }
 
-    fun getLocation() {
+    private fun getLocation() {
         SmartLocation.with(this)
                 .location()
+                .config(LocationParams.LAZY)
                 .oneFix()
                 .start {
-                    val lonlat = LonLat(it.longitude, it.latitude)
-                    locationSubject.onNext(lonlat)
+                    locationSubject.onNext(LonLat(it.longitude, it.latitude))
                 }
     }
 
     override fun onBadResponse(errorCode: ErrorCode) {
+        super.onBadResponse(errorCode)
+
         /*val message = ErrorMessage.getRemoteErrorMessage(activity, errorCode)
         showToast(message, Toast.LENGTH_LONG)*/
     }

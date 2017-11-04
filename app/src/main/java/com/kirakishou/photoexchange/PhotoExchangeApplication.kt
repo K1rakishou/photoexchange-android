@@ -22,6 +22,7 @@ class PhotoExchangeApplication : Application() {
                 .gsonModule(GsonModule())
                 .apiClientModule(ApiClientModule())
                 .schedulerProviderModule(SchedulerProviderModule())
+                .appSharedPreferenceModule(AppSharedPreferenceModule())
                 .build()
 
         initTimber()

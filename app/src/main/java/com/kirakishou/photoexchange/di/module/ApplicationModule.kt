@@ -2,6 +2,8 @@ package com.kirakishou.photoexchange.di.module
 
 import android.app.Application
 import android.content.Context
+import android.content.SharedPreferences
+import com.kirakishou.photoexchange.mvvm.model.AppConstants
 import dagger.Module
 import dagger.Provides
 import javax.inject.Singleton
@@ -24,5 +26,11 @@ class ApplicationModule(private val application: Application,
     @Provides
     fun provideContext(): Context {
         return application.applicationContext
+    }
+
+    @Singleton
+    @Provides
+    fun provideSharedPreferences(context: Context): SharedPreferences {
+        return context.getSharedPreferences(AppConstants.SHARED_PREFS_PREFIX, Context.MODE_PRIVATE)
     }
 }

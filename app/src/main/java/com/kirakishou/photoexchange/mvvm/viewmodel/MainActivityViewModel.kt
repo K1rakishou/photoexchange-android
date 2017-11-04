@@ -25,7 +25,6 @@ class MainActivityViewModel
 @Inject constructor(
         private val apiClient: ApiClient,
         private val schedulers: SchedulerProvider
-
 ) : BaseViewModel(),
         MainActivityViewModelInputs,
         MainActivityViewModelOutpus,
@@ -42,11 +41,12 @@ class MainActivityViewModel
     init {
         compositeDisposable += sendPhotoSubject
                 .subscribeOn(schedulers.provideIo())
-                .flatMap { apiClient.sendPhoto<SendPhotoResponse>(it).toObservable() }
+                .flatMap { info -> apiClient.sendPhoto<SendPhotoResponse>(info).toObservable() }
                 .subscribe(this::handleResponse, this::handleError)
     }
 
     override fun sendPhoto(photoFile: File, location: LonLat) {
+        Timber.d("MainActivityViewModel.sendPhoto(${photoFile.absolutePath}, $location)")
         sendPhotoSubject.onNext(PhotoWithLocation(photoFile, location))
     }
 
