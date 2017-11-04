@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.kirakishou.photoexchange.helper.api.request.SendPhotoRequest
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvvm.model.dto.PhotoWithInfo
+import com.kirakishou.photoexchange.mvvm.model.net.response.SendPhotoResponse
 import com.kirakishou.photoexchange.mvvm.model.net.response.StatusResponse
 import io.reactivex.Single
 import javax.inject.Inject
@@ -18,8 +19,8 @@ class ApiClientImpl
                     protected val gson: Gson,
                     protected val schedulers: SchedulerProvider) : ApiClient {
 
-    override fun <T : StatusResponse> sendPhoto(info: PhotoWithInfo): Single<T> {
-        return SendPhotoRequest<T>(info, apiService, gson)
+    override fun sendPhoto(info: PhotoWithInfo): Single<SendPhotoResponse> {
+        return SendPhotoRequest(info, apiService, gson)
                 .build()
     }
 }

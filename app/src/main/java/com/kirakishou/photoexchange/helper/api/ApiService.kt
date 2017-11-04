@@ -4,6 +4,7 @@ import com.kirakishou.photoexchange.mvvm.model.net.packet.SendPhotoPacket
 import com.kirakishou.photoexchange.mvvm.model.net.response.SendPhotoResponse
 import io.reactivex.Single
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Multipart
 import retrofit2.http.POST
@@ -16,8 +17,8 @@ interface ApiService {
 
     @Multipart
     @POST("/v1/api/upload")
-    fun <T> sendPhoto(@Part photo: MultipartBody.Part,
-                  @Part("packet") packet: SendPhotoPacket) : Single<Response<T>>
+    fun sendPhoto(@Part packet: MultipartBody.Part,
+                  @Part photo: MultipartBody.Part) : Single<Response<SendPhotoResponse>>
 }
 
 

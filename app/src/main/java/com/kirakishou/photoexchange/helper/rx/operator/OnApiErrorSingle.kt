@@ -40,10 +40,10 @@ class OnApiErrorSingle<T>(val gson: Gson) : SingleOperator<T, Response<T>> {
                         Timber.e(responseJson)
 
                         //may happen in some rare cases
-                        if (error.errorCode != null) {
-                            observer.onError(ApiException(error.errorCode))
-                        } else {
+                        if (error == null || error.errorCode == null) {
                             observer.onError(BadServerResponseException())
+                        } else {
+                            observer.onError(ApiException(error.errorCode))
                         }
                     } catch (e: Exception) {
                         observer.onError(e)

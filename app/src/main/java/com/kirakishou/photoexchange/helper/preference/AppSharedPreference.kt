@@ -7,7 +7,7 @@ import javax.inject.Inject
  * Created by kirakishou on 7/25/2017.
  */
 class AppSharedPreference
-    @Inject constructor(protected val mSharedPreferences: SharedPreferences) {
+    @Inject constructor(protected val sharedPreferences: SharedPreferences) {
 
     inline fun <reified T : BasePreference> prepare(): T {
         return accessPrepare(T::class.java)
@@ -17,6 +17,7 @@ class AppSharedPreference
     @PublishedApi
     internal fun <T : BasePreference> accessPrepare(clazz: Class<*>): T {
         return when (clazz) {
+            UserInfoPreference::class.java -> UserInfoPreference(sharedPreferences) as T
             else -> throw IllegalArgumentException("Unknown type T: ${clazz.simpleName}")
         }
     }

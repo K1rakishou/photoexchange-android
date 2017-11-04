@@ -121,7 +121,6 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
                 .doOnError { unknownErrorsSubject.onNext(it) }
                 .subscribe({ (location, photoFile) ->
                     val userId = userInfoPreference.getUserId()
-
                     getViewModel().inputs.sendPhoto(photoFile, location, userId)
                 })
 
@@ -146,21 +145,26 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
     }
 
     private fun takePhoto() {
+        Timber.d("takePhoto() Taking a photo...")
         val tempFile = File.createTempFile("temp", "file")
 
         fotoapparat.takePicture()
                 .saveToFile(tempFile)
                 .whenAvailable {
+                    Timber.d("takePhoto() Done")
                     photoAvailabilitySubject.onNext(tempFile)
                 }
     }
 
     private fun getLocation() {
+        Timber.d("getLocation() Getting current location...")
+
         SmartLocation.with(this)
                 .location()
                 .config(LocationParams.LAZY)
                 .oneFix()
                 .start {
+                    Timber.d("getLocation() Done")
                     locationSubject.onNext(LonLat(it.longitude, it.latitude))
                 }
     }

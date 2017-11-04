@@ -4,15 +4,28 @@ import android.app.Activity
 import android.content.Context
 import android.graphics.Point
 import android.os.Build
+import android.os.Looper
 import android.util.DisplayMetrics
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
+import timber.log.Timber
 
 
 /**
  * Created by kirakishou on 7/30/2017.
  */
 object AndroidUtils {
+
+    fun checkIsOnMainThread(): Boolean {
+        return Looper.myLooper() == Looper.getMainLooper()
+    }
+
+    fun throwIfOnMainThread() {
+        if (checkIsOnMainThread()) {
+            Timber.e("Current operation cannot be executed on the main thread")
+            throw RuntimeException("Current operation cannot be executed on the main thread")
+        }
+    }
 
     fun isAtleastLollipop(): Boolean {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP

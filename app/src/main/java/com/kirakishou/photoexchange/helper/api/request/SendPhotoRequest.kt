@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.mvvm.model.dto.PhotoWithInfo
 import com.kirakishou.photoexchange.mvvm.model.exception.PhotoDoesNotExistsException
 import com.kirakishou.photoexchange.mvvm.model.net.packet.SendPhotoPacket
+import com.kirakishou.photoexchange.mvvm.model.net.response.SendPhotoResponse
 import com.kirakishou.photoexchange.mvvm.model.net.response.StatusResponse
 import io.reactivex.Single
 import okhttp3.MediaType
@@ -16,31 +17,39 @@ import java.io.File
 /**
  * Created by kirakishou on 11/3/2017.
  */
-class SendPhotoRequest<T : StatusResponse>(private val info: PhotoWithInfo,
+class SendPhotoRequest(private val info: PhotoWithInfo,
                                            private val apiService: ApiService,
-                                           private val gson: Gson) : AbstractRequest<Single<T>>() {
+                                           private val gson: Gson) : AbstractRequest<Single<SendPhotoResponse>>() {
 
-    override fun build(): Single<T> {
-        return getBodySingle(info.photoFile)
-                .flatMap { body ->
-                    val packet = SendPhotoPacket(info.location, info.userId)
+    override fun build(): Single<SendPhotoResponse> {
+        val packet = SendPhotoPacket(info.location.lon, info.location.lat, info.userId)
 
-                    return@flatMap apiService.sendPhoto<T>(body, packet)
+        return getBodySingle(info.photoFile, packet)
+                .flatMap { multipartBody ->
+                    return@flatMap apiService.sendPhoto(multipartBody.part(0), multipartBody.part(1))
                             .lift(OnApiErrorSingle(gson))
                 }
                 .onErrorResumeNext { error -> convertExceptionToErrorCode(error) }
     }
 
-    private fun getBodySingle(photoFile: File): Single<MultipartBody.Part> {
+    private fun getBodySingle(photoFile: File, packet: SendPhotoPacket): Single<MultipartBody> {
         return Single.fromCallable {
             if (!photoFile.isFile || !photoFile.exists()) {
                 throw PhotoDoesNotExistsException()
             }
 
-            val progressBody = RequestBody.create(MediaType.parse("multipart/form-data"), photoFile)
-            return@fromCallable MultipartBody.Part.createFormData("photo", photoFile.name, progressBody)
+            val photoRequestBody = RequestBody.create(MediaType.parse("image/*"), photoFile)
+            val packetJson = gson.toJson(packet)
+
+            return@fromCallable MultipartBody.Builder()
+                    .addFormDataPart("photo", photoFile.name, photoRequestBody)
+                    .addFormDataPart("packet", packetJson)
+                    .build()
         }
     }
+
+    data class PhotoAndPacketBody(val packet: RequestBody,
+                                  val photo: MultipartBody.Part)
 }
 
 

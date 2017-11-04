@@ -1,8 +1,10 @@
 package com.kirakishou.photoexchange.mvvm.viewmodel
 
+import android.os.Looper
 import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvvm.model.ErrorCode
 import com.kirakishou.photoexchange.mvvm.model.LonLat
 import com.kirakishou.photoexchange.mvvm.model.dto.PhotoWithInfo
@@ -13,6 +15,7 @@ import com.kirakishou.photoexchange.mvvm.viewmodel.wires.input.MainActivityViewM
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.output.MainActivityViewModelOutpus
 import io.reactivex.Observable
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.io.File
@@ -41,17 +44,21 @@ class MainActivityViewModel
     init {
         compositeDisposable += sendPhotoSubject
                 .subscribeOn(schedulers.provideIo())
-                .flatMap { info -> apiClient.sendPhoto<SendPhotoResponse>(info).toObservable() }
+                .observeOn(schedulers.provideIo())
+                .doOnNext { AndroidUtils.throwIfOnMainThread() }
+                .flatMap { info -> apiClient.sendPhoto(info).toObservable() }
                 .subscribe(this::handleResponse, this::handleError)
     }
 
     override fun sendPhoto(photoFile: File, location: LonLat, userId: String) {
-        Timber.d("MainActivityViewModel.sendPhoto(${photoFile.absolutePath}, $location, $userId)")
+        Timber.d("MainActivityViewModel.sendPhoto() sending request with params (${photoFile.absolutePath}, $location, $userId)")
+
         sendPhotoSubject.onNext(PhotoWithInfo(photoFile, location, userId))
     }
 
     private fun handleResponse(response: StatusResponse) {
         val errorCode = response.errorCode
+        Timber.d("Received response, errorCode: $errorCode")
 
         when (response) {
             is SendPhotoResponse -> {

@@ -33,15 +33,4 @@ object Utils {
     fun generateUserId(): String {
         return generateRandomString(128, numericAlphabetic)
     }
-
-    fun checkIsOnMainThread(): Boolean {
-        return Looper.myLooper() == Looper.getMainLooper()
-    }
-
-    fun throwIfOnMainThread() {
-        if (checkIsOnMainThread()) {
-            Timber.e("Current operation cannot be executed on the main thread")
-            throw RuntimeException("Current operation cannot be executed on the main thread")
-        }
-    }
 }
