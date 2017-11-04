@@ -5,7 +5,7 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvvm.model.ErrorCode
 import com.kirakishou.photoexchange.mvvm.model.LonLat
-import com.kirakishou.photoexchange.mvvm.model.dto.PhotoWithLocation
+import com.kirakishou.photoexchange.mvvm.model.dto.PhotoWithInfo
 import com.kirakishou.photoexchange.mvvm.model.net.response.SendPhotoResponse
 import com.kirakishou.photoexchange.mvvm.model.net.response.StatusResponse
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.error.MainActivityViewModelErrors
@@ -34,7 +34,7 @@ class MainActivityViewModel
     val outputs: MainActivityViewModelOutpus = this
     val errors: MainActivityViewModelErrors = this
 
-    private val sendPhotoSubject = PublishSubject.create<PhotoWithLocation>()
+    private val sendPhotoSubject = PublishSubject.create<PhotoWithInfo>()
     private val onBadResponse = PublishSubject.create<ErrorCode>()
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
 
@@ -45,9 +45,9 @@ class MainActivityViewModel
                 .subscribe(this::handleResponse, this::handleError)
     }
 
-    override fun sendPhoto(photoFile: File, location: LonLat) {
-        Timber.d("MainActivityViewModel.sendPhoto(${photoFile.absolutePath}, $location)")
-        sendPhotoSubject.onNext(PhotoWithLocation(photoFile, location))
+    override fun sendPhoto(photoFile: File, location: LonLat, userId: String) {
+        Timber.d("MainActivityViewModel.sendPhoto(${photoFile.absolutePath}, $location, $userId)")
+        sendPhotoSubject.onNext(PhotoWithInfo(photoFile, location, userId))
     }
 
     private fun handleResponse(response: StatusResponse) {

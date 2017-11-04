@@ -10,5 +10,9 @@ import com.kirakishou.photoexchange.mvvm.model.LonLat
 class SendPhotoPacket(
         @Expose
         @SerializedName("location")
-        val location: LonLat
+        val location: LonLat,
+
+        @Expose
+        @SerializedName("user_id")
+        val userId: String
 )

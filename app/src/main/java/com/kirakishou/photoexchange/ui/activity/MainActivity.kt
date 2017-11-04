@@ -17,6 +17,7 @@ import com.kirakishou.photoexchange.di.module.NetworkModule
 import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
+import com.kirakishou.photoexchange.helper.util.Utils
 import com.kirakishou.photoexchange.mvvm.model.ErrorCode
 import com.kirakishou.photoexchange.mvvm.model.LonLat
 import com.kirakishou.photoexchange.mvvm.viewmodel.MainActivityViewModel
@@ -35,6 +36,7 @@ import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
+import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 
@@ -65,6 +67,7 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
     override fun getContentView(): Int = R.layout.activity_main
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
+        initUserInfo()
         initRx()
         initCamera()
     }
@@ -83,6 +86,16 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
     override fun onStop() {
         super.onStop()
         fotoapparat.stop()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        userInfoPreference.save()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        userInfoPreference.load()
     }
 
     private fun initCamera() {
@@ -107,7 +120,9 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
                 .subscribeOn(Schedulers.io())
                 .doOnError { unknownErrorsSubject.onNext(it) }
                 .subscribe({ (location, photoFile) ->
-                    getViewModel().inputs.sendPhoto(photoFile, location)
+                    val userId = userInfoPreference.getUserId()
+
+                    getViewModel().inputs.sendPhoto(photoFile, location, userId)
                 })
 
         compositeDisposable += getViewModel().errors.onBadResponse()
@@ -117,6 +132,17 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
         compositeDisposable += getViewModel().errors.onUnknownError()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onUnknownError)
+    }
+
+    private fun initUserInfo() {
+        if (!userInfoPreference.exists()) {
+            Timber.d("App first run. Generating userId")
+
+            val newUserId = Utils.generateUserId()
+            userInfoPreference.setUserId(newUserId)
+        } else {
+            Timber.d("UserId already exists")
+        }
     }
 
     private fun takePhoto() {

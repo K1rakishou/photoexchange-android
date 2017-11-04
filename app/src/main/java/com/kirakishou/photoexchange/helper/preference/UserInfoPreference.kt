@@ -9,10 +9,18 @@ import com.kirakishou.photoexchange.mvvm.model.Fickle
  */
 class UserInfoPreference(private val sharedPreferences: SharedPreferences) : BasePreference {
 
-    var userId: Fickle<String> = Fickle.empty()
+    private var userId: Fickle<String> = Fickle.empty()
 
     private val thisPrefPrefix = "AccountInfoPreference"
     private val userIdSharedPrefKey = "${thisPrefPrefix}_user_id"
+
+    fun getUserId(): String {
+        return userId.get()
+    }
+
+    fun setUserId(newUserId: String) {
+        userId = Fickle.of(newUserId)
+    }
 
     override fun save() {
         sharedPreferences.edit {
@@ -34,5 +42,9 @@ class UserInfoPreference(private val sharedPreferences: SharedPreferences) : Bas
 
             userId = Fickle.empty()
         }
+    }
+
+    fun exists(): Boolean {
+        return userId.isPresent()
     }
 }
