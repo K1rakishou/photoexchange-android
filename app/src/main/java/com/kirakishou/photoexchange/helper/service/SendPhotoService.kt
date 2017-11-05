@@ -1,12 +1,10 @@
 package com.kirakishou.photoexchange.helper.service
 
-import android.app.Notification
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
-import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
-import com.kirakishou.photoexchange.di.component.DaggerMainActivityComponent
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvvm.model.LonLat
@@ -15,10 +13,11 @@ import timber.log.Timber
 import javax.inject.Inject
 import com.kirakishou.photoexchange.ui.activity.MainActivity
 import android.app.PendingIntent
+import android.content.Context
+import android.support.v4.app.NotificationCompat
 import com.kirakishou.photoexchange.di.component.DaggerServiceComponent
 import com.kirakishou.photoexchange.di.module.*
 import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
-import com.kirakishou.photoexchange.mvvm.model.net.response.StatusResponse
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
@@ -38,8 +37,8 @@ class SendPhotoService : Service() {
     private lateinit var presenter: SendPhotoServicePresenter
 
     override fun onCreate() {
-        Timber.e("SendPhotoService start")
         super.onCreate()
+        Timber.e("SendPhotoService start")
 
         resolveDaggerDependency()
 
@@ -48,10 +47,10 @@ class SendPhotoService : Service() {
     }
 
     override fun onDestroy() {
-        Timber.e("SendPhotoService destroy")
         compositeDisposable.clear()
         presenter.detach()
 
+        Timber.e("SendPhotoService destroy")
         super.onDestroy()
     }
 
@@ -75,32 +74,34 @@ class SendPhotoService : Service() {
     private fun onSendPhotoResponseObservable(errorCode: ServerErrorCode) {
         Timber.d("onSendPhotoResponseObservable() errorCode: $errorCode")
 
+        updateUploadingNotificationShowSuccess()
         stopService()
     }
 
     private fun onBadResponse(errorCode: ServerErrorCode) {
         Timber.e("BadResponse: errorCode: $errorCode")
 
+        updateUploadingNotificationShowError()
         stopService()
     }
 
     private fun onUnknownError(error: Throwable) {
         Timber.e("Unknown error: $error")
 
+        updateUploadingNotificationShowError()
         stopService()
     }
 
     private fun stopService() {
         Timber.d("Stopping service")
 
-        stopForeground(true)
-        stopSelf()
+        stopForeground(false)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent != null) {
             handleCommand(intent)
-            showNotification()
+            showUploadingNotification()
         }
 
         return START_NOT_STICKY
@@ -124,28 +125,61 @@ class SendPhotoService : Service() {
         }
     }
 
-    private fun showNotification() {
-        val notificationIntent = Intent(applicationContext, MainActivity::class.java)
+    private fun showUploadingNotification() {
+        val notification = NotificationCompat.Builder(this)
+                .setContentTitle("Please wait")
+                .setContentText("Uploading photo...")
+                .setSmallIcon(android.R.drawable.stat_sys_upload)
+                .setWhen(System.currentTimeMillis())
+                .setContentIntent(getNotificationIntent())
+                .setAutoCancel(false)
+                .setOngoing(true)
+                .build()
+
+        startForeground(NOTIFICATION_ID, notification)
+    }
+
+    private fun updateUploadingNotificationShowSuccess() {
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        val newNotification = NotificationCompat.Builder(this)
+                .setContentTitle("Done")
+                .setContentText("Photo has been uploaded!")
+                .setSmallIcon(android.R.drawable.stat_sys_upload_done)
+                .setWhen(System.currentTimeMillis())
+                .setContentIntent(getNotificationIntent())
+                .setAutoCancel(false)
+                .build()
+
+        notificationManager.notify(NOTIFICATION_ID, newNotification)
+    }
+
+    private fun updateUploadingNotificationShowError() {
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        val newNotification = NotificationCompat.Builder(this)
+                .setContentTitle("Error")
+                .setContentText("Could not upload photo")
+                .setSmallIcon(android.R.drawable.stat_notify_error)
+                .setWhen(System.currentTimeMillis())
+                .setContentIntent(getNotificationIntent())
+                .setAutoCancel(false)
+                .build()
+
+        notificationManager.notify(NOTIFICATION_ID, newNotification)
+    }
+
+    private fun getNotificationIntent(): PendingIntent {
+        val notificationIntent = Intent(this, MainActivity::class.java)
         notificationIntent.action = Intent.ACTION_MAIN
         notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER)
         notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
-        val contentIntent = PendingIntent.getActivity(
-                applicationContext,
+        return PendingIntent.getActivity(
+                this,
                 0,
                 notificationIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT)
-
-        val notification = Notification.Builder(applicationContext)
-                .setContentTitle(getString(R.string.app_name))
-                .setContentText("Text")
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setWhen(System.currentTimeMillis())
-                .setContentIntent(contentIntent)
-                .setAutoCancel(true)
-                .build()
-
-        startForeground(NOTIFICATION_ID, notification)
     }
 
     override fun onBind(intent: Intent): IBinder? = null
