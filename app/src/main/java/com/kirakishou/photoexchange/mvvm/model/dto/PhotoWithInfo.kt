@@ -6,6 +6,6 @@ import java.io.File
 /**
  * Created by kirakishou on 11/3/2017.
  */
-class PhotoWithInfo(val photoFile: File,
+class PhotoWithInfo(val photoFilePath: String,
                     val location: LonLat,
                     val userId: String)

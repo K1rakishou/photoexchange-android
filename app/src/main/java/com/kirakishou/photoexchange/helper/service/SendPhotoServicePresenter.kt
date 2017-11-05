@@ -52,8 +52,8 @@ class SendPhotoServicePresenter(
         Timber.d("SendPhotoServicePresenter detached")
     }
 
-    override fun uploadPhoto(photoFile: File, location: LonLat, userId: String) {
-        sendPhotoSubject.onNext(PhotoWithInfo(photoFile, location, userId))
+    override fun uploadPhoto(photoFilePath: String, location: LonLat, userId: String) {
+        sendPhotoSubject.onNext(PhotoWithInfo(photoFilePath, location, userId))
     }
 
     private fun handleResponse(response: StatusResponse) {

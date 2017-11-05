@@ -24,7 +24,7 @@ class SendPhotoRequest(private val info: PhotoWithInfo,
     override fun build(): Single<SendPhotoResponse> {
         val packet = SendPhotoPacket(info.location.lon, info.location.lat, info.userId)
 
-        return getBodySingle(info.photoFile, packet)
+        return getBodySingle(info.photoFilePath, packet)
                 .flatMap { multipartBody ->
                     return@flatMap apiService.sendPhoto(multipartBody.part(0), multipartBody.part(1))
                             .lift(OnApiErrorSingle(gson))
@@ -32,8 +32,10 @@ class SendPhotoRequest(private val info: PhotoWithInfo,
                 .onErrorResumeNext { error -> convertExceptionToErrorCode(error) }
     }
 
-    private fun getBodySingle(photoFile: File, packet: SendPhotoPacket): Single<MultipartBody> {
+    private fun getBodySingle(photoFilePath: String, packet: SendPhotoPacket): Single<MultipartBody> {
         return Single.fromCallable {
+            val photoFile = File(photoFilePath)
+
             if (!photoFile.isFile || !photoFile.exists()) {
                 throw PhotoDoesNotExistsException()
             }

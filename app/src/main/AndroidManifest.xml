@@ -24,7 +24,7 @@
         <service
             android:name="com.kirakishou.photoexchange.helper.service.SendPhotoService"
             android:enabled="true"
-            android:exported="false"></service>
+            android:exported="false" />
     </application>
 
 </manifest>

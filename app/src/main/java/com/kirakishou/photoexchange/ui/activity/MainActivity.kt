@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.ui.activity
 
+import android.app.Notification
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.os.Bundle
@@ -16,6 +17,7 @@ import com.kirakishou.photoexchange.helper.service.SendPhotoService
 import com.kirakishou.photoexchange.helper.util.Utils
 import com.kirakishou.photoexchange.mvvm.model.ErrorCode
 import com.kirakishou.photoexchange.mvvm.model.LonLat
+import com.kirakishou.photoexchange.mvvm.model.ServiceCommand
 import com.kirakishou.photoexchange.mvvm.viewmodel.MainActivityViewModel
 import com.kirakishou.photoexchange.mvvm.viewmodel.factory.MainActivityViewModelFactory
 import io.fotoapparat.Fotoapparat
@@ -52,7 +54,7 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
     lateinit var fotoapparat: Fotoapparat
 
     private val userInfoPreference by lazy { appSharedPreference.prepare<UserInfoPreference>() }
-    private val photoAvailabilitySubject = PublishSubject.create<File>()
+    private val photoAvailabilitySubject = PublishSubject.create<String>()
     private val locationSubject = PublishSubject.create<LonLat>()
 
     override fun initViewModel() =
@@ -107,21 +109,26 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
                     takePhoto()
                 })
 
-        /*compositeDisposable += Observables.zip(locationSubject, photoAvailabilitySubject)
+        compositeDisposable += Observables.zip(locationSubject, photoAvailabilitySubject)
                 .subscribeOn(Schedulers.io())
                 .doOnError { unknownErrorsSubject.onNext(it) }
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ (location, photoFile) ->
                     val userId = userInfoPreference.getUserId()
-                    getViewModel().inputs.sendPhoto(photoFile, location, userId)
+
+                    passInfoToService(location, photoFile, userId)
                 })
+    }
 
-        compositeDisposable += getViewModel().errors.onBadResponse()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onBadResponse)
+    private fun passInfoToService(location: LonLat, photoFilePath: String, userId: String) {
+        val intent = Intent(this, SendPhotoService::class.java)
+        intent.putExtra("command", ServiceCommand.SEND_PHOTO.value)
+        intent.putExtra("lon", location.lon)
+        intent.putExtra("lat", location.lat)
+        intent.putExtra("user_id", userId)
+        intent.putExtra("photo_file_path", photoFilePath)
 
-        compositeDisposable += getViewModel().errors.onUnknownError()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onUnknownError)*/
+        startService(intent)
     }
 
     private fun initUserInfo() {
@@ -143,7 +150,7 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
                 .saveToFile(tempFile)
                 .whenAvailable {
                     Timber.d("takePhoto() Done")
-                    photoAvailabilitySubject.onNext(tempFile)
+                    photoAvailabilitySubject.onNext(tempFile.absolutePath)
                 }
     }
 
