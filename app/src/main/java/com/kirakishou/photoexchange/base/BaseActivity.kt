@@ -9,7 +9,7 @@ import android.support.v7.app.AppCompatActivity
 import android.widget.Toast
 import butterknife.ButterKnife
 import butterknife.Unbinder
-import com.kirakishou.photoexchange.mvvm.model.ErrorCode
+import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
 import com.kirakishou.photoexchange.mvvm.model.Fickle
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -74,8 +74,8 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
     }
 
     @CallSuper
-    open fun onBadResponse(errorCode: ErrorCode) {
-        Timber.d("ErrorCode: $errorCode")
+    open fun onBadResponse(serverErrorCode: ServerErrorCode) {
+        Timber.d("ServerErrorCode: $serverErrorCode")
     }
 
     @CallSuper

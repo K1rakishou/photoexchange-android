@@ -30,8 +30,8 @@ class OnApiErrorObservable<T : StatusResponse>(val gson: Gson) : ObservableOpera
                         Timber.e(responseJson)
 
                         //may happen in some rare cases
-                        if (error.errorCode != null) {
-                            observer.onError(ApiException(error.errorCode))
+                        if (error.serverErrorCode != null) {
+                            observer.onError(ApiException(error.serverErrorCode!!))
                         } else {
                             observer.onError(BadServerResponseException())
                         }

@@ -16,7 +16,7 @@ import timber.log.Timber
 
 /**
  *
- * Whenever HttpException occurs returns converted errorBody as an ApiException with ErrorCode.Remote and HttpStatus
+ * Whenever HttpException occurs returns converted errorBody as an ApiException with ServerErrorCode.Remote and HttpStatus
  *
  * */
 class OnApiErrorSingle<T>(val gson: Gson) : SingleOperator<T, Response<T>> {
@@ -40,10 +40,10 @@ class OnApiErrorSingle<T>(val gson: Gson) : SingleOperator<T, Response<T>> {
                         Timber.e(responseJson)
 
                         //may happen in some rare cases
-                        if (error == null || error.errorCode == null) {
+                        if (error?.serverErrorCode == null) {
                             observer.onError(BadServerResponseException())
                         } else {
-                            observer.onError(ApiException(error.errorCode))
+                            observer.onError(ApiException(error.serverErrorCode!!))
                         }
                     } catch (e: Exception) {
                         observer.onError(e)

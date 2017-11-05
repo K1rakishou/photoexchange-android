@@ -1,20 +1,10 @@
 package com.kirakishou.photoexchange.mvvm.viewmodel
 
 import com.kirakishou.photoexchange.base.BaseViewModel
-import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvvm.model.ErrorCode
-import com.kirakishou.photoexchange.mvvm.model.LonLat
-import com.kirakishou.photoexchange.mvvm.model.dto.PhotoWithInfo
-import com.kirakishou.photoexchange.mvvm.model.net.response.SendPhotoResponse
-import com.kirakishou.photoexchange.mvvm.model.net.response.StatusResponse
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.error.MainActivityViewModelErrors
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.input.MainActivityViewModelInputs
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.output.MainActivityViewModelOutputs
-import io.reactivex.Observable
-import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
-import java.io.File
 import javax.inject.Inject
 
 /**

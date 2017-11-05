@@ -15,9 +15,13 @@ import timber.log.Timber
 import javax.inject.Inject
 import com.kirakishou.photoexchange.ui.activity.MainActivity
 import android.app.PendingIntent
-
-
-
+import com.kirakishou.photoexchange.di.component.DaggerServiceComponent
+import com.kirakishou.photoexchange.di.module.*
+import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
+import com.kirakishou.photoexchange.mvvm.model.net.response.StatusResponse
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 
 
 class SendPhotoService : Service() {
@@ -30,6 +34,7 @@ class SendPhotoService : Service() {
 
     private val NOTIFICATION_ID = 1
 
+    private val compositeDisposable = CompositeDisposable()
     private lateinit var presenter: SendPhotoServicePresenter
 
     override fun onCreate() {
@@ -39,13 +44,57 @@ class SendPhotoService : Service() {
         resolveDaggerDependency()
 
         presenter = SendPhotoServicePresenter(apiClient, schedulers)
+        initRx()
     }
 
     override fun onDestroy() {
         Timber.e("SendPhotoService destroy")
+        compositeDisposable.clear()
         presenter.detach()
 
         super.onDestroy()
+    }
+
+    private fun initRx() {
+        compositeDisposable += presenter.outputs.onSendPhotoResponseObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onSendPhotoResponseObservable)
+
+        compositeDisposable += presenter.errors.onBadResponseObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onBadResponse)
+
+        compositeDisposable += presenter.errors.onUnknownErrorObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onUnknownError)
+    }
+
+    private fun onSendPhotoResponseObservable(errorCode: ServerErrorCode) {
+        Timber.d("onSendPhotoResponseObservable() errorCode: $errorCode")
+
+        stopService()
+    }
+
+    private fun onBadResponse(errorCode: ServerErrorCode) {
+        Timber.e("BadResponse: errorCode: $errorCode")
+
+        stopService()
+    }
+
+    private fun onUnknownError(error: Throwable) {
+        Timber.e("Unknown error: $error")
+
+        stopService()
+    }
+
+    private fun stopService() {
+        Timber.d("Stopping service")
+
+        stopForeground(true)
+        stopSelf()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -62,7 +111,6 @@ class SendPhotoService : Service() {
         check(commandRaw != -1)
 
         val serviceCommand = ServiceCommand.from(commandRaw)
-
         when (serviceCommand) {
             ServiceCommand.SEND_PHOTO -> {
                 val lon = intent.getDoubleExtra("lon", 0.0)
@@ -103,8 +151,13 @@ class SendPhotoService : Service() {
     override fun onBind(intent: Intent): IBinder? = null
 
     private fun resolveDaggerDependency() {
-        DaggerMainActivityComponent.builder()
-                .applicationComponent(PhotoExchangeApplication.applicationComponent)
+        DaggerServiceComponent
+                .builder()
+                .serviceModule(ServiceModule(this))
+                .networkModule(NetworkModule(PhotoExchangeApplication.baseUrl))
+                .gsonModule(GsonModule())
+                .apiClientModule(ApiClientModule())
+                .schedulerProviderModule(SchedulerProviderModule())
                 .build()
                 .inject(this)
     }

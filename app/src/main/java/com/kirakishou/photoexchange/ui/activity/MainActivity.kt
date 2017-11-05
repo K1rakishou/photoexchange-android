@@ -1,6 +1,5 @@
 package com.kirakishou.photoexchange.ui.activity
 
-import android.app.Notification
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.os.Bundle
@@ -10,12 +9,15 @@ import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
+import com.kirakishou.photoexchange.di.component.DaggerApplicationComponent
 import com.kirakishou.photoexchange.di.component.DaggerMainActivityComponent
+import com.kirakishou.photoexchange.di.component.DaggerServiceComponent
+import com.kirakishou.photoexchange.di.module.*
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.helper.service.SendPhotoService
 import com.kirakishou.photoexchange.helper.util.Utils
-import com.kirakishou.photoexchange.mvvm.model.ErrorCode
+import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
 import com.kirakishou.photoexchange.mvvm.model.LonLat
 import com.kirakishou.photoexchange.mvvm.model.ServiceCommand
 import com.kirakishou.photoexchange.mvvm.viewmodel.MainActivityViewModel
@@ -167,10 +169,10 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
                 }
     }
 
-    override fun onBadResponse(errorCode: ErrorCode) {
-        super.onBadResponse(errorCode)
+    override fun onBadResponse(serverErrorCode: ServerErrorCode) {
+        super.onBadResponse(serverErrorCode)
 
-        /*val message = ErrorMessage.getRemoteErrorMessage(activity, errorCode)
+        /*val message = ErrorMessage.getRemoteErrorMessage(activity, serverErrorCode)
         showToast(message, Toast.LENGTH_LONG)*/
     }
 

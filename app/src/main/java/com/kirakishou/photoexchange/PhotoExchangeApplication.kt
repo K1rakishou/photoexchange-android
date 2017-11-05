@@ -34,7 +34,7 @@ class PhotoExchangeApplication : Application() {
 
     companion object {
         @JvmStatic lateinit var applicationComponent: ApplicationComponent
-        private val baseUrl = "http://kez1911.asuscomm.com:8080/"
-        private val databaseName = "photoexchange_db"
+        val baseUrl = "http://kez1911.asuscomm.com:8080/"
+        val databaseName = "photoexchange_db"
     }
 }

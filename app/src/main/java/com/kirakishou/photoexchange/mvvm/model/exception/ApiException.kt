@@ -1,9 +1,9 @@
 package com.kirakishou.photoexchange.mvvm.model.exception
 
-import com.kirakishou.photoexchange.mvvm.model.ErrorCode
+import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
 
 
 /**
  * Created by kirakishou on 8/25/2017.
  */
-class ApiException(val errorCode: ErrorCode) : Exception()
+class ApiException(val serverErrorCode: ServerErrorCode) : Exception()
