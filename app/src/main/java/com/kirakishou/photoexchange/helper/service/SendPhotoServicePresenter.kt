@@ -58,7 +58,7 @@ class SendPhotoServicePresenter(
     }
 
     private fun handleResponse(response: StatusResponse) {
-        val errorCode = response.serverErrorCode
+        val errorCode = ServerErrorCode.from(response.serverErrorCode)
         Timber.d("Received response, serverErrorCode: $errorCode")
 
         when (response) {
@@ -66,8 +66,7 @@ class SendPhotoServicePresenter(
                 if (errorCode == ServerErrorCode.REC_OK) {
                     sendPhotoResponseSubject.onNext(errorCode)
                 } else {
-                    val errCode = errorCode ?: ServerErrorCode.REC_BAD_ERROR_CODE
-                    badResponseSubject.onNext(errCode)
+                    badResponseSubject.onNext(errorCode)
                 }
             }
 

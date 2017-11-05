@@ -10,5 +10,5 @@ import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
 open class StatusResponse(
         @Expose
         @SerializedName("server_error_code")
-        var serverErrorCode: ServerErrorCode?
+        var serverErrorCode: Int?
 )

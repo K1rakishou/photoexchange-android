@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.helper.api.request
 
+import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
 import com.kirakishou.photoexchange.mvvm.model.exception.ApiException
 import com.kirakishou.photoexchange.mvvm.model.net.response.StatusResponse
 import timber.log.Timber
@@ -13,7 +14,7 @@ abstract class AbstractRequest<out T> {
     @Suppress("UNCHECKED_CAST")
     protected fun convertExceptionToErrorCode(error: Throwable): T {
         val response = when (error) {
-            is ApiException -> StatusResponse(error.serverErrorCode)
+            is ApiException -> StatusResponse(error.serverErrorCode.value)
 
             else -> {
                 Timber.e("Unknown exception")

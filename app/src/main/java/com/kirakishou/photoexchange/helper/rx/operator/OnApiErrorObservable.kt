@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.helper.rx.operator
 
 import com.google.gson.Gson
+import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
 import com.kirakishou.photoexchange.mvvm.model.exception.ApiException
 import com.kirakishou.photoexchange.mvvm.model.exception.BadServerResponseException
 import com.kirakishou.photoexchange.mvvm.model.net.response.StatusResponse
@@ -31,7 +32,7 @@ class OnApiErrorObservable<T : StatusResponse>(val gson: Gson) : ObservableOpera
 
                         //may happen in some rare cases
                         if (error.serverErrorCode != null) {
-                            observer.onError(ApiException(error.serverErrorCode!!))
+                            observer.onError(ApiException(ServerErrorCode.from(error.serverErrorCode)))
                         } else {
                             observer.onError(BadServerResponseException())
                         }
