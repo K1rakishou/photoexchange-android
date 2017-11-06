@@ -11,7 +11,7 @@ import com.kirakishou.photoexchange.mvvm.model.LonLat
 import com.kirakishou.photoexchange.mvvm.model.ServiceCommand
 import timber.log.Timber
 import javax.inject.Inject
-import com.kirakishou.photoexchange.ui.activity.MainActivity
+import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
 import android.app.PendingIntent
 import android.content.Context
 import android.support.v4.app.NotificationCompat
@@ -170,7 +170,7 @@ class SendPhotoService : Service() {
     }
 
     private fun getNotificationIntent(): PendingIntent {
-        val notificationIntent = Intent(this, MainActivity::class.java)
+        val notificationIntent = Intent(this, TakePhotoActivity::class.java)
         notificationIntent.action = Intent.ACTION_MAIN
         notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER)
         notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

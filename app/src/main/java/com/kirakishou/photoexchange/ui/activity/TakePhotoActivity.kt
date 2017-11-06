@@ -9,10 +9,7 @@ import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
-import com.kirakishou.photoexchange.di.component.DaggerApplicationComponent
 import com.kirakishou.photoexchange.di.component.DaggerMainActivityComponent
-import com.kirakishou.photoexchange.di.component.DaggerServiceComponent
-import com.kirakishou.photoexchange.di.module.*
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.helper.service.SendPhotoService
@@ -39,7 +36,7 @@ import java.io.File
 import javax.inject.Inject
 
 
-class MainActivity : BaseActivity<MainActivityViewModel>() {
+class TakePhotoActivity : BaseActivity<MainActivityViewModel>() {
 
     @BindView(R.id.camera_view)
     lateinit var cameraView: CameraView
@@ -62,7 +59,7 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
     override fun initViewModel() =
             ViewModelProviders.of(this, viewModelFactory).get(MainActivityViewModel::class.java)
 
-    override fun getContentView(): Int = R.layout.activity_main
+    override fun getContentView(): Int = R.layout.activity_take_photo
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         userInfoPreference.load()
@@ -118,11 +115,23 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
                 .subscribe({ (location, photoFile) ->
                     val userId = userInfoPreference.getUserId()
 
-                    passInfoToService(location, photoFile, userId)
+                    passToViewTakenPhotoActivity(location, photoFile, userId)
+                    //passInfoToService(location, photoFile, userId)
                 })
     }
 
-    private fun passInfoToService(location: LonLat, photoFilePath: String, userId: String) {
+    fun passToViewTakenPhotoActivity(location: LonLat, photoFilePath: String, userId: String) {
+        val intent = Intent(this, ViewTakenPhotoActivity::class.java)
+        intent.putExtra("command", ServiceCommand.SEND_PHOTO.value)
+        intent.putExtra("lon", location.lon)
+        intent.putExtra("lat", location.lat)
+        intent.putExtra("user_id", userId)
+        intent.putExtra("photo_file_path", photoFilePath)
+
+        startActivity(intent)
+    }
+
+    /*private fun passInfoToService(location: LonLat, photoFilePath: String, userId: String) {
         val intent = Intent(this, SendPhotoService::class.java)
         intent.putExtra("command", ServiceCommand.SEND_PHOTO.value)
         intent.putExtra("lon", location.lon)
@@ -131,7 +140,7 @@ class MainActivity : BaseActivity<MainActivityViewModel>() {
         intent.putExtra("photo_file_path", photoFilePath)
 
         startService(intent)
-    }
+    }*/
 
     private fun initUserInfo() {
         if (!userInfoPreference.exists()) {
