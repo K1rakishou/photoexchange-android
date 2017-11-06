@@ -116,7 +116,6 @@ class TakePhotoActivity : BaseActivity<MainActivityViewModel>() {
                     val userId = userInfoPreference.getUserId()
 
                     passToViewTakenPhotoActivity(location, photoFile, userId)
-                    //passInfoToService(location, photoFile, userId)
                 })
     }
 
@@ -130,17 +129,6 @@ class TakePhotoActivity : BaseActivity<MainActivityViewModel>() {
 
         startActivity(intent)
     }
-
-    /*private fun passInfoToService(location: LonLat, photoFilePath: String, userId: String) {
-        val intent = Intent(this, SendPhotoService::class.java)
-        intent.putExtra("command", ServiceCommand.SEND_PHOTO.value)
-        intent.putExtra("lon", location.lon)
-        intent.putExtra("lat", location.lat)
-        intent.putExtra("user_id", userId)
-        intent.putExtra("photo_file_path", photoFilePath)
-
-        startService(intent)
-    }*/
 
     private fun initUserInfo() {
         if (!userInfoPreference.exists()) {

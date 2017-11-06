@@ -9,4 +9,10 @@ class LonLat(val lon: Double,
     override fun toString(): String {
         return "[lon: $lon, lat: $lat]"
     }
+
+    companion object {
+        fun empty(): LonLat {
+            return LonLat(0.0, 0.0)
+        }
+    }
 }

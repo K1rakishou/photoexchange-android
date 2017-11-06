@@ -4,40 +4,56 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:ignore="contentDescription"
+    android:background="#000"
     tools:context="com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity">
 
     <ImageView
-        android:id="@+id/photo_view"
+        android:id="@+id/iv_photo_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="centerCrop"/>
+        android:layout_height="match_parent" />
+
+    <ImageView
+        android:id="@+id/iv_close_activity"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:background="?selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_close"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <android.support.design.widget.FloatingActionButton
-        android:id="@+id/close_activity"
+        android:id="@+id/fab_close_activity"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="32dp"
         android:layout_marginEnd="24dp"
+        android:clickable="true"
+        android:focusable="true"
         android:src="@drawable/ic_close"
-        android:backgroundTint="@color/fab_close_background_color"
+        app:backgroundTint="@color/colorAccent"
+        app:elevation="4dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/send_photo"
+        app:layout_constraintEnd_toStartOf="@+id/fab_send_photo"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintStart_toStartOf="parent" />
 
     <android.support.design.widget.FloatingActionButton
-        android:id="@+id/send_photo"
+        android:id="@+id/fab_send_photo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="32dp"
         android:layout_marginStart="24dp"
+        android:clickable="true"
+        android:focusable="true"
         android:src="@drawable/ic_done"
-        android:backgroundTint="@color/fab_send_background_color"
+        app:backgroundTint="@color/colorPrimary"
+        app:elevation="4dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/close_activity" />
+        app:layout_constraintStart_toEndOf="@+id/fab_close_activity" />
 
 </android.support.constraint.ConstraintLayout>

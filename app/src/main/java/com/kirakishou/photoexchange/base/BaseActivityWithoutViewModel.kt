@@ -31,7 +31,6 @@ abstract class BaseActivityWithoutViewModel : AppCompatActivity() {
 
     private var unBinder: Fickle<Unbinder> = Fickle.empty()
 
-
     @Suppress("UNCHECKED_CAST")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
