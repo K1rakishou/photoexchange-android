@@ -6,8 +6,7 @@ import com.kirakishou.photoexchange.helper.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.mvvm.model.dto.PhotoWithInfo
 import com.kirakishou.photoexchange.mvvm.model.exception.PhotoDoesNotExistsException
 import com.kirakishou.photoexchange.mvvm.model.net.packet.SendPhotoPacket
-import com.kirakishou.photoexchange.mvvm.model.net.response.SendPhotoResponse
-import com.kirakishou.photoexchange.mvvm.model.net.response.StatusResponse
+import com.kirakishou.photoexchange.mvvm.model.net.response.UploadPhotoResponse
 import io.reactivex.Single
 import okhttp3.MediaType
 import okhttp3.MultipartBody
@@ -19,9 +18,9 @@ import java.io.File
  */
 class SendPhotoRequest(private val info: PhotoWithInfo,
                                            private val apiService: ApiService,
-                                           private val gson: Gson) : AbstractRequest<Single<SendPhotoResponse>>() {
+                                           private val gson: Gson) : AbstractRequest<Single<UploadPhotoResponse>>() {
 
-    override fun build(): Single<SendPhotoResponse> {
+    override fun build(): Single<UploadPhotoResponse> {
         val packet = SendPhotoPacket(info.location.lon, info.location.lat, info.userId)
 
         return getBodySingle(info.photoFilePath, packet)

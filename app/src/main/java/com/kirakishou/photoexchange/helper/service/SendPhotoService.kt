@@ -21,6 +21,7 @@ import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
+import org.greenrobot.eventbus.EventBus
 
 
 class SendPhotoService : Service() {
@@ -71,8 +72,8 @@ class SendPhotoService : Service() {
                 .subscribe(this::onUnknownError)
     }
 
-    private fun onSendPhotoResponseObservable(errorCode: ServerErrorCode) {
-        Timber.d("onSendPhotoResponseObservable() errorCode: $errorCode")
+    private fun onSendPhotoResponseObservable(photoName: String) {
+        Timber.d("onSendPhotoResponseObservable() photoName: $photoName")
 
         updateUploadingNotificationShowSuccess()
         stopService()

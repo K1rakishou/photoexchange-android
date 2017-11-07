@@ -13,9 +13,16 @@ import com.kirakishou.photoexchange.base.BaseActivityWithoutViewModel
 import com.kirakishou.photoexchange.helper.service.SendPhotoService
 import com.kirakishou.photoexchange.mvvm.model.LonLat
 import com.kirakishou.photoexchange.mvvm.model.ServiceCommand
+import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEvent
+import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEventStatus
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import org.greenrobot.eventbus.EventBus
 import java.io.File
+import org.greenrobot.eventbus.ThreadMode
+import org.greenrobot.eventbus.Subscribe
+
+
 
 class ViewTakenPhotoActivity : BaseActivityWithoutViewModel() {
 

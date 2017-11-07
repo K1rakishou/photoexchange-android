@@ -8,5 +8,5 @@ import io.reactivex.Observable
  * Created by kirakishou on 11/4/2017.
  */
 interface SendPhotoServiceOutputs {
-    fun onSendPhotoResponseObservable(): Observable<ServerErrorCode>
+    fun onSendPhotoResponseObservable(): Observable<String>
 }

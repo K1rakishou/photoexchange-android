@@ -10,7 +10,7 @@ import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
 import com.kirakishou.photoexchange.mvvm.model.LonLat
 import com.kirakishou.photoexchange.mvvm.model.dto.PhotoWithInfo
 import com.kirakishou.photoexchange.mvvm.model.exception.UnknownErrorCodeException
-import com.kirakishou.photoexchange.mvvm.model.net.response.SendPhotoResponse
+import com.kirakishou.photoexchange.mvvm.model.net.response.UploadPhotoResponse
 import com.kirakishou.photoexchange.mvvm.model.net.response.StatusResponse
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
@@ -36,7 +36,7 @@ class SendPhotoServicePresenter(
 
     private val MAX_RETRY_TIMES = 3L
 
-    private val sendPhotoResponseSubject = PublishSubject.create<ServerErrorCode>()
+    private val sendPhotoResponseSubject = PublishSubject.create<String>()
     private val sendPhotoRequestSubject = PublishSubject.create<PhotoWithInfo>()
     private val badResponseSubject = PublishSubject.create<ServerErrorCode>()
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
@@ -46,18 +46,15 @@ class SendPhotoServicePresenter(
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .doOnNext { AndroidUtils.throwIfOnMainThread() }
-                .flatMap { info ->
-                    apiClient.sendPhoto(info)
-                            .retry(MAX_RETRY_TIMES)
-                            .toObservable()
-                }
+                .flatMap(this::sendPacketWithPhoto)
                 .subscribe(this::handleResponse, this::handleError)
     }
 
-    fun detach() {
-        compositeDisposable.clear()
-
-        Timber.d("SendPhotoServicePresenter detached")
+    private fun sendPacketWithPhoto(info: PhotoWithInfo): Observable<UploadPhotoResponse> {
+        return apiClient.sendPhoto(info)
+                .doOnSuccess { Timber.d("Sending packet with photo...") }
+                .retry(MAX_RETRY_TIMES)
+                .toObservable()
     }
 
     override fun uploadPhoto(photoFilePath: String, location: LonLat, userId: String) {
@@ -69,9 +66,9 @@ class SendPhotoServicePresenter(
         Timber.d("Received response, serverErrorCode: $errorCode")
 
         when (response) {
-            is SendPhotoResponse -> {
+            is UploadPhotoResponse -> {
                 if (errorCode == ServerErrorCode.OK) {
-                    sendPhotoResponseSubject.onNext(errorCode)
+                    sendPhotoResponseSubject.onNext(response.photoName)
                 } else {
                     when (errorCode) {
                         ServerErrorCode.BAD_REQUEST,
@@ -98,7 +95,13 @@ class SendPhotoServicePresenter(
         unknownErrorSubject.onNext(error)
     }
 
-    override fun onSendPhotoResponseObservable(): Observable<ServerErrorCode> = sendPhotoResponseSubject
+    fun detach() {
+        compositeDisposable.clear()
+
+        Timber.d("SendPhotoServicePresenter detached")
+    }
+
+    override fun onSendPhotoResponseObservable(): Observable<String> = sendPhotoResponseSubject
     override fun onBadResponseObservable(): Observable<ServerErrorCode> = badResponseSubject
     override fun onUnknownErrorObservable(): Observable<Throwable> = unknownErrorSubject
 }

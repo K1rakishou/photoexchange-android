@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:title="Отправленные" android:id="@+id/sent_photos"
+        android:enabled="true"/>
+
+    <item android:title="Полученные" android:id="@+id/received_photos"/>
+
+</menu>
