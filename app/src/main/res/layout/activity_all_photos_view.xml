@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.kirakishou.photoexchange.ui.activity.AllPhotoViewActivity">
+    tools:context="com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity">
 
     <android.support.design.widget.TabLayout
         android:id="@+id/sliding_tab_layout"

@@ -27,7 +27,7 @@
             android:exported="false" />
 
         <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity" />
-        <activity android:name="com.kirakishou.photoexchange.ui.activity.AllPhotoViewActivity"></activity>
+        <activity android:name="com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity"></activity>
     </application>
 
 </manifest>

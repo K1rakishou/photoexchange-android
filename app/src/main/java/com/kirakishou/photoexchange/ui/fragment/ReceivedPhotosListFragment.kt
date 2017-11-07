@@ -8,18 +8,18 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseFragment
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
-import com.kirakishou.photoexchange.mvvm.viewmodel.AllPhotoViewActivityViewModel
-import com.kirakishou.photoexchange.mvvm.viewmodel.factory.AllPhotoViewActivityViewModelFactory
-import com.kirakishou.photoexchange.ui.activity.AllPhotoViewActivity
+import com.kirakishou.photoexchange.mvvm.viewmodel.AllPhotosViewActivityViewModel
+import com.kirakishou.photoexchange.mvvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
+import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
 import javax.inject.Inject
 
-class ReceivedPhotosListFragment : BaseFragment<AllPhotoViewActivityViewModel>() {
+class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
 
     @Inject
-    lateinit var viewModelFactory: AllPhotoViewActivityViewModelFactory
+    lateinit var viewModelFactory: AllPhotosViewActivityViewModelFactory
 
-    override fun initViewModel(): AllPhotoViewActivityViewModel {
-        return ViewModelProviders.of(activity, viewModelFactory).get(AllPhotoViewActivityViewModel::class.java)
+    override fun initViewModel(): AllPhotosViewActivityViewModel {
+        return ViewModelProviders.of(activity, viewModelFactory).get(AllPhotosViewActivityViewModel::class.java)
     }
 
     override fun getContentView(): Int = R.layout.fragment_received_photos_list
@@ -33,7 +33,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotoViewActivityViewModel>()
     override fun resolveDaggerDependency() {
         DaggerAllPhotoViewActivityComponent.builder()
                 .applicationComponent(PhotoExchangeApplication.applicationComponent)
-                .allPhotoViewActivityModule(AllPhotoViewActivityModule(activity as AllPhotoViewActivity))
+                .allPhotoViewActivityModule(AllPhotoViewActivityModule(activity as AllPhotosViewActivity))
                 .build()
                 .inject(this)
     }

@@ -13,16 +13,15 @@ import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityCompo
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEvent
 import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEventStatus
-import com.kirakishou.photoexchange.mvvm.viewmodel.AllPhotoViewActivityViewModel
-import com.kirakishou.photoexchange.mvvm.viewmodel.factory.AllPhotoViewActivityViewModelFactory
-import com.kirakishou.photoexchange.ui.navigator.AllPhotoViewActivityNavigator
+import com.kirakishou.photoexchange.mvvm.viewmodel.AllPhotosViewActivityViewModel
+import com.kirakishou.photoexchange.mvvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import javax.inject.Inject
 
-class AllPhotoViewActivity : BaseActivity<AllPhotoViewActivityViewModel>(),
+class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         TabLayout.OnTabSelectedListener, ViewPager.OnPageChangeListener {
 
     @BindView(R.id.sliding_tab_layout)
@@ -32,20 +31,17 @@ class AllPhotoViewActivity : BaseActivity<AllPhotoViewActivityViewModel>(),
     lateinit var viewPager: ViewPager
 
     @Inject
-    lateinit var navigator: AllPhotoViewActivityNavigator
+    lateinit var viewModelFactory: AllPhotosViewActivityViewModelFactory
 
-    @Inject
-    lateinit var viewModelFactory: AllPhotoViewActivityViewModelFactory
-
-    override fun initViewModel(): AllPhotoViewActivityViewModel {
-        return ViewModelProviders.of(this, viewModelFactory).get(AllPhotoViewActivityViewModel::class.java)
+    override fun initViewModel(): AllPhotosViewActivityViewModel {
+        return ViewModelProviders.of(this, viewModelFactory).get(AllPhotosViewActivityViewModel::class.java)
     }
 
-    override fun getContentView(): Int = R.layout.activity_all_photo_view
+    override fun getContentView(): Int = R.layout.activity_all_photos_view
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
-        tabLayout.addTab(tabLayout.newTab().setText("Активные"))
-        tabLayout.addTab(tabLayout.newTab().setText("Старые"))
+        tabLayout.addTab(tabLayout.newTab().setText("Sent"))
+        tabLayout.addTab(tabLayout.newTab().setText("Received"))
         tabLayout.tabGravity = TabLayout.GRAVITY_FILL
 
         val adapter = FragmentTabsPager(supportFragmentManager)

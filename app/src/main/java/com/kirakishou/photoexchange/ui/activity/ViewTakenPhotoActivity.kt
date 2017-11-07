@@ -70,7 +70,16 @@ class ViewTakenPhotoActivity : BaseActivityWithoutViewModel() {
         compositeDisposable += RxView.clicks(sendPhotoButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ passInfoToService(command, location, photoFilePath, userId) })
+                .subscribe({
+                    passInfoToService(command, location, photoFilePath, userId)
+                    startAllPhotosViewActivity()
+                })
+    }
+
+    private fun startAllPhotosViewActivity() {
+        val intent = Intent(this, AllPhotosViewActivity::class.java)
+        startActivity(intent)
+        finish()
     }
 
     private fun passInfoToService(command: Int, location: LonLat, photoFilePath: String, userId: String) {
