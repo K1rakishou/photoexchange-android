@@ -22,7 +22,7 @@ class MainActivityViewModel
 
 
     override fun onCleared() {
-        Timber.e("ClientMainActivityViewModel.onCleared()")
+        Timber.e("MainActivityViewModel.onCleared()")
 
         super.onCleared()
     }

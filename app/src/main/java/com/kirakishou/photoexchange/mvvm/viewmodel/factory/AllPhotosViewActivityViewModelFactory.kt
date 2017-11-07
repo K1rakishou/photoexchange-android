@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.mvvm.viewmodel.factory
 
 import android.arch.lifecycle.ViewModel
 import android.arch.lifecycle.ViewModelProvider
+import com.kirakishou.photoexchange.mvvm.viewmodel.AllPhotosViewActivityViewModel
 import javax.inject.Inject
 
 /**
@@ -12,6 +13,6 @@ class AllPhotosViewActivityViewModelFactory
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
-        return AllPhotosViewActivityViewModelFactory() as T
+        return AllPhotosViewActivityViewModel() as T
     }
 }
