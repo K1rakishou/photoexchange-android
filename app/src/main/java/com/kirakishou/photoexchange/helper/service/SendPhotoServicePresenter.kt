@@ -9,6 +9,7 @@ import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
 import com.kirakishou.photoexchange.mvvm.model.LonLat
 import com.kirakishou.photoexchange.mvvm.model.dto.PhotoWithInfo
+import com.kirakishou.photoexchange.mvvm.model.exception.UnknownErrorCodeException
 import com.kirakishou.photoexchange.mvvm.model.net.response.SendPhotoResponse
 import com.kirakishou.photoexchange.mvvm.model.net.response.StatusResponse
 import io.reactivex.Observable
@@ -33,6 +34,8 @@ class SendPhotoServicePresenter(
     val outputs: SendPhotoServiceOutputs = this
     val errors: SendPhotoServiceErrors = this
 
+    private val MAX_RETRY_TIMES = 3L
+
     private val sendPhotoResponseSubject = PublishSubject.create<ServerErrorCode>()
     private val sendPhotoRequestSubject = PublishSubject.create<PhotoWithInfo>()
     private val badResponseSubject = PublishSubject.create<ServerErrorCode>()
@@ -43,7 +46,11 @@ class SendPhotoServicePresenter(
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .doOnNext { AndroidUtils.throwIfOnMainThread() }
-                .flatMap { info -> apiClient.sendPhoto(info).toObservable() }
+                .flatMap { info ->
+                    apiClient.sendPhoto(info)
+                            .retry(MAX_RETRY_TIMES)
+                            .toObservable()
+                }
                 .subscribe(this::handleResponse, this::handleError)
     }
 
@@ -63,10 +70,21 @@ class SendPhotoServicePresenter(
 
         when (response) {
             is SendPhotoResponse -> {
-                if (errorCode == ServerErrorCode.REC_OK) {
+                if (errorCode == ServerErrorCode.OK) {
                     sendPhotoResponseSubject.onNext(errorCode)
                 } else {
-                    badResponseSubject.onNext(errorCode)
+                    when (errorCode) {
+                        ServerErrorCode.BAD_REQUEST,
+                        ServerErrorCode.DISK_ERROR,
+                        ServerErrorCode.REPOSITORY_ERROR,
+                        ServerErrorCode.UNKNOWN_ERROR -> {
+                            badResponseSubject.onNext(errorCode)
+                        }
+
+                        else -> {
+                            unknownErrorSubject.onNext(UnknownErrorCodeException(errorCode))
+                        }
+                    }
                 }
             }
 
