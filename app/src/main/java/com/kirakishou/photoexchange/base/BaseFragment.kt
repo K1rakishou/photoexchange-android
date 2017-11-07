@@ -9,27 +9,26 @@ import android.view.View
 import android.view.ViewGroup
 import butterknife.ButterKnife
 import butterknife.Unbinder
-import com.kirakishou.photoexchange.mvvm.model.Fickle
 import io.reactivex.disposables.CompositeDisposable
 
 /**
  * Created by kirakishou on 11/7/2017.
  */
 
-abstract class BaseFragment<T : ViewModel> : Fragment() {
+abstract class BaseFragment<out T : ViewModel> : Fragment() {
 
-    protected val mRegistry by lazy {
+    protected val registry by lazy {
         LifecycleRegistry(this)
     }
 
-    override fun getLifecycle(): LifecycleRegistry = mRegistry
+    override fun getLifecycle(): LifecycleRegistry = registry
 
-    private lateinit var mUnBinder: Unbinder
-    protected var mViewModel: Fickle<T> = Fickle.empty()
-    protected val mCompositeDisposable = CompositeDisposable()
+    private lateinit var unBinder: Unbinder
+    private lateinit var viewModel: T
+    protected val compositeDisposable = CompositeDisposable()
 
     protected fun getViewModel(): T {
-        return mViewModel.get()
+        return viewModel
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -37,11 +36,11 @@ abstract class BaseFragment<T : ViewModel> : Fragment() {
         super.onCreateView(inflater, container, savedInstanceState)
 
         resolveDaggerDependency()
-        mViewModel = Fickle.of(initViewModel())
+        viewModel = initViewModel()
 
         val viewId = getContentView()
         val root = inflater.inflate(viewId, container, false)
-        mUnBinder = ButterKnife.bind(this, root)
+        unBinder = ButterKnife.bind(this, root)
 
         return root
     }
@@ -53,14 +52,14 @@ abstract class BaseFragment<T : ViewModel> : Fragment() {
     }
 
     override fun onDestroyView() {
-        mCompositeDisposable.clear()
+        compositeDisposable.clear()
         onFragmentViewDestroy()
 
-        mUnBinder.unbind()
+        unBinder.unbind()
         super.onDestroyView()
     }
 
-    protected abstract fun initViewModel(): T?
+    protected abstract fun initViewModel(): T
     protected abstract fun getContentView(): Int
     protected abstract fun onFragmentViewCreated(savedInstanceState: Bundle?)
     protected abstract fun onFragmentViewDestroy()

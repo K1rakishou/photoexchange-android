@@ -53,7 +53,7 @@ open class BaseNavigator(activity: AppCompatActivity) {
     }
 
     fun navigateToFragment(fragmentClass: KClass<*>, fragmentTag: String,
-                           bundle: Bundle? = null, fragmentFrameId: Int = R.id.fragment_frame) {
+                           bundle: Bundle? = null, fragmentFrameId: Int/* = R.id.fragment_frame*/) {
         navigatorHandler.post {
             val fragmentTransaction = fragmentManager.beginTransaction()
             val visibleFragment = getVisibleFragment()

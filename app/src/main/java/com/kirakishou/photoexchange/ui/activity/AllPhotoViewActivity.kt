@@ -2,17 +2,13 @@ package com.kirakishou.photoexchange.ui.activity
 
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.support.design.widget.BottomNavigationView
 import android.support.design.widget.TabLayout
 import android.support.v4.view.ViewPager
-import android.view.MenuItem
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
-import com.kirakishou.photoexchange.base.BaseActivityWithoutViewModel
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEvent
