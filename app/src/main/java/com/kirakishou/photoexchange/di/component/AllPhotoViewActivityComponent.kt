@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.di.component
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.ui.activity.AllPhotoViewActivity
+import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosListFragment
 import com.kirakishou.photoexchange.ui.fragment.SentPhotosListFragment
 import dagger.Component
 
@@ -15,4 +16,5 @@ import dagger.Component
 interface AllPhotoViewActivityComponent {
     fun inject(activity: AllPhotoViewActivity)
     fun inject(fragment: SentPhotosListFragment)
+    fun inject(fragment: ReceivedPhotosListFragment)
 }
