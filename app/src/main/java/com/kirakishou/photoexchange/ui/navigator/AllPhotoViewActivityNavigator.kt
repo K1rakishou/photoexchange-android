@@ -8,5 +8,4 @@ import com.kirakishou.photoexchange.base.BaseNavigator
  */
 class AllPhotoViewActivityNavigator(activity: AppCompatActivity) : BaseNavigator(activity) {
 
-
 }
