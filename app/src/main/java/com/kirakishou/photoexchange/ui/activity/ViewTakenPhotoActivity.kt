@@ -10,18 +10,10 @@ import com.bumptech.glide.request.RequestOptions
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.base.BaseActivityWithoutViewModel
-import com.kirakishou.photoexchange.helper.service.SendPhotoService
 import com.kirakishou.photoexchange.mvvm.model.LonLat
-import com.kirakishou.photoexchange.mvvm.model.ServiceCommand
-import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEvent
-import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEventStatus
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
-import org.greenrobot.eventbus.EventBus
 import java.io.File
-import org.greenrobot.eventbus.ThreadMode
-import org.greenrobot.eventbus.Subscribe
-
 
 
 class ViewTakenPhotoActivity : BaseActivityWithoutViewModel() {
@@ -39,14 +31,13 @@ class ViewTakenPhotoActivity : BaseActivityWithoutViewModel() {
     lateinit var sendPhotoButton: FloatingActionButton
 
     private var location: LonLat = LonLat.empty()
-    private var command: Int = -1
     private var userId: String = ""
     private var photoFilePath: String = ""
 
     override fun getContentView() = R.layout.activity_view_taken_photo
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
-        getPhotoInfo(intent)
+        getPhotoInfoFromIntent(intent)
         setImageViewPhoto()
 
         initRx()
@@ -71,26 +62,18 @@ class ViewTakenPhotoActivity : BaseActivityWithoutViewModel() {
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    passInfoToService(command, location, photoFilePath, userId)
-                    startAllPhotosViewActivity()
+                    startAllPhotosViewActivity(location, photoFilePath, userId)
                 })
     }
 
-    private fun startAllPhotosViewActivity() {
+    private fun startAllPhotosViewActivity(location: LonLat, photoFilePath: String, userId: String) {
         val intent = Intent(this, AllPhotosViewActivity::class.java)
-        startActivity(intent)
-        finish()
-    }
-
-    private fun passInfoToService(command: Int, location: LonLat, photoFilePath: String, userId: String) {
-        val intent = Intent(this, SendPhotoService::class.java)
-        intent.putExtra("command", command)
         intent.putExtra("lon", location.lon)
         intent.putExtra("lat", location.lat)
         intent.putExtra("user_id", userId)
         intent.putExtra("photo_file_path", photoFilePath)
-
-        startService(intent)
+        startActivity(intent)
+        finish()
     }
 
     private fun setImageViewPhoto() {
@@ -100,18 +83,16 @@ class ViewTakenPhotoActivity : BaseActivityWithoutViewModel() {
                 .into(photoView)
     }
 
-    private fun getPhotoInfo(intent: Intent) {
+    private fun getPhotoInfoFromIntent(intent: Intent) {
         val lon = intent.getDoubleExtra("lon", 0.0)
         val lat = intent.getDoubleExtra("lat", 0.0)
         userId = intent.getStringExtra("user_id")
         photoFilePath = intent.getStringExtra("photo_file_path")
-        command = intent.getIntExtra("command", -1)
 
         check(lon != 0.0)
         check(lat != 0.0)
         check(userId.isNotEmpty())
         check(photoFilePath.isNotEmpty())
-        check(command != -1)
 
         location = LonLat(lon, lat)
     }

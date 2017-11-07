@@ -121,7 +121,6 @@ class TakePhotoActivity : BaseActivity<MainActivityViewModel>() {
 
     private fun passToViewTakenPhotoActivity(location: LonLat, photoFilePath: String, userId: String) {
         val intent = Intent(this, ViewTakenPhotoActivity::class.java)
-        intent.putExtra("command", ServiceCommand.SEND_PHOTO.value)
         intent.putExtra("lon", location.lon)
         intent.putExtra("lat", location.lat)
         intent.putExtra("user_id", userId)

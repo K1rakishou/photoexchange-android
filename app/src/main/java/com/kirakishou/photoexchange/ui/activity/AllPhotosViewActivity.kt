@@ -11,6 +11,8 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
+import com.kirakishou.photoexchange.helper.service.SendPhotoService
+import com.kirakishou.photoexchange.mvvm.model.LonLat
 import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEvent
 import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEventStatus
 import com.kirakishou.photoexchange.mvvm.viewmodel.AllPhotosViewActivityViewModel
@@ -40,6 +42,26 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     override fun getContentView(): Int = R.layout.activity_all_photos_view
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
+        initTabs()
+        getPhotoInfoFromIntent(intent)
+    }
+
+    private fun getPhotoInfoFromIntent(intent: Intent) {
+        val lon = intent.getDoubleExtra("lon", 0.0)
+        val lat = intent.getDoubleExtra("lat", 0.0)
+        val userId = intent.getStringExtra("user_id")
+        val photoFilePath = intent.getStringExtra("photo_file_path")
+        val location = LonLat(lon, lat)
+
+        check(lon != 0.0)
+        check(lat != 0.0)
+        check(userId.isNotEmpty())
+        check(photoFilePath.isNotEmpty())
+
+        getViewModel().photoInfo = AllPhotosViewActivityViewModel.PhotoInfo(location, userId, photoFilePath)
+    }
+
+    private fun initTabs() {
         tabLayout.addTab(tabLayout.newTab().setText("Sent"))
         tabLayout.addTab(tabLayout.newTab().setText("Received"))
         tabLayout.tabGravity = TabLayout.GRAVITY_FILL

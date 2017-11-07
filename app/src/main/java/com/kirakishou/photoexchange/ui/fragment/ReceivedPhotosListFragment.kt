@@ -3,6 +3,8 @@ package com.kirakishou.photoexchange.ui.fragment
 
 import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
+import android.support.v7.widget.RecyclerView
+import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseFragment
@@ -14,6 +16,9 @@ import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
 import javax.inject.Inject
 
 class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
+
+    @BindView(R.id.received_photos_list)
+    lateinit var receivedPhotosList: RecyclerView
 
     @Inject
     lateinit var viewModelFactory: AllPhotosViewActivityViewModelFactory
