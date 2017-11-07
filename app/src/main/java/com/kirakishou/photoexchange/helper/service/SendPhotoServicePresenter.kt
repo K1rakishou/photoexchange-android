@@ -71,6 +71,7 @@ class SendPhotoServicePresenter(
                     sendPhotoResponseSubject.onNext(response.photoName)
                 } else {
                     when (errorCode) {
+                        ServerErrorCode.BAD_ERROR_CODE,
                         ServerErrorCode.BAD_REQUEST,
                         ServerErrorCode.DISK_ERROR,
                         ServerErrorCode.REPOSITORY_ERROR,

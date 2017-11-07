@@ -58,12 +58,12 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
 
     override fun onDestroy() {
         compositeDisposable.clear()
+        onActivityDestroy()
 
         unBinder.ifPresent {
             it.unbind()
         }
 
-        onActivityDestroy()
         super.onDestroy()
     }
 
