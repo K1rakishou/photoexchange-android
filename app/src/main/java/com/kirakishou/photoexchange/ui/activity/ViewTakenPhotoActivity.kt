@@ -30,6 +30,9 @@ class ViewTakenPhotoActivity : BaseActivityWithoutViewModel() {
     @BindView(R.id.fab_send_photo)
     lateinit var sendPhotoButton: FloatingActionButton
 
+    private var photoFilePath: String = ""
+    private var photoId: Long = -1L
+
     override fun getContentView() = R.layout.activity_view_taken_photo
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
@@ -66,7 +69,11 @@ class ViewTakenPhotoActivity : BaseActivityWithoutViewModel() {
     }
 
     private fun setImageViewPhoto(intent: Intent) {
-        val photoFilePath = intent.getStringExtra("photo_file_path")
+        photoFilePath = intent.getStringExtra("photo_file_path")
+        photoId = intent.getLongExtra("photo_id", -1L)
+
+        check(photoFilePath.isNotEmpty())
+        check(photoId != -1L)
 
         Glide.with(this)
                 .load(File(photoFilePath))
@@ -75,6 +82,8 @@ class ViewTakenPhotoActivity : BaseActivityWithoutViewModel() {
     }
 
     private fun closeActivity() {
+        //TODO: delete photo from the DB and from the disk
+
         finish()
     }
 

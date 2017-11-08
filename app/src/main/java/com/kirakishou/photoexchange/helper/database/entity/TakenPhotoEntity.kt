@@ -11,7 +11,7 @@ import com.kirakishou.photoexchange.helper.util.TimeUtils
 
 @Entity(tableName = TakenPhotoEntity.TABLE_NAME)
 class TakenPhotoEntity(
-        @PrimaryKey
+        @PrimaryKey(autoGenerate = true)
         @ColumnInfo(name = "id")
         var id: Long,
 

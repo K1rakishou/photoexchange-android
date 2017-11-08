@@ -30,4 +30,12 @@ class TakenPhotosRepository(
                 .map(takenPhotoMapper::toTakenPhoto)
                 .first(emptyList())
     }
+
+    fun findAll(): List<TakenPhoto> {
+        return takenPhotosDao.findAll()
+                .subscribeOn(schedulers.provideIo())
+                .observeOn(schedulers.provideIo())
+                .map(takenPhotoMapper::toTakenPhoto)
+                .blockingFirst()
+    }
 }

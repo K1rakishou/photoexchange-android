@@ -1,5 +1,7 @@
 package com.kirakishou.photoexchange.mvvm.viewmodel
 
+import android.os.Debug
+import com.kirakishou.fixmypc.photoexchange.BuildConfig
 import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.mvvm.model.LonLat
@@ -24,8 +26,17 @@ class TakePhotoActivityViewModel
     val outputs: MainActivityViewModelOutputs = this
     val errors: MainActivityViewModelErrors = this
 
-    fun saveTakenPhotoToDb(location: LonLat, userId: String, photoFilePath: String) {
-        takenPhotosRepo.saveOne(location.lon, location.lat, userId, photoFilePath)
+    //TODO: redo this asynchronously
+    fun saveTakenPhotoToDb(location: LonLat, userId: String, photoFilePath: String): Long {
+        val id = takenPhotosRepo.saveOne(location.lon, location.lat, userId, photoFilePath)
+
+        if (BuildConfig.DEBUG) {
+            val allPhotos = takenPhotosRepo.findAll()
+
+            allPhotos.forEach { Timber.d(it.toString()) }
+        }
+
+        return id
     }
 
     override fun onCleared() {

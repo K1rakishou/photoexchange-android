@@ -25,7 +25,7 @@ import io.fotoapparat.parameter.selector.LensPositionSelectors.back
 import io.fotoapparat.parameter.selector.SizeSelectors.biggestSize
 import io.fotoapparat.view.CameraView
 import io.nlopez.smartlocation.SmartLocation
-import io.nlopez.smartlocation.location.config.LocationParams
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.plusAssign
@@ -115,23 +115,26 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.io())
                 .doOnError { unknownErrorsSubject.onNext(it) }
-                .doOnNext(this::onPhotoReady)
-                .map { it.second }
+                .flatMap {
+                    val id = saveTakenPhotoToDb(it)
+                    return@flatMap Observables.zip(Observable.just(id), Observable.just(it.second))
+                }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::switchToViewTakenPhotoActivity)
     }
 
-    private fun onPhotoReady(locationAndPhotoPath: Pair<LonLat, String>) {
+    private fun saveTakenPhotoToDb(locationAndPhotoPath: Pair<LonLat, String>): Long {
         val userId = userInfoPreference.getUserId()
         val location = locationAndPhotoPath.first
         val photoFilePath = locationAndPhotoPath.second
 
-        getViewModel().saveTakenPhotoToDb(location, userId, photoFilePath)
+        return getViewModel().saveTakenPhotoToDb(location, userId, photoFilePath)
     }
 
-    private fun switchToViewTakenPhotoActivity(photoFilePath: String) {
+    private fun switchToViewTakenPhotoActivity(idAndPhotoFilePath: Pair<Long, String>) {
         val intent = Intent(this, ViewTakenPhotoActivity::class.java)
-        intent.putExtra("photo_file_path", photoFilePath)
+        intent.putExtra("photo_id", idAndPhotoFilePath.first)
+        intent.putExtra("photo_file_path", idAndPhotoFilePath.second)
         startActivity(intent)
     }
 
@@ -148,7 +151,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
     private fun takePhoto() {
         Timber.d("takePhoto() Taking a photo...")
-        val tempFile = File.createTempFile("temp", "file")
+        val tempFile = File.createTempFile("photo", ".tmp")
 
         fotoapparat.takePicture()
                 .saveToFile(tempFile)
