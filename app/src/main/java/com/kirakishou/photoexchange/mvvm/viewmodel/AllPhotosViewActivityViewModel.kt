@@ -1,11 +1,19 @@
 package com.kirakishou.photoexchange.mvvm.viewmodel
 
 import com.kirakishou.photoexchange.base.BaseViewModel
+import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvvm.model.LonLat
+import com.kirakishou.photoexchange.mvvm.model.Pageable
+import com.kirakishou.photoexchange.mvvm.model.TakenPhoto
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.error.AllPhotosViewActivityViewModelError
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.input.AllPhotosViewActivityViewModelInputs
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.output.AllPhotosViewActivityViewModelOutputs
+import io.reactivex.Observable
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -14,7 +22,8 @@ import javax.inject.Inject
  */
 class AllPhotosViewActivityViewModel
 @Inject constructor(
-        val takenPhotosRepository: TakenPhotosRepository
+        val takenPhotosRepository: TakenPhotosRepository,
+        val schedulers: SchedulerProvider
 ) : BaseViewModel(),
         AllPhotosViewActivityViewModelInputs,
         AllPhotosViewActivityViewModelOutputs,
@@ -24,9 +33,30 @@ class AllPhotosViewActivityViewModel
     val outputs: AllPhotosViewActivityViewModelOutputs = this
     val errors: AllPhotosViewActivityViewModelError = this
 
+    private val onTakenPhotosPageFetchedSubject = PublishSubject.create<List<TakenPhoto>>()
+    private val getTakenPhotosPageSubject = PublishSubject.create<Pageable>()
+
+    init {
+        compositeDisposable += getTakenPhotosPageSubject
+                .subscribeOn(schedulers.provideIo())
+                .observeOn(schedulers.provideIo())
+                .flatMap { takenPhotosRepository.findOnePage(it).toObservable() }
+                .subscribe(onTakenPhotosPageFetchedSubject::onNext, this::handleError)
+    }
+
+    override fun getTakenPhotos(page: Int, count: Int) {
+
+    }
+
+    private fun handleError(error: Throwable) {
+        Timber.e(error)
+    }
+
     override fun onCleared() {
         Timber.e("AllPhotosViewActivityViewModel.onCleared()")
 
         super.onCleared()
     }
+
+    override fun onTakenPhotosPageFetchedObservable(): Observable<List<TakenPhoto>> = onTakenPhotosPageFetchedSubject
 }

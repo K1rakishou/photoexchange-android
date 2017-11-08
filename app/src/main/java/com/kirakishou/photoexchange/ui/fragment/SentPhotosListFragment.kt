@@ -13,11 +13,14 @@ import com.kirakishou.photoexchange.base.BaseFragment
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.helper.service.SendPhotoService
-import com.kirakishou.photoexchange.mvvm.model.LonLat
+import com.kirakishou.photoexchange.mvvm.model.*
 import com.kirakishou.photoexchange.mvvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mvvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
 import com.kirakishou.photoexchange.ui.adapter.SentPhotosAdapter
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.rxkotlin.plusAssign
+import timber.log.Timber
 import javax.inject.Inject
 
 class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
@@ -38,6 +41,19 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRecycler()
+        initRx()
+
+        getViewModel().inputs.getTakenPhotos(0, 5)
+    }
+
+    override fun onFragmentViewDestroy() {
+    }
+
+    private fun initRx() {
+        compositeDisposable += getViewModel().outputs.onTakenPhotosPageFetchedObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onTakenPhotosPageFetched)
     }
 
     private fun initRecycler() {
@@ -51,7 +67,19 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
         sentPhotosRv.setHasFixedSize(true)
     }
 
-    override fun onFragmentViewDestroy() {
+    private fun onTakenPhotosPageFetched(takenPhotosList: List<TakenPhoto>) {
+        Timber.d("Found ${takenPhotosList.size} taken photos in the DB")
+        takenPhotosList.forEach { Timber.d(it.toString()) }
+
+        adapter.runOnAdapterHandler {
+            for (takenPhoto in takenPhotosList) {
+                if (takenPhoto.wasSent) {
+                    adapter.add(AdapterItem(SentPhoto(takenPhoto.photoName), AdapterItemType.VIEW_ITEM))
+                } else {
+                    adapter.add(AdapterItem(AdapterItemType.VIEW_PROGRESSBAR))
+                }
+            }
+        }
     }
 
     override fun resolveDaggerDependency() {

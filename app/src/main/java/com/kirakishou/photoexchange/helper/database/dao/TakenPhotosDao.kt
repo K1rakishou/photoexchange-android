@@ -18,8 +18,16 @@ interface TakenPhotosDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun saveOne(takenPhotoEntity: TakenPhotoEntity): Long
 
-    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} WHERE was_sent = ${MyDatabase.SQLITE_FALSE} ORDER BY created_on ASC LIMIT 1")
+    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} " +
+            "WHERE was_sent = ${MyDatabase.SQLITE_FALSE} " +
+            "ORDER BY created_on ASC " +
+            "LIMIT 1")
     fun findLastSaved(): Flowable<TakenPhotoEntity>
+
+    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} " +
+            "ORDER BY created_on ASC " +
+            "LIMIT :arg1 OFFSET :arg0")
+    fun findPage(page: Int, count: Int): Flowable<List<TakenPhotoEntity>>
 
     @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME}")
     fun findAll(): Flowable<List<TakenPhotoEntity>>

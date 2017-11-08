@@ -13,7 +13,6 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.base.BaseAdapter
 import com.kirakishou.photoexchange.mvvm.model.AdapterItemType
 import com.kirakishou.photoexchange.mvvm.model.SentPhoto
-import java.io.File
 
 /**
  * Created by kirakishou on 11/7/2017.
@@ -36,7 +35,7 @@ class SentPhotosAdapter(
                     val item = items[position].value.get()
 
                     Glide.with(context)
-                            .load(item.photoPath)
+                            .load(item.photoFilePath)
                             .apply(RequestOptions().centerCrop())
                             .into(holder.sentPhoto)
                 }

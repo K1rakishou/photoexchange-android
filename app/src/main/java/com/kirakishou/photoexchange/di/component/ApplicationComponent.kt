@@ -23,7 +23,8 @@ import javax.inject.Singleton
         ApiClientModule::class,
         SchedulerProviderModule::class,
         AppSharedPreferenceModule::class,
-        DatabaseModule::class))
+        DatabaseModule::class,
+        MapperModule::class))
 interface ApplicationComponent {
     fun exposeContext(): Context
     fun exposeApiService(): ApiService
