@@ -12,10 +12,25 @@ import com.kirakishou.photoexchange.ui.fragment.SentPhotosListFragment
 
 class FragmentTabsPager(fm: FragmentManager) : FragmentStatePagerAdapter(fm) {
 
+    var sentPhotos: SentPhotosListFragment? = null
+    var receivedPhotos: ReceivedPhotosListFragment? = null
+
     override fun getItem(position: Int): Fragment {
-        return when (position) {
-            0 -> SentPhotosListFragment()
-            1 -> ReceivedPhotosListFragment()
+        when (position) {
+            0 -> {
+                if (sentPhotos == null) {
+                    sentPhotos = SentPhotosListFragment()
+                }
+
+                return sentPhotos!!
+            }
+            1 -> {
+                if (receivedPhotos == null) {
+                    receivedPhotos = ReceivedPhotosListFragment()
+                }
+
+                return receivedPhotos!!
+            }
             else -> throw IllegalArgumentException("No fragment for the current position $position")
         }
     }

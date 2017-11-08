@@ -13,6 +13,7 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.base.BaseAdapter
 import com.kirakishou.photoexchange.mvvm.model.AdapterItemType
 import com.kirakishou.photoexchange.mvvm.model.SentPhoto
+import timber.log.Timber
 
 /**
  * Created by kirakishou on 11/7/2017.
@@ -20,6 +21,33 @@ import com.kirakishou.photoexchange.mvvm.model.SentPhoto
 class SentPhotosAdapter(
         private val context: Context
 ) : BaseAdapter<SentPhoto>(context) {
+
+    fun updateType(photoId: Long, photoName: String) {
+        var found = false
+
+        for ((idx, item) in items.withIndex()) {
+            if (item.getType() != AdapterItemType.VIEW_PROGRESSBAR.ordinal) {
+                continue
+            }
+
+            if (!item.value.isPresent()) {
+                continue
+            }
+
+            if (item.value.get().photoId == photoId) {
+                found = true
+
+                item.setType(AdapterItemType.VIEW_ITEM)
+                item.value.get().photoName = photoName
+                notifyItemChanged(idx)
+                break
+            }
+        }
+
+        if (!found) {
+            Timber.e("adapter does not contain photo with id $photoId")
+        }
+    }
 
     override fun getBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
         return mutableListOf(
@@ -35,7 +63,7 @@ class SentPhotosAdapter(
                     val item = items[position].value.get()
 
                     Glide.with(context)
-                            .load(item.photoFilePath)
+                            .load(item.photoName)
                             .apply(RequestOptions().centerCrop())
                             .into(holder.sentPhoto)
                 }

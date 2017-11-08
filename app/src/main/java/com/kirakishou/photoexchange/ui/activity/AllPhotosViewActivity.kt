@@ -13,6 +13,7 @@ import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityCompo
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.helper.service.SendPhotoService
 import com.kirakishou.photoexchange.mvvm.model.LonLat
+import com.kirakishou.photoexchange.mvvm.model.event.EventType
 import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEvent
 import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEventStatus
 import com.kirakishou.photoexchange.mvvm.viewmodel.AllPhotosViewActivityViewModel
@@ -21,6 +22,7 @@ import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
+import timber.log.Timber
 import javax.inject.Inject
 
 class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
@@ -35,6 +37,11 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     @Inject
     lateinit var viewModelFactory: AllPhotosViewActivityViewModelFactory
 
+    @Inject
+    lateinit var eventBus: EventBus
+
+    val adapter = FragmentTabsPager(supportFragmentManager)
+
     override fun initViewModel(): AllPhotosViewActivityViewModel {
         return ViewModelProviders.of(this, viewModelFactory).get(AllPhotosViewActivityViewModel::class.java)
     }
@@ -42,7 +49,15 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     override fun getContentView(): Int = R.layout.activity_all_photos_view
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
+        eventBus.register(this)
         initTabs()
+    }
+
+    override fun onActivityDestroy() {
+        eventBus.unregister(this)
+
+        tabLayout.clearOnTabSelectedListeners()
+        viewPager.clearOnPageChangeListeners()
     }
 
     private fun initTabs() {
@@ -50,17 +65,11 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         tabLayout.addTab(tabLayout.newTab().setText("Received"))
         tabLayout.tabGravity = TabLayout.GRAVITY_FILL
 
-        val adapter = FragmentTabsPager(supportFragmentManager)
         viewPager.adapter = adapter
         viewPager.offscreenPageLimit = 1
 
         viewPager.addOnPageChangeListener(this)
         tabLayout.addOnTabSelectedListener(this)
-    }
-
-    override fun onActivityDestroy() {
-        tabLayout.clearOnTabSelectedListeners()
-        viewPager.clearOnPageChangeListeners()
     }
 
     override fun onTabReselected(tab: TabLayout.Tab) {
@@ -86,6 +95,31 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     }
 
     override fun onPageSelected(position: Int) {
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onMessageEvent(event: SendPhotoEvent) {
+        if (event.owner != AllPhotosViewActivity::class) {
+            Timber.d("Received event with wrong owner: ${event.owner}")
+            return
+        }
+
+        when (event.type) {
+            EventType.UploadPhoto -> {
+                checkNotNull(event.response)
+                val response = event.response!!
+
+                val fragment = adapter.sentPhotos
+                if (fragment == null) {
+                    Timber.w("Event received when fragment is null!")
+                    return
+                }
+
+                fragment.onPhotoUploaded(response)
+            }
+
+            else -> IllegalStateException("Unknown eventType: ${event.type}")
+        }
     }
 
     override fun resolveDaggerDependency() {

@@ -46,6 +46,10 @@ class AllPhotosViewActivityViewModel
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .flatMap { takenPhotosRepository.findLastSaved().toObservable() }
+                .doOnNext {
+                    println(it.toString())
+                    println()
+                }
                 .subscribe(onLastTakenPhoto::onNext, this::handleError)
     }
 

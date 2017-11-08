@@ -14,12 +14,16 @@ import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityCompo
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.helper.service.SendPhotoService
 import com.kirakishou.photoexchange.mvvm.model.*
+import com.kirakishou.photoexchange.mvvm.model.dto.PhotoNameWithId
+import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEvent
 import com.kirakishou.photoexchange.mvvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mvvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
 import com.kirakishou.photoexchange.ui.adapter.SentPhotosAdapter
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -78,13 +82,14 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
             serviceUploadPhoto(lastTakenPhoto)
 
             adapter.runOnAdapterHandler {
-                adapter.add(AdapterItem(AdapterItemType.VIEW_PROGRESSBAR))
+                adapter.add(AdapterItem(SentPhoto(lastTakenPhoto.id, lastTakenPhoto.photoName), AdapterItemType.VIEW_PROGRESSBAR))
             }
         }
     }
 
     private fun serviceUploadPhoto(lastTakenPhoto: TakenPhoto) {
         val intent = Intent(activity, SendPhotoService::class.java)
+        intent.putExtra("command", ServiceCommand.SEND_PHOTO.value)
         intent.putExtra("photo_id", lastTakenPhoto.id)
         intent.putExtra("lon", lastTakenPhoto.lon)
         intent.putExtra("lat", lastTakenPhoto.lat)
@@ -101,11 +106,18 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
         adapter.runOnAdapterHandler {
             for (takenPhoto in takenPhotosList) {
                 if (takenPhoto.wasSent) {
-                    adapter.add(AdapterItem(SentPhoto(takenPhoto.photoName), AdapterItemType.VIEW_ITEM))
+                    adapter.add(AdapterItem(
+                            SentPhoto(takenPhoto.id, takenPhoto.photoName), AdapterItemType.VIEW_ITEM))
                 } else {
                     adapter.add(AdapterItem(AdapterItemType.VIEW_PROGRESSBAR))
                 }
             }
+        }
+    }
+
+    fun onPhotoUploaded(response: PhotoNameWithId) {
+        adapter.runOnAdapterHandler {
+            adapter.updateType(response.photoId, response.photoName)
         }
     }
 

@@ -9,6 +9,7 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import dagger.Component
+import org.greenrobot.eventbus.EventBus
 import javax.inject.Singleton
 
 /**
@@ -24,7 +25,8 @@ import javax.inject.Singleton
         SchedulerProviderModule::class,
         AppSharedPreferenceModule::class,
         DatabaseModule::class,
-        MapperModule::class))
+        MapperModule::class,
+        EventBusModule::class))
 interface ApplicationComponent {
     fun exposeContext(): Context
     fun exposeApiService(): ApiService
@@ -33,4 +35,5 @@ interface ApplicationComponent {
     fun exposeSharedPreferences(): SharedPreferences
     fun exposeDatabase(): MyDatabase
     fun exposeTakenPhotosRepository(): TakenPhotosRepository
+    fun exposeEventBust(): EventBus
 }

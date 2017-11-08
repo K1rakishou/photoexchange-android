@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.service.SendPhotoService
 import dagger.Component
+import org.greenrobot.eventbus.EventBus
 import javax.inject.Singleton
 
 /**
@@ -29,4 +30,5 @@ interface ServiceComponent {
     fun exposeApiService(): ApiService
     fun exposeApiClient(): ApiClient
     fun exposeSchedulers(): SchedulerProvider
+    fun exposeEventBus(): EventBus
 }

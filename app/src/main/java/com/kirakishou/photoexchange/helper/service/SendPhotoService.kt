@@ -19,6 +19,10 @@ import com.kirakishou.photoexchange.di.component.DaggerServiceComponent
 import com.kirakishou.photoexchange.di.module.*
 import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
 import com.kirakishou.photoexchange.mvvm.model.dto.PhotoNameWithId
+import com.kirakishou.photoexchange.mvvm.model.event.EventType
+import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEvent
+import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEventStatus
+import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
@@ -32,6 +36,9 @@ class SendPhotoService : Service() {
 
     @Inject
     lateinit var schedulers: SchedulerProvider
+
+    @Inject
+    lateinit var eventBus: EventBus
 
     private val NOTIFICATION_ID = 1
 
@@ -76,6 +83,10 @@ class SendPhotoService : Service() {
     private fun onSendPhotoResponseObservable(response: PhotoNameWithId) {
         Timber.d("onSendPhotoResponseObservable() photoName: ${response.photoName}")
 
+        //TODO: update photo in DB
+        eventBus.postSticky(SendPhotoEvent(EventType.UploadPhoto, SendPhotoEventStatus.SUCCESS,
+                response, AllPhotosViewActivity::class))
+
         updateUploadingNotificationShowSuccess()
         stopService()
     }
@@ -83,12 +94,20 @@ class SendPhotoService : Service() {
     private fun onBadResponse(errorCode: ServerErrorCode) {
         Timber.e("BadResponse: errorCode: $errorCode")
 
+        //TODO: update photo in DB
+        eventBus.postSticky(SendPhotoEvent(EventType.UploadPhoto, SendPhotoEventStatus.FAIL,
+                null, AllPhotosViewActivity::class))
+
         updateUploadingNotificationShowError()
         stopService()
     }
 
     private fun onUnknownError(error: Throwable) {
         Timber.e("Unknown error: $error")
+
+        //TODO: update photo in DB
+        eventBus.postSticky(SendPhotoEvent(EventType.UploadPhoto, SendPhotoEventStatus.FAIL,
+                null, AllPhotosViewActivity::class))
 
         updateUploadingNotificationShowError()
         stopService()

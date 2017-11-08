@@ -25,6 +25,7 @@ class PhotoExchangeApplication : Application() {
                 .appSharedPreferenceModule(AppSharedPreferenceModule())
                 .databaseModule(DatabaseModule(databaseName))
                 .mapperModule(MapperModule())
+                .eventBusModule(EventBusModule())
                 .build()
 
         initTimber()
