@@ -23,6 +23,7 @@ class PhotoExchangeApplication : Application() {
                 .apiClientModule(ApiClientModule())
                 .schedulerProviderModule(SchedulerProviderModule())
                 .appSharedPreferenceModule(AppSharedPreferenceModule())
+                .databaseModule(DatabaseModule(databaseName))
                 .build()
 
         initTimber()
