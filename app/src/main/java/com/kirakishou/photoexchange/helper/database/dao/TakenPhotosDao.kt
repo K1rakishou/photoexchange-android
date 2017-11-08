@@ -19,7 +19,7 @@ interface TakenPhotosDao {
     fun saveOne(takenPhotoEntity: TakenPhotoEntity): Long
 
     @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} " +
-            "WHERE was_sent = ${MyDatabase.SQLITE_FALSE} " +
+            "WHERE was_sent = ${MyDatabase.SQLITE_FALSE} AND failed_to_upload = ${MyDatabase.SQLITE_FALSE}" +
             "ORDER BY created_on ASC " +
             "LIMIT 1")
     fun findLastSaved(): Flowable<TakenPhotoEntity>

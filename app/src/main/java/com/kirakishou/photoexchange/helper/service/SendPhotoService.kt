@@ -18,6 +18,7 @@ import android.support.v4.app.NotificationCompat
 import com.kirakishou.photoexchange.di.component.DaggerServiceComponent
 import com.kirakishou.photoexchange.di.module.*
 import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
+import com.kirakishou.photoexchange.mvvm.model.dto.PhotoNameWithId
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
@@ -72,8 +73,8 @@ class SendPhotoService : Service() {
                 .subscribe(this::onUnknownError)
     }
 
-    private fun onSendPhotoResponseObservable(photoName: String) {
-        Timber.d("onSendPhotoResponseObservable() photoName: $photoName")
+    private fun onSendPhotoResponseObservable(response: PhotoNameWithId) {
+        Timber.d("onSendPhotoResponseObservable() photoName: ${response.photoName}")
 
         updateUploadingNotificationShowSuccess()
         stopService()
@@ -115,13 +116,14 @@ class SendPhotoService : Service() {
         val serviceCommand = ServiceCommand.from(commandRaw)
         when (serviceCommand) {
             ServiceCommand.SEND_PHOTO -> {
+                val id = intent.getLongExtra("photo_id", -1L)
                 val lon = intent.getDoubleExtra("lon", 0.0)
                 val lat = intent.getDoubleExtra("lat", 0.0)
                 val userId = intent.getStringExtra("user_id")
                 val photoFilePath = intent.getStringExtra("photo_file_path")
                 val location = LonLat(lon, lat)
 
-                presenter.inputs.uploadPhoto(photoFilePath, location, userId)
+                presenter.inputs.uploadPhoto(id, photoFilePath, location, userId)
             }
         }
     }

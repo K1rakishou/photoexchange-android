@@ -43,7 +43,8 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
         initRecycler()
         initRx()
 
-        getViewModel().inputs.getTakenPhotos(0, 5)
+        //getViewModel().inputs.getTakenPhotos(0, 5)
+        getViewModel().inputs.getLastTakenPhoto()
     }
 
     override fun onFragmentViewDestroy() {
@@ -54,6 +55,11 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onTakenPhotosPageFetched)
+
+        compositeDisposable += getViewModel().outputs.onLastTakenPhotoObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onLastTakenPhoto)
     }
 
     private fun initRecycler() {
@@ -65,6 +71,27 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
         sentPhotosRv.layoutManager = layoutManager
         sentPhotosRv.adapter = adapter
         sentPhotosRv.setHasFixedSize(true)
+    }
+
+    private fun onLastTakenPhoto(lastTakenPhoto: TakenPhoto) {
+        if (!lastTakenPhoto.isEmpty()) {
+            serviceUploadPhoto(lastTakenPhoto)
+
+            adapter.runOnAdapterHandler {
+                adapter.add(AdapterItem(AdapterItemType.VIEW_PROGRESSBAR))
+            }
+        }
+    }
+
+    private fun serviceUploadPhoto(lastTakenPhoto: TakenPhoto) {
+        val intent = Intent(activity, SendPhotoService::class.java)
+        intent.putExtra("photo_id", lastTakenPhoto.id)
+        intent.putExtra("lon", lastTakenPhoto.lon)
+        intent.putExtra("lat", lastTakenPhoto.lat)
+        intent.putExtra("user_id", lastTakenPhoto.userId)
+        intent.putExtra("photo_file_path", lastTakenPhoto.photoFilePath)
+
+        activity.startService(intent)
     }
 
     private fun onTakenPhotosPageFetched(takenPhotosList: List<TakenPhoto>) {

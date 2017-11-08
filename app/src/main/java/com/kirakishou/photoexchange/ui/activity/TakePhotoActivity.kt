@@ -132,6 +132,8 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     }
 
     private fun switchToViewTakenPhotoActivity(idAndPhotoFilePath: Pair<Long, String>) {
+        hideNotification()
+
         val intent = Intent(this, ViewTakenPhotoActivity::class.java)
         intent.putExtra("photo_id", idAndPhotoFilePath.first)
         intent.putExtra("photo_file_path", idAndPhotoFilePath.second)
@@ -170,8 +172,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .oneFix()
                 .start {
                     Timber.d("getLocation() Done")
-
-                    hideNotification()
                     locationSubject.onNext(LonLat(it.longitude, it.latitude))
                 }
     }

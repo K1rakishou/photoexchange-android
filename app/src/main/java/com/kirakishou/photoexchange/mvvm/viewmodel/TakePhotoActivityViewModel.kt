@@ -4,6 +4,7 @@ import android.os.Debug
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
 import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.mvvm.model.Constants
 import com.kirakishou.photoexchange.mvvm.model.LonLat
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.error.MainActivityViewModelErrors
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.input.MainActivityViewModelInputs
@@ -30,7 +31,7 @@ class TakePhotoActivityViewModel
     fun saveTakenPhotoToDb(location: LonLat, userId: String, photoFilePath: String): Long {
         val id = takenPhotosRepo.saveOne(location.lon, location.lat, userId, photoFilePath)
 
-        if (BuildConfig.DEBUG) {
+        if (Constants.isDebugBuild) {
             val allPhotos = takenPhotosRepo.findAll()
 
             allPhotos.forEach { Timber.d(it.toString()) }

@@ -10,6 +10,7 @@ class TakenPhotoMapper : Mapper {
 
     fun toTakenPhoto(entity: TakenPhotoEntity): TakenPhoto {
         return TakenPhoto(
+                entity.id,
                 entity.lon,
                 entity.lat,
                 entity.userId,

@@ -30,6 +30,9 @@ class TakenPhotoEntity(
         @ColumnInfo(name = "photo_file_path")
         var photoFilePath: String,
 
+        @ColumnInfo(name = "failed_to_upload")
+        val failedToUpload: Boolean,
+
         @ColumnInfo(name = "was_sent")
         var wasSent: Boolean,
 
@@ -37,12 +40,12 @@ class TakenPhotoEntity(
         var createdOn: Long
 ) {
 
-    constructor() : this(0L, 0.0, 0.0, "", "", "", false, 0L)
+    constructor() : this(0L, 0.0, 0.0, "", "", "", false, false, 0L)
 
     companion object {
 
         fun new(lon: Double, lat: Double, userId: String, photoFilePath: String): TakenPhotoEntity {
-            return TakenPhotoEntity(0L, lon, lat, userId, "", photoFilePath, false, TimeUtils.getTimeFast())
+            return TakenPhotoEntity(0L, lon, lat, userId, "", photoFilePath, false, false, TimeUtils.getTimeFast())
         }
 
         const val TABLE_NAME = "taken_photo"

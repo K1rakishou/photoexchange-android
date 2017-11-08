@@ -10,9 +10,9 @@ import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
  */
 class UploadPhotoResponse(
 
-        @Expose
-        @SerializedName("photo_name")
-        val photoName: String,
+    @Expose
+    @SerializedName("photo_name")
+    val photoName: String,
 
-        serverErrorCode: ServerErrorCode
+    serverErrorCode: ServerErrorCode
 ) : StatusResponse(serverErrorCode.value)

@@ -8,4 +8,5 @@ import io.reactivex.Observable
  */
 interface AllPhotosViewActivityViewModelOutputs {
     fun onTakenPhotosPageFetchedObservable(): Observable<List<TakenPhoto>>
+    fun onLastTakenPhotoObservable(): Observable<TakenPhoto>
 }

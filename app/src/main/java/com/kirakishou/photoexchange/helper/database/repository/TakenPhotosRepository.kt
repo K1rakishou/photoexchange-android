@@ -8,6 +8,7 @@ import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvvm.model.Pageable
 import com.kirakishou.photoexchange.mvvm.model.TakenPhoto
 import io.reactivex.Single
+import timber.log.Timber
 
 /**
  * Created by kirakishou on 11/8/2017.
@@ -21,6 +22,14 @@ class TakenPhotosRepository(
 
     fun saveOne(lon: Double, lat: Double, userId: String, photoFilePath: String): Long {
         return takenPhotosDao.saveOne(TakenPhotoEntity.new(lon, lat, userId, photoFilePath))
+    }
+
+    fun findLastSaved(): Single<TakenPhoto> {
+        return takenPhotosDao.findLastSaved()
+                .subscribeOn(schedulers.provideIo())
+                .observeOn(schedulers.provideIo())
+                .map(takenPhotoMapper::toTakenPhoto)
+                .first(TakenPhoto.empty())
     }
 
     fun findOnePage(pageable: Pageable): Single<List<TakenPhoto>> {
