@@ -19,7 +19,8 @@ import javax.inject.Singleton
         NetworkModule::class,
         GsonModule::class,
         ApiClientModule::class,
-        SchedulerProviderModule::class
+        SchedulerProviderModule::class,
+        EventBusModule::class
 ))
 interface ServiceComponent {
     fun inject(service: SendPhotoService)

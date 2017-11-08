@@ -195,6 +195,7 @@ class SendPhotoService : Service() {
                 .gsonModule(GsonModule())
                 .apiClientModule(ApiClientModule())
                 .schedulerProviderModule(SchedulerProviderModule())
+                .eventBusModule(EventBusModule())
                 .build()
                 .inject(this)
     }

@@ -31,7 +31,7 @@ class TakenPhotoEntity(
         var photoFilePath: String,
 
         @ColumnInfo(name = "failed_to_upload")
-        val failedToUpload: Boolean,
+        var failedToUpload: Boolean,
 
         @ColumnInfo(name = "was_sent")
         var wasSent: Boolean,
