@@ -4,21 +4,21 @@ import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
+import android.support.v7.widget.CardView
+import android.view.View
 import butterknife.BindView
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
-import com.kirakishou.photoexchange.di.component.DaggerMainActivityComponent
+import com.kirakishou.photoexchange.di.component.DaggerTakePhotoActivityComponent
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
-import com.kirakishou.photoexchange.helper.service.SendPhotoService
 import com.kirakishou.photoexchange.helper.util.Utils
 import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
 import com.kirakishou.photoexchange.mvvm.model.LonLat
-import com.kirakishou.photoexchange.mvvm.model.ServiceCommand
-import com.kirakishou.photoexchange.mvvm.viewmodel.MainActivityViewModel
-import com.kirakishou.photoexchange.mvvm.viewmodel.factory.MainActivityViewModelFactory
+import com.kirakishou.photoexchange.mvvm.viewmodel.TakePhotoActivityViewModel
+import com.kirakishou.photoexchange.mvvm.viewmodel.factory.TakePhotoActivityViewModelFactory
 import io.fotoapparat.Fotoapparat
 import io.fotoapparat.parameter.ScaleType
 import io.fotoapparat.parameter.selector.LensPositionSelectors.back
@@ -36,7 +36,10 @@ import java.io.File
 import javax.inject.Inject
 
 
-class TakePhotoActivity : BaseActivity<MainActivityViewModel>() {
+class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
+
+    @BindView(R.id.notification)
+    lateinit var notification: CardView
 
     @BindView(R.id.camera_view)
     lateinit var cameraView: CameraView
@@ -45,7 +48,7 @@ class TakePhotoActivity : BaseActivity<MainActivityViewModel>() {
     lateinit var takePhotoButton: FloatingActionButton
 
     @Inject
-    lateinit var viewModelFactory: MainActivityViewModelFactory
+    lateinit var viewModelFactory: TakePhotoActivityViewModelFactory
 
     @Inject
     lateinit var appSharedPreference: AppSharedPreference
@@ -57,7 +60,7 @@ class TakePhotoActivity : BaseActivity<MainActivityViewModel>() {
     private val locationSubject = PublishSubject.create<LonLat>()
 
     override fun initViewModel() =
-            ViewModelProviders.of(this, viewModelFactory).get(MainActivityViewModel::class.java)
+            ViewModelProviders.of(this, viewModelFactory).get(TakePhotoActivityViewModel::class.java)
 
     override fun getContentView(): Int = R.layout.activity_take_photo
 
@@ -110,22 +113,25 @@ class TakePhotoActivity : BaseActivity<MainActivityViewModel>() {
 
         compositeDisposable += Observables.zip(locationSubject, photoAvailabilitySubject)
                 .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
                 .doOnError { unknownErrorsSubject.onNext(it) }
+                .doOnNext(this::onPhotoReady)
+                .map { it.second }
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ (location, photoFile) ->
-                    val userId = userInfoPreference.getUserId()
-
-                    passToViewTakenPhotoActivity(location, photoFile, userId)
-                })
+                .subscribe(this::switchToViewTakenPhotoActivity)
     }
 
-    private fun passToViewTakenPhotoActivity(location: LonLat, photoFilePath: String, userId: String) {
-        val intent = Intent(this, ViewTakenPhotoActivity::class.java)
-        intent.putExtra("lon", location.lon)
-        intent.putExtra("lat", location.lat)
-        intent.putExtra("user_id", userId)
-        intent.putExtra("photo_file_path", photoFilePath)
+    private fun onPhotoReady(locationAndPhotoPath: Pair<LonLat, String>) {
+        val userId = userInfoPreference.getUserId()
+        val location = locationAndPhotoPath.first
+        val photoFilePath = locationAndPhotoPath.second
 
+        getViewModel().saveTakenPhotoToDb(location, userId, photoFilePath)
+    }
+
+    private fun switchToViewTakenPhotoActivity(photoFilePath: String) {
+        val intent = Intent(this, ViewTakenPhotoActivity::class.java)
+        intent.putExtra("photo_file_path", photoFilePath)
         startActivity(intent)
     }
 
@@ -154,15 +160,25 @@ class TakePhotoActivity : BaseActivity<MainActivityViewModel>() {
 
     private fun getLocation() {
         Timber.d("getLocation() Getting current location...")
+        showNotification()
 
         SmartLocation.with(this)
                 .location()
-                .config(LocationParams.LAZY)
                 .oneFix()
                 .start {
                     Timber.d("getLocation() Done")
+
+                    hideNotification()
                     locationSubject.onNext(LonLat(it.longitude, it.latitude))
                 }
+    }
+
+    fun showNotification() {
+        notification.visibility = View.VISIBLE
+    }
+
+    fun hideNotification() {
+        notification.visibility = View.GONE
     }
 
     override fun onBadResponse(serverErrorCode: ServerErrorCode) {
@@ -177,7 +193,7 @@ class TakePhotoActivity : BaseActivity<MainActivityViewModel>() {
     }
 
     override fun resolveDaggerDependency() {
-        DaggerMainActivityComponent.builder()
+        DaggerTakePhotoActivityComponent.builder()
                 .applicationComponent(PhotoExchangeApplication.applicationComponent)
                 .build()
                 .inject(this)

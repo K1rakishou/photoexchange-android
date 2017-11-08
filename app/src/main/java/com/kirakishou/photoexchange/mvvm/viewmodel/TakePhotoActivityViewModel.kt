@@ -1,6 +1,8 @@
 package com.kirakishou.photoexchange.mvvm.viewmodel
 
 import com.kirakishou.photoexchange.base.BaseViewModel
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.mvvm.model.LonLat
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.error.MainActivityViewModelErrors
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.input.MainActivityViewModelInputs
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.output.MainActivityViewModelOutputs
@@ -10,8 +12,10 @@ import javax.inject.Inject
 /**
  * Created by kirakishou on 11/3/2017.
  */
-class MainActivityViewModel
-@Inject constructor() : BaseViewModel(),
+class TakePhotoActivityViewModel
+@Inject constructor(
+        val takenPhotosRepo: TakenPhotosRepository
+) : BaseViewModel(),
         MainActivityViewModelInputs,
         MainActivityViewModelOutputs,
         MainActivityViewModelErrors {
@@ -20,9 +24,12 @@ class MainActivityViewModel
     val outputs: MainActivityViewModelOutputs = this
     val errors: MainActivityViewModelErrors = this
 
+    fun saveTakenPhotoToDb(location: LonLat, userId: String, photoFilePath: String) {
+        takenPhotosRepo.saveOne(location.lon, location.lat, userId, photoFilePath)
+    }
 
     override fun onCleared() {
-        Timber.e("MainActivityViewModel.onCleared()")
+        Timber.e("TakePhotoActivityViewModel.onCleared()")
 
         super.onCleared()
     }

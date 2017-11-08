@@ -30,15 +30,10 @@ class ViewTakenPhotoActivity : BaseActivityWithoutViewModel() {
     @BindView(R.id.fab_send_photo)
     lateinit var sendPhotoButton: FloatingActionButton
 
-    private var location: LonLat = LonLat.empty()
-    private var userId: String = ""
-    private var photoFilePath: String = ""
-
     override fun getContentView() = R.layout.activity_view_taken_photo
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
-        getPhotoInfoFromIntent(intent)
-        setImageViewPhoto()
+        setImageViewPhoto(intent)
 
         initRx()
     }
@@ -61,40 +56,22 @@ class ViewTakenPhotoActivity : BaseActivityWithoutViewModel() {
         compositeDisposable += RxView.clicks(sendPhotoButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    startAllPhotosViewActivity(location, photoFilePath, userId)
-                })
+                .subscribe({ startAllPhotosViewActivity() })
     }
 
-    private fun startAllPhotosViewActivity(location: LonLat, photoFilePath: String, userId: String) {
+    private fun startAllPhotosViewActivity() {
         val intent = Intent(this, AllPhotosViewActivity::class.java)
-        intent.putExtra("lon", location.lon)
-        intent.putExtra("lat", location.lat)
-        intent.putExtra("user_id", userId)
-        intent.putExtra("photo_file_path", photoFilePath)
         startActivity(intent)
         finish()
     }
 
-    private fun setImageViewPhoto() {
+    private fun setImageViewPhoto(intent: Intent) {
+        val photoFilePath = intent.getStringExtra("photo_file_path")
+
         Glide.with(this)
                 .load(File(photoFilePath))
                 .apply(RequestOptions().centerCrop())
                 .into(photoView)
-    }
-
-    private fun getPhotoInfoFromIntent(intent: Intent) {
-        val lon = intent.getDoubleExtra("lon", 0.0)
-        val lat = intent.getDoubleExtra("lat", 0.0)
-        userId = intent.getStringExtra("user_id")
-        photoFilePath = intent.getStringExtra("photo_file_path")
-
-        check(lon != 0.0)
-        check(lat != 0.0)
-        check(userId.isNotEmpty())
-        check(photoFilePath.isNotEmpty())
-
-        location = LonLat(lon, lat)
     }
 
     private fun closeActivity() {

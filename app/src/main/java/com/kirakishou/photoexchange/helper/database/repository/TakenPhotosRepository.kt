@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.helper.database.repository
 
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.dao.TakenPhotosDao
+import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 
 /**
@@ -13,5 +14,7 @@ class TakenPhotosRepository(
 ) {
     private val takenPhotosDao: TakenPhotosDao by lazy { database.takenPhotosDao() }
 
-
+    fun saveOne(lon: Double, lat: Double, userId: String, photoFilePath: String): Long {
+        return takenPhotosDao.saveOne(TakenPhotoEntity.new(lon, lat, userId, photoFilePath))
+    }
 }

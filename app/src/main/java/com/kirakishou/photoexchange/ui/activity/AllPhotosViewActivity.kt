@@ -43,22 +43,6 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         initTabs()
-        getPhotoInfoFromIntent(intent)
-    }
-
-    private fun getPhotoInfoFromIntent(intent: Intent) {
-        val lon = intent.getDoubleExtra("lon", 0.0)
-        val lat = intent.getDoubleExtra("lat", 0.0)
-        val userId = intent.getStringExtra("user_id")
-        val photoFilePath = intent.getStringExtra("photo_file_path")
-        val location = LonLat(lon, lat)
-
-        check(lon != 0.0)
-        check(lat != 0.0)
-        check(userId.isNotEmpty())
-        check(photoFilePath.isNotEmpty())
-
-        getViewModel().photoInfo = AllPhotosViewActivityViewModel.PhotoInfo(location, userId, photoFilePath)
     }
 
     private fun initTabs() {
@@ -77,16 +61,6 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     override fun onActivityDestroy() {
         tabLayout.clearOnTabSelectedListeners()
         viewPager.clearOnPageChangeListeners()
-    }
-
-    override fun onStart() {
-        super.onStart()
-        EventBus.getDefault().register(this)
-    }
-
-    override fun onStop() {
-        EventBus.getDefault().unregister(this)
-        super.onStop()
     }
 
     override fun onTabReselected(tab: TabLayout.Tab) {
@@ -112,19 +86,6 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     }
 
     override fun onPageSelected(position: Int) {
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onMessageEvent(event: SendPhotoEvent) {
-        when (event.status) {
-            SendPhotoEventStatus.SUCCESS -> {
-
-            }
-
-            SendPhotoEventStatus.FAIL -> {
-
-            }
-        }
     }
 
     override fun resolveDaggerDependency() {

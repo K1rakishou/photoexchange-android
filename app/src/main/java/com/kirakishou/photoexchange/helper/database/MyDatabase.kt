@@ -2,18 +2,18 @@ package com.kirakishou.photoexchange.helper.database
 
 import android.arch.persistence.room.Database
 import android.arch.persistence.room.RoomDatabase
-import com.kirakishou.photoexchange.helper.database.dao.SentPhotosDao
 import com.kirakishou.photoexchange.helper.database.dao.TakenPhotosDao
-import com.kirakishou.photoexchange.helper.database.entity.SentPhotoEntity
+import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
 
 /**
  * Created by kirakishou on 9/12/2017.
  */
 
-@Database(entities = arrayOf(SentPhotoEntity::class), version = 1)
+@Database(entities = arrayOf(
+        TakenPhotoEntity::class
+), version = 1)
 abstract class MyDatabase : RoomDatabase() {
 
-    abstract fun sentPhotosDao(): SentPhotosDao
     abstract fun takenPhotosDao(): TakenPhotosDao
 
     fun runInTransaction(func: () -> Unit) {
@@ -25,5 +25,10 @@ abstract class MyDatabase : RoomDatabase() {
         } finally {
             this.endTransaction()
         }
+    }
+
+    companion object {
+        const val SQLITE_TRUE = 1
+        const val SQLITE_FALSE = 0
     }
 }

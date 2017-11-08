@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.di.component
 
-import com.kirakishou.photoexchange.di.module.MainActivityModule
+import com.kirakishou.photoexchange.di.module.TakePhotoActivityModule
 import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.helper.service.SendPhotoService
 import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
@@ -11,8 +11,7 @@ import dagger.Component
  */
 
 @PerActivity
-@Component(modules = arrayOf(MainActivityModule::class), dependencies = arrayOf(ApplicationComponent::class))
-interface MainActivityComponent {
+@Component(modules = arrayOf(TakePhotoActivityModule::class), dependencies = arrayOf(ApplicationComponent::class))
+interface TakePhotoActivityComponent {
     fun inject(activity: TakePhotoActivity)
-    fun inject(service: SendPhotoService)
 }
