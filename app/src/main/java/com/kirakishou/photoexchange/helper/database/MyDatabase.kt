@@ -1,9 +1,10 @@
-package com.kirakishou.photoexchange.helper.repository.database
+package com.kirakishou.photoexchange.helper.database
 
 import android.arch.persistence.room.Database
 import android.arch.persistence.room.RoomDatabase
-import com.kirakishou.photoexchange.helper.repository.dao.SentPhotosDao
-import com.kirakishou.photoexchange.helper.repository.entity.SentPhotoEntity
+import com.kirakishou.photoexchange.helper.database.dao.SentPhotosDao
+import com.kirakishou.photoexchange.helper.database.dao.TakenPhotosDao
+import com.kirakishou.photoexchange.helper.database.entity.SentPhotoEntity
 
 /**
  * Created by kirakishou on 9/12/2017.
@@ -13,6 +14,7 @@ import com.kirakishou.photoexchange.helper.repository.entity.SentPhotoEntity
 abstract class MyDatabase : RoomDatabase() {
 
     abstract fun sentPhotosDao(): SentPhotosDao
+    abstract fun takenPhotosDao(): TakenPhotosDao
 
     fun runInTransaction(func: () -> Unit) {
         this.beginTransaction()

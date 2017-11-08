@@ -1,11 +1,10 @@
-package com.kirakishou.photoexchange.helper.repository.dao
+package com.kirakishou.photoexchange.helper.database.dao
 
 import android.arch.persistence.room.Dao
 import android.arch.persistence.room.Insert
 import android.arch.persistence.room.OnConflictStrategy
 import android.arch.persistence.room.Query
-import com.kirakishou.photoexchange.helper.repository.entity.SentPhotoEntity
-import io.reactivex.Flowable
+import com.kirakishou.photoexchange.helper.database.entity.SentPhotoEntity
 import io.reactivex.Single
 
 /**
