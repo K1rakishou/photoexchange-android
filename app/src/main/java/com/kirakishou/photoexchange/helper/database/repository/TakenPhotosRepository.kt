@@ -8,7 +8,9 @@ import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvvm.model.Pageable
 import com.kirakishou.photoexchange.mvvm.model.TakenPhoto
 import io.reactivex.Completable
+import io.reactivex.Flowable
 import io.reactivex.Single
+import io.reactivex.internal.operators.flowable.FlowableAll
 import timber.log.Timber
 
 /**
@@ -25,52 +27,43 @@ class TakenPhotosRepository(
         return takenPhotosDao.saveOne(TakenPhotoEntity.new(lon, lat, userId, photoFilePath))
     }
 
-    fun findLastSaved(): Single<TakenPhoto> {
+    fun findLastSaved(): Flowable<TakenPhoto> {
         return takenPhotosDao.findLastSaved()
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .map(takenPhotoMapper::toTakenPhoto)
-                .first(TakenPhoto.empty())
     }
 
-    fun findFailedToUploadPhotos(): Single<List<TakenPhoto>> {
+    fun findFailedToUploadPhotos(): Flowable<List<TakenPhoto>> {
         return takenPhotosDao.findFailedToUploadPhotos()
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .map(takenPhotoMapper::toTakenPhoto)
-                .first(emptyList())
     }
 
-    fun findOne(id: Long): Single<TakenPhoto> {
+    fun findOne(id: Long): Flowable<TakenPhoto> {
         return takenPhotosDao.findOne(id)
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .map(takenPhotoMapper::toTakenPhoto)
-                .first(TakenPhoto.empty())
     }
 
-    fun findOnePage(pageable: Pageable): Single<List<TakenPhoto>> {
+    fun findOnePage(pageable: Pageable): Flowable<List<TakenPhoto>> {
         return takenPhotosDao.findPage(pageable.page, pageable.count)
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .map(takenPhotoMapper::toTakenPhoto)
-                .first(emptyList())
     }
 
-    fun findAll(): List<TakenPhoto> {
+    fun findAll(): Flowable<List<TakenPhoto>> {
         return takenPhotosDao.findAll()
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .map(takenPhotoMapper::toTakenPhoto)
-                .blockingFirst()
     }
 
-    fun deleteOne(id: Long): Completable {
-        val completable = Completable.fromAction {
-            takenPhotosDao.deleteOne(id)
-        }
-
-        return completable
+    fun deleteOne(id: Long): Flowable<Int> {
+        return Flowable.just(takenPhotosDao.deleteOne(id))
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
     }

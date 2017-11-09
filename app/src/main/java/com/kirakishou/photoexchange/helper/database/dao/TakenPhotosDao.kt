@@ -43,5 +43,5 @@ interface TakenPhotosDao {
     fun findAll(): Flowable<List<TakenPhotoEntity>>
 
     @Query("DELETE FROM ${TakenPhotoEntity.TABLE_NAME} WHERE id = :arg0")
-    fun deleteOne(id: Long)
+    fun deleteOne(id: Long): Int
 }

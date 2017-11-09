@@ -39,7 +39,8 @@ class ViewTakenPhotoActivityViewModel
                 .observeOn(schedulers.provideIo())
                 .flatMap { photoId -> takenPhotosRepo.findOne(photoId).toObservable() }
                 .doOnNext(this::deleteFileFromDisk)
-                .flatMap { takenPhoto -> takenPhotosRepo.deleteOne(takenPhoto.id).toObservable<Unit>() }
+                .flatMap { takenPhoto -> takenPhotosRepo.deleteOne(takenPhoto.id).toObservable() }
+                .map { Unit }
                 .subscribe(onPhotoDeletedSubject::onNext, this::handleError)
     }
 
@@ -59,7 +60,7 @@ class ViewTakenPhotoActivityViewModel
 
     private fun deleteFileFromDisk(takenPhoto: TakenPhoto) {
         if (takenPhoto.isEmpty()) {
-            Timber.e("CCould not find photo by id")
+            Timber.e("Could not find photo by id")
             return
         }
 
