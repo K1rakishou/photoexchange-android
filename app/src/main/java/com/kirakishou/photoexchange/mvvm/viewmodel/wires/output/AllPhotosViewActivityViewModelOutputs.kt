@@ -9,4 +9,5 @@ import io.reactivex.Observable
 interface AllPhotosViewActivityViewModelOutputs {
     fun onTakenPhotosPageFetchedObservable(): Observable<List<TakenPhoto>>
     fun onLastTakenPhotoObservable(): Observable<TakenPhoto>
+    fun onFailedToUploadPhotosObservable(): Observable<List<TakenPhoto>>
 }

@@ -32,6 +32,14 @@ class TakenPhotosRepository(
                 .first(TakenPhoto.empty())
     }
 
+    fun findFailedToUploadPhotos(): Single<List<TakenPhoto>> {
+        return takenPhotosDao.findFailedToUploadPhotos()
+                .subscribeOn(schedulers.provideIo())
+                .observeOn(schedulers.provideIo())
+                .map(takenPhotoMapper::toTakenPhoto)
+                .first(emptyList())
+    }
+
     fun findOnePage(pageable: Pageable): Single<List<TakenPhoto>> {
         return takenPhotosDao.findPage(pageable.page, pageable.count)
                 .subscribeOn(schedulers.provideIo())

@@ -15,15 +15,13 @@ import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.helper.service.SendPhotoService
 import com.kirakishou.photoexchange.mvvm.model.*
 import com.kirakishou.photoexchange.mvvm.model.dto.PhotoNameWithId
-import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEvent
 import com.kirakishou.photoexchange.mvvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mvvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
-import com.kirakishou.photoexchange.ui.adapter.SentPhotosAdapter
+import com.kirakishou.photoexchange.ui.adapter.TakenPhotosAdapter
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
-import org.greenrobot.eventbus.Subscribe
-import org.greenrobot.eventbus.ThreadMode
+import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -32,10 +30,12 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
     @BindView(R.id.sent_photos_list)
     lateinit var sentPhotosRv: RecyclerView
 
-    private lateinit var adapter: SentPhotosAdapter
+    private lateinit var adapter: TakenPhotosAdapter
 
     @Inject
     lateinit var viewModelFactory: AllPhotosViewActivityViewModelFactory
+
+    private val retryButtonSubject = PublishSubject.create<TakenPhoto>()
 
     override fun initViewModel(): AllPhotosViewActivityViewModel {
         return ViewModelProviders.of(activity, viewModelFactory).get(AllPhotosViewActivityViewModel::class.java)
@@ -63,13 +63,30 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
         compositeDisposable += getViewModel().outputs.onLastTakenPhotoObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext {
+                    //TODO
+                    //update this photo in the DB:
+                    // - set photoName to it.photoName
+                    // - set failedToUpload to false
+                    // - set wasSent to true
+                }
                 .subscribe(this::onLastTakenPhoto)
+
+        compositeDisposable += getViewModel().outputs.onFailedToUploadPhotosObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onFailedToUploadPhotos)
+
+        compositeDisposable += retryButtonSubject
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onRetryButtonClicked)
     }
 
     private fun initRecycler() {
         val layoutManager = LinearLayoutManager(activity)
 
-        adapter = SentPhotosAdapter(activity)
+        adapter = TakenPhotosAdapter(activity, retryButtonSubject)
         adapter.init()
 
         sentPhotosRv.layoutManager = layoutManager
@@ -77,12 +94,24 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
         sentPhotosRv.setHasFixedSize(true)
     }
 
+    private fun onRetryButtonClicked(takenPhoto: TakenPhoto) {
+        Timber.e("photoName: ${takenPhoto.photoName}")
+    }
+
+    private fun onFailedToUploadPhotos(failedToUploadPhotos: List<TakenPhoto>) {
+        adapter.runOnAdapterHandler {
+            for (photo in failedToUploadPhotos) {
+                adapter.add(AdapterItem(photo, AdapterItemType.VIEW_FAILED_TO_UPLOAD))
+            }
+        }
+    }
+
     private fun onLastTakenPhoto(lastTakenPhoto: TakenPhoto) {
         if (!lastTakenPhoto.isEmpty()) {
             serviceUploadPhoto(lastTakenPhoto)
 
             adapter.runOnAdapterHandler {
-                adapter.add(AdapterItem(SentPhoto(lastTakenPhoto.id, lastTakenPhoto.photoName), AdapterItemType.VIEW_PROGRESSBAR))
+                adapter.add(AdapterItem(lastTakenPhoto, AdapterItemType.VIEW_FAILED_TO_UPLOAD))
             }
         }
     }
@@ -106,8 +135,7 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
         adapter.runOnAdapterHandler {
             for (takenPhoto in takenPhotosList) {
                 if (takenPhoto.wasSent) {
-                    adapter.add(AdapterItem(
-                            SentPhoto(takenPhoto.id, takenPhoto.photoName), AdapterItemType.VIEW_ITEM))
+                    adapter.add(AdapterItem(takenPhoto, AdapterItemType.VIEW_ITEM))
                 } else {
                     adapter.add(AdapterItem(AdapterItemType.VIEW_PROGRESSBAR))
                 }

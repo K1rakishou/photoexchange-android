@@ -30,7 +30,8 @@ class AllPhotosViewActivityViewModel
     val outputs: AllPhotosViewActivityViewModelOutputs = this
     val errors: AllPhotosViewActivityViewModelError = this
 
-    private val onLastTakenPhoto = PublishSubject.create<TakenPhoto>()
+    private val onFailedToUploadPhotosSubject = PublishSubject.create<List<TakenPhoto>>()
+    private val onLastTakenPhotoSubject = PublishSubject.create<TakenPhoto>()
     private val getLastTakenPhotoSubject = PublishSubject.create<Unit>()
     private val onTakenPhotosPageFetchedSubject = PublishSubject.create<List<TakenPhoto>>()
     private val getTakenPhotosPageSubject = PublishSubject.create<Pageable>()
@@ -46,11 +47,15 @@ class AllPhotosViewActivityViewModel
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .flatMap { takenPhotosRepository.findLastSaved().toObservable() }
+                .doOnNext(onLastTakenPhotoSubject::onNext)
+                .flatMap { takenPhotosRepository.findFailedToUploadPhotos().toObservable() }
+                .doOnNext(onFailedToUploadPhotosSubject::onNext)
                 .doOnNext {
                     println(it.toString())
                     println()
                 }
-                .subscribe(onLastTakenPhoto::onNext, this::handleError)
+                .doOnError(this::handleError)
+                .subscribe()
     }
 
     override fun getTakenPhotos(page: Int, count: Int) {
@@ -71,6 +76,7 @@ class AllPhotosViewActivityViewModel
         super.onCleared()
     }
 
-    override fun onLastTakenPhotoObservable(): Observable<TakenPhoto> = onLastTakenPhoto
+    override fun onFailedToUploadPhotosObservable(): Observable<List<TakenPhoto>> = onFailedToUploadPhotosSubject
+    override fun onLastTakenPhotoObservable(): Observable<TakenPhoto> = onLastTakenPhotoSubject
     override fun onTakenPhotosPageFetchedObservable(): Observable<List<TakenPhoto>> = onTakenPhotosPageFetchedSubject
 }

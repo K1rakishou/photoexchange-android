@@ -25,6 +25,11 @@ interface TakenPhotosDao {
     fun findLastSaved(): Flowable<TakenPhotoEntity>
 
     @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} " +
+            "WHERE failed_to_upload = ${MyDatabase.SQLITE_TRUE} " +
+            "ORDER BY created_on ASC ")
+    fun findFailedToUploadPhotos(): Flowable<List<TakenPhotoEntity>>
+
+    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} " +
             "ORDER BY created_on ASC " +
             "LIMIT :arg1 OFFSET :arg0")
     fun findPage(page: Int, count: Int): Flowable<List<TakenPhotoEntity>>

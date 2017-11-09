@@ -6,5 +6,6 @@ package com.kirakishou.photoexchange.mvvm.model
 enum class AdapterItemType {
     VIEW_ITEM,
     VIEW_PROGRESSBAR,
+    VIEW_FAILED_TO_UPLOAD,
     VIEW_MESSAGE,
 }
