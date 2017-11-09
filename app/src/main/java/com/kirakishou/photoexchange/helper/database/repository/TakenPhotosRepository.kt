@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.mapper.TakenPhotoMapper
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvvm.model.Pageable
 import com.kirakishou.photoexchange.mvvm.model.TakenPhoto
+import io.reactivex.Completable
 import io.reactivex.Single
 import timber.log.Timber
 
@@ -55,4 +56,29 @@ class TakenPhotosRepository(
                 .map(takenPhotoMapper::toTakenPhoto)
                 .blockingFirst()
     }
+
+    fun deleteOne(id: Long): Completable {
+        val completable = Completable.fromAction {
+            takenPhotosDao.deleteOne(id)
+        }
+
+        return completable
+                .subscribeOn(schedulers.provideIo())
+                .observeOn(schedulers.provideIo())
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
