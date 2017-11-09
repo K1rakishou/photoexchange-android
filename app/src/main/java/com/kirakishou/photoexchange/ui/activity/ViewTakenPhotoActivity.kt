@@ -12,13 +12,8 @@ import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
-import com.kirakishou.photoexchange.base.BaseActivityWithoutViewModel
-import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.component.DaggerViewTakenPhotoActivityComponent
-import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.di.module.ViewTakenPhotoActivityModule
-import com.kirakishou.photoexchange.mvvm.model.LonLat
-import com.kirakishou.photoexchange.mvvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mvvm.viewmodel.ViewTakenPhotoActivityViewModel
 import com.kirakishou.photoexchange.mvvm.viewmodel.factory.ViewTakenPhotoActivityViewModelFactory
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -67,17 +62,32 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
         compositeDisposable += RxView.clicks(closeActivityButtonIv)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ closeActivity() })
+                .subscribe({ deletePhoto() })
 
         compositeDisposable += RxView.clicks(closeActivityButtonFab)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ closeActivity() })
+                .subscribe({ deletePhoto() })
 
         compositeDisposable += RxView.clicks(sendPhotoButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ startAllPhotosViewActivity() })
+
+        compositeDisposable += getViewModel().outputs.onPhotoDeletedObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ onPhotoDeleted() })
+    }
+
+    private fun deletePhoto() {
+        check(photoId != -1L)
+
+        getViewModel().inputs.deletePhoto(photoId)
+    }
+
+    private fun onPhotoDeleted() {
+        finish()
     }
 
     private fun startAllPhotosViewActivity() {
@@ -97,12 +107,6 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
                 .load(File(photoFilePath))
                 .apply(RequestOptions().centerCrop())
                 .into(photoView)
-    }
-
-    private fun closeActivity() {
-        //TODO: delete photo from the DB and from the disk
-
-        finish()
     }
 
     override fun resolveDaggerDependency() {

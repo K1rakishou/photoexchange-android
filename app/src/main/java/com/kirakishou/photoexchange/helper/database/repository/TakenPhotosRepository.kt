@@ -41,6 +41,14 @@ class TakenPhotosRepository(
                 .first(emptyList())
     }
 
+    fun findOne(id: Long): Single<TakenPhoto> {
+        return takenPhotosDao.findOne(id)
+                .subscribeOn(schedulers.provideIo())
+                .observeOn(schedulers.provideIo())
+                .map(takenPhotoMapper::toTakenPhoto)
+                .first(TakenPhoto.empty())
+    }
+
     fun findOnePage(pageable: Pageable): Single<List<TakenPhoto>> {
         return takenPhotosDao.findPage(pageable.page, pageable.count)
                 .subscribeOn(schedulers.provideIo())

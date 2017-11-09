@@ -30,6 +30,11 @@ interface TakenPhotosDao {
     fun findFailedToUploadPhotos(): Flowable<List<TakenPhotoEntity>>
 
     @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} " +
+            "WHERE id = :arg0 " +
+            "LIMIT 1")
+    fun findOne(photoId: Long): Flowable<TakenPhotoEntity>
+
+    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} " +
             "ORDER BY created_on ASC " +
             "LIMIT :arg1 OFFSET :arg0")
     fun findPage(page: Int, count: Int): Flowable<List<TakenPhotoEntity>>

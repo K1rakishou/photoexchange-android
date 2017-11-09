@@ -5,7 +5,7 @@ import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosReposi
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvvm.model.Pageable
 import com.kirakishou.photoexchange.mvvm.model.TakenPhoto
-import com.kirakishou.photoexchange.mvvm.viewmodel.wires.error.AllPhotosViewActivityViewModelError
+import com.kirakishou.photoexchange.mvvm.viewmodel.wires.error.AllPhotosViewActivityViewModelErrors
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.input.AllPhotosViewActivityViewModelInputs
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.output.AllPhotosViewActivityViewModelOutputs
 import io.reactivex.Observable
@@ -19,16 +19,16 @@ import javax.inject.Inject
  */
 class AllPhotosViewActivityViewModel
 @Inject constructor(
-        val takenPhotosRepository: TakenPhotosRepository,
-        val schedulers: SchedulerProvider
+        private val takenPhotosRepository: TakenPhotosRepository,
+        private val schedulers: SchedulerProvider
 ) : BaseViewModel(),
         AllPhotosViewActivityViewModelInputs,
         AllPhotosViewActivityViewModelOutputs,
-        AllPhotosViewActivityViewModelError {
+        AllPhotosViewActivityViewModelErrors {
 
     val inputs: AllPhotosViewActivityViewModelInputs = this
     val outputs: AllPhotosViewActivityViewModelOutputs = this
-    val errors: AllPhotosViewActivityViewModelError = this
+    val errors: AllPhotosViewActivityViewModelErrors = this
 
     private val onFailedToUploadPhotosSubject = PublishSubject.create<List<TakenPhoto>>()
     private val onLastTakenPhotoSubject = PublishSubject.create<TakenPhoto>()

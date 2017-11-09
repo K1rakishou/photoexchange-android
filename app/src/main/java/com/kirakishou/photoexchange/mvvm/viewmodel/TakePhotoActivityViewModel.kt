@@ -17,7 +17,7 @@ import javax.inject.Inject
  */
 class TakePhotoActivityViewModel
 @Inject constructor(
-        val takenPhotosRepo: TakenPhotosRepository
+        private val takenPhotosRepo: TakenPhotosRepository
 ) : BaseViewModel(),
         MainActivityViewModelInputs,
         MainActivityViewModelOutputs,
