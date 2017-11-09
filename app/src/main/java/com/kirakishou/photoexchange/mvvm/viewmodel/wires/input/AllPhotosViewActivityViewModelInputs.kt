@@ -5,5 +5,5 @@ package com.kirakishou.photoexchange.mvvm.viewmodel.wires.input
  */
 interface AllPhotosViewActivityViewModelInputs {
     fun getTakenPhotos(page: Int, count: Int)
-    fun getLastTakenPhoto()
+    fun getTakenPhotos()
 }

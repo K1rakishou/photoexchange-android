@@ -65,6 +65,8 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     override fun getContentView(): Int = R.layout.activity_take_photo
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
+        getViewModel().inputs.cleanDb()
+
         userInfoPreference.load()
 
         initUserInfo()
@@ -128,7 +130,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         val location = locationAndPhotoPath.first
         val photoFilePath = locationAndPhotoPath.second
 
-        return getViewModel().saveTakenPhotoToDb(location, userId, photoFilePath)
+        return getViewModel().saveTakenPhotoToTheDb(location, userId, photoFilePath)
     }
 
     private fun switchToViewTakenPhotoActivity(idAndPhotoFilePath: Pair<Long, String>) {
@@ -176,11 +178,11 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 }
     }
 
-    fun showNotification() {
+    private fun showNotification() {
         notification.visibility = View.VISIBLE
     }
 
-    fun hideNotification() {
+    private fun hideNotification() {
         notification.visibility = View.GONE
     }
 

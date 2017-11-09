@@ -47,8 +47,7 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
         initRecycler()
         initRx()
 
-        //getViewModel().inputs.getTakenPhotos(0, 5)
-        getViewModel().inputs.getLastTakenPhoto()
+        getViewModel().inputs.getTakenPhotos()
     }
 
     override fun onFragmentViewDestroy() {
@@ -108,15 +107,15 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
 
     private fun onLastTakenPhoto(lastTakenPhoto: TakenPhoto) {
         if (!lastTakenPhoto.isEmpty()) {
-            serviceUploadPhoto(lastTakenPhoto)
+            startServiceToUploadPhoto(lastTakenPhoto)
 
             adapter.runOnAdapterHandler {
-                adapter.add(AdapterItem(lastTakenPhoto, AdapterItemType.VIEW_FAILED_TO_UPLOAD))
+                adapter.add(AdapterItem(lastTakenPhoto, AdapterItemType.VIEW_PROGRESSBAR))
             }
         }
     }
 
-    private fun serviceUploadPhoto(lastTakenPhoto: TakenPhoto) {
+    private fun startServiceToUploadPhoto(lastTakenPhoto: TakenPhoto) {
         val intent = Intent(activity, SendPhotoService::class.java)
         intent.putExtra("command", ServiceCommand.SEND_PHOTO.value)
         intent.putExtra("photo_id", lastTakenPhoto.id)

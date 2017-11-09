@@ -20,7 +20,7 @@ interface TakenPhotosDao {
 
     @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} " +
             "WHERE was_sent = ${MyDatabase.SQLITE_FALSE} AND failed_to_upload = ${MyDatabase.SQLITE_FALSE} " +
-            "ORDER BY created_on ASC " +
+            "ORDER BY created_on DESC " +
             "LIMIT 1")
     fun findLastSaved(): Flowable<TakenPhotoEntity>
 
@@ -39,9 +39,14 @@ interface TakenPhotosDao {
             "LIMIT :arg1 OFFSET :arg0")
     fun findPage(page: Int, count: Int): Flowable<List<TakenPhotoEntity>>
 
-    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME}")
+    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} " +
+            "ORDER BY created_on ASC ")
     fun findAll(): Flowable<List<TakenPhotoEntity>>
 
     @Query("DELETE FROM ${TakenPhotoEntity.TABLE_NAME} WHERE id = :arg0")
     fun deleteOne(id: Long): Int
+
+    @Query("DELETE FROM ${TakenPhotoEntity.TABLE_NAME} WHERE was_sent = ${MyDatabase.SQLITE_FALSE}")
+    fun deleteAllNotSent(): Int
+
 }

@@ -14,7 +14,6 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseAdapter
 import com.kirakishou.photoexchange.mvvm.model.AdapterItemType
-import com.kirakishou.photoexchange.mvvm.model.SentPhoto
 import com.kirakishou.photoexchange.mvvm.model.TakenPhoto
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
@@ -24,7 +23,7 @@ import timber.log.Timber
  */
 class TakenPhotosAdapter(
         private val context: Context,
-        private val retryButtonSsubject: PublishSubject<TakenPhoto>
+        private val retryButtonSubject: PublishSubject<TakenPhoto>
 ) : BaseAdapter<TakenPhoto>(context) {
 
     fun updateType(photoId: Long, photoName: String) {
@@ -87,7 +86,7 @@ class TakenPhotosAdapter(
                 if (items[position].value.isPresent()) {
                     val item = items[position].value.get()
 
-                    retryButtonSsubject.onNext(item)
+                    retryButtonSubject.onNext(item)
                 }
             }
         }

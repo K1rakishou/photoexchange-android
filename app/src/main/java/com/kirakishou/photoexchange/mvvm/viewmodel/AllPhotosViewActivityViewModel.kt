@@ -31,8 +31,8 @@ class AllPhotosViewActivityViewModel
     val errors: AllPhotosViewActivityViewModelErrors = this
 
     private val onFailedToUploadPhotosSubject = PublishSubject.create<List<TakenPhoto>>()
-    private val onLastTakenPhotoSubject = PublishSubject.create<TakenPhoto>()
-    private val getLastTakenPhotoSubject = PublishSubject.create<Unit>()
+    private val onTakenPhotoSubject = PublishSubject.create<TakenPhoto>()
+    private val getTakenPhotoSubject = PublishSubject.create<Unit>()
     private val onTakenPhotosPageFetchedSubject = PublishSubject.create<List<TakenPhoto>>()
     private val getTakenPhotosPageSubject = PublishSubject.create<Pageable>()
 
@@ -43,16 +43,23 @@ class AllPhotosViewActivityViewModel
                 .flatMap { takenPhotosRepository.findOnePage(it).toObservable() }
                 .subscribe(onTakenPhotosPageFetchedSubject::onNext, this::handleError)
 
-        compositeDisposable += getLastTakenPhotoSubject
+        compositeDisposable += getTakenPhotoSubject
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .flatMap { takenPhotosRepository.findLastSaved().toObservable() }
-                .doOnNext(onLastTakenPhotoSubject::onNext)
-                .flatMap { takenPhotosRepository.findFailedToUploadPhotos().toObservable() }
-                .doOnNext(onFailedToUploadPhotosSubject::onNext)
                 .doOnNext {
-                    println(it.toString())
-                    println()
+                    onTakenPhotoSubject.onNext(it)
+                }
+                .flatMap { takenPhotosRepository.findFailedToUploadPhotos().toObservable() }
+                .doOnNext {
+                    onFailedToUploadPhotosSubject.onNext(it)
+                }
+                .doOnNext {
+                    val allPhotos = takenPhotosRepository.findAll().blockingFirst()
+
+                    for (photo in allPhotos) {
+                        Timber.d(photo.toString())
+                    }
                 }
                 .doOnError(this::handleError)
                 .subscribe()
@@ -62,8 +69,9 @@ class AllPhotosViewActivityViewModel
         getTakenPhotosPageSubject.onNext(Pageable(page, count))
     }
 
-    override fun getLastTakenPhoto() {
-        getLastTakenPhotoSubject.onNext(Unit)
+    override fun getTakenPhotos() {
+        Timber.e("getTakenPhotos")
+        getTakenPhotoSubject.onNext(Unit)
     }
 
     private fun handleError(error: Throwable) {
@@ -77,6 +85,6 @@ class AllPhotosViewActivityViewModel
     }
 
     override fun onFailedToUploadPhotosObservable(): Observable<List<TakenPhoto>> = onFailedToUploadPhotosSubject
-    override fun onLastTakenPhotoObservable(): Observable<TakenPhoto> = onLastTakenPhotoSubject
+    override fun onLastTakenPhotoObservable(): Observable<TakenPhoto> = onTakenPhotoSubject
     override fun onTakenPhotosPageFetchedObservable(): Observable<List<TakenPhoto>> = onTakenPhotosPageFetchedSubject
 }

@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.mvvm.viewmodel
 import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.mvvm.model.Constants
 import com.kirakishou.photoexchange.mvvm.model.TakenPhoto
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.error.ViewTakenPhotoActivityViewModelErrors
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.input.ViewTakenPhotoActivityViewModelInputs
@@ -41,7 +42,18 @@ class ViewTakenPhotoActivityViewModel
                 .doOnNext(this::deleteFileFromDisk)
                 .flatMap { takenPhoto -> takenPhotosRepo.deleteOne(takenPhoto.id).toObservable() }
                 .map { Unit }
+                .doOnNext { debugPrintAllDbPhotos() }
                 .subscribe(onPhotoDeletedSubject::onNext, this::handleError)
+    }
+
+    private fun debugPrintAllDbPhotos() {
+        if (Constants.isDebugBuild) {
+            val allPhotos = takenPhotosRepo.findAll().blockingFirst()
+
+            for (photo in allPhotos) {
+                Timber.e(photo.toString())
+            }
+        }
     }
 
     override fun deletePhoto(photoId: Long) {
@@ -50,12 +62,6 @@ class ViewTakenPhotoActivityViewModel
 
     private fun handleError(error: Throwable) {
         Timber.e(error)
-    }
-
-    override fun onCleared() {
-        Timber.e("ViewTakenPhotoActivityViewModel.onCleared()")
-
-        super.onCleared()
     }
 
     private fun deleteFileFromDisk(takenPhoto: TakenPhoto) {
@@ -68,6 +74,12 @@ class ViewTakenPhotoActivityViewModel
         if (photoFile.exists()) {
             photoFile.delete()
         }
+    }
+
+    override fun onCleared() {
+        Timber.e("ViewTakenPhotoActivityViewModel.onCleared()")
+
+        super.onCleared()
     }
 
     override fun onPhotoDeletedObservable(): Observable<Unit> = onPhotoDeletedSubject

@@ -32,6 +32,7 @@ class TakenPhotosRepository(
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .map(takenPhotoMapper::toTakenPhoto)
+                .switchIfEmpty(Flowable.just(TakenPhoto.empty()))
     }
 
     fun findFailedToUploadPhotos(): Flowable<List<TakenPhoto>> {
@@ -39,6 +40,7 @@ class TakenPhotosRepository(
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .map(takenPhotoMapper::toTakenPhoto)
+                .switchIfEmpty(Flowable.just(emptyList()))
     }
 
     fun findOne(id: Long): Flowable<TakenPhoto> {
@@ -63,7 +65,13 @@ class TakenPhotosRepository(
     }
 
     fun deleteOne(id: Long): Flowable<Int> {
-        return Flowable.just(takenPhotosDao.deleteOne(id))
+        return Flowable.fromCallable { takenPhotosDao.deleteOne(id) }
+                .subscribeOn(schedulers.provideIo())
+                .observeOn(schedulers.provideIo())
+    }
+
+    fun deleteAllNotSent(): Flowable<Int> {
+        return Flowable.fromCallable { takenPhotosDao.deleteAllNotSent() }
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
     }
