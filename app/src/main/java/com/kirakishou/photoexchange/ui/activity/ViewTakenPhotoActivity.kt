@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.ui.activity
 
+import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
@@ -9,14 +10,24 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.PhotoExchangeApplication
+import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.base.BaseActivityWithoutViewModel
+import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
+import com.kirakishou.photoexchange.di.component.DaggerViewTakenPhotoActivityComponent
+import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
+import com.kirakishou.photoexchange.di.module.ViewTakenPhotoActivityModule
 import com.kirakishou.photoexchange.mvvm.model.LonLat
+import com.kirakishou.photoexchange.mvvm.viewmodel.AllPhotosViewActivityViewModel
+import com.kirakishou.photoexchange.mvvm.viewmodel.ViewTakenPhotoActivityViewModel
+import com.kirakishou.photoexchange.mvvm.viewmodel.factory.ViewTakenPhotoActivityViewModelFactory
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import java.io.File
+import javax.inject.Inject
 
 
-class ViewTakenPhotoActivity : BaseActivityWithoutViewModel() {
+class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
 
     @BindView(R.id.iv_close_activity)
     lateinit var closeActivityButtonIv: ImageView
@@ -30,8 +41,15 @@ class ViewTakenPhotoActivity : BaseActivityWithoutViewModel() {
     @BindView(R.id.fab_send_photo)
     lateinit var sendPhotoButton: FloatingActionButton
 
+    @Inject
+    lateinit var viewModelFactory: ViewTakenPhotoActivityViewModelFactory
+
     private var photoFilePath: String = ""
     private var photoId: Long = -1L
+
+    override fun initViewModel(): ViewTakenPhotoActivityViewModel {
+        return ViewModelProviders.of(this, viewModelFactory).get(ViewTakenPhotoActivityViewModel::class.java)
+    }
 
     override fun getContentView() = R.layout.activity_view_taken_photo
 
@@ -88,6 +106,10 @@ class ViewTakenPhotoActivity : BaseActivityWithoutViewModel() {
     }
 
     override fun resolveDaggerDependency() {
+        DaggerViewTakenPhotoActivityComponent.builder()
+                .applicationComponent(PhotoExchangeApplication.applicationComponent)
+                .viewTakenPhotoActivityModule(ViewTakenPhotoActivityModule(this))
+                .build()
+                .inject(this)
     }
-
 }
