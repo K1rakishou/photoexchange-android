@@ -42,6 +42,6 @@ class UploadedPhotoEntity(
             return UploadedPhotoEntity(0L, lon, lat, userId, photoName, photoFilePath, TimeUtils.getTimeFast())
         }
 
-        const val TABLE_NAME = "uploaded_photo"
+        const val TABLE_NAME = "uploaded_photos"
     }
 }

@@ -1,9 +1,11 @@
 package com.kirakishou.photoexchange.mvvm.viewmodel
 
 import com.kirakishou.photoexchange.base.BaseViewModel
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvvm.model.Constants
+import com.kirakishou.photoexchange.mvvm.model.TakenPhoto
 import com.kirakishou.photoexchange.mvvm.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.error.MainActivityViewModelErrors
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.input.MainActivityViewModelInputs
@@ -16,9 +18,9 @@ import javax.inject.Inject
 /**
  * Created by kirakishou on 11/3/2017.
  */
-class TakePhotoActivityViewModel
-@Inject constructor(
+class TakePhotoActivityViewModel(
         private val uploadedPhotosRepo: UploadedPhotosRepository,
+        private val takenPhotosRepo: TakenPhotosRepository,
         private val schedulers: SchedulerProvider
 ) : BaseViewModel(),
         MainActivityViewModelInputs,
@@ -34,14 +36,14 @@ class TakePhotoActivityViewModel
     }
 
     override fun cleanDb() {
-        compositeDisposable += uploadedPhotosRepo.findAll()
+        compositeDisposable += takenPhotosRepo.findAll()
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .doOnSuccess(this::deletePhotoFiles)
-                .flatMap { uploadedPhotosRepo.deleteAll() }
+                .flatMap { takenPhotosRepo.deleteAll() }
                 .doOnSuccess {
                     if (Constants.isDebugBuild) {
-                        val allPhotos = uploadedPhotosRepo.findAll().blockingGet()
+                        val allPhotos = takenPhotosRepo.findAll().blockingGet()
                         allPhotos.forEach { Timber.d("photo: $it") }
                     }
                 }
@@ -49,11 +51,14 @@ class TakePhotoActivityViewModel
                 .subscribe()
     }
 
-    private fun deletePhotoFiles(allPhotos: List<UploadedPhoto>) {
+    private fun deletePhotoFiles(allPhotos: List<TakenPhoto>) {
         allPhotos.forEach { uploadedPhoto ->
             val photoFile = File(uploadedPhoto.photoFilePath)
             if (photoFile.exists()) {
-                photoFile.delete()
+                val wasDeleted = photoFile.delete()
+                if (!wasDeleted) {
+                    Timber.e("Could not delete file: ${uploadedPhoto.photoFilePath}")
+                }
             }
         }
     }

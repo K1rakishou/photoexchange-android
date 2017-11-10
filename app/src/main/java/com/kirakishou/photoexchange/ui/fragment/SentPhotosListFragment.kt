@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
-import android.widget.ListView
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
@@ -56,7 +55,8 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRx()
-        initRecycler()
+        initRecyclerView()
+        initSwipeRefreshLayout()
 
         val isUploadingPhoto = arguments.getBoolean("is_uploading_photo", false)
         if (isUploadingPhoto) {
@@ -71,7 +71,17 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
         adapter.addProgressFooter()
     }
 
-    private fun initRecycler() {
+    private fun initSwipeRefreshLayout() {
+        swipeRefreshLayout.setOnRefreshListener {
+            adapter.clear()
+            endlessScrollListener.reset()
+            recyclerStartLoadingItems()
+
+            swipeRefreshLayout.isRefreshing = false
+        }
+    }
+
+    private fun initRecyclerView() {
         columnsCount = AndroidUtils.calculateNoOfColumns(activity, PHOTO_ADAPTER_VIEW_WIDTH)
 
         adapter = TakenPhotosAdapter(activity, retryButtonSubject)
@@ -98,6 +108,9 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
                 .flatMap { getViewModel().outputs.onPageReceivedObservable() }
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext { adapter.removeProgressFooter() }
+                .doOnNext {
+                    Timber.e("after adapter.removeProgressFooter()")
+                }
                 .subscribe(this::onPageReceived, this::onUnknownError)
 
         compositeDisposable += retryButtonSubject

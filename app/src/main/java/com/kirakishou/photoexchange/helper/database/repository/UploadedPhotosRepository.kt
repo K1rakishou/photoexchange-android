@@ -35,14 +35,14 @@ class UploadedPhotosRepository(
         return uploadedPhotosDao.findOne(id)
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
-                .map(uploadedPhotoMapper::toTakenPhoto)
+                .map(uploadedPhotoMapper::toUploadedPhoto)
     }
 
     fun findOnePage(pageable: Pageable): Observable<List<UploadedPhoto>> {
         return uploadedPhotosDao.findPage(pageable.page, pageable.count)
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
-                .map(uploadedPhotoMapper::toTakenPhoto)
+                .map(uploadedPhotoMapper::toUploadedPhotos)
                 .toObservable()
     }
 
@@ -50,7 +50,7 @@ class UploadedPhotosRepository(
         return uploadedPhotosDao.findAll()
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
-                .map(uploadedPhotoMapper::toTakenPhoto)
+                .map(uploadedPhotoMapper::toUploadedPhotos)
     }
 
     fun deleteOne(id: Long): Flowable<Int> {

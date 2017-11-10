@@ -12,8 +12,7 @@ import javax.inject.Inject
 /**
  * Created by kirakishou on 11/9/2017.
  */
-class ViewTakenPhotoActivityViewModel
-@Inject constructor(
+class ViewTakenPhotoActivityViewModel(
         private val uploadedPhotosRepo: UploadedPhotosRepository,
         private val schedulers: SchedulerProvider
 ) : BaseViewModel(),

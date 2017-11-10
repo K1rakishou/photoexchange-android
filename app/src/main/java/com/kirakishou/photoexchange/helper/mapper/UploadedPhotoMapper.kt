@@ -8,7 +8,7 @@ import com.kirakishou.photoexchange.mvvm.model.UploadedPhoto
  */
 class UploadedPhotoMapper : Mapper {
 
-    fun toTakenPhoto(entity: UploadedPhotoEntity): UploadedPhoto {
+    fun toUploadedPhoto(entity: UploadedPhotoEntity): UploadedPhoto {
         return UploadedPhoto(
                 entity.id,
                 entity.lon,
@@ -19,7 +19,7 @@ class UploadedPhotoMapper : Mapper {
         )
     }
 
-    fun toTakenPhoto(entityList: List<UploadedPhotoEntity>): List<UploadedPhoto> {
-        return entityList.map { toTakenPhoto(it) }
+    fun toUploadedPhotos(entityList: List<UploadedPhotoEntity>): List<UploadedPhoto> {
+        return entityList.map { toUploadedPhoto(it) }
     }
 }
