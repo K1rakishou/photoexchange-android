@@ -2,7 +2,6 @@ package com.kirakishou.photoexchange.di.component
 
 import com.kirakishou.photoexchange.di.module.TakePhotoActivityModule
 import com.kirakishou.photoexchange.di.scope.PerActivity
-import com.kirakishou.photoexchange.helper.service.SendPhotoService
 import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
 import dagger.Component
 

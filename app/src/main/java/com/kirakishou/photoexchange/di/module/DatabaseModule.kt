@@ -3,8 +3,8 @@ package com.kirakishou.photoexchange.di.module
 import android.arch.persistence.room.Room
 import android.content.Context
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import com.kirakishou.photoexchange.helper.mapper.TakenPhotoMapper
+import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
+import com.kirakishou.photoexchange.helper.mapper.UploadedPhotoMapper
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import dagger.Module
 import dagger.Provides
@@ -25,7 +25,7 @@ class DatabaseModule(val dbName: String) {
 
     @Singleton
     @Provides
-    fun provideTakenPhotosRepository(database: MyDatabase, schedulers: SchedulerProvider, mapper: TakenPhotoMapper): TakenPhotosRepository {
-        return TakenPhotosRepository(database, schedulers, mapper)
+    fun provideUploadedPhotosRepository(database: MyDatabase, schedulers: SchedulerProvider, mapper: UploadedPhotoMapper): UploadedPhotosRepository {
+        return UploadedPhotosRepository(database, schedulers, mapper)
     }
 }

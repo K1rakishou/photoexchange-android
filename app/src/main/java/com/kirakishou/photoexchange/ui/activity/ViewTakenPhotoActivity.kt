@@ -14,6 +14,10 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerViewTakenPhotoActivityComponent
 import com.kirakishou.photoexchange.di.module.ViewTakenPhotoActivityModule
+import com.kirakishou.photoexchange.helper.service.UploadPhotoService
+import com.kirakishou.photoexchange.mvvm.model.LonLat
+import com.kirakishou.photoexchange.mvvm.model.ServiceCommand
+import com.kirakishou.photoexchange.mvvm.model.TakenPhoto
 import com.kirakishou.photoexchange.mvvm.viewmodel.ViewTakenPhotoActivityViewModel
 import com.kirakishou.photoexchange.mvvm.viewmodel.factory.ViewTakenPhotoActivityViewModelFactory
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -39,8 +43,7 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
     @Inject
     lateinit var viewModelFactory: ViewTakenPhotoActivityViewModelFactory
 
-    private var photoFilePath: String = ""
-    private var photoId: Long = -1L
+    private var takenPhoto = TakenPhoto.empty()
 
     override fun initViewModel(): ViewTakenPhotoActivityViewModel {
         return ViewModelProviders.of(this, viewModelFactory).get(ViewTakenPhotoActivityViewModel::class.java)
@@ -49,7 +52,8 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
     override fun getContentView() = R.layout.activity_view_taken_photo
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
-        setImageViewPhoto(intent)
+        getTakenPhoto(intent)
+        setPhotoPreview()
 
         initRx()
     }
@@ -62,51 +66,74 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
         compositeDisposable += RxView.clicks(closeActivityButtonIv)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ deletePhoto() })
+                .subscribe({
+                    deletePhoto()
+                    finish()
+                })
 
         compositeDisposable += RxView.clicks(closeActivityButtonFab)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ deletePhoto() })
+                .subscribe({
+                    deletePhoto()
+                    finish()
+                })
 
         compositeDisposable += RxView.clicks(sendPhotoButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ startAllPhotosViewActivity() })
-
-        compositeDisposable += getViewModel().outputs.onPhotoDeletedObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onPhotoDeleted() })
+                .subscribe({
+                    startServiceToUploadPhoto()
+                    switchToAllPhotosViewActivity()
+                })
     }
 
     private fun deletePhoto() {
-        check(photoId != -1L)
-
-        getViewModel().inputs.deletePhoto(photoId)
+        val photoFile = File(takenPhoto.photoFilePath)
+        if (photoFile.exists()) {
+            photoFile.delete()
+        }
     }
 
-    private fun onPhotoDeleted() {
-        finish()
-    }
-
-    private fun startAllPhotosViewActivity() {
+    private fun switchToAllPhotosViewActivity() {
         val intent = Intent(this, AllPhotosViewActivity::class.java)
+        intent.putExtra("is_uploading_photo", true)
         startActivity(intent)
         finish()
     }
 
-    private fun setImageViewPhoto(intent: Intent) {
-        photoFilePath = intent.getStringExtra("photo_file_path")
-        photoId = intent.getLongExtra("photo_id", -1L)
+    private fun startServiceToUploadPhoto() {
+        val intent = Intent(this, UploadPhotoService::class.java)
+        intent.putExtra("command", ServiceCommand.SEND_PHOTO.value)
+        intent.putExtra("lon", takenPhoto.location.lon)
+        intent.putExtra("lat", takenPhoto.location.lat)
+        intent.putExtra("user_id", takenPhoto.userId)
+        intent.putExtra("photo_file_path", takenPhoto.photoFilePath)
 
-        check(photoFilePath.isNotEmpty())
-        check(photoId != -1L)
+        startService(intent)
+    }
 
+    private fun setPhotoPreview() {
         Glide.with(this)
-                .load(File(photoFilePath))
+                .load(File(takenPhoto.photoFilePath))
                 .apply(RequestOptions().centerCrop())
                 .into(photoView)
+    }
+
+    private fun getTakenPhoto(intent: Intent) {
+        val lon = intent.getDoubleExtra("lon", 0.0)
+        val lat = intent.getDoubleExtra("lat", 0.0)
+        val photoFilePath = intent.getStringExtra("photo_file_path")
+        val userId = intent.getStringExtra("user_id")
+
+        checkNotNull(photoFilePath)
+        checkNotNull(userId)
+        check(lon != 0.0)
+        check(lat != 0.0)
+        check(photoFilePath.isNotEmpty())
+        check(userId.isNotEmpty())
+
+        takenPhoto = TakenPhoto(LonLat(lon, lat), photoFilePath, userId)
     }
 
     override fun resolveDaggerDependency() {

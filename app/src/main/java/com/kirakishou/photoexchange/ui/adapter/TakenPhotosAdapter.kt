@@ -13,8 +13,9 @@ import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseAdapter
+import com.kirakishou.photoexchange.mvvm.model.AdapterItem
 import com.kirakishou.photoexchange.mvvm.model.AdapterItemType
-import com.kirakishou.photoexchange.mvvm.model.TakenPhoto
+import com.kirakishou.photoexchange.mvvm.model.UploadedPhoto
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 
@@ -23,8 +24,12 @@ import timber.log.Timber
  */
 class TakenPhotosAdapter(
         private val context: Context,
-        private val retryButtonSubject: PublishSubject<TakenPhoto>
-) : BaseAdapter<TakenPhoto>(context) {
+        private val retryButtonSubject: PublishSubject<UploadedPhoto>
+) : BaseAdapter<UploadedPhoto>(context) {
+
+    fun addFirst(item: AdapterItem<UploadedPhoto>) {
+        items.add(0, item)
+    }
 
     fun updateType(photoId: Long, photoName: String) {
         var found = false

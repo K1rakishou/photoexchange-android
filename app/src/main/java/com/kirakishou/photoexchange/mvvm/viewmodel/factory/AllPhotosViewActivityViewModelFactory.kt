@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.mvvm.viewmodel.factory
 
 import android.arch.lifecycle.ViewModel
 import android.arch.lifecycle.ViewModelProvider
-import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvvm.viewmodel.AllPhotosViewActivityViewModel
 import javax.inject.Inject
@@ -12,12 +12,12 @@ import javax.inject.Inject
  */
 class AllPhotosViewActivityViewModelFactory
 @Inject constructor(
-        val takenPhotosRepository: TakenPhotosRepository,
+        val uploadedPhotosRepository: UploadedPhotosRepository,
         val schedulers: SchedulerProvider
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
-        return AllPhotosViewActivityViewModel(takenPhotosRepository, schedulers) as T
+        return AllPhotosViewActivityViewModel(uploadedPhotosRepository, schedulers) as T
     }
 }

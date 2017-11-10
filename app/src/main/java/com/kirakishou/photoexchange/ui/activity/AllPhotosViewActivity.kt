@@ -11,11 +11,8 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
-import com.kirakishou.photoexchange.helper.service.SendPhotoService
-import com.kirakishou.photoexchange.mvvm.model.LonLat
-import com.kirakishou.photoexchange.mvvm.model.event.EventType
-import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEvent
-import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEventStatus
+import com.kirakishou.photoexchange.mvvm.model.EventType
+import com.kirakishou.photoexchange.mvvm.model.event.PhotoUploadedEvent
 import com.kirakishou.photoexchange.mvvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mvvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
@@ -50,7 +47,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         eventBus.register(this)
-        initTabs()
+        initTabs(intent)
     }
 
     override fun onActivityDestroy() {
@@ -60,10 +57,12 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         viewPager.clearOnPageChangeListeners()
     }
 
-    private fun initTabs() {
+    private fun initTabs(intent: Intent) {
         tabLayout.addTab(tabLayout.newTab().setText("Sent"))
         tabLayout.addTab(tabLayout.newTab().setText("Received"))
         tabLayout.tabGravity = TabLayout.GRAVITY_FILL
+
+        adapter.isUploadingPhoto = intent.getBooleanExtra("is_uploading_photo", false)
 
         viewPager.adapter = adapter
         viewPager.offscreenPageLimit = 1
@@ -98,16 +97,11 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onMessageEvent(event: SendPhotoEvent) {
-        if (event.owner != AllPhotosViewActivity::class) {
-            Timber.d("Received event with wrong owner: ${event.owner}")
-            return
-        }
-
-        when (event.type) {
+    fun onMessageEvent(uploadedEvent: PhotoUploadedEvent) {
+        when (uploadedEvent.type) {
             EventType.UploadPhoto -> {
-                checkNotNull(event.response)
-                val response = event.response!!
+                checkNotNull(uploadedEvent.photo)
+                val photo = uploadedEvent.photo!!
 
                 val fragment = adapter.sentPhotos
                 if (fragment == null) {
@@ -115,10 +109,10 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                     return
                 }
 
-                fragment.onPhotoUploaded(response)
+                fragment.onPhotoUploaded(photo)
             }
 
-            else -> IllegalStateException("Unknown eventType: ${event.type}")
+            else -> IllegalStateException("Unknown eventType: ${uploadedEvent.type}")
         }
     }
 

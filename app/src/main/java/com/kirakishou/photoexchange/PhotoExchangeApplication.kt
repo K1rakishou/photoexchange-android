@@ -17,7 +17,7 @@ class PhotoExchangeApplication : Application() {
 
         applicationComponent = DaggerApplicationComponent
                 .builder()
-                .applicationModule(ApplicationModule(this, databaseName))
+                .applicationModule(ApplicationModule(this))
                 .networkModule(NetworkModule(baseUrl))
                 .gsonModule(GsonModule())
                 .apiClientModule(ApiClientModule())

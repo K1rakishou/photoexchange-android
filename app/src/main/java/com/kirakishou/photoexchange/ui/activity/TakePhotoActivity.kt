@@ -25,7 +25,6 @@ import io.fotoapparat.parameter.selector.LensPositionSelectors.back
 import io.fotoapparat.parameter.selector.SizeSelectors.biggestSize
 import io.fotoapparat.view.CameraView
 import io.nlopez.smartlocation.SmartLocation
-import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.plusAssign
@@ -109,36 +108,31 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         compositeDisposable += RxView.clicks(takePhotoButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .subscribe({
+                    showNotification()
                     getLocation()
                     takePhoto()
                 })
 
         compositeDisposable += Observables.zip(locationSubject, photoAvailabilitySubject)
                 .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.io())
-                .doOnError { unknownErrorsSubject.onNext(it) }
-                .flatMap {
-                    val id = saveTakenPhotoToDb(it)
-                    return@flatMap Observables.zip(Observable.just(id), Observable.just(it.second))
-                }
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::switchToViewTakenPhotoActivity)
+                .doOnError { unknownErrorsSubject.onNext(it) }
+                .subscribe({
+                    val location = it.first
+                    val photoFilePath = it.second
+                    val userId = userInfoPreference.getUserId()
+
+                    hideNotification()
+                    switchToViewTakenPhotoActivity(location, photoFilePath, userId)
+                })
     }
 
-    private fun saveTakenPhotoToDb(locationAndPhotoPath: Pair<LonLat, String>): Long {
-        val userId = userInfoPreference.getUserId()
-        val location = locationAndPhotoPath.first
-        val photoFilePath = locationAndPhotoPath.second
-
-        return getViewModel().saveTakenPhotoToTheDb(location, userId, photoFilePath)
-    }
-
-    private fun switchToViewTakenPhotoActivity(idAndPhotoFilePath: Pair<Long, String>) {
-        hideNotification()
-
+    private fun switchToViewTakenPhotoActivity(location: LonLat, photoFilePath: String, userId: String) {
         val intent = Intent(this, ViewTakenPhotoActivity::class.java)
-        intent.putExtra("photo_id", idAndPhotoFilePath.first)
-        intent.putExtra("photo_file_path", idAndPhotoFilePath.second)
+        intent.putExtra("lon", location.lon)
+        intent.putExtra("lat", location.lat)
+        intent.putExtra("photo_file_path", photoFilePath)
+        intent.putExtra("user_id", userId)
         startActivity(intent)
     }
 
@@ -167,7 +161,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
     private fun getLocation() {
         Timber.d("getLocation() Getting current location...")
-        showNotification()
 
         SmartLocation.with(this)
                 .location()

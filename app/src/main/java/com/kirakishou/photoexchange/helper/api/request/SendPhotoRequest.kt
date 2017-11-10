@@ -3,7 +3,7 @@ package com.kirakishou.photoexchange.helper.api.request
 import com.google.gson.Gson
 import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.rx.operator.OnApiErrorSingle
-import com.kirakishou.photoexchange.mvvm.model.dto.PhotoWithInfo
+import com.kirakishou.photoexchange.mvvm.model.dto.PhotoToBeUploaded
 import com.kirakishou.photoexchange.mvvm.model.exception.PhotoDoesNotExistsException
 import com.kirakishou.photoexchange.mvvm.model.net.packet.SendPhotoPacket
 import com.kirakishou.photoexchange.mvvm.model.net.response.UploadPhotoResponse
@@ -16,9 +16,9 @@ import java.io.File
 /**
  * Created by kirakishou on 11/3/2017.
  */
-class SendPhotoRequest(private val info: PhotoWithInfo,
-                                           private val apiService: ApiService,
-                                           private val gson: Gson) : AbstractRequest<Single<UploadPhotoResponse>>() {
+class SendPhotoRequest(private val info: PhotoToBeUploaded,
+                       private val apiService: ApiService,
+                       private val gson: Gson) : AbstractRequest<Single<UploadPhotoResponse>>() {
 
     override fun build(): Single<UploadPhotoResponse> {
         val packet = SendPhotoPacket(info.location.lon, info.location.lat, info.userId)

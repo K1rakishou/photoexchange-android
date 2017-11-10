@@ -12,6 +12,8 @@ import com.kirakishou.photoexchange.ui.fragment.SentPhotosListFragment
 
 class FragmentTabsPager(fm: FragmentManager) : FragmentStatePagerAdapter(fm) {
 
+    var isUploadingPhoto = false
+
     var sentPhotos: SentPhotosListFragment? = null
     var receivedPhotos: ReceivedPhotosListFragment? = null
 
@@ -19,7 +21,7 @@ class FragmentTabsPager(fm: FragmentManager) : FragmentStatePagerAdapter(fm) {
         when (position) {
             0 -> {
                 if (sentPhotos == null) {
-                    sentPhotos = SentPhotosListFragment()
+                    sentPhotos = SentPhotosListFragment.newInstance(isUploadingPhoto)
                 }
 
                 return sentPhotos!!

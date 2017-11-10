@@ -13,8 +13,7 @@ import javax.inject.Singleton
  */
 
 @Module
-class ApplicationModule(private val application: Application,
-                        private val databaseName: String) {
+class ApplicationModule(private val application: Application) {
 
     @Singleton
     @Provides

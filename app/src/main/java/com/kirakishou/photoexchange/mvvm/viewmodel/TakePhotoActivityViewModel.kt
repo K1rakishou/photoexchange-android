@@ -1,12 +1,9 @@
 package com.kirakishou.photoexchange.mvvm.viewmodel
 
-import android.os.Debug
-import com.kirakishou.fixmypc.photoexchange.BuildConfig
 import com.kirakishou.photoexchange.base.BaseViewModel
-import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvvm.model.Constants
-import com.kirakishou.photoexchange.mvvm.model.LonLat
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.error.MainActivityViewModelErrors
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.input.MainActivityViewModelInputs
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.output.MainActivityViewModelOutputs
@@ -19,7 +16,7 @@ import javax.inject.Inject
  */
 class TakePhotoActivityViewModel
 @Inject constructor(
-        private val takenPhotosRepo: TakenPhotosRepository,
+        private val uploadedPhotosRepo: UploadedPhotosRepository,
         private val schedulers: SchedulerProvider
 ) : BaseViewModel(),
         MainActivityViewModelInputs,
@@ -34,25 +31,25 @@ class TakePhotoActivityViewModel
 
     }
 
-    //TODO: redo this asynchronously
+    /*//TODO: redo this asynchronously
     fun saveTakenPhotoToTheDb(location: LonLat, userId: String, photoFilePath: String): Long {
-        val id = takenPhotosRepo.saveOne(location.lon, location.lat, userId, photoFilePath)
+        val id = uploadedPhotosRepo.saveOne(location.lon, location.lat, userId, photoFilePath)
 
         if (Constants.isDebugBuild) {
-            val allPhotos = takenPhotosRepo.findAll()
+            val allPhotos = uploadedPhotosRepo.findAll()
             allPhotos.forEach { Timber.d("photo: $it") }
         }
 
         return id
-    }
+    }*/
 
     override fun cleanDb() {
-        compositeDisposable += takenPhotosRepo.deleteAllNotSent()
+        compositeDisposable += uploadedPhotosRepo.deleteAllNotSent()
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .doOnNext {
                     if (Constants.isDebugBuild) {
-                        val allPhotos = takenPhotosRepo.findAll().blockingFirst()
+                        val allPhotos = uploadedPhotosRepo.findAll().blockingFirst()
                         allPhotos.forEach { Timber.d("photo: $it") }
                     }
                 }

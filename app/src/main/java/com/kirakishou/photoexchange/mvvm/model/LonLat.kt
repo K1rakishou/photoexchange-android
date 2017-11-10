@@ -6,6 +6,10 @@ package com.kirakishou.photoexchange.mvvm.model
 class LonLat(val lon: Double,
              val lat: Double) {
 
+    fun isEmpty(): Boolean {
+        return lon == 0.0 && lat == 0.0
+    }
+
     override fun toString(): String {
         return "[lon: $lon, lat: $lat]"
     }

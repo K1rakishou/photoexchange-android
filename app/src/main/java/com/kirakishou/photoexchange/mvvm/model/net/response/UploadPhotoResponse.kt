@@ -15,4 +15,12 @@ class UploadPhotoResponse(
     val photoName: String,
 
     serverErrorCode: ServerErrorCode
-) : StatusResponse(serverErrorCode.value)
+
+) : StatusResponse(serverErrorCode.value) {
+
+    companion object {
+        fun fail(errorCode: ServerErrorCode): UploadPhotoResponse {
+            return UploadPhotoResponse("", errorCode)
+        }
+    }
+}

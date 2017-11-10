@@ -17,10 +17,10 @@ import android.content.Context
 import android.support.v4.app.NotificationCompat
 import com.kirakishou.photoexchange.di.component.DaggerServiceComponent
 import com.kirakishou.photoexchange.di.module.*
+import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
-import com.kirakishou.photoexchange.mvvm.model.dto.PhotoNameWithId
-import com.kirakishou.photoexchange.mvvm.model.event.EventType
-import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEvent
+import com.kirakishou.photoexchange.mvvm.model.UploadedPhoto
+import com.kirakishou.photoexchange.mvvm.model.event.PhotoUploadedEvent
 import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEventStatus
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -29,7 +29,7 @@ import io.reactivex.rxkotlin.plusAssign
 import org.greenrobot.eventbus.EventBus
 
 
-class SendPhotoService : Service() {
+class UploadPhotoService : Service() {
 
     @Inject
     lateinit var apiClient: ApiClient
@@ -40,18 +40,21 @@ class SendPhotoService : Service() {
     @Inject
     lateinit var eventBus: EventBus
 
+    @Inject
+    lateinit var uploadedPhotosRepo: UploadedPhotosRepository
+
     private val NOTIFICATION_ID = 1
 
     private val compositeDisposable = CompositeDisposable()
-    private lateinit var presenter: SendPhotoServicePresenter
+    private lateinit var presenter: UploadPhotoServicePresenter
 
     override fun onCreate() {
         super.onCreate()
-        Timber.e("SendPhotoService start")
+        Timber.e("UploadPhotoService start")
 
         resolveDaggerDependency()
 
-        presenter = SendPhotoServicePresenter(apiClient, schedulers)
+        presenter = UploadPhotoServicePresenter(apiClient, schedulers, uploadedPhotosRepo)
         initRx()
     }
 
@@ -59,7 +62,7 @@ class SendPhotoService : Service() {
         compositeDisposable.clear()
         presenter.detach()
 
-        Timber.e("SendPhotoService destroy")
+        Timber.e("UploadPhotoService destroy")
         super.onDestroy()
     }
 
@@ -80,12 +83,10 @@ class SendPhotoService : Service() {
                 .subscribe(this::onUnknownError)
     }
 
-    private fun onSendPhotoResponseObservable(response: PhotoNameWithId) {
-        Timber.d("onSendPhotoResponseObservable() photoName: ${response.photoName}")
+    private fun onSendPhotoResponseObservable(uploadedPhoto: UploadedPhoto) {
+        Timber.d("onSendPhotoResponseObservable() photoName: ${uploadedPhoto.photoName}")
 
-        //TODO: update photo in DB
-        eventBus.postSticky(SendPhotoEvent(EventType.UploadPhoto, SendPhotoEventStatus.SUCCESS,
-                response, AllPhotosViewActivity::class))
+        eventBus.post(PhotoUploadedEvent.success(uploadedPhoto))
 
         updateUploadingNotificationShowSuccess()
         stopService()
@@ -94,9 +95,7 @@ class SendPhotoService : Service() {
     private fun onBadResponse(errorCode: ServerErrorCode) {
         Timber.e("BadResponse: errorCode: $errorCode")
 
-        //TODO: update photo in DB
-        eventBus.postSticky(SendPhotoEvent(EventType.UploadPhoto, SendPhotoEventStatus.FAIL,
-                null, AllPhotosViewActivity::class))
+        eventBus.post(PhotoUploadedEvent.fail())
 
         updateUploadingNotificationShowError()
         stopService()
@@ -105,9 +104,7 @@ class SendPhotoService : Service() {
     private fun onUnknownError(error: Throwable) {
         Timber.e("Unknown error: $error")
 
-        //TODO: update photo in DB
-        eventBus.postSticky(SendPhotoEvent(EventType.UploadPhoto, SendPhotoEventStatus.FAIL,
-                null, AllPhotosViewActivity::class))
+        eventBus.post(PhotoUploadedEvent.fail())
 
         updateUploadingNotificationShowError()
         stopService()
@@ -135,14 +132,13 @@ class SendPhotoService : Service() {
         val serviceCommand = ServiceCommand.from(commandRaw)
         when (serviceCommand) {
             ServiceCommand.SEND_PHOTO -> {
-                val id = intent.getLongExtra("photo_id", -1L)
                 val lon = intent.getDoubleExtra("lon", 0.0)
                 val lat = intent.getDoubleExtra("lat", 0.0)
                 val userId = intent.getStringExtra("user_id")
                 val photoFilePath = intent.getStringExtra("photo_file_path")
                 val location = LonLat(lon, lat)
 
-                presenter.inputs.uploadPhoto(id, photoFilePath, location, userId)
+                presenter.inputs.uploadPhoto(photoFilePath, location, userId)
             }
         }
     }
@@ -215,6 +211,8 @@ class SendPhotoService : Service() {
                 .apiClientModule(ApiClientModule())
                 .schedulerProviderModule(SchedulerProviderModule())
                 .eventBusModule(EventBusModule())
+                .databaseModule(DatabaseModule(PhotoExchangeApplication.databaseName))
+                .mapperModule(MapperModule())
                 .build()
                 .inject(this)
     }

@@ -5,4 +5,4 @@ import kotlin.reflect.KClass
 /**
  * Created by kirakishou on 11/7/2017.
  */
-abstract class BaseEvent(val owner: KClass<*>)
+abstract class BaseEvent()

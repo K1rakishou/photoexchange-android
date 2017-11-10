@@ -9,8 +9,8 @@ import com.kirakishou.photoexchange.helper.util.TimeUtils
  * Created by kirakishou on 11/8/2017.
  */
 
-@Entity(tableName = TakenPhotoEntity.TABLE_NAME)
-class TakenPhotoEntity(
+@Entity(tableName = UploadedPhotoEntity.TABLE_NAME)
+class UploadedPhotoEntity(
         @PrimaryKey(autoGenerate = true)
         @ColumnInfo(name = "id")
         var id: Long,
@@ -30,24 +30,18 @@ class TakenPhotoEntity(
         @ColumnInfo(name = "photo_file_path")
         var photoFilePath: String,
 
-        @ColumnInfo(name = "failed_to_upload")
-        var failedToUpload: Boolean,
-
-        @ColumnInfo(name = "was_sent")
-        var wasSent: Boolean,
-
         @ColumnInfo(name = "created_on")
         var createdOn: Long
 ) {
 
-    constructor() : this(0L, 0.0, 0.0, "", "", "", false, false, 0L)
+    constructor() : this(0L, 0.0, 0.0, "", "", "", 0L)
 
     companion object {
 
-        fun new(lon: Double, lat: Double, userId: String, photoFilePath: String): TakenPhotoEntity {
-            return TakenPhotoEntity(0L, lon, lat, userId, "", photoFilePath, false, false, TimeUtils.getTimeFast())
+        fun new(lon: Double, lat: Double, userId: String, photoFilePath: String): UploadedPhotoEntity {
+            return UploadedPhotoEntity(0L, lon, lat, userId, "", photoFilePath, TimeUtils.getTimeFast())
         }
 
-        const val TABLE_NAME = "taken_photo"
+        const val TABLE_NAME = "uploaded_photo"
     }
 }
