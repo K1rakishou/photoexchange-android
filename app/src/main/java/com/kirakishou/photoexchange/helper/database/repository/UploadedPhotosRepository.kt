@@ -8,6 +8,8 @@ import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvvm.model.Pageable
 import com.kirakishou.photoexchange.mvvm.model.UploadedPhoto
 import io.reactivex.Flowable
+import io.reactivex.Observable
+import io.reactivex.Single
 
 /**
  * Created by kirakishou on 11/8/2017.
@@ -19,8 +21,12 @@ class UploadedPhotosRepository(
 ) {
     private val uploadedPhotosDao: UploadedPhotosDao by lazy { database.uploadedPhotosDao() }
 
-    fun saveOne(lon: Double, lat: Double, userId: String, photoFilePath: String): Flowable<Long> {
-        return Flowable.fromCallable { uploadedPhotosDao.saveOne(UploadedPhotoEntity.new(lon, lat, userId, photoFilePath)) }
+    fun saveOne(lon: Double, lat: Double, userId: String, photoFilePath: String, photoName: String): Single<Long> {
+        val resultSingle = Single.fromCallable {
+            uploadedPhotosDao.saveOne(UploadedPhotoEntity.new(lon, lat, userId, photoFilePath, photoName))
+        }
+
+        return resultSingle
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
     }
@@ -32,14 +38,15 @@ class UploadedPhotosRepository(
                 .map(uploadedPhotoMapper::toTakenPhoto)
     }
 
-    fun findOnePage(pageable: Pageable): Flowable<List<UploadedPhoto>> {
+    fun findOnePage(pageable: Pageable): Observable<List<UploadedPhoto>> {
         return uploadedPhotosDao.findPage(pageable.page, pageable.count)
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .map(uploadedPhotoMapper::toTakenPhoto)
+                .toObservable()
     }
 
-    fun findAll(): Flowable<List<UploadedPhoto>> {
+    fun findAll(): Single<List<UploadedPhoto>> {
         return uploadedPhotosDao.findAll()
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
@@ -52,8 +59,8 @@ class UploadedPhotosRepository(
                 .observeOn(schedulers.provideIo())
     }
 
-    fun deleteAllNotSent(): Flowable<Int> {
-        return Flowable.fromCallable { uploadedPhotosDao.deleteAll() }
+    fun deleteAll(): Single<Int> {
+        return Single.fromCallable { uploadedPhotosDao.deleteAll() }
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
     }

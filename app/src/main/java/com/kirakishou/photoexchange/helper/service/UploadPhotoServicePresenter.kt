@@ -23,6 +23,7 @@ import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.rxkotlin.zipWith
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 
 /**
  * Created by kirakishou on 11/4/2017.
@@ -64,12 +65,12 @@ class UploadPhotoServicePresenter(
                         }
             }
 
-            fun cacheResponse(photoInfo: PhotoToBeUploaded): Observable<Long> {
+            fun cacheResponse(photoInfo: PhotoToBeUploaded, photoName: String): Observable<Long> {
                 val location = photoInfo.location
                 val photoFilePath = photoInfo.photoFilePath
                 val userId = photoInfo.userId
 
-                return uploadedPhotosRepo.saveOne(location.lon, location.lat, userId, photoFilePath).toObservable()
+                return uploadedPhotosRepo.saveOne(location.lon, location.lat, userId, photoFilePath, photoName).toObservable()
             }
 
             val photoInfoObservable = sendPhotoRequestSubject
@@ -78,12 +79,11 @@ class UploadPhotoServicePresenter(
             val responseObservable = photoInfoObservable
                     .subscribeOn(schedulers.provideIo())
                     .observeOn(schedulers.provideIo())
-                    .doOnNext { AndroidUtils.throwIfOnMainThread() }
                     .flatMap { uploadPhoto(it) }
                     .share()
 
-            val photoIdObservable = photoInfoObservable
-                    .flatMap { cacheResponse(it) }
+            val photoIdObservable = photoInfoObservable.zipWith(responseObservable)
+                    .flatMap { cacheResponse(it.first, it.second.photoName) }
 
             val uploadedPhotoObservable = Observables.zip(photoInfoObservable, photoIdObservable, responseObservable)
                     .map {

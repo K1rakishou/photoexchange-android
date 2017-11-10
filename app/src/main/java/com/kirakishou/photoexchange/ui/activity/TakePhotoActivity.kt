@@ -64,13 +64,13 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     override fun getContentView(): Int = R.layout.activity_take_photo
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
-        getViewModel().inputs.cleanDb()
-
         userInfoPreference.load()
 
         initUserInfo()
         initRx()
         initCamera()
+
+        getViewModel().inputs.cleanDb()
     }
 
     override fun onActivityDestroy() {

@@ -29,32 +29,26 @@ class TakenPhotosAdapter(
 
     fun addFirst(item: AdapterItem<UploadedPhoto>) {
         items.add(0, item)
+        notifyItemInserted(0)
     }
 
-    fun updateType(photoId: Long, photoName: String) {
-        var found = false
+    fun addProgressFooter() {
+        checkInited()
 
-        for ((idx, item) in items.withIndex()) {
-            if (item.getType() != AdapterItemType.VIEW_PROGRESSBAR.ordinal) {
-                continue
-            }
-
-            if (!item.value.isPresent()) {
-                continue
-            }
-
-            if (item.value.get().id == photoId) {
-                found = true
-
-                item.setType(AdapterItemType.VIEW_ITEM)
-                item.value.get().photoName = photoName
-                notifyItemChanged(idx)
-                break
-            }
+        if (items.isEmpty() || items.last().getType() != AdapterItemType.VIEW_PROGRESSBAR.ordinal) {
+            items.add(AdapterItem(AdapterItemType.VIEW_PROGRESSBAR))
+            notifyItemInserted(items.lastIndex)
         }
+    }
 
-        if (!found) {
-            Timber.e("adapter does not contain photo with id $photoId")
+    fun removeProgressFooter() {
+        checkInited()
+
+        if (items.isNotEmpty() && items.last().getType() == AdapterItemType.VIEW_PROGRESSBAR.ordinal) {
+            val index = items.lastIndex
+
+            items.removeAt(index)
+            notifyItemRemoved(index)
         }
     }
 
@@ -73,7 +67,6 @@ class TakenPhotosAdapter(
                     val item = items[position].value.get()
 
                     val fullPath = "${PhotoExchangeApplication.baseUrl}v1/api/get_photo/${item.photoName}"
-                    Timber.d("fullPath: $fullPath")
 
                     //TODO: do image loading via ImageLoader class
                     Glide.with(context)

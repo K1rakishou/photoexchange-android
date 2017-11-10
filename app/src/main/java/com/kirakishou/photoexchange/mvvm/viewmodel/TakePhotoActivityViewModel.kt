@@ -4,11 +4,13 @@ import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvvm.model.Constants
+import com.kirakishou.photoexchange.mvvm.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.error.MainActivityViewModelErrors
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.input.MainActivityViewModelInputs
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.output.MainActivityViewModelOutputs
 import io.reactivex.rxkotlin.plusAssign
 import timber.log.Timber
+import java.io.File
 import javax.inject.Inject
 
 /**
@@ -31,30 +33,29 @@ class TakePhotoActivityViewModel
 
     }
 
-    /*//TODO: redo this asynchronously
-    fun saveTakenPhotoToTheDb(location: LonLat, userId: String, photoFilePath: String): Long {
-        val id = uploadedPhotosRepo.saveOne(location.lon, location.lat, userId, photoFilePath)
-
-        if (Constants.isDebugBuild) {
-            val allPhotos = uploadedPhotosRepo.findAll()
-            allPhotos.forEach { Timber.d("photo: $it") }
-        }
-
-        return id
-    }*/
-
     override fun cleanDb() {
-        compositeDisposable += uploadedPhotosRepo.deleteAllNotSent()
+        compositeDisposable += uploadedPhotosRepo.findAll()
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
-                .doOnNext {
+                .doOnSuccess(this::deletePhotoFiles)
+                .flatMap { uploadedPhotosRepo.deleteAll() }
+                .doOnSuccess {
                     if (Constants.isDebugBuild) {
-                        val allPhotos = uploadedPhotosRepo.findAll().blockingFirst()
+                        val allPhotos = uploadedPhotosRepo.findAll().blockingGet()
                         allPhotos.forEach { Timber.d("photo: $it") }
                     }
                 }
                 .doOnError(this::handlerError)
                 .subscribe()
+    }
+
+    private fun deletePhotoFiles(allPhotos: List<UploadedPhoto>) {
+        allPhotos.forEach { uploadedPhoto ->
+            val photoFile = File(uploadedPhoto.photoFilePath)
+            if (photoFile.exists()) {
+                photoFile.delete()
+            }
+        }
     }
 
     private fun handlerError(error: Throwable) {

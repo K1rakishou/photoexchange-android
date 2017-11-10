@@ -13,6 +13,7 @@ import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityCompo
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.mvvm.model.EventType
 import com.kirakishou.photoexchange.mvvm.model.event.PhotoUploadedEvent
+import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEventStatus
 import com.kirakishou.photoexchange.mvvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mvvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
@@ -103,13 +104,22 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                 checkNotNull(uploadedEvent.photo)
                 val photo = uploadedEvent.photo!!
 
-                val fragment = adapter.sentPhotos
+                val fragment = adapter.sentPhotosFragment
                 if (fragment == null) {
                     Timber.w("Event received when fragment is null!")
                     return
                 }
 
-                fragment.onPhotoUploaded(photo)
+                if (!fragment.isAdded) {
+                    Timber.w("Fragment is not added in the backstack!")
+                    return
+                }
+
+                if (uploadedEvent.status == SendPhotoEventStatus.SUCCESS) {
+                    fragment.onPhotoUploaded(photo)
+                } else {
+                    fragment.onFailedToUploadPhoto()
+                }
             }
 
             else -> IllegalStateException("Unknown eventType: ${uploadedEvent.type}")

@@ -14,24 +14,24 @@ class FragmentTabsPager(fm: FragmentManager) : FragmentStatePagerAdapter(fm) {
 
     var isUploadingPhoto = false
 
-    var sentPhotos: SentPhotosListFragment? = null
-    var receivedPhotos: ReceivedPhotosListFragment? = null
+    var sentPhotosFragment: SentPhotosListFragment? = null
+    var receivedPhotosFragment: ReceivedPhotosListFragment? = null
 
     override fun getItem(position: Int): Fragment {
         when (position) {
             0 -> {
-                if (sentPhotos == null) {
-                    sentPhotos = SentPhotosListFragment.newInstance(isUploadingPhoto)
+                if (sentPhotosFragment == null) {
+                    sentPhotosFragment = SentPhotosListFragment.newInstance(isUploadingPhoto)
                 }
 
-                return sentPhotos!!
+                return sentPhotosFragment!!
             }
             1 -> {
-                if (receivedPhotos == null) {
-                    receivedPhotos = ReceivedPhotosListFragment()
+                if (receivedPhotosFragment == null) {
+                    receivedPhotosFragment = ReceivedPhotosListFragment()
                 }
 
-                return receivedPhotos!!
+                return receivedPhotosFragment!!
             }
             else -> throw IllegalArgumentException("No fragment for the current position $position")
         }
