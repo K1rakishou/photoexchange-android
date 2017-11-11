@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.ui.widget
 
+import android.os.Bundle
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import io.reactivex.subjects.PublishSubject
@@ -12,7 +13,7 @@ import timber.log.Timber
 class EndlessRecyclerOnScrollListener(
         private val gridLayoutManager: GridLayoutManager,
         private val loadMoreSubject: PublishSubject<Int>
-): RecyclerView.OnScrollListener() {
+) : RecyclerView.OnScrollListener() {
 
     private var loading = false
     private val visibleThreshold = 5 * gridLayoutManager.spanCount
@@ -55,9 +56,35 @@ class EndlessRecyclerOnScrollListener(
         totalItemCount = 0
         currentPage = 0
         isEndReached = false
-   }
+    }
 
-    fun triggerOnScrolled(rv: RecyclerView, dx: Int, dy: Int) {
-        onScrolled(rv, dx, dy)
+    fun saveState(outState: Bundle) {
+        outState.putBoolean("loading", loading)
+        outState.putInt("lastVisibleItem", lastVisibleItem)
+        outState.putInt("totalItemCount", totalItemCount)
+        outState.putInt("currentPage", currentPage)
+        outState.putBoolean("isEndReached", isEndReached)
+    }
+
+    fun restoreState(savedInstanceState: Bundle) {
+        loading = savedInstanceState.getBoolean("loading", false)
+        lastVisibleItem = savedInstanceState.getInt("lastVisibleItem", 0)
+        totalItemCount = savedInstanceState.getInt("totalItemCount", 0)
+        currentPage = savedInstanceState.getInt("currentPage", 0)
+        isEndReached = savedInstanceState.getBoolean("isEndReached", false)
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

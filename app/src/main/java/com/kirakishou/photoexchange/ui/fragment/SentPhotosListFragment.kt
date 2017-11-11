@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.ui.fragment
 
 import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
+import android.os.Parcelable
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import butterknife.BindView
@@ -37,10 +38,13 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
 
     private lateinit var adapter: TakenPhotosAdapter
     private lateinit var endlessScrollListener: EndlessRecyclerOnScrollListener
+    private lateinit var layoutManager: GridLayoutManager
 
+    private val DELAY_BEFORE_PROGRESS_FOOTER_ADDED = 500L
     private val PHOTO_ADAPTER_VIEW_WIDTH = 288
     private val PHOTOS_PER_PAGE = 5
     private var columnsCount: Int = 1
+
     private val retryButtonSubject = PublishSubject.create<UploadedPhoto>()
     private val loadMoreSubject = PublishSubject.create<Int>()
 
@@ -50,9 +54,23 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
 
     override fun getContentView(): Int = R.layout.fragment_sent_photos_list
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+
+        endlessScrollListener.saveState(outState)
+
+        val layoutManagerState = layoutManager.onSaveInstanceState()
+        outState.putParcelable("layoutManagerState", layoutManagerState)
+    }
+
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRx()
         initRecyclerView()
+
+        savedInstanceState?.let { savedState ->
+            endlessScrollListener.restoreState(savedState)
+            layoutManager.onRestoreInstanceState(savedState.getParcelable<Parcelable>("layoutManagerState"))
+        }
 
         val isUploadingPhoto = arguments.getBoolean("is_uploading_photo", false)
         if (!isUploadingPhoto) {
@@ -71,7 +89,7 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
         //loadMoreSubject won't get any observables at all, so we have to add slight delay
         //I have no idea why is this happening
 
-        adapter.runOnAdapterHandlerWithDelay(500) {
+        adapter.runOnAdapterHandlerWithDelay(DELAY_BEFORE_PROGRESS_FOOTER_ADDED) {
             adapter.addProgressFooter()
         }
     }
@@ -84,7 +102,7 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
         adapter = TakenPhotosAdapter(activity, retryButtonSubject, noPhotosUploadedMessage)
         adapter.init()
 
-        val layoutManager = GridLayoutManager(activity, columnsCount)
+        layoutManager = GridLayoutManager(activity, columnsCount)
         layoutManager.spanSizeLookup = TakenPhotosAdapterSpanSizeLookup(adapter, columnsCount)
 
         endlessScrollListener = EndlessRecyclerOnScrollListener(layoutManager, loadMoreSubject)
@@ -120,7 +138,8 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
     }
 
     private fun fetchPage(page: Int) {
-        getViewModel().inputs.fetchOnePage(page, PHOTOS_PER_PAGE * columnsCount)
+        val count = PHOTOS_PER_PAGE * columnsCount
+        getViewModel().inputs.fetchOnePage(page * count, count)
     }
 
     private fun onPageReceived(uploadedPhotosList: List<UploadedPhoto>) {
