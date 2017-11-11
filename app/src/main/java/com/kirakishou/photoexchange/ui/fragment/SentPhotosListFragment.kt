@@ -19,14 +19,12 @@ import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
 import com.kirakishou.photoexchange.ui.adapter.TakenPhotosAdapter
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
 import com.kirakishou.photoexchange.ui.widget.TakenPhotosAdapterSpanSizeLookup
-import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
@@ -81,7 +79,9 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
     private fun initRecyclerView() {
         columnsCount = AndroidUtils.calculateNoOfColumns(activity, PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = TakenPhotosAdapter(activity, retryButtonSubject)
+        val noPhotosUploadedMessage = context.getString(R.string.no_photos_uploaded)
+
+        adapter = TakenPhotosAdapter(activity, retryButtonSubject, noPhotosUploadedMessage)
         adapter.init()
 
         val layoutManager = GridLayoutManager(activity, columnsCount)
@@ -134,6 +134,10 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
             if (uploadedPhotosList.isNotEmpty()) {
                 for (photo in uploadedPhotosList) {
                     adapter.add(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
+                }
+            } else {
+                if (adapter.itemCount == 0) {
+                    adapter.addMessageFooter()
                 }
             }
         }

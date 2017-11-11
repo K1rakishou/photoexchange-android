@@ -6,6 +6,7 @@ import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.widget.ImageView
 import android.widget.ProgressBar
+import android.widget.TextView
 import butterknife.BindView
 import butterknife.ButterKnife
 import com.bumptech.glide.Glide
@@ -24,7 +25,8 @@ import timber.log.Timber
  */
 class TakenPhotosAdapter(
         private val context: Context,
-        private val retryButtonSubject: PublishSubject<UploadedPhoto>
+        private val retryButtonSubject: PublishSubject<UploadedPhoto>,
+        private val noPhotosUploadedMessage: String
 ) : BaseAdapter<UploadedPhoto>(context) {
 
     fun addFirst(item: AdapterItem<UploadedPhoto>) {
@@ -52,11 +54,32 @@ class TakenPhotosAdapter(
         }
     }
 
+    fun addMessageFooter() {
+        checkInited()
+
+        if (items.isEmpty() || items.last().getType() != AdapterItemType.VIEW_MESSAGE.ordinal) {
+            items.add(AdapterItem(AdapterItemType.VIEW_MESSAGE))
+            notifyItemInserted(items.lastIndex)
+        }
+    }
+
+    fun removeMessageFooter() {
+        checkInited()
+
+        if (items.isNotEmpty() && items.last().getType() == AdapterItemType.VIEW_MESSAGE.ordinal) {
+            val index = items.lastIndex
+
+            items.removeAt(index)
+            notifyItemRemoved(index)
+        }
+    }
+
     override fun getBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
         return mutableListOf(
                 BaseAdapterInfo(AdapterItemType.VIEW_ITEM, R.layout.adapter_item_sent_photo, SentPhotoViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_PROGRESSBAR, R.layout.adapter_item_progress, ProgressBarViewHolder::class.java),
-                BaseAdapterInfo(AdapterItemType.VIEW_FAILED_TO_UPLOAD, R.layout.adapter_item_upload_photo_error, PhotoUploadErrorViewHolder::class.java)
+                BaseAdapterInfo(AdapterItemType.VIEW_FAILED_TO_UPLOAD, R.layout.adapter_item_upload_photo_error, PhotoUploadErrorViewHolder::class.java),
+                BaseAdapterInfo(AdapterItemType.VIEW_MESSAGE, R.layout.adapter_item_message, MessageViewHolder::class.java)
         )
     }
 
@@ -86,6 +109,10 @@ class TakenPhotosAdapter(
 
                     retryButtonSubject.onNext(item)
                 }
+            }
+
+            is MessageViewHolder -> {
+                holder.messageTv.text = noPhotosUploadedMessage
             }
         }
     }
@@ -119,4 +146,33 @@ class TakenPhotosAdapter(
             ButterKnife.bind(this, itemView)
         }
     }
+
+    class MessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        @BindView(R.id.message)
+        lateinit var messageTv: TextView
+
+        init {
+            ButterKnife.bind(this, itemView)
+        }
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
