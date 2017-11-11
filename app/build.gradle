@@ -38,13 +38,13 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
 
     compile "android.arch.lifecycle:runtime:1.0.3"
-    compile "android.arch.lifecycle:extensions:1.0.0-rc1"
-    compile "android.arch.lifecycle:reactivestreams:1.0.0-rc1"
-    kapt "android.arch.lifecycle:compiler:1.0.0-rc1"
+    compile "android.arch.lifecycle:extensions:1.0.0"
+    compile "android.arch.lifecycle:reactivestreams:1.0.0"
+    kapt "android.arch.lifecycle:compiler:1.0.0"
 
-    compile "android.arch.persistence.room:runtime:1.0.0-rc1"
-    compile "android.arch.persistence.room:rxjava2:1.0.0-rc1"
-    kapt "android.arch.persistence.room:compiler:1.0.0-rc1"
+    compile "android.arch.persistence.room:runtime:1.0.0"
+    compile "android.arch.persistence.room:rxjava2:1.0.0"
+    kapt "android.arch.persistence.room:compiler:1.0.0"
 
     compile 'com.android.support:multidex:1.0.2'
     compile 'com.android.support:appcompat-v7:26.1.0'
@@ -67,8 +67,8 @@ dependencies {
     compile 'org.greenrobot:eventbus:3.1.0-RC'
     compile 'com.github.bumptech.glide:glide:4.3.0'
 
-    debugCompile 'com.squareup.leakcanary:leakcanary-android:1.5.1'
-    releaseCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.1'
+    debugCompile 'com.squareup.leakcanary:leakcanary-android:1.5.4'
+    releaseCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.5.4'
 
     kapt 'com.jakewharton:butterknife-compiler:8.8.1'
     compile 'com.jakewharton:butterknife:8.8.1'

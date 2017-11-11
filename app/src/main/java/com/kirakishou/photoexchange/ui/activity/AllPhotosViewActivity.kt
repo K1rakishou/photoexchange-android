@@ -5,7 +5,9 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.TabLayout
 import android.support.v4.view.ViewPager
+import android.widget.ImageView
 import butterknife.BindView
+import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
@@ -17,6 +19,8 @@ import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEventStatus
 import com.kirakishou.photoexchange.mvvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mvvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.rxkotlin.plusAssign
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -25,6 +29,9 @@ import javax.inject.Inject
 
 class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         TabLayout.OnTabSelectedListener, ViewPager.OnPageChangeListener {
+
+    @BindView(R.id.iv_close_button)
+    lateinit var ivCloseActivityButton: ImageView
 
     @BindView(R.id.sliding_tab_layout)
     lateinit var tabLayout: TabLayout
@@ -49,6 +56,14 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         eventBus.register(this)
         initTabs(intent)
+        initRx()
+    }
+
+    private fun initRx() {
+        compositeDisposable += RxView.clicks(ivCloseActivityButton)
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ finish() })
     }
 
     override fun onActivityDestroy() {
@@ -56,6 +71,8 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
         tabLayout.clearOnTabSelectedListeners()
         viewPager.clearOnPageChangeListeners()
+
+        PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
     }
 
     private fun initTabs(intent: Intent) {

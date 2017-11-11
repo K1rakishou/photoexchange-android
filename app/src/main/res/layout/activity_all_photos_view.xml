@@ -7,51 +7,45 @@
     android:orientation="vertical"
     tools:context="com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity">
 
-    <android.support.v7.widget.Toolbar
+    <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="68dp"
         android:background="@color/colorPrimaryDark">
 
-        <android.support.constraint.ConstraintLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+        <ImageView
+            android:id="@+id/iv_close_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:background="?selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_close"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-            <ImageView
-                android:id="@+id/iv_close_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginTop="8dp"
-                android:src="@drawable/ic_close"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+        <TextView
+            android:id="@+id/tv_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:text="Photos"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            app:layout_constraintBottom_toBottomOf="@+id/iv_close_button"
+            app:layout_constraintStart_toEndOf="@+id/iv_close_button"
+            app:layout_constraintTop_toTopOf="@+id/iv_close_button" />
 
-            <TextView
-                android:id="@+id/tv_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:text="Photos"
-                android:textColor="@color/white"
-                android:textSize="24sp"
-                app:layout_constraintBottom_toBottomOf="@+id/iv_close_button"
-                app:layout_constraintStart_toEndOf="@+id/iv_close_button"
-                app:layout_constraintTop_toTopOf="@+id/iv_close_button" />
+        <android.support.design.widget.TabLayout
+            android:id="@+id/sliding_tab_layout"
+            android:layout_width="192dp"
+            android:layout_height="32dp"
+            android:background="@color/colorPrimaryDark"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/iv_close_button"
+            app:tabSelectedTextColor="@color/white"
+            app:tabTextColor="@color/gray" />
 
-            <android.support.design.widget.TabLayout
-                android:id="@+id/sliding_tab_layout"
-                android:layout_width="192dp"
-                android:layout_height="32dp"
-                android:layout_marginStart="16dp"
-                android:background="@color/colorPrimaryDark"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toEndOf="@+id/iv_close_button"
-                app:tabSelectedTextColor="@color/white"
-                app:tabTextColor="@color/gray" />
-
-        </android.support.constraint.ConstraintLayout>
-
-    </android.support.v7.widget.Toolbar>
+    </android.support.constraint.ConstraintLayout>
 
     <android.support.v4.view.ViewPager
         android:id="@+id/view_pager"

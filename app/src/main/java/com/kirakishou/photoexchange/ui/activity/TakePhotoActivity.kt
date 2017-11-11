@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.support.v7.widget.CardView
 import android.view.View
+import android.widget.ImageView
 import butterknife.BindView
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
@@ -37,6 +38,9 @@ import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
+    @BindView(R.id.iv_show_all_photos)
+    lateinit var ivShowAllPhotos: ImageView
+
     @BindView(R.id.notification)
     lateinit var notification: CardView
 
@@ -58,8 +62,9 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     private val photoAvailabilitySubject = PublishSubject.create<String>()
     private val locationSubject = PublishSubject.create<LonLat>()
 
-    override fun initViewModel() =
-            ViewModelProviders.of(this, viewModelFactory).get(TakePhotoActivityViewModel::class.java)
+    override fun initViewModel(): TakePhotoActivityViewModel {
+        return ViewModelProviders.of(this, viewModelFactory).get(TakePhotoActivityViewModel::class.java)
+    }
 
     override fun getContentView(): Int = R.layout.activity_take_photo
 
@@ -77,6 +82,8 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         SmartLocation.with(this)
                 .location()
                 .stop()
+
+        PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
     }
 
     override fun onStart() {
@@ -107,11 +114,17 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     private fun initRx() {
         compositeDisposable += RxView.clicks(takePhotoButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
                     showNotification()
                     getLocation()
                     takePhoto()
                 })
+
+        compositeDisposable += RxView.clicks(ivShowAllPhotos)
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ switchToAllPhotosViewActivity() })
 
         compositeDisposable += Observables.zip(locationSubject, photoAvailabilitySubject)
                 .subscribeOn(Schedulers.io())
@@ -125,6 +138,11 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                     hideNotification()
                     switchToViewTakenPhotoActivity(location, photoFilePath, userId)
                 })
+    }
+
+    private fun switchToAllPhotosViewActivity() {
+        val intent = Intent(this, AllPhotosViewActivity::class.java)
+        startActivity(intent)
     }
 
     private fun switchToViewTakenPhotoActivity(location: LonLat, photoFilePath: String, userId: String) {

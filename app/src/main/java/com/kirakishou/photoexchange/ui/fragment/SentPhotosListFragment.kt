@@ -3,7 +3,6 @@ package com.kirakishou.photoexchange.ui.fragment
 
 import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
-import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import butterknife.BindView
@@ -20,20 +19,20 @@ import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
 import com.kirakishou.photoexchange.ui.adapter.TakenPhotosAdapter
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
 import com.kirakishou.photoexchange.ui.widget.TakenPhotosAdapterSpanSizeLookup
+import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
 
     @BindView(R.id.sent_photos_list)
     lateinit var sentPhotosRv: RecyclerView
-
-    @BindView(R.id.swipe_refresh_layout)
-    lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
     @Inject
     lateinit var viewModelFactory: AllPhotosViewActivityViewModelFactory
@@ -56,28 +55,26 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRx()
         initRecyclerView()
-        initSwipeRefreshLayout()
 
         val isUploadingPhoto = arguments.getBoolean("is_uploading_photo", false)
-        if (isUploadingPhoto) {
-            showRefreshIndicator()
+        if (!isUploadingPhoto) {
+            recyclerStartLoadingItems()
         }
     }
 
     override fun onFragmentViewDestroy() {
+        PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
     }
 
     private fun recyclerStartLoadingItems() {
-        adapter.addProgressFooter()
-    }
+        //FIXME:
+        //HACK
+        //For some mysterious reason if we do not add a delay before calling addProgressFooter
+        //loadMoreSubject won't get any observables at all, so we have to add slight delay
+        //I have no idea why is this happening
 
-    private fun initSwipeRefreshLayout() {
-        swipeRefreshLayout.setOnRefreshListener {
-            adapter.clear()
-            endlessScrollListener.reset()
-            recyclerStartLoadingItems()
-
-            swipeRefreshLayout.isRefreshing = false
+        adapter.runOnAdapterHandlerWithDelay(500) {
+            adapter.addProgressFooter()
         }
     }
 
@@ -93,6 +90,7 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
         endlessScrollListener = EndlessRecyclerOnScrollListener(layoutManager, loadMoreSubject)
 
         sentPhotosRv.layoutManager = layoutManager
+        sentPhotosRv.clearOnScrollListeners()
         sentPhotosRv.addOnScrollListener(endlessScrollListener)
         sentPhotosRv.adapter = adapter
         sentPhotosRv.setHasFixedSize(true)
@@ -102,14 +100,16 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
         compositeDisposable += loadMoreSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext { Timber.d("page: $it") }
                 .doOnNext { adapter.addProgressFooter() }
                 .doOnNext(this::fetchPage)
                 .observeOn(Schedulers.io())
-                .flatMap { getViewModel().outputs.onPageReceivedObservable() }
+                .zipWith(getViewModel().outputs.onPageReceivedObservable())
+                .map { it.second }
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext { adapter.removeProgressFooter() }
                 .doOnNext {
-                    Timber.e("after adapter.removeProgressFooter()")
+                    Timber.e("items count: ${it.size}")
                 }
                 .subscribe(this::onPageReceived, this::onUnknownError)
 
@@ -131,8 +131,10 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
                 endlessScrollListener.reachedEnd()
             }
 
-            for (photo in uploadedPhotosList) {
-                adapter.add(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
+            if (uploadedPhotosList.isNotEmpty()) {
+                for (photo in uploadedPhotosList) {
+                    adapter.add(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
+                }
             }
         }
     }
@@ -145,7 +147,7 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
         Timber.d("onPhotoUploaded()")
 
         check(isAdded)
-        hideRefreshIndicator()
+        //adapter.removeProgressFooter()
 
         /*adapter.runOnAdapterHandler {
             adapter.addFirst(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
@@ -158,21 +160,13 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
         Timber.d("onFailedToUploadPhoto()")
 
         check(isAdded)
-        hideRefreshIndicator()
+        //adapter.removeProgressFooter()
 
         adapter.runOnAdapterHandler {
             adapter.addFirst(AdapterItem(AdapterItemType.VIEW_FAILED_TO_UPLOAD))
         }
 
         recyclerStartLoadingItems()
-    }
-
-    private fun showRefreshIndicator() {
-        swipeRefreshLayout.isRefreshing = true
-    }
-
-    private fun hideRefreshIndicator() {
-        swipeRefreshLayout.isRefreshing = false
     }
 
     private fun onUnknownError(error: Throwable) {

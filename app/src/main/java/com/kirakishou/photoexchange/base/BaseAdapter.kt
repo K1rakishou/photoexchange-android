@@ -7,6 +7,7 @@ import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvvm.model.AdapterItem
 import com.kirakishou.photoexchange.mvvm.model.AdapterItemType
 
@@ -72,6 +73,10 @@ abstract class BaseAdapter<T>(mContext: Context) : RecyclerView.Adapter<Recycler
 
     fun runOnAdapterHandler(func: () -> Unit) {
         handler.post(func)
+    }
+
+    fun runOnAdapterHandlerWithDelay(delayInMs: Long, func: () -> Unit) {
+        handler.postDelayed({ func() }, delayInMs)
     }
 
     override fun getItemViewType(position: Int) = items[position].getType()

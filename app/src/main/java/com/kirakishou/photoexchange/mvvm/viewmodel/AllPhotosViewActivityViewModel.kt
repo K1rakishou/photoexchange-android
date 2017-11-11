@@ -36,12 +36,11 @@ class AllPhotosViewActivityViewModel(
         compositeDisposable += fetchOnePageSubject
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
-                .flatMap { uploadedPhotosRepository.findOnePage(it) }
+                .flatMap(uploadedPhotosRepository::findOnePage)
                 .doOnNext {
-                    it.forEach { Timber.d(it.toString()) }
                     Timber.d("fetchOnePageSubject doOnNext")
                 }
-                .subscribe(onPageReceivedSubject::onNext, this::handleError)
+                .subscribe({ onPageReceivedSubject.onNext(it) }, this::handleError)
     }
 
     override fun fetchOnePage(page: Int, count: Int) {

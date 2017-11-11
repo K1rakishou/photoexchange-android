@@ -10,6 +10,8 @@ import com.kirakishou.photoexchange.mvvm.model.UploadedPhoto
 import io.reactivex.Flowable
 import io.reactivex.Observable
 import io.reactivex.Single
+import timber.log.Timber
+import java.util.concurrent.TimeUnit
 
 /**
  * Created by kirakishou on 11/8/2017.
@@ -20,6 +22,7 @@ class UploadedPhotosRepository(
         private val uploadedPhotoMapper: UploadedPhotoMapper
 ) {
     private val uploadedPhotosDao: UploadedPhotosDao by lazy { database.uploadedPhotosDao() }
+    private val MAX_DB_WAIT_TIME = 3L
 
     fun saveOne(lon: Double, lat: Double, userId: String, photoFilePath: String, photoName: String): Single<Long> {
         val resultSingle = Single.fromCallable {

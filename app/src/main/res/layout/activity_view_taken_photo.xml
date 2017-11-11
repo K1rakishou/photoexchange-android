@@ -16,7 +16,7 @@
         android:id="@+id/iv_close_activity"
         android:layout_width="32dp"
         android:layout_height="32dp"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:background="?selectableItemBackgroundBorderless"
         android:src="@drawable/ic_close"
