@@ -58,7 +58,7 @@ class EndlessRecyclerOnScrollListener(
         isEndReached = false
     }
 
-    fun saveState(outState: Bundle) {
+    fun onSaveInstanceState(outState: Bundle) {
         outState.putBoolean("loading", loading)
         outState.putInt("lastVisibleItem", lastVisibleItem)
         outState.putInt("totalItemCount", totalItemCount)
@@ -66,7 +66,7 @@ class EndlessRecyclerOnScrollListener(
         outState.putBoolean("isEndReached", isEndReached)
     }
 
-    fun restoreState(savedInstanceState: Bundle) {
+    fun onRestoreInstanceState(savedInstanceState: Bundle) {
         loading = savedInstanceState.getBoolean("loading", false)
         lastVisibleItem = savedInstanceState.getInt("lastVisibleItem", 0)
         totalItemCount = savedInstanceState.getInt("totalItemCount", 0)

@@ -57,7 +57,7 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
-        endlessScrollListener.saveState(outState)
+        endlessScrollListener.onSaveInstanceState(outState)
 
         val layoutManagerState = layoutManager.onSaveInstanceState()
         outState.putParcelable("layoutManagerState", layoutManagerState)
@@ -68,12 +68,12 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
         initRecyclerView()
 
         savedInstanceState?.let { savedState ->
-            endlessScrollListener.restoreState(savedState)
+            endlessScrollListener.onRestoreInstanceState(savedState)
             layoutManager.onRestoreInstanceState(savedState.getParcelable<Parcelable>("layoutManagerState"))
         }
 
         val isUploadingPhoto = arguments.getBoolean("is_uploading_photo", false)
-        if (!isUploadingPhoto) {
+        if (!isUploadingPhoto || savedInstanceState == null) {
             recyclerStartLoadingItems()
         }
     }
@@ -86,8 +86,9 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
         //FIXME:
         //HACK
         //For some mysterious reason if we do not add a delay before calling addProgressFooter
-        //loadMoreSubject won't get any observables at all, so we have to add slight delay
-        //I have no idea why is this happening
+        //loadMoreSubject won't get any observables from EndlessRecyclerOnScrollListener at all, so we have to add a slight delay
+        //The subscription to loadMoreSubject happens before scroll listener generates any observables,
+        //so I have no idea why loadMoreSubject doesn't receive any observables
 
         adapter.runOnAdapterHandlerWithDelay(DELAY_BEFORE_PROGRESS_FOOTER_ADDED) {
             adapter.addProgressFooter()
@@ -97,9 +98,9 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
     private fun initRecyclerView() {
         columnsCount = AndroidUtils.calculateNoOfColumns(activity, PHOTO_ADAPTER_VIEW_WIDTH)
 
-        val noPhotosUploadedMessage = context.getString(R.string.no_photos_uploaded)
+        val noPhotosUploadedYetMessage = context.getString(R.string.no_photos_uploaded)
 
-        adapter = TakenPhotosAdapter(activity, retryButtonSubject, noPhotosUploadedMessage)
+        adapter = TakenPhotosAdapter(activity, retryButtonSubject, noPhotosUploadedYetMessage)
         adapter.init()
 
         layoutManager = GridLayoutManager(activity, columnsCount)

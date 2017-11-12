@@ -21,8 +21,6 @@ import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRep
 import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
 import com.kirakishou.photoexchange.mvvm.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvvm.model.event.PhotoUploadedEvent
-import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEventStatus
-import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
@@ -83,6 +81,35 @@ class UploadPhotoService : Service() {
                 .subscribe(this::onUnknownError)
     }
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent != null) {
+            handleCommand(intent)
+            startAsForeground()
+        }
+
+        return START_NOT_STICKY
+    }
+
+    private fun handleCommand(intent: Intent) {
+        val commandRaw = intent.getIntExtra("command", -1)
+        check(commandRaw != -1)
+
+        val serviceCommand = ServiceCommand.from(commandRaw)
+        when (serviceCommand) {
+            ServiceCommand.SEND_PHOTO -> {
+                val lon = intent.getDoubleExtra("lon", 0.0)
+                val lat = intent.getDoubleExtra("lat", 0.0)
+                val userId = intent.getStringExtra("user_id")
+                val photoFilePath = intent.getStringExtra("photo_file_path")
+                val location = LonLat(lon, lat)
+
+                presenter.inputs.uploadPhoto(photoFilePath, location, userId)
+            }
+
+            else -> onUnknownError(IllegalArgumentException("Unknown serviceCommand: $serviceCommand"))
+        }
+    }
+
     private fun onSendPhotoResponseObservable(uploadedPhoto: UploadedPhoto) {
         Timber.d("onSendPhotoResponseObservable() photoName: ${uploadedPhoto.photoName}")
 
@@ -116,34 +143,7 @@ class UploadPhotoService : Service() {
         stopForeground(false)
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent != null) {
-            handleCommand(intent)
-            showUploadingNotification()
-        }
-
-        return START_NOT_STICKY
-    }
-
-    private fun handleCommand(intent: Intent) {
-        val commandRaw = intent.getIntExtra("command", -1)
-        check(commandRaw != -1)
-
-        val serviceCommand = ServiceCommand.from(commandRaw)
-        when (serviceCommand) {
-            ServiceCommand.SEND_PHOTO -> {
-                val lon = intent.getDoubleExtra("lon", 0.0)
-                val lat = intent.getDoubleExtra("lat", 0.0)
-                val userId = intent.getStringExtra("user_id")
-                val photoFilePath = intent.getStringExtra("photo_file_path")
-                val location = LonLat(lon, lat)
-
-                presenter.inputs.uploadPhoto(photoFilePath, location, userId)
-            }
-        }
-    }
-
-    private fun showUploadingNotification() {
+    private fun startAsForeground() {
         val notification = NotificationCompat.Builder(this)
                 .setContentTitle("Please wait")
                 .setContentText("Uploading photo...")

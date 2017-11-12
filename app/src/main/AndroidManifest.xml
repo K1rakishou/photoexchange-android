@@ -27,7 +27,12 @@
             android:exported="false" />
 
         <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity" />
-        <activity android:name="com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity"></activity>
+        <activity android:name="com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity" />
+
+        <service
+            android:name="com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService"
+            android:enabled="true"
+            android:exported="false"></service>
     </application>
 
 </manifest>

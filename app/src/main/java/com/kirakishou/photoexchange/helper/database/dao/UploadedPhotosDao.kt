@@ -26,12 +26,12 @@ interface UploadedPhotosDao {
     fun findOne(photoId: Long): Flowable<UploadedPhotoEntity>
 
     @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
-            "ORDER BY created_on ASC " +
+            "ORDER BY created_on DESC " +
             "LIMIT :arg1 OFFSET :arg0")
     fun findPage(page: Int, count: Int): Single<List<UploadedPhotoEntity>>
 
     @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
-            "ORDER BY created_on ASC ")
+            "ORDER BY created_on DESC ")
     fun findAll(): Single<List<UploadedPhotoEntity>>
 
     @Query("DELETE FROM ${UploadedPhotoEntity.TABLE_NAME} WHERE id = :arg0")

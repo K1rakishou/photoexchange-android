@@ -5,7 +5,8 @@ package com.kirakishou.photoexchange.mvvm.model
  */
 
 enum class ServiceCommand(val value: Int) {
-    SEND_PHOTO(0);
+    SEND_PHOTO(0),
+    FIND_PHOTO(1);
 
     companion object {
         fun from(value: Int): ServiceCommand {

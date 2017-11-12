@@ -36,12 +36,13 @@ class UploadPhotoServicePresenter(
         private val uploadedPhotosRepo: UploadedPhotosRepository
 ) : UploadPhotoServiceInputs, UploadPhotoServiceOutputs, UploadPhotoServiceErrors {
 
-    private val compositeDisposable = CompositeDisposable()
+
 
     val inputs: UploadPhotoServiceInputs = this
     val outputs: UploadPhotoServiceOutputs = this
     val errors: UploadPhotoServiceErrors = this
 
+    private val compositeDisposable = CompositeDisposable()
     private val MAX_RETRY_TIMES = 3L
 
     private val sendPhotoResponseSubject = PublishSubject.create<UploadedPhoto>()

@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.helper.database.entity
 
 import android.arch.persistence.room.ColumnInfo
 import android.arch.persistence.room.Entity
+import android.arch.persistence.room.Index
 import android.arch.persistence.room.PrimaryKey
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 
@@ -30,7 +31,7 @@ class UploadedPhotoEntity(
         @ColumnInfo(name = "photo_file_path")
         var photoFilePath: String,
 
-        @ColumnInfo(name = "created_on")
+        @ColumnInfo(name = "created_on", index = true)
         var createdOn: Long
 ) {
 
