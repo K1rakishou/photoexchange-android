@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.helper.api
 
 import com.kirakishou.photoexchange.mvvm.model.dto.PhotoToBeUploaded
+import com.kirakishou.photoexchange.mvvm.model.net.response.PhotoAnswerResponse
 import com.kirakishou.photoexchange.mvvm.model.net.response.UploadPhotoResponse
 import io.reactivex.Single
 
@@ -9,4 +10,5 @@ import io.reactivex.Single
  */
 interface ApiClient {
     fun sendPhoto(info: PhotoToBeUploaded): Single<UploadPhotoResponse>
+    fun findPhotoAnswer(userId: String): Single<PhotoAnswerResponse>
 }

@@ -10,6 +10,7 @@ import com.kirakishou.photoexchange.mvvm.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.error.MainActivityViewModelErrors
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.input.MainActivityViewModelInputs
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.output.MainActivityViewModelOutputs
+import io.reactivex.Observable
 import io.reactivex.rxkotlin.plusAssign
 import timber.log.Timber
 import java.io.File

@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.kirakishou.photoexchange.helper.api.request.SendPhotoRequest
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvvm.model.dto.PhotoToBeUploaded
+import com.kirakishou.photoexchange.mvvm.model.net.response.PhotoAnswerResponse
 import com.kirakishou.photoexchange.mvvm.model.net.response.UploadPhotoResponse
 import io.reactivex.Single
 import javax.inject.Inject
@@ -21,6 +22,10 @@ class ApiClientImpl
     override fun sendPhoto(info: PhotoToBeUploaded): Single<UploadPhotoResponse> {
         return SendPhotoRequest(info, apiService, gson)
                 .build()
+    }
+
+    override fun findPhotoAnswer(userId: String): Single<PhotoAnswerResponse> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }
 

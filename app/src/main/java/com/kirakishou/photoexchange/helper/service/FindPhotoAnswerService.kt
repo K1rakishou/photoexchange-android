@@ -8,12 +8,24 @@ import android.content.Context
 import android.content.Intent
 import android.os.PersistableBundle
 import android.support.v4.app.NotificationCompat
+import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvvm.model.ServiceCommand
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import timber.log.Timber
+import javax.inject.Inject
 
 class FindPhotoAnswerService : JobService() {
+
+    @Inject
+    lateinit var apiClient: ApiClient
+
+    @Inject
+    lateinit var schedulers: SchedulerProvider
+
     private lateinit var presenter: FindPhotoAnswerServicePresenter
 
     private val compositeDisposable = CompositeDisposable()
@@ -22,6 +34,9 @@ class FindPhotoAnswerService : JobService() {
     override fun onCreate() {
         super.onCreate()
         Timber.e("FindPhotoAnswerService start")
+
+        resolveDaggerDependency()
+        presenter = FindPhotoAnswerServicePresenter(apiClient, schedulers)
     }
 
     override fun onDestroy() {
@@ -32,8 +47,20 @@ class FindPhotoAnswerService : JobService() {
         super.onDestroy()
     }
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        return START_NOT_STICKY
+    }
+
     override fun onStartJob(params: JobParameters): Boolean {
-        handleCommand(params.extras)
+        initRx(params)
+
+        try {
+            handleCommand(params.extras)
+        } catch (error: Throwable) {
+            onUnknownError(params, false, error)
+            return false
+        }
+
         return true
     }
 
@@ -44,13 +71,11 @@ class FindPhotoAnswerService : JobService() {
         return true
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        /*if (intent != null) {
-            handleCommand(intent)
-            startAsForeground()
-        }*/
-
-        return START_NOT_STICKY
+    private fun initRx(params: JobParameters) {
+        compositeDisposable += presenter.errors.onUnknownErrorObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ onUnknownError(params, true, it) })
     }
 
     private fun handleCommand(extras: PersistableBundle) {
@@ -66,21 +91,18 @@ class FindPhotoAnswerService : JobService() {
                 presenter.inputs.findPhotoAnswer(userId)
             }
 
-            else -> onUnknownError(IllegalArgumentException("Unknown serviceCommand: $serviceCommand"))
+            else -> throw IllegalArgumentException("Unknown serviceCommand: $serviceCommand")
         }
     }
 
-    private fun onUnknownError(error: Throwable) {
-        Timber.e("Unknown error: $error")
+    private fun onUnknownError(params: JobParameters, reschedule: Boolean, error: Throwable) {
+        Timber.e(error)
 
-        stopService()
+        finish(params, reschedule)
     }
 
-    private fun stopService() {
-        Timber.d("Stopping service")
-
-        stopForeground(false)
-        stopSelf()
+    private fun finish(params: JobParameters, reschedule: Boolean) {
+        jobFinished(params, reschedule)
     }
 
     private fun startAsForeground() {
@@ -123,5 +145,9 @@ class FindPhotoAnswerService : JobService() {
                 0,
                 notificationIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT)
+    }
+
+    private fun resolveDaggerDependency() {
+
     }
 }
