@@ -1,6 +1,8 @@
 package com.kirakishou.photoexchange.ui.activity
 
+import android.app.job.JobInfo
 import android.arch.lifecycle.ViewModelProviders
+import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
@@ -8,6 +10,7 @@ import android.support.v7.widget.CardView
 import android.view.View
 import android.widget.ImageView
 import butterknife.BindView
+import com.evernote.android.job.JobRequest
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
@@ -15,6 +18,7 @@ import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerTakePhotoActivityComponent
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
+import com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService
 import com.kirakishou.photoexchange.helper.util.Utils
 import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
 import com.kirakishou.photoexchange.mvvm.model.LonLat
@@ -61,6 +65,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     private val userInfoPreference by lazy { appSharedPreference.prepare<UserInfoPreference>() }
     private val photoAvailabilitySubject = PublishSubject.create<String>()
     private val locationSubject = PublishSubject.create<LonLat>()
+    private var jobId = -1
 
     override fun initViewModel(): TakePhotoActivityViewModel {
         return ViewModelProviders.of(this, viewModelFactory).get(TakePhotoActivityViewModel::class.java)
@@ -74,6 +79,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         initUserInfo()
         initRx()
         initCamera()
+        startFindPhotoAnswerService()
 
         getViewModel().inputs.cleanDb()
     }
@@ -99,6 +105,21 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     override fun onPause() {
         super.onPause()
         userInfoPreference.save()
+    }
+
+    private fun startFindPhotoAnswerService() {
+        jobId = JobRequest.Builder(FindPhotoAnswerService.TAG)
+                .setExecutionWindow(0, 1_000)
+                .setBackoffCriteria(5_000, JobRequest.BackoffPolicy.EXPONENTIAL)
+                .setRequiresCharging(false)
+                .setRequiresDeviceIdle(false)
+                .setRequiredNetworkType(JobRequest.NetworkType.CONNECTED)
+                .setRequirementsEnforced(true)
+                .setUpdateCurrent(true)
+                .build()
+                .schedule()
+
+        Timber.d("Created a job with id $jobId")
     }
 
     private fun initCamera() {

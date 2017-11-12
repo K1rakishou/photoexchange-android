@@ -15,7 +15,7 @@ import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
 import android.app.PendingIntent
 import android.content.Context
 import android.support.v4.app.NotificationCompat
-import com.kirakishou.photoexchange.di.component.DaggerServiceComponent
+import com.kirakishou.photoexchange.di.component.DaggerUploadPhotoServiceComponent
 import com.kirakishou.photoexchange.di.module.*
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
@@ -203,9 +203,9 @@ class UploadPhotoService : Service() {
     override fun onBind(intent: Intent): IBinder? = null
 
     private fun resolveDaggerDependency() {
-        DaggerServiceComponent
+        DaggerUploadPhotoServiceComponent
                 .builder()
-                .serviceModule(ServiceModule(this))
+                .uploadPhotoServiceModule(UploadPhotoServiceModule(this))
                 .networkModule(NetworkModule(PhotoExchangeApplication.baseUrl))
                 .gsonModule(GsonModule())
                 .apiClientModule(ApiClientModule())

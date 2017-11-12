@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.helper.api
 
 import com.google.gson.Gson
+import com.kirakishou.photoexchange.helper.api.request.FindPhotoAnswerRequest
 import com.kirakishou.photoexchange.helper.api.request.SendPhotoRequest
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvvm.model.dto.PhotoToBeUploaded
@@ -15,17 +16,20 @@ import javax.inject.Inject
  */
 
 class ApiClientImpl
-@Inject constructor(protected val apiService: ApiService,
-                    protected val gson: Gson,
-                    protected val schedulers: SchedulerProvider) : ApiClient {
+@Inject constructor(
+        protected val apiService: ApiService,
+        protected val gson: Gson,
+        protected val schedulers: SchedulerProvider
+) : ApiClient {
 
     override fun sendPhoto(info: PhotoToBeUploaded): Single<UploadPhotoResponse> {
-        return SendPhotoRequest(info, apiService, gson)
+        return SendPhotoRequest(info, apiService, schedulers, gson)
                 .build()
     }
 
     override fun findPhotoAnswer(userId: String): Single<PhotoAnswerResponse> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return FindPhotoAnswerRequest(userId, apiService, schedulers, gson)
+                .build()
     }
 }
 

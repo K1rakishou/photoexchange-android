@@ -17,7 +17,7 @@ import javax.inject.Singleton
 
 @Singleton
 @Component(modules = arrayOf(
-        ServiceModule::class,
+        UploadPhotoServiceModule::class,
         NetworkModule::class,
         GsonModule::class,
         ApiClientModule::class,
@@ -25,7 +25,7 @@ import javax.inject.Singleton
         EventBusModule::class,
         DatabaseModule::class,
         MapperModule::class))
-interface ServiceComponent {
+interface UploadPhotoServiceComponent {
     fun inject(service: UploadPhotoService)
 
     fun exposeContext(): Context

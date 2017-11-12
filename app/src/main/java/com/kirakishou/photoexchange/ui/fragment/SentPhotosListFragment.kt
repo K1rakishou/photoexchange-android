@@ -54,26 +54,26 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
 
     override fun getContentView(): Int = R.layout.fragment_sent_photos_list
 
-    override fun onSaveInstanceState(outState: Bundle) {
+   /* override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
 
         endlessScrollListener.onSaveInstanceState(outState)
 
         val layoutManagerState = layoutManager.onSaveInstanceState()
         outState.putParcelable("layoutManagerState", layoutManagerState)
-    }
+    }*/
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRx()
         initRecyclerView()
 
-        savedInstanceState?.let { savedState ->
+        /*savedInstanceState?.let { savedState ->
             endlessScrollListener.onRestoreInstanceState(savedState)
             layoutManager.onRestoreInstanceState(savedState.getParcelable<Parcelable>("layoutManagerState"))
-        }
+        }*/
 
         val isUploadingPhoto = arguments.getBoolean("is_uploading_photo", false)
-        if (!isUploadingPhoto || savedInstanceState == null) {
+        if (!isUploadingPhoto /*|| savedInstanceState == null*/) {
             recyclerStartLoadingItems()
         }
     }

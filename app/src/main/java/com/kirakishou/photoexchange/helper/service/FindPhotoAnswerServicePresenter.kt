@@ -5,6 +5,10 @@ import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.service.wires.errors.FindPhotoAnswerServiceErrors
 import com.kirakishou.photoexchange.helper.service.wires.inputs.FindPhotoAnswerServiceInputs
 import com.kirakishou.photoexchange.helper.service.wires.outputs.FindPhotoAnswerServiceOutputs
+import com.kirakishou.photoexchange.mvvm.model.PhotoAnswer
+import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
+import com.kirakishou.photoexchange.mvvm.model.exception.UnknownErrorCodeException
+import com.kirakishou.photoexchange.mvvm.model.net.response.PhotoAnswerResponse
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
@@ -27,8 +31,9 @@ class FindPhotoAnswerServicePresenter(
 
     private val compositeDisposable = CompositeDisposable()
 
-    private val onPhotoAnswerFoundSubject = PublishSubject.create<Unit>()
+    private val onPhotoAnswerFoundSubject = PublishSubject.create<PhotoAnswer>()
     private val findPhotoAnswerSubject = PublishSubject.create<String>()
+    private val badResponseSubject = PublishSubject.create<ServerErrorCode>()
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
 
     init {
@@ -36,11 +41,40 @@ class FindPhotoAnswerServicePresenter(
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .flatMap { userId -> apiClient.findPhotoAnswer(userId).toObservable() }
-                .subscribe()
+                .doOnNext {
+                    //TODO: save PhotoAnswer in the DB
+                }
+                .subscribe(this::handleFindPhotoAnswerResponse, this::handleError)
     }
 
     override fun findPhotoAnswer(userId: String) {
         findPhotoAnswerSubject.onNext(userId)
+    }
+
+    private fun handleFindPhotoAnswerResponse(response: PhotoAnswerResponse) {
+        val errorCode = ServerErrorCode.from(response.serverErrorCode)
+        Timber.d("Received response, serverErrorCode: $errorCode")
+
+        if (errorCode == ServerErrorCode.OK) {
+            //TODO: use mapper instead
+
+            val photoAnswer = PhotoAnswer(response.userId, response.photoName)
+            onPhotoAnswerFoundSubject.onNext(photoAnswer)
+        } else {
+            when (errorCode) {
+                ServerErrorCode.BAD_ERROR_CODE,
+                ServerErrorCode.BAD_REQUEST,
+                ServerErrorCode.DISK_ERROR,
+                ServerErrorCode.REPOSITORY_ERROR,
+                ServerErrorCode.UNKNOWN_ERROR -> {
+                    badResponseSubject.onNext(errorCode)
+                }
+
+                else -> {
+                    unknownErrorSubject.onNext(UnknownErrorCodeException(errorCode))
+                }
+            }
+        }
     }
 
     private fun handleError(error: Throwable) {
@@ -55,5 +89,7 @@ class FindPhotoAnswerServicePresenter(
         Timber.d("FindPhotoAnswerServicePresenter detached")
     }
 
+    override fun onPhotoAnswerFoundObservable(): Observable<PhotoAnswer> = onPhotoAnswerFoundSubject
+    override fun onBadResponseObservable(): Observable<ServerErrorCode> = badResponseSubject
     override fun onUnknownErrorObservable(): Observable<Throwable> = unknownErrorSubject
 }
