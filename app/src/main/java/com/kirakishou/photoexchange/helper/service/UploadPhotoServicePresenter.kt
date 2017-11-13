@@ -6,11 +6,9 @@ import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.service.wires.errors.UploadPhotoServiceErrors
 import com.kirakishou.photoexchange.helper.service.wires.inputs.UploadPhotoServiceInputs
 import com.kirakishou.photoexchange.helper.service.wires.outputs.UploadPhotoServiceOutputs
-import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
-import com.kirakishou.photoexchange.mvvm.model.LonLat
-import com.kirakishou.photoexchange.mvvm.model.UploadedPhoto
-import com.kirakishou.photoexchange.mvvm.model.dto.PhotoNameWithId
+import com.kirakishou.photoexchange.mvvm.model.other.ServerErrorCode
+import com.kirakishou.photoexchange.mvvm.model.other.LonLat
+import com.kirakishou.photoexchange.mvvm.model.other.UploadedPhoto
 import com.kirakishou.photoexchange.mvvm.model.dto.PhotoToBeUploaded
 import com.kirakishou.photoexchange.mvvm.model.exception.ApiException
 import com.kirakishou.photoexchange.mvvm.model.exception.UnknownErrorCodeException
@@ -23,7 +21,6 @@ import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.rxkotlin.zipWith
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
 
 /**
  * Created by kirakishou on 11/4/2017.

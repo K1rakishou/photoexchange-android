@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.mvvm.model.exception
 
-import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
+import com.kirakishou.photoexchange.mvvm.model.other.ServerErrorCode
 
 
 /**

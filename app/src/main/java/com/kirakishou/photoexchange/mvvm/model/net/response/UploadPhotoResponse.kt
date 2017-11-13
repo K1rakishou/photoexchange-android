@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.mvvm.model.net.response
 
 import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
-import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
+import com.kirakishou.photoexchange.mvvm.model.other.ServerErrorCode
 
 
 /**

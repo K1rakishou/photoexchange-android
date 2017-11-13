@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.ui.widget
 
 import android.support.v7.widget.GridLayoutManager
-import com.kirakishou.photoexchange.mvvm.model.AdapterItemType
+import com.kirakishou.photoexchange.mvvm.model.other.AdapterItemType
 import com.kirakishou.photoexchange.ui.adapter.TakenPhotosAdapter
 
 /**

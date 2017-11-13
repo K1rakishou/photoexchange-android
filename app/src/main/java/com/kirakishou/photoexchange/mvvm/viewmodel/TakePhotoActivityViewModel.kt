@@ -4,17 +4,14 @@ import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.mvvm.model.Constants
-import com.kirakishou.photoexchange.mvvm.model.TakenPhoto
-import com.kirakishou.photoexchange.mvvm.model.UploadedPhoto
+import com.kirakishou.photoexchange.mvvm.model.other.Constants
+import com.kirakishou.photoexchange.mvvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.error.MainActivityViewModelErrors
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.input.MainActivityViewModelInputs
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.output.MainActivityViewModelOutputs
-import io.reactivex.Observable
 import io.reactivex.rxkotlin.plusAssign
 import timber.log.Timber
 import java.io.File
-import javax.inject.Inject
 
 /**
  * Created by kirakishou on 11/3/2017.

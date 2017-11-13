@@ -1,16 +1,18 @@
 package com.kirakishou.photoexchange.ui.activity
 
 import android.app.job.JobInfo
+import android.app.job.JobScheduler
 import android.arch.lifecycle.ViewModelProviders
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.PersistableBundle
 import android.support.design.widget.FloatingActionButton
 import android.support.v7.widget.CardView
 import android.view.View
 import android.widget.ImageView
 import butterknife.BindView
-import com.evernote.android.job.JobRequest
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
@@ -20,8 +22,9 @@ import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService
 import com.kirakishou.photoexchange.helper.util.Utils
-import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
-import com.kirakishou.photoexchange.mvvm.model.LonLat
+import com.kirakishou.photoexchange.mvvm.model.other.ServerErrorCode
+import com.kirakishou.photoexchange.mvvm.model.other.LonLat
+import com.kirakishou.photoexchange.mvvm.model.other.ServiceCommand
 import com.kirakishou.photoexchange.mvvm.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.mvvm.viewmodel.factory.TakePhotoActivityViewModelFactory
 import io.fotoapparat.Fotoapparat
@@ -38,7 +41,6 @@ import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
-
 
 class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
@@ -65,7 +67,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     private val userInfoPreference by lazy { appSharedPreference.prepare<UserInfoPreference>() }
     private val photoAvailabilitySubject = PublishSubject.create<String>()
     private val locationSubject = PublishSubject.create<LonLat>()
-    private var jobId = -1
 
     override fun initViewModel(): TakePhotoActivityViewModel {
         return ViewModelProviders.of(this, viewModelFactory).get(TakePhotoActivityViewModel::class.java)
@@ -79,7 +80,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         initUserInfo()
         initRx()
         initCamera()
-        startFindPhotoAnswerService()
+        startFindPhotoAnswerService(userInfoPreference.getUserId())
 
         getViewModel().inputs.cleanDb()
     }
@@ -107,19 +108,10 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         userInfoPreference.save()
     }
 
-    private fun startFindPhotoAnswerService() {
-        jobId = JobRequest.Builder(FindPhotoAnswerService.TAG)
-                .setExecutionWindow(0, 1_000)
-                .setBackoffCriteria(5_000, JobRequest.BackoffPolicy.EXPONENTIAL)
-                .setRequiresCharging(false)
-                .setRequiresDeviceIdle(false)
-                .setRequiredNetworkType(JobRequest.NetworkType.CONNECTED)
-                .setRequirementsEnforced(true)
-                .setUpdateCurrent(true)
-                .build()
-                .schedule()
+    private fun startFindPhotoAnswerService(userId: String) {
 
-        Timber.d("Created a job with id $jobId")
+
+        Timber.d("Job has been scheduled")
     }
 
     private fun initCamera() {

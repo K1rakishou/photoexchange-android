@@ -7,8 +7,8 @@ import android.os.IBinder
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.mvvm.model.LonLat
-import com.kirakishou.photoexchange.mvvm.model.ServiceCommand
+import com.kirakishou.photoexchange.mvvm.model.other.LonLat
+import com.kirakishou.photoexchange.mvvm.model.other.ServiceCommand
 import timber.log.Timber
 import javax.inject.Inject
 import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
@@ -18,8 +18,8 @@ import android.support.v4.app.NotificationCompat
 import com.kirakishou.photoexchange.di.component.DaggerUploadPhotoServiceComponent
 import com.kirakishou.photoexchange.di.module.*
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
-import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
-import com.kirakishou.photoexchange.mvvm.model.UploadedPhoto
+import com.kirakishou.photoexchange.mvvm.model.other.ServerErrorCode
+import com.kirakishou.photoexchange.mvvm.model.other.UploadedPhoto
 import com.kirakishou.photoexchange.mvvm.model.event.PhotoUploadedEvent
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -48,7 +48,7 @@ class UploadPhotoService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        Timber.e("UploadPhotoService start")
+        Timber.d("UploadPhotoService start")
 
         resolveDaggerDependency()
 
@@ -60,7 +60,7 @@ class UploadPhotoService : Service() {
         compositeDisposable.clear()
         presenter.detach()
 
-        Timber.e("UploadPhotoService destroy")
+        Timber.d("UploadPhotoService destroy")
         super.onDestroy()
     }
 

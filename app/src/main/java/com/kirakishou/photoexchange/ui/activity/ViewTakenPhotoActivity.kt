@@ -15,9 +15,9 @@ import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerViewTakenPhotoActivityComponent
 import com.kirakishou.photoexchange.di.module.ViewTakenPhotoActivityModule
 import com.kirakishou.photoexchange.helper.service.UploadPhotoService
-import com.kirakishou.photoexchange.mvvm.model.LonLat
-import com.kirakishou.photoexchange.mvvm.model.ServiceCommand
-import com.kirakishou.photoexchange.mvvm.model.TakenPhoto
+import com.kirakishou.photoexchange.mvvm.model.other.LonLat
+import com.kirakishou.photoexchange.mvvm.model.other.ServiceCommand
+import com.kirakishou.photoexchange.mvvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mvvm.viewmodel.ViewTakenPhotoActivityViewModel
 import com.kirakishou.photoexchange.mvvm.viewmodel.factory.ViewTakenPhotoActivityViewModelFactory
 import io.reactivex.android.schedulers.AndroidSchedulers

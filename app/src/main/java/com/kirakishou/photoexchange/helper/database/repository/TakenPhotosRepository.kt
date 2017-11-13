@@ -3,10 +3,9 @@ package com.kirakishou.photoexchange.helper.database.repository
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.dao.TakenPhotosDao
 import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
-import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
 import com.kirakishou.photoexchange.helper.mapper.TakenPhotoMapper
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.mvvm.model.TakenPhoto
+import com.kirakishou.photoexchange.mvvm.model.other.TakenPhoto
 import io.reactivex.Single
 
 /**

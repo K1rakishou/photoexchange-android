@@ -1,7 +1,6 @@
 package com.kirakishou.photoexchange.helper.service.wires.outputs
 
-import com.kirakishou.photoexchange.mvvm.model.UploadedPhoto
-import com.kirakishou.photoexchange.mvvm.model.dto.PhotoNameWithId
+import com.kirakishou.photoexchange.mvvm.model.other.UploadedPhoto
 import io.reactivex.Observable
 
 /**

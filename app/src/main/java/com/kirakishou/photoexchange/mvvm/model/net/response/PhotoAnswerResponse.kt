@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.mvvm.model.net.response
 
 import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
-import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
+import com.kirakishou.photoexchange.mvvm.model.other.ServerErrorCode
 
 /**
  * Created by kirakishou on 11/12/2017.
@@ -10,12 +10,12 @@ import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
 class PhotoAnswerResponse(
 
         @Expose
-        @SerializedName("user_id")
-        val userId: String,
+        @SerializedName("photo_answer_list")
+        val photoAnswerList: List<PhotoAnswerJsonObject>,
 
         @Expose
-        @SerializedName("photo_name")
-        val photoName: String,
+        @SerializedName("all_found")
+        val allFound: Boolean,
 
         serverErrorCode: ServerErrorCode
 

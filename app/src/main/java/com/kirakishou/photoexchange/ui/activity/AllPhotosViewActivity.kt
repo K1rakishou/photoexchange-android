@@ -13,7 +13,7 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
-import com.kirakishou.photoexchange.mvvm.model.EventType
+import com.kirakishou.photoexchange.mvvm.model.other.EventType
 import com.kirakishou.photoexchange.mvvm.model.event.PhotoUploadedEvent
 import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEventStatus
 import com.kirakishou.photoexchange.mvvm.viewmodel.AllPhotosViewActivityViewModel

@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.helper.rx.operator
 
 import com.google.gson.Gson
-import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
+import com.kirakishou.photoexchange.mvvm.model.other.ServerErrorCode
 import com.kirakishou.photoexchange.mvvm.model.exception.ApiException
 import com.kirakishou.photoexchange.mvvm.model.exception.BadServerResponseException
 import com.kirakishou.photoexchange.mvvm.model.net.response.StatusResponse

@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.helper.mapper
 
 import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
-import com.kirakishou.photoexchange.mvvm.model.UploadedPhoto
+import com.kirakishou.photoexchange.mvvm.model.other.UploadedPhoto
 
 /**
  * Created by kirakishou on 11/8/2017.

@@ -1,7 +1,7 @@
 package com.kirakishou.fixmypc.fixmypcapp.helper.extension
 
 import android.animation.Animator
-import com.kirakishou.photoexchange.mvvm.model.Fickle
+import com.kirakishou.photoexchange.mvvm.model.other.Fickle
 
 /**
  * Created by kirakishou on 7/22/2017.

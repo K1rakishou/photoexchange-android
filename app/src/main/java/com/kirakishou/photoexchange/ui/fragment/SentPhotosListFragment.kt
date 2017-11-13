@@ -3,7 +3,6 @@ package com.kirakishou.photoexchange.ui.fragment
 
 import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
-import android.os.Parcelable
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import butterknife.BindView
@@ -13,7 +12,9 @@ import com.kirakishou.photoexchange.base.BaseFragment
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvvm.model.*
+import com.kirakishou.photoexchange.mvvm.model.other.AdapterItem
+import com.kirakishou.photoexchange.mvvm.model.other.AdapterItemType
+import com.kirakishou.photoexchange.mvvm.model.other.UploadedPhoto
 import com.kirakishou.photoexchange.mvvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mvvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity

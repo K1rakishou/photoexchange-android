@@ -1,6 +1,5 @@
 package com.kirakishou.photoexchange.helper.api.request
 
-import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
 import com.kirakishou.photoexchange.mvvm.model.exception.ApiException
 import com.kirakishou.photoexchange.mvvm.model.net.response.StatusResponse
 import timber.log.Timber

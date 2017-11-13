@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.helper.service.wires.errors
 
-import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
+import com.kirakishou.photoexchange.mvvm.model.other.ServerErrorCode
 import io.reactivex.Observable
 
 /**

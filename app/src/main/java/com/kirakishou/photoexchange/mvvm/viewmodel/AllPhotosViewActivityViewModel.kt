@@ -3,8 +3,8 @@ package com.kirakishou.photoexchange.mvvm.viewmodel
 import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.mvvm.model.Pageable
-import com.kirakishou.photoexchange.mvvm.model.UploadedPhoto
+import com.kirakishou.photoexchange.mvvm.model.other.Pageable
+import com.kirakishou.photoexchange.mvvm.model.other.UploadedPhoto
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.error.AllPhotosViewActivityViewModelErrors
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.input.AllPhotosViewActivityViewModelInputs
 import com.kirakishou.photoexchange.mvvm.viewmodel.wires.output.AllPhotosViewActivityViewModelOutputs
@@ -12,7 +12,6 @@ import io.reactivex.Observable
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
-import javax.inject.Inject
 
 /**
  * Created by kirakishou on 11/7/2017.

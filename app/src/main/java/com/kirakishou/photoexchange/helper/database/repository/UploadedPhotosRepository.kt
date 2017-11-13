@@ -5,13 +5,11 @@ import com.kirakishou.photoexchange.helper.database.dao.UploadedPhotosDao
 import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
 import com.kirakishou.photoexchange.helper.mapper.UploadedPhotoMapper
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.mvvm.model.Pageable
-import com.kirakishou.photoexchange.mvvm.model.UploadedPhoto
+import com.kirakishou.photoexchange.mvvm.model.other.Pageable
+import com.kirakishou.photoexchange.mvvm.model.other.UploadedPhoto
 import io.reactivex.Flowable
 import io.reactivex.Observable
 import io.reactivex.Single
-import timber.log.Timber
-import java.util.concurrent.TimeUnit
 
 /**
  * Created by kirakishou on 11/8/2017.

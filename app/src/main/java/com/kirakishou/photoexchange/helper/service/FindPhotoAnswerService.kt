@@ -2,21 +2,24 @@ package com.kirakishou.photoexchange.helper.service
 
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.app.job.JobInfo
 import android.app.job.JobParameters
+import android.app.job.JobScheduler
 import android.app.job.JobService
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.PersistableBundle
 import android.support.v4.app.NotificationCompat
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.component.DaggerFindPhotoAnswerServiceComponent
-import com.kirakishou.photoexchange.di.component.DaggerUploadPhotoServiceComponent
 import com.kirakishou.photoexchange.di.module.*
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.mvvm.model.PhotoAnswer
-import com.kirakishou.photoexchange.mvvm.model.ServerErrorCode
-import com.kirakishou.photoexchange.mvvm.model.ServiceCommand
+import com.kirakishou.photoexchange.helper.util.TimeUtils
+import com.kirakishou.photoexchange.mvvm.model.other.ServerErrorCode
+import com.kirakishou.photoexchange.mvvm.model.other.ServiceCommand
+import com.kirakishou.photoexchange.mvvm.model.dto.PhotoAnswerReturnValue
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -39,7 +42,7 @@ class FindPhotoAnswerService : JobService() {
 
     override fun onCreate() {
         super.onCreate()
-        Timber.e("FindPhotoAnswerService start")
+        Timber.d("FindPhotoAnswerService start")
 
         resolveDaggerDependency()
         presenter = FindPhotoAnswerServicePresenter(apiClient, schedulers)
@@ -49,21 +52,28 @@ class FindPhotoAnswerService : JobService() {
         compositeDisposable.clear()
         presenter.detach()
 
-        Timber.e("FindPhotoAnswerService destroy")
+        Timber.d("FindPhotoAnswerService destroy")
         super.onDestroy()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Timber.d("FindPhotoAnswerService onStartCommand")
         return START_NOT_STICKY
     }
 
     override fun onStartJob(params: JobParameters): Boolean {
+        Timber.d("FindPhotoAnswerService onStartJob")
+
+        val currentTime = TimeUtils.getTimeFast()
+        val formattedTime = TimeUtils.formatDateAndTime(currentTime)
+        Timber.e("Job started at: $formattedTime")
+
         initRx(params)
 
         try {
             handleCommand(params.extras)
         } catch (error: Throwable) {
-            onUnknownError(params, false, error)
+            onUnknownError(params, error)
             return false
         }
 
@@ -71,6 +81,8 @@ class FindPhotoAnswerService : JobService() {
     }
 
     override fun onStopJob(params: JobParameters): Boolean {
+        Timber.d("FindPhotoAnswerService onStopJob")
+
         compositeDisposable.clear()
         presenter.detach()
 
@@ -81,17 +93,17 @@ class FindPhotoAnswerService : JobService() {
         compositeDisposable += presenter.outputs.onPhotoAnswerFoundObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onPhotoAnswerFound)
+                .subscribe({ onPhotoAnswerFound(params, it) })
 
         compositeDisposable += presenter.errors.onBadResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onBadResponse(params, true, it) })
+                .subscribe({ onBadResponse(params, it) })
 
         compositeDisposable += presenter.errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onUnknownError(params, true, it) })
+                .subscribe({ onUnknownError(params, it) })
     }
 
     private fun handleCommand(extras: PersistableBundle) {
@@ -107,31 +119,38 @@ class FindPhotoAnswerService : JobService() {
                 presenter.inputs.findPhotoAnswer(userId)
             }
 
-            else -> throw IllegalArgumentException("Unknown serviceCommand: $serviceCommand")
+            else -> throw IllegalArgumentException("FindPhotoAnswerService Unknown serviceCommand: $serviceCommand")
         }
     }
 
-    private fun onPhotoAnswerFound(photoAnswer: PhotoAnswer) {
-        Timber.e(photoAnswer.toString())
+    private fun onPhotoAnswerFound(params: JobParameters, returnValue: PhotoAnswerReturnValue) {
+        if (!returnValue.allFound) {
+            Timber.d("FindPhotoAnswerService Reschedule job")
+        }
+
+        Timber.e(returnValue.toString())
+
+        finish(params, true)
     }
 
-    private fun onBadResponse(params: JobParameters, reschedule: Boolean, errorCode: ServerErrorCode) {
+    private fun onBadResponse(params: JobParameters, errorCode: ServerErrorCode) {
         Timber.e("BadResponse: errorCode: $errorCode")
 
         //TODO: should notify activity
 
-        finish(params, reschedule)
+        finish(params, true)
     }
 
-    private fun onUnknownError(params: JobParameters, reschedule: Boolean, error: Throwable) {
+    private fun onUnknownError(params: JobParameters, error: Throwable) {
         Timber.e(error)
 
         //TODO: should notify activity
 
-        finish(params, reschedule)
+        finish(params, false)
     }
 
     private fun finish(params: JobParameters, reschedule: Boolean) {
+        Timber.d("finish, reschedule: $reschedule")
         jobFinished(params, reschedule)
     }
 
@@ -193,6 +212,46 @@ class FindPhotoAnswerService : JobService() {
     }
 
     companion object {
-        val TAG = "FindPhotoAnswerServiceTag"
+        private val JOB_ID = 1
+
+        fun scheduleImmediateJob(userId: String, context: Context) {
+            val extras = PersistableBundle()
+            extras.putInt("command", ServiceCommand.FIND_PHOTO.value)
+            extras.putString("user_id", userId)
+
+            val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, FindPhotoAnswerService::class.java))
+                    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                    .setRequiresDeviceIdle(false)
+                    .setRequiresCharging(false)
+                    .setMinimumLatency(0)
+                    .setOverrideDeadline(0)
+                    .setExtras(extras)
+                    .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_LINEAR)
+                    .build()
+
+            val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
+            jobScheduler.cancel(JOB_ID)
+            jobScheduler.schedule(jobInfo)
+        }
+
+        fun scheduleJobPeriodicJob(userId: String, context: Context) {
+            val extras = PersistableBundle()
+            extras.putInt("command", ServiceCommand.FIND_PHOTO.value)
+            extras.putString("user_id", userId)
+
+            val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, FindPhotoAnswerService::class.java))
+                    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                    .setRequiresDeviceIdle(false)
+                    .setRequiresCharging(false)
+                    .setMinimumLatency(10_000)
+                    .setOverrideDeadline(60_000)
+                    .setExtras(extras)
+                    .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_EXPONENTIAL)
+                    .build()
+
+            val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
+            jobScheduler.cancel(JOB_ID)
+            jobScheduler.schedule(jobInfo)
+        }
     }
 }

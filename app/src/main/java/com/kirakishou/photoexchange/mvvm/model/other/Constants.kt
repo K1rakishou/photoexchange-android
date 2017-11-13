@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.mvvm.model
+package com.kirakishou.photoexchange.mvvm.model.other
 
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
 

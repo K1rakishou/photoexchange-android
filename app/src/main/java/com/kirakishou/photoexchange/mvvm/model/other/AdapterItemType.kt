@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.mvvm.model
+package com.kirakishou.photoexchange.mvvm.model.other
 
 /**
  * Created by kirakishou on 11/7/2017.

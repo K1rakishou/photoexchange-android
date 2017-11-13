@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.mvvm.model
+package com.kirakishou.photoexchange.mvvm.model.other
 
 /**
  * Created by kirakishou on 7/26/2017.
@@ -9,7 +9,8 @@ enum class ServerErrorCode(val value: Int) {
     OK(0),
     BAD_REQUEST(1),
     REPOSITORY_ERROR(2),
-    DISK_ERROR(3);
+    DISK_ERROR(3),
+    NOTHING_FOUND(4);
 
     companion object {
         fun from(value: Int?): ServerErrorCode {
