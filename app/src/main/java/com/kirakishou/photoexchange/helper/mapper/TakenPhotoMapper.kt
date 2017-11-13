@@ -1,8 +1,8 @@
 package com.kirakishou.photoexchange.helper.mapper
 
 import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
-import com.kirakishou.photoexchange.mvvm.model.other.LonLat
-import com.kirakishou.photoexchange.mvvm.model.other.TakenPhoto
+import com.kirakishou.photoexchange.mwvm.model.other.LonLat
+import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 
 /**
  * Created by kirakishou on 11/10/2017.

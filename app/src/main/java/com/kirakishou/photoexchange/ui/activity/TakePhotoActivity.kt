@@ -1,13 +1,8 @@
 package com.kirakishou.photoexchange.ui.activity
 
-import android.app.job.JobInfo
-import android.app.job.JobScheduler
 import android.arch.lifecycle.ViewModelProviders
-import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.os.PersistableBundle
 import android.support.design.widget.FloatingActionButton
 import android.support.v7.widget.CardView
 import android.view.View
@@ -22,11 +17,10 @@ import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService
 import com.kirakishou.photoexchange.helper.util.Utils
-import com.kirakishou.photoexchange.mvvm.model.other.ServerErrorCode
-import com.kirakishou.photoexchange.mvvm.model.other.LonLat
-import com.kirakishou.photoexchange.mvvm.model.other.ServiceCommand
-import com.kirakishou.photoexchange.mvvm.viewmodel.TakePhotoActivityViewModel
-import com.kirakishou.photoexchange.mvvm.viewmodel.factory.TakePhotoActivityViewModelFactory
+import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
+import com.kirakishou.photoexchange.mwvm.model.other.LonLat
+import com.kirakishou.photoexchange.mwvm.viewmodel.TakePhotoActivityViewModel
+import com.kirakishou.photoexchange.mwvm.viewmodel.factory.TakePhotoActivityViewModelFactory
 import io.fotoapparat.Fotoapparat
 import io.fotoapparat.parameter.ScaleType
 import io.fotoapparat.parameter.selector.LensPositionSelectors.back
@@ -109,9 +103,8 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     }
 
     private fun startFindPhotoAnswerService(userId: String) {
-
-
-        Timber.d("Job has been scheduled")
+        FindPhotoAnswerService.scheduleImmediateJob(userId, this)
+        Timber.d("A job has been scheduled")
     }
 
     private fun initCamera() {

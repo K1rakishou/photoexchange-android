@@ -4,10 +4,10 @@ import com.google.gson.Gson
 import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.mvvm.model.dto.PhotoToBeUploaded
-import com.kirakishou.photoexchange.mvvm.model.exception.PhotoDoesNotExistsException
-import com.kirakishou.photoexchange.mvvm.model.net.packet.SendPhotoPacket
-import com.kirakishou.photoexchange.mvvm.model.net.response.UploadPhotoResponse
+import com.kirakishou.photoexchange.mwvm.model.dto.PhotoToBeUploaded
+import com.kirakishou.photoexchange.mwvm.model.exception.PhotoDoesNotExistsException
+import com.kirakishou.photoexchange.mwvm.model.net.packet.SendPhotoPacket
+import com.kirakishou.photoexchange.mwvm.model.net.response.UploadPhotoResponse
 import io.reactivex.Single
 import okhttp3.MediaType
 import okhttp3.MultipartBody

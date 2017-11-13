@@ -17,9 +17,10 @@ import com.kirakishou.photoexchange.di.module.*
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.mvvm.model.other.ServerErrorCode
-import com.kirakishou.photoexchange.mvvm.model.other.ServiceCommand
-import com.kirakishou.photoexchange.mvvm.model.dto.PhotoAnswerReturnValue
+import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
+import com.kirakishou.photoexchange.mwvm.model.other.ServiceCommand
+import com.kirakishou.photoexchange.mwvm.model.dto.PhotoAnswerReturnValue
+import com.kirakishou.photoexchange.mwvm.viewmodel.FindPhotoAnswerServiceViewModel
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -35,7 +36,7 @@ class FindPhotoAnswerService : JobService() {
     @Inject
     lateinit var schedulers: SchedulerProvider
 
-    private lateinit var presenter: FindPhotoAnswerServicePresenter
+    private lateinit var viewModel: FindPhotoAnswerServiceViewModel
 
     private val compositeDisposable = CompositeDisposable()
     private val NOTIFICATION_ID = 2
@@ -45,14 +46,13 @@ class FindPhotoAnswerService : JobService() {
         Timber.d("FindPhotoAnswerService start")
 
         resolveDaggerDependency()
-        presenter = FindPhotoAnswerServicePresenter(apiClient, schedulers)
+        viewModel = FindPhotoAnswerServiceViewModel(apiClient, schedulers)
     }
 
     override fun onDestroy() {
-        compositeDisposable.clear()
-        presenter.detach()
-
         Timber.d("FindPhotoAnswerService destroy")
+        cleanUp()
+
         super.onDestroy()
     }
 
@@ -82,25 +82,33 @@ class FindPhotoAnswerService : JobService() {
 
     override fun onStopJob(params: JobParameters): Boolean {
         Timber.d("FindPhotoAnswerService onStopJob")
-
-        compositeDisposable.clear()
-        presenter.detach()
+        cleanUp()
 
         return true
     }
 
     private fun initRx(params: JobParameters) {
-        compositeDisposable += presenter.outputs.onPhotoAnswerFoundObservable()
+        compositeDisposable += viewModel.outputs.onPhotoAnswerFoundObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ onPhotoAnswerFound(params, it) })
 
-        compositeDisposable += presenter.errors.onBadResponseObservable()
+        compositeDisposable += viewModel.outputs.userHasNoUploadedPhotosObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ userHasNoUploadedPhotosObservable(params) })
+
+        compositeDisposable += viewModel.outputs.noPhotosToSendBackObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ noPhotosToSendBackObservable(params) })
+
+        compositeDisposable += viewModel.errors.onBadResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ onBadResponse(params, it) })
 
-        compositeDisposable += presenter.errors.onUnknownErrorObservable()
+        compositeDisposable += viewModel.errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ onUnknownError(params, it) })
@@ -116,11 +124,23 @@ class FindPhotoAnswerService : JobService() {
                 val userId = extras.getString("user_id")
                 checkNotNull(userId)
 
-                presenter.inputs.findPhotoAnswer(userId)
+                viewModel.inputs.findPhotoAnswer(userId)
             }
 
             else -> throw IllegalArgumentException("FindPhotoAnswerService Unknown serviceCommand: $serviceCommand")
         }
+    }
+
+    private fun noPhotosToSendBackObservable(params: JobParameters) {
+        Timber.d("No photos to send back")
+
+        finish(params, true)
+    }
+
+    private fun userHasNoUploadedPhotosObservable(params: JobParameters) {
+        Timber.d("User has no uploaded photos")
+
+        finish(params, false)
     }
 
     private fun onPhotoAnswerFound(params: JobParameters, returnValue: PhotoAnswerReturnValue) {
@@ -136,7 +156,7 @@ class FindPhotoAnswerService : JobService() {
     private fun onBadResponse(params: JobParameters, errorCode: ServerErrorCode) {
         Timber.e("BadResponse: errorCode: $errorCode")
 
-        //TODO: should notify activity
+        //TODO: notify activity
 
         finish(params, true)
     }
@@ -144,7 +164,7 @@ class FindPhotoAnswerService : JobService() {
     private fun onUnknownError(params: JobParameters, error: Throwable) {
         Timber.e(error)
 
-        //TODO: should notify activity
+        //TODO: notify activity
 
         finish(params, false)
     }
@@ -152,6 +172,11 @@ class FindPhotoAnswerService : JobService() {
     private fun finish(params: JobParameters, reschedule: Boolean) {
         Timber.d("finish, reschedule: $reschedule")
         jobFinished(params, reschedule)
+    }
+
+    private fun cleanUp() {
+        compositeDisposable.clear()
+        viewModel.detach()
     }
 
     private fun startAsForeground() {

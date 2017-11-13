@@ -5,8 +5,8 @@ import com.kirakishou.photoexchange.helper.database.dao.UploadedPhotosDao
 import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
 import com.kirakishou.photoexchange.helper.mapper.UploadedPhotoMapper
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.mvvm.model.other.Pageable
-import com.kirakishou.photoexchange.mvvm.model.other.UploadedPhoto
+import com.kirakishou.photoexchange.mwvm.model.other.Pageable
+import com.kirakishou.photoexchange.mwvm.model.other.UploadedPhoto
 import io.reactivex.Flowable
 import io.reactivex.Observable
 import io.reactivex.Single

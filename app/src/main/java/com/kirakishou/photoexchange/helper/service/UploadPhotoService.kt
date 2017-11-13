@@ -7,8 +7,8 @@ import android.os.IBinder
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.mvvm.model.other.LonLat
-import com.kirakishou.photoexchange.mvvm.model.other.ServiceCommand
+import com.kirakishou.photoexchange.mwvm.model.other.LonLat
+import com.kirakishou.photoexchange.mwvm.model.other.ServiceCommand
 import timber.log.Timber
 import javax.inject.Inject
 import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
@@ -18,9 +18,10 @@ import android.support.v4.app.NotificationCompat
 import com.kirakishou.photoexchange.di.component.DaggerUploadPhotoServiceComponent
 import com.kirakishou.photoexchange.di.module.*
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
-import com.kirakishou.photoexchange.mvvm.model.other.ServerErrorCode
-import com.kirakishou.photoexchange.mvvm.model.other.UploadedPhoto
-import com.kirakishou.photoexchange.mvvm.model.event.PhotoUploadedEvent
+import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
+import com.kirakishou.photoexchange.mwvm.model.other.UploadedPhoto
+import com.kirakishou.photoexchange.mwvm.model.event.PhotoUploadedEvent
+import com.kirakishou.photoexchange.mwvm.viewmodel.UploadPhotoServiceViewModel
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
@@ -44,7 +45,7 @@ class UploadPhotoService : Service() {
     private val NOTIFICATION_ID = 1
 
     private val compositeDisposable = CompositeDisposable()
-    private lateinit var presenter: UploadPhotoServicePresenter
+    private lateinit var viewModel: UploadPhotoServiceViewModel
 
     override fun onCreate() {
         super.onCreate()
@@ -52,30 +53,30 @@ class UploadPhotoService : Service() {
 
         resolveDaggerDependency()
 
-        presenter = UploadPhotoServicePresenter(apiClient, schedulers, uploadedPhotosRepo)
+        viewModel = UploadPhotoServiceViewModel(apiClient, schedulers, uploadedPhotosRepo)
         initRx()
     }
 
     override fun onDestroy() {
         compositeDisposable.clear()
-        presenter.detach()
+        viewModel.detach()
 
         Timber.d("UploadPhotoService destroy")
         super.onDestroy()
     }
 
     private fun initRx() {
-        compositeDisposable += presenter.outputs.onSendPhotoResponseObservable()
+        compositeDisposable += viewModel.outputs.onSendPhotoResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onSendPhotoResponseObservable)
 
-        compositeDisposable += presenter.errors.onBadResponseObservable()
+        compositeDisposable += viewModel.errors.onBadResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onBadResponse)
 
-        compositeDisposable += presenter.errors.onUnknownErrorObservable()
+        compositeDisposable += viewModel.errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onUnknownError)
@@ -103,7 +104,7 @@ class UploadPhotoService : Service() {
                 val photoFilePath = intent.getStringExtra("photo_file_path")
                 val location = LonLat(lon, lat)
 
-                presenter.inputs.uploadPhoto(photoFilePath, location, userId)
+                viewModel.inputs.uploadPhoto(photoFilePath, location, userId)
             }
 
             else -> onUnknownError(IllegalArgumentException("Unknown serviceCommand: $serviceCommand"))

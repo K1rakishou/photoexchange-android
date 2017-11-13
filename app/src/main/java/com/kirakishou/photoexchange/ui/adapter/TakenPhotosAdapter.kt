@@ -14,9 +14,9 @@ import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseAdapter
-import com.kirakishou.photoexchange.mvvm.model.other.AdapterItem
-import com.kirakishou.photoexchange.mvvm.model.other.AdapterItemType
-import com.kirakishou.photoexchange.mvvm.model.other.UploadedPhoto
+import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
+import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
+import com.kirakishou.photoexchange.mwvm.model.other.UploadedPhoto
 import io.reactivex.subjects.PublishSubject
 
 /**

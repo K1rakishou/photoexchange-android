@@ -13,11 +13,11 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
-import com.kirakishou.photoexchange.mvvm.model.other.EventType
-import com.kirakishou.photoexchange.mvvm.model.event.PhotoUploadedEvent
-import com.kirakishou.photoexchange.mvvm.model.event.SendPhotoEventStatus
-import com.kirakishou.photoexchange.mvvm.viewmodel.AllPhotosViewActivityViewModel
-import com.kirakishou.photoexchange.mvvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
+import com.kirakishou.photoexchange.mwvm.model.other.EventType
+import com.kirakishou.photoexchange.mwvm.model.event.PhotoUploadedEvent
+import com.kirakishou.photoexchange.mwvm.model.event.SendPhotoEventStatus
+import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
+import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign

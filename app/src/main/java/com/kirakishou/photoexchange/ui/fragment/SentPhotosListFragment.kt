@@ -12,11 +12,11 @@ import com.kirakishou.photoexchange.base.BaseFragment
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvvm.model.other.AdapterItem
-import com.kirakishou.photoexchange.mvvm.model.other.AdapterItemType
-import com.kirakishou.photoexchange.mvvm.model.other.UploadedPhoto
-import com.kirakishou.photoexchange.mvvm.viewmodel.AllPhotosViewActivityViewModel
-import com.kirakishou.photoexchange.mvvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
+import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
+import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
+import com.kirakishou.photoexchange.mwvm.model.other.UploadedPhoto
+import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
+import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
 import com.kirakishou.photoexchange.ui.adapter.TakenPhotosAdapter
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener

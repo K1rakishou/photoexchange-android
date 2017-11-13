@@ -4,7 +4,7 @@ import com.google.gson.Gson
 import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.mvvm.model.net.response.PhotoAnswerResponse
+import com.kirakishou.photoexchange.mwvm.model.net.response.PhotoAnswerResponse
 import io.reactivex.Single
 
 /**

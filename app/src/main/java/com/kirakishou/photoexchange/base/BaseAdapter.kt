@@ -7,8 +7,8 @@ import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.kirakishou.photoexchange.mvvm.model.other.AdapterItem
-import com.kirakishou.photoexchange.mvvm.model.other.AdapterItemType
+import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
+import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
 
 /**
  * Created by kirakishou on 11/7/2017.

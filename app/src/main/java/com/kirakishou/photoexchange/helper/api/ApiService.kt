@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.helper.api
 
-import com.kirakishou.photoexchange.mvvm.model.net.response.PhotoAnswerResponse
-import com.kirakishou.photoexchange.mvvm.model.net.response.UploadPhotoResponse
+import com.kirakishou.photoexchange.mwvm.model.net.response.PhotoAnswerResponse
+import com.kirakishou.photoexchange.mwvm.model.net.response.UploadPhotoResponse
 import io.reactivex.Single
 import okhttp3.MultipartBody
 import retrofit2.Response

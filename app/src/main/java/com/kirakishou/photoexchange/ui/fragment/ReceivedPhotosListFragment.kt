@@ -10,8 +10,8 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseFragment
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
-import com.kirakishou.photoexchange.mvvm.viewmodel.AllPhotosViewActivityViewModel
-import com.kirakishou.photoexchange.mvvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
+import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
+import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
 import javax.inject.Inject
 

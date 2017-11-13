@@ -1,8 +1,8 @@
 package com.kirakishou.photoexchange.helper.api
 
-import com.kirakishou.photoexchange.mvvm.model.dto.PhotoToBeUploaded
-import com.kirakishou.photoexchange.mvvm.model.net.response.PhotoAnswerResponse
-import com.kirakishou.photoexchange.mvvm.model.net.response.UploadPhotoResponse
+import com.kirakishou.photoexchange.mwvm.model.dto.PhotoToBeUploaded
+import com.kirakishou.photoexchange.mwvm.model.net.response.PhotoAnswerResponse
+import com.kirakishou.photoexchange.mwvm.model.net.response.UploadPhotoResponse
 import io.reactivex.Single
 
 /**

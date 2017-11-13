@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.helper.preference
 
 import android.content.SharedPreferences
 import com.kirakishou.fixmypc.fixmypcapp.helper.extension.edit
-import com.kirakishou.photoexchange.mvvm.model.other.Fickle
+import com.kirakishou.photoexchange.mwvm.model.other.Fickle
 
 /**
  * Created by kirakishou on 11/4/2017.

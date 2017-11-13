@@ -4,9 +4,9 @@ import com.google.gson.Gson
 import com.kirakishou.photoexchange.helper.api.request.FindPhotoAnswerRequest
 import com.kirakishou.photoexchange.helper.api.request.SendPhotoRequest
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.mvvm.model.dto.PhotoToBeUploaded
-import com.kirakishou.photoexchange.mvvm.model.net.response.PhotoAnswerResponse
-import com.kirakishou.photoexchange.mvvm.model.net.response.UploadPhotoResponse
+import com.kirakishou.photoexchange.mwvm.model.dto.PhotoToBeUploaded
+import com.kirakishou.photoexchange.mwvm.model.net.response.PhotoAnswerResponse
+import com.kirakishou.photoexchange.mwvm.model.net.response.UploadPhotoResponse
 import io.reactivex.Single
 import javax.inject.Inject
 
