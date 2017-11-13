@@ -59,7 +59,7 @@ class UploadPhotoService : Service() {
 
     override fun onDestroy() {
         compositeDisposable.clear()
-        viewModel.detach()
+        viewModel.cleanUp()
 
         Timber.d("UploadPhotoService destroy")
         super.onDestroy()

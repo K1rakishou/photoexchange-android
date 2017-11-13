@@ -87,7 +87,7 @@ class FindPhotoAnswerServiceViewModel(
         findPhotoAnswerSubject.onNext(userId)
     }
 
-    fun detach() {
+    fun cleanUp() {
         compositeDisposable.clear()
 
         Timber.d("FindPhotoAnswerServiceViewModel detached")

@@ -39,7 +39,7 @@ class AllPhotosViewActivityViewModel(
                 .doOnNext {
                     Timber.d("fetchOnePageSubject doOnNext")
                 }
-                .subscribe({ onPageReceivedSubject.onNext(it) }, this::handleError)
+                .subscribe(onPageReceivedSubject::onNext, this::handleError)
     }
 
     override fun fetchOnePage(page: Int, count: Int) {

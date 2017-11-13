@@ -140,7 +140,7 @@ class UploadPhotoServiceViewModel(
         unknownErrorSubject.onNext(error)
     }
 
-    fun detach() {
+    fun cleanUp() {
         compositeDisposable.clear()
 
         Timber.d("UploadPhotoServiceViewModel detached")

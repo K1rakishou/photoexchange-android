@@ -176,7 +176,7 @@ class FindPhotoAnswerService : JobService() {
 
     private fun cleanUp() {
         compositeDisposable.clear()
-        viewModel.detach()
+        viewModel.cleanUp()
     }
 
     private fun startAsForeground() {
