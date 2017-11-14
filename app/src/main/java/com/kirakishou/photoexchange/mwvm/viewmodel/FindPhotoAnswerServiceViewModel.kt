@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.mwvm.viewmodel
 
 import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mwvm.wires.errors.FindPhotoAnswerServiceErrors
 import com.kirakishou.photoexchange.mwvm.wires.inputs.FindPhotoAnswerServiceInputs
@@ -19,6 +20,7 @@ import timber.log.Timber
  * Created by kirakishou on 11/12/2017.
  */
 class FindPhotoAnswerServiceViewModel(
+        private val photoAnswerRepo: PhotoAnswerRepository,
         private val apiClient: ApiClient,
         private val schedulers: SchedulerProvider
 ) : FindPhotoAnswerServiceInputs,
@@ -54,12 +56,12 @@ class FindPhotoAnswerServiceViewModel(
                     .filter { errorCode -> errorCode == ServerErrorCode.OK }
                     .zipWith(responseObservable)
                     .map { it.second }
-                    .doOnNext {
-                        //TODO: save in the DB
-                    }
                     .map { response ->
                         val photoAnswerList = response.photoAnswerList.map { answer -> PhotoAnswer.fromPhotoAnswerJsonObject(answer) }
                         return@map PhotoAnswerReturnValue(photoAnswerList, response.allFound)
+                    }
+                    .doOnNext { answer ->
+                        photoAnswerRepo.saveMany(answer.photoAnswerList)
                     }
                     .subscribe(onPhotoAnswerFoundSubject::onNext, unknownErrorSubject::onNext)
 

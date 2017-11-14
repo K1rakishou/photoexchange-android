@@ -39,9 +39,8 @@ class UploadedPhotoEntity(
 
     companion object {
 
-        fun new(lon: Double, lat: Double, userId: String, photoFilePath: String, photoName: String): UploadedPhotoEntity {
-            return UploadedPhotoEntity(0L, lon, lat, userId, photoName, photoFilePath, TimeUtils.getTimeFast())
-        }
+        fun new(lon: Double, lat: Double, userId: String, photoFilePath: String, photoName: String) =
+                UploadedPhotoEntity(0L, lon, lat, userId, photoName, photoFilePath, TimeUtils.getTimeFast())
 
         const val TABLE_NAME = "uploaded_photos"
     }

@@ -13,8 +13,7 @@ data class PhotoAnswer(
 ) {
 
     companion object {
-        fun fromPhotoAnswerJsonObject(answer: PhotoAnswerJsonObject): PhotoAnswer {
-            return  PhotoAnswer(answer.userId, answer.photoName, answer.lon, answer.lat)
-        }
+        fun fromPhotoAnswerJsonObject(answer: PhotoAnswerJsonObject) =
+                PhotoAnswer(answer.userId, answer.photoName, answer.lon, answer.lat)
     }
 }

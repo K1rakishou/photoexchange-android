@@ -15,6 +15,7 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.component.DaggerFindPhotoAnswerServiceComponent
 import com.kirakishou.photoexchange.di.module.*
 import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
@@ -36,6 +37,9 @@ class FindPhotoAnswerService : JobService() {
     @Inject
     lateinit var schedulers: SchedulerProvider
 
+    @Inject
+    lateinit var photoAnswerRepo: PhotoAnswerRepository
+
     private lateinit var viewModel: FindPhotoAnswerServiceViewModel
 
     private val compositeDisposable = CompositeDisposable()
@@ -46,7 +50,7 @@ class FindPhotoAnswerService : JobService() {
         Timber.d("FindPhotoAnswerService start")
 
         resolveDaggerDependency()
-        viewModel = FindPhotoAnswerServiceViewModel(apiClient, schedulers)
+        viewModel = FindPhotoAnswerServiceViewModel(photoAnswerRepo, apiClient, schedulers)
     }
 
     override fun onDestroy() {

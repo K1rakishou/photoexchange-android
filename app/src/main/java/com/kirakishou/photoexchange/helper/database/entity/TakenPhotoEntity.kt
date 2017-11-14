@@ -10,6 +10,7 @@ import android.arch.persistence.room.PrimaryKey
 
 @Entity(tableName = TakenPhotoEntity.TABLE_NAME)
 class TakenPhotoEntity(
+
         @PrimaryKey(autoGenerate = true)
         @ColumnInfo(name = "id")
         var id: Long,
@@ -30,9 +31,8 @@ class TakenPhotoEntity(
     constructor() : this(0L, 0.0, 0.0, "", "")
 
     companion object {
-        fun new(lon: Double, lat: Double, photoFilePath: String, userId: String): TakenPhotoEntity {
-            return TakenPhotoEntity(0L, lon, lat, photoFilePath, userId)
-        }
+        fun new(lon: Double, lat: Double, photoFilePath: String, userId: String) =
+                TakenPhotoEntity(0L, lon, lat, photoFilePath, userId)
 
         const val TABLE_NAME = "taken_photos"
     }

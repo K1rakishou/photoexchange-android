@@ -14,7 +14,7 @@ import io.reactivex.Single
 @Dao
 interface TakenPhotosDao {
 
-    @Insert(onConflict = OnConflictStrategy.FAIL)
+    @Insert
     fun saveOne(takenPhotoEntity: TakenPhotoEntity): Long
 
     @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME}")
