@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
+import com.kirakishou.photoexchange.helper.mapper.PhotoAnswerMapper
 import com.kirakishou.photoexchange.helper.mapper.TakenPhotoMapper
 import com.kirakishou.photoexchange.helper.mapper.UploadedPhotoMapper
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
@@ -40,7 +41,7 @@ class DatabaseModule(val dbName: String) {
 
     @Singleton
     @Provides
-    fun providePhotoAnswerRepository(database: MyDatabase, schedulers: SchedulerProvider): PhotoAnswerRepository {
-        return PhotoAnswerRepository(database, schedulers)
+    fun providePhotoAnswerRepository(database: MyDatabase, schedulers: SchedulerProvider, mapper: PhotoAnswerMapper): PhotoAnswerRepository {
+        return PhotoAnswerRepository(database, schedulers, mapper)
     }
 }

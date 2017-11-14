@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.mwvm.wires.errors.FindPhotoAnswerServiceErro
 import com.kirakishou.photoexchange.mwvm.wires.inputs.FindPhotoAnswerServiceInputs
 import com.kirakishou.photoexchange.mwvm.wires.outputs.FindPhotoAnswerServiceOutputs
 import com.kirakishou.photoexchange.mwvm.model.dto.PhotoAnswerReturnValue
+import com.kirakishou.photoexchange.mwvm.model.other.Constants
 import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
 import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
 import io.reactivex.Observable
@@ -62,17 +63,22 @@ class FindPhotoAnswerServiceViewModel(
                     }
                     .doOnNext { answer ->
                         photoAnswerRepo.saveMany(answer.photoAnswerList)
+
+                        if (Constants.isDebugBuild) {
+                            val allPhotoAnswers = photoAnswerRepo.findAll().blockingGet()
+                            allPhotoAnswers.forEach { Timber.d(it.toString()) }
+                        }
                     }
                     .subscribe(onPhotoAnswerFoundSubject::onNext, unknownErrorSubject::onNext)
 
             compositeDisposable += responseErrorCode
                     .filter { errorCode -> errorCode == ServerErrorCode.USER_HAS_NO_UPLOADED_PHOTOS }
-                    .map { }
+                    .map { Unit }
                     .subscribe(userHasNoUploadedPhotosSubject::onNext, unknownErrorSubject::onNext)
 
             compositeDisposable += responseErrorCode
                     .filter { errorCode -> errorCode == ServerErrorCode.NO_PHOTOS_TO_SEND_BACK }
-                    .map { }
+                    .map { Unit }
                     .subscribe(noPhotosToSendBackSubject::onNext, unknownErrorSubject::onNext)
 
             compositeDisposable += responseErrorCode

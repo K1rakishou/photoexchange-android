@@ -15,6 +15,9 @@ class PhotoAnswerEntity(
         @ColumnInfo(name = "id")
         var id: Long,
 
+        @ColumnInfo(name = "photo_id")
+        var photoRemoteId: Long,
+
         @ColumnInfo(name = "user_id")
         var userId: String,
 
@@ -28,11 +31,11 @@ class PhotoAnswerEntity(
         var lat: Double
 ) {
 
-    constructor() : this(0L, "", "", 0.0, 0.0)
+    constructor() : this(0L, 0L, "", "", 0.0, 0.0)
 
     companion object {
-        fun new(userId: String, photoName: String, lon: Double, lat: Double) =
-                PhotoAnswerEntity(0L, userId, photoName, lon, lat)
+        fun new(photoRemoteId: Long, userId: String, photoName: String, lon: Double, lat: Double) =
+                PhotoAnswerEntity(0L, photoRemoteId, userId, photoName, lon, lat)
 
         const val TABLE_NAME = "photo_answer"
     }

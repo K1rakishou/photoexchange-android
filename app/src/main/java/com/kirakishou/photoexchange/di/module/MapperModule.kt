@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.di.module
 
+import com.kirakishou.photoexchange.helper.mapper.PhotoAnswerMapper
 import com.kirakishou.photoexchange.helper.mapper.TakenPhotoMapper
 import com.kirakishou.photoexchange.helper.mapper.UploadedPhotoMapper
 import dagger.Module
@@ -23,5 +24,11 @@ class MapperModule {
     @Provides
     fun provideTakenPhotoMapper(): TakenPhotoMapper {
         return TakenPhotoMapper()
+    }
+
+    @Singleton
+    @Provides
+    fun providePhotoAnswerMapper(): PhotoAnswerMapper {
+        return PhotoAnswerMapper()
     }
 }

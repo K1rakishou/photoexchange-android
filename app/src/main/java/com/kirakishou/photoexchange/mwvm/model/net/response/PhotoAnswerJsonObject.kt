@@ -8,20 +8,24 @@ import com.google.gson.annotations.SerializedName
  */
 data class PhotoAnswerJsonObject(
 
-        @Expose
-        @SerializedName("user_id")
-        val userId: String,
+    @Expose
+    @SerializedName("id")
+    val id: Long,
 
-        @Expose
-        @SerializedName("photo_name")
-        val photoName: String,
+    @Expose
+    @SerializedName("user_id")
+    val userId: String,
 
-        @Expose
-        @SerializedName("lon")
-        val lon: Double,
+    @Expose
+    @SerializedName("photo_name")
+    val photoName: String,
 
-        @Expose
-        @SerializedName("lat")
-        val lat: Double
+    @Expose
+    @SerializedName("lon")
+    val lon: Double,
+
+    @Expose
+    @SerializedName("lat")
+    val lat: Double
 ) {
 }

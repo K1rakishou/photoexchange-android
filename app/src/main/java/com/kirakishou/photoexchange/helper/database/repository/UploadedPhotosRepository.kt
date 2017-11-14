@@ -20,7 +20,6 @@ class UploadedPhotosRepository(
         private val uploadedPhotoMapper: UploadedPhotoMapper
 ) {
     private val uploadedPhotosDao: UploadedPhotosDao by lazy { database.uploadedPhotosDao() }
-    private val MAX_DB_WAIT_TIME = 3L
 
     fun saveOne(lon: Double, lat: Double, userId: String, photoFilePath: String, photoName: String): Single<Long> {
         val resultSingle = Single.fromCallable {
