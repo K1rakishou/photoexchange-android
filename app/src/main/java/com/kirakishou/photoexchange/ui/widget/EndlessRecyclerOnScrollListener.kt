@@ -32,9 +32,7 @@ class EndlessRecyclerOnScrollListener(
         totalItemCount = gridLayoutManager.itemCount
         lastVisibleItem = gridLayoutManager.findLastVisibleItemPosition()
 
-        Timber.d("${!loading} && ($totalItemCount <= (${lastVisibleItem + visibleThreshold})")
         if (!loading && (totalItemCount <= (lastVisibleItem + visibleThreshold))) {
-            Timber.d("Loading!")
             loading = true
 
             loadMoreSubject.onNext(currentPage)

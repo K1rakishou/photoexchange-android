@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.api.ApiService
 import dagger.Module
 import dagger.Provides
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
@@ -21,7 +22,16 @@ class NetworkModule(private val baseUrl: String) {
 
     @Singleton
     @Provides
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideLoggingInterceptor(): HttpLoggingInterceptor {
+        val loggingInterceptor = HttpLoggingInterceptor()
+        loggingInterceptor.level = HttpLoggingInterceptor.Level.BODY
+
+        return loggingInterceptor
+    }
+
+    @Singleton
+    @Provides
+    fun provideOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient {
         return OkHttpClient.Builder()
                 .connectTimeout(15000, TimeUnit.SECONDS) //TODO: Don't forget to change this on release build
                 .writeTimeout(15000, TimeUnit.SECONDS)  //TODO: Don't forget to change this on release build
