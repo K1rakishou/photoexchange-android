@@ -19,7 +19,6 @@ import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerReposi
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
-import com.kirakishou.photoexchange.mwvm.model.other.ServiceCommand
 import com.kirakishou.photoexchange.mwvm.model.dto.PhotoAnswerReturnValue
 import com.kirakishou.photoexchange.mwvm.viewmodel.FindPhotoAnswerServiceViewModel
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
@@ -84,6 +83,13 @@ class FindPhotoAnswerService : JobService() {
         return true
     }
 
+    private fun handleCommand(extras: PersistableBundle) {
+        val userId = extras.getString("user_id")
+        checkNotNull(userId)
+
+        viewModel.inputs.findPhotoAnswer(userId)
+    }
+
     override fun onStopJob(params: JobParameters): Boolean {
         Timber.d("FindPhotoAnswerService onStopJob")
         cleanUp()
@@ -107,6 +113,11 @@ class FindPhotoAnswerService : JobService() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ noPhotosToSendBackObservable(params) })
 
+        compositeDisposable += viewModel.outputs.couldNotMarkPhotoAsReceivedObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ couldNotMarkPhotoAsReceived(params) })
+
         compositeDisposable += viewModel.errors.onBadResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -118,58 +129,46 @@ class FindPhotoAnswerService : JobService() {
                 .subscribe({ onUnknownError(params, it) })
     }
 
-    private fun handleCommand(extras: PersistableBundle) {
-        val commandRaw = extras.getInt("command", -1)
-        check(commandRaw != -1)
-
-        val serviceCommand = ServiceCommand.from(commandRaw)
-        when (serviceCommand) {
-            ServiceCommand.FIND_PHOTO -> {
-                val userId = extras.getString("user_id")
-                checkNotNull(userId)
-
-                viewModel.inputs.findPhotoAnswer(userId)
-            }
-
-            else -> throw IllegalArgumentException("FindPhotoAnswerService Unknown serviceCommand: $serviceCommand")
-        }
+    private fun couldNotMarkPhotoAsReceived(params: JobParameters) {
+        Timber.d("Could not mark a photo as received")
+        finish(params, true)
     }
 
     private fun noPhotosToSendBackObservable(params: JobParameters) {
         Timber.d("No photos to send back")
-
         finish(params, true)
     }
 
     private fun userHasNoUploadedPhotosObservable(params: JobParameters) {
         Timber.d("User has no uploaded photos")
-
         finish(params, false)
     }
 
     private fun onPhotoAnswerFound(params: JobParameters, returnValue: PhotoAnswerReturnValue) {
         if (!returnValue.allFound) {
-            Timber.d("FindPhotoAnswerService Reschedule job")
+            Timber.d("FindPhotoAnswerService: allFound = ${!returnValue.allFound} Reschedule job")
+            Timber.e(returnValue.photoAnswer.toString())
+
+            finish(params, true)
+            return
         }
 
-        Timber.e(returnValue.toString())
-
-        finish(params, true)
+        Timber.d("FindPhotoAnswerService: allFound = ${!returnValue.allFound} we are done")
+        finish(params, false)
     }
 
     private fun onBadResponse(params: JobParameters, errorCode: ServerErrorCode) {
         Timber.e("BadResponse: errorCode: $errorCode")
 
         //TODO: notify activity
-
         finish(params, true)
     }
 
     private fun onUnknownError(params: JobParameters, error: Throwable) {
+        Timber.e("onUnknownError")
         Timber.e(error)
 
         //TODO: notify activity
-
         finish(params, false)
     }
 
@@ -179,6 +178,8 @@ class FindPhotoAnswerService : JobService() {
     }
 
     private fun cleanUp() {
+        Timber.e("FindPhotoAnswerService cleanUp()")
+
         compositeDisposable.clear()
         viewModel.cleanUp()
     }
@@ -245,7 +246,6 @@ class FindPhotoAnswerService : JobService() {
 
         fun scheduleImmediateJob(userId: String, context: Context) {
             val extras = PersistableBundle()
-            extras.putInt("command", ServiceCommand.FIND_PHOTO.value)
             extras.putString("user_id", userId)
 
             val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, FindPhotoAnswerService::class.java))
@@ -265,7 +265,6 @@ class FindPhotoAnswerService : JobService() {
 
         fun scheduleJobPeriodicJob(userId: String, context: Context) {
             val extras = PersistableBundle()
-            extras.putInt("command", ServiceCommand.FIND_PHOTO.value)
             extras.putString("user_id", userId)
 
             val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, FindPhotoAnswerService::class.java))

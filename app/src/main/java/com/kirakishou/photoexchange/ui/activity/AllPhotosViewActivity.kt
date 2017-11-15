@@ -13,6 +13,9 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
+import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
+import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
+import com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService
 import com.kirakishou.photoexchange.mwvm.model.other.EventType
 import com.kirakishou.photoexchange.mwvm.model.event.PhotoUploadedEvent
 import com.kirakishou.photoexchange.mwvm.model.event.SendPhotoEventStatus
@@ -45,7 +48,11 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     @Inject
     lateinit var eventBus: EventBus
 
-    val adapter = FragmentTabsPager(supportFragmentManager)
+    @Inject
+    lateinit var appSharedPreference: AppSharedPreference
+
+    private val adapter = FragmentTabsPager(supportFragmentManager)
+    private val userInfoPreference by lazy { appSharedPreference.prepare<UserInfoPreference>() }
 
     override fun initViewModel(): AllPhotosViewActivityViewModel {
         return ViewModelProviders.of(this, viewModelFactory).get(AllPhotosViewActivityViewModel::class.java)
@@ -54,16 +61,11 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     override fun getContentView(): Int = R.layout.activity_all_photos_view
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
+        userInfoPreference.load()
         eventBus.register(this)
+
         initTabs(intent)
         initRx()
-    }
-
-    private fun initRx() {
-        compositeDisposable += RxView.clicks(ivCloseActivityButton)
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ finish() })
     }
 
     override fun onActivityDestroy() {
@@ -73,6 +75,18 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         viewPager.clearOnPageChangeListeners()
 
         PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        userInfoPreference.save()
+    }
+
+    private fun initRx() {
+        compositeDisposable += RxView.clicks(ivCloseActivityButton)
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ finish() })
     }
 
     private fun initTabs(intent: Intent) {
@@ -114,6 +128,11 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     override fun onPageSelected(position: Int) {
     }
 
+    private fun startFindPhotoAnswerService(userId: String) {
+        FindPhotoAnswerService.scheduleImmediateJob(userId, this)
+        Timber.d("A job has been scheduled")
+    }
+
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onMessageEvent(uploadedEvent: PhotoUploadedEvent) {
         when (uploadedEvent.type) {
@@ -134,6 +153,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
                 if (uploadedEvent.status == SendPhotoEventStatus.SUCCESS) {
                     fragment.onPhotoUploaded(photo)
+                    startFindPhotoAnswerService(userInfoPreference.getUserId())
                 } else {
                     fragment.onFailedToUploadPhoto()
                 }

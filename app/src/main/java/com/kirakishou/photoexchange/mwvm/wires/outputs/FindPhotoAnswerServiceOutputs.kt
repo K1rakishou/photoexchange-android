@@ -10,4 +10,5 @@ interface FindPhotoAnswerServiceOutputs {
     fun onPhotoAnswerFoundObservable(): Observable<PhotoAnswerReturnValue>
     fun userHasNoUploadedPhotosObservable(): Observable<Unit>
     fun noPhotosToSendBackObservable(): Observable<Unit>
+    fun couldNotMarkPhotoAsReceivedObservable(): Observable<Unit>
 }

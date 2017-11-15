@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.helper.database.entity
 import android.arch.persistence.room.ColumnInfo
 import android.arch.persistence.room.Entity
 import android.arch.persistence.room.PrimaryKey
+import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
 
 /**
  * Created by kirakishou on 11/14/2017.
@@ -36,6 +37,17 @@ class PhotoAnswerEntity(
     companion object {
         fun new(photoRemoteId: Long, userId: String, photoName: String, lon: Double, lat: Double) =
                 PhotoAnswerEntity(0L, photoRemoteId, userId, photoName, lon, lat)
+
+        fun fromPhotoAnswer(photoAnswer: PhotoAnswer): PhotoAnswerEntity {
+            return PhotoAnswerEntity(
+                    0L,
+                    photoAnswer.photoRemoteId,
+                    photoAnswer.userId,
+                    photoAnswer.photoName,
+                    photoAnswer.lon,
+                    photoAnswer.lat
+            )
+        }
 
         const val TABLE_NAME = "photo_answer"
     }

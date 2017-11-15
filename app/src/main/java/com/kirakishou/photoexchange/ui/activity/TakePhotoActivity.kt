@@ -74,7 +74,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         initUserInfo()
         initRx()
         initCamera()
-        startFindPhotoAnswerService(userInfoPreference.getUserId())
 
         getViewModel().inputs.cleanDb()
     }
@@ -100,11 +99,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     override fun onPause() {
         super.onPause()
         userInfoPreference.save()
-    }
-
-    private fun startFindPhotoAnswerService(userId: String) {
-        FindPhotoAnswerService.scheduleImmediateJob(userId, this)
-        Timber.d("A job has been scheduled")
     }
 
     private fun initCamera() {

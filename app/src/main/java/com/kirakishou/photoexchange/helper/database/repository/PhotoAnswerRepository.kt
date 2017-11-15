@@ -18,6 +18,16 @@ class PhotoAnswerRepository(
 ) {
     private val photoAnswerDao: PhotoAnswerDao by lazy { database.photoAnswerDao() }
 
+    fun saveOne(photoAnswer: PhotoAnswer): Single<Long> {
+        val resultSingle = Single.fromCallable {
+            photoAnswerDao.saveOne(mapper.toPhotoAnswerEntity(photoAnswer))
+        }
+
+        return resultSingle
+                .subscribeOn(schedulers.provideIo())
+                .observeOn(schedulers.provideIo())
+    }
+
     fun saveMany(photoAnswerList: List<PhotoAnswer>): Single<List<Long>> {
         val resultSingle = Single.fromCallable {
             val photoAnswerArray = photoAnswerList

@@ -10,8 +10,8 @@ import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
 class PhotoAnswerResponse(
 
         @Expose
-        @SerializedName("photo_answer_list")
-        val photoAnswerList: List<PhotoAnswerJsonObject>,
+        @SerializedName("photo_answer")
+        val photoAnswer: PhotoAnswerJsonObject,
 
         @Expose
         @SerializedName("all_found")

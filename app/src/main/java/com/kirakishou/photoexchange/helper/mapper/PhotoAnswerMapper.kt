@@ -8,6 +8,9 @@ import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
  */
 class PhotoAnswerMapper {
 
+    fun toPhotoAnswerEntity(photoAnswer: PhotoAnswer) =
+            PhotoAnswerEntity.fromPhotoAnswer(photoAnswer)
+
     fun toPhotoAnswer(photoAnswerEntity: PhotoAnswerEntity) =
             PhotoAnswer.fromPhotoAnswerEntity(photoAnswerEntity)
 

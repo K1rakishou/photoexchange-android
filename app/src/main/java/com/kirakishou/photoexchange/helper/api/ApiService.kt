@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.helper.api
 
 import com.kirakishou.photoexchange.mwvm.model.net.response.PhotoAnswerResponse
+import com.kirakishou.photoexchange.mwvm.model.net.response.StatusResponse
 import com.kirakishou.photoexchange.mwvm.model.net.response.UploadPhotoResponse
 import io.reactivex.Single
 import okhttp3.MultipartBody
@@ -19,6 +20,10 @@ interface ApiService {
 
     @GET("/v1/api/get_answer/{user_id}")
     fun findPhotoAnswer(@Path("user_id") userId: String): Single<Response<PhotoAnswerResponse>>
+
+    @POST("/v1/api/received/{photo_id}/{user_id}")
+    fun markPhotoAsReceived(@Path("photo_id") photoId: Long,
+                            @Path("user_id") userId: String): Single<Response<StatusResponse>>
 }
 
 

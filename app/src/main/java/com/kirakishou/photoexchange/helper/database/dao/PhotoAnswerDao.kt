@@ -15,6 +15,9 @@ import io.reactivex.Single
 interface PhotoAnswerDao {
 
     @Insert
+    fun saveOne(photoAnswerEntity: PhotoAnswerEntity): Long
+
+    @Insert
     fun saveMany(vararg photoAnswerEntityArray: PhotoAnswerEntity): List<Long>
 
     @Query("SELECT * FROM ${PhotoAnswerEntity.TABLE_NAME}")

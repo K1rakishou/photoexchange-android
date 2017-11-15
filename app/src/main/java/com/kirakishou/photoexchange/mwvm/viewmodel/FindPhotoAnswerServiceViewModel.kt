@@ -34,41 +34,84 @@ class FindPhotoAnswerServiceViewModel(
 
     private val compositeDisposable = CompositeDisposable()
 
+    //inputs
+    private val findPhotoAnswerSubject = PublishSubject.create<String>()
+
+    //outputs
+    private val couldNotMarkPhotoAsReceivedSubject = PublishSubject.create<Unit>()
     private val noPhotosToSendBackSubject = PublishSubject.create<Unit>()
     private val userHasNoUploadedPhotosSubject = PublishSubject.create<Unit>()
     private val onPhotoAnswerFoundSubject = PublishSubject.create<PhotoAnswerReturnValue>()
-    private val findPhotoAnswerSubject = PublishSubject.create<String>()
+
+    //errors
     private val badResponseSubject = PublishSubject.create<ServerErrorCode>()
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
 
     init {
         fun setUpFindPhotoAnswer() {
-            val responseObservable = findPhotoAnswerSubject
+            val userIdObservable = findPhotoAnswerSubject
+                    .share()
+
+            val responseObservable = userIdObservable
                     .subscribeOn(schedulers.provideIo())
                     .observeOn(schedulers.provideIo())
                     .flatMap { userId -> apiClient.findPhotoAnswer(userId).toObservable() }
+                    .doOnNext {
+                        Timber.e("after findPhotoAnswer, response: ${it.photoAnswer}")
+                    }
                     .share()
 
             val responseErrorCode = responseObservable
                     .map { ServerErrorCode.from(it.serverErrorCode) }
                     .share()
 
-            compositeDisposable += responseErrorCode
+            val photoAnswerReturnValueObservable = responseErrorCode
                     .filter { errorCode -> errorCode == ServerErrorCode.OK }
                     .zipWith(responseObservable)
                     .map { it.second }
                     .map { response ->
-                        val photoAnswerList = response.photoAnswerList.map { answer -> PhotoAnswer.fromPhotoAnswerJsonObject(answer) }
-                        return@map PhotoAnswerReturnValue(photoAnswerList, response.allFound)
+                        val photoAnswer = PhotoAnswer.fromPhotoAnswerJsonObject(response.photoAnswer)
+                        return@map PhotoAnswerReturnValue(photoAnswer, response.allFound)
                     }
-                    .doOnNext { answer ->
-                        photoAnswerRepo.saveMany(answer.photoAnswerList)
+                    .share()
 
+            val markPhotoResponseObservable = photoAnswerReturnValueObservable
+                    .zipWith(userIdObservable)
+                    .flatMap {
+                        val userId = it.second
+                        val photoAnswer = it.first.photoAnswer
+
+                        return@flatMap apiClient.markPhotoAsReceived(photoAnswer.photoRemoteId, userId)
+                                .toObservable()
+                    }
+                    .doOnNext {
+                        Timber.e("after markPhotoAsReceived, response: ${it.serverErrorCode}")
+                    }
+                    .share()
+
+            compositeDisposable += markPhotoResponseObservable
+                    .map { ServerErrorCode.from(it.serverErrorCode) }
+                    .filter { errorCode -> errorCode != ServerErrorCode.OK }
+                    .map { Unit }
+                    .subscribe(couldNotMarkPhotoAsReceivedSubject::onNext, unknownErrorSubject::onNext)
+
+            compositeDisposable += markPhotoResponseObservable
+                    .map { ServerErrorCode.from(it.serverErrorCode) }
+                    .filter { errorCode -> errorCode == ServerErrorCode.OK }
+                    .zipWith(photoAnswerReturnValueObservable)
+                    .map { it.second }
+                    .flatMap { photoAnswerRetValue ->
+                        return@flatMap photoAnswerRepo.saveOne(photoAnswerRetValue.photoAnswer)
+                                .toObservable()
+                    }
+                    .doOnNext {
                         if (Constants.isDebugBuild) {
                             val allPhotoAnswers = photoAnswerRepo.findAll().blockingGet()
                             allPhotoAnswers.forEach { Timber.d(it.toString()) }
                         }
                     }
+                    .zipWith(photoAnswerReturnValueObservable)
+                    .map { it.second }
                     .subscribe(onPhotoAnswerFoundSubject::onNext, unknownErrorSubject::onNext)
 
             compositeDisposable += responseErrorCode
@@ -101,9 +144,13 @@ class FindPhotoAnswerServiceViewModel(
         Timber.d("FindPhotoAnswerServiceViewModel detached")
     }
 
+    //outputs
+    override fun couldNotMarkPhotoAsReceivedObservable(): Observable<Unit> = couldNotMarkPhotoAsReceivedSubject
     override fun userHasNoUploadedPhotosObservable(): Observable<Unit> = userHasNoUploadedPhotosSubject
     override fun noPhotosToSendBackObservable(): Observable<Unit> = noPhotosToSendBackSubject
     override fun onPhotoAnswerFoundObservable(): Observable<PhotoAnswerReturnValue> = onPhotoAnswerFoundSubject
+
+    //errors
     override fun onBadResponseObservable(): Observable<ServerErrorCode> = badResponseSubject
     override fun onUnknownErrorObservable(): Observable<Throwable> = unknownErrorSubject
 }
