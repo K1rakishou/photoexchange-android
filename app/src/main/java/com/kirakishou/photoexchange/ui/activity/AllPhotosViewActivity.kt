@@ -137,8 +137,6 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     fun onMessageEvent(uploadedEvent: PhotoUploadedEvent) {
         when (uploadedEvent.type) {
             EventType.UploadPhoto -> {
-                checkNotNull(uploadedEvent.photo)
-                val photo = uploadedEvent.photo!!
 
                 val fragment = adapter.sentPhotosFragment
                 if (fragment == null) {
@@ -152,6 +150,9 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                 }
 
                 if (uploadedEvent.status == SendPhotoEventStatus.SUCCESS) {
+                    checkNotNull(uploadedEvent.photo)
+                    val photo = uploadedEvent.photo!!
+
                     fragment.onPhotoUploaded(photo)
                     startFindPhotoAnswerService(userInfoPreference.getUserId())
                 } else {

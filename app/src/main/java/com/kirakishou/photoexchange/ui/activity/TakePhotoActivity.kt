@@ -15,14 +15,15 @@ import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerTakePhotoActivityComponent
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
-import com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService
 import com.kirakishou.photoexchange.helper.util.Utils
 import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
 import com.kirakishou.photoexchange.mwvm.model.other.LonLat
 import com.kirakishou.photoexchange.mwvm.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.TakePhotoActivityViewModelFactory
 import io.fotoapparat.Fotoapparat
+import io.fotoapparat.hardware.provider.CameraProviders
 import io.fotoapparat.parameter.ScaleType
+import io.fotoapparat.parameter.Size
 import io.fotoapparat.parameter.selector.LensPositionSelectors.back
 import io.fotoapparat.parameter.selector.SizeSelectors.biggestSize
 import io.fotoapparat.view.CameraView
@@ -34,6 +35,7 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.io.File
+import java.lang.Long.signum
 import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
@@ -105,10 +107,34 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         fotoapparat = Fotoapparat
                 .with(this)
                 .into(cameraView)
+                .cameraProvider(CameraProviders.v2(this))
                 .previewScaleType(ScaleType.CENTER_CROP)
-                .photoSize(biggestSize())
+                .photoSize(this::getSize)
                 .lensPosition(back())
                 .build()
+    }
+
+    private fun getSize(sizes: MutableCollection<Size>): Size? {
+        val idealHeight = 1280
+        val idealWidth = 720
+        var minDist = Double.MAX_VALUE
+        var finalSize: Size? = null
+
+        for (size in sizes) {
+            val result = Math.hypot((idealHeight - size.height).toDouble(), (idealWidth - size.width).toDouble())
+            Timber.d("result: $result, size: $size")
+            minDist = Math.min(minDist, result)
+        }
+
+        for (size in sizes) {
+            val result = Math.hypot((idealHeight - size.height).toDouble(), (idealWidth - size.width).toDouble())
+            if (result == minDist) {
+                finalSize = size
+                break
+            }
+        }
+
+        return finalSize
     }
 
     private fun initRx() {
