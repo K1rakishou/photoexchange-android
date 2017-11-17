@@ -57,9 +57,6 @@ class FindPhotoAnswerServiceViewModel(
                     .subscribeOn(schedulers.provideIo())
                     .observeOn(schedulers.provideIo())
                     .flatMap { userId -> apiClient.findPhotoAnswer(userId).toObservable() }
-                    .doOnNext {
-                        Timber.e("after findPhotoAnswer, response: ${it.photoAnswer}")
-                    }
                     .share()
 
             val responseErrorCode = responseObservable
@@ -84,9 +81,6 @@ class FindPhotoAnswerServiceViewModel(
 
                         return@flatMap apiClient.markPhotoAsReceived(photoAnswer.photoRemoteId, userId)
                                 .toObservable()
-                    }
-                    .doOnNext {
-                        Timber.e("after markPhotoAsReceived, response: ${it.serverErrorCode}")
                     }
                     .share()
 

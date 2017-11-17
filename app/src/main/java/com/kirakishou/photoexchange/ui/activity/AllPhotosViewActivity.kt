@@ -174,6 +174,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         when (event.status) {
             PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED -> {
                 Timber.d("SUCCESS_ALL_RECEIVED")
+                FindPhotoAnswerService.cancelAll(this)
             }
             PhotoReceivedEventStatus.SUCCESS_NOT_ALL_RECEIVED -> {
                 Timber.d("SUCCESS_NOT_ALL_RECEIVED rescheduling as immediate")
@@ -181,6 +182,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
             }
             PhotoReceivedEventStatus.FAIL -> {
                 Timber.d("FAIL")
+                FindPhotoAnswerService.cancelAll(this)
             }
             PhotoReceivedEventStatus.NO_PHOTOS_ON_SERVER -> {
                 Timber.d("NO_PHOTOS_ON_SERVER rescheduling as periodic")
@@ -188,9 +190,11 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
             }
             PhotoReceivedEventStatus.USER_HAS_NOT_UPLOADED_ANY_PHOTOS -> {
                 Timber.d("USER_HAS_NOT_UPLOADED_ANY_PHOTOS")
+                FindPhotoAnswerService.cancelAll(this)
             }
             PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS -> {
                 Timber.d("UPLOAD_MORE_PHOTOS")
+                FindPhotoAnswerService.cancelAll(this)
             }
         }
     }

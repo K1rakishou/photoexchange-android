@@ -120,7 +120,7 @@ class FindPhotoAnswerService : JobService() {
         compositeDisposable += viewModel.outputs.noPhotosToSendBackObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ noPhotosToSendBackObservable(params) })
+                .subscribe({ noPhotosToSendBack(params) })
 
         compositeDisposable += viewModel.outputs.couldNotMarkPhotoAsReceivedObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -157,7 +157,7 @@ class FindPhotoAnswerService : JobService() {
         finish(params, true)
     }
 
-    private fun noPhotosToSendBackObservable(params: JobParameters) {
+    private fun noPhotosToSendBack(params: JobParameters) {
         Timber.d("No photos to send back")
 
         eventBus.post(PhotoReceivedEvent.noPhotos())
@@ -188,15 +188,15 @@ class FindPhotoAnswerService : JobService() {
     private fun onBadResponse(params: JobParameters, errorCode: ServerErrorCode) {
         Timber.e("BadResponse: errorCode: $errorCode")
 
-        //TODO: notify activity
-        finish(params, true)
+        eventBus.post(PhotoReceivedEvent.fail())
+        finish(params, false)
     }
 
     private fun onUnknownError(params: JobParameters, error: Throwable) {
         Timber.e("onUnknownError")
         Timber.e(error)
 
-        //TODO: notify activity
+        eventBus.post(PhotoReceivedEvent.fail())
         finish(params, false)
     }
 
@@ -284,7 +284,7 @@ class FindPhotoAnswerService : JobService() {
                     .setMinimumLatency(0)
                     .setOverrideDeadline(0)
                     .setExtras(extras)
-                    .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_LINEAR)
+                    .setBackoffCriteria(2_000, JobInfo.BACKOFF_POLICY_LINEAR)
                     .build()
 
             val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
@@ -300,9 +300,8 @@ class FindPhotoAnswerService : JobService() {
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
-                    //TODO
-                    .setMinimumLatency(1_000)
-                    .setOverrideDeadline(6_000)
+                    .setMinimumLatency(10_000)
+                    .setOverrideDeadline(60_000)
                     .setExtras(extras)
                     .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_LINEAR)
                     .build()
@@ -310,6 +309,11 @@ class FindPhotoAnswerService : JobService() {
             val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
             jobScheduler.cancelAll()
             jobScheduler.schedule(jobInfo)
+        }
+
+        fun cancelAll(context: Context) {
+            val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
+            jobScheduler.cancelAll()
         }
     }
 }
