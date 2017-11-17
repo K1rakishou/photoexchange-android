@@ -56,7 +56,9 @@ class FindPhotoAnswerServiceViewModel(
             val responseObservable = userIdObservable
                     .subscribeOn(schedulers.provideIo())
                     .observeOn(schedulers.provideIo())
+                    .doOnNext { Timber.e("before findPhotoAnswer") }
                     .flatMap { userId -> apiClient.findPhotoAnswer(userId).toObservable() }
+                    .doOnNext { Timber.e("after findPhotoAnswer") }
                     .share()
 
             val responseErrorCode = responseObservable

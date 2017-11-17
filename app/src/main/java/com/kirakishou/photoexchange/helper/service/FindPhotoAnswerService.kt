@@ -45,6 +45,7 @@ class FindPhotoAnswerService : JobService() {
     lateinit var eventBus: EventBus
 
     private lateinit var viewModel: FindPhotoAnswerServiceViewModel
+    private var isRxInited = false
 
     private val compositeDisposable = CompositeDisposable()
     private val NOTIFICATION_ID = 2
@@ -107,6 +108,14 @@ class FindPhotoAnswerService : JobService() {
     }
 
     private fun initRx(params: JobParameters) {
+        Timber.e("isRxInited: $isRxInited")
+
+        if (isRxInited) {
+            return
+        }
+
+        isRxInited = true
+
         compositeDisposable += viewModel.outputs.onPhotoAnswerFoundObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())

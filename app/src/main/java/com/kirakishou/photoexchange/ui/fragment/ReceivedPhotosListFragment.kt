@@ -132,7 +132,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     private fun fetchPage(page: Int) {
         val count = PHOTOS_PER_PAGE * columnsCount
-        getViewModel().inputs.fetchOnePageUploadedPhotos(page * count, count)
+        getViewModel().inputs.fetchOnePageReceivedPhotos(page * count, count)
     }
 
     private fun onPageReceived(photoAnswerList: List<PhotoAnswer>) {
