@@ -14,7 +14,7 @@ import io.reactivex.Single
 @Dao
 interface PhotoAnswerDao {
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun saveOne(photoAnswerEntity: PhotoAnswerEntity): Long
 
     @Insert

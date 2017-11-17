@@ -20,11 +20,13 @@ import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
 import com.kirakishou.photoexchange.mwvm.model.dto.PhotoAnswerReturnValue
+import com.kirakishou.photoexchange.mwvm.model.event.PhotoReceivedEvent
 import com.kirakishou.photoexchange.mwvm.viewmodel.FindPhotoAnswerServiceViewModel
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
+import org.greenrobot.eventbus.EventBus
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -38,6 +40,9 @@ class FindPhotoAnswerService : JobService() {
 
     @Inject
     lateinit var photoAnswerRepo: PhotoAnswerRepository
+
+    @Inject
+    lateinit var eventBus: EventBus
 
     private lateinit var viewModel: FindPhotoAnswerServiceViewModel
 
@@ -67,6 +72,12 @@ class FindPhotoAnswerService : JobService() {
     override fun onStartJob(params: JobParameters): Boolean {
         Timber.d("FindPhotoAnswerService onStartJob")
 
+        when {
+            params.jobId == IMMEDIATE_JOB_ID -> Timber.d("IMMEDIATE_JOB_ID")
+            params.jobId == PERIODIC_JOB_ID -> Timber.d("PERIODIC_JOB_ID")
+            else -> throw IllegalStateException("Unknown jobId ${params.jobId}")
+        }
+
         val currentTime = TimeUtils.getTimeFast()
         val formattedTime = TimeUtils.formatDateAndTime(currentTime)
         Timber.e("Job started at: $formattedTime")
@@ -92,8 +103,6 @@ class FindPhotoAnswerService : JobService() {
 
     override fun onStopJob(params: JobParameters): Boolean {
         Timber.d("FindPhotoAnswerService onStopJob")
-        cleanUp()
-
         return true
     }
 
@@ -118,6 +127,11 @@ class FindPhotoAnswerService : JobService() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ couldNotMarkPhotoAsReceived(params) })
 
+        compositeDisposable += viewModel.outputs.uploadMorePhotosObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ uploadMorePhotos(params) })
+
         compositeDisposable += viewModel.errors.onBadResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -129,18 +143,31 @@ class FindPhotoAnswerService : JobService() {
                 .subscribe({ onUnknownError(params, it) })
     }
 
+    fun uploadMorePhotos(params: JobParameters) {
+        Timber.d("Upload more photos")
+
+        eventBus.post(PhotoReceivedEvent.uploadMorePhotos())
+        finish(params, false)
+    }
+
     private fun couldNotMarkPhotoAsReceived(params: JobParameters) {
         Timber.d("Could not mark a photo as received")
+
+        eventBus.post(PhotoReceivedEvent.fail())
         finish(params, true)
     }
 
     private fun noPhotosToSendBackObservable(params: JobParameters) {
         Timber.d("No photos to send back")
-        finish(params, true)
+
+        eventBus.post(PhotoReceivedEvent.noPhotos())
+        finish(params, false)
     }
 
     private fun userHasNoUploadedPhotosObservable(params: JobParameters) {
         Timber.d("User has no uploaded photos")
+
+        eventBus.post(PhotoReceivedEvent.userNotUploadedPhotosYet())
         finish(params, false)
     }
 
@@ -154,6 +181,7 @@ class FindPhotoAnswerService : JobService() {
         }
 
         Timber.d("FindPhotoAnswerService: allFound = ${!returnValue.allFound} we are done")
+        eventBus.post(PhotoReceivedEvent.successAllReceived(returnValue.photoAnswer))
         finish(params, false)
     }
 
@@ -242,13 +270,14 @@ class FindPhotoAnswerService : JobService() {
     }
 
     companion object {
-        private val JOB_ID = 1
+        private val IMMEDIATE_JOB_ID = 1
+        private val PERIODIC_JOB_ID = 2
 
         fun scheduleImmediateJob(userId: String, context: Context) {
             val extras = PersistableBundle()
             extras.putString("user_id", userId)
 
-            val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, FindPhotoAnswerService::class.java))
+            val jobInfo = JobInfo.Builder(IMMEDIATE_JOB_ID, ComponentName(context, FindPhotoAnswerService::class.java))
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
@@ -259,7 +288,7 @@ class FindPhotoAnswerService : JobService() {
                     .build()
 
             val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
-            jobScheduler.cancel(JOB_ID)
+            jobScheduler.cancelAll()
             jobScheduler.schedule(jobInfo)
         }
 
@@ -267,18 +296,19 @@ class FindPhotoAnswerService : JobService() {
             val extras = PersistableBundle()
             extras.putString("user_id", userId)
 
-            val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, FindPhotoAnswerService::class.java))
+            val jobInfo = JobInfo.Builder(PERIODIC_JOB_ID, ComponentName(context, FindPhotoAnswerService::class.java))
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
-                    .setMinimumLatency(10_000)
-                    .setOverrideDeadline(60_000)
+                    //TODO
+                    .setMinimumLatency(1_000)
+                    .setOverrideDeadline(6_000)
                     .setExtras(extras)
-                    .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_EXPONENTIAL)
+                    .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_LINEAR)
                     .build()
 
             val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
-            jobScheduler.cancel(JOB_ID)
+            jobScheduler.cancelAll()
             jobScheduler.schedule(jobInfo)
         }
     }

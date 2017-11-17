@@ -12,10 +12,7 @@ import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
 @Entity(tableName = PhotoAnswerEntity.TABLE_NAME)
 class PhotoAnswerEntity(
 
-        @PrimaryKey(autoGenerate = true)
-        @ColumnInfo(name = "id")
-        var id: Long,
-
+        @PrimaryKey(autoGenerate = false)
         @ColumnInfo(name = "photo_id")
         var photoRemoteId: Long,
 
@@ -32,15 +29,14 @@ class PhotoAnswerEntity(
         var lat: Double
 ) {
 
-    constructor() : this(0L, 0L, "", "", 0.0, 0.0)
+    constructor() : this(0L, "", "", 0.0, 0.0)
 
     companion object {
         fun new(photoRemoteId: Long, userId: String, photoName: String, lon: Double, lat: Double) =
-                PhotoAnswerEntity(0L, photoRemoteId, userId, photoName, lon, lat)
+                PhotoAnswerEntity(photoRemoteId, userId, photoName, lon, lat)
 
         fun fromPhotoAnswer(photoAnswer: PhotoAnswer): PhotoAnswerEntity {
             return PhotoAnswerEntity(
-                    0L,
                     photoAnswer.photoRemoteId,
                     photoAnswer.userId,
                     photoAnswer.photoName,

@@ -16,7 +16,8 @@ import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService
-import com.kirakishou.photoexchange.mwvm.model.other.EventType
+import com.kirakishou.photoexchange.mwvm.model.event.PhotoReceivedEvent
+import com.kirakishou.photoexchange.mwvm.model.event.PhotoReceivedEventStatus
 import com.kirakishou.photoexchange.mwvm.model.event.PhotoUploadedEvent
 import com.kirakishou.photoexchange.mwvm.model.event.SendPhotoEventStatus
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
@@ -128,39 +129,69 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     override fun onPageSelected(position: Int) {
     }
 
-    private fun startFindPhotoAnswerService(userId: String) {
-        FindPhotoAnswerService.scheduleImmediateJob(userId, this)
+    fun startFindPhotoAnswerService() {
+        FindPhotoAnswerService.scheduleImmediateJob(userInfoPreference.getUserId(), this)
         Timber.d("A job has been scheduled")
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onMessageEvent(uploadedEvent: PhotoUploadedEvent) {
-        when (uploadedEvent.type) {
-            EventType.UploadPhoto -> {
+    fun onPhotoUploadedEvent(event: PhotoUploadedEvent) {
+        val fragment = adapter.sentPhotosFragment
+        if (fragment == null) {
+            Timber.w("Event received when fragment is null!")
+            return
+        }
 
-                val fragment = adapter.sentPhotosFragment
-                if (fragment == null) {
-                    Timber.w("Event received when fragment is null!")
-                    return
-                }
+        if (!fragment.isAdded) {
+            Timber.w("Fragment is not added in the backstack!")
+            return
+        }
 
-                if (!fragment.isAdded) {
-                    Timber.w("Fragment is not added in the backstack!")
-                    return
-                }
+        if (event.status == SendPhotoEventStatus.SUCCESS) {
+            checkNotNull(event.photo)
+            val photo = event.photo!!
 
-                if (uploadedEvent.status == SendPhotoEventStatus.SUCCESS) {
-                    checkNotNull(uploadedEvent.photo)
-                    val photo = uploadedEvent.photo!!
+            fragment.onPhotoUploaded(photo)
+            startFindPhotoAnswerService()
+        } else {
+            fragment.onFailedToUploadPhoto()
+        }
+    }
 
-                    fragment.onPhotoUploaded(photo)
-                    startFindPhotoAnswerService(userInfoPreference.getUserId())
-                } else {
-                    fragment.onFailedToUploadPhoto()
-                }
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onPhotoReceivedEvent(event: PhotoReceivedEvent) {
+        val fragment = adapter.receivedPhotosFragment
+        if (fragment == null) {
+            Timber.w("Event received when fragment is null!")
+            return
+        }
+
+        if (!fragment.isAdded) {
+            Timber.w("Fragment is not added in the backstack!")
+            return
+        }
+
+        when (event.status) {
+            PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED -> {
+                Timber.d("SUCCESS_ALL_RECEIVED")
             }
-
-            else -> IllegalStateException("Unknown eventType: ${uploadedEvent.type}")
+            PhotoReceivedEventStatus.SUCCESS_NOT_ALL_RECEIVED -> {
+                Timber.d("SUCCESS_NOT_ALL_RECEIVED rescheduling as immediate")
+                FindPhotoAnswerService.scheduleImmediateJob(userInfoPreference.getUserId(), this)
+            }
+            PhotoReceivedEventStatus.FAIL -> {
+                Timber.d("FAIL")
+            }
+            PhotoReceivedEventStatus.NO_PHOTOS_ON_SERVER -> {
+                Timber.d("NO_PHOTOS_ON_SERVER rescheduling as periodic")
+                FindPhotoAnswerService.scheduleJobPeriodicJob(userInfoPreference.getUserId(), this)
+            }
+            PhotoReceivedEventStatus.USER_HAS_NOT_UPLOADED_ANY_PHOTOS -> {
+                Timber.d("USER_HAS_NOT_UPLOADED_ANY_PHOTOS")
+            }
+            PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS -> {
+                Timber.d("UPLOAD_MORE_PHOTOS")
+            }
         }
     }
 

@@ -25,8 +25,8 @@ class FindPhotoAnswerServiceViewModel(
         private val apiClient: ApiClient,
         private val schedulers: SchedulerProvider
 ) : FindPhotoAnswerServiceInputs,
-        FindPhotoAnswerServiceOutputs,
-        FindPhotoAnswerServiceErrors {
+    FindPhotoAnswerServiceOutputs,
+    FindPhotoAnswerServiceErrors {
 
     val inputs: FindPhotoAnswerServiceInputs = this
     val outputs: FindPhotoAnswerServiceOutputs = this
@@ -38,6 +38,7 @@ class FindPhotoAnswerServiceViewModel(
     private val findPhotoAnswerSubject = PublishSubject.create<String>()
 
     //outputs
+    private val uploadMorePhotosSubject = PublishSubject.create<Unit>()
     private val couldNotMarkPhotoAsReceivedSubject = PublishSubject.create<Unit>()
     private val noPhotosToSendBackSubject = PublishSubject.create<Unit>()
     private val userHasNoUploadedPhotosSubject = PublishSubject.create<Unit>()
@@ -125,9 +126,15 @@ class FindPhotoAnswerServiceViewModel(
                     .subscribe(noPhotosToSendBackSubject::onNext, unknownErrorSubject::onNext)
 
             compositeDisposable += responseErrorCode
+                    .filter { errorCode -> errorCode == ServerErrorCode.UPLOAD_MORE_PHOTOS }
+                    .map { Unit }
+                    .subscribe(uploadMorePhotosSubject::onNext, unknownErrorSubject::onNext)
+
+            compositeDisposable += responseErrorCode
                     .filter { errorCode -> errorCode != ServerErrorCode.OK }
                     .filter { errorCode -> errorCode != ServerErrorCode.USER_HAS_NO_UPLOADED_PHOTOS }
                     .filter { errorCode -> errorCode != ServerErrorCode.NO_PHOTOS_TO_SEND_BACK }
+                    .filter { errorCode -> errorCode != ServerErrorCode.UPLOAD_MORE_PHOTOS }
                     .subscribe(badResponseSubject::onNext, unknownErrorSubject::onNext)
         }
 
@@ -145,6 +152,7 @@ class FindPhotoAnswerServiceViewModel(
     }
 
     //outputs
+    override fun uploadMorePhotosObservable(): Observable<Unit> = uploadMorePhotosSubject
     override fun couldNotMarkPhotoAsReceivedObservable(): Observable<Unit> = couldNotMarkPhotoAsReceivedSubject
     override fun userHasNoUploadedPhotosObservable(): Observable<Unit> = userHasNoUploadedPhotosSubject
     override fun noPhotosToSendBackObservable(): Observable<Unit> = noPhotosToSendBackSubject
