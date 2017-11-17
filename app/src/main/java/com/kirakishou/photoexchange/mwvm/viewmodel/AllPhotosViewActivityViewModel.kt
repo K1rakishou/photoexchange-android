@@ -1,9 +1,12 @@
 package com.kirakishou.photoexchange.mwvm.viewmodel
 
 import com.kirakishou.photoexchange.base.BaseViewModel
+import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mwvm.model.other.Pageable
+import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
 import com.kirakishou.photoexchange.mwvm.model.other.UploadedPhoto
 import com.kirakishou.photoexchange.mwvm.wires.errors.AllPhotosViewActivityViewModelErrors
 import com.kirakishou.photoexchange.mwvm.wires.inputs.AllPhotosViewActivityViewModelInputs
@@ -18,6 +21,7 @@ import timber.log.Timber
  */
 class AllPhotosViewActivityViewModel(
         private val uploadedPhotosRepository: UploadedPhotosRepository,
+        private val photoAnswerRepository: PhotoAnswerRepository,
         private val schedulers: SchedulerProvider
 ) : BaseViewModel(),
         AllPhotosViewActivityViewModelInputs,
@@ -28,22 +32,36 @@ class AllPhotosViewActivityViewModel(
     val outputs: AllPhotosViewActivityViewModelOutputs = this
     val errors: AllPhotosViewActivityViewModelErrors = this
 
-    private val onPageReceivedSubject = PublishSubject.create<List<UploadedPhoto>>()
-    private val fetchOnePageSubject = PublishSubject.create<Pageable>()
+    //inputs
+    private val fetchOnePageUploadedPhotosSubject = PublishSubject.create<Pageable>()
+    private val fetchOnePageReceivedPhotosSubject = PublishSubject.create<Pageable>()
+
+    //outputs
+    private val onUploadedPhotosPageReceivedSubject = PublishSubject.create<List<UploadedPhoto>>()
+    private val onReceivedPhotosPageReceivedSubject = PublishSubject.create<List<PhotoAnswer>>()
+
+    //errors
 
     init {
-        compositeDisposable += fetchOnePageSubject
+        compositeDisposable += fetchOnePageUploadedPhotosSubject
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .flatMap(uploadedPhotosRepository::findOnePage)
-                .doOnNext {
-                    Timber.d("fetchOnePageSubject doOnNext")
-                }
-                .subscribe(onPageReceivedSubject::onNext, this::handleError)
+                .subscribe(onUploadedPhotosPageReceivedSubject::onNext, this::handleError)
+
+        compositeDisposable += fetchOnePageReceivedPhotosSubject
+                .subscribeOn(schedulers.provideIo())
+                .observeOn(schedulers.provideIo())
+                .flatMap(photoAnswerRepository::findOnePage)
+                .subscribe(onReceivedPhotosPageReceivedSubject::onNext, this::handleError)
     }
 
-    override fun fetchOnePage(page: Int, count: Int) {
-        fetchOnePageSubject.onNext(Pageable(page, count))
+    override fun fetchOnePageUploadedPhotos(page: Int, count: Int) {
+        fetchOnePageUploadedPhotosSubject.onNext(Pageable(page, count))
+    }
+
+    override fun fetchOnePageReceivedPhotos(page: Int, count: Int) {
+        fetchOnePageReceivedPhotosSubject.onNext(Pageable(page, count))
     }
 
     private fun handleError(error: Throwable) {
@@ -56,7 +74,8 @@ class AllPhotosViewActivityViewModel(
         super.onCleared()
     }
 
-    override fun onPageReceivedObservable(): Observable<List<UploadedPhoto>> = onPageReceivedSubject
+    override fun onUploadedPhotosPageReceivedObservable(): Observable<List<UploadedPhoto>> = onUploadedPhotosPageReceivedSubject
+    override fun onReceivedPhotosPageReceivedObservable(): Observable<List<PhotoAnswer>> = onReceivedPhotosPageReceivedSubject
 }
 
 

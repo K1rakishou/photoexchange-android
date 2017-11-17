@@ -5,7 +5,9 @@ import com.kirakishou.photoexchange.helper.database.dao.PhotoAnswerDao
 import com.kirakishou.photoexchange.helper.database.entity.PhotoAnswerEntity
 import com.kirakishou.photoexchange.helper.mapper.PhotoAnswerMapper
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.mwvm.model.other.Pageable
 import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
+import io.reactivex.Observable
 import io.reactivex.Single
 
 /**
@@ -20,7 +22,8 @@ class PhotoAnswerRepository(
 
     fun saveOne(photoAnswer: PhotoAnswer): Single<Long> {
         val resultSingle = Single.fromCallable {
-            photoAnswerDao.saveOne(mapper.toPhotoAnswerEntity(photoAnswer))
+            val entity = PhotoAnswerEntity.new(photoAnswer.photoRemoteId, photoAnswer.userId, photoAnswer.photoName, photoAnswer.lon, photoAnswer.lat)
+            photoAnswerDao.saveOne(entity)
         }
 
         return resultSingle
@@ -40,6 +43,14 @@ class PhotoAnswerRepository(
         return resultSingle
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
+    }
+
+    fun findOnePage(pageable: Pageable): Observable<List<PhotoAnswer>> {
+        return photoAnswerDao.findPage(pageable.page, pageable.count)
+                .subscribeOn(schedulers.provideIo())
+                .observeOn(schedulers.provideIo())
+                .map(mapper::toPhotoAnswers)
+                .toObservable()
     }
 
     fun findAll(): Single<List<PhotoAnswer>> {

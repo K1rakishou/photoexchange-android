@@ -124,7 +124,7 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
                 .doOnNext { adapter.addProgressFooter() }
                 .doOnNext(this::fetchPage)
                 .observeOn(Schedulers.io())
-                .zipWith(getViewModel().outputs.onPageReceivedObservable())
+                .zipWith(getViewModel().outputs.onUploadedPhotosPageReceivedObservable())
                 .map { it.second }
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext { adapter.removeProgressFooter() }
@@ -141,7 +141,7 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
 
     private fun fetchPage(page: Int) {
         val count = PHOTOS_PER_PAGE * columnsCount
-        getViewModel().inputs.fetchOnePage(page * count, count)
+        getViewModel().inputs.fetchOnePageUploadedPhotos(page * count, count)
     }
 
     private fun onPageReceived(uploadedPhotosList: List<UploadedPhoto>) {

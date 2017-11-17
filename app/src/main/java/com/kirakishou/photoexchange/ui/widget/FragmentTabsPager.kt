@@ -28,7 +28,7 @@ class FragmentTabsPager(fm: FragmentManager) : FragmentStatePagerAdapter(fm) {
             }
             1 -> {
                 if (receivedPhotosFragment == null) {
-                    receivedPhotosFragment = ReceivedPhotosListFragment()
+                    receivedPhotosFragment = ReceivedPhotosListFragment.newInstance(isUploadingPhoto)
                 }
 
                 return receivedPhotosFragment!!

@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.helper.database.entity
 import android.arch.persistence.room.ColumnInfo
 import android.arch.persistence.room.Entity
 import android.arch.persistence.room.PrimaryKey
+import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
 
 /**
@@ -26,24 +27,17 @@ class PhotoAnswerEntity(
         var lon: Double,
 
         @ColumnInfo(name = "lat")
-        var lat: Double
+        var lat: Double,
+
+        @ColumnInfo(name = "created_on", index = true)
+        var createdOn: Long
 ) {
 
-    constructor() : this(0L, "", "", 0.0, 0.0)
+    constructor() : this(0L, "", "", 0.0, 0.0, 0L)
 
     companion object {
         fun new(photoRemoteId: Long, userId: String, photoName: String, lon: Double, lat: Double) =
-                PhotoAnswerEntity(photoRemoteId, userId, photoName, lon, lat)
-
-        fun fromPhotoAnswer(photoAnswer: PhotoAnswer): PhotoAnswerEntity {
-            return PhotoAnswerEntity(
-                    photoAnswer.photoRemoteId,
-                    photoAnswer.userId,
-                    photoAnswer.photoName,
-                    photoAnswer.lon,
-                    photoAnswer.lat
-            )
-        }
+                PhotoAnswerEntity(photoRemoteId, userId, photoName, lon, lat, TimeUtils.getTimeFast())
 
         const val TABLE_NAME = "photo_answer"
     }

@@ -20,6 +20,11 @@ interface PhotoAnswerDao {
     @Insert
     fun saveMany(vararg photoAnswerEntityArray: PhotoAnswerEntity): List<Long>
 
+    @Query("SELECT * FROM ${PhotoAnswerEntity.TABLE_NAME} " +
+            "ORDER BY created_on DESC " +
+            "LIMIT :arg1 OFFSET :arg0")
+    fun findPage(page: Int, count: Int): Single<List<PhotoAnswerEntity>>
+
     @Query("SELECT * FROM ${PhotoAnswerEntity.TABLE_NAME}")
     fun findAll(): Single<List<PhotoAnswerEntity>>
 }
