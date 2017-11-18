@@ -52,31 +52,28 @@ class FindPhotoAnswerService : JobService() {
 
     override fun onCreate() {
         super.onCreate()
-        Timber.d("FindPhotoAnswerService start")
 
         resolveDaggerDependency()
         viewModel = FindPhotoAnswerServiceViewModel(photoAnswerRepo, apiClient, schedulers)
     }
 
     override fun onDestroy() {
-        Timber.d("FindPhotoAnswerService destroy")
         cleanUp()
 
         super.onDestroy()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Timber.d("FindPhotoAnswerService onStartCommand")
         return START_NOT_STICKY
     }
 
     override fun onStartJob(params: JobParameters): Boolean {
+        Timber.d("")
         Timber.d("FindPhotoAnswerService onStartJob")
 
-        when {
-            params.jobId == IMMEDIATE_JOB_ID -> Timber.d("IMMEDIATE_JOB_ID")
-            params.jobId == PERIODIC_JOB_ID -> Timber.d("PERIODIC_JOB_ID")
-            else -> throw IllegalStateException("Unknown jobId ${params.jobId}")
+        when (getJobTypeFromParams(params)) {
+            IMMEDIATE_JOB_TYPE -> Timber.d("IMMEDIATE_JOB_TYPE")
+            PERIODIC_JOB_TYPE -> Timber.d("PERIODIC_JOB_TYPE")
         }
 
         val currentTime = TimeUtils.getTimeFast()
@@ -96,7 +93,7 @@ class FindPhotoAnswerService : JobService() {
     }
 
     private fun handleCommand(params: JobParameters) {
-        val userId = getUserIdFromParam(params)
+        val userId = getUserIdFromParams(params)
         viewModel.inputs.findPhotoAnswer(userId)
     }
 
@@ -162,19 +159,22 @@ class FindPhotoAnswerService : JobService() {
 
         eventBus.post(PhotoReceivedEvent.fail())
         cancelAll(this)
-        finish(params, true)
+        finish(params, false)
     }
 
     private fun noPhotosToSendBack(params: JobParameters) {
         Timber.d("No photos on server to send back")
 
-        if (isJobImmediate(params.jobId)) {
-            Timber.d("Current job is immediate, changing it to periodic")
-            changeJobToPeriodic(getUserIdFromParam(params))
-        }
-
         eventBus.post(PhotoReceivedEvent.noPhotos())
-        finish(params, false)
+
+        if (isJobImmediate(params)) {
+            Timber.d("Current job is immediate, changing it to periodic")
+            finish(params, false)
+            changeJobToPeriodic(getUserIdFromParams(params))
+        } else {
+            Timber.d("Current job is periodic, no need to change it")
+            finish(params, true)
+        }
     }
 
     private fun userHasNoUploadedPhotos(params: JobParameters) {
@@ -186,7 +186,7 @@ class FindPhotoAnswerService : JobService() {
     }
 
     private fun onPhotoAnswerFound(params: JobParameters, returnValue: PhotoAnswerReturnValue) {
-        val userId = getUserIdFromParam(params)
+        val userId = getUserIdFromParams(params)
 
         if (!returnValue.allFound) {
             Timber.d("FindPhotoAnswerService: allFound = ${returnValue.allFound} Reschedule job")
@@ -194,7 +194,7 @@ class FindPhotoAnswerService : JobService() {
 
             eventBus.post(PhotoReceivedEvent.successNotAllReceived(returnValue.photoAnswer))
 
-            if (isJobPeriodic(params.jobId)) {
+            if (isJobPeriodic(params)) {
                 Timber.d("Current job is periodic, changing it to immediate")
                 changeJobToImmediate(userId)
             } else {
@@ -205,7 +205,6 @@ class FindPhotoAnswerService : JobService() {
             Timber.d("FindPhotoAnswerService: allFound = ${returnValue.allFound} we are done")
             eventBus.post(PhotoReceivedEvent.successAllReceived(returnValue.photoAnswer))
 
-            cancelAll(this)
             finish(params, false)
         }
     }
@@ -238,19 +237,28 @@ class FindPhotoAnswerService : JobService() {
     }
 
     //utils
-    private fun getUserIdFromParam(params: JobParameters): String {
+    private fun getUserIdFromParams(params: JobParameters): String {
         val userId = params.extras.getString("user_id")
         checkNotNull(userId)
 
         return userId
     }
 
-    private fun isJobPeriodic(jobId: Int): Boolean {
-        return jobId == PERIODIC_JOB_ID
+    private fun getJobTypeFromParams(params: JobParameters): Int {
+        val jobType = params.extras.getInt("job_type", -1)
+        check(jobType != -1)
+
+        return jobType
     }
 
-    private fun isJobImmediate(jobId: Int): Boolean {
-        return jobId == IMMEDIATE_JOB_ID
+    private fun isJobPeriodic(params: JobParameters): Boolean {
+        val jobType = getJobTypeFromParams(params)
+        return jobType == PERIODIC_JOB_TYPE
+    }
+
+    private fun isJobImmediate(params: JobParameters): Boolean {
+        val jobType = getJobTypeFromParams(params)
+        return jobType == IMMEDIATE_JOB_TYPE
     }
 
     private fun changeJobToImmediate(userId: String) {
@@ -320,25 +328,28 @@ class FindPhotoAnswerService : JobService() {
     }
 
     companion object {
-        private val IMMEDIATE_JOB_ID = 1
-        private val PERIODIC_JOB_ID = 2
+        private val JOB_ID = 1
+
+        private val IMMEDIATE_JOB_TYPE = 0
+        private val PERIODIC_JOB_TYPE = 1
 
         fun scheduleImmediateJob(userId: String, context: Context) {
             val extras = PersistableBundle()
             extras.putString("user_id", userId)
+            extras.putInt("job_type", IMMEDIATE_JOB_TYPE)
 
-            val jobInfo = JobInfo.Builder(IMMEDIATE_JOB_ID, ComponentName(context, FindPhotoAnswerService::class.java))
+            val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, FindPhotoAnswerService::class.java))
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
                     .setMinimumLatency(0)
                     .setOverrideDeadline(0)
                     .setExtras(extras)
-                    .setBackoffCriteria(2_000, JobInfo.BACKOFF_POLICY_LINEAR)
+                    .setBackoffCriteria(1_000, JobInfo.BACKOFF_POLICY_LINEAR)
                     .build()
 
             val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
-            jobScheduler.cancelAll()
+            jobScheduler.cancel(JOB_ID)
             val result = jobScheduler.schedule(jobInfo)
 
             check(result == JobScheduler.RESULT_SUCCESS)
@@ -347,19 +358,21 @@ class FindPhotoAnswerService : JobService() {
         fun schedulePeriodicJob(userId: String, context: Context) {
             val extras = PersistableBundle()
             extras.putString("user_id", userId)
+            extras.putInt("job_type", PERIODIC_JOB_TYPE)
 
-            val jobInfo = JobInfo.Builder(PERIODIC_JOB_ID, ComponentName(context, FindPhotoAnswerService::class.java))
+            val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, FindPhotoAnswerService::class.java))
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
-                    .setMinimumLatency(10_000)
-                    .setOverrideDeadline(60_000)
+                    //TODO
+                    .setMinimumLatency(1_000)
+                    .setOverrideDeadline(6_000)
                     .setExtras(extras)
-                    .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_LINEAR)
+                    .setBackoffCriteria(1_000, JobInfo.BACKOFF_POLICY_LINEAR)
                     .build()
 
             val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
-            jobScheduler.cancelAll()
+            jobScheduler.cancel(JOB_ID)
             val result = jobScheduler.schedule(jobInfo)
 
             check(result == JobScheduler.RESULT_SUCCESS)

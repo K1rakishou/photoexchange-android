@@ -63,10 +63,11 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         initRecyclerView()
 
         val isUploadingPhoto = arguments.getBoolean("is_uploading_photo", false)
-        if (!isUploadingPhoto /*|| savedInstanceState == null*/) {
+        if (!isUploadingPhoto) {
             (activity as AllPhotosViewActivity).startFindPhotoAnswerService()
-            startRefreshing()
         }
+
+        recyclerStartLoadingItems()
     }
 
     override fun onFragmentViewDestroy() {
@@ -159,16 +160,14 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         Timber.d("onPhotoReceived()")
         check(isAdded)
 
-        stopRefreshing()
-        recyclerStartLoadingItems()
+        adapter.runOnAdapterHandler {
+            adapter.addFirst(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
+        }
     }
 
     fun onNoPhoto() {
         Timber.d("onNoPhoto()")
         check(isAdded)
-
-        stopRefreshing()
-        recyclerStartLoadingItems()
     }
 
     private fun onUnknownError(error: Throwable) {

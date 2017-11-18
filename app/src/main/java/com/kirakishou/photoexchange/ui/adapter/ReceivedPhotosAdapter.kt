@@ -20,12 +20,42 @@ import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
  * Created by kirakishou on 11/17/2017.
  */
 class ReceivedPhotosAdapter(
-        private val context: Context
+        private val context: Context,
+        private val selector: IdSelectorFunction
 ) : BaseAdapter<PhotoAnswer>(context) {
 
+    private val duplicatesCheckerSet = mutableSetOf<Long>()
+
+    private fun isDuplicate(item: AdapterItem<PhotoAnswer>): Boolean {
+        if (item.getType() != AdapterItemType.VIEW_ITEM.ordinal) {
+            return false
+        }
+
+        val photoAnswer = item.value.get()
+        val id = selector.select(photoAnswer)
+
+        return !duplicatesCheckerSet.add(id)
+    }
+
     fun addFirst(item: AdapterItem<PhotoAnswer>) {
+        if (isDuplicate(item)) {
+            return
+        }
+
         items.add(0, item)
         notifyItemInserted(0)
+    }
+
+    override fun add(item: AdapterItem<PhotoAnswer>) {
+        if (isDuplicate(item)) {
+            return
+        }
+
+        super.add(item)
+    }
+
+    override fun addAll(items: List<AdapterItem<PhotoAnswer>>) {
+        super.addAll(items.filter { isDuplicate(it) })
     }
 
     fun addProgressFooter() {
@@ -94,5 +124,13 @@ class ReceivedPhotosAdapter(
         init {
             ButterKnife.bind(this, itemView)
         }
+    }
+
+    interface IdSelectorFunction {
+        fun select(item: PhotoAnswer): Long
+    }
+
+    inner class IdSelectorFunctionImpl : IdSelectorFunction {
+        override fun select(item: PhotoAnswer): Long = item.photoRemoteId
     }
 }

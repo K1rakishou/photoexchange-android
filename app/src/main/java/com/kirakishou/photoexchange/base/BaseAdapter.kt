@@ -9,16 +9,19 @@ import android.view.View
 import android.view.ViewGroup
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
+import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
 
 /**
  * Created by kirakishou on 11/7/2017.
  */
 
-abstract class BaseAdapter<T>(mContext: Context) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+abstract class BaseAdapter<T>(
+        context: Context
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     protected lateinit var handler: Handler
     protected val items = mutableListOf<AdapterItem<T>>()
-    private val layoutInflater = LayoutInflater.from(mContext)
+    private val layoutInflater = LayoutInflater.from(context)
     private var baseAdapterInfo = mutableListOf<BaseAdapterInfo>()
     private var isInited = false
 
@@ -102,6 +105,4 @@ abstract class BaseAdapter<T>(mContext: Context) : RecyclerView.Adapter<Recycler
     inner class BaseAdapterInfo(val viewType: AdapterItemType,
                                 val layoutId: Int,
                                 val viewHolderClazz: Class<*>)
-
-
 }
