@@ -7,5 +7,6 @@ enum class AdapterItemType {
     VIEW_ITEM,
     VIEW_PROGRESSBAR,
     VIEW_FAILED_TO_UPLOAD,
-    VIEW_MESSAGE
+    VIEW_MESSAGE,
+    VIEW_PHOTO_UPLOADING
 }

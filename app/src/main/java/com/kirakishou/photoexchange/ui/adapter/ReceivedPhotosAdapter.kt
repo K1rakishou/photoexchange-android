@@ -20,10 +20,10 @@ import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
  * Created by kirakishou on 11/17/2017.
  */
 class ReceivedPhotosAdapter(
-        private val context: Context,
-        private val selector: IdSelectorFunction
+        private val context: Context
 ) : BaseAdapter<PhotoAnswer>(context) {
 
+    private val selector = IdSelectorFunctionImpl()
     private val duplicatesCheckerSet = mutableSetOf<Long>()
 
     private fun isDuplicate(item: AdapterItem<PhotoAnswer>): Boolean {

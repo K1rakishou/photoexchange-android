@@ -18,7 +18,7 @@ import com.kirakishou.photoexchange.mwvm.model.other.UploadedPhoto
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
-import com.kirakishou.photoexchange.ui.adapter.TakenPhotosAdapter
+import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapter
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
 import com.kirakishou.photoexchange.ui.widget.TakenPhotosAdapterSpanSizeLookup
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -37,7 +37,7 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
     @Inject
     lateinit var viewModelFactory: AllPhotosViewActivityViewModelFactory
 
-    private lateinit var adapter: TakenPhotosAdapter
+    private lateinit var adapter: UploadedPhotosAdapter
     private lateinit var endlessScrollListener: EndlessRecyclerOnScrollListener
     private lateinit var layoutManager: GridLayoutManager
 
@@ -55,32 +55,26 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
 
     override fun getContentView(): Int = R.layout.fragment_sent_photos_list
 
-   /* override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-
-        endlessScrollListener.onSaveInstanceState(outState)
-
-        val layoutManagerState = layoutManager.onSaveInstanceState()
-        outState.putParcelable("layoutManagerState", layoutManagerState)
-    }*/
-
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRx()
         initRecyclerView()
 
-        /*savedInstanceState?.let { savedState ->
-            endlessScrollListener.onRestoreInstanceState(savedState)
-            layoutManager.onRestoreInstanceState(savedState.getParcelable<Parcelable>("layoutManagerState"))
-        }*/
-
         val isUploadingPhoto = arguments.getBoolean("is_uploading_photo", false)
-        if (!isUploadingPhoto /*|| savedInstanceState == null*/) {
-            recyclerStartLoadingItems()
+        if (isUploadingPhoto) {
+            addPhotoUploadingIndicator()
         }
+
+        recyclerStartLoadingItems()
     }
 
     override fun onFragmentViewDestroy() {
         PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
+    }
+
+    private fun addPhotoUploadingIndicator() {
+        adapter.runOnAdapterHandlerWithDelay(DELAY_BEFORE_PROGRESS_FOOTER_ADDED) {
+            adapter.addPhotoUploadingIndicator()
+        }
     }
 
     private fun recyclerStartLoadingItems() {
@@ -101,7 +95,7 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
 
         val noPhotosUploadedYetMessage = context.getString(R.string.no_photos_uploaded)
 
-        adapter = TakenPhotosAdapter(activity, retryButtonSubject, noPhotosUploadedYetMessage)
+        adapter = UploadedPhotosAdapter(activity, retryButtonSubject, noPhotosUploadedYetMessage)
         adapter.init()
 
         layoutManager = GridLayoutManager(activity, columnsCount)

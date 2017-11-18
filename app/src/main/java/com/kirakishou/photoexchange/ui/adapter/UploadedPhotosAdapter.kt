@@ -22,7 +22,7 @@ import io.reactivex.subjects.PublishSubject
 /**
  * Created by kirakishou on 11/7/2017.
  */
-class TakenPhotosAdapter(
+class UploadedPhotosAdapter(
         private val context: Context,
         private val retryButtonSubject: PublishSubject<UploadedPhoto>,
         private val noPhotosUploadedMessage: String
@@ -31,6 +31,24 @@ class TakenPhotosAdapter(
     fun addFirst(item: AdapterItem<UploadedPhoto>) {
         items.add(0, item)
         notifyItemInserted(0)
+    }
+
+    fun addPhotoUploadingIndicator() {
+        checkInited()
+
+        if (items.isEmpty() || items.first().getType() != AdapterItemType.VIEW_PHOTO_UPLOADING.ordinal) {
+            items.add(AdapterItem(AdapterItemType.VIEW_PHOTO_UPLOADING))
+            notifyItemInserted(items.lastIndex)
+        }
+    }
+
+    fun removePhotoUploadingIndicator() {
+        checkInited()
+
+        if (items.isEmpty() || items.first().getType() != AdapterItemType.VIEW_PHOTO_UPLOADING.ordinal) {
+            items.removeAt(0)
+            notifyItemInserted(0)
+        }
     }
 
     fun addProgressFooter() {
@@ -78,7 +96,8 @@ class TakenPhotosAdapter(
                 BaseAdapterInfo(AdapterItemType.VIEW_ITEM, R.layout.adapter_item_sent_photo, SentPhotoViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_PROGRESSBAR, R.layout.adapter_item_progress, ProgressBarViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_FAILED_TO_UPLOAD, R.layout.adapter_item_upload_photo_error, PhotoUploadErrorViewHolder::class.java),
-                BaseAdapterInfo(AdapterItemType.VIEW_MESSAGE, R.layout.adapter_item_message, MessageViewHolder::class.java)
+                BaseAdapterInfo(AdapterItemType.VIEW_MESSAGE, R.layout.adapter_item_message, MessageViewHolder::class.java),
+                BaseAdapterInfo(AdapterItemType.VIEW_PHOTO_UPLOADING, R.layout.adapter_item_photo_uploading, PhotoUploadingViewHolder::class.java)
         )
     }
 
@@ -112,6 +131,10 @@ class TakenPhotosAdapter(
 
             is MessageViewHolder -> {
                 holder.messageTv.text = noPhotosUploadedMessage
+            }
+
+            is PhotoUploadingViewHolder -> {
+                holder.progressBar.isIndeterminate = true
             }
         }
     }
@@ -150,6 +173,16 @@ class TakenPhotosAdapter(
 
         @BindView(R.id.message)
         lateinit var messageTv: TextView
+
+        init {
+            ButterKnife.bind(this, itemView)
+        }
+    }
+
+    class PhotoUploadingViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        @BindView(R.id.loading_indicator)
+        lateinit var progressBar: ProgressBar
 
         init {
             ButterKnife.bind(this, itemView)

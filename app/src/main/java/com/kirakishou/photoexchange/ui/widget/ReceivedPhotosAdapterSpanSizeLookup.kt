@@ -3,7 +3,6 @@ package com.kirakishou.photoexchange.ui.widget
 import android.support.v7.widget.GridLayoutManager
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapter
-import com.kirakishou.photoexchange.ui.adapter.TakenPhotosAdapter
 
 /**
  * Created by kirakishou on 11/17/2017.
