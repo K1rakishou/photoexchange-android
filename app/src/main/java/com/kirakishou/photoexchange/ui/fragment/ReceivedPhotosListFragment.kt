@@ -3,6 +3,8 @@ package com.kirakishou.photoexchange.ui.fragment
 
 import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
+import android.support.design.widget.CoordinatorLayout
+import android.support.design.widget.Snackbar
 import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -32,11 +34,11 @@ import javax.inject.Inject
 
 class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
 
+    @BindView(R.id.root_layout)
+    lateinit var rootLayout: CoordinatorLayout
+
     @BindView(R.id.received_photos_list)
     lateinit var receivedPhotosList: RecyclerView
-
-    @BindView(R.id.swipe_to_refresh)
-    lateinit var swipeToRefresh: SwipeRefreshLayout
 
     @Inject
     lateinit var viewModelFactory: AllPhotosViewActivityViewModelFactory
@@ -62,11 +64,6 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         initRx()
         initRecyclerView()
 
-        swipeToRefresh.setOnRefreshListener {
-            //TODO
-            swipeToRefresh.isRefreshing = false
-        }
-
         val isPhotoUploading = arguments.getBoolean("is_photo_uploading", false)
         if (!isPhotoUploading) {
             (activity as AllPhotosViewActivity).startLookingForPhotoAnswerService()
@@ -79,13 +76,13 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     override fun onFragmentViewDestroy() {
         PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
     }
-
-    private fun startRefreshing() {
-        swipeToRefresh.isRefreshing = true
-    }
-
-    private fun stopRefreshing() {
-        swipeToRefresh.isRefreshing = false
+    
+    private fun showNewPhotoReceivedNotification() {
+        Snackbar.make(rootLayout, "New photo has been received", Snackbar.LENGTH_LONG)
+                .setAction("SHOW", {
+                    receivedPhotosList.scrollToPosition(0)
+                })
+                .show()
     }
 
     private fun initRx() {
@@ -171,6 +168,8 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         adapter.runOnAdapterHandler {
             adapter.removeLookingForPhotoIndicator()
             adapter.addFirst(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
+
+            showNewPhotoReceivedNotification()
         }
     }
 
