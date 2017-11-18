@@ -129,7 +129,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     override fun onPageSelected(position: Int) {
     }
 
-    fun startFindPhotoAnswerService() {
+    fun startLookingForPhotoAnswerService() {
         FindPhotoAnswerService.scheduleImmediateJob(userInfoPreference.getUserId(), this)
         Timber.d("A job has been scheduled")
     }
@@ -152,7 +152,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
             val photo = event.photo!!
 
             fragment.onPhotoUploaded(photo)
-            startFindPhotoAnswerService()
+            startLookingForPhotoAnswerService()
         } else {
             fragment.onFailedToUploadPhoto()
         }

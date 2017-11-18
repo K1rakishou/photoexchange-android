@@ -45,7 +45,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private lateinit var endlessScrollListener: EndlessRecyclerOnScrollListener
     private lateinit var layoutManager: GridLayoutManager
 
-    private val DELAY_BEFORE_PROGRESS_FOOTER_ADDED = 500L
+    private val DELAY_BEFORE_PROGRESS_FOOTER_ADDED = 100L
     private val PHOTO_ADAPTER_VIEW_WIDTH = 288
     private val PHOTOS_PER_PAGE = 5
     private var columnsCount: Int = 1
@@ -62,9 +62,15 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         initRx()
         initRecyclerView()
 
+        swipeToRefresh.setOnRefreshListener {
+            //TODO
+            swipeToRefresh.isRefreshing = false
+        }
+
         val isPhotoUploading = arguments.getBoolean("is_photo_uploading", false)
         if (!isPhotoUploading) {
-            (activity as AllPhotosViewActivity).startFindPhotoAnswerService()
+            (activity as AllPhotosViewActivity).startLookingForPhotoAnswerService()
+            addLookingForPhotoIndicator()
         }
 
         recyclerStartLoadingItems()
@@ -86,7 +92,6 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         compositeDisposable += loadMoreSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext { Timber.d("page: $it") }
                 .doOnNext { adapter.addProgressFooter() }
                 .doOnNext(this::fetchPage)
                 .observeOn(Schedulers.io())
@@ -94,10 +99,13 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .map { it.second }
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext { adapter.removeProgressFooter() }
-                .doOnNext {
-                    Timber.e("items count: ${it.size}")
-                }
                 .subscribe(this::onPageReceived, this::onUnknownError)
+    }
+
+    private fun addLookingForPhotoIndicator() {
+        adapter.runOnAdapterHandlerWithDelay(DELAY_BEFORE_PROGRESS_FOOTER_ADDED) {
+            adapter.addLookingForPhotoIndicator()
+        }
     }
 
     private fun recyclerStartLoadingItems() {
@@ -161,6 +169,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         check(isAdded)
 
         adapter.runOnAdapterHandler {
+            adapter.removeLookingForPhotoIndicator()
             adapter.addFirst(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
         }
     }

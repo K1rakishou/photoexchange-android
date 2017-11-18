@@ -46,6 +46,24 @@ class ReceivedPhotosAdapter(
         notifyItemInserted(0)
     }
 
+    fun addLookingForPhotoIndicator() {
+        checkInited()
+
+        if (items.isEmpty() || items.first().getType() != AdapterItemType.VIEW_LOOKING_FOR_PHOTO.ordinal) {
+            items.add(AdapterItem(AdapterItemType.VIEW_LOOKING_FOR_PHOTO))
+            notifyItemInserted(items.lastIndex)
+        }
+    }
+
+    fun removeLookingForPhotoIndicator() {
+        checkInited()
+
+        if (items.isNotEmpty() && items.first().getType() == AdapterItemType.VIEW_LOOKING_FOR_PHOTO.ordinal) {
+            items.removeAt(0)
+            notifyItemRemoved(0)
+        }
+    }
+
     override fun add(item: AdapterItem<PhotoAnswer>) {
         if (isDuplicate(item)) {
             return
@@ -81,7 +99,8 @@ class ReceivedPhotosAdapter(
     override fun getBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
         return mutableListOf(
                 BaseAdapterInfo(AdapterItemType.VIEW_ITEM, R.layout.adapter_item_sent_photo, SentPhotoViewHolder::class.java),
-                BaseAdapterInfo(AdapterItemType.VIEW_PROGRESSBAR, R.layout.adapter_item_progress, ProgressBarViewHolder::class.java)
+                BaseAdapterInfo(AdapterItemType.VIEW_PROGRESSBAR, R.layout.adapter_item_progress, ProgressBarViewHolder::class.java),
+                BaseAdapterInfo(AdapterItemType.VIEW_LOOKING_FOR_PHOTO, R.layout.adapter_item_looking_for_photo, LookingForPhotoViewHolder::class.java)
         )
     }
 
@@ -103,6 +122,10 @@ class ReceivedPhotosAdapter(
             is ProgressBarViewHolder -> {
                 holder.progressBar.isIndeterminate = true
             }
+
+            is LookingForPhotoViewHolder -> {
+                holder.progressBar.isIndeterminate = true
+            }
         }
     }
 
@@ -119,6 +142,16 @@ class ReceivedPhotosAdapter(
     class ProgressBarViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         @BindView(R.id.progressbar)
+        lateinit var progressBar: ProgressBar
+
+        init {
+            ButterKnife.bind(this, itemView)
+        }
+    }
+
+    class LookingForPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        @BindView(R.id.loading_indicator)
         lateinit var progressBar: ProgressBar
 
         init {

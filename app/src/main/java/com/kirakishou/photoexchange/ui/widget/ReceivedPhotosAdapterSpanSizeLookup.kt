@@ -16,7 +16,9 @@ class ReceivedPhotosAdapterSpanSizeLookup(
         val type = adapter.getItemViewType(position)
         return when (type) {
             AdapterItemType.VIEW_PROGRESSBAR.ordinal -> columnsCount
-            AdapterItemType.VIEW_ITEM.ordinal-> 1
+
+            AdapterItemType.VIEW_LOOKING_FOR_PHOTO.ordinal,
+            AdapterItemType.VIEW_ITEM.ordinal -> 1
 
             else -> throw RuntimeException("Unknown item view type: $type")
         }

@@ -368,7 +368,7 @@ class FindPhotoAnswerService : JobService() {
                     .setMinimumLatency(1_000)
                     .setOverrideDeadline(6_000)
                     .setExtras(extras)
-                    .setBackoffCriteria(1_000, JobInfo.BACKOFF_POLICY_LINEAR)
+                    .setBackoffCriteria(4_000, JobInfo.BACKOFF_POLICY_LINEAR)
                     .build()
 
             val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
@@ -381,6 +381,20 @@ class FindPhotoAnswerService : JobService() {
         fun cancelAll(context: Context) {
             val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
             jobScheduler.cancelAll()
+        }
+
+        fun isAlreadyRunning(context: Context): Boolean {
+            val scheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
+            var hasBeenScheduled = false
+
+            for (jobInfo in scheduler.allPendingJobs) {
+                if (jobInfo.id == JOB_ID) {
+                    hasBeenScheduled = true
+                    break
+                }
+            }
+
+            return hasBeenScheduled
         }
     }
 }
