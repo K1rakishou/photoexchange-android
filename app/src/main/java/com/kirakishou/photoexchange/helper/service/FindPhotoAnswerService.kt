@@ -364,11 +364,10 @@ class FindPhotoAnswerService : JobService() {
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
-                    //TODO
-                    .setMinimumLatency(1_000)
-                    .setOverrideDeadline(6_000)
+                    .setMinimumLatency(10_000)
+                    .setOverrideDeadline(60_000)
                     .setExtras(extras)
-                    .setBackoffCriteria(4_000, JobInfo.BACKOFF_POLICY_LINEAR)
+                    .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_EXPONENTIAL)
                     .build()
 
             val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler

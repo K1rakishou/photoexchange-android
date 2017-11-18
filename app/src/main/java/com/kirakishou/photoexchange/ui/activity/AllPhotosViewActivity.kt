@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.TabLayout
 import android.support.v4.view.ViewPager
+import android.support.v7.widget.AppCompatButton
 import android.widget.ImageView
 import butterknife.BindView
 import com.jakewharton.rxbinding2.view.RxView
@@ -42,6 +43,9 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
     @BindView(R.id.view_pager)
     lateinit var viewPager: ViewPager
+
+    @BindView(R.id.take_photo_button)
+    lateinit var takePhotoButton: AppCompatButton
 
     @Inject
     lateinit var viewModelFactory: AllPhotosViewActivityViewModelFactory
@@ -85,6 +89,11 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
     private fun initRx() {
         compositeDisposable += RxView.clicks(ivCloseActivityButton)
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ finish() })
+
+        compositeDisposable += RxView.clicks(takePhotoButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ finish() })

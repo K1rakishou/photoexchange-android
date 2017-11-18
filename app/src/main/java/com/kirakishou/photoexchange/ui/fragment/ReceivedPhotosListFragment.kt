@@ -76,7 +76,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     override fun onFragmentViewDestroy() {
         PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
     }
-    
+
     private fun showNewPhotoReceivedNotification() {
         Snackbar.make(rootLayout, "New photo has been received", Snackbar.LENGTH_LONG)
                 .setAction("SHOW", {
