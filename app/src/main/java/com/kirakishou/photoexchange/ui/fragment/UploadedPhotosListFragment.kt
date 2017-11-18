@@ -29,7 +29,7 @@ import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import javax.inject.Inject
 
-class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
+class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
 
     @BindView(R.id.sent_photos_list)
     lateinit var sentPhotosRv: RecyclerView
@@ -41,7 +41,7 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
     private lateinit var endlessScrollListener: EndlessRecyclerOnScrollListener
     private lateinit var layoutManager: GridLayoutManager
 
-    private val DELAY_BEFORE_PROGRESS_FOOTER_ADDED = 500L
+    private val DELAY_BEFORE_PROGRESS_FOOTER_ADDED = 100L
     private val PHOTO_ADAPTER_VIEW_WIDTH = 288
     private val PHOTOS_PER_PAGE = 5
     private var columnsCount: Int = 1
@@ -53,14 +53,14 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
         return ViewModelProviders.of(activity, viewModelFactory).get(AllPhotosViewActivityViewModel::class.java)
     }
 
-    override fun getContentView(): Int = R.layout.fragment_sent_photos_list
+    override fun getContentView(): Int = R.layout.fragment_uploaded_photos_list
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRx()
         initRecyclerView()
 
-        val isUploadingPhoto = arguments.getBoolean("is_uploading_photo", false)
-        if (isUploadingPhoto) {
+        val isPhotoUploading = arguments.getBoolean("is_photo_uploading", false)
+        if (isPhotoUploading) {
             addPhotoUploadingIndicator()
         }
 
@@ -164,28 +164,22 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
 
     fun onPhotoUploaded(photo: UploadedPhoto) {
         Timber.d("onPhotoUploaded()")
-
         check(isAdded)
-        //adapter.removeProgressFooter()
 
-        /*adapter.runOnAdapterHandler {
+        adapter.runOnAdapterHandler {
+            adapter.removePhotoUploadingIndicator()
             adapter.addFirst(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
-        }*/
-
-        recyclerStartLoadingItems()
+        }
     }
 
     fun onFailedToUploadPhoto() {
         Timber.d("onFailedToUploadPhoto()")
-
         check(isAdded)
-        //adapter.removeProgressFooter()
 
         adapter.runOnAdapterHandler {
+            adapter.removePhotoUploadingIndicator()
             adapter.addFirst(AdapterItem(AdapterItemType.VIEW_FAILED_TO_UPLOAD))
         }
-
-        recyclerStartLoadingItems()
     }
 
     private fun onUnknownError(error: Throwable) {
@@ -201,10 +195,10 @@ class SentPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
     }
 
     companion object {
-        fun newInstance(isUploadingPhoto: Boolean): SentPhotosListFragment {
-            val fragment = SentPhotosListFragment()
+        fun newInstance(isPhotoUploading: Boolean): UploadedPhotosListFragment {
+            val fragment = UploadedPhotosListFragment()
             val args = Bundle()
-            args.putBoolean("is_uploading_photo", isUploadingPhoto)
+            args.putBoolean("is_photo_uploading", isPhotoUploading)
 
             fragment.arguments = args
             return fragment

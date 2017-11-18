@@ -45,9 +45,9 @@ class UploadedPhotosAdapter(
     fun removePhotoUploadingIndicator() {
         checkInited()
 
-        if (items.isEmpty() || items.first().getType() != AdapterItemType.VIEW_PHOTO_UPLOADING.ordinal) {
+        if (items.isNotEmpty() && items.first().getType() == AdapterItemType.VIEW_PHOTO_UPLOADING.ordinal) {
             items.removeAt(0)
-            notifyItemInserted(0)
+            notifyItemRemoved(0)
         }
     }
 

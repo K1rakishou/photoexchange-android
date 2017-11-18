@@ -4,7 +4,7 @@ import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentManager
 import android.support.v4.app.FragmentStatePagerAdapter
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosListFragment
-import com.kirakishou.photoexchange.ui.fragment.SentPhotosListFragment
+import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosListFragment
 
 /**
  * Created by kirakishou on 11/7/2017.
@@ -12,23 +12,23 @@ import com.kirakishou.photoexchange.ui.fragment.SentPhotosListFragment
 
 class FragmentTabsPager(fm: FragmentManager) : FragmentStatePagerAdapter(fm) {
 
-    var isUploadingPhoto = false
+    var isPhotoUploading = false
 
-    var sentPhotosFragment: SentPhotosListFragment? = null
+    var uploadedPhotosFragment: UploadedPhotosListFragment? = null
     var receivedPhotosFragment: ReceivedPhotosListFragment? = null
 
     override fun getItem(position: Int): Fragment {
         when (position) {
             0 -> {
-                if (sentPhotosFragment == null) {
-                    sentPhotosFragment = SentPhotosListFragment.newInstance(isUploadingPhoto)
+                if (uploadedPhotosFragment == null) {
+                    uploadedPhotosFragment = UploadedPhotosListFragment.newInstance(isPhotoUploading)
                 }
 
-                return sentPhotosFragment!!
+                return uploadedPhotosFragment!!
             }
             1 -> {
                 if (receivedPhotosFragment == null) {
-                    receivedPhotosFragment = ReceivedPhotosListFragment.newInstance(isUploadingPhoto)
+                    receivedPhotosFragment = ReceivedPhotosListFragment.newInstance(isPhotoUploading)
                 }
 
                 return receivedPhotosFragment!!

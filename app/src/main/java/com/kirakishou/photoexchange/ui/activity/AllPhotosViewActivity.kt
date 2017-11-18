@@ -95,7 +95,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         tabLayout.addTab(tabLayout.newTab().setText("Received"))
         tabLayout.tabGravity = TabLayout.GRAVITY_FILL
 
-        adapter.isUploadingPhoto = intent.getBooleanExtra("is_uploading_photo", false)
+        adapter.isPhotoUploading = intent.getBooleanExtra("is_photo_uploading", false)
 
         viewPager.adapter = adapter
         viewPager.offscreenPageLimit = 1
@@ -136,7 +136,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onPhotoUploadedEvent(event: PhotoUploadedEvent) {
-        val fragment = adapter.sentPhotosFragment
+        val fragment = adapter.uploadedPhotosFragment
         if (fragment == null) {
             Timber.w("Event received when fragment is null!")
             return

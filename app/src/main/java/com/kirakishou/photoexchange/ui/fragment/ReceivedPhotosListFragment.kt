@@ -62,8 +62,8 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         initRx()
         initRecyclerView()
 
-        val isUploadingPhoto = arguments.getBoolean("is_uploading_photo", false)
-        if (!isUploadingPhoto) {
+        val isPhotoUploading = arguments.getBoolean("is_photo_uploading", false)
+        if (!isPhotoUploading) {
             (activity as AllPhotosViewActivity).startFindPhotoAnswerService()
         }
 
@@ -183,10 +183,10 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     companion object {
-        fun newInstance(isUploadingPhoto: Boolean): ReceivedPhotosListFragment {
+        fun newInstance(isPhotoUploading: Boolean): ReceivedPhotosListFragment {
             val fragment = ReceivedPhotosListFragment()
             val args = Bundle()
-            args.putBoolean("is_uploading_photo", isUploadingPhoto)
+            args.putBoolean("is_photo_uploading", isPhotoUploading)
 
             fragment.arguments = args
             return fragment

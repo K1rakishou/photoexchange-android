@@ -97,7 +97,7 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
 
     private fun switchToAllPhotosViewActivity() {
         val intent = Intent(this, AllPhotosViewActivity::class.java)
-        intent.putExtra("is_uploading_photo", true)
+        intent.putExtra("is_photo_uploading", true)
         startActivity(intent)
         finish()
     }
