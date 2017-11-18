@@ -86,7 +86,7 @@ class FindPhotoAnswerService : JobService() {
         initRx(params)
 
         try {
-            handleCommand(params.extras)
+            handleCommand(params)
         } catch (error: Throwable) {
             onUnknownError(params, error)
             return false
@@ -95,10 +95,8 @@ class FindPhotoAnswerService : JobService() {
         return true
     }
 
-    private fun handleCommand(extras: PersistableBundle) {
-        val userId = extras.getString("user_id")
-        checkNotNull(userId)
-
+    private fun handleCommand(params: JobParameters) {
+        val userId = getUserIdFromParam(params)
         viewModel.inputs.findPhotoAnswer(userId)
     }
 
@@ -108,8 +106,6 @@ class FindPhotoAnswerService : JobService() {
     }
 
     private fun initRx(params: JobParameters) {
-        Timber.e("isRxInited: $isRxInited")
-
         if (isRxInited) {
             return
         }
@@ -124,7 +120,7 @@ class FindPhotoAnswerService : JobService() {
         compositeDisposable += viewModel.outputs.userHasNoUploadedPhotosObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ userHasNoUploadedPhotosObservable(params) })
+                .subscribe({ userHasNoUploadedPhotos(params) })
 
         compositeDisposable += viewModel.outputs.noPhotosToSendBackObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -152,10 +148,12 @@ class FindPhotoAnswerService : JobService() {
                 .subscribe({ onUnknownError(params, it) })
     }
 
-    fun uploadMorePhotos(params: JobParameters) {
+    //API responses
+    private fun uploadMorePhotos(params: JobParameters) {
         Timber.d("Upload more photos")
 
         eventBus.post(PhotoReceivedEvent.uploadMorePhotos())
+        cancelAll(this)
         finish(params, false)
     }
 
@@ -163,35 +161,53 @@ class FindPhotoAnswerService : JobService() {
         Timber.d("Could not mark a photo as received")
 
         eventBus.post(PhotoReceivedEvent.fail())
+        cancelAll(this)
         finish(params, true)
     }
 
     private fun noPhotosToSendBack(params: JobParameters) {
-        Timber.d("No photos to send back")
+        Timber.d("No photos on server to send back")
+
+        if (isJobImmediate(params.jobId)) {
+            Timber.d("Current job is immediate, changing it to periodic")
+            changeJobToPeriodic(getUserIdFromParam(params))
+        }
 
         eventBus.post(PhotoReceivedEvent.noPhotos())
         finish(params, false)
     }
 
-    private fun userHasNoUploadedPhotosObservable(params: JobParameters) {
+    private fun userHasNoUploadedPhotos(params: JobParameters) {
         Timber.d("User has no uploaded photos")
 
         eventBus.post(PhotoReceivedEvent.userNotUploadedPhotosYet())
+        cancelAll(this)
         finish(params, false)
     }
 
     private fun onPhotoAnswerFound(params: JobParameters, returnValue: PhotoAnswerReturnValue) {
+        val userId = getUserIdFromParam(params)
+
         if (!returnValue.allFound) {
-            Timber.d("FindPhotoAnswerService: allFound = ${!returnValue.allFound} Reschedule job")
+            Timber.d("FindPhotoAnswerService: allFound = ${returnValue.allFound} Reschedule job")
             Timber.e(returnValue.photoAnswer.toString())
 
-            finish(params, true)
-            return
-        }
+            eventBus.post(PhotoReceivedEvent.successNotAllReceived(returnValue.photoAnswer))
 
-        Timber.d("FindPhotoAnswerService: allFound = ${!returnValue.allFound} we are done")
-        eventBus.post(PhotoReceivedEvent.successAllReceived(returnValue.photoAnswer))
-        finish(params, false)
+            if (isJobPeriodic(params.jobId)) {
+                Timber.d("Current job is periodic, changing it to immediate")
+                changeJobToImmediate(userId)
+            } else {
+                Timber.d("Current job is immediate, no need to change it")
+                finish(params, true)
+            }
+        } else {
+            Timber.d("FindPhotoAnswerService: allFound = ${returnValue.allFound} we are done")
+            eventBus.post(PhotoReceivedEvent.successAllReceived(returnValue.photoAnswer))
+
+            cancelAll(this)
+            finish(params, false)
+        }
     }
 
     private fun onBadResponse(params: JobParameters, errorCode: ServerErrorCode) {
@@ -221,6 +237,31 @@ class FindPhotoAnswerService : JobService() {
         viewModel.cleanUp()
     }
 
+    //utils
+    private fun getUserIdFromParam(params: JobParameters): String {
+        val userId = params.extras.getString("user_id")
+        checkNotNull(userId)
+
+        return userId
+    }
+
+    private fun isJobPeriodic(jobId: Int): Boolean {
+        return jobId == PERIODIC_JOB_ID
+    }
+
+    private fun isJobImmediate(jobId: Int): Boolean {
+        return jobId == IMMEDIATE_JOB_ID
+    }
+
+    private fun changeJobToImmediate(userId: String) {
+        scheduleImmediateJob(userId, this)
+    }
+
+    private fun changeJobToPeriodic(userId: String) {
+        schedulePeriodicJob(userId, this)
+    }
+
+    //notifications
     private fun startAsForeground() {
         val notification = NotificationCompat.Builder(this)
                 .setContentTitle("Please wait")
@@ -298,10 +339,12 @@ class FindPhotoAnswerService : JobService() {
 
             val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
             jobScheduler.cancelAll()
-            jobScheduler.schedule(jobInfo)
+            val result = jobScheduler.schedule(jobInfo)
+
+            check(result == JobScheduler.RESULT_SUCCESS)
         }
 
-        fun scheduleJobPeriodicJob(userId: String, context: Context) {
+        fun schedulePeriodicJob(userId: String, context: Context) {
             val extras = PersistableBundle()
             extras.putString("user_id", userId)
 
@@ -317,7 +360,9 @@ class FindPhotoAnswerService : JobService() {
 
             val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
             jobScheduler.cancelAll()
-            jobScheduler.schedule(jobInfo)
+            val result = jobScheduler.schedule(jobInfo)
+
+            check(result == JobScheduler.RESULT_SUCCESS)
         }
 
         fun cancelAll(context: Context) {

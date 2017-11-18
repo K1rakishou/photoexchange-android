@@ -174,34 +174,26 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         when (event.status) {
             PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED -> {
                 Timber.d("SUCCESS_ALL_RECEIVED")
-                FindPhotoAnswerService.cancelAll(this)
                 fragment.onPhotoReceived(event.photoAnswer!!)
             }
             PhotoReceivedEventStatus.SUCCESS_NOT_ALL_RECEIVED -> {
-                Timber.d("SUCCESS_NOT_ALL_RECEIVED rescheduling as immediate")
-                //TODO: check if we already running an immediate job, so we don't have to recreate it
-                FindPhotoAnswerService.scheduleImmediateJob(userInfoPreference.getUserId(), this)
+                Timber.d("SUCCESS_NOT_ALL_RECEIVED")
                 fragment.onPhotoReceived(event.photoAnswer!!)
             }
             PhotoReceivedEventStatus.FAIL -> {
                 Timber.d("FAIL")
-                FindPhotoAnswerService.cancelAll(this)
                 fragment.onNoPhoto()
             }
             PhotoReceivedEventStatus.NO_PHOTOS_ON_SERVER -> {
-                Timber.d("NO_PHOTOS_ON_SERVER rescheduling as periodic")
-                //TODO: check if we already running a periodic job, so we don't have to recreate it
-                FindPhotoAnswerService.scheduleJobPeriodicJob(userInfoPreference.getUserId(), this)
+                Timber.d("NO_PHOTOS_ON_SERVER")
                 fragment.onNoPhoto()
             }
             PhotoReceivedEventStatus.USER_HAS_NOT_UPLOADED_ANY_PHOTOS -> {
                 Timber.d("USER_HAS_NOT_UPLOADED_ANY_PHOTOS")
-                FindPhotoAnswerService.cancelAll(this)
                 fragment.onNoPhoto()
             }
             PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS -> {
                 Timber.d("UPLOAD_MORE_PHOTOS")
-                FindPhotoAnswerService.cancelAll(this)
                 fragment.onNoPhoto()
             }
         }
