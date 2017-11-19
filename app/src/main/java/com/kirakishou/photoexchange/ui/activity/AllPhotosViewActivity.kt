@@ -252,7 +252,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
             }
             PhotoReceivedEventStatus.FAIL -> {
                 Timber.d("FAIL")
-                fragment.onNoPhoto()
+                fragment.errorWhileTryingToSearchForPhoto()
             }
             PhotoReceivedEventStatus.NO_PHOTOS_ON_SERVER -> {
                 Timber.d("NO_PHOTOS_ON_SERVER")
