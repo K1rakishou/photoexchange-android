@@ -9,8 +9,10 @@ import android.support.v7.app.AppCompatActivity
 import android.widget.Toast
 import butterknife.ButterKnife
 import butterknife.Unbinder
+import com.crashlytics.android.Crashlytics
 import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
 import com.kirakishou.photoexchange.mwvm.model.other.Fickle
+import io.fabric.sdk.android.Fabric
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
@@ -42,6 +44,8 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
     @Suppress("UNCHECKED_CAST")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        Fabric.with(this, Crashlytics())
 
         compositeDisposable += unknownErrorsSubject
                 .observeOn(AndroidSchedulers.mainThread())

@@ -8,7 +8,8 @@ import com.squareup.leakcanary.LeakCanary
 import com.squareup.leakcanary.RefWatcher
 import timber.log.Timber
 import android.os.StrictMode
-
+import android.util.Log
+import com.crashlytics.android.Crashlytics
 
 
 /**
@@ -55,7 +56,28 @@ class PhotoExchangeApplication : Application() {
     }
 
     private fun initTimber() {
-        Timber.plant(Timber.DebugTree())
+        Timber.plant(CrashlyticsTree())
+    }
+
+    class CrashlyticsTree : Timber.Tree() {
+        override fun log(priority: Int, tag: String?, message: String?, t: Throwable?) {
+            if (priority == Log.VERBOSE || priority == Log.DEBUG || priority == Log.INFO) {
+                return
+            }
+
+            Crashlytics.setInt(CRASHLYTICS_KEY_PRIORITY, priority)
+            Crashlytics.setString(CRASHLYTICS_KEY_TAG, tag)
+            Crashlytics.setString(CRASHLYTICS_KEY_MESSAGE, message)
+
+            if (t == null) {
+                val exception = Exception(message)
+                Crashlytics.logException(exception)
+                exception.printStackTrace()
+            } else {
+                Crashlytics.logException(t)
+                t.printStackTrace()
+            }
+        }
     }
 
     companion object {
@@ -63,5 +85,9 @@ class PhotoExchangeApplication : Application() {
         lateinit var refWatcher: RefWatcher
         val baseUrl = "http://kez1911.asuscomm.com:8080/"
         val databaseName = "photoexchange_db"
+
+        private val CRASHLYTICS_KEY_PRIORITY = "priority"
+        private val CRASHLYTICS_KEY_TAG = "tag"
+        private val CRASHLYTICS_KEY_MESSAGE = "message"
     }
 }

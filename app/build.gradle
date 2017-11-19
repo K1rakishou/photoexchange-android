@@ -1,6 +1,7 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
+apply plugin: 'io.fabric'
 
 kapt {
     generateStubs = true
@@ -24,6 +25,7 @@ android {
         }
     }
     repositories {
+        maven { url 'https://maven.fabric.io/public' }
         maven { url 'https://jitpack.io' }
     }
 }
@@ -77,4 +79,8 @@ dependencies {
     compile 'org.glassfish:javax.annotation:10.0-b28'
     kapt 'com.google.dagger:dagger-compiler:2.12'
     compile 'com.google.dagger:dagger:2.12'
+
+    compile('com.crashlytics.sdk.android:crashlytics:2.7.1@aar') {
+        transitive = true;
+    }
 }
