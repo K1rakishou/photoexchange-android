@@ -17,7 +17,7 @@ abstract class AbstractRequest<out T> {
             is ApiException -> StatusResponse(error.serverErrorCode.value)
 
             else -> {
-                Timber.e("Unknown exception")
+                Timber.d("Unknown exception")
                 throw error
             }
         }

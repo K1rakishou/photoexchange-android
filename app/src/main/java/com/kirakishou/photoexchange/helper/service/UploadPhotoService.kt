@@ -122,7 +122,7 @@ class UploadPhotoService : Service() {
     }
 
     private fun onBadResponse(errorCode: ServerErrorCode) {
-        Timber.e("BadResponse: errorCode: $errorCode")
+        Timber.d("BadResponse: errorCode: $errorCode")
 
         eventBus.post(PhotoUploadedEvent.fail())
 
@@ -131,7 +131,7 @@ class UploadPhotoService : Service() {
     }
 
     private fun onUnknownError(error: Throwable) {
-        Timber.e("Unknown error: $error")
+        Timber.d("Unknown error: $error")
 
         eventBus.post(PhotoUploadedEvent.fail())
 

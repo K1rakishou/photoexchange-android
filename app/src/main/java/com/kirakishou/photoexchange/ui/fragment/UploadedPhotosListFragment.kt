@@ -155,7 +155,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onRetryButtonClicked(uploadedPhoto: UploadedPhoto) {
-        Timber.e("photoName: ${uploadedPhoto.photoName}")
+        Timber.d("photoName: ${uploadedPhoto.photoName}")
     }
 
     fun onPhotoUploaded(photo: UploadedPhoto) {

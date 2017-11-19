@@ -69,7 +69,7 @@ class AllPhotosViewActivityViewModel(
     }
 
     override fun onCleared() {
-        Timber.e("AllPhotosViewActivityViewModel.onCleared()")
+        Timber.d("AllPhotosViewActivityViewModel.onCleared()")
 
         super.onCleared()
     }

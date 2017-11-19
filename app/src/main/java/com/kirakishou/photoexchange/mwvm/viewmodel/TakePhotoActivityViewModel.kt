@@ -55,7 +55,7 @@ class TakePhotoActivityViewModel(
             if (photoFile.exists()) {
                 val wasDeleted = photoFile.delete()
                 if (!wasDeleted) {
-                    Timber.e("Could not delete file: ${uploadedPhoto.photoFilePath}")
+                    Timber.d("Could not delete file: ${uploadedPhoto.photoFilePath}")
                 }
             }
         }
@@ -66,7 +66,7 @@ class TakePhotoActivityViewModel(
     }
 
     override fun onCleared() {
-        Timber.e("TakePhotoActivityViewModel.onCleared()")
+        Timber.d("TakePhotoActivityViewModel.onCleared()")
 
         super.onCleared()
     }

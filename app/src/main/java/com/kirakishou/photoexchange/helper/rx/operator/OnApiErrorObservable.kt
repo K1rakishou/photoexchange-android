@@ -28,7 +28,7 @@ class OnApiErrorObservable<T : StatusResponse>(val gson: Gson) : ObservableOpera
                     try {
                         val responseJson = response.errorBody()!!.string()
                         val error = gson.fromJson<StatusResponse>(responseJson, StatusResponse::class.java)
-                        Timber.e(responseJson)
+                        Timber.d(responseJson)
 
                         //may happen in some rare cases
                         if (error.serverErrorCode != null) {

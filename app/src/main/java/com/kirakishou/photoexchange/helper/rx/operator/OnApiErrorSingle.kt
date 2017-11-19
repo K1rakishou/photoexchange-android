@@ -38,7 +38,7 @@ class OnApiErrorSingle<T>(val gson: Gson) : SingleOperator<T, Response<T>> {
                     try {
                         val responseJson = response.errorBody()!!.string()
                         val error = gson.fromJson<StatusResponse>(responseJson, StatusResponse::class.java)
-                        Timber.e(responseJson)
+                        Timber.d(responseJson)
 
                         //may happen in some rare cases
                         if (error?.serverErrorCode == null) {

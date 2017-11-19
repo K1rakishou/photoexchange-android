@@ -22,7 +22,7 @@ object AndroidUtils {
 
     fun throwIfOnMainThread() {
         if (checkIsOnMainThread()) {
-            Timber.e("Current operation cannot be executed on the main thread")
+            Timber.d("Current operation cannot be executed on the main thread")
             throw RuntimeException("Current operation cannot be executed on the main thread")
         }
     }

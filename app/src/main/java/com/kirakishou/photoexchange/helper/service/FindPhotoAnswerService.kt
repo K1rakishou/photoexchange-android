@@ -81,7 +81,7 @@ class FindPhotoAnswerService : JobService() {
 
         val currentTime = TimeUtils.getTimeFast()
         val formattedTime = TimeUtils.formatDateAndTime(currentTime)
-        Timber.e("Job started at: $formattedTime")
+        Timber.d("Job started at: $formattedTime")
 
         initRx(params)
 
@@ -194,7 +194,7 @@ class FindPhotoAnswerService : JobService() {
 
         if (!returnValue.allFound) {
             Timber.d("FindPhotoAnswerService: allFound = ${returnValue.allFound} Reschedule job")
-            Timber.e(returnValue.photoAnswer.toString())
+            Timber.d(returnValue.photoAnswer.toString())
 
             eventBus.post(PhotoReceivedEvent.successNotAllReceived(returnValue.photoAnswer))
 
@@ -216,14 +216,14 @@ class FindPhotoAnswerService : JobService() {
     }
 
     private fun onBadResponse(params: JobParameters, errorCode: ServerErrorCode) {
-        Timber.e("BadResponse: errorCode: $errorCode")
+        Timber.d("BadResponse: errorCode: $errorCode")
 
         eventBus.post(PhotoReceivedEvent.fail())
         finish(params, false)
     }
 
     private fun onUnknownError(params: JobParameters, error: Throwable) {
-        Timber.e("onUnknownError")
+        Timber.d("onUnknownError")
         Timber.e(error)
 
         eventBus.post(PhotoReceivedEvent.fail())
@@ -235,7 +235,7 @@ class FindPhotoAnswerService : JobService() {
     }
 
     private fun cleanUp() {
-        Timber.e("FindPhotoAnswerService cleanUp()")
+        Timber.d("FindPhotoAnswerService cleanUp()")
 
         compositeDisposable.clear()
         viewModel.cleanUp()
