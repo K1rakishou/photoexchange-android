@@ -156,6 +156,8 @@ class FindPhotoAnswerService : JobService() {
         eventBus.post(PhotoReceivedEvent.uploadMorePhotos())
         cancelAll(this)
         finish(params, false)
+
+        cancelNotification()
     }
 
     private fun couldNotMarkPhotoAsReceived(params: JobParameters) {
@@ -164,6 +166,8 @@ class FindPhotoAnswerService : JobService() {
         eventBus.post(PhotoReceivedEvent.fail())
         cancelAll(this)
         finish(params, false)
+
+        cancelNotification()
     }
 
     private fun noPhotosToSendBack(params: JobParameters) {
@@ -305,6 +309,11 @@ class FindPhotoAnswerService : JobService() {
         notificationManager.notify(NOTIFICATION_ID, newNotification)
     }
 
+    private fun cancelNotification() {
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(NOTIFICATION_ID)
+    }
+
     private fun getNotificationIntent(): PendingIntent {
         val notificationIntent = Intent(this, AllPhotosViewActivity::class.java)
         notificationIntent.action = Intent.ACTION_MAIN
@@ -350,7 +359,7 @@ class FindPhotoAnswerService : JobService() {
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
                     .setMinimumLatency(0)
-                    .setOverrideDeadline(0)
+                    .setOverrideDeadline(1_000)
                     .setExtras(extras)
                     .setBackoffCriteria(1_000, JobInfo.BACKOFF_POLICY_LINEAR)
                     .build()
@@ -371,8 +380,8 @@ class FindPhotoAnswerService : JobService() {
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
-                    .setMinimumLatency(10_000)
-                    .setOverrideDeadline(60_000)
+                    .setMinimumLatency(1_000)
+                    .setOverrideDeadline(20_000)
                     .setExtras(extras)
                     .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_EXPONENTIAL)
                     .build()

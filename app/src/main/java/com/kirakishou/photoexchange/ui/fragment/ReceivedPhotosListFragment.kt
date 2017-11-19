@@ -173,6 +173,24 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         check(isAdded)
     }
 
+    fun errorWhileTryingToSearchForPhoto() {
+        Timber.d("errorWhileTryingToSearchForPhoto()")
+        check(isAdded)
+
+        adapter.runOnAdapterHandler {
+            adapter.removeLookingForPhotoIndicator()
+        }
+    }
+
+    fun userNeedsToUploadMorePhotos() {
+        Timber.d("userNeedsToUploadMorePhotos()")
+        check(isAdded)
+
+        adapter.runOnAdapterHandler {
+            adapter.removeLookingForPhotoIndicator()
+        }
+    }
+
     private fun onUnknownError(error: Throwable) {
         Timber.e(error)
     }

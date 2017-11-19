@@ -260,11 +260,11 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
             }
             PhotoReceivedEventStatus.USER_HAS_NOT_UPLOADED_ANY_PHOTOS -> {
                 Timber.d("USER_HAS_NOT_UPLOADED_ANY_PHOTOS")
-                fragment.onNoPhoto()
+                fragment.userNeedsToUploadMorePhotos()
             }
             PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS -> {
                 Timber.d("UPLOAD_MORE_PHOTOS")
-                fragment.onNoPhoto()
+                fragment.userNeedsToUploadMorePhotos()
             }
         }
     }
