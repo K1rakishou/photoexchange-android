@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context="com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity">
+    android:layout_height="match_parent">
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/take_photo_button"
@@ -15,60 +15,67 @@
         android:clickable="true"
         android:focusable="true"
         android:src="@drawable/ic_photo_camera"
-        app:elevation="4dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:layout_gravity="bottom|end"
+        app:elevation="4dp" />
 
-    <LinearLayout
+    <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        tools:context="com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity">
 
-        <android.support.constraint.ConstraintLayout
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="68dp"
-            android:background="@color/colorPrimaryDark">
+            android:layout_height="match_parent"
+            android:orientation="vertical">
 
-            <ImageView
-                android:id="@+id/iv_close_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginTop="8dp"
-                android:background="?selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_close"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+            <android.support.constraint.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="68dp"
+                android:background="@color/colorPrimaryDark">
 
-            <TextView
-                android:id="@+id/tv_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:text="Photos"
-                android:textColor="@color/white"
-                android:textSize="24sp"
-                app:layout_constraintBottom_toBottomOf="@+id/iv_close_button"
-                app:layout_constraintStart_toEndOf="@+id/iv_close_button"
-                app:layout_constraintTop_toTopOf="@+id/iv_close_button" />
+                <ImageView
+                    android:id="@+id/iv_close_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="8dp"
+                    android:background="?selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_close"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
 
-            <android.support.design.widget.TabLayout
-                android:id="@+id/sliding_tab_layout"
-                android:layout_width="192dp"
-                android:layout_height="32dp"
-                android:background="@color/colorPrimaryDark"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="@+id/iv_close_button"
-                app:tabSelectedTextColor="@color/white"
-                app:tabTextColor="@color/gray" />
+                <TextView
+                    android:id="@+id/tv_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:text="Photos"
+                    android:textColor="@color/white"
+                    android:textSize="24sp"
+                    app:layout_constraintBottom_toBottomOf="@+id/iv_close_button"
+                    app:layout_constraintStart_toEndOf="@+id/iv_close_button"
+                    app:layout_constraintTop_toTopOf="@+id/iv_close_button" />
 
-        </android.support.constraint.ConstraintLayout>
+                <android.support.design.widget.TabLayout
+                    android:id="@+id/sliding_tab_layout"
+                    android:layout_width="192dp"
+                    android:layout_height="32dp"
+                    android:background="@color/colorPrimaryDark"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="@+id/iv_close_button"
+                    app:tabSelectedTextColor="@color/white"
+                    app:tabTextColor="@color/gray" />
 
-        <android.support.v4.view.ViewPager
-            android:id="@+id/view_pager"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            </android.support.constraint.ConstraintLayout>
 
-    </LinearLayout>
+            <android.support.v4.view.ViewPager
+                android:id="@+id/view_pager"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
 
-</android.support.constraint.ConstraintLayout>
+        </LinearLayout>
+
+    </android.support.constraint.ConstraintLayout>
+
+
+</android.support.design.widget.CoordinatorLayout>

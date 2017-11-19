@@ -34,9 +34,6 @@ import javax.inject.Inject
 
 class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
 
-    @BindView(R.id.root_layout)
-    lateinit var rootLayout: CoordinatorLayout
-
     @BindView(R.id.received_photos_list)
     lateinit var receivedPhotosList: RecyclerView
 
@@ -77,14 +74,6 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
     }
 
-    private fun showNewPhotoReceivedNotification() {
-        Snackbar.make(rootLayout, "New photo has been received", Snackbar.LENGTH_LONG)
-                .setAction("SHOW", {
-                    receivedPhotosList.scrollToPosition(0)
-                })
-                .show()
-    }
-
     private fun initRx() {
         compositeDisposable += loadMoreSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -99,7 +88,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .subscribe(this::onPageReceived, this::onUnknownError)
     }
 
-    private fun addLookingForPhotoIndicator() {
+    fun addLookingForPhotoIndicator() {
         adapter.runOnAdapterHandlerWithDelay(DELAY_BEFORE_PROGRESS_FOOTER_ADDED) {
             adapter.addLookingForPhotoIndicator()
         }
@@ -161,6 +150,12 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
+    fun scrollToTop() {
+        check(isAdded)
+
+        receivedPhotosList.scrollToPosition(0)
+    }
+
     fun onPhotoReceived(photo: PhotoAnswer) {
         Timber.d("onPhotoReceived()")
         check(isAdded)
@@ -169,7 +164,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
             adapter.removeLookingForPhotoIndicator()
             adapter.addFirst(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
 
-            showNewPhotoReceivedNotification()
+            (activity as AllPhotosViewActivity).showNewPhotoReceivedNotification()
         }
     }
 

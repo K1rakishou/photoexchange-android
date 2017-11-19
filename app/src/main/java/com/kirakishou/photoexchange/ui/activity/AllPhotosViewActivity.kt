@@ -3,6 +3,8 @@ package com.kirakishou.photoexchange.ui.activity
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.os.Bundle
+import android.support.design.widget.FloatingActionButton
+import android.support.design.widget.Snackbar
 import android.support.design.widget.TabLayout
 import android.support.v4.view.ViewPager
 import android.support.v7.widget.AppCompatButton
@@ -45,7 +47,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     lateinit var viewPager: ViewPager
 
     @BindView(R.id.take_photo_button)
-    lateinit var takePhotoButton: AppCompatButton
+    lateinit var takePhotoButton: FloatingActionButton
 
     @Inject
     lateinit var viewModelFactory: AllPhotosViewActivityViewModelFactory
@@ -55,6 +57,9 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
     @Inject
     lateinit var appSharedPreference: AppSharedPreference
+
+    private val UPLOADED_PHOTOS_FRAGMENT_TAB_INDEX = 0
+    private val RECEIVED_PHOTOS_FRAGMENT_TAB_INDEX = 1
 
     private val adapter = FragmentTabsPager(supportFragmentManager)
     private val userInfoPreference by lazy { appSharedPreference.prepare<UserInfoPreference>() }
@@ -138,9 +143,47 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     override fun onPageSelected(position: Int) {
     }
 
+    private fun selectReceivedPhotosTab() {
+        val tab = tabLayout.getTabAt(RECEIVED_PHOTOS_FRAGMENT_TAB_INDEX)
+        tab!!.select()
+    }
+
     fun startLookingForPhotoAnswerService() {
         FindPhotoAnswerService.scheduleImmediateJob(userInfoPreference.getUserId(), this)
         Timber.d("A job has been scheduled")
+
+        val fragment = adapter.receivedPhotosFragment
+        if (fragment == null) {
+            Timber.w("Event received when fragment is null!")
+            return
+        }
+
+        if (!fragment.isAdded) {
+            Timber.w("Fragment is not added in the backstack!")
+            return
+        }
+
+        fragment.addLookingForPhotoIndicator()
+    }
+
+    fun showNewPhotoReceivedNotification() {
+        Snackbar.make(takePhotoButton, "New photo has been received", Snackbar.LENGTH_LONG)
+                .setAction("SHOW", {
+                    val fragment = adapter.receivedPhotosFragment
+                    if (fragment == null) {
+                        Timber.w("Event received when fragment is null!")
+                        return@setAction
+                    }
+
+                    if (!fragment.isAdded) {
+                        Timber.w("Fragment is not added in the backstack!")
+                        return@setAction
+                    }
+
+                    selectReceivedPhotosTab()
+                    fragment.scrollToTop()
+                })
+                .show()
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)

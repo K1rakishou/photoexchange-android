@@ -48,7 +48,7 @@ class FindPhotoAnswerService : JobService() {
     private var isRxInited = false
 
     private val compositeDisposable = CompositeDisposable()
-    private val NOTIFICATION_ID = 2
+    private val NOTIFICATION_ID = 1
 
     override fun onCreate() {
         super.onCreate()
@@ -89,6 +89,7 @@ class FindPhotoAnswerService : JobService() {
             return false
         }
 
+        updateNotificationShowLookingForPhoto()
         return true
     }
 
@@ -207,6 +208,8 @@ class FindPhotoAnswerService : JobService() {
 
             finish(params, false)
         }
+
+        updateNotificationShowPhotoFound()
     }
 
     private fun onBadResponse(params: JobParameters, errorCode: ServerErrorCode) {
@@ -225,7 +228,6 @@ class FindPhotoAnswerService : JobService() {
     }
 
     private fun finish(params: JobParameters, reschedule: Boolean) {
-        Timber.d("finish, reschedule: $reschedule")
         jobFinished(params, reschedule)
     }
 
@@ -270,21 +272,22 @@ class FindPhotoAnswerService : JobService() {
     }
 
     //notifications
-    private fun startAsForeground() {
-        val notification = NotificationCompat.Builder(this)
-                .setContentTitle("Please wait")
-                .setContentText("Looking for a photo...")
+    private fun updateNotificationShowLookingForPhoto() {
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        val newNotification = NotificationCompat.Builder(this)
+                .setContentTitle("Searching")
+                .setContentText("Looking for your photo")
                 .setSmallIcon(android.R.drawable.ic_menu_search)
                 .setWhen(System.currentTimeMillis())
                 .setContentIntent(getNotificationIntent())
                 .setAutoCancel(false)
-                .setOngoing(true)
                 .build()
 
-        startForeground(NOTIFICATION_ID, notification)
+        notificationManager.notify(NOTIFICATION_ID, newNotification)
     }
 
-    private fun updateFindNotificationShowSuccess() {
+    private fun updateNotificationShowPhotoFound() {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         val newNotification = NotificationCompat.Builder(this)
@@ -304,6 +307,7 @@ class FindPhotoAnswerService : JobService() {
         notificationIntent.action = Intent.ACTION_MAIN
         notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER)
         notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        notificationIntent.putExtra("open_received_photos_fragment", true)
 
         return PendingIntent.getActivity(
                 this,

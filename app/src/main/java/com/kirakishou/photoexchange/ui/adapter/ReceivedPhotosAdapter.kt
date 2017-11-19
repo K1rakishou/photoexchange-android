@@ -50,8 +50,8 @@ class ReceivedPhotosAdapter(
         checkInited()
 
         if (items.isEmpty() || items.first().getType() != AdapterItemType.VIEW_LOOKING_FOR_PHOTO.ordinal) {
-            items.add(AdapterItem(AdapterItemType.VIEW_LOOKING_FOR_PHOTO))
-            notifyItemInserted(items.lastIndex)
+            items.add(0, AdapterItem(AdapterItemType.VIEW_LOOKING_FOR_PHOTO))
+            notifyItemInserted(0)
         }
     }
 
