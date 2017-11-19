@@ -25,6 +25,8 @@ import com.kirakishou.photoexchange.mwvm.model.event.PhotoUploadedEvent
 import com.kirakishou.photoexchange.mwvm.model.event.SendPhotoEventStatus
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
+import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosListFragment
+import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosListFragment
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
@@ -76,6 +78,8 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
         initTabs(intent)
         initRx()
+
+        getNotificationIntent(getIntent())
     }
 
     override fun onActivityDestroy() {
@@ -90,6 +94,23 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     override fun onPause() {
         super.onPause()
         userInfoPreference.save()
+    }
+
+    private fun getNotificationIntent(intent: Intent?) {
+        if (intent == null) {
+            Timber.d("Intent is null. Nothing to handle")
+            return
+        }
+
+        val extras = intent.extras
+        val openReceivedPhotosFragment = extras.getBoolean("open_received_photos_fragment", false)
+        if (openReceivedPhotosFragment) {
+            val fragment = getReceivedPhotosFragment()
+            if (fragment != null) {
+                selectReceivedPhotosTab()
+                fragment.scrollToTop()
+            }
+        }
     }
 
     private fun initRx() {
@@ -152,52 +173,58 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         FindPhotoAnswerService.scheduleImmediateJob(userInfoPreference.getUserId(), this)
         Timber.d("A job has been scheduled")
 
-        val fragment = adapter.receivedPhotosFragment
-        if (fragment == null) {
-            Timber.w("Event received when fragment is null!")
-            return
+        val fragment = getReceivedPhotosFragment()
+        if (fragment != null) {
+            fragment.addLookingForPhotoIndicator()
         }
-
-        if (!fragment.isAdded) {
-            Timber.w("Fragment is not added in the backstack!")
-            return
-        }
-
-        fragment.addLookingForPhotoIndicator()
     }
 
     fun showNewPhotoReceivedNotification() {
         Snackbar.make(takePhotoButton, "New photo has been received", Snackbar.LENGTH_LONG)
                 .setAction("SHOW", {
-                    val fragment = adapter.receivedPhotosFragment
-                    if (fragment == null) {
-                        Timber.w("Event received when fragment is null!")
-                        return@setAction
-                    }
+                    val fragment = getReceivedPhotosFragment()
 
-                    if (!fragment.isAdded) {
-                        Timber.w("Fragment is not added in the backstack!")
-                        return@setAction
+                    if (fragment != null) {
+                        selectReceivedPhotosTab()
+                        fragment.scrollToTop()
                     }
-
-                    selectReceivedPhotosTab()
-                    fragment.scrollToTop()
                 })
                 .show()
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onPhotoUploadedEvent(event: PhotoUploadedEvent) {
+    private fun getUploadedPhotosFragment(): UploadedPhotosListFragment? {
         val fragment = adapter.uploadedPhotosFragment
         if (fragment == null) {
-            Timber.w("Event received when fragment is null!")
-            return
+            Timber.w("UploadedPhotosFragment: Event received when fragment is null!")
+            return null
         }
 
         if (!fragment.isAdded) {
-            Timber.w("Fragment is not added in the backstack!")
-            return
+            Timber.w("UploadedPhotosFragment: Fragment is not added in the backstack!")
+            return null
         }
+
+        return fragment
+    }
+
+    private fun getReceivedPhotosFragment(): ReceivedPhotosListFragment? {
+        val fragment = adapter.receivedPhotosFragment
+        if (fragment == null) {
+            Timber.w("ReceivedPhotosFragment: Event received when fragment is null!")
+            return null
+        }
+
+        if (!fragment.isAdded) {
+            Timber.w("ReceivedPhotosFragment: Fragment is not added in the backstack!")
+            return null
+        }
+
+        return fragment
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onPhotoUploadedEvent(event: PhotoUploadedEvent) {
+        val fragment = getUploadedPhotosFragment() ?: return
 
         if (event.status == SendPhotoEventStatus.SUCCESS) {
             checkNotNull(event.photo)
@@ -212,16 +239,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onPhotoReceivedEvent(event: PhotoReceivedEvent) {
-        val fragment = adapter.receivedPhotosFragment
-        if (fragment == null) {
-            Timber.w("Event received when fragment is null!")
-            return
-        }
-
-        if (!fragment.isAdded) {
-            Timber.w("Fragment is not added in the backstack!")
-            return
-        }
+        val fragment = getReceivedPhotosFragment() ?: return
 
         when (event.status) {
             PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED -> {
