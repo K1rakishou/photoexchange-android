@@ -114,7 +114,6 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         compositeDisposable += loadMoreSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext { Timber.d("page: $it") }
                 .doOnNext { adapter.addProgressFooter() }
                 .doOnNext(this::fetchPage)
                 .observeOn(Schedulers.io())
@@ -122,9 +121,6 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .map { it.second }
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext { adapter.removeProgressFooter() }
-                .doOnNext {
-                    Timber.e("items count: ${it.size}")
-                }
                 .subscribe(this::onPageReceived, this::onUnknownError)
 
         compositeDisposable += retryButtonSubject

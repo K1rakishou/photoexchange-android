@@ -11,6 +11,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.PersistableBundle
 import android.support.v4.app.NotificationCompat
+import com.crashlytics.android.Crashlytics
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.component.DaggerFindPhotoAnswerServiceComponent
 import com.kirakishou.photoexchange.di.module.*
@@ -23,6 +24,7 @@ import com.kirakishou.photoexchange.mwvm.model.dto.PhotoAnswerReturnValue
 import com.kirakishou.photoexchange.mwvm.model.event.PhotoReceivedEvent
 import com.kirakishou.photoexchange.mwvm.viewmodel.FindPhotoAnswerServiceViewModel
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
+import io.fabric.sdk.android.Fabric
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
@@ -53,6 +55,7 @@ class FindPhotoAnswerService : JobService() {
     override fun onCreate() {
         super.onCreate()
 
+        Fabric.with(this, Crashlytics())
         resolveDaggerDependency()
         viewModel = FindPhotoAnswerServiceViewModel(photoAnswerRepo, apiClient, schedulers)
     }

@@ -15,6 +15,7 @@ import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
 import android.app.PendingIntent
 import android.content.Context
 import android.support.v4.app.NotificationCompat
+import com.crashlytics.android.Crashlytics
 import com.kirakishou.photoexchange.di.component.DaggerUploadPhotoServiceComponent
 import com.kirakishou.photoexchange.di.module.*
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
@@ -22,6 +23,7 @@ import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
 import com.kirakishou.photoexchange.mwvm.model.other.UploadedPhoto
 import com.kirakishou.photoexchange.mwvm.model.event.PhotoUploadedEvent
 import com.kirakishou.photoexchange.mwvm.viewmodel.UploadPhotoServiceViewModel
+import io.fabric.sdk.android.Fabric
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
@@ -49,8 +51,8 @@ class UploadPhotoService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        Timber.d("UploadPhotoService start")
 
+        Fabric.with(this, Crashlytics())
         resolveDaggerDependency()
 
         viewModel = UploadPhotoServiceViewModel(apiClient, schedulers, uploadedPhotosRepo)
@@ -61,7 +63,6 @@ class UploadPhotoService : Service() {
         compositeDisposable.clear()
         viewModel.cleanUp()
 
-        Timber.d("UploadPhotoService destroy")
         super.onDestroy()
     }
 
