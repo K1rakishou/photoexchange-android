@@ -25,7 +25,6 @@ import io.fotoapparat.hardware.provider.CameraProviders
 import io.fotoapparat.parameter.ScaleType
 import io.fotoapparat.parameter.Size
 import io.fotoapparat.parameter.selector.LensPositionSelectors.back
-import io.fotoapparat.parameter.selector.SizeSelectors.biggestSize
 import io.fotoapparat.view.CameraView
 import io.nlopez.smartlocation.SmartLocation
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -35,7 +34,6 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.io.File
-import java.lang.Long.signum
 import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
@@ -77,7 +75,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         initRx()
         initCamera()
 
-        getViewModel().inputs.cleanDb()
+        getViewModel().inputs.cleanTakenPhotosDB()
     }
 
     override fun onActivityDestroy() {
@@ -107,7 +105,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         fotoapparat = Fotoapparat
                 .with(this)
                 .into(cameraView)
-                .cameraProvider(CameraProviders.v2(this))
                 .previewScaleType(ScaleType.CENTER_CROP)
                 .photoSize(this::getSize)
                 .lensPosition(back())
@@ -115,16 +112,13 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     }
 
     private fun getSize(sizes: MutableCollection<Size>): Size? {
-        val idealHeight = 1280
-        val idealWidth = 720
-        var minDist = Double.MAX_VALUE
+        val idealHeight = 1920
+        val idealWidth = 1080
         var finalSize: Size? = null
 
-        for (size in sizes) {
-            val result = Math.hypot((idealHeight - size.height).toDouble(), (idealWidth - size.width).toDouble())
-            Timber.d("result: $result, size: $size")
-            minDist = Math.min(minDist, result)
-        }
+        val minDist = sizes
+                .map { Math.hypot((idealHeight - it.height).toDouble(), (idealWidth - it.width).toDouble()) }
+                .min()
 
         for (size in sizes) {
             val result = Math.hypot((idealHeight - size.height).toDouble(), (idealWidth - size.width).toDouble())
@@ -164,6 +158,11 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                     hideNotification()
                     switchToViewTakenPhotoActivity(location, photoFilePath, userId)
                 })
+
+        compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onUnknownError)
     }
 
     private fun switchToAllPhotosViewActivity() {
@@ -228,10 +227,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
         /*val message = ErrorMessage.getRemoteErrorMessage(activity, serverErrorCode)
         showToast(message, Toast.LENGTH_LONG)*/
-    }
-
-    override fun onUnknownError(error: Throwable) {
-        super.onUnknownError(error)
     }
 
     override fun resolveDaggerDependency() {

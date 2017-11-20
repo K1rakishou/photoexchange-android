@@ -118,19 +118,7 @@ class UploadPhotoServiceViewModel(
         if (errorCode == ServerErrorCode.OK) {
             sendPhotoResponseSubject.onNext(uploadedPhoto)
         } else {
-            when (errorCode) {
-                ServerErrorCode.BAD_ERROR_CODE,
-                ServerErrorCode.BAD_REQUEST,
-                ServerErrorCode.DISK_ERROR,
-                ServerErrorCode.REPOSITORY_ERROR,
-                ServerErrorCode.UNKNOWN_ERROR -> {
-                    badResponseSubject.onNext(errorCode)
-                }
-
-                else -> {
-                    unknownErrorSubject.onNext(UnknownErrorCodeException(errorCode))
-                }
-            }
+            badResponseSubject.onNext(errorCode)
         }
     }
 

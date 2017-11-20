@@ -9,7 +9,9 @@ import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.wires.errors.MainActivityViewModelErrors
 import com.kirakishou.photoexchange.mwvm.wires.inputs.MainActivityViewModelInputs
 import com.kirakishou.photoexchange.mwvm.wires.outputs.MainActivityViewModelOutputs
+import io.reactivex.Observable
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.io.File
 
@@ -29,11 +31,13 @@ class TakePhotoActivityViewModel(
     val outputs: MainActivityViewModelOutputs = this
     val errors: MainActivityViewModelErrors = this
 
+    private val onUnknownErrorErrorSubject = PublishSubject.create<Throwable>()
+
     init {
 
     }
 
-    override fun cleanDb() {
+    override fun cleanTakenPhotosDB() {
         compositeDisposable += takenPhotosRepo.findAll()
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
@@ -45,7 +49,7 @@ class TakePhotoActivityViewModel(
                         allPhotos.forEach { Timber.d("photo: $it") }
                     }
                 }
-                .doOnError(this::handlerError)
+                .doOnError(this::handleErrors)
                 .subscribe()
     }
 
@@ -61,8 +65,10 @@ class TakePhotoActivityViewModel(
         }
     }
 
-    private fun handlerError(error: Throwable) {
+    private fun handleErrors(error: Throwable) {
         Timber.e(error)
+
+        onUnknownErrorErrorSubject.onNext(error)
     }
 
     override fun onCleared() {
@@ -70,4 +76,7 @@ class TakePhotoActivityViewModel(
 
         super.onCleared()
     }
+
+    override fun onUnknownErrorObservable(): Observable<Throwable> = onUnknownErrorErrorSubject
+
 }
