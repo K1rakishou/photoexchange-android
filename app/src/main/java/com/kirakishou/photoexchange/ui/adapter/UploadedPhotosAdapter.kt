@@ -93,7 +93,7 @@ class UploadedPhotosAdapter(
 
     override fun getBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
         return mutableListOf(
-                BaseAdapterInfo(AdapterItemType.VIEW_ITEM, R.layout.adapter_item_sent_photo, SentPhotoViewHolder::class.java),
+                BaseAdapterInfo(AdapterItemType.VIEW_ITEM, R.layout.adapter_item_photo, SentPhotoViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_PROGRESSBAR, R.layout.adapter_item_progress, ProgressBarViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_FAILED_TO_UPLOAD, R.layout.adapter_item_upload_photo_error, PhotoUploadErrorViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_MESSAGE, R.layout.adapter_item_message, MessageViewHolder::class.java),
@@ -114,7 +114,7 @@ class UploadedPhotosAdapter(
                     Glide.with(context)
                             .load(fullPath)
                             .apply(RequestOptions().centerCrop())
-                            .into(holder.sentPhoto)
+                            .into(holder.photoView)
                 }
             }
 
@@ -145,8 +145,8 @@ class UploadedPhotosAdapter(
         @BindView(R.id.photo_id)
         lateinit var photoId: TextView
 
-        @BindView(R.id.sent_photo)
-        lateinit var sentPhoto: ImageView
+        @BindView(R.id.photo)
+        lateinit var photoView: ImageView
 
         init {
             ButterKnife.bind(this, itemView)

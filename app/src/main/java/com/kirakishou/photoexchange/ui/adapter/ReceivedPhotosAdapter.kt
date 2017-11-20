@@ -5,6 +5,7 @@ import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.widget.ImageView
 import android.widget.ProgressBar
+import android.widget.TextView
 import butterknife.BindView
 import butterknife.ButterKnife
 import com.bumptech.glide.Glide
@@ -98,7 +99,7 @@ class ReceivedPhotosAdapter(
 
     override fun getBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
         return mutableListOf(
-                BaseAdapterInfo(AdapterItemType.VIEW_ITEM, R.layout.adapter_item_sent_photo, SentPhotoViewHolder::class.java),
+                BaseAdapterInfo(AdapterItemType.VIEW_ITEM, R.layout.adapter_item_photo, ReceivedPhotoViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_PROGRESSBAR, R.layout.adapter_item_progress, ProgressBarViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_LOOKING_FOR_PHOTO, R.layout.adapter_item_looking_for_photo, LookingForPhotoViewHolder::class.java)
         )
@@ -106,16 +107,18 @@ class ReceivedPhotosAdapter(
 
     override fun onViewHolderBound(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
-            is SentPhotoViewHolder -> {
+            is ReceivedPhotoViewHolder -> {
                 if (items[position].value.isPresent()) {
                     val item = items[position].value.get()
                     val fullPath = "${PhotoExchangeApplication.baseUrl}v1/api/get_photo/${item.photoName}"
+
+                    holder.photoId.text = item.photoRemoteId.toString()
 
                     //TODO: do image loading via ImageLoader class
                     Glide.with(context)
                             .load(fullPath)
                             .apply(RequestOptions().centerCrop())
-                            .into(holder.sentPhoto)
+                            .into(holder.photoView)
                 }
             }
 
@@ -129,10 +132,13 @@ class ReceivedPhotosAdapter(
         }
     }
 
-    class SentPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    class ReceivedPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
-        @BindView(R.id.sent_photo)
-        lateinit var sentPhoto: ImageView
+        @BindView(R.id.photo_id)
+        lateinit var photoId: TextView
+
+        @BindView(R.id.photo)
+        lateinit var photoView: ImageView
 
         init {
             ButterKnife.bind(this, itemView)
