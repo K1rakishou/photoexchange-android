@@ -97,8 +97,8 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     }
 
     private fun getNotificationIntent(intent: Intent?) {
-        if (intent == null) {
-            Timber.d("Intent is null. Nothing to handle")
+        if (intent == null || intent.extras == null) {
+            Timber.d("No extras. Nothing to handle")
             return
         }
 
