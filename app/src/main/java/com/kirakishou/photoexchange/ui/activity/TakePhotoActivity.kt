@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.ui.activity
 
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
+import android.location.Location
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.support.v7.widget.CardView
@@ -27,6 +28,7 @@ import io.fotoapparat.parameter.Size
 import io.fotoapparat.parameter.selector.LensPositionSelectors.back
 import io.fotoapparat.view.CameraView
 import io.nlopez.smartlocation.SmartLocation
+import io.nlopez.smartlocation.location.config.LocationParams
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.plusAssign
@@ -34,6 +36,8 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.io.File
+import java.math.RoundingMode
+import java.text.DecimalFormat
 import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
@@ -208,10 +212,20 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         SmartLocation.with(this)
                 .location()
                 .oneFix()
-                .start {
+                .start { location ->
                     Timber.d("getLocation() Done")
-                    locationSubject.onNext(LonLat(it.longitude, it.latitude))
+                    locationSubject.onNext(getTruncatedLolLat(location))
                 }
+    }
+
+    private fun getTruncatedLolLat(location: Location): LonLat {
+        val lon = Math.floor(location.longitude * 100) / 100
+        val lat = Math.floor(location.latitude * 100) / 100
+
+        Timber.d("Original lon: ${location.longitude}, lat: ${location.latitude}")
+        Timber.d("Truncated lon: $lon, lat: $lat")
+
+        return LonLat(lon, lat)
     }
 
     private fun showNotification() {
@@ -220,13 +234,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
     private fun hideNotification() {
         notification.visibility = View.GONE
-    }
-
-    override fun onBadResponse(serverErrorCode: ServerErrorCode) {
-        super.onBadResponse(serverErrorCode)
-
-        /*val message = ErrorMessage.getRemoteErrorMessage(activity, serverErrorCode)
-        showToast(message, Toast.LENGTH_LONG)*/
     }
 
     override fun resolveDaggerDependency() {
