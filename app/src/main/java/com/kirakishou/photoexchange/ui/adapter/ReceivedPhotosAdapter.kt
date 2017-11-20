@@ -112,8 +112,6 @@ class ReceivedPhotosAdapter(
                     val item = items[position].value.get()
                     val fullPath = "${PhotoExchangeApplication.baseUrl}v1/api/get_photo/${item.photoName}"
 
-                    holder.photoId.text = item.photoRemoteId.toString()
-
                     //TODO: do image loading via ImageLoader class
                     Glide.with(context)
                             .load(fullPath)
@@ -133,9 +131,6 @@ class ReceivedPhotosAdapter(
     }
 
     class ReceivedPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-
-        @BindView(R.id.photo_id)
-        lateinit var photoId: TextView
 
         @BindView(R.id.photo)
         lateinit var photoView: ImageView
