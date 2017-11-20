@@ -136,7 +136,7 @@ class UploadedPhotosAdapter(
             is SentPhotoViewHolder -> {
                 if (items[position].value.isPresent()) {
                     val item = items[position].value.get()
-                    val fullPath = "${PhotoExchangeApplication.baseUrl}v1/api/get_photo/${item.photoName}"
+                    val fullPath = "${PhotoExchangeApplication.baseUrl}v1/api/get_photo/${item.photoName}/s"
 
                     //TODO: do image loading via ImageLoader class
                     Glide.with(context)
