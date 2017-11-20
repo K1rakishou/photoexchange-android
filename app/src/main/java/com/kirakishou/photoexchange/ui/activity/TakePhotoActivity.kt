@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.ui.activity
 
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
+import android.location.Location
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.support.v7.widget.CardView
@@ -16,12 +17,10 @@ import com.kirakishou.photoexchange.di.component.DaggerTakePhotoActivityComponen
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.helper.util.Utils
-import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
 import com.kirakishou.photoexchange.mwvm.model.other.LonLat
 import com.kirakishou.photoexchange.mwvm.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.TakePhotoActivityViewModelFactory
 import io.fotoapparat.Fotoapparat
-import io.fotoapparat.hardware.provider.CameraProviders
 import io.fotoapparat.parameter.ScaleType
 import io.fotoapparat.parameter.Size
 import io.fotoapparat.parameter.selector.LensPositionSelectors.back
@@ -208,10 +207,20 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         SmartLocation.with(this)
                 .location()
                 .oneFix()
-                .start {
+                .start { location ->
                     Timber.d("getLocation() Done")
-                    locationSubject.onNext(LonLat(it.longitude, it.latitude))
+                    locationSubject.onNext(getTruncatedLonLat(location))
                 }
+    }
+
+    private fun getTruncatedLonLat(location: Location): LonLat {
+        val lon = Math.floor(location.longitude * 100) / 100
+        val lat = Math.floor(location.latitude * 100) / 100
+
+        Timber.d("Original lon: ${location.longitude}, lat: ${location.latitude}")
+        Timber.d("Truncated lon: $lon, lat: $lat")
+
+        return LonLat(lon, lat)
     }
 
     private fun showNotification() {
@@ -220,13 +229,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
     private fun hideNotification() {
         notification.visibility = View.GONE
-    }
-
-    override fun onBadResponse(serverErrorCode: ServerErrorCode) {
-        super.onBadResponse(serverErrorCode)
-
-        /*val message = ErrorMessage.getRemoteErrorMessage(activity, serverErrorCode)
-        showToast(message, Toast.LENGTH_LONG)*/
     }
 
     override fun resolveDaggerDependency() {

@@ -51,6 +51,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private var columnsCount: Int = 1
 
     private val loadMoreSubject = PublishSubject.create<Int>()
+    private val photoAnswerClickSubject = PublishSubject.create<PhotoAnswer>()
 
     override fun initViewModel(): AllPhotosViewActivityViewModel {
         return ViewModelProviders.of(activity, viewModelFactory).get(AllPhotosViewActivityViewModel::class.java)
@@ -87,6 +88,11 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext { adapter.removeProgressFooter() }
                 .subscribe(this::onPageReceived, this::onUnknownError)
+
+        compositeDisposable += photoAnswerClickSubject
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onPhotoAnswerClick, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onScrollToTopObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -146,7 +152,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private fun initRecyclerView() {
         columnsCount = AndroidUtils.calculateNoOfColumns(activity, PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = ReceivedPhotosAdapter(activity)
+        adapter = ReceivedPhotosAdapter(activity, photoAnswerClickSubject)
         adapter.init()
 
         layoutManager = GridLayoutManager(activity, columnsCount)
@@ -159,6 +165,9 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         receivedPhotosList.addOnScrollListener(endlessScrollListener)
         receivedPhotosList.adapter = adapter
         receivedPhotosList.setHasFixedSize(true)
+    }
+
+    private fun onPhotoAnswerClick(photo: PhotoAnswer) {
     }
 
     private fun fetchPage(page: Int) {
