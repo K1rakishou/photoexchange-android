@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.ui.fragment
 
 
 import android.arch.lifecycle.ViewModelProviders
+import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.CoordinatorLayout
 import android.support.design.widget.Snackbar
@@ -22,6 +23,7 @@ import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
+import com.kirakishou.photoexchange.ui.activity.MapActivity
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapter
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
 import com.kirakishou.photoexchange.ui.widget.ReceivedPhotosAdapterSpanSizeLookup
@@ -54,7 +56,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private val photoAnswerClickSubject = PublishSubject.create<PhotoAnswer>()
 
     override fun initViewModel(): AllPhotosViewActivityViewModel {
-        return ViewModelProviders.of(activity, viewModelFactory).get(AllPhotosViewActivityViewModel::class.java)
+        return ViewModelProviders.of(activity!!, viewModelFactory).get(AllPhotosViewActivityViewModel::class.java)
     }
 
     override fun getContentView(): Int = R.layout.fragment_received_photos_list
@@ -63,10 +65,12 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         initRx()
         initRecyclerView()
 
-        val isPhotoUploading = arguments.getBoolean("is_photo_uploading", false)
-        if (!isPhotoUploading) {
-            (activity as AllPhotosViewActivity).startLookingForPhotoAnswerService()
-            showLookingForPhotoIndicator()
+        if (arguments != null) {
+            val isPhotoUploading = arguments!!.getBoolean("is_photo_uploading", false)
+            if (!isPhotoUploading) {
+                (activity as AllPhotosViewActivity).startLookingForPhotoAnswerService()
+                showLookingForPhotoIndicator()
+            }
         }
 
         recyclerStartLoadingItems()
@@ -150,9 +154,9 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun initRecyclerView() {
-        columnsCount = AndroidUtils.calculateNoOfColumns(activity, PHOTO_ADAPTER_VIEW_WIDTH)
+        columnsCount = AndroidUtils.calculateNoOfColumns(activity!!, PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = ReceivedPhotosAdapter(activity, photoAnswerClickSubject)
+        adapter = ReceivedPhotosAdapter(activity!!, photoAnswerClickSubject)
         adapter.init()
 
         layoutManager = GridLayoutManager(activity, columnsCount)
@@ -168,6 +172,11 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onPhotoAnswerClick(photo: PhotoAnswer) {
+        val intent = Intent(activity, MapActivity::class.java)
+        intent.putExtra("lon", photo.lon)
+        intent.putExtra("lat", photo.lat)
+
+        startActivity(intent)
     }
 
     private fun fetchPage(page: Int) {

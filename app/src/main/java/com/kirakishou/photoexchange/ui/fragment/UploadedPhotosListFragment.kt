@@ -51,7 +51,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private val loadMoreSubject = PublishSubject.create<Int>()
 
     override fun initViewModel(): AllPhotosViewActivityViewModel {
-        return ViewModelProviders.of(activity, viewModelFactory).get(AllPhotosViewActivityViewModel::class.java)
+        return ViewModelProviders.of(activity!!, viewModelFactory).get(AllPhotosViewActivityViewModel::class.java)
     }
 
     override fun getContentView(): Int = R.layout.fragment_uploaded_photos_list
@@ -60,9 +60,11 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         initRx()
         initRecyclerView()
 
-        val isPhotoUploading = arguments.getBoolean("is_photo_uploading", false)
-        if (isPhotoUploading) {
-            addPhotoUploadingIndicator()
+        if (arguments != null) {
+            val isPhotoUploading = arguments!!.getBoolean("is_photo_uploading", false)
+            if (isPhotoUploading) {
+                addPhotoUploadingIndicator()
+            }
         }
 
         recyclerStartLoadingItems()
@@ -92,11 +94,11 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun initRecyclerView() {
-        columnsCount = AndroidUtils.calculateNoOfColumns(activity, PHOTO_ADAPTER_VIEW_WIDTH)
+        columnsCount = AndroidUtils.calculateNoOfColumns(activity!!, PHOTO_ADAPTER_VIEW_WIDTH)
 
-        val noPhotosUploadedYetMessage = context.getString(R.string.no_photos_uploaded)
+        val noPhotosUploadedYetMessage = context!!.getString(R.string.no_photos_uploaded)
 
-        adapter = UploadedPhotosAdapter(activity, retryButtonSubject, noPhotosUploadedYetMessage)
+        adapter = UploadedPhotosAdapter(activity!!, retryButtonSubject, noPhotosUploadedYetMessage)
         adapter.init()
 
         layoutManager = GridLayoutManager(activity, columnsCount)

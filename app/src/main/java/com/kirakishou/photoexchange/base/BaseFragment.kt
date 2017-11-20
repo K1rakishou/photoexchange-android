@@ -45,7 +45,7 @@ abstract class BaseFragment<out T : ViewModel> : Fragment() {
         return root
     }
 
-    override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         onFragmentViewCreated(savedInstanceState)
