@@ -127,6 +127,16 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onRetryButtonClicked, this::onUnknownError)
+
+        compositeDisposable += getViewModel().outputs.onShowPhotoUploadedOutputObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onPhotoUploaded, this::onUnknownError)
+
+        compositeDisposable += getViewModel().outputs.onShowFailedToUploadPhotoObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ onFailedToUploadPhoto() }, this::onUnknownError)
     }
 
     private fun fetchPage(page: Int) {
@@ -158,7 +168,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         Timber.d("photoName: ${uploadedPhoto.photoName}")
     }
 
-    fun onPhotoUploaded(photo: UploadedPhoto) {
+    private fun onPhotoUploaded(photo: UploadedPhoto) {
         Timber.d("onPhotoUploaded()")
         check(isAdded)
 
@@ -168,7 +178,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
-    fun onFailedToUploadPhoto() {
+    private fun onFailedToUploadPhoto() {
         Timber.d("onFailedToUploadPhoto()")
         check(isAdded)
 

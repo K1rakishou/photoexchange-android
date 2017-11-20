@@ -105,11 +105,8 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         val extras = intent.extras
         val openReceivedPhotosFragment = extras.getBoolean("open_received_photos_fragment", false)
         if (openReceivedPhotosFragment) {
-            val fragment = getReceivedPhotosFragment()
-            if (fragment != null) {
-                selectReceivedPhotosTab()
-                fragment.scrollToTop()
-            }
+            selectReceivedPhotosTab()
+            getViewModel().inputs.receivedPhotosFragmentScrollToTop()
         }
     }
 
@@ -173,98 +170,57 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         FindPhotoAnswerService.scheduleImmediateJob(userInfoPreference.getUserId(), this)
         Timber.d("A job has been scheduled")
 
-        val fragment = getReceivedPhotosFragment()
-        if (fragment != null) {
-            fragment.addLookingForPhotoIndicator()
-        }
+        getViewModel().inputs.receivedPhotosFragmentShowLookingForPhotoIndicator()
     }
 
     fun showNewPhotoReceivedNotification() {
         Snackbar.make(takePhotoButton, "New photo has been received", Snackbar.LENGTH_LONG)
                 .setAction("SHOW", {
-                    val fragment = getReceivedPhotosFragment()
-
-                    if (fragment != null) {
-                        selectReceivedPhotosTab()
-                        fragment.scrollToTop()
-                    }
+                    selectReceivedPhotosTab()
+                    getViewModel().inputs.receivedPhotosFragmentScrollToTop()
                 })
                 .show()
     }
 
-    private fun getUploadedPhotosFragment(): UploadedPhotosListFragment? {
-        val fragment = adapter.uploadedPhotosFragment
-        if (fragment == null) {
-            Timber.w("UploadedPhotosFragment: Event received when fragment is null!")
-            return null
-        }
-
-        if (!fragment.isAdded) {
-            Timber.w("UploadedPhotosFragment: Fragment is not added in the backstack!")
-            return null
-        }
-
-        return fragment
-    }
-
-    private fun getReceivedPhotosFragment(): ReceivedPhotosListFragment? {
-        val fragment = adapter.receivedPhotosFragment
-        if (fragment == null) {
-            Timber.w("ReceivedPhotosFragment: Event received when fragment is null!")
-            return null
-        }
-
-        if (!fragment.isAdded) {
-            Timber.w("ReceivedPhotosFragment: Fragment is not added in the backstack!")
-            return null
-        }
-
-        return fragment
-    }
-
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onPhotoUploadedEvent(event: PhotoUploadedEvent) {
-        val fragment = getUploadedPhotosFragment() ?: return
-
         if (event.status == SendPhotoEventStatus.SUCCESS) {
             checkNotNull(event.photo)
             val photo = event.photo!!
 
-            fragment.onPhotoUploaded(photo)
+            getViewModel().inputs.uploadedPhotosFragmentShowPhotoUploaded(photo)
             startLookingForPhotoAnswerService()
         } else {
-            fragment.onFailedToUploadPhoto()
+            getViewModel().inputs.uploadedPhotosFragmentShowFailedToUploadPhoto()
         }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onPhotoReceivedEvent(event: PhotoReceivedEvent) {
-        val fragment = getReceivedPhotosFragment() ?: return
-
         when (event.status) {
             PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED -> {
                 Timber.d("SUCCESS_ALL_RECEIVED")
-                fragment.onPhotoReceived(event.photoAnswer!!)
+                getViewModel().inputs.receivedPhotosFragmentShowPhotoReceived(event.photoAnswer!!)
             }
             PhotoReceivedEventStatus.SUCCESS_NOT_ALL_RECEIVED -> {
                 Timber.d("SUCCESS_NOT_ALL_RECEIVED")
-                fragment.onPhotoReceived(event.photoAnswer!!)
+                getViewModel().inputs.receivedPhotosFragmentShowPhotoReceived(event.photoAnswer!!)
             }
             PhotoReceivedEventStatus.FAIL -> {
                 Timber.d("FAIL")
-                fragment.errorWhileTryingToSearchForPhoto()
+                getViewModel().inputs.receivedPhotosFragmentShowErrorWhileTryingToLookForPhoto()
             }
             PhotoReceivedEventStatus.NO_PHOTOS_ON_SERVER -> {
                 Timber.d("NO_PHOTOS_ON_SERVER")
-                fragment.onNoPhoto()
+                getViewModel().inputs.receivedPhotosFragmentShowNoPhotoOnServer()
             }
             PhotoReceivedEventStatus.USER_HAS_NOT_UPLOADED_ANY_PHOTOS -> {
                 Timber.d("USER_HAS_NOT_UPLOADED_ANY_PHOTOS")
-                fragment.userNeedsToUploadMorePhotos()
+                getViewModel().inputs.receivedPhotosFragmentShowUserNeedsToUploadMorePhotos()
             }
             PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS -> {
                 Timber.d("UPLOAD_MORE_PHOTOS")
-                fragment.userNeedsToUploadMorePhotos()
+                getViewModel().inputs.receivedPhotosFragmentShowUserNeedsToUploadMorePhotos()
             }
         }
     }

@@ -10,4 +10,12 @@ import io.reactivex.Observable
 interface AllPhotosViewActivityViewModelOutputs {
     fun onUploadedPhotosPageReceivedObservable(): Observable<List<UploadedPhoto>>
     fun onReceivedPhotosPageReceivedObservable(): Observable<List<PhotoAnswer>>
+    fun onScrollToTopObservable(): Observable<Unit>
+    fun onShowLookingForPhotoIndicatorObservable(): Observable<Unit>
+    fun onShowPhotoUploadedOutputObservable(): Observable<UploadedPhoto>
+    fun onShowFailedToUploadPhotoObservable(): Observable<Unit>
+    fun onShowPhotoReceivedObservable(): Observable<PhotoAnswer>
+    fun onShowErrorWhileTryingToLookForPhotoObservable(): Observable<Unit>
+    fun onShowNoPhotoOnServerObservable(): Observable<Unit>
+    fun onShowUserNeedsToUploadMorePhotosObservable(): Observable<Unit>
 }

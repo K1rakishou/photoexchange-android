@@ -64,7 +64,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         val isPhotoUploading = arguments.getBoolean("is_photo_uploading", false)
         if (!isPhotoUploading) {
             (activity as AllPhotosViewActivity).startLookingForPhotoAnswerService()
-            addLookingForPhotoIndicator()
+            showLookingForPhotoIndicator()
         }
 
         recyclerStartLoadingItems()
@@ -86,9 +86,39 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext { adapter.removeProgressFooter() }
                 .subscribe(this::onPageReceived, this::onUnknownError)
+
+        compositeDisposable += getViewModel().outputs.onScrollToTopObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ scrollToTop() }, this::onUnknownError)
+
+        compositeDisposable += getViewModel().outputs.onShowLookingForPhotoIndicatorObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ showLookingForPhotoIndicator() }, this::onUnknownError)
+
+        compositeDisposable += getViewModel().outputs.onShowPhotoReceivedObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onPhotoReceived, this::onUnknownError)
+
+        compositeDisposable += getViewModel().outputs.onShowErrorWhileTryingToLookForPhotoObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ errorWhileTryingToSearchForPhoto() }, this::onUnknownError)
+
+        compositeDisposable += getViewModel().outputs.onShowNoPhotoOnServerObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ onNoPhotoOnTheServer() }, this::onUnknownError)
+
+        compositeDisposable += getViewModel().outputs.onShowUserNeedsToUploadMorePhotosObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ userNeedsToUploadMorePhotos() }, this::onUnknownError)
     }
 
-    fun addLookingForPhotoIndicator() {
+    private fun showLookingForPhotoIndicator() {
         adapter.runOnAdapterHandlerWithDelay(DELAY_BEFORE_PROGRESS_FOOTER_ADDED) {
             adapter.addLookingForPhotoIndicator()
         }
@@ -150,13 +180,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
-    fun scrollToTop() {
-        check(isAdded)
-
-        receivedPhotosList.scrollToPosition(0)
-    }
-
-    fun onPhotoReceived(photo: PhotoAnswer) {
+    private fun onPhotoReceived(photo: PhotoAnswer) {
         Timber.d("onPhotoReceived()")
         check(isAdded)
 
@@ -168,12 +192,16 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
-    fun onNoPhoto() {
+    private fun scrollToTop() {
+        receivedPhotosList.scrollToPosition(0)
+    }
+
+    private fun onNoPhotoOnTheServer() {
         Timber.d("onNoPhoto()")
         check(isAdded)
     }
 
-    fun errorWhileTryingToSearchForPhoto() {
+    private fun errorWhileTryingToSearchForPhoto() {
         Timber.d("errorWhileTryingToSearchForPhoto()")
         check(isAdded)
 
@@ -182,7 +210,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
-    fun userNeedsToUploadMorePhotos() {
+    private fun userNeedsToUploadMorePhotos() {
         Timber.d("userNeedsToUploadMorePhotos()")
         check(isAdded)
 
