@@ -17,6 +17,11 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
+            <ImageView
+                android:id="@+id/photo"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
             <TextView
                 android:id="@+id/photo_id"
                 android:layout_width="wrap_content"
@@ -29,11 +34,6 @@
                 android:textColor="@color/white"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
-
-            <ImageView
-                android:id="@+id/photo"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent" />
 
         </android.support.constraint.ConstraintLayout>
 

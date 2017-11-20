@@ -16,6 +16,7 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseAdapter
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
+import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
 import com.kirakishou.photoexchange.mwvm.model.other.UploadedPhoto
 import io.reactivex.subjects.PublishSubject
 
@@ -28,9 +29,39 @@ class UploadedPhotosAdapter(
         private val noPhotosUploadedMessage: String
 ) : BaseAdapter<UploadedPhoto>(context) {
 
+    private val selector = UploadedPhotosIdSelectorFunction()
+    private val duplicatesCheckerSet = mutableSetOf<Long>()
+
+    private fun isDuplicate(item: AdapterItem<UploadedPhoto>): Boolean {
+        if (item.getType() != AdapterItemType.VIEW_ITEM.ordinal) {
+            return false
+        }
+
+        val photoAnswer = item.value.get()
+        val id = selector.select(photoAnswer)
+
+        return !duplicatesCheckerSet.add(id)
+    }
+
     fun addFirst(item: AdapterItem<UploadedPhoto>) {
+        if (isDuplicate(item)) {
+            return
+        }
+
         items.add(0, item)
         notifyItemInserted(0)
+    }
+
+    override fun add(item: AdapterItem<UploadedPhoto>) {
+        if (isDuplicate(item)) {
+            return
+        }
+
+        super.add(item)
+    }
+
+    override fun addAll(items: List<AdapterItem<UploadedPhoto>>) {
+        super.addAll(items.filter { isDuplicate(it) })
     }
 
     fun addPhotoUploadingIndicator() {
@@ -191,6 +222,10 @@ class UploadedPhotosAdapter(
         init {
             ButterKnife.bind(this, itemView)
         }
+    }
+
+    inner class UploadedPhotosIdSelectorFunction {
+        fun select(item: UploadedPhoto): Long = item.id
     }
 }
 

@@ -24,7 +24,7 @@ class ReceivedPhotosAdapter(
         private val context: Context
 ) : BaseAdapter<PhotoAnswer>(context) {
 
-    private val selector = IdSelectorFunctionImpl()
+    private val selector = ReceivedPhotosIdSelectorFunction()
     private val duplicatesCheckerSet = mutableSetOf<Long>()
 
     private fun isDuplicate(item: AdapterItem<PhotoAnswer>): Boolean {
@@ -47,6 +47,18 @@ class ReceivedPhotosAdapter(
         notifyItemInserted(0)
     }
 
+    override fun add(item: AdapterItem<PhotoAnswer>) {
+        if (isDuplicate(item)) {
+            return
+        }
+
+        super.add(item)
+    }
+
+    override fun addAll(items: List<AdapterItem<PhotoAnswer>>) {
+        super.addAll(items.filter { isDuplicate(it) })
+    }
+
     fun addLookingForPhotoIndicator() {
         checkInited()
 
@@ -63,18 +75,6 @@ class ReceivedPhotosAdapter(
             items.removeAt(0)
             notifyItemRemoved(0)
         }
-    }
-
-    override fun add(item: AdapterItem<PhotoAnswer>) {
-        if (isDuplicate(item)) {
-            return
-        }
-
-        super.add(item)
-    }
-
-    override fun addAll(items: List<AdapterItem<PhotoAnswer>>) {
-        super.addAll(items.filter { isDuplicate(it) })
     }
 
     fun addProgressFooter() {
@@ -165,11 +165,7 @@ class ReceivedPhotosAdapter(
         }
     }
 
-    interface IdSelectorFunction {
-        fun select(item: PhotoAnswer): Long
-    }
-
-    inner class IdSelectorFunctionImpl : IdSelectorFunction {
-        override fun select(item: PhotoAnswer): Long = item.photoRemoteId
+    inner class ReceivedPhotosIdSelectorFunction {
+        fun select(item: PhotoAnswer): Long = item.photoRemoteId
     }
 }
