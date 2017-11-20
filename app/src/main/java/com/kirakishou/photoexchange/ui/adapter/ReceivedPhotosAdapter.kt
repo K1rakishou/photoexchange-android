@@ -1,11 +1,11 @@
 package com.kirakishou.photoexchange.ui.adapter
 
 import android.content.Context
+import android.support.v7.widget.CardView
 import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.widget.ImageView
 import android.widget.ProgressBar
-import android.widget.TextView
 import butterknife.BindView
 import butterknife.ButterKnife
 import com.bumptech.glide.Glide
@@ -16,12 +16,14 @@ import com.kirakishou.photoexchange.base.BaseAdapter
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
 import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
+import io.reactivex.subjects.PublishSubject
 
 /**
  * Created by kirakishou on 11/17/2017.
  */
 class ReceivedPhotosAdapter(
-        private val context: Context
+        private val context: Context,
+        private val photoAnswerClickSubject: PublishSubject<PhotoAnswer>
 ) : BaseAdapter<PhotoAnswer>(context) {
 
     private val selector = ReceivedPhotosIdSelectorFunction()
@@ -99,7 +101,7 @@ class ReceivedPhotosAdapter(
 
     override fun getBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
         return mutableListOf(
-                BaseAdapterInfo(AdapterItemType.VIEW_ITEM, R.layout.adapter_item_photo, ReceivedPhotoViewHolder::class.java),
+                BaseAdapterInfo(AdapterItemType.VIEW_ITEM, R.layout.adapter_item_received_photos, ReceivedPhotoViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_PROGRESSBAR, R.layout.adapter_item_progress, ProgressBarViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_LOOKING_FOR_PHOTO, R.layout.adapter_item_looking_for_photo, LookingForPhotoViewHolder::class.java)
         )
@@ -117,6 +119,10 @@ class ReceivedPhotosAdapter(
                             .load(fullPath)
                             .apply(RequestOptions().centerCrop())
                             .into(holder.photoView)
+
+                    holder.clickView.setOnClickListener {
+                        photoAnswerClickSubject.onNext(item)
+                    }
                 }
             }
 
@@ -131,6 +137,9 @@ class ReceivedPhotosAdapter(
     }
 
     class ReceivedPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        @BindView(R.id.click_view)
+        lateinit var clickView: CardView
 
         @BindView(R.id.photo)
         lateinit var photoView: ImageView

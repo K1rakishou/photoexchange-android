@@ -17,18 +17,15 @@ import com.kirakishou.photoexchange.di.component.DaggerTakePhotoActivityComponen
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.helper.util.Utils
-import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
 import com.kirakishou.photoexchange.mwvm.model.other.LonLat
 import com.kirakishou.photoexchange.mwvm.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.TakePhotoActivityViewModelFactory
 import io.fotoapparat.Fotoapparat
-import io.fotoapparat.hardware.provider.CameraProviders
 import io.fotoapparat.parameter.ScaleType
 import io.fotoapparat.parameter.Size
 import io.fotoapparat.parameter.selector.LensPositionSelectors.back
 import io.fotoapparat.view.CameraView
 import io.nlopez.smartlocation.SmartLocation
-import io.nlopez.smartlocation.location.config.LocationParams
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.plusAssign
@@ -36,8 +33,6 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.io.File
-import java.math.RoundingMode
-import java.text.DecimalFormat
 import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
@@ -214,11 +209,11 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .oneFix()
                 .start { location ->
                     Timber.d("getLocation() Done")
-                    locationSubject.onNext(getTruncatedLolLat(location))
+                    locationSubject.onNext(getTruncatedLonLat(location))
                 }
     }
 
-    private fun getTruncatedLolLat(location: Location): LonLat {
+    private fun getTruncatedLonLat(location: Location): LonLat {
         val lon = Math.floor(location.longitude * 100) / 100
         val lat = Math.floor(location.latitude * 100) / 100
 

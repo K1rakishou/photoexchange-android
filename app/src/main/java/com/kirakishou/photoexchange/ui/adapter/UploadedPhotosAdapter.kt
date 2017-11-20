@@ -16,7 +16,6 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseAdapter
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
-import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
 import com.kirakishou.photoexchange.mwvm.model.other.UploadedPhoto
 import io.reactivex.subjects.PublishSubject
 
@@ -124,7 +123,7 @@ class UploadedPhotosAdapter(
 
     override fun getBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
         return mutableListOf(
-                BaseAdapterInfo(AdapterItemType.VIEW_ITEM, R.layout.adapter_item_photo, SentPhotoViewHolder::class.java),
+                BaseAdapterInfo(AdapterItemType.VIEW_ITEM, R.layout.adapter_item_sent_photos, SentPhotoViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_PROGRESSBAR, R.layout.adapter_item_progress, ProgressBarViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_FAILED_TO_UPLOAD, R.layout.adapter_item_upload_photo_error, PhotoUploadErrorViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_MESSAGE, R.layout.adapter_item_message, MessageViewHolder::class.java),
