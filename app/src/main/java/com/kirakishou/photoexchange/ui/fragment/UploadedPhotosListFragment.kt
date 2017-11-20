@@ -5,6 +5,7 @@ import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.widget.Toast
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
@@ -137,6 +138,11 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ onFailedToUploadPhoto() }, this::onUnknownError)
+
+        compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onUnknownError)
     }
 
     private fun fetchPage(page: Int) {
@@ -189,7 +195,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onUnknownError(error: Throwable) {
-        Timber.e(error)
+        (activity as AllPhotosViewActivity).onUnknownError(error)
     }
 
     override fun resolveDaggerDependency() {

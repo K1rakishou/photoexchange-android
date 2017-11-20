@@ -120,6 +120,11 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ finish() })
+
+        compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onUnknownError)
     }
 
     private fun initTabs(intent: Intent) {

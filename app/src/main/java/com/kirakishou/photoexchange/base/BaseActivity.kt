@@ -32,7 +32,7 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
     override fun getLifecycle(): LifecycleRegistry = registry
 
     protected val compositeDisposable = CompositeDisposable()
-    protected val unknownErrorsSubject = PublishSubject.create<Throwable>()
+    protected val unknownErrorsSubject = PublishSubject.create<Throwable>()!!
 
     private lateinit var viewModel: T
     private var unBinder: Fickle<Unbinder> = Fickle.empty()

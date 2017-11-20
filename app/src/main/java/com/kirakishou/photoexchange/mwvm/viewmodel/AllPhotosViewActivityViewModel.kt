@@ -2,7 +2,6 @@ package com.kirakishou.photoexchange.mwvm.viewmodel
 
 import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
-import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mwvm.model.other.Pageable
@@ -58,6 +57,7 @@ class AllPhotosViewActivityViewModel(
     private val showUserNeedsToUploadMorePhotosOutput = PublishSubject.create<Unit>()
 
     //errors
+    private val onUnknownErrorErrorSubject = PublishSubject.create<Throwable>()
 
     init {
         compositeDisposable += fetchOnePageUploadedPhotosSubject
@@ -156,6 +156,8 @@ class AllPhotosViewActivityViewModel(
 
     private fun handleError(error: Throwable) {
         Timber.e(error)
+
+        onUnknownErrorErrorSubject.onNext(error)
     }
 
     override fun onCleared() {
@@ -174,7 +176,7 @@ class AllPhotosViewActivityViewModel(
     override fun onShowErrorWhileTryingToLookForPhotoObservable(): Observable<Unit> = showErrorWhileTryingToLookForPhotoOutput
     override fun onShowNoPhotoOnServerObservable(): Observable<Unit> = showNoPhotoOnServerOutput
     override fun onShowUserNeedsToUploadMorePhotosObservable(): Observable<Unit> = showUserNeedsToUploadMorePhotosOutput
-
+    override fun onUnknownErrorObservable(): Observable<Throwable> = onUnknownErrorErrorSubject
 }
 
 

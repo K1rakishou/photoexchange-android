@@ -8,6 +8,7 @@ import android.support.design.widget.Snackbar
 import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.widget.Toast
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
@@ -116,6 +117,11 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ userNeedsToUploadMorePhotos() }, this::onUnknownError)
+
+        compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onUnknownError)
     }
 
     private fun showLookingForPhotoIndicator() {
@@ -220,7 +226,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onUnknownError(error: Throwable) {
-        Timber.e(error)
+        (activity as AllPhotosViewActivity).onUnknownError(error)
     }
 
     override fun resolveDaggerDependency() {
