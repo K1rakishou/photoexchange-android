@@ -24,6 +24,7 @@ import io.fotoapparat.Fotoapparat
 import io.fotoapparat.parameter.ScaleType
 import io.fotoapparat.parameter.Size
 import io.fotoapparat.parameter.selector.LensPositionSelectors.back
+import io.fotoapparat.parameter.selector.SizeSelectors.biggestSize
 import io.fotoapparat.view.CameraView
 import io.nlopez.smartlocation.SmartLocation
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -105,29 +106,9 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .with(this)
                 .into(cameraView)
                 .previewScaleType(ScaleType.CENTER_CROP)
-                .photoSize(this::getSize)
+                .photoSize(biggestSize())
                 .lensPosition(back())
                 .build()
-    }
-
-    private fun getSize(sizes: MutableCollection<Size>): Size? {
-        val idealHeight = 1920
-        val idealWidth = 1080
-        var finalSize: Size? = null
-
-        val minDist = sizes
-                .map { Math.hypot((idealHeight - it.height).toDouble(), (idealWidth - it.width).toDouble()) }
-                .min()
-
-        for (size in sizes) {
-            val result = Math.hypot((idealHeight - size.height).toDouble(), (idealWidth - size.width).toDouble())
-            if (result == minDist) {
-                finalSize = size
-                break
-            }
-        }
-
-        return finalSize
     }
 
     private fun initRx() {
