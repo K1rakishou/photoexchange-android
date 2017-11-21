@@ -43,10 +43,6 @@ class UploadPhotoService : Service() {
     @Inject
     lateinit var uploadedPhotosRepo: UploadedPhotosRepository
 
-    private val NOTIFICATION_ID = 1
-    private val CHANNEL_ID = "${Constants.appid}.UPLOAD_PHOTO_CHANNEL_ID"
-    private val CHANNEL_NAME = "${Constants.appid}.UPLOAD_PHOTO_CHANNEL_NAME"
-
     private var notificationManager: NotificationManager? = null
 
     private val compositeDisposable = CompositeDisposable()
@@ -150,24 +146,24 @@ class UploadPhotoService : Service() {
 
     private fun startAsForeground() {
         val notification = createNotificationUploading()
-        startForeground(NOTIFICATION_ID, notification)
+        startForeground(Constants.NOTIFICATION_ID, notification)
     }
 
     private fun updateUploadingNotificationShowSuccess() {
         val newNotification = createNotificationSuccess()
-        getNotificationManager().notify(NOTIFICATION_ID, newNotification)
+        getNotificationManager().notify(Constants.NOTIFICATION_ID, newNotification)
     }
 
     private fun updateUploadingNotificationShowError() {
         val newNotification = createNotificationError()
-        getNotificationManager().notify(NOTIFICATION_ID, newNotification)
+        getNotificationManager().notify(Constants.NOTIFICATION_ID, newNotification)
     }
 
     private fun createNotificationError(): Notification {
         if (AndroidUtils.isOreoOrHigher()) {
             createNotificationChannelIfNotExists()
 
-            return NotificationCompat.Builder(this, CHANNEL_ID)
+            return NotificationCompat.Builder(this, Constants.CHANNEL_ID)
                     .setContentTitle("Error")
                     .setContentText("Could not upload photo")
                     .setSmallIcon(android.R.drawable.stat_notify_error)
@@ -176,7 +172,7 @@ class UploadPhotoService : Service() {
                     .setAutoCancel(false)
                     .build()
         } else {
-            return NotificationCompat.Builder(this, CHANNEL_ID)
+            return NotificationCompat.Builder(this, Constants.CHANNEL_ID)
                     .setContentTitle("Error")
                     .setContentText("Could not upload photo")
                     .setSmallIcon(android.R.drawable.stat_notify_error)
@@ -191,7 +187,7 @@ class UploadPhotoService : Service() {
         if (AndroidUtils.isOreoOrHigher()) {
             createNotificationChannelIfNotExists()
 
-            return NotificationCompat.Builder(this, CHANNEL_ID)
+            return NotificationCompat.Builder(this, Constants.CHANNEL_ID)
                     .setContentTitle("Done")
                     .setContentText("Photo has been uploaded!")
                     .setSmallIcon(android.R.drawable.stat_sys_upload_done)
@@ -215,7 +211,7 @@ class UploadPhotoService : Service() {
         if (AndroidUtils.isOreoOrHigher()) {
             createNotificationChannelIfNotExists()
 
-            return NotificationCompat.Builder(this, CHANNEL_ID)
+            return NotificationCompat.Builder(this, Constants.CHANNEL_ID)
                     .setContentTitle("Please wait")
                     .setContentText("Uploading photo...")
                     .setSmallIcon(android.R.drawable.stat_sys_upload)
@@ -239,8 +235,10 @@ class UploadPhotoService : Service() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun createNotificationChannelIfNotExists() {
-        if (getNotificationManager().getNotificationChannel(CHANNEL_ID) == null) {
-            val notificationChannel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_LOW)
+        if (getNotificationManager().getNotificationChannel(Constants.CHANNEL_ID) == null) {
+            val notificationChannel = NotificationChannel(Constants.CHANNEL_ID, Constants.CHANNEL_NAME,
+                    NotificationManager.IMPORTANCE_LOW)
+
             notificationChannel.enableLights(false)
             notificationChannel.enableVibration(false)
             notificationChannel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
