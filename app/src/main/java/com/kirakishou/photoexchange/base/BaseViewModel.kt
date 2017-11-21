@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.base
 import android.arch.lifecycle.ViewModel
 import android.support.annotation.CallSuper
 import com.kirakishou.photoexchange.PhotoExchangeApplication
+import com.kirakishou.photoexchange.helper.CompositeJob
 import io.reactivex.disposables.CompositeDisposable
 
 /**
@@ -10,12 +11,14 @@ import io.reactivex.disposables.CompositeDisposable
  */
 abstract class BaseViewModel : ViewModel() {
     protected val compositeDisposable = CompositeDisposable()
+    protected val compositeJob = CompositeJob()
 
     @CallSuper
     override fun onCleared() {
         compositeDisposable.clear()
-        PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
+        compositeJob.cancelAll()
 
+        PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
         super.onCleared()
     }
 }

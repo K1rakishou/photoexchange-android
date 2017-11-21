@@ -14,10 +14,7 @@ import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
 import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.rxkotlin.zipWith
 import io.reactivex.subjects.PublishSubject
-import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.rx2.await
 import timber.log.Timber
@@ -83,9 +80,14 @@ class FindPhotoAnswerServiceViewModel(
                     else -> badResponseSubject.onNext(findPhotoErrorCode)
                 }
             } catch (error: Throwable) {
-                unknownErrorSubject.onNext(error)
+                handleErrors(error)
             }
         }
+    }
+
+    private fun handleErrors(error: Throwable) {
+        Timber.e(error)
+        unknownErrorSubject.onNext(error)
     }
 
     fun cleanUp() {

@@ -74,9 +74,14 @@ class UploadPhotoServiceViewModel(
 
                 sendPhotoResponseSubject.onNext(uploadedPhoto)
             } catch (error: Throwable) {
-                unknownErrorSubject.onNext(error)
+                handleErrors(error)
             }
         }
+    }
+
+    private fun handleErrors(error: Throwable) {
+        Timber.e(error)
+        unknownErrorSubject.onNext(error)
     }
 
     fun cleanUp() {
