@@ -37,6 +37,7 @@ import io.nlopez.smartlocation.rx.ObservableFactory
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.Observables
+import io.reactivex.rxkotlin.combineLatest
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
@@ -66,13 +67,14 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     @Inject
     lateinit var appSharedPreference: AppSharedPreference
 
-    private var fotoapparat: Fotoapparat? = null
+    private val ON_START = 0
+    private val ON_STOP = 1
 
     private val userInfoPreference by lazy { appSharedPreference.prepare<UserInfoPreference>() }
-
-    private val cameraPermissionSubject = BehaviorSubject.create<Boolean>()
+    private val initCameraSubject = BehaviorSubject.create<Boolean>()
     private val locationPermissionSubject = BehaviorSubject.create<Boolean>()
     private val photoAvailabilitySubject = PublishSubject.create<String>()
+    private val lifecycleSubject = BehaviorSubject.create<Int>()
 
     override fun initViewModel(): TakePhotoActivityViewModel {
         return ViewModelProviders.of(this, viewModelFactory).get(TakePhotoActivityViewModel::class.java)
@@ -100,21 +102,13 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                         Manifest.permission.ACCESS_FINE_LOCATION)
                 .withListener(object : MultiplePermissionsListener {
                     override fun onPermissionsChecked(report: MultiplePermissionsReport) {
-                        for (grantedResponse in report.grantedPermissionResponses) {
-                            if (grantedResponse.permissionName == Manifest.permission.CAMERA) {
-                                cameraPermissionSubject.onNext(true)
-                            } else if (grantedResponse.permissionName == Manifest.permission.ACCESS_FINE_LOCATION) {
-                                locationPermissionSubject.onNext(true)
-                            }
+                        if (!report.areAllPermissionsGranted()) {
+                            finish()
+                            return
                         }
 
-                        for (deniedPermission in report.deniedPermissionResponses) {
-                            if (deniedPermission.permissionName == Manifest.permission.CAMERA) {
-                                cameraPermissionSubject.onNext(false)
-                            } else if (deniedPermission.permissionName == Manifest.permission.ACCESS_FINE_LOCATION) {
-                                locationPermissionSubject.onNext(false)
-                            }
-                        }
+                        initCameraSubject.onNext(true)
+                        locationPermissionSubject.onNext(true)
                     }
 
                     override fun onPermissionRationaleShouldBeShown(permissions: MutableList<PermissionRequest>, token: PermissionToken) {
@@ -132,41 +126,33 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
     }
 
-    /*override fun onStart() {
-        super.onStart()
-
-    }
-
-    override fun onStop() {
-        super.onStop()
-        fotoapparat.stop()
-    }*/
-
     override fun onPause() {
         super.onPause()
         userInfoPreference.save()
     }
 
-    private fun initCamera() {
-        fotoapparat = Fotoapparat
+    override fun onStart() {
+        super.onStart()
+
+        lifecycleSubject.onNext(ON_START)
+    }
+
+    override fun onStop() {
+        super.onStop()
+
+        lifecycleSubject.onNext(ON_STOP)
+    }
+
+    private fun initCamera(): Observable<Fotoapparat> {
+        val foto = Fotoapparat
                 .with(this)
                 .into(cameraView)
                 .previewScaleType(ScaleType.CENTER_CROP)
                 .photoSize(biggestSize())
                 .lensPosition(back())
                 .build()
-    }
 
-    private fun startCamera() {
-        if (fotoapparat != null) {
-            fotoapparat!!.start()
-        }
-    }
-
-    private fun stopCamera() {
-        if (fotoapparat != null) {
-            fotoapparat!!.stop()
-        }
+        return Observable.just(foto)
     }
 
     private fun initRx() {
@@ -175,50 +161,56 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ switchToAllPhotosViewActivity() })
 
-        compositeDisposable += cameraPermissionSubject
-                .filter { granted -> granted }
-                .doOnNext {
+        val fotoapparatObservable = initCameraSubject
+                .flatMap {
                     initCamera()
                 }
-                .doOnNext {
-                    startCamera()
-                }
-                .doOnDispose {
-                    stopCamera()
+                .share()
+
+        compositeDisposable += Observables.combineLatest(fotoapparatObservable, lifecycleSubject)
+                .doOnNext { (fotoapparat, lifecycle) ->
+                    when (lifecycle) {
+                        ON_START -> {
+                            fotoapparat.start()
+                        }
+                        ON_STOP -> {
+                            fotoapparat.stop()
+                        }
+                    }
                 }
                 .subscribe()
 
         compositeDisposable += RxView.clicks(takePhotoButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
+                .map { lifecycleSubject.value }
+                .filter { lifecycle -> lifecycle == ON_START }
+                .doOnNext {
+                    when (it) {
+                        ON_START -> Timber.d("ON_START")
+                        ON_STOP -> Timber.d("ON_STOP")
+                    }
+                }
+                .combineLatest(fotoapparatObservable)
+                .map { it.second }
+                .subscribe({ fotoapparat ->
                     showNotification()
-                    //getLocation()
-                    takePhoto()
-                })
-
-        compositeDisposable += cameraPermissionSubject
-                .filter { granted -> !granted }
-                .subscribe({
-                    Timber.d("Could not get camera permission!")
-                    finish()
+                    takePhoto(fotoapparat)
                 })
 
         val locationObservable = locationPermissionSubject
-                .doOnNext { granted ->
-                    Timber.d("granted = $granted")
-                }
                 .filter { granted -> granted }
                 .zipWith(getLocationObservable())
                 .map { it.second }
 
-        compositeDisposable += Observables.zip(locationObservable, photoAvailabilitySubject)
+        compositeDisposable += photoAvailabilitySubject
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
+                .combineLatest(locationObservable)
                 .doOnError { unknownErrorsSubject.onNext(it) }
                 .subscribe({
-                    val location = it.first
-                    val photoFilePath = it.second
+                    val photoFilePath = it.first
+                    val location = it.second
                     val userId = userInfoPreference.getUserId()
 
                     hideNotification()
@@ -256,18 +248,16 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         }
     }
 
-    private fun takePhoto() {
+    private fun takePhoto(fotoapparat: Fotoapparat) {
         Timber.d("takePhoto() Taking a photo...")
         val tempFile = File.createTempFile("photo", ".tmp")
 
-        if (fotoapparat != null) {
-            fotoapparat!!.takePicture()
-                    .saveToFile(tempFile)
-                    .whenAvailable {
-                        Timber.d("takePhoto() Done")
-                        photoAvailabilitySubject.onNext(tempFile.absolutePath)
-                    }
-        }
+        fotoapparat.takePicture()
+                .saveToFile(tempFile)
+                .whenAvailable {
+                    Timber.d("takePhoto() Done")
+                    photoAvailabilitySubject.onNext(tempFile.absolutePath)
+                }
     }
 
     private fun getLocationObservable(): Observable<LonLat> {

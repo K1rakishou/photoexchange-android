@@ -207,11 +207,11 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         when (event.status) {
             PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED -> {
                 Timber.d("SUCCESS_ALL_RECEIVED")
-                getViewModel().inputs.receivedPhotosFragmentShowPhotoReceived(event.photoAnswer!!)
+                getViewModel().inputs.receivedPhotosFragmentShowPhotoReceived(event.photoAnswer!!, event.allFound)
             }
             PhotoReceivedEventStatus.SUCCESS_NOT_ALL_RECEIVED -> {
                 Timber.d("SUCCESS_NOT_ALL_RECEIVED")
-                getViewModel().inputs.receivedPhotosFragmentShowPhotoReceived(event.photoAnswer!!)
+                getViewModel().inputs.receivedPhotosFragmentShowPhotoReceived(event.photoAnswer!!, event.allFound)
             }
             PhotoReceivedEventStatus.FAIL -> {
                 Timber.d("FAIL")

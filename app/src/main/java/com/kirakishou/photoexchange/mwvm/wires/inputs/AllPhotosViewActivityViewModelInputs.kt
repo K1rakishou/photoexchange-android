@@ -13,7 +13,7 @@ interface AllPhotosViewActivityViewModelInputs {
     fun receivedPhotosFragmentShowLookingForPhotoIndicator()
     fun uploadedPhotosFragmentShowPhotoUploaded(photo: UploadedPhoto)
     fun uploadedPhotosFragmentShowFailedToUploadPhoto()
-    fun receivedPhotosFragmentShowPhotoReceived(photo: PhotoAnswer)
+    fun receivedPhotosFragmentShowPhotoReceived(photo: PhotoAnswer, allFound: Boolean)
     fun receivedPhotosFragmentShowErrorWhileTryingToLookForPhoto()
     fun receivedPhotosFragmentShowNoPhotoOnServer()
     fun receivedPhotosFragmentShowUserNeedsToUploadMorePhotos()
