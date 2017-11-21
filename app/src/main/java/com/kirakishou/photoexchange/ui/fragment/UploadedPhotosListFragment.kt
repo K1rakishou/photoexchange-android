@@ -96,9 +96,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private fun initRecyclerView() {
         columnsCount = AndroidUtils.calculateNoOfColumns(activity!!, PHOTO_ADAPTER_VIEW_WIDTH)
 
-        val noPhotosUploadedYetMessage = context!!.getString(R.string.no_photos_uploaded)
-
-        adapter = UploadedPhotosAdapter(activity!!, retryButtonSubject, noPhotosUploadedYetMessage)
+        adapter = UploadedPhotosAdapter(activity!!, retryButtonSubject)
         adapter.init()
 
         layoutManager = GridLayoutManager(activity, columnsCount)

@@ -45,29 +45,32 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        setContentView(getContentView())
+        unBinder = Fickle.of(ButterKnife.bind(this))
+
+        resolveDaggerDependency()
+        viewModel = initViewModel()
+        onInitRx()
+
         Fabric.with(this, Crashlytics())
 
         compositeDisposable += unknownErrorsSubject
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onUnknownError)
 
-        resolveDaggerDependency()
-        viewModel = initViewModel()
-
-        setContentView(getContentView())
-        unBinder = Fickle.of(ButterKnife.bind(this))
-
         onActivityCreate(savedInstanceState, intent)
     }
 
     override fun onDestroy() {
+        Timber.d("Activity.onDestroy")
+
         compositeDisposable.clear()
-        onActivityDestroy()
 
         unBinder.ifPresent {
             it.unbind()
         }
 
+        onActivityDestroy()
         super.onDestroy()
     }
 
@@ -120,6 +123,7 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
 
     protected abstract fun initViewModel(): T
     protected abstract fun getContentView(): Int
+    protected abstract fun onInitRx()
     protected abstract fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent)
     protected abstract fun onActivityDestroy()
     protected abstract fun resolveDaggerDependency()

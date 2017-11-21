@@ -21,14 +21,14 @@
             </intent-filter>
         </activity>
 
+        <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity" />
+        <activity android:name="com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity" />
+        <activity android:name="com.kirakishou.photoexchange.ui.activity.MapActivity" />
+
         <service
             android:name="com.kirakishou.photoexchange.helper.service.UploadPhotoService"
             android:enabled="true"
             android:exported="false" />
-
-        <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity" />
-        <activity android:name="com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity" />
-        <activity android:name="com.kirakishou.photoexchange.ui.activity.MapActivity"/>
 
         <service
             android:name="com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService"

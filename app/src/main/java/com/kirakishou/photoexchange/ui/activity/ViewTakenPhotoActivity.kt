@@ -51,11 +51,13 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
 
     override fun getContentView() = R.layout.activity_view_taken_photo
 
+    override fun onInitRx() {
+        initRx()
+    }
+
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         getTakenPhoto(intent)
         setPhotoPreview()
-
-        initRx()
     }
 
     override fun onActivityDestroy() {

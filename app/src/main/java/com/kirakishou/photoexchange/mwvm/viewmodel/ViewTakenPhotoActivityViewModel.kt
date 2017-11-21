@@ -27,7 +27,7 @@ class ViewTakenPhotoActivityViewModel(
 
     }
 
-    private fun handleError(error: Throwable) {
+    private fun handleErrors(error: Throwable) {
         Timber.e(error)
     }
 

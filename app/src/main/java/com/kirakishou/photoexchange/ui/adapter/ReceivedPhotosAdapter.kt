@@ -6,6 +6,7 @@ import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.widget.ImageView
 import android.widget.ProgressBar
+import android.widget.TextView
 import butterknife.BindView
 import butterknife.ButterKnife
 import com.bumptech.glide.Glide
@@ -17,6 +18,7 @@ import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
 import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
 import io.reactivex.subjects.PublishSubject
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Created by kirakishou on 11/17/2017.
@@ -28,6 +30,14 @@ class ReceivedPhotosAdapter(
 
     private val selector = ReceivedPhotosIdSelectorFunction()
     private val duplicatesCheckerSet = mutableSetOf<Long>()
+
+    private val messages = arrayOf(
+            context.getString(R.string.error_while_looking_for_photo),
+            context.getString(R.string.upload_more_photos)
+    )
+
+    @Volatile
+    private var messageType = -1
 
     private fun isDuplicate(item: AdapterItem<PhotoAnswer>): Boolean {
         if (item.getType() != AdapterItemType.VIEW_ITEM.ordinal) {
@@ -59,6 +69,24 @@ class ReceivedPhotosAdapter(
 
     override fun addAll(items: List<AdapterItem<PhotoAnswer>>) {
         super.addAll(items.filter { isDuplicate(it) })
+    }
+
+    fun addMessage(messageType: Int) {
+        checkInited()
+
+        if (items.isEmpty() || items.first().getType() != AdapterItemType.VIEW_MESSAGE.ordinal) {
+            items.add(0, AdapterItem(AdapterItemType.VIEW_MESSAGE))
+            notifyItemInserted(0)
+        }
+    }
+
+    fun removeMessage() {
+        checkInited()
+
+        if (items.isNotEmpty() && items.first().getType() == AdapterItemType.VIEW_MESSAGE.ordinal) {
+            items.removeAt(0)
+            notifyItemRemoved(0)
+        }
     }
 
     fun addLookingForPhotoIndicator() {
@@ -103,7 +131,8 @@ class ReceivedPhotosAdapter(
         return mutableListOf(
                 BaseAdapterInfo(AdapterItemType.VIEW_ITEM, R.layout.adapter_item_received_photos, ReceivedPhotoViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_PROGRESSBAR, R.layout.adapter_item_progress, ProgressBarViewHolder::class.java),
-                BaseAdapterInfo(AdapterItemType.VIEW_LOOKING_FOR_PHOTO, R.layout.adapter_item_looking_for_photo, LookingForPhotoViewHolder::class.java)
+                BaseAdapterInfo(AdapterItemType.VIEW_LOOKING_FOR_PHOTO, R.layout.adapter_item_looking_for_photo, LookingForPhotoViewHolder::class.java),
+                BaseAdapterInfo(AdapterItemType.VIEW_MESSAGE, R.layout.adapter_item_message, MessageViewHolder::class.java)
         )
     }
 
@@ -132,6 +161,13 @@ class ReceivedPhotosAdapter(
 
             is LookingForPhotoViewHolder -> {
                 holder.progressBar.isIndeterminate = true
+            }
+
+            is MessageViewHolder -> {
+                if (messageType != -1) {
+                    val message = messages[messageType]
+                    holder.messageTv.text = message
+                }
             }
         }
     }
@@ -169,7 +205,22 @@ class ReceivedPhotosAdapter(
         }
     }
 
+    class MessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        @BindView(R.id.message)
+        lateinit var messageTv: TextView
+
+        init {
+            ButterKnife.bind(this, itemView)
+        }
+    }
+
     inner class ReceivedPhotosIdSelectorFunction {
         fun select(item: PhotoAnswer): Long = item.photoRemoteId
+    }
+
+    companion object {
+        val MESSAGE_TYPE_ERROR = 0
+        val MESSAGE_TYPE_UPLOAD_MORE_PHOTOS = 1
     }
 }

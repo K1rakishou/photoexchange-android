@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.ui.activity
 
+import android.Manifest
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.location.Location
@@ -10,6 +11,11 @@ import android.view.View
 import android.widget.ImageView
 import butterknife.BindView
 import com.jakewharton.rxbinding2.view.RxView
+import com.karumi.dexter.Dexter
+import com.karumi.dexter.MultiplePermissionsReport
+import com.karumi.dexter.PermissionToken
+import com.karumi.dexter.listener.PermissionRequest
+import com.karumi.dexter.listener.multi.MultiplePermissionsListener
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
@@ -22,15 +28,17 @@ import com.kirakishou.photoexchange.mwvm.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.TakePhotoActivityViewModelFactory
 import io.fotoapparat.Fotoapparat
 import io.fotoapparat.parameter.ScaleType
-import io.fotoapparat.parameter.Size
 import io.fotoapparat.parameter.selector.LensPositionSelectors.back
 import io.fotoapparat.parameter.selector.SizeSelectors.biggestSize
 import io.fotoapparat.view.CameraView
 import io.nlopez.smartlocation.SmartLocation
+import io.nlopez.smartlocation.rx.ObservableFactory
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
+import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.io.File
@@ -56,11 +64,13 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     @Inject
     lateinit var appSharedPreference: AppSharedPreference
 
-    lateinit var fotoapparat: Fotoapparat
+    private var fotoapparat: Fotoapparat? = null
 
     private val userInfoPreference by lazy { appSharedPreference.prepare<UserInfoPreference>() }
+
+    private val cameraPermissionSubject = BehaviorSubject.create<Boolean>()
+    private val locationPermissionSubject = BehaviorSubject.create<Boolean>()
     private val photoAvailabilitySubject = PublishSubject.create<String>()
-    private val locationSubject = PublishSubject.create<LonLat>()
 
     override fun initViewModel(): TakePhotoActivityViewModel {
         return ViewModelProviders.of(this, viewModelFactory).get(TakePhotoActivityViewModel::class.java)
@@ -68,14 +78,48 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
     override fun getContentView(): Int = R.layout.activity_take_photo
 
+    override fun onInitRx() {
+        initRx()
+    }
+
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         userInfoPreference.load()
 
-        initUserInfo()
-        initRx()
-        initCamera()
+        getPermissions()
+        generateOrReadUserId()
 
         getViewModel().inputs.cleanTakenPhotosDB()
+    }
+
+    private fun getPermissions() {
+        Dexter.withActivity(this)
+                .withPermissions(
+                        Manifest.permission.CAMERA,
+                        Manifest.permission.ACCESS_FINE_LOCATION)
+                .withListener(object : MultiplePermissionsListener {
+                    override fun onPermissionsChecked(report: MultiplePermissionsReport) {
+                        for (grantedResponse in report.grantedPermissionResponses) {
+                            if (grantedResponse.permissionName == Manifest.permission.CAMERA) {
+                                cameraPermissionSubject.onNext(true)
+                            } else if (grantedResponse.permissionName == Manifest.permission.ACCESS_FINE_LOCATION) {
+                                locationPermissionSubject.onNext(true)
+                            }
+                        }
+
+                        for (deniedPermission in report.deniedPermissionResponses) {
+                            if (deniedPermission.permissionName == Manifest.permission.CAMERA) {
+                                cameraPermissionSubject.onNext(false)
+                            } else if (deniedPermission.permissionName == Manifest.permission.ACCESS_FINE_LOCATION) {
+                                locationPermissionSubject.onNext(false)
+                            }
+                        }
+                    }
+
+                    override fun onPermissionRationaleShouldBeShown(permissions: MutableList<PermissionRequest>, token: PermissionToken) {
+                        token.continuePermissionRequest()
+                    }
+
+                }).check()
     }
 
     override fun onActivityDestroy() {
@@ -86,15 +130,15 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
     }
 
-    override fun onStart() {
+    /*override fun onStart() {
         super.onStart()
-        fotoapparat.start()
+
     }
 
     override fun onStop() {
         super.onStop()
         fotoapparat.stop()
-    }
+    }*/
 
     override fun onPause() {
         super.onPause()
@@ -111,22 +155,68 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .build()
     }
 
-    private fun initRx() {
-        compositeDisposable += RxView.clicks(takePhotoButton)
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    showNotification()
-                    getLocation()
-                    takePhoto()
-                })
+    private fun startCamera() {
+        if (fotoapparat != null) {
+            fotoapparat!!.start()
+        }
+    }
 
+    private fun stopCamera() {
+        if (fotoapparat != null) {
+            fotoapparat!!.stop()
+        }
+    }
+
+    private fun initRx() {
         compositeDisposable += RxView.clicks(ivShowAllPhotos)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ switchToAllPhotosViewActivity() })
 
-        compositeDisposable += Observables.zip(locationSubject, photoAvailabilitySubject)
+        compositeDisposable += cameraPermissionSubject
+                .filter { granted -> granted }
+                .doOnNext {
+                    initCamera()
+                }
+                .doOnNext {
+                    startCamera()
+                }
+                .doOnDispose {
+                    stopCamera()
+                }
+                .subscribe()
+
+        compositeDisposable += RxView.clicks(takePhotoButton)
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    showNotification()
+                    //getLocation()
+                    takePhoto()
+                })
+
+        compositeDisposable += cameraPermissionSubject
+                .filter { granted -> !granted }
+                .subscribe({
+                    Timber.d("Could not get camera permission!")
+                    finish()
+                })
+
+        val locationObservable = locationPermissionSubject
+                .doOnNext { granted ->
+                    Timber.d("granted = $granted")
+                }
+                .filter { granted -> granted }
+                .doOnNext {
+                    SmartLocation.with(this)
+                            .location()
+                            .continuous()
+                            .start {
+                                Timber.d("lastlocation: $it")
+                            }
+                }
+
+        compositeDisposable += Observables.zip(locationObservable, photoAvailabilitySubject)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnError { unknownErrorsSubject.onNext(it) }
@@ -136,7 +226,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                     val userId = userInfoPreference.getUserId()
 
                     hideNotification()
-                    switchToViewTakenPhotoActivity(location, photoFilePath, userId)
+                    //switchToViewTakenPhotoActivity(location, photoFilePath, userId)
                 })
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
@@ -159,7 +249,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         startActivity(intent)
     }
 
-    private fun initUserInfo() {
+    private fun generateOrReadUserId() {
         if (!userInfoPreference.exists()) {
             Timber.d("App first run. Generating userId")
 
@@ -174,32 +264,28 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         Timber.d("takePhoto() Taking a photo...")
         val tempFile = File.createTempFile("photo", ".tmp")
 
-        fotoapparat.takePicture()
-                .saveToFile(tempFile)
-                .whenAvailable {
-                    Timber.d("takePhoto() Done")
-                    photoAvailabilitySubject.onNext(tempFile.absolutePath)
-                }
+        if (fotoapparat != null) {
+            fotoapparat!!.takePicture()
+                    .saveToFile(tempFile)
+                    .whenAvailable {
+                        Timber.d("takePhoto() Done")
+                        photoAvailabilitySubject.onNext(tempFile.absolutePath)
+                    }
+        }
     }
 
-    private fun getLocation() {
+    private fun getLocationObservable(): Observable<LonLat> {
         Timber.d("getLocation() Getting current location...")
 
-        SmartLocation.with(this)
+        return ObservableFactory.from(SmartLocation.with(this)
                 .location()
-                .oneFix()
-                .start { location ->
-                    Timber.d("getLocation() Done")
-                    locationSubject.onNext(getTruncatedLonLat(location))
-                }
+                .oneFix())
+                .map { location -> getTruncatedLonLat(location) }
     }
 
     private fun getTruncatedLonLat(location: Location): LonLat {
         val lon = Math.floor(location.longitude * 100) / 100
         val lat = Math.floor(location.latitude * 100) / 100
-
-        Timber.d("Original lon: ${location.longitude}, lat: ${location.latitude}")
-        Timber.d("Truncated lon: $lon, lat: $lat")
 
         return LonLat(lon, lat)
     }

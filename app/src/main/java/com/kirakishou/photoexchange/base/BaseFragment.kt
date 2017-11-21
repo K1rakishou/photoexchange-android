@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import butterknife.ButterKnife
 import butterknife.Unbinder
 import io.reactivex.disposables.CompositeDisposable
+import timber.log.Timber
 
 /**
  * Created by kirakishou on 11/7/2017.
@@ -52,11 +53,17 @@ abstract class BaseFragment<out T : ViewModel> : Fragment() {
     }
 
     override fun onDestroyView() {
-        compositeDisposable.clear()
         onFragmentViewDestroy()
 
         unBinder.unbind()
         super.onDestroyView()
+    }
+
+    override fun onDetach() {
+        Timber.d("Fragment.onDetach")
+        compositeDisposable.clear()
+
+        super.onDetach()
     }
 
     protected abstract fun initViewModel(): T

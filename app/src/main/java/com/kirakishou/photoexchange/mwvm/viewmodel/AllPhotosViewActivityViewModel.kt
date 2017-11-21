@@ -57,61 +57,61 @@ class AllPhotosViewActivityViewModel(
     private val showUserNeedsToUploadMorePhotosOutput = PublishSubject.create<Unit>()
 
     //errors
-    private val onUnknownErrorErrorSubject = PublishSubject.create<Throwable>()
+    private val unknownErrorSubject = PublishSubject.create<Throwable>()
 
     init {
         compositeDisposable += fetchOnePageUploadedPhotosSubject
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .flatMap(uploadedPhotosRepository::findOnePage)
-                .subscribe(onUploadedPhotosPageReceivedSubject::onNext, this::handleError)
+                .subscribe(onUploadedPhotosPageReceivedSubject::onNext, this::handleErrors)
 
         compositeDisposable += fetchOnePageReceivedPhotosSubject
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .flatMap(photoAnswerRepository::findOnePage)
-                .subscribe(onReceivedPhotosPageReceivedSubject::onNext, this::handleError)
+                .subscribe(onReceivedPhotosPageReceivedSubject::onNext, this::handleErrors)
 
         compositeDisposable += scrollToTopInput
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .delay(500, TimeUnit.MILLISECONDS)
-                .subscribe(scrollToTopOutput::onNext, this::handleError)
+                .subscribe(scrollToTopOutput::onNext, this::handleErrors)
 
         compositeDisposable += showLookingForPhotoIndicatorInput
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
-                .subscribe(showLookingForPhotoIndicatorOutput::onNext, this::handleError)
+                .subscribe(showLookingForPhotoIndicatorOutput::onNext, this::handleErrors)
 
         compositeDisposable += showPhotoUploadedInput
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
-                .subscribe(showPhotoUploadedOutput::onNext, this::handleError)
+                .subscribe(showPhotoUploadedOutput::onNext, this::handleErrors)
 
         compositeDisposable += showFailedToUploadPhotoInput
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
-                .subscribe(showFailedToUploadPhotoOutput::onNext, this::handleError)
+                .subscribe(showFailedToUploadPhotoOutput::onNext, this::handleErrors)
 
         compositeDisposable += showPhotoReceivedInput
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
-                .subscribe(showPhotoReceivedOutput::onNext, this::handleError)
+                .subscribe(showPhotoReceivedOutput::onNext, this::handleErrors)
 
         compositeDisposable += showErrorWhileTryingToLookForPhotoInput
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
-                .subscribe(showErrorWhileTryingToLookForPhotoOutput::onNext, this::handleError)
+                .subscribe(showErrorWhileTryingToLookForPhotoOutput::onNext, this::handleErrors)
 
         compositeDisposable += showNoPhotoOnServerInput
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
-                .subscribe(showNoPhotoOnServerOutput::onNext, this::handleError)
+                .subscribe(showNoPhotoOnServerOutput::onNext, this::handleErrors)
 
         compositeDisposable += showUserNeedsToUploadMorePhotosInput
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
-                .subscribe(showUserNeedsToUploadMorePhotosOutput::onNext, this::handleError)
+                .subscribe(showUserNeedsToUploadMorePhotosOutput::onNext, this::handleErrors)
     }
 
     override fun fetchOnePageUploadedPhotos(page: Int, count: Int) {
@@ -154,10 +154,9 @@ class AllPhotosViewActivityViewModel(
         showUserNeedsToUploadMorePhotosInput.onNext(Unit)
     }
 
-    private fun handleError(error: Throwable) {
+    private fun handleErrors(error: Throwable) {
         Timber.e(error)
-
-        onUnknownErrorErrorSubject.onNext(error)
+        unknownErrorSubject.onNext(error)
     }
 
     override fun onCleared() {
@@ -176,7 +175,7 @@ class AllPhotosViewActivityViewModel(
     override fun onShowErrorWhileTryingToLookForPhotoObservable(): Observable<Unit> = showErrorWhileTryingToLookForPhotoOutput
     override fun onShowNoPhotoOnServerObservable(): Observable<Unit> = showNoPhotoOnServerOutput
     override fun onShowUserNeedsToUploadMorePhotosObservable(): Observable<Unit> = showUserNeedsToUploadMorePhotosOutput
-    override fun onUnknownErrorObservable(): Observable<Throwable> = onUnknownErrorErrorSubject
+    override fun onUnknownErrorObservable(): Observable<Throwable> = unknownErrorSubject
 }
 
 

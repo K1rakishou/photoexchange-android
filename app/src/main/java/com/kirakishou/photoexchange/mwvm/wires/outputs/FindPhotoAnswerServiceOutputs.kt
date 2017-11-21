@@ -9,7 +9,6 @@ import io.reactivex.Observable
 interface FindPhotoAnswerServiceOutputs {
     fun uploadMorePhotosObservable(): Observable<Unit>
     fun onPhotoAnswerFoundObservable(): Observable<PhotoAnswerReturnValue>
-    fun userHasNoUploadedPhotosObservable(): Observable<Unit>
     fun noPhotosToSendBackObservable(): Observable<Unit>
     fun couldNotMarkPhotoAsReceivedObservable(): Observable<Unit>
 }

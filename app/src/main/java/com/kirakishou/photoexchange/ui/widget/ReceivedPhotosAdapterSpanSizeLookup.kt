@@ -15,7 +15,8 @@ class ReceivedPhotosAdapterSpanSizeLookup(
     override fun getSpanSize(position: Int): Int {
         val type = adapter.getItemViewType(position)
         return when (type) {
-            AdapterItemType.VIEW_PROGRESSBAR.ordinal -> columnsCount
+            AdapterItemType.VIEW_PROGRESSBAR.ordinal,
+            AdapterItemType.VIEW_MESSAGE.ordinal -> columnsCount
 
             AdapterItemType.VIEW_LOOKING_FOR_PHOTO.ordinal,
             AdapterItemType.VIEW_ITEM.ordinal -> 1

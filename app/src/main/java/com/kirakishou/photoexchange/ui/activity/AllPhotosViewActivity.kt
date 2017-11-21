@@ -72,13 +72,15 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
     override fun getContentView(): Int = R.layout.activity_all_photos_view
 
+    override fun onInitRx() {
+        initRx()
+    }
+
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         userInfoPreference.load()
         eventBus.register(this)
 
         initTabs(intent)
-        initRx()
-
         getNotificationIntent(getIntent())
     }
 
@@ -218,10 +220,6 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
             PhotoReceivedEventStatus.NO_PHOTOS_ON_SERVER -> {
                 Timber.d("NO_PHOTOS_ON_SERVER")
                 getViewModel().inputs.receivedPhotosFragmentShowNoPhotoOnServer()
-            }
-            PhotoReceivedEventStatus.USER_HAS_NOT_UPLOADED_ANY_PHOTOS -> {
-                Timber.d("USER_HAS_NOT_UPLOADED_ANY_PHOTOS")
-                getViewModel().inputs.receivedPhotosFragmentShowUserNeedsToUploadMorePhotos()
             }
             PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS -> {
                 Timber.d("UPLOAD_MORE_PHOTOS")

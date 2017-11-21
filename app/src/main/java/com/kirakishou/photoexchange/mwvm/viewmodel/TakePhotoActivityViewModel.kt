@@ -4,16 +4,16 @@ import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.mwvm.model.other.Constants
-import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.wires.errors.MainActivityViewModelErrors
 import com.kirakishou.photoexchange.mwvm.wires.inputs.MainActivityViewModelInputs
 import com.kirakishou.photoexchange.mwvm.wires.outputs.MainActivityViewModelOutputs
 import io.reactivex.Observable
-import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.rx2.await
 import timber.log.Timber
-import java.io.File
 
 /**
  * Created by kirakishou on 11/3/2017.
@@ -33,41 +33,24 @@ class TakePhotoActivityViewModel(
 
     private val onUnknownErrorErrorSubject = PublishSubject.create<Throwable>()
 
-    init {
-
-    }
-
     override fun cleanTakenPhotosDB() {
-        compositeDisposable += takenPhotosRepo.findAll()
-                .subscribeOn(schedulers.provideIo())
-                .observeOn(schedulers.provideIo())
-                .doOnSuccess(this::deletePhotoFiles)
-                .flatMap { takenPhotosRepo.deleteAll() }
-                .doOnSuccess {
-                    if (Constants.isDebugBuild) {
-                        val allPhotos = takenPhotosRepo.findAll().blockingGet()
-                        allPhotos.forEach { Timber.d("photo: $it") }
-                    }
-                }
-                .doOnError(this::handleErrors)
-                .subscribe()
-    }
+        compositeJob += async {
+            try {
+                val takenPhotos = takenPhotosRepo.findAll().await()
+                FileUtils.deletePhotoFiles(takenPhotos)
 
-    private fun deletePhotoFiles(allPhotos: List<TakenPhoto>) {
-        allPhotos.forEach { uploadedPhoto ->
-            val photoFile = File(uploadedPhoto.photoFilePath)
-            if (photoFile.exists()) {
-                val wasDeleted = photoFile.delete()
-                if (!wasDeleted) {
-                    Timber.d("Could not delete file: ${uploadedPhoto.photoFilePath}")
+                if (Constants.isDebugBuild) {
+                    val allPhotos = takenPhotosRepo.findAll().blockingGet()
+                    allPhotos.forEach { Timber.d("photo: $it") }
                 }
+            } catch (error: Throwable) {
+                handleErrors(error)
             }
         }
     }
 
     private fun handleErrors(error: Throwable) {
         Timber.e(error)
-
         onUnknownErrorErrorSubject.onNext(error)
     }
 

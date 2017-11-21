@@ -210,6 +210,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
         adapter.runOnAdapterHandler {
             adapter.removeLookingForPhotoIndicator()
+            adapter.removeMessage()
             adapter.addFirst(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
 
             (activity as AllPhotosViewActivity).showNewPhotoReceivedNotification()
@@ -223,6 +224,8 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private fun onNoPhotoOnTheServer() {
         Timber.d("onNoPhoto()")
         check(isAdded)
+
+        //Service should continue running and looking for photos, so we don't need to do anything here
     }
 
     private fun errorWhileTryingToSearchForPhoto() {
@@ -231,6 +234,9 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
         adapter.runOnAdapterHandler {
             adapter.removeLookingForPhotoIndicator()
+            adapter.removeMessage()
+
+            adapter.addMessage(ReceivedPhotosAdapter.MESSAGE_TYPE_ERROR)
         }
     }
 
@@ -240,6 +246,9 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
         adapter.runOnAdapterHandler {
             adapter.removeLookingForPhotoIndicator()
+            adapter.removeMessage()
+
+            adapter.addMessage(ReceivedPhotosAdapter.MESSAGE_TYPE_UPLOAD_MORE_PHOTOS)
         }
     }
 
