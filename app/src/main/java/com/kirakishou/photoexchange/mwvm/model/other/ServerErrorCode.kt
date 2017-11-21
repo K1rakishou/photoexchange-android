@@ -10,10 +10,9 @@ enum class ServerErrorCode(val value: Int) {
     BAD_REQUEST(1),
     REPOSITORY_ERROR(2),
     DISK_ERROR(3),
-    USER_HAS_NO_UPLOADED_PHOTOS(4),
-    NO_PHOTOS_TO_SEND_BACK(5),
-    BAD_PHOTO_ID(6),
-    UPLOAD_MORE_PHOTOS(7);
+    NO_PHOTOS_TO_SEND_BACK(4),
+    BAD_PHOTO_ID(5),
+    UPLOAD_MORE_PHOTOS(6);
 
     companion object {
         fun from(value: Int?): ServerErrorCode {

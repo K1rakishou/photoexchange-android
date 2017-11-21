@@ -27,10 +27,6 @@ class PhotoReceivedEvent(
             return PhotoReceivedEvent(PhotoReceivedEventStatus.NO_PHOTOS_ON_SERVER, null)
         }
 
-        fun userNotUploadedPhotosYet(): PhotoReceivedEvent {
-            return PhotoReceivedEvent(PhotoReceivedEventStatus.USER_HAS_NOT_UPLOADED_ANY_PHOTOS, null)
-        }
-
         fun uploadMorePhotos(): PhotoReceivedEvent {
             return PhotoReceivedEvent(PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS, null)
         }

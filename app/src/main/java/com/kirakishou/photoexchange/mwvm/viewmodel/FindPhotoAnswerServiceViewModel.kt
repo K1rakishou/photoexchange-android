@@ -41,7 +41,6 @@ class FindPhotoAnswerServiceViewModel(
     private val uploadMorePhotosSubject = PublishSubject.create<Unit>()
     private val couldNotMarkPhotoAsReceivedSubject = PublishSubject.create<Unit>()
     private val noPhotosToSendBackSubject = PublishSubject.create<Unit>()
-    private val userHasNoUploadedPhotosSubject = PublishSubject.create<Unit>()
     private val onPhotoAnswerFoundSubject = PublishSubject.create<PhotoAnswerReturnValue>()
 
     //errors
@@ -110,11 +109,6 @@ class FindPhotoAnswerServiceViewModel(
                     .subscribe(onPhotoAnswerFoundSubject::onNext, unknownErrorSubject::onNext)
 
             compositeDisposable += responseErrorCode
-                    .filter { errorCode -> errorCode == ServerErrorCode.USER_HAS_NO_UPLOADED_PHOTOS }
-                    .map { Unit }
-                    .subscribe(userHasNoUploadedPhotosSubject::onNext, unknownErrorSubject::onNext)
-
-            compositeDisposable += responseErrorCode
                     .filter { errorCode -> errorCode == ServerErrorCode.NO_PHOTOS_TO_SEND_BACK }
                     .map { Unit }
                     .subscribe(noPhotosToSendBackSubject::onNext, unknownErrorSubject::onNext)
@@ -126,7 +120,6 @@ class FindPhotoAnswerServiceViewModel(
 
             compositeDisposable += responseErrorCode
                     .filter { errorCode -> errorCode != ServerErrorCode.OK }
-                    .filter { errorCode -> errorCode != ServerErrorCode.USER_HAS_NO_UPLOADED_PHOTOS }
                     .filter { errorCode -> errorCode != ServerErrorCode.NO_PHOTOS_TO_SEND_BACK }
                     .filter { errorCode -> errorCode != ServerErrorCode.UPLOAD_MORE_PHOTOS }
                     .subscribe(badResponseSubject::onNext, unknownErrorSubject::onNext)
@@ -148,7 +141,6 @@ class FindPhotoAnswerServiceViewModel(
     //outputs
     override fun uploadMorePhotosObservable(): Observable<Unit> = uploadMorePhotosSubject
     override fun couldNotMarkPhotoAsReceivedObservable(): Observable<Unit> = couldNotMarkPhotoAsReceivedSubject
-    override fun userHasNoUploadedPhotosObservable(): Observable<Unit> = userHasNoUploadedPhotosSubject
     override fun noPhotosToSendBackObservable(): Observable<Unit> = noPhotosToSendBackSubject
     override fun onPhotoAnswerFoundObservable(): Observable<PhotoAnswerReturnValue> = onPhotoAnswerFoundSubject
 

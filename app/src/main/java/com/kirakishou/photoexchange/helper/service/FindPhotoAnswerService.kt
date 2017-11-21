@@ -118,11 +118,6 @@ class FindPhotoAnswerService : JobService() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ onPhotoAnswerFound(params, it) })
 
-        compositeDisposable += viewModel.outputs.userHasNoUploadedPhotosObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ userHasNoUploadedPhotos(params) })
-
         compositeDisposable += viewModel.outputs.noPhotosToSendBackObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -183,14 +178,6 @@ class FindPhotoAnswerService : JobService() {
             Timber.d("Current job is periodic, no need to change it")
             finish(params, true)
         }
-    }
-
-    private fun userHasNoUploadedPhotos(params: JobParameters) {
-        Timber.d("User has no uploaded photos")
-
-        eventBus.post(PhotoReceivedEvent.userNotUploadedPhotosYet())
-        cancelAll(this)
-        finish(params, false)
     }
 
     private fun onPhotoAnswerFound(params: JobParameters, returnValue: PhotoAnswerReturnValue) {

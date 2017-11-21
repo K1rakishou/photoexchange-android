@@ -221,10 +221,6 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                 Timber.d("NO_PHOTOS_ON_SERVER")
                 getViewModel().inputs.receivedPhotosFragmentShowNoPhotoOnServer()
             }
-            PhotoReceivedEventStatus.USER_HAS_NOT_UPLOADED_ANY_PHOTOS -> {
-                Timber.d("USER_HAS_NOT_UPLOADED_ANY_PHOTOS")
-                getViewModel().inputs.receivedPhotosFragmentShowUserNeedsToUploadMorePhotos()
-            }
             PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS -> {
                 Timber.d("UPLOAD_MORE_PHOTOS")
                 getViewModel().inputs.receivedPhotosFragmentShowUserNeedsToUploadMorePhotos()

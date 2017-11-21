@@ -223,6 +223,8 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private fun onNoPhotoOnTheServer() {
         Timber.d("onNoPhoto()")
         check(isAdded)
+
+        //Service should continue running and looking for photos, so we don't need to do anything here
     }
 
     private fun errorWhileTryingToSearchForPhoto() {
@@ -231,6 +233,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
         adapter.runOnAdapterHandler {
             adapter.removeLookingForPhotoIndicator()
+            //notify user that an error has occurred
         }
     }
 
@@ -240,6 +243,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
         adapter.runOnAdapterHandler {
             adapter.removeLookingForPhotoIndicator()
+            //notify user that he needs to upload more photos
         }
     }
 

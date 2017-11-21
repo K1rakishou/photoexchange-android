@@ -8,6 +8,5 @@ enum class PhotoReceivedEventStatus {
     SUCCESS_NOT_ALL_RECEIVED,
     FAIL,
     NO_PHOTOS_ON_SERVER,
-    USER_HAS_NOT_UPLOADED_ANY_PHOTOS,
     UPLOAD_MORE_PHOTOS
 }
