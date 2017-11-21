@@ -7,4 +7,5 @@ import com.kirakishou.fixmypc.photoexchange.BuildConfig
  */
 object Constants {
     val isDebugBuild = BuildConfig.DEBUG
+    val appid = "com.kirakishou.photoexchange"
 }

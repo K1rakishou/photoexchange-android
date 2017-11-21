@@ -27,8 +27,8 @@ object AndroidUtils {
         }
     }
 
-    fun isAtleastLollipop(): Boolean {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+    fun isOreoOrHigher(): Boolean {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
     }
 
     fun pixelsToSp(context: Context, px: Float): Float {
@@ -46,10 +46,6 @@ object AndroidUtils {
         val resources = context.resources
         val metrics = resources.displayMetrics
         return px / (metrics.densityDpi.toFloat() / DisplayMetrics.DENSITY_DEFAULT)
-    }
-
-    fun isLollipopOrHigher(): Boolean {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
     }
 
     fun dpToPx(dp: Float, context: Context): Float {

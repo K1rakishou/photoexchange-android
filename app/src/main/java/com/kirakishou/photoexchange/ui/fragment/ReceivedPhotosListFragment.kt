@@ -226,7 +226,12 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         Timber.d("onNoPhoto()")
         check(isAdded)
 
-        //Service should continue running and looking for photos, so we don't need to do anything here
+        adapter.runOnAdapterHandler {
+            adapter.removeLookingForPhotoIndicator()
+            adapter.removeMessage()
+
+            adapter.addLookingForPhotoIndicator()
+        }
     }
 
     private fun errorWhileTryingToSearchForPhoto() {
