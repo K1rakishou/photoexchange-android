@@ -72,13 +72,15 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
     override fun getContentView(): Int = R.layout.activity_all_photos_view
 
+    override fun onInitRx() {
+        initRx()
+    }
+
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         userInfoPreference.load()
         eventBus.register(this)
 
         initTabs(intent)
-        initRx()
-
         getNotificationIntent(getIntent())
     }
 

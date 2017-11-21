@@ -48,11 +48,11 @@ class PhotoExchangeApplication : Application() {
     }
 
     private fun enabledStrictMode() {
-        StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder()
+        /*StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder()
                 .detectAll()
                 .penaltyLog()
                 .penaltyDeath()
-                .build())
+                .build())*/
     }
 
     private fun initTimber() {
