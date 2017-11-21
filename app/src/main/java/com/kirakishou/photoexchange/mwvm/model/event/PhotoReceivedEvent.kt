@@ -7,12 +7,13 @@ import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
  */
 class PhotoReceivedEvent(
         val status: PhotoReceivedEventStatus,
-        val photoAnswer: PhotoAnswer?
+        val photoAnswer: PhotoAnswer?,
+        val allFound: Boolean = false
 ) : BaseEvent() {
 
     companion object {
         fun successAllReceived(photoAnswer: PhotoAnswer): PhotoReceivedEvent {
-            return PhotoReceivedEvent(PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED, photoAnswer)
+            return PhotoReceivedEvent(PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED, photoAnswer, true)
         }
 
         fun successNotAllReceived(photoAnswer: PhotoAnswer): PhotoReceivedEvent {

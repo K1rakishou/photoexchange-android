@@ -4,6 +4,7 @@ import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.mwvm.model.dto.PhotoAnswerAllFound
 import com.kirakishou.photoexchange.mwvm.model.other.Pageable
 import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
 import com.kirakishou.photoexchange.mwvm.model.other.UploadedPhoto
@@ -39,7 +40,7 @@ class AllPhotosViewActivityViewModel(
     private val showLookingForPhotoIndicatorInput = PublishSubject.create<Unit>()
     private val showPhotoUploadedInput = PublishSubject.create<UploadedPhoto>()
     private val showFailedToUploadPhotoInput = PublishSubject.create<Unit>()
-    private val showPhotoReceivedInput = PublishSubject.create<PhotoAnswer>()
+    private val showPhotoReceivedInput = PublishSubject.create<PhotoAnswerAllFound>()
     private val showErrorWhileTryingToLookForPhotoInput = PublishSubject.create<Unit>()
     private val showNoPhotoOnServerInput = PublishSubject.create<Unit>()
     private val showUserNeedsToUploadMorePhotosInput = PublishSubject.create<Unit>()
@@ -51,7 +52,7 @@ class AllPhotosViewActivityViewModel(
     private val showLookingForPhotoIndicatorOutput = PublishSubject.create<Unit>()
     private val showPhotoUploadedOutput = PublishSubject.create<UploadedPhoto>()
     private val showFailedToUploadPhotoOutput = PublishSubject.create<Unit>()
-    private val showPhotoReceivedOutput = PublishSubject.create<PhotoAnswer>()
+    private val showPhotoReceivedOutput = PublishSubject.create<PhotoAnswerAllFound>()
     private val showErrorWhileTryingToLookForPhotoOutput = PublishSubject.create<Unit>()
     private val showNoPhotoOnServerOutput = PublishSubject.create<Unit>()
     private val showUserNeedsToUploadMorePhotosOutput = PublishSubject.create<Unit>()
@@ -138,8 +139,8 @@ class AllPhotosViewActivityViewModel(
         showFailedToUploadPhotoInput.onNext(Unit)
     }
 
-    override fun receivedPhotosFragmentShowPhotoReceived(photo: PhotoAnswer) {
-        showPhotoReceivedInput.onNext(photo)
+    override fun receivedPhotosFragmentShowPhotoReceived(photo: PhotoAnswer, allFound: Boolean) {
+        showPhotoReceivedInput.onNext(PhotoAnswerAllFound(photo, allFound))
     }
 
     override fun receivedPhotosFragmentShowErrorWhileTryingToLookForPhoto() {
@@ -171,7 +172,7 @@ class AllPhotosViewActivityViewModel(
     override fun onShowLookingForPhotoIndicatorObservable(): Observable<Unit> = showLookingForPhotoIndicatorOutput
     override fun onShowPhotoUploadedOutputObservable(): Observable<UploadedPhoto> = showPhotoUploadedOutput
     override fun onShowFailedToUploadPhotoObservable(): Observable<Unit> = showFailedToUploadPhotoOutput
-    override fun onShowPhotoReceivedObservable(): Observable<PhotoAnswer> = showPhotoReceivedOutput
+    override fun onShowPhotoReceivedObservable(): Observable<PhotoAnswerAllFound> = showPhotoReceivedOutput
     override fun onShowErrorWhileTryingToLookForPhotoObservable(): Observable<Unit> = showErrorWhileTryingToLookForPhotoOutput
     override fun onShowNoPhotoOnServerObservable(): Observable<Unit> = showNoPhotoOnServerOutput
     override fun onShowUserNeedsToUploadMorePhotosObservable(): Observable<Unit> = showUserNeedsToUploadMorePhotosOutput

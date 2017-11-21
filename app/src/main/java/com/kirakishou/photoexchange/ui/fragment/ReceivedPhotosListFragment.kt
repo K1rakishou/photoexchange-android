@@ -17,6 +17,7 @@ import com.kirakishou.photoexchange.base.BaseFragment
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
+import com.kirakishou.photoexchange.mwvm.model.dto.PhotoAnswerAllFound
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
 import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
@@ -219,14 +220,17 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         receivedPhotosList.scrollToPosition(0)
     }
 
-    private fun onPhotoReceived(photo: PhotoAnswer) {
+    private fun onPhotoReceived(data: PhotoAnswerAllFound) {
         Timber.d("onPhotoReceived()")
         check(isAdded)
 
         adapter.runOnAdapterHandler {
-            adapter.removeLookingForPhotoIndicator()
+            if (data.allFound) {
+                adapter.removeLookingForPhotoIndicator()
+            }
+
             adapter.removeMessage()
-            adapter.addFirst(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
+            adapter.addFirst(AdapterItem(data.photoAnswer, AdapterItemType.VIEW_ITEM))
 
             (activity as AllPhotosViewActivity).showNewPhotoReceivedNotification()
         }
