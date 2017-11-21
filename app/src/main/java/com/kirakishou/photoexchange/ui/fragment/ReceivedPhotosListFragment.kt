@@ -205,6 +205,10 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
+    private fun scrollToTop() {
+        receivedPhotosList.scrollToPosition(0)
+    }
+
     private fun onPhotoReceived(photo: PhotoAnswer) {
         Timber.d("onPhotoReceived()")
         check(isAdded)
@@ -216,10 +220,6 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
             (activity as AllPhotosViewActivity).showNewPhotoReceivedNotification()
         }
-    }
-
-    private fun scrollToTop() {
-        receivedPhotosList.scrollToPosition(0)
     }
 
     private fun onNoPhotoOnTheServer() {
