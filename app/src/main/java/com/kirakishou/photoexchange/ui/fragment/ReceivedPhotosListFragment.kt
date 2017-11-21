@@ -68,6 +68,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         if (arguments != null) {
             val isPhotoUploading = arguments!!.getBoolean("is_photo_uploading", false)
             if (!isPhotoUploading) {
+                Timber.d("Showing startLookingForPhotoAnswerService")
                 (activity as AllPhotosViewActivity).startLookingForPhotoAnswerService()
                 showLookingForPhotoIndicator()
             }

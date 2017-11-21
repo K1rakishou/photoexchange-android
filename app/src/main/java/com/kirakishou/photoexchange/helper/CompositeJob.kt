@@ -15,5 +15,6 @@ class CompositeJob {
 
     fun cancelAll() {
         jobs.forEach { it.cancel() }
+        jobs.clear()
     }
 }

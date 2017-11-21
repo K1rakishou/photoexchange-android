@@ -4,5 +4,5 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="no_photos_uploaded">You have not uploaded any photos yet</string>
     <string name="error_while_looking_for_photo">An error has occurred while looking for your photo</string>
-    <string name="upload_more_photos">You need to upload a new photo to received someone else\'s</string>
+    <string name="upload_more_photos">You need to upload a photo first to receive someone else\'s</string>
 </resources>
