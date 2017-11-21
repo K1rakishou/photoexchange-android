@@ -335,10 +335,10 @@ class FindPhotoAnswerService : JobService() {
     private fun createNotificationChannelIfNotExists() {
         if (getNotificationManager().getNotificationChannel(Constants.CHANNEL_ID) == null) {
             val notificationChannel = NotificationChannel(Constants.CHANNEL_ID, Constants.CHANNEL_NAME,
-                    NotificationManager.IMPORTANCE_DEFAULT)
+                    NotificationManager.IMPORTANCE_LOW)
 
-            notificationChannel.enableLights(true)
-            notificationChannel.enableVibration(true)
+            notificationChannel.enableLights(false)
+            notificationChannel.enableVibration(false)
             notificationChannel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
 
             getNotificationManager().createNotificationChannel(notificationChannel)
