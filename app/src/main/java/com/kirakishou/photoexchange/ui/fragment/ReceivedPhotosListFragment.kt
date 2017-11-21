@@ -210,6 +210,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
         adapter.runOnAdapterHandler {
             adapter.removeLookingForPhotoIndicator()
+            adapter.removeMessage()
             adapter.addFirst(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
 
             (activity as AllPhotosViewActivity).showNewPhotoReceivedNotification()
@@ -233,7 +234,9 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
         adapter.runOnAdapterHandler {
             adapter.removeLookingForPhotoIndicator()
-            //notify user that an error has occurred
+            adapter.removeMessage()
+
+            adapter.addMessage(ReceivedPhotosAdapter.MESSAGE_TYPE_ERROR)
         }
     }
 
@@ -243,7 +246,9 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
         adapter.runOnAdapterHandler {
             adapter.removeLookingForPhotoIndicator()
-            //notify user that he needs to upload more photos
+            adapter.removeMessage()
+
+            adapter.addMessage(ReceivedPhotosAdapter.MESSAGE_TYPE_UPLOAD_MORE_PHOTOS)
         }
     }
 

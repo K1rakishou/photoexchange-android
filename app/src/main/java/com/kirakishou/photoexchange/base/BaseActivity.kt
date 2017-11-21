@@ -62,13 +62,15 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        Timber.d("Activity.onDestroy")
+
         compositeDisposable.clear()
-        onActivityDestroy()
 
         unBinder.ifPresent {
             it.unbind()
         }
 
+        onActivityDestroy()
         super.onDestroy()
     }
 

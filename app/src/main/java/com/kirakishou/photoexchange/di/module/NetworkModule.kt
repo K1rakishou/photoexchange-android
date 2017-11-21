@@ -33,9 +33,9 @@ class NetworkModule(private val baseUrl: String) {
     @Provides
     fun provideOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient {
         return OkHttpClient.Builder()
-                .connectTimeout(15000, TimeUnit.SECONDS) //TODO: Don't forget to change this on release build
-                .writeTimeout(15000, TimeUnit.SECONDS)  //TODO: Don't forget to change this on release build
-                .readTimeout(15000, TimeUnit.SECONDS)    //TODO: Don't forget to change this on release build
+                .connectTimeout(15, TimeUnit.SECONDS)
+                .writeTimeout(15, TimeUnit.SECONDS)
+                .readTimeout(15, TimeUnit.SECONDS)
                 //.addInterceptor(loggingInterceptor)
                 .build()
     }

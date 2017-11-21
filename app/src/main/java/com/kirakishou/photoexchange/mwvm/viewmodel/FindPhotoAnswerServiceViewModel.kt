@@ -1,5 +1,7 @@
 package com.kirakishou.photoexchange.mwvm.viewmodel
 
+import com.kirakishou.photoexchange.PhotoExchangeApplication
+import com.kirakishou.photoexchange.helper.CompositeJob
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
@@ -15,6 +17,9 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.rxkotlin.zipWith
 import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.experimental.Job
+import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.rx2.await
 import timber.log.Timber
 
 /**
@@ -33,9 +38,9 @@ class FindPhotoAnswerServiceViewModel(
     val errors: FindPhotoAnswerServiceErrors = this
 
     private val compositeDisposable = CompositeDisposable()
+    private val compositeJob = CompositeJob()
 
     //inputs
-    private val findPhotoAnswerSubject = PublishSubject.create<String>()
 
     //outputs
     private val uploadMorePhotosSubject = PublishSubject.create<Unit>()
@@ -47,95 +52,48 @@ class FindPhotoAnswerServiceViewModel(
     private val badResponseSubject = PublishSubject.create<ServerErrorCode>()
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
 
-    init {
-        fun setUpFindPhotoAnswer() {
-            val userIdObservable = findPhotoAnswerSubject
-                    .share()
+    override fun findPhotoAnswer(userId: String) {
+        compositeJob += async {
+            try {
+                val findPhotoResponse = apiClient.findPhotoAnswer(userId).await()
+                val findPhotoErrorCode = ServerErrorCode.from(findPhotoResponse.serverErrorCode)
 
-            val responseObservable = userIdObservable
-                    .subscribeOn(schedulers.provideIo())
-                    .observeOn(schedulers.provideIo())
-                    .flatMap { userId -> apiClient.findPhotoAnswer(userId).toObservable() }
-                    .share()
+                when (findPhotoErrorCode) {
+                    ServerErrorCode.NO_PHOTOS_TO_SEND_BACK -> noPhotosToSendBackSubject.onNext(Unit)
+                    ServerErrorCode.UPLOAD_MORE_PHOTOS -> uploadMorePhotosSubject.onNext(Unit)
+                    ServerErrorCode.OK -> {
+                        val photoAnswer = PhotoAnswer.fromPhotoAnswerJsonObject(findPhotoResponse.photoAnswer)
+                        val markPhotoResponse = apiClient.markPhotoAsReceived(photoAnswer.photoRemoteId, userId).await()
 
-            val responseErrorCode = responseObservable
-                    .map { ServerErrorCode.from(it.serverErrorCode) }
-                    .share()
+                        val markPhotoErrorCode = ServerErrorCode.from(markPhotoResponse.serverErrorCode)
+                        if (markPhotoErrorCode != ServerErrorCode.OK) {
+                            couldNotMarkPhotoAsReceivedSubject.onNext(Unit)
+                        } else {
+                            photoAnswerRepo.saveOne(photoAnswer).await()
 
-            val photoAnswerReturnValueObservable = responseErrorCode
-                    .filter { errorCode -> errorCode == ServerErrorCode.OK }
-                    .zipWith(responseObservable)
-                    .map { it.second }
-                    .map { response ->
-                        val photoAnswer = PhotoAnswer.fromPhotoAnswerJsonObject(response.photoAnswer)
-                        return@map PhotoAnswerReturnValue(photoAnswer, response.allFound)
-                    }
-                    .share()
+                            if (Constants.isDebugBuild) {
+                                val allPhotoAnswers = photoAnswerRepo.findAll().await()
+                                allPhotoAnswers.forEach { Timber.d(it.toString()) }
+                            }
 
-            val markPhotoResponseObservable = photoAnswerReturnValueObservable
-                    .zipWith(userIdObservable)
-                    .flatMap {
-                        val userId = it.second
-                        val photoAnswer = it.first.photoAnswer
-
-                        return@flatMap apiClient.markPhotoAsReceived(photoAnswer.photoRemoteId, userId)
-                                .toObservable()
-                    }
-                    .share()
-
-            compositeDisposable += markPhotoResponseObservable
-                    .map { ServerErrorCode.from(it.serverErrorCode) }
-                    .filter { errorCode -> errorCode != ServerErrorCode.OK }
-                    .map { Unit }
-                    .subscribe(couldNotMarkPhotoAsReceivedSubject::onNext, unknownErrorSubject::onNext)
-
-            compositeDisposable += markPhotoResponseObservable
-                    .map { ServerErrorCode.from(it.serverErrorCode) }
-                    .filter { errorCode -> errorCode == ServerErrorCode.OK }
-                    .zipWith(photoAnswerReturnValueObservable)
-                    .map { it.second }
-                    .flatMap { photoAnswerRetValue ->
-                        return@flatMap photoAnswerRepo.saveOne(photoAnswerRetValue.photoAnswer)
-                                .toObservable()
-                    }
-                    .doOnNext {
-                        if (Constants.isDebugBuild) {
-                            val allPhotoAnswers = photoAnswerRepo.findAll().blockingGet()
-                            allPhotoAnswers.forEach { Timber.d(it.toString()) }
+                            onPhotoAnswerFoundSubject.onNext(PhotoAnswerReturnValue(photoAnswer, findPhotoResponse.allFound))
                         }
                     }
-                    .zipWith(photoAnswerReturnValueObservable)
-                    .map { it.second }
-                    .subscribe(onPhotoAnswerFoundSubject::onNext, unknownErrorSubject::onNext)
 
-            compositeDisposable += responseErrorCode
-                    .filter { errorCode -> errorCode == ServerErrorCode.NO_PHOTOS_TO_SEND_BACK }
-                    .map { Unit }
-                    .subscribe(noPhotosToSendBackSubject::onNext, unknownErrorSubject::onNext)
-
-            compositeDisposable += responseErrorCode
-                    .filter { errorCode -> errorCode == ServerErrorCode.UPLOAD_MORE_PHOTOS }
-                    .map { Unit }
-                    .subscribe(uploadMorePhotosSubject::onNext, unknownErrorSubject::onNext)
-
-            compositeDisposable += responseErrorCode
-                    .filter { errorCode -> errorCode != ServerErrorCode.OK }
-                    .filter { errorCode -> errorCode != ServerErrorCode.NO_PHOTOS_TO_SEND_BACK }
-                    .filter { errorCode -> errorCode != ServerErrorCode.UPLOAD_MORE_PHOTOS }
-                    .subscribe(badResponseSubject::onNext, unknownErrorSubject::onNext)
+                    else -> badResponseSubject.onNext(findPhotoErrorCode)
+                }
+            } catch (error: Throwable) {
+                unknownErrorSubject.onNext(error)
+            }
         }
-
-        setUpFindPhotoAnswer()
-    }
-
-    override fun findPhotoAnswer(userId: String) {
-        findPhotoAnswerSubject.onNext(userId)
     }
 
     fun cleanUp() {
         compositeDisposable.clear()
+        compositeJob.cancelAll()
 
-        Timber.d("FindPhotoAnswerServiceViewModel detached")
+        PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
+        Timber.d("FindPhotoAnswerServiceViewModel cleanUp")
     }
 
     //outputs

@@ -368,7 +368,7 @@ class FindPhotoAnswerService : JobService() {
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
                     .setMinimumLatency(1_000)
-                    .setOverrideDeadline(20_000)
+                    .setOverrideDeadline(5_000)
                     .setExtras(extras)
                     .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_EXPONENTIAL)
                     .build()

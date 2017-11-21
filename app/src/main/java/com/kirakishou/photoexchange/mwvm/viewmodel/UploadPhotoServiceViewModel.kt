@@ -131,7 +131,7 @@ class UploadPhotoServiceViewModel(
     fun cleanUp() {
         compositeDisposable.clear()
 
-        Timber.d("UploadPhotoServiceViewModel detached")
+        Timber.d("UploadPhotoServiceViewModel cleanUp")
     }
 
     override fun onSendPhotoResponseObservable(): Observable<UploadedPhoto> = sendPhotoResponseSubject

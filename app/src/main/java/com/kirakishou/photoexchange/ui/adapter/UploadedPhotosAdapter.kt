@@ -24,12 +24,13 @@ import io.reactivex.subjects.PublishSubject
  */
 class UploadedPhotosAdapter(
         private val context: Context,
-        private val retryButtonSubject: PublishSubject<UploadedPhoto>,
-        private val noPhotosUploadedMessage: String
+        private val retryButtonSubject: PublishSubject<UploadedPhoto>
 ) : BaseAdapter<UploadedPhoto>(context) {
 
     private val selector = UploadedPhotosIdSelectorFunction()
     private val duplicatesCheckerSet = mutableSetOf<Long>()
+
+    private val noPhotosUploadedMessage: String = context.getString(R.string.no_photos_uploaded)
 
     private fun isDuplicate(item: AdapterItem<UploadedPhoto>): Boolean {
         if (item.getType() != AdapterItemType.VIEW_ITEM.ordinal) {
