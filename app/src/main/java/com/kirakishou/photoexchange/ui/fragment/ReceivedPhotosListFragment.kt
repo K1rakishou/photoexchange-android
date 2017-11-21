@@ -51,6 +51,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private val PHOTO_ADAPTER_VIEW_WIDTH = 288
     private val PHOTOS_PER_PAGE = 5
     private var columnsCount: Int = 1
+    private var isPhotoUploading = true
 
     private val loadMoreSubject = PublishSubject.create<Int>()
     private val photoAnswerClickSubject = PublishSubject.create<PhotoAnswer>()
@@ -65,16 +66,25 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         initRx()
         initRecyclerView()
 
-        if (arguments != null) {
-            val isPhotoUploading = arguments!!.getBoolean("is_photo_uploading", true)
-            if (!isPhotoUploading) {
-                Timber.d("Showing startLookingForPhotoAnswerService")
-                (activity as AllPhotosViewActivity).startLookingForPhotoAnswerService()
-                showLookingForPhotoIndicator()
-            }
+        if (savedInstanceState != null) {
+            isPhotoUploading = savedInstanceState.getBoolean("is_photo_uploading")
+        } else if (arguments != null) {
+            isPhotoUploading = arguments!!.getBoolean("is_photo_uploading", true)
+        }
+
+        if (!isPhotoUploading) {
+            Timber.d("Showing startLookingForPhotoAnswerService")
+            (activity as AllPhotosViewActivity).startLookingForPhotoAnswerService()
+            showLookingForPhotoIndicator()
         }
 
         recyclerStartLoadingItems()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+
+        outState.putBoolean("is_photo_uploading", isPhotoUploading)
     }
 
     override fun onFragmentViewDestroy() {
