@@ -1,33 +1,32 @@
 package com.kirakishou.photoexchange.helper.service
 
-import android.app.NotificationManager
-import android.app.Service
+import android.app.*
 import android.content.Intent
 import android.os.IBinder
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.mwvm.model.other.LonLat
-import com.kirakishou.photoexchange.mwvm.model.other.ServiceCommand
 import timber.log.Timber
 import javax.inject.Inject
 import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
-import android.app.PendingIntent
 import android.content.Context
 import android.support.v4.app.NotificationCompat
 import com.crashlytics.android.Crashlytics
 import com.kirakishou.photoexchange.di.component.DaggerUploadPhotoServiceComponent
 import com.kirakishou.photoexchange.di.module.*
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
-import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
-import com.kirakishou.photoexchange.mwvm.model.other.UploadedPhoto
+import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mwvm.model.event.PhotoUploadedEvent
+import com.kirakishou.photoexchange.mwvm.model.other.*
 import com.kirakishou.photoexchange.mwvm.viewmodel.UploadPhotoServiceViewModel
 import io.fabric.sdk.android.Fabric
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import org.greenrobot.eventbus.EventBus
+import android.app.NotificationManager
+import android.os.Build
+import android.support.annotation.RequiresApi
 
 
 class UploadPhotoService : Service() {
@@ -44,7 +43,7 @@ class UploadPhotoService : Service() {
     @Inject
     lateinit var uploadedPhotosRepo: UploadedPhotosRepository
 
-    private val NOTIFICATION_ID = 1
+    private var notificationManager: NotificationManager? = null
 
     private val compositeDisposable = CompositeDisposable()
     private lateinit var viewModel: UploadPhotoServiceViewModel
@@ -146,47 +145,106 @@ class UploadPhotoService : Service() {
     }
 
     private fun startAsForeground() {
-        val notification = NotificationCompat.Builder(this)
-                .setContentTitle("Please wait")
-                .setContentText("Uploading photo...")
-                .setSmallIcon(android.R.drawable.stat_sys_upload)
-                .setWhen(System.currentTimeMillis())
-                .setContentIntent(getNotificationIntent())
-                .setAutoCancel(false)
-                .setOngoing(true)
-                .build()
-
-        startForeground(NOTIFICATION_ID, notification)
+        val notification = createNotificationUploading()
+        startForeground(Constants.NOTIFICATION_ID, notification)
     }
 
     private fun updateUploadingNotificationShowSuccess() {
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        val newNotification = NotificationCompat.Builder(this)
-                .setContentTitle("Done")
-                .setContentText("Photo has been uploaded!")
-                .setSmallIcon(android.R.drawable.stat_sys_upload_done)
-                .setWhen(System.currentTimeMillis())
-                .setContentIntent(getNotificationIntent())
-                .setAutoCancel(false)
-                .build()
-
-        notificationManager.notify(NOTIFICATION_ID, newNotification)
+        val newNotification = createNotificationSuccess()
+        getNotificationManager().notify(Constants.NOTIFICATION_ID, newNotification)
     }
 
     private fun updateUploadingNotificationShowError() {
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val newNotification = createNotificationError()
+        getNotificationManager().notify(Constants.NOTIFICATION_ID, newNotification)
+    }
 
-        val newNotification = NotificationCompat.Builder(this)
-                .setContentTitle("Error")
-                .setContentText("Could not upload photo")
-                .setSmallIcon(android.R.drawable.stat_notify_error)
-                .setWhen(System.currentTimeMillis())
-                .setContentIntent(getNotificationIntent())
-                .setAutoCancel(false)
-                .build()
+    private fun createNotificationError(): Notification {
+        if (AndroidUtils.isOreoOrHigher()) {
+            createNotificationChannelIfNotExists()
 
-        notificationManager.notify(NOTIFICATION_ID, newNotification)
+            return NotificationCompat.Builder(this, Constants.CHANNEL_ID)
+                    .setContentTitle("Error")
+                    .setContentText("Could not upload photo")
+                    .setSmallIcon(android.R.drawable.stat_notify_error)
+                    .setWhen(System.currentTimeMillis())
+                    .setContentIntent(getNotificationIntent())
+                    .setAutoCancel(false)
+                    .build()
+        } else {
+            return NotificationCompat.Builder(this, Constants.CHANNEL_ID)
+                    .setContentTitle("Error")
+                    .setContentText("Could not upload photo")
+                    .setSmallIcon(android.R.drawable.stat_notify_error)
+                    .setWhen(System.currentTimeMillis())
+                    .setContentIntent(getNotificationIntent())
+                    .setAutoCancel(false)
+                    .build()
+        }
+    }
+
+    private fun createNotificationSuccess(): Notification {
+        if (AndroidUtils.isOreoOrHigher()) {
+            createNotificationChannelIfNotExists()
+
+            return NotificationCompat.Builder(this, Constants.CHANNEL_ID)
+                    .setContentTitle("Done")
+                    .setContentText("Photo has been uploaded!")
+                    .setSmallIcon(android.R.drawable.stat_sys_upload_done)
+                    .setWhen(System.currentTimeMillis())
+                    .setContentIntent(getNotificationIntent())
+                    .setAutoCancel(false)
+                    .build()
+        } else {
+            return NotificationCompat.Builder(this)
+                    .setContentTitle("Done")
+                    .setContentText("Photo has been uploaded!")
+                    .setSmallIcon(android.R.drawable.stat_sys_upload_done)
+                    .setWhen(System.currentTimeMillis())
+                    .setContentIntent(getNotificationIntent())
+                    .setAutoCancel(false)
+                    .build()
+        }
+    }
+
+    private fun createNotificationUploading(): Notification {
+        if (AndroidUtils.isOreoOrHigher()) {
+            createNotificationChannelIfNotExists()
+
+            return NotificationCompat.Builder(this, Constants.CHANNEL_ID)
+                    .setContentTitle("Please wait")
+                    .setContentText("Uploading photo...")
+                    .setSmallIcon(android.R.drawable.stat_sys_upload)
+                    .setWhen(System.currentTimeMillis())
+                    .setContentIntent(getNotificationIntent())
+                    .setAutoCancel(false)
+                    .setOngoing(true)
+                    .build()
+        } else {
+            return NotificationCompat.Builder(this)
+                    .setContentTitle("Please wait")
+                    .setContentText("Uploading photo...")
+                    .setSmallIcon(android.R.drawable.stat_sys_upload)
+                    .setWhen(System.currentTimeMillis())
+                    .setContentIntent(getNotificationIntent())
+                    .setAutoCancel(false)
+                    .setOngoing(true)
+                    .build()
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun createNotificationChannelIfNotExists() {
+        if (getNotificationManager().getNotificationChannel(Constants.CHANNEL_ID) == null) {
+            val notificationChannel = NotificationChannel(Constants.CHANNEL_ID, Constants.CHANNEL_NAME,
+                    NotificationManager.IMPORTANCE_LOW)
+
+            notificationChannel.enableLights(false)
+            notificationChannel.enableVibration(false)
+            notificationChannel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
+
+            getNotificationManager().createNotificationChannel(notificationChannel)
+        }
     }
 
     private fun getNotificationIntent(): PendingIntent {
@@ -200,6 +258,13 @@ class UploadPhotoService : Service() {
                 0,
                 notificationIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT)
+    }
+
+    private fun getNotificationManager(): NotificationManager {
+        if (notificationManager == null) {
+            notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        }
+        return notificationManager!!
     }
 
     override fun onBind(intent: Intent): IBinder? = null

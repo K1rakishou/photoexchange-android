@@ -1,5 +1,7 @@
 package com.kirakishou.photoexchange.helper.service
 
+import android.app.Notification
+import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.job.JobInfo
@@ -9,7 +11,9 @@ import android.app.job.JobService
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.PersistableBundle
+import android.support.annotation.RequiresApi
 import android.support.v4.app.NotificationCompat
 import com.crashlytics.android.Crashlytics
 import com.kirakishou.photoexchange.PhotoExchangeApplication
@@ -18,10 +22,12 @@ import com.kirakishou.photoexchange.di.module.*
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
 import com.kirakishou.photoexchange.mwvm.model.dto.PhotoAnswerReturnValue
 import com.kirakishou.photoexchange.mwvm.model.event.PhotoReceivedEvent
+import com.kirakishou.photoexchange.mwvm.model.other.Constants
 import com.kirakishou.photoexchange.mwvm.viewmodel.FindPhotoAnswerServiceViewModel
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
 import io.fabric.sdk.android.Fabric
@@ -49,8 +55,8 @@ class FindPhotoAnswerService : JobService() {
     private lateinit var viewModel: FindPhotoAnswerServiceViewModel
     private var isRxInited = false
 
+    private var notificationManager: NotificationManager? = null
     private val compositeDisposable = CompositeDisposable()
-    private val NOTIFICATION_ID = 1
 
     override fun onCreate() {
         super.onCreate()
@@ -267,38 +273,81 @@ class FindPhotoAnswerService : JobService() {
 
     //notifications
     private fun updateNotificationShowLookingForPhoto() {
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        val newNotification = NotificationCompat.Builder(this)
-                .setContentTitle("Searching")
-                .setContentText("Looking for your photo")
-                .setSmallIcon(android.R.drawable.ic_menu_search)
-                .setWhen(System.currentTimeMillis())
-                .setContentIntent(getNotificationIntent())
-                .setAutoCancel(false)
-                .build()
-
-        notificationManager.notify(NOTIFICATION_ID, newNotification)
+        val newNotification = createNotificationLookingForPhoto()
+        getNotificationManager().notify(Constants.NOTIFICATION_ID, newNotification)
     }
 
     private fun updateNotificationShowPhotoFound() {
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val newNotification = createNotificationPhotoFound()
+        getNotificationManager().notify(Constants.NOTIFICATION_ID, newNotification)
+    }
 
-        val newNotification = NotificationCompat.Builder(this)
-                .setContentTitle("Done")
-                .setContentText("Photo has been found!")
-                .setSmallIcon(android.R.drawable.stat_sys_download_done)
-                .setWhen(System.currentTimeMillis())
-                .setContentIntent(getNotificationIntent())
-                .setAutoCancel(false)
-                .build()
+    private fun createNotificationPhotoFound(): Notification {
+        if (AndroidUtils.isOreoOrHigher()) {
+            createNotificationChannelIfNotExists()
 
-        notificationManager.notify(NOTIFICATION_ID, newNotification)
+            return NotificationCompat.Builder(this, Constants.CHANNEL_ID)
+                    .setContentTitle("Done")
+                    .setContentText("Photo has been found!")
+                    .setSmallIcon(android.R.drawable.stat_sys_download_done)
+                    .setWhen(System.currentTimeMillis())
+                    .setContentIntent(getNotificationIntent())
+                    .setAutoCancel(false)
+                    .build()
+        } else {
+            return NotificationCompat.Builder(this)
+                    .setContentTitle("Done")
+                    .setContentText("Photo has been found!")
+                    .setSmallIcon(android.R.drawable.stat_sys_download_done)
+                    .setWhen(System.currentTimeMillis())
+                    .setContentIntent(getNotificationIntent())
+                    .setAutoCancel(false)
+                    .build()
+        }
+    }
+
+    private fun createNotificationLookingForPhoto(): Notification {
+        if (AndroidUtils.isOreoOrHigher()) {
+            createNotificationChannelIfNotExists()
+
+            return NotificationCompat.Builder(this, Constants.CHANNEL_ID)
+                    .setContentTitle("Searching")
+                    .setContentText("Looking for your photo")
+                    .setSmallIcon(android.R.drawable.ic_menu_search)
+                    .setWhen(System.currentTimeMillis())
+                    .setContentIntent(getNotificationIntent())
+                    .setAutoCancel(false)
+                    .build()
+
+        } else {
+            return NotificationCompat.Builder(this)
+                    .setContentTitle("Searching")
+                    .setContentText("Looking for your photo")
+                    .setSmallIcon(android.R.drawable.ic_menu_search)
+                    .setWhen(System.currentTimeMillis())
+                    .setContentIntent(getNotificationIntent())
+                    .setAutoCancel(false)
+                    .build()
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun createNotificationChannelIfNotExists() {
+        if (getNotificationManager().getNotificationChannel(Constants.CHANNEL_ID) == null) {
+            val notificationChannel = NotificationChannel(Constants.CHANNEL_ID, Constants.CHANNEL_NAME,
+                    NotificationManager.IMPORTANCE_LOW)
+
+            notificationChannel.enableLights(false)
+            notificationChannel.enableVibration(false)
+            notificationChannel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
+
+            getNotificationManager().createNotificationChannel(notificationChannel)
+        }
     }
 
     private fun cancelNotification() {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.cancel(NOTIFICATION_ID)
+        notificationManager.cancel(Constants.NOTIFICATION_ID)
     }
 
     private fun getNotificationIntent(): PendingIntent {
@@ -313,6 +362,13 @@ class FindPhotoAnswerService : JobService() {
                 0,
                 notificationIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT)
+    }
+
+    private fun getNotificationManager(): NotificationManager {
+        if (notificationManager == null) {
+            notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        }
+        return notificationManager!!
     }
 
     private fun resolveDaggerDependency() {

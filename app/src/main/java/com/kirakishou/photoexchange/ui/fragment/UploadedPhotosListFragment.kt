@@ -5,7 +5,6 @@ import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
-import android.widget.Toast
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
@@ -49,6 +48,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     private val retryButtonSubject = PublishSubject.create<UploadedPhoto>()
     private val loadMoreSubject = PublishSubject.create<Int>()
+    private var isPhotoUploading = false
 
     override fun initViewModel(): AllPhotosViewActivityViewModel {
         return ViewModelProviders.of(activity!!, viewModelFactory).get(AllPhotosViewActivityViewModel::class.java)
@@ -60,11 +60,15 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         initRx()
         initRecyclerView()
 
-        if (arguments != null) {
-            val isPhotoUploading = arguments!!.getBoolean("is_photo_uploading", false)
-            if (isPhotoUploading) {
-                addPhotoUploadingIndicator()
-            }
+        if (savedInstanceState != null) {
+            isPhotoUploading = savedInstanceState.getBoolean("is_photo_uploading")
+        } else if (arguments != null) {
+            isPhotoUploading = arguments!!.getBoolean("is_photo_uploading", false)
+        }
+
+        if (isPhotoUploading) {
+            Timber.d("Showing startPhotoUploadingIndicator")
+            startPhotoUploadingIndicator()
         }
 
         recyclerStartLoadingItems()
@@ -74,7 +78,13 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
     }
 
-    private fun addPhotoUploadingIndicator() {
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+
+        outState.putBoolean("is_photo_uploading", isPhotoUploading)
+    }
+
+    private fun startPhotoUploadingIndicator() {
         adapter.runOnAdapterHandlerWithDelay(DELAY_BEFORE_PROGRESS_FOOTER_ADDED) {
             adapter.addPhotoUploadingIndicator()
         }
@@ -182,6 +192,8 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
             adapter.removePhotoUploadingIndicator()
             adapter.addFirst(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
         }
+
+        isPhotoUploading = false
     }
 
     private fun onFailedToUploadPhoto() {
@@ -192,6 +204,8 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
             adapter.removePhotoUploadingIndicator()
             adapter.addFirst(AdapterItem(AdapterItemType.VIEW_FAILED_TO_UPLOAD))
         }
+
+        isPhotoUploading = false
     }
 
     private fun onUnknownError(error: Throwable) {

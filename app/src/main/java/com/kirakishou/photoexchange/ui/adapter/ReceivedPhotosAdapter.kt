@@ -75,6 +75,8 @@ class ReceivedPhotosAdapter(
         checkInited()
 
         if (items.isEmpty() || items.first().getType() != AdapterItemType.VIEW_MESSAGE.ordinal) {
+            this.messageType = messageType
+
             items.add(0, AdapterItem(AdapterItemType.VIEW_MESSAGE))
             notifyItemInserted(0)
         }

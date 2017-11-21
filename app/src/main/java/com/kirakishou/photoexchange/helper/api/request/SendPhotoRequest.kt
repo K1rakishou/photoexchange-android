@@ -13,6 +13,7 @@ import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 /**
  * Created by kirakishou on 11/3/2017.
@@ -34,6 +35,7 @@ class SendPhotoRequest(
                     return@flatMap apiService.sendPhoto(multipartBody.part(0), multipartBody.part(1))
                             .lift(OnApiErrorSingle(gson))
                 }
+                .delay(3, TimeUnit.SECONDS)
                 .onErrorResumeNext { error -> convertExceptionToErrorCode(error) }
     }
 
