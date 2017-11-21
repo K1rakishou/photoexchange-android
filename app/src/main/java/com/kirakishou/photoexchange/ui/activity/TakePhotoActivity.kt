@@ -32,11 +32,13 @@ import io.fotoapparat.parameter.selector.LensPositionSelectors.back
 import io.fotoapparat.parameter.selector.SizeSelectors.biggestSize
 import io.fotoapparat.view.CameraView
 import io.nlopez.smartlocation.SmartLocation
+import io.nlopez.smartlocation.location.config.LocationParams
 import io.nlopez.smartlocation.rx.ObservableFactory
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
@@ -207,14 +209,8 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                     Timber.d("granted = $granted")
                 }
                 .filter { granted -> granted }
-                .doOnNext {
-                    SmartLocation.with(this)
-                            .location()
-                            .continuous()
-                            .start {
-                                Timber.d("lastlocation: $it")
-                            }
-                }
+                .zipWith(getLocationObservable())
+                .map { it.second }
 
         compositeDisposable += Observables.zip(locationObservable, photoAvailabilitySubject)
                 .subscribeOn(Schedulers.io())
@@ -226,7 +222,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                     val userId = userInfoPreference.getUserId()
 
                     hideNotification()
-                    //switchToViewTakenPhotoActivity(location, photoFilePath, userId)
+                    switchToViewTakenPhotoActivity(location, photoFilePath, userId)
                 })
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
@@ -279,6 +275,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
         return ObservableFactory.from(SmartLocation.with(this)
                 .location()
+                .config(LocationParams.NAVIGATION)
                 .oneFix())
                 .map { location -> getTruncatedLonLat(location) }
     }
