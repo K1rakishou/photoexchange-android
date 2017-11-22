@@ -29,6 +29,6 @@ interface PhotoAnswerDao {
     @Query("SELECT * FROM ${PhotoAnswerEntity.TABLE_NAME}")
     fun findAll(): Single<List<PhotoAnswerEntity>>
 
-    @Query("SELECT COUNT(id) FROM ${PhotoAnswerEntity.TABLE_NAME}")
+    @Query("SELECT COUNT(photo_id) FROM ${PhotoAnswerEntity.TABLE_NAME}")
     fun countAll(): Single<Long>
 }
