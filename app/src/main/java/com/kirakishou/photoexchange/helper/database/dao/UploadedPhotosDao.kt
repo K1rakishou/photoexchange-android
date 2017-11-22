@@ -34,6 +34,9 @@ interface UploadedPhotosDao {
             "ORDER BY created_on DESC ")
     fun findAll(): Single<List<UploadedPhotoEntity>>
 
+    @Query("SELECT COUNT(id) FROM ${UploadedPhotoEntity.TABLE_NAME}")
+    fun countAll(): Single<Long>
+
     @Query("DELETE FROM ${UploadedPhotoEntity.TABLE_NAME} WHERE id = :arg0")
     fun deleteOne(id: Long): Int
 

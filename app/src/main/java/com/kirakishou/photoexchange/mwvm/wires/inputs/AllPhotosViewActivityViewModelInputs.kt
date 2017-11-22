@@ -17,4 +17,5 @@ interface AllPhotosViewActivityViewModelInputs {
     fun receivedPhotosFragmentShowErrorWhileTryingToLookForPhoto()
     fun receivedPhotosFragmentShowNoPhotoOnServer()
     fun receivedPhotosFragmentShowUserNeedsToUploadMorePhotos()
+    fun shouldStartLookingForPhotos()
 }

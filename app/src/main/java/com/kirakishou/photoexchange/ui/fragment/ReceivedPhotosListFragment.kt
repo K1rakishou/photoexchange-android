@@ -4,12 +4,8 @@ package com.kirakishou.photoexchange.ui.fragment
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.os.Bundle
-import android.support.design.widget.CoordinatorLayout
-import android.support.design.widget.Snackbar
-import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
-import android.widget.Toast
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
@@ -74,9 +70,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
 
         if (!isPhotoUploading) {
-            Timber.d("Showing startLookingForPhotoAnswerService")
-            (activity as AllPhotosViewActivity).startLookingForPhotoAnswerService()
-            showLookingForPhotoIndicator()
+            getViewModel().inputs.shouldStartLookingForPhotos()
         }
 
         recyclerStartLoadingItems()
@@ -139,6 +133,11 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ userNeedsToUploadMorePhotos() }, this::onUnknownError)
+
+        compositeDisposable += getViewModel().outputs.onStartLookingForPhotosObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ startLookingForPhotos() }, this::onUnknownError)
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -270,6 +269,13 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
             adapter.addMessage(ReceivedPhotosAdapter.MESSAGE_TYPE_UPLOAD_MORE_PHOTOS)
         }
+    }
+
+    private fun startLookingForPhotos() {
+        Timber.d("Showing startLookingForPhotoAnswerService")
+        (activity as AllPhotosViewActivity).startLookingForPhotoAnswerService()
+        showLookingForPhotoIndicator()
+
     }
 
     private fun onUnknownError(error: Throwable) {

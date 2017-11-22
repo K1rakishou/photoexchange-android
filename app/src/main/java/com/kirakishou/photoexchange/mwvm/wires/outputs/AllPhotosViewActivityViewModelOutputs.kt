@@ -19,4 +19,5 @@ interface AllPhotosViewActivityViewModelOutputs {
     fun onShowErrorWhileTryingToLookForPhotoObservable(): Observable<Unit>
     fun onShowNoPhotoOnServerObservable(): Observable<Unit>
     fun onShowUserNeedsToUploadMorePhotosObservable(): Observable<Unit>
+    fun onStartLookingForPhotosObservable(): Observable<Unit>
 }

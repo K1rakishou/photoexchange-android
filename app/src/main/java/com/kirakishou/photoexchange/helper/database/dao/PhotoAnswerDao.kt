@@ -5,6 +5,7 @@ import android.arch.persistence.room.Insert
 import android.arch.persistence.room.OnConflictStrategy
 import android.arch.persistence.room.Query
 import com.kirakishou.photoexchange.helper.database.entity.PhotoAnswerEntity
+import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
 import io.reactivex.Single
 
 /**
@@ -27,4 +28,7 @@ interface PhotoAnswerDao {
 
     @Query("SELECT * FROM ${PhotoAnswerEntity.TABLE_NAME}")
     fun findAll(): Single<List<PhotoAnswerEntity>>
+
+    @Query("SELECT COUNT(id) FROM ${PhotoAnswerEntity.TABLE_NAME}")
+    fun countAll(): Single<Long>
 }
