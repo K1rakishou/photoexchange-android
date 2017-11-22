@@ -53,6 +53,12 @@ class UploadedPhotosRepository(
                 .map(uploadedPhotoMapper::toUploadedPhotos)
     }
 
+    fun countAll(): Single<Long> {
+        return uploadedPhotosDao.countAll()
+                .subscribeOn(schedulers.provideIo())
+                .observeOn(schedulers.provideIo())
+    }
+
     fun deleteOne(id: Long): Flowable<Int> {
         return Flowable.fromCallable { uploadedPhotosDao.deleteOne(id) }
                 .subscribeOn(schedulers.provideIo())

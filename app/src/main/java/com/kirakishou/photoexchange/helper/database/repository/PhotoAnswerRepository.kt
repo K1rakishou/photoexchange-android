@@ -59,4 +59,10 @@ class PhotoAnswerRepository(
                 .observeOn(schedulers.provideIo())
                 .map(mapper::toPhotoAnswers)
     }
+
+    fun countAll(): Single<Long> {
+        return photoAnswerDao.countAll()
+                .subscribeOn(schedulers.provideIo())
+                .observeOn(schedulers.provideIo())
+    }
 }

@@ -171,9 +171,11 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .doOnNext { (fotoapparat, lifecycle) ->
                     when (lifecycle) {
                         ON_START -> {
+                            Timber.d("ON_START")
                             fotoapparat.start()
                         }
                         ON_STOP -> {
+                            Timber.d("ON_STOP")
                             fotoapparat.stop()
                         }
                     }
@@ -185,12 +187,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .map { lifecycleSubject.value }
                 .filter { lifecycle -> lifecycle == ON_START }
-                .doOnNext {
-                    when (it) {
-                        ON_START -> Timber.d("ON_START")
-                        ON_STOP -> Timber.d("ON_STOP")
-                    }
-                }
                 .combineLatest(fotoapparatObservable)
                 .map { it.second }
                 .subscribe({ fotoapparat ->

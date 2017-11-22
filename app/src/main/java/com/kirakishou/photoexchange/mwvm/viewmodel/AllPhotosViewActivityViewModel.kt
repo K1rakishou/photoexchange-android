@@ -14,6 +14,8 @@ import com.kirakishou.photoexchange.mwvm.wires.outputs.AllPhotosViewActivityView
 import io.reactivex.Observable
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.rx2.await
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
@@ -56,6 +58,7 @@ class AllPhotosViewActivityViewModel(
     private val showErrorWhileTryingToLookForPhotoOutput = PublishSubject.create<Unit>()
     private val showNoPhotoOnServerOutput = PublishSubject.create<Unit>()
     private val showUserNeedsToUploadMorePhotosOutput = PublishSubject.create<Unit>()
+    private val startLookingForPhotosOutput = PublishSubject.create<Unit>()
 
     //errors
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
@@ -155,6 +158,20 @@ class AllPhotosViewActivityViewModel(
         showUserNeedsToUploadMorePhotosInput.onNext(Unit)
     }
 
+    override fun shouldStartLookingForPhotos() {
+        compositeJob += async {
+            val receivedCount = photoAnswerRepository.countAll().await()
+            val uploadedCount = uploadedPhotosRepository.countAll().await()
+
+            if (uploadedCount > receivedCount) {
+                Timber.d("uploadedCount GREATER THAN receivedCount")
+                startLookingForPhotosOutput.onNext(Unit)
+            } else {
+                Timber.d("uploadedCount LESS THAN receivedCount")
+            }
+        }
+    }
+
     private fun handleErrors(error: Throwable) {
         Timber.e(error)
         unknownErrorSubject.onNext(error)
@@ -176,6 +193,7 @@ class AllPhotosViewActivityViewModel(
     override fun onShowErrorWhileTryingToLookForPhotoObservable(): Observable<Unit> = showErrorWhileTryingToLookForPhotoOutput
     override fun onShowNoPhotoOnServerObservable(): Observable<Unit> = showNoPhotoOnServerOutput
     override fun onShowUserNeedsToUploadMorePhotosObservable(): Observable<Unit> = showUserNeedsToUploadMorePhotosOutput
+    override fun onStartLookingForPhotosObservable(): Observable<Unit> = startLookingForPhotosOutput
     override fun onUnknownErrorObservable(): Observable<Throwable> = unknownErrorSubject
 }
 
