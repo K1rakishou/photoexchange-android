@@ -128,8 +128,8 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     }
 
     private fun initTabs(intent: Intent) {
-        tabLayout.addTab(tabLayout.newTab().setText("Sent"))
-        tabLayout.addTab(tabLayout.newTab().setText("Received"))
+        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_sent)))
+        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_received)))
         tabLayout.tabGravity = TabLayout.GRAVITY_FILL
 
         adapter.isPhotoUploading = intent.getBooleanExtra("is_photo_uploading", false)
@@ -179,8 +179,8 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     }
 
     fun showNewPhotoReceivedNotification() {
-        Snackbar.make(takePhotoButton, "New photo has been received", Snackbar.LENGTH_LONG)
-                .setAction("SHOW", {
+        Snackbar.make(takePhotoButton, getString(R.string.new_photo_received), Snackbar.LENGTH_LONG)
+                .setAction(getString(R.string.snackbar_button_title_show), {
                     selectReceivedPhotosTab()
                     getViewModel().inputs.receivedPhotosFragmentScrollToTop()
                 })
