@@ -36,7 +36,7 @@ class PhotoExchangeApplication : Application() {
                 .build()
 
         initTimber()
-        //initLeakCanary()
+        initLeakCanary()
         //enabledStrictMode()
     }
 
