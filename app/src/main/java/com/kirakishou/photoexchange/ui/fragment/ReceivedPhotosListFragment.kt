@@ -63,25 +63,10 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         initRx()
         initRecyclerView()
 
-        if (savedInstanceState != null) {
-            isPhotoUploading = savedInstanceState.getBoolean("is_photo_uploading")
-        } else if (arguments != null) {
-            isPhotoUploading = arguments!!.getBoolean("is_photo_uploading", true)
-        }
-
-        if (!isPhotoUploading) {
-            getViewModel().inputs.shouldStartLookingForPhotos()
-        }
-
+        getViewModel().inputs.shouldStartLookingForPhotos()
         recyclerStartLoadingItems()
     }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-
-        outState.putBoolean("is_photo_uploading", isPhotoUploading)
-    }
-
+    
     override fun onFragmentViewDestroy() {
     }
 
@@ -145,6 +130,8 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun showLookingForPhotoIndicator() {
+        isPhotoUploading = false
+
         adapter.runOnAdapterHandlerWithDelay(DELAY_BEFORE_PROGRESS_FOOTER_ADDED) {
             adapter.addLookingForPhotoIndicator()
         }
@@ -274,7 +261,6 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         Timber.d("Showing startLookingForPhotoAnswerService")
         (activity as AllPhotosViewActivity).startLookingForPhotoAnswerService()
         showLookingForPhotoIndicator()
-
     }
 
     private fun onUnknownError(error: Throwable) {
