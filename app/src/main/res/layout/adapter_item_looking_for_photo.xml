@@ -44,7 +44,7 @@
                     android:layout_marginStart="8dp"
                     android:layout_marginTop="8dp"
                     android:layout_weight="1"
-                    android:text="Looking for a photo..."
+                    android:text="@string/looking_for_your_photo_text"
                     android:textColor="@color/black"
                     android:textSize="22sp"
                     app:layout_constraintBottom_toBottomOf="@+id/iv_error_image"

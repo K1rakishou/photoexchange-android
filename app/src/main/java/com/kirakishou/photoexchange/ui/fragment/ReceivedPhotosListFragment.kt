@@ -21,6 +21,7 @@ import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewMode
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
 import com.kirakishou.photoexchange.ui.activity.MapActivity
+import com.kirakishou.photoexchange.ui.activity.ViewPhotoFullSizeActivity
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapter
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
 import com.kirakishou.photoexchange.ui.widget.ReceivedPhotosAdapterSpanSizeLookup
@@ -52,6 +53,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     private val loadMoreSubject = PublishSubject.create<Int>()
     private val photoAnswerClickSubject = PublishSubject.create<PhotoAnswer>()
+    private val photoAnswerLongClickSubject = PublishSubject.create<PhotoAnswer>()
 
     override fun initViewModel(): AllPhotosViewActivityViewModel {
         return ViewModelProviders.of(activity!!, viewModelFactory).get(AllPhotosViewActivityViewModel::class.java)
@@ -87,6 +89,11 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onPhotoAnswerClick, this::onUnknownError)
+
+        compositeDisposable += photoAnswerLongClickSubject
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onPhotoAnswerLongClick, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onScrollToTopObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -153,7 +160,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private fun initRecyclerView() {
         columnsCount = AndroidUtils.calculateNoOfColumns(activity!!, PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = ReceivedPhotosAdapter(activity!!, photoAnswerClickSubject)
+        adapter = ReceivedPhotosAdapter(activity!!, photoAnswerClickSubject, photoAnswerLongClickSubject)
         adapter.init()
 
         layoutManager = GridLayoutManager(activity, columnsCount)
@@ -172,6 +179,13 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         val intent = Intent(activity, MapActivity::class.java)
         intent.putExtra("lon", photo.lon)
         intent.putExtra("lat", photo.lat)
+
+        startActivity(intent)
+    }
+
+    private fun onPhotoAnswerLongClick(photo: PhotoAnswer) {
+        val intent = Intent(activity, ViewPhotoFullSizeActivity::class.java)
+        intent.putExtra("photo_name", photo.photoName)
 
         startActivity(intent)
     }

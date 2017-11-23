@@ -51,7 +51,7 @@
                     android:layout_marginEnd="8dp"
                     android:layout_marginStart="8dp"
                     android:layout_marginTop="8dp"
-                    android:text="Could not upload a photo"
+                    android:text="@string/could_not_upload_a_photo_text"
                     android:textColor="@color/black"
                     android:textSize="22sp"
                     app:layout_constraintBottom_toBottomOf="@+id/iv_error_image"
