@@ -61,5 +61,4 @@ class ViewPhotoFullSizeActivity : BaseActivityWithoutViewModel() {
 
     override fun resolveDaggerDependency() {
     }
-
 }

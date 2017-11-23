@@ -73,7 +73,7 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
             it.unbind()
         }
 
-        PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
+        PhotoExchangeApplication.watch(this, this::class.simpleName)
         super.onDestroy()
     }
 
