@@ -61,7 +61,6 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
     }
 
     override fun onActivityDestroy() {
-        PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
     }
 
     private fun initRx() {

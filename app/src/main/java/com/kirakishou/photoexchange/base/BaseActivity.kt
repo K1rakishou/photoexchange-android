@@ -10,6 +10,8 @@ import android.widget.Toast
 import butterknife.ButterKnife
 import butterknife.Unbinder
 import com.crashlytics.android.Crashlytics
+import com.kirakishou.photoexchange.PhotoExchangeApplication
+import com.kirakishou.photoexchange.mwvm.model.other.Constants
 import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
 import com.kirakishou.photoexchange.mwvm.model.other.Fickle
 import io.fabric.sdk.android.Fabric
@@ -71,6 +73,7 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
             it.unbind()
         }
 
+        PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
         super.onDestroy()
     }
 

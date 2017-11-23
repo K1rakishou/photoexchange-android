@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import butterknife.ButterKnife
 import butterknife.Unbinder
+import com.kirakishou.photoexchange.PhotoExchangeApplication
 import io.reactivex.disposables.CompositeDisposable
 import timber.log.Timber
 
@@ -63,6 +64,7 @@ abstract class BaseFragment<out T : ViewModel> : Fragment() {
         Timber.d("Fragment.onDetach")
         compositeDisposable.clear()
 
+        PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
         super.onDetach()
     }
 

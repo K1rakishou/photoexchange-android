@@ -119,11 +119,9 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     }
 
     override fun onActivityDestroy() {
-        SmartLocation.with(this)
+        /*SmartLocation.with(this)
                 .location()
-                .stop()
-
-        PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
+                .stop()*/
     }
 
     override fun onPause() {
@@ -196,7 +194,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
         val locationObservable = locationPermissionSubject
                 .filter { granted -> granted }
-                .zipWith(getLocationObservable())
+                .combineLatest(getLocationObservable())
                 .map { it.second }
 
         compositeDisposable += photoAvailabilitySubject
@@ -259,7 +257,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     private fun getLocationObservable(): Observable<LonLat> {
         Timber.d("getLocation() Getting current location...")
 
-        return ObservableFactory.from(SmartLocation.with(this)
+        return ObservableFactory.from(SmartLocation.with(applicationContext)
                 .location()
                 .config(LocationParams.NAVIGATION)
                 .oneFix())

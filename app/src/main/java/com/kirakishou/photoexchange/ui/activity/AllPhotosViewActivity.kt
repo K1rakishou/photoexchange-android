@@ -89,8 +89,6 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
         tabLayout.clearOnTabSelectedListeners()
         viewPager.clearOnPageChangeListeners()
-
-        PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
     }
 
     override fun onPause() {

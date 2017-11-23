@@ -10,6 +10,7 @@ import timber.log.Timber
 import android.os.StrictMode
 import android.util.Log
 import com.crashlytics.android.Crashlytics
+import com.kirakishou.photoexchange.mwvm.model.other.Constants
 
 
 /**
@@ -40,23 +41,37 @@ class PhotoExchangeApplication : Application() {
     }
 
     private fun initLeakCanary() {
-        if (LeakCanary.isInAnalyzerProcess(this)) {
-            return
-        }
+        if (Constants.isDebugBuild) {
+            if (LeakCanary.isInAnalyzerProcess(this)) {
+                return
+            }
 
-        refWatcher = LeakCanary.install(this)
+            refWatcher = LeakCanary.install(this)
+        }
     }
 
     private fun enabledStrictMode() {
-        /*StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder()
-                .detectAll()
-                .penaltyLog()
-                .penaltyDeath()
-                .build())*/
+        if (Constants.isDebugBuild) {
+            StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder()
+                    .detectAll()
+                    .penaltyLog()
+                    .penaltyDeath()
+                    .build())
+
+            StrictMode.setVmPolicy(StrictMode.VmPolicy.Builder()
+                    .detectAll()
+                    .penaltyLog()
+                    //.penaltyDeath()
+                    .build())
+        }
     }
 
     private fun initTimber() {
-        Timber.plant(CrashlyticsTree())
+        if (Constants.isDebugBuild) {
+            Timber.plant(Timber.DebugTree())
+        } else {
+            Timber.plant(CrashlyticsTree())
+        }
     }
 
     class CrashlyticsTree : Timber.Tree() {
