@@ -25,7 +25,8 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 class ReceivedPhotosAdapter(
         private val context: Context,
-        private val photoAnswerClickSubject: PublishSubject<PhotoAnswer>
+        private val photoAnswerClickSubject: PublishSubject<PhotoAnswer>,
+        private val photoAnswerLongClickSubject: PublishSubject<PhotoAnswer>
 ) : BaseAdapter<PhotoAnswer>(context) {
 
     private val selector = ReceivedPhotosIdSelectorFunction()
@@ -158,6 +159,11 @@ class ReceivedPhotosAdapter(
 
                     holder.clickView.setOnClickListener {
                         photoAnswerClickSubject.onNext(item)
+                    }
+
+                    holder.clickView.setOnLongClickListener {
+                        photoAnswerLongClickSubject.onNext(item)
+                        return@setOnLongClickListener true
                     }
                 }
             }

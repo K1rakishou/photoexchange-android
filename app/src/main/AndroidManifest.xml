@@ -20,7 +20,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity" />
         <activity android:name="com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity" />
         <activity android:name="com.kirakishou.photoexchange.ui.activity.MapActivity" />
@@ -29,7 +28,6 @@
             android:name="com.kirakishou.photoexchange.helper.service.UploadPhotoService"
             android:enabled="true"
             android:exported="false" />
-
         <service
             android:name="com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService"
             android:exported="true"
@@ -38,11 +36,11 @@
         <meta-data
             android:name="io.fabric.ApiKey"
             android:value="25e246425284f02064665b2dc30323200c19a724" />
-
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyAx_qyt-Mz65VNxITphSCUCulk071YIABc" />
 
+        <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewPhotoFullSizeActivity"></activity>
     </application>
 
 </manifest>

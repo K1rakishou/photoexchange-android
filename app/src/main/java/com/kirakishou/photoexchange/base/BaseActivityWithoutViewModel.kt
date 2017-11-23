@@ -36,6 +36,10 @@ abstract class BaseActivityWithoutViewModel : AppCompatActivity() {
     @Suppress("UNCHECKED_CAST")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(getContentView())
+
+        unBinder = Fickle.of(ButterKnife.bind(this))
+        resolveDaggerDependency()
 
         Fabric.with(this, Crashlytics())
 
@@ -43,22 +47,17 @@ abstract class BaseActivityWithoutViewModel : AppCompatActivity() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onUnknownError)
 
-        resolveDaggerDependency()
-
-        setContentView(getContentView())
-        unBinder = Fickle.of(ButterKnife.bind(this))
-
         onActivityCreate(savedInstanceState, intent)
     }
 
     override fun onDestroy() {
         compositeDisposable.clear()
+        onActivityDestroy()
 
         unBinder.ifPresent {
             it.unbind()
         }
 
-        onActivityDestroy()
         super.onDestroy()
     }
 
