@@ -83,7 +83,6 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     override fun onFragmentViewDestroy() {
-        PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
     }
 
     private fun initRx() {

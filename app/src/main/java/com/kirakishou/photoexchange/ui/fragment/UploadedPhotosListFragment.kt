@@ -75,7 +75,6 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     override fun onFragmentViewDestroy() {
-        PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
