@@ -88,7 +88,7 @@ class UploadPhotoServiceViewModel(
         compositeDisposable.clear()
         compositeJob.cancelAll()
 
-        PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
+        PhotoExchangeApplication.watch(this, this::class.simpleName)
         Timber.d("UploadPhotoServiceViewModel cleanUp")
     }
 

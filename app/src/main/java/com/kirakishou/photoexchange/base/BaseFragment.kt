@@ -64,7 +64,7 @@ abstract class BaseFragment<out T : ViewModel> : Fragment() {
         Timber.d("Fragment.onDetach")
         compositeDisposable.clear()
 
-        PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
+        PhotoExchangeApplication.watch(this, this::class.simpleName)
         super.onDetach()
     }
 

@@ -94,7 +94,7 @@ class FindPhotoAnswerServiceViewModel(
         compositeDisposable.clear()
         compositeJob.cancelAll()
 
-        PhotoExchangeApplication.refWatcher.watch(this, this::class.simpleName)
+        PhotoExchangeApplication.watch(this, this::class.simpleName)
         Timber.d("FindPhotoAnswerServiceViewModel cleanUp")
     }
 

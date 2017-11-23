@@ -37,7 +37,7 @@ class PhotoExchangeApplication : Application() {
 
         initTimber()
         initLeakCanary()
-        enabledStrictMode()
+        //enabledStrictMode()
     }
 
     private fun initLeakCanary() {
@@ -115,5 +115,11 @@ class PhotoExchangeApplication : Application() {
         private val CRASHLYTICS_KEY_PRIORITY = "priority"
         private val CRASHLYTICS_KEY_TAG = "tag"
         private val CRASHLYTICS_KEY_MESSAGE = "message"
+
+        fun watch(reference: Any, refName: String?) {
+            if (refWatcher != null) {
+                refWatcher.watch(reference, refName ?: "Unknown class")
+            }
+        }
     }
 }
