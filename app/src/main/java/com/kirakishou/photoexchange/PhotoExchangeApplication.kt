@@ -55,7 +55,7 @@ class PhotoExchangeApplication : Application() {
             StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder()
                     .detectAll()
                     .penaltyLog()
-                    .penaltyDeath()
+                    //.penaltyDeath()
                     .build())
 
             StrictMode.setVmPolicy(StrictMode.VmPolicy.Builder()

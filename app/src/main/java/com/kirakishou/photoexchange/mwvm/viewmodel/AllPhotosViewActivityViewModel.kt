@@ -167,7 +167,7 @@ class AllPhotosViewActivityViewModel(
                 Timber.d("uploadedCount GREATER THAN receivedCount")
                 startLookingForPhotosOutput.onNext(Unit)
             } else {
-                Timber.d("uploadedCount LESS THAN receivedCount")
+                Timber.d("uploadedCount LESS OR EQUALS THAN receivedCount")
             }
         }
     }

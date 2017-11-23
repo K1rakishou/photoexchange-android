@@ -140,7 +140,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
     private fun initCamera(): Observable<Fotoapparat> {
         val foto = Fotoapparat
-                .with(this)
+                .with(applicationContext)
                 .into(cameraView)
                 .previewScaleType(ScaleType.CENTER_CROP)
                 .photoSize(biggestSize())
