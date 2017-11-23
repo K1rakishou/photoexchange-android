@@ -63,27 +63,10 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         initRx()
         initRecyclerView()
 
-        if (savedInstanceState != null) {
-            isPhotoUploading = savedInstanceState.getBoolean("is_photo_uploading")
-        } else if (arguments != null) {
-            isPhotoUploading = arguments!!.getBoolean("is_photo_uploading", true)
-        }
-
-        if (!isPhotoUploading) {
-            showLookingForPhotoIndicator()
-        } else {
-            getViewModel().inputs.shouldStartLookingForPhotos()
-        }
-
+        getViewModel().inputs.shouldStartLookingForPhotos()
         recyclerStartLoadingItems()
     }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-
-        outState.putBoolean("is_photo_uploading", isPhotoUploading)
-    }
-
+    
     override fun onFragmentViewDestroy() {
     }
 
