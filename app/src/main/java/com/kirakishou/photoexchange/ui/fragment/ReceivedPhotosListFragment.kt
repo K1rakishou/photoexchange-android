@@ -70,6 +70,8 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
 
         if (!isPhotoUploading) {
+            showLookingForPhotoIndicator()
+        } else {
             getViewModel().inputs.shouldStartLookingForPhotos()
         }
 
@@ -145,6 +147,8 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun showLookingForPhotoIndicator() {
+        isPhotoUploading = false
+
         adapter.runOnAdapterHandlerWithDelay(DELAY_BEFORE_PROGRESS_FOOTER_ADDED) {
             adapter.addLookingForPhotoIndicator()
         }
@@ -274,7 +278,6 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         Timber.d("Showing startLookingForPhotoAnswerService")
         (activity as AllPhotosViewActivity).startLookingForPhotoAnswerService()
         showLookingForPhotoIndicator()
-
     }
 
     private fun onUnknownError(error: Throwable) {

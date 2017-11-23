@@ -119,9 +119,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     }
 
     override fun onActivityDestroy() {
-        /*SmartLocation.with(this)
-                .location()
-                .stop()*/
     }
 
     override fun onPause() {
