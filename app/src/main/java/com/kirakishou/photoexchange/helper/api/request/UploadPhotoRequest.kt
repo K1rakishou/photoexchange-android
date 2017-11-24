@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit
 /**
  * Created by kirakishou on 11/3/2017.
  */
-class SendPhotoRequest(
+class UploadPhotoRequest(
         private val info: PhotoToBeUploaded,
         private val apiService: ApiService,
         private val schedulers: SchedulerProvider,

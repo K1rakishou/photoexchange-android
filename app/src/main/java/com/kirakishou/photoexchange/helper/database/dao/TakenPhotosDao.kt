@@ -4,6 +4,7 @@ import android.arch.persistence.room.Dao
 import android.arch.persistence.room.Insert
 import android.arch.persistence.room.OnConflictStrategy
 import android.arch.persistence.room.Query
+import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
 import io.reactivex.Single
 
@@ -14,12 +15,61 @@ import io.reactivex.Single
 @Dao
 interface TakenPhotosDao {
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun saveOne(takenPhotoEntity: TakenPhotoEntity): Long
 
-    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME}")
+    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} WHERE id = :arg0")
+    fun findOne(id: Long): Single<TakenPhotoEntity>
+
+    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} WHERE uploaded = ${MyDatabase.SQLITE_TRUE}" +
+            "ORDER BY created_on DESC " +
+            "LIMIT :arg1 OFFSET :arg0")
+    fun findPage(page: Int, count: Int): Single<List<TakenPhotoEntity>>
+
+    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} WHERE is_uploading = ${MyDatabase.SQLITE_TRUE}")
+    fun findAllQueuedUp(): Single<List<TakenPhotoEntity>>
+
+    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} ORDER BY created_on DESC ")
     fun findAll(): Single<List<TakenPhotoEntity>>
 
-    @Query("DELETE FROM ${TakenPhotoEntity.TABLE_NAME}")
+    @Query("SELECT COUNT(id) FROM ${TakenPhotoEntity.TABLE_NAME} WHERE uploaded = ${MyDatabase.SQLITE_TRUE}")
+    fun countAll(): Single<Long>
+
+    @Query("UPDATE ${TakenPhotoEntity.TABLE_NAME} SET is_uploading = :arg0 WHERE id = :arg1")
+    fun updateOneSetIsUploading(isUploading: Boolean, id: Long)
+
+    @Query("UPDATE ${TakenPhotoEntity.TABLE_NAME} SET photo_name = :arg0, photo_file_path = \"\" WHERE id = :arg1")
+    fun updateOneSetUploaded(photoName: String, id: Long)
+
+    @Query("DELETE FROM ${TakenPhotoEntity.TABLE_NAME} WHERE id = :arg0")
+    fun deleteOne(id: Long): Int
+
+    @Query("DELETE FROM ${TakenPhotoEntity.TABLE_NAME} WHERE is_uploading = ${MyDatabase.SQLITE_FALSE} AND uploaded = ${MyDatabase.SQLITE_FALSE}")
     fun deleteAll(): Int
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

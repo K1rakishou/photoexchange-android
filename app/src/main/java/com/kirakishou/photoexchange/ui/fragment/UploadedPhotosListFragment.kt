@@ -14,7 +14,7 @@ import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
-import com.kirakishou.photoexchange.mwvm.model.other.UploadedPhoto
+import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
@@ -46,7 +46,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private val PHOTOS_PER_PAGE = 5
     private var columnsCount: Int = 1
 
-    private val retryButtonSubject = PublishSubject.create<UploadedPhoto>()
+    private val retryButtonSubject = PublishSubject.create<TakenPhoto>()
     private val loadMoreSubject = PublishSubject.create<Int>()
     private var isPhotoUploading = false
 
@@ -71,7 +71,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
             startPhotoUploadingIndicator()
         }
 
-        recyclerStartLoadingItems()
+        showQueuedUpPhotos()
     }
 
     override fun onFragmentViewDestroy() {
@@ -87,6 +87,10 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         adapter.runOnAdapterHandlerWithDelay(DELAY_BEFORE_PROGRESS_FOOTER_ADDED) {
             adapter.addPhotoUploadingIndicator()
         }
+    }
+
+    private fun showQueuedUpPhotos() {
+        getViewModel().inputs.getQueuedUpPhotos()
     }
 
     private fun recyclerStartLoadingItems() {
@@ -148,6 +152,11 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ onFailedToUploadPhoto() }, this::onUnknownError)
 
+        compositeDisposable += getViewModel().outputs.onQueuedUpPhotosLoadedObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onQueuedUpPhotosLoaded, this::onUnknownError)
+
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -159,7 +168,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         getViewModel().inputs.fetchOnePageUploadedPhotos(page * count, count)
     }
 
-    private fun onPageReceived(uploadedPhotosList: List<UploadedPhoto>) {
+    private fun onPageReceived(uploadedPhotosList: List<TakenPhoto>) {
         adapter.runOnAdapterHandler {
             endlessScrollListener.pageLoaded()
 
@@ -179,11 +188,11 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
-    private fun onRetryButtonClicked(uploadedPhoto: UploadedPhoto) {
+    private fun onRetryButtonClicked(uploadedPhoto: TakenPhoto) {
         Timber.d("photoName: ${uploadedPhoto.photoName}")
     }
 
-    private fun onPhotoUploaded(photo: UploadedPhoto) {
+    private fun onPhotoUploaded(photo: TakenPhoto) {
         Timber.d("onPhotoUploaded()")
         check(isAdded)
 
@@ -205,6 +214,14 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
 
         isPhotoUploading = false
+    }
+
+    private fun onQueuedUpPhotosLoaded(queuedUpPhotosList: List<TakenPhoto>) {
+        adapter.runOnAdapterHandler {
+            adapter.addQueuedUpPhotos(queuedUpPhotosList)
+        }
+
+        recyclerStartLoadingItems()
     }
 
     private fun onUnknownError(error: Throwable) {

@@ -16,12 +16,12 @@ import com.kirakishou.photoexchange.di.component.DaggerViewTakenPhotoActivityCom
 import com.kirakishou.photoexchange.di.module.ViewTakenPhotoActivityModule
 import com.kirakishou.photoexchange.helper.service.UploadPhotoService
 import com.kirakishou.photoexchange.mwvm.model.other.LonLat
-import com.kirakishou.photoexchange.mwvm.model.other.ServiceCommand
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.viewmodel.ViewTakenPhotoActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.ViewTakenPhotoActivityViewModelFactory
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 
@@ -67,33 +67,26 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
         compositeDisposable += RxView.clicks(closeActivityButtonIv)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    deletePhoto()
-                    finish()
-                })
+                .doOnNext {
+                    getViewModel().inputs.deleteTakenPhoto(takenPhoto.id)
+                }
+                .subscribe({ finish() }, this::onUnknownError)
 
         compositeDisposable += RxView.clicks(closeActivityButtonFab)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    deletePhoto()
-                    finish()
-                })
+                .doOnNext {
+                    getViewModel().inputs.deleteTakenPhoto(takenPhoto.id)
+                }
+                .subscribe({ finish() }, this::onUnknownError)
 
         compositeDisposable += RxView.clicks(sendPhotoButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    startServiceToUploadPhoto()
+                    schedulePhotoUpload()
                     switchToAllPhotosViewActivity()
                 })
-    }
-
-    private fun deletePhoto() {
-        val photoFile = File(takenPhoto.photoFilePath)
-        if (photoFile.exists()) {
-            photoFile.delete()
-        }
     }
 
     private fun switchToAllPhotosViewActivity() {
@@ -103,15 +96,9 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
         finish()
     }
 
-    private fun startServiceToUploadPhoto() {
-        val intent = Intent(this, UploadPhotoService::class.java)
-        intent.putExtra("command", ServiceCommand.SEND_PHOTO.value)
-        intent.putExtra("lon", takenPhoto.location.lon)
-        intent.putExtra("lat", takenPhoto.location.lat)
-        intent.putExtra("user_id", takenPhoto.userId)
-        intent.putExtra("photo_file_path", takenPhoto.photoFilePath)
-
-        startService(intent)
+    private fun schedulePhotoUpload() {
+        UploadPhotoService.scheduleImmediateJob(takenPhoto.id, this)
+        Timber.d("UploadPhoto has been job scheduled")
     }
 
     private fun setPhotoPreview() {
@@ -122,6 +109,7 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
     }
 
     private fun getTakenPhoto(intent: Intent) {
+        val id = intent.getLongExtra("id", -1L)
         val lon = intent.getDoubleExtra("lon", 0.0)
         val lat = intent.getDoubleExtra("lat", 0.0)
         val photoFilePath = intent.getStringExtra("photo_file_path")
@@ -134,7 +122,7 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
         check(photoFilePath.isNotEmpty())
         check(userId.isNotEmpty())
 
-        takenPhoto = TakenPhoto(LonLat(lon, lat), photoFilePath, userId)
+        takenPhoto = TakenPhoto(id, LonLat(lon, lat), photoFilePath, userId, "")
     }
 
     override fun resolveDaggerDependency() {

@@ -16,23 +16,24 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseAdapter
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
-import com.kirakishou.photoexchange.mwvm.model.other.UploadedPhoto
+import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import io.reactivex.subjects.PublishSubject
+import java.io.File
 
 /**
  * Created by kirakishou on 11/7/2017.
  */
 class UploadedPhotosAdapter(
         private val context: Context,
-        private val retryButtonSubject: PublishSubject<UploadedPhoto>
-) : BaseAdapter<UploadedPhoto>(context) {
+        private val retryButtonSubject: PublishSubject<TakenPhoto>
+) : BaseAdapter<TakenPhoto>(context) {
 
     private val selector = UploadedPhotosIdSelectorFunction()
     private val duplicatesCheckerSet = mutableSetOf<Long>()
 
     private val noPhotosUploadedMessage: String = context.getString(R.string.no_photos_uploaded)
 
-    private fun isDuplicate(item: AdapterItem<UploadedPhoto>): Boolean {
+    private fun isDuplicate(item: AdapterItem<TakenPhoto>): Boolean {
         if (item.getType() != AdapterItemType.VIEW_ITEM.ordinal) {
             return false
         }
@@ -43,7 +44,23 @@ class UploadedPhotosAdapter(
         return !duplicatesCheckerSet.add(id)
     }
 
-    fun addFirst(item: AdapterItem<UploadedPhoto>) {
+    fun addQueuedUpPhotos(queuedUpPhotosList: List<TakenPhoto>) {
+        val index = when {
+            items.isEmpty() -> 0
+            items.first().getType() == AdapterItemType.VIEW_ITEM.ordinal -> 0
+            items.first().getType() != AdapterItemType.VIEW_ITEM.ordinal -> 1
+            else -> 1
+        }
+
+        val converted = queuedUpPhotosList
+                .map { takenPhoto -> AdapterItem(takenPhoto, AdapterItemType.VIEW_ITEM) }
+                .filter { convertedPhoto -> !isDuplicate(convertedPhoto) }
+
+        items.addAll(index, converted)
+        notifyItemRangeInserted(index, converted.size)
+    }
+
+    fun addFirst(item: AdapterItem<TakenPhoto>) {
         if (isDuplicate(item)) {
             return
         }
@@ -52,7 +69,7 @@ class UploadedPhotosAdapter(
         notifyItemInserted(0)
     }
 
-    override fun add(item: AdapterItem<UploadedPhoto>) {
+    override fun add(item: AdapterItem<TakenPhoto>) {
         if (isDuplicate(item)) {
             return
         }
@@ -60,7 +77,7 @@ class UploadedPhotosAdapter(
         super.add(item)
     }
 
-    override fun addAll(items: List<AdapterItem<UploadedPhoto>>) {
+    override fun addAll(items: List<AdapterItem<TakenPhoto>>) {
         super.addAll(items.filter { isDuplicate(it) })
     }
 
@@ -128,7 +145,8 @@ class UploadedPhotosAdapter(
                 BaseAdapterInfo(AdapterItemType.VIEW_PROGRESSBAR, R.layout.adapter_item_progress, ProgressBarViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_FAILED_TO_UPLOAD, R.layout.adapter_item_upload_photo_error, PhotoUploadErrorViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_MESSAGE, R.layout.adapter_item_message, MessageViewHolder::class.java),
-                BaseAdapterInfo(AdapterItemType.VIEW_PHOTO_UPLOADING, R.layout.adapter_item_photo_uploading, PhotoUploadingViewHolder::class.java)
+                BaseAdapterInfo(AdapterItemType.VIEW_PHOTO_UPLOADING, R.layout.adapter_item_photo_uploading, PhotoUploadingViewHolder::class.java),
+                BaseAdapterInfo(AdapterItemType.VIEW_QUEUED_UP_PHOTO, R.layout.adapter_item_photo_uploading_queued_up, QueuedUpPhotoViewHolder::class.java)
         )
     }
 
@@ -165,6 +183,18 @@ class UploadedPhotosAdapter(
 
             is PhotoUploadingViewHolder -> {
                 holder.progressBar.isIndeterminate = true
+            }
+
+            is QueuedUpPhotoViewHolder -> {
+                if (items[position].value.isPresent()) {
+                    val item = items[position].value.get()
+                    holder.progressBar.isIndeterminate = true
+
+                    Glide.with(context)
+                            .load(File(item.photoFilePath))
+                            .apply(RequestOptions().centerCrop())
+                            .into(holder.photoView)
+                }
             }
         }
     }
@@ -219,8 +249,21 @@ class UploadedPhotosAdapter(
         }
     }
 
+    class QueuedUpPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        @BindView(R.id.image_view)
+        lateinit var photoView: ImageView
+
+        @BindView(R.id.loading_indicator)
+        lateinit var progressBar: ProgressBar
+
+        init {
+            ButterKnife.bind(this, itemView)
+        }
+    }
+
     inner class UploadedPhotosIdSelectorFunction {
-        fun select(item: UploadedPhoto): Long = item.id
+        fun select(item: TakenPhoto): Long = item.id
     }
 }
 

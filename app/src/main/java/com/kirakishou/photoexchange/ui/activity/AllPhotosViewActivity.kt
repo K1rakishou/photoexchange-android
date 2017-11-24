@@ -190,10 +190,9 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onPhotoUploadedEvent(event: PhotoUploadedEvent) {
         if (event.status == SendPhotoEventStatus.SUCCESS) {
-            checkNotNull(event.photo)
-            val photo = event.photo!!
+            checkNotNull(event.photoId)
 
-            getViewModel().inputs.uploadedPhotosFragmentShowPhotoUploaded(photo)
+            getViewModel().inputs.uploadedPhotosFragmentShowPhotoUploaded(event.photoId)
             startLookingForPhotoAnswerService()
         } else {
             getViewModel().inputs.uploadedPhotosFragmentShowFailedToUploadPhoto()

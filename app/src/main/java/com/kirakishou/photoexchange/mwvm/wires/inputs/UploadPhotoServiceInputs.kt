@@ -6,5 +6,5 @@ import com.kirakishou.photoexchange.mwvm.model.other.LonLat
  * Created by kirakishou on 11/4/2017.
  */
 interface UploadPhotoServiceInputs {
-    fun uploadPhoto(photoFilePath: String, location: LonLat, userId: String)
+    fun uploadPhoto(id: Long)
 }

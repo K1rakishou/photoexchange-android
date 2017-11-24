@@ -11,9 +11,11 @@ class TakenPhotoMapper : Mapper {
 
     fun toTakenPhoto(entity: TakenPhotoEntity): TakenPhoto {
         return TakenPhoto(
+                entity.id,
                 LonLat(entity.lon, entity.lat),
                 entity.photoFilePath,
-                entity.userId
+                entity.userId,
+                entity.photoName
         )
     }
 

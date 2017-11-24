@@ -20,10 +20,12 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerTakePhotoActivityComponent
+import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.helper.util.Utils
 import com.kirakishou.photoexchange.mwvm.model.other.LonLat
+import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.TakePhotoActivityViewModelFactory
 import io.fotoapparat.Fotoapparat
@@ -196,16 +198,23 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
         compositeDisposable += photoAvailabilitySubject
                 .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
+                .observeOn(Schedulers.io())
                 .combineLatest(locationObservable)
                 .doOnError { unknownErrorsSubject.onNext(it) }
-                .subscribe({
+                .map {
                     val photoFilePath = it.first
                     val location = it.second
                     val userId = userInfoPreference.getUserId()
 
+                    return@map TakenPhoto(-1L, location, photoFilePath, userId, "")
+                }
+                .subscribe({ getViewModel().inputs.saveTakenPhoto(it) }, this::onUnknownError)
+
+        compositeDisposable += getViewModel().outputs.onTakenPhotoSavedObservable()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ savedTakenPhoto ->
                     hideNotification()
-                    switchToViewTakenPhotoActivity(location, photoFilePath, userId)
+                    switchToViewTakenPhotoActivity(savedTakenPhoto.id, savedTakenPhoto.location, savedTakenPhoto.photoFilePath, savedTakenPhoto.userId)
                 })
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
@@ -219,8 +228,9 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         startActivity(intent)
     }
 
-    private fun switchToViewTakenPhotoActivity(location: LonLat, photoFilePath: String, userId: String) {
+    private fun switchToViewTakenPhotoActivity(id: Long, location: LonLat, photoFilePath: String, userId: String) {
         val intent = Intent(this, ViewTakenPhotoActivity::class.java)
+        intent.putExtra("id", id)
         intent.putExtra("lon", location.lon)
         intent.putExtra("lat", location.lat)
         intent.putExtra("photo_file_path", photoFilePath)

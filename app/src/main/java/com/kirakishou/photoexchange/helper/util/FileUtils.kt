@@ -9,15 +9,19 @@ import java.io.File
  */
 object FileUtils {
 
-    fun deletePhotoFiles(allPhotos: List<TakenPhoto>) {
-        allPhotos.forEach { uploadedPhoto ->
-            val photoFile = File(uploadedPhoto.photoFilePath)
-            if (photoFile.exists()) {
-                val wasDeleted = photoFile.delete()
-                if (!wasDeleted) {
-                    Timber.d("Could not delete file: ${uploadedPhoto.photoFilePath}")
-                }
+    fun deletePhotoFile(takenPhotooto: TakenPhoto) {
+        val photoFile = File(takenPhotooto.photoFilePath)
+        if (photoFile.exists()) {
+            val wasDeleted = photoFile.delete()
+            if (!wasDeleted) {
+                Timber.d("Could not delete file: ${takenPhotooto.photoFilePath}")
             }
+        }
+    }
+
+    fun deletePhotosFiles(allPhotos: List<TakenPhoto>) {
+        allPhotos.forEach { takenPhoto ->
+            deletePhotoFile(takenPhoto)
         }
     }
 }
