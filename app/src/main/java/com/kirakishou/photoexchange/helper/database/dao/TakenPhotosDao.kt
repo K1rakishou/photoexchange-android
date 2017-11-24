@@ -21,7 +21,7 @@ interface TakenPhotosDao {
     @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} WHERE id = :arg0")
     fun findOne(id: Long): Single<TakenPhotoEntity>
 
-    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} " +
+    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} WHERE uploaded = ${MyDatabase.SQLITE_TRUE}" +
             "ORDER BY created_on DESC " +
             "LIMIT :arg1 OFFSET :arg0")
     fun findPage(page: Int, count: Int): Single<List<TakenPhotoEntity>>
