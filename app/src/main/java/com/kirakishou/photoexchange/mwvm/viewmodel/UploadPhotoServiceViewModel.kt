@@ -49,7 +49,7 @@ class UploadPhotoServiceViewModel(
     private val badResponseSubject = PublishSubject.create<ServerErrorCode>()
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
 
-    override fun uploadPhoto(photoFilePath: String, location: LonLat, userId: String) {
+    override fun uploadPhoto(id: Long, photoFilePath: String, location: LonLat, userId: String) {
         compositeJob += async {
             try {
                 val response = repeatRequest(MAX_ATTEMPTS, PhotoToBeUploaded(photoFilePath, location, userId)) { arg ->
@@ -69,7 +69,7 @@ class UploadPhotoServiceViewModel(
                     return@async
                 }
 
-                val photoId = uploadedPhotosRepo.saveOne(location.lon, location.lat, userId, photoFilePath, response.photoName).await()
+                val photoId = uploadedPhotosRepo.saveOne(id, location.lon, location.lat, userId, photoFilePath, response.photoName).await()
                 val uploadedPhoto = UploadedPhoto(photoId, location.lon, location.lat, userId, response.photoName, photoFilePath)
 
                 sendPhotoResponseSubject.onNext(uploadedPhoto)

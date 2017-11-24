@@ -25,14 +25,17 @@ class TakenPhotoEntity(
         var photoFilePath: String,
 
         @ColumnInfo(name = "user_id")
-        var userId: String
+        var userId: String,
+
+        @ColumnInfo(name = "is_uploading")
+        var isUploading: Boolean
 ) {
 
-    constructor() : this(0L, 0.0, 0.0, "", "")
+    constructor() : this(0L, 0.0, 0.0, "", "", false)
 
     companion object {
         fun new(lon: Double, lat: Double, photoFilePath: String, userId: String) =
-                TakenPhotoEntity(0L, lon, lat, photoFilePath, userId)
+                TakenPhotoEntity(0L, lon, lat, photoFilePath, userId, false)
 
         const val TABLE_NAME = "taken_photos"
     }

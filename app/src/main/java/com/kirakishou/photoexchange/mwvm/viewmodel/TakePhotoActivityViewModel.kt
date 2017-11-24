@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRep
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.mwvm.model.other.Constants
+import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.wires.errors.MainActivityViewModelErrors
 import com.kirakishou.photoexchange.mwvm.wires.inputs.MainActivityViewModelInputs
 import com.kirakishou.photoexchange.mwvm.wires.outputs.MainActivityViewModelOutputs
@@ -31,6 +32,7 @@ class TakePhotoActivityViewModel(
     val outputs: MainActivityViewModelOutputs = this
     val errors: MainActivityViewModelErrors = this
 
+    private val onTakenPhotoSavedOutput = PublishSubject.create<TakenPhoto>()
     private val onUnknownErrorErrorSubject = PublishSubject.create<Throwable>()
 
     override fun cleanTakenPhotosDB() {
@@ -39,10 +41,27 @@ class TakePhotoActivityViewModel(
                 val takenPhotos = takenPhotosRepo.findAll().await()
                 FileUtils.deletePhotoFiles(takenPhotos)
 
+                takenPhotosRepo.deleteAll().await()
+
                 if (Constants.isDebugBuild) {
                     val allPhotos = takenPhotosRepo.findAll().blockingGet()
                     allPhotos.forEach { Timber.d("photo: $it") }
                 }
+            } catch (error: Throwable) {
+                handleErrors(error)
+            }
+        }
+    }
+
+    override fun saveTakenPhoto(takenPhoto: TakenPhoto) {
+        compositeJob += async {
+            try {
+                val id = takenPhotosRepo.saveOne(takenPhoto.location.lon, takenPhoto.location.lat,
+                        takenPhoto.photoFilePath, takenPhoto.userId).await()
+                val savedTakenPhoto = takenPhoto.copy(id)
+
+                onTakenPhotoSavedOutput.onNext(savedTakenPhoto)
+
             } catch (error: Throwable) {
                 handleErrors(error)
             }
@@ -60,6 +79,6 @@ class TakePhotoActivityViewModel(
         super.onCleared()
     }
 
+    override fun onTakenPhotoSavedObservable(): Observable<TakenPhoto> = onTakenPhotoSavedOutput
     override fun onUnknownErrorObservable(): Observable<Throwable> = onUnknownErrorErrorSubject
-
 }

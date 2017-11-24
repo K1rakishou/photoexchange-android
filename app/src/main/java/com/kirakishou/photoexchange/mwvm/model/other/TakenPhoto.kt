@@ -4,18 +4,23 @@ package com.kirakishou.photoexchange.mwvm.model.other
  * Created by kirakishou on 11/10/2017.
  */
 class TakenPhoto(
+        val id: Long,
         val location: LonLat,
         val photoFilePath: String,
         val userId: String
 ) {
 
     fun isEmpty(): Boolean {
-        return location.isEmpty() && photoFilePath.isEmpty() && userId.isEmpty()
+        return id == -1L
+    }
+
+    fun copy(id: Long): TakenPhoto {
+        return TakenPhoto(id, location, photoFilePath, userId)
     }
 
     companion object {
         fun empty(): TakenPhoto {
-            return TakenPhoto(LonLat.empty(), "", "")
+            return TakenPhoto(-1L, LonLat.empty(), "", "")
         }
     }
 }

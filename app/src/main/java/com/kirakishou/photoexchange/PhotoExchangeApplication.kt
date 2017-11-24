@@ -37,7 +37,7 @@ class PhotoExchangeApplication : Application() {
 
         initTimber()
         initLeakCanary()
-        //enabledStrictMode()
+        enabledStrictMode()
     }
 
     private fun initLeakCanary() {
@@ -68,7 +68,8 @@ class PhotoExchangeApplication : Application() {
 
     private fun initTimber() {
         if (Constants.isDebugBuild) {
-            Timber.plant(Timber.DebugTree())
+            //TODO: Timber.plant(Timber.DebugTree())
+            Timber.plant(CrashlyticsTree())
         } else {
             Timber.plant(CrashlyticsTree())
         }
@@ -108,7 +109,7 @@ class PhotoExchangeApplication : Application() {
 
     companion object {
         @JvmStatic lateinit var applicationComponent: ApplicationComponent
-        lateinit var refWatcher: RefWatcher
+        var refWatcher: RefWatcher? = null
         val baseUrl = "http://kez1911.asuscomm.com:8080/"
         val databaseName = "photoexchange_db"
 
@@ -118,7 +119,7 @@ class PhotoExchangeApplication : Application() {
 
         fun watch(reference: Any, refName: String?) {
             if (refWatcher != null) {
-                refWatcher.watch(reference, refName ?: "Unknown class")
+                refWatcher!!.watch(reference, refName ?: "Unknown class")
             }
         }
     }

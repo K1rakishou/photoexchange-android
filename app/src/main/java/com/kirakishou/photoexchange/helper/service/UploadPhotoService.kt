@@ -98,13 +98,15 @@ class UploadPhotoService : Service() {
         val serviceCommand = ServiceCommand.from(commandRaw)
         when (serviceCommand) {
             ServiceCommand.SEND_PHOTO -> {
+                val id = intent.getLongExtra("id", -1L)
                 val lon = intent.getDoubleExtra("lon", 0.0)
                 val lat = intent.getDoubleExtra("lat", 0.0)
                 val userId = intent.getStringExtra("user_id")
                 val photoFilePath = intent.getStringExtra("photo_file_path")
                 val location = LonLat(lon, lat)
+                check(id != -1L)
 
-                viewModel.inputs.uploadPhoto(photoFilePath, location, userId)
+                viewModel.inputs.uploadPhoto(id, photoFilePath, location, userId)
             }
 
             else -> onUnknownError(IllegalArgumentException("Unknown serviceCommand: $serviceCommand"))

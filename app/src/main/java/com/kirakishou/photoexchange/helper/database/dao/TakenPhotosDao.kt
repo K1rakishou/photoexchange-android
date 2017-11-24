@@ -4,6 +4,7 @@ import android.arch.persistence.room.Dao
 import android.arch.persistence.room.Insert
 import android.arch.persistence.room.OnConflictStrategy
 import android.arch.persistence.room.Query
+import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
 import io.reactivex.Single
 
@@ -20,6 +21,6 @@ interface TakenPhotosDao {
     @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME}")
     fun findAll(): Single<List<TakenPhotoEntity>>
 
-    @Query("DELETE FROM ${TakenPhotoEntity.TABLE_NAME}")
+    @Query("DELETE FROM ${TakenPhotoEntity.TABLE_NAME} WHERE is_uploading = ${MyDatabase.SQLITE_FALSE}")
     fun deleteAll(): Int
 }

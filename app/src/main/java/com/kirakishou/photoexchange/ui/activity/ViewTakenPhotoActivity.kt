@@ -105,6 +105,7 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
 
     private fun startServiceToUploadPhoto() {
         val intent = Intent(this, UploadPhotoService::class.java)
+        intent.putExtra("id", takenPhoto.id)
         intent.putExtra("command", ServiceCommand.SEND_PHOTO.value)
         intent.putExtra("lon", takenPhoto.location.lon)
         intent.putExtra("lat", takenPhoto.location.lat)
@@ -122,6 +123,7 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
     }
 
     private fun getTakenPhoto(intent: Intent) {
+        val id = intent.getLongExtra("id", -1L)
         val lon = intent.getDoubleExtra("lon", 0.0)
         val lat = intent.getDoubleExtra("lat", 0.0)
         val photoFilePath = intent.getStringExtra("photo_file_path")
@@ -134,7 +136,7 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
         check(photoFilePath.isNotEmpty())
         check(userId.isNotEmpty())
 
-        takenPhoto = TakenPhoto(LonLat(lon, lat), photoFilePath, userId)
+        takenPhoto = TakenPhoto(id, LonLat(lon, lat), photoFilePath, userId)
     }
 
     override fun resolveDaggerDependency() {

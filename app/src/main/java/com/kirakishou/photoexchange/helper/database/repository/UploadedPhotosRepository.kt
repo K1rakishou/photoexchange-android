@@ -21,9 +21,9 @@ class UploadedPhotosRepository(
 ) {
     private val uploadedPhotosDao: UploadedPhotosDao by lazy { database.uploadedPhotosDao() }
 
-    fun saveOne(lon: Double, lat: Double, userId: String, photoFilePath: String, photoName: String): Single<Long> {
+    fun saveOne(id: Long, lon: Double, lat: Double, userId: String, photoFilePath: String, photoName: String): Single<Long> {
         val resultSingle = Single.fromCallable {
-            uploadedPhotosDao.saveOne(UploadedPhotoEntity.new(lon, lat, userId, photoFilePath, photoName))
+            uploadedPhotosDao.saveOne(UploadedPhotoEntity.new(id, lon, lat, userId, photoFilePath, photoName))
         }
 
         return resultSingle
