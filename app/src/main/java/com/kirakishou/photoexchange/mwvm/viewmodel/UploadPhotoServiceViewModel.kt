@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.mwvm.viewmodel
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.helper.CompositeJob
 import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mwvm.wires.errors.UploadPhotoServiceErrors
@@ -32,6 +33,7 @@ import timber.log.Timber
 class UploadPhotoServiceViewModel(
         private val apiClient: ApiClient,
         private val schedulers: SchedulerProvider,
+        private val takenPhotosRepo: TakenPhotosRepository,
         private val uploadedPhotosRepo: UploadedPhotosRepository
 ) : UploadPhotoServiceInputs,
         UploadPhotoServiceOutputs,
@@ -52,6 +54,8 @@ class UploadPhotoServiceViewModel(
     override fun uploadPhoto(id: Long, photoFilePath: String, location: LonLat, userId: String) {
         compositeJob += async {
             try {
+                takenPhotosRepo.updateOneSetIsUploading(id, true).await()
+
                 val response = repeatRequest(MAX_ATTEMPTS, PhotoToBeUploaded(photoFilePath, location, userId)) { arg ->
                     apiClient.sendPhoto(arg).await()
                 }
@@ -74,7 +78,8 @@ class UploadPhotoServiceViewModel(
 
                 sendPhotoResponseSubject.onNext(uploadedPhoto)
             } catch (error: Throwable) {
-                handleErrors(error)
+                //handleErrors(error)
+                sendPhotoResponseSubject.onError(error)
             }
         }
     }

@@ -18,4 +18,5 @@ interface AllPhotosViewActivityViewModelInputs {
     fun receivedPhotosFragmentShowNoPhotoOnServer()
     fun receivedPhotosFragmentShowUserNeedsToUploadMorePhotos()
     fun shouldStartLookingForPhotos()
+    fun getQueuedUpPhotos()
 }

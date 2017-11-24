@@ -22,5 +22,10 @@ data class UploadedPhoto(
             return UploadedPhoto(-1L, 0.0, 0.0, "",
                     "", "")
         }
+
+        fun fromTakenPhoto(takenPhoto: TakenPhoto): UploadedPhoto {
+            return UploadedPhoto(takenPhoto.id, takenPhoto.location.lon, takenPhoto.location.lat,
+                    takenPhoto.userId, "", takenPhoto.photoFilePath)
+        }
     }
 }

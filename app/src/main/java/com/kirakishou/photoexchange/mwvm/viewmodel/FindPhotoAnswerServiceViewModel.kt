@@ -80,7 +80,7 @@ class FindPhotoAnswerServiceViewModel(
                     else -> badResponseSubject.onNext(findPhotoErrorCode)
                 }
             } catch (error: Throwable) {
-                handleErrors(error)
+                onPhotoAnswerFoundSubject.onError(error)
             }
         }
     }

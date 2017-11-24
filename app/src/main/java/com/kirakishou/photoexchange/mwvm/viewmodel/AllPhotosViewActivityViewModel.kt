@@ -2,11 +2,13 @@ package com.kirakishou.photoexchange.mwvm.viewmodel
 
 import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mwvm.model.dto.PhotoAnswerAllFound
 import com.kirakishou.photoexchange.mwvm.model.other.Pageable
 import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
+import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.model.other.UploadedPhoto
 import com.kirakishou.photoexchange.mwvm.wires.errors.AllPhotosViewActivityViewModelErrors
 import com.kirakishou.photoexchange.mwvm.wires.inputs.AllPhotosViewActivityViewModelInputs
@@ -25,6 +27,7 @@ import java.util.concurrent.TimeUnit
 class AllPhotosViewActivityViewModel(
         private val uploadedPhotosRepository: UploadedPhotosRepository,
         private val photoAnswerRepository: PhotoAnswerRepository,
+        private val takenPhotosRepository: TakenPhotosRepository,
         private val schedulers: SchedulerProvider
 ) : BaseViewModel(),
         AllPhotosViewActivityViewModelInputs,
@@ -59,6 +62,7 @@ class AllPhotosViewActivityViewModel(
     private val showNoPhotoOnServerOutput = PublishSubject.create<Unit>()
     private val showUserNeedsToUploadMorePhotosOutput = PublishSubject.create<Unit>()
     private val startLookingForPhotosOutput = PublishSubject.create<Unit>()
+    private val onQueuedUpPhotosLoadedOutput = PublishSubject.create<List<TakenPhoto>>()
 
     //errors
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
@@ -160,14 +164,30 @@ class AllPhotosViewActivityViewModel(
 
     override fun shouldStartLookingForPhotos() {
         compositeJob += async {
-            val receivedCount = photoAnswerRepository.countAll().await()
-            val uploadedCount = uploadedPhotosRepository.countAll().await()
+            try {
+                val receivedCount = photoAnswerRepository.countAll().await()
+                val uploadedCount = uploadedPhotosRepository.countAll().await()
 
-            if (uploadedCount > receivedCount) {
-                Timber.d("uploadedCount GREATER THAN receivedCount")
-                startLookingForPhotosOutput.onNext(Unit)
-            } else {
-                Timber.d("uploadedCount LESS OR EQUALS THAN receivedCount")
+                if (uploadedCount > receivedCount) {
+                    Timber.d("uploadedCount GREATER THAN receivedCount")
+                    startLookingForPhotosOutput.onNext(Unit)
+                } else {
+                    Timber.d("uploadedCount LESS OR EQUALS THAN receivedCount")
+                }
+            } catch (error: Throwable) {
+                startLookingForPhotosOutput.onError(error)
+            }
+        }
+    }
+
+    override fun getQueuedUpPhotos() {
+        compositeJob += async {
+            try {
+                val queuedUpPhotos = takenPhotosRepository.findAllQueuedUp().await()
+                onQueuedUpPhotosLoadedOutput.onNext(queuedUpPhotos)
+
+            } catch (error: Throwable) {
+                onQueuedUpPhotosLoadedOutput.onError(error)
             }
         }
     }
@@ -194,6 +214,7 @@ class AllPhotosViewActivityViewModel(
     override fun onShowNoPhotoOnServerObservable(): Observable<Unit> = showNoPhotoOnServerOutput
     override fun onShowUserNeedsToUploadMorePhotosObservable(): Observable<Unit> = showUserNeedsToUploadMorePhotosOutput
     override fun onStartLookingForPhotosObservable(): Observable<Unit> = startLookingForPhotosOutput
+    override fun onQueuedUpPhotosLoadedObservable(): Observable<List<TakenPhoto>> = onQueuedUpPhotosLoadedOutput
     override fun onUnknownErrorObservable(): Observable<Throwable> = unknownErrorSubject
 }
 

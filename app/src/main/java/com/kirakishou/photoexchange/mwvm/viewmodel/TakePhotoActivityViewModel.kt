@@ -39,14 +39,10 @@ class TakePhotoActivityViewModel(
         compositeJob += async {
             try {
                 val takenPhotos = takenPhotosRepo.findAll().await()
-                FileUtils.deletePhotoFiles(takenPhotos)
+                FileUtils.deletePhotosFiles(takenPhotos)
 
                 takenPhotosRepo.deleteAll().await()
-
-                if (Constants.isDebugBuild) {
-                    val allPhotos = takenPhotosRepo.findAll().blockingGet()
-                    allPhotos.forEach { Timber.d("photo: $it") }
-                }
+                printTakenPhotoTable()
             } catch (error: Throwable) {
                 handleErrors(error)
             }
@@ -60,11 +56,18 @@ class TakePhotoActivityViewModel(
                         takenPhoto.photoFilePath, takenPhoto.userId).await()
                 val savedTakenPhoto = takenPhoto.copy(id)
 
+                printTakenPhotoTable()
                 onTakenPhotoSavedOutput.onNext(savedTakenPhoto)
-
             } catch (error: Throwable) {
-                handleErrors(error)
+                onTakenPhotoSavedOutput.onError(error)
             }
+        }
+    }
+
+    private suspend fun printTakenPhotoTable() {
+        if (Constants.isDebugBuild) {
+            val allPhotos = takenPhotosRepo.findAll().await()
+            allPhotos.forEach { Timber.d("photo: $it") }
         }
     }
 
