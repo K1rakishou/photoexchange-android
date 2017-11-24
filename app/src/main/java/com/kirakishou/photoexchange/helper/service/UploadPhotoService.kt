@@ -25,11 +25,15 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import org.greenrobot.eventbus.EventBus
 import android.app.NotificationManager
+import android.app.job.JobParameters
+import android.app.job.JobService
 import android.os.Build
+import android.os.PersistableBundle
 import android.support.annotation.RequiresApi
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 
 
-class UploadPhotoService : Service() {
+class UploadPhotoService : JobService() {
 
     @Inject
     lateinit var apiClient: ApiClient
@@ -43,8 +47,12 @@ class UploadPhotoService : Service() {
     @Inject
     lateinit var uploadedPhotosRepo: UploadedPhotosRepository
 
+    @Inject
+    lateinit var takenPhotosRepo: TakenPhotosRepository
+
     private var notificationManager: NotificationManager? = null
 
+    private var isRxInited = false
     private val compositeDisposable = CompositeDisposable()
     private lateinit var viewModel: UploadPhotoServiceViewModel
 
@@ -53,19 +61,75 @@ class UploadPhotoService : Service() {
 
         Fabric.with(this, Crashlytics())
         resolveDaggerDependency()
-
-        viewModel = UploadPhotoServiceViewModel(apiClient, schedulers, uploadedPhotosRepo)
-        initRx()
+        viewModel = UploadPhotoServiceViewModel(apiClient, schedulers, takenPhotosRepo, uploadedPhotosRepo)
     }
 
     override fun onDestroy() {
-        compositeDisposable.clear()
-        viewModel.cleanUp()
+        cleanUp()
 
         super.onDestroy()
     }
 
-    private fun initRx() {
+    private fun cleanUp() {
+        compositeDisposable.clear()
+        viewModel.cleanUp()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        return START_NOT_STICKY
+    }
+
+    private fun handleCommand(params: JobParameters) {
+        val bundle = params.extras
+        val commandRaw = bundle.getInt("command", -1)
+        check(commandRaw != -1)
+
+        val serviceCommand = ServiceCommand.from(commandRaw)
+        when (serviceCommand) {
+            ServiceCommand.SEND_PHOTO -> {
+                val id = bundle.getLong("id", -1L)
+                val lon = bundle.getDouble("lon", 0.0)
+                val lat = bundle.getDouble("lat", 0.0)
+                val userId = bundle.getString("user_id")
+                val photoFilePath = bundle.getString("photo_file_path")
+                val location = LonLat(lon, lat)
+                check(id != -1L)
+
+                viewModel.inputs.uploadPhoto(id, photoFilePath, location, userId)
+            }
+
+            else -> onUnknownError(params, IllegalArgumentException("Unknown serviceCommand: $serviceCommand"))
+        }
+    }
+
+    override fun onStartJob(params: JobParameters): Boolean {
+        Timber.d("UploadPhotoService onStartJob")
+
+        initRx(params)
+
+        try {
+            handleCommand(params)
+        } catch (error: Throwable) {
+            onUnknownError(params, error)
+            return false
+        }
+
+        //startAsForeground()
+        return true
+    }
+
+    override fun onStopJob(params: JobParameters): Boolean {
+        Timber.d("UploadPhotoService onStopJob")
+        return true
+    }
+
+    private fun initRx(params: JobParameters) {
+        if (isRxInited) {
+            return
+        }
+
+        isRxInited = true
+
         compositeDisposable += viewModel.outputs.onSendPhotoResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -79,38 +143,7 @@ class UploadPhotoService : Service() {
         compositeDisposable += viewModel.errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onUnknownError)
-    }
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent != null) {
-            handleCommand(intent)
-            startAsForeground()
-        }
-
-        return START_NOT_STICKY
-    }
-
-    private fun handleCommand(intent: Intent) {
-        val commandRaw = intent.getIntExtra("command", -1)
-        check(commandRaw != -1)
-
-        val serviceCommand = ServiceCommand.from(commandRaw)
-        when (serviceCommand) {
-            ServiceCommand.SEND_PHOTO -> {
-                val id = intent.getLongExtra("id", -1L)
-                val lon = intent.getDoubleExtra("lon", 0.0)
-                val lat = intent.getDoubleExtra("lat", 0.0)
-                val userId = intent.getStringExtra("user_id")
-                val photoFilePath = intent.getStringExtra("photo_file_path")
-                val location = LonLat(lon, lat)
-                check(id != -1L)
-
-                viewModel.inputs.uploadPhoto(id, photoFilePath, location, userId)
-            }
-
-            else -> onUnknownError(IllegalArgumentException("Unknown serviceCommand: $serviceCommand"))
-        }
+                .subscribe({ onUnknownError(params, it) })
     }
 
     private fun onSendPhotoResponseObservable(uploadedPhoto: UploadedPhoto) {
@@ -131,7 +164,7 @@ class UploadPhotoService : Service() {
         stopService()
     }
 
-    private fun onUnknownError(error: Throwable) {
+    private fun onUnknownError(params: JobParameters, error: Throwable) {
         Timber.d("Unknown error: $error")
 
         eventBus.post(PhotoUploadedEvent.fail())
@@ -268,8 +301,6 @@ class UploadPhotoService : Service() {
         }
         return notificationManager!!
     }
-
-    override fun onBind(intent: Intent): IBinder? = null
 
     private fun resolveDaggerDependency() {
         DaggerUploadPhotoServiceComponent
