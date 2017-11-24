@@ -3,7 +3,7 @@ package com.kirakishou.photoexchange.helper.api
 import com.google.gson.Gson
 import com.kirakishou.photoexchange.helper.api.request.FindPhotoAnswerRequest
 import com.kirakishou.photoexchange.helper.api.request.MarkPhotoAsReceivedRequest
-import com.kirakishou.photoexchange.helper.api.request.SendPhotoRequest
+import com.kirakishou.photoexchange.helper.api.request.UploadPhotoRequest
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mwvm.model.dto.PhotoToBeUploaded
 import com.kirakishou.photoexchange.mwvm.model.net.response.PhotoAnswerResponse
@@ -24,8 +24,8 @@ class ApiClientImpl
         protected val schedulers: SchedulerProvider
 ) : ApiClient {
 
-    override fun sendPhoto(info: PhotoToBeUploaded): Single<UploadPhotoResponse> {
-        return SendPhotoRequest(info, apiService, schedulers, gson)
+    override fun uploadPhoto(info: PhotoToBeUploaded): Single<UploadPhotoResponse> {
+        return UploadPhotoRequest(info, apiService, schedulers, gson)
                 .build()
     }
 

@@ -23,7 +23,7 @@ class TakenPhotosRepository(
 
     fun saveOne(lon: Double, lat: Double, photoFilePath: String, userId: String): Single<Long> {
         val resultSingle = Single.fromCallable {
-            takenPhotosDao.saveOne(TakenPhotoEntity.new(lon, lat, photoFilePath, userId))
+            takenPhotosDao.saveOne(TakenPhotoEntity.new(lon, lat, userId, photoFilePath))
         }
 
         return resultSingle

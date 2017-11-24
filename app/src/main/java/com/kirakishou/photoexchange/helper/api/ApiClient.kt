@@ -12,7 +12,7 @@ import retrofit2.http.Path
  * Created by kirakishou on 7/23/2017.
  */
 interface ApiClient {
-    fun sendPhoto(info: PhotoToBeUploaded): Single<UploadPhotoResponse>
+    fun uploadPhoto(info: PhotoToBeUploaded): Single<UploadPhotoResponse>
     fun findPhotoAnswer(userId: String): Single<PhotoAnswerResponse>
     fun markPhotoAsReceived(photoId: Long, userId: String): Single<StatusResponse>
 }

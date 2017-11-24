@@ -48,10 +48,13 @@ class UploadPhotoServiceViewModel(
         compositeJob += async {
             try {
                 val takenPhoto = takenPhotosRepo.findOne(id).await()
+                Timber.d("takenPhoto: $takenPhoto")
+                Timber.d("")
+
                 takenPhotosRepo.updateOneSetIsUploading(id, true).await()
 
                 val response = repeatRequest(MAX_ATTEMPTS, PhotoToBeUploaded(takenPhoto.photoFilePath, takenPhoto.location, takenPhoto.userId)) { arg ->
-                    apiClient.sendPhoto(arg).await()
+                    apiClient.uploadPhoto(arg).await()
                 }
 
                 if (response == null) {

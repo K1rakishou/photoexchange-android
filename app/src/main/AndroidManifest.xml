@@ -24,7 +24,7 @@
         <activity android:name="com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity" />
         <activity android:name="com.kirakishou.photoexchange.ui.activity.MapActivity" />
         <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewPhotoFullSizeActivity" />
-        
+
         <service
             android:name="com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService"
             android:exported="true"
