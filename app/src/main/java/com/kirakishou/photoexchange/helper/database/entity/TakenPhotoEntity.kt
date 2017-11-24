@@ -42,9 +42,16 @@ class TakenPhotoEntity(
 
     constructor() : this(0L, 0.0, 0.0, "", "", "", false, false, 0L)
 
+    fun isEmpty(): Boolean {
+        return id == -1L
+    }
+
     companion object {
         fun new(lon: Double, lat: Double, userId: String, photoFilePath: String) =
                 TakenPhotoEntity(0L, lon, lat, userId, "", photoFilePath, false, false, TimeUtils.getTimeFast())
+
+        fun empty() =
+                TakenPhotoEntity(-1L, 0.0, 0.0, "", "", "", false, false, 0L)
 
         const val TABLE_NAME = "taken_photos"
     }

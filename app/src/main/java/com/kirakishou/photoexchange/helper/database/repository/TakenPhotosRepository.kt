@@ -33,6 +33,7 @@ class TakenPhotosRepository(
 
     fun findOne(id: Long): Single<TakenPhoto> {
         return takenPhotosDao.findOne(id)
+                .onErrorReturn { TakenPhotoEntity() }
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .map(mapper::toTakenPhoto)

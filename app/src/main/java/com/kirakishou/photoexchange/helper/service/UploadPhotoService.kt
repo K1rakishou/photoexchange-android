@@ -144,7 +144,7 @@ class UploadPhotoService : JobService() {
         eventBus.post(PhotoUploadedEvent.fail())
 
         updateUploadingNotificationShowError()
-        finish(params, true)
+        finish(params, false)
     }
 
     private fun onUnknownError(params: JobParameters, error: Throwable) {
@@ -153,7 +153,7 @@ class UploadPhotoService : JobService() {
         eventBus.post(PhotoUploadedEvent.fail())
 
         updateUploadingNotificationShowError()
-        finish(params, true)
+        finish(params, false)
     }
 
     private fun finish(params: JobParameters, reschedule: Boolean) {

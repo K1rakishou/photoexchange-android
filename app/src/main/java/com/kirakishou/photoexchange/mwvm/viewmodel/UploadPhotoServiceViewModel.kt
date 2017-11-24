@@ -48,8 +48,7 @@ class UploadPhotoServiceViewModel(
         compositeJob += async {
             try {
                 val takenPhoto = takenPhotosRepo.findOne(id).await()
-                Timber.d("takenPhoto: $takenPhoto")
-                Timber.d("")
+                check(!takenPhoto.isEmpty())
 
                 takenPhotosRepo.updateOneSetIsUploading(id, true).await()
 
@@ -94,11 +93,12 @@ class UploadPhotoServiceViewModel(
     }
 
     private suspend fun <Argument, Result> repeatRequest(maxAttempts: Int, arg: Argument, block: suspend (arg: Argument) -> Result): Result? {
-        var attempts = maxAttempts
+        var attempt = maxAttempts
         var response: Result? = null
 
-        while (attempts-- > 0) {
+        while (attempt-- > 0) {
             try {
+                Timber.d("Trying to send request, attempt #$attempt")
                 response = block(arg)
                 return response!!
             } catch (error: Throwable) {
