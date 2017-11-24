@@ -296,20 +296,18 @@ class UploadPhotoService : JobService() {
     companion object {
         private val JOB_ID = 2
 
-        //TODO
-        private val IMMEDIATE_JOB_TYPE = 0
-
-        fun scheduleImmediateJob(userId: String, context: Context) {
+        fun scheduleImmediateJob(photoId: Long, context: Context) {
             val extras = PersistableBundle()
+            extras.putLong("id", photoId)
 
             val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, FindPhotoAnswerService::class.java))
-                    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_UNMETERED)
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
                     .setMinimumLatency(0)
                     .setOverrideDeadline(5_000)
                     .setExtras(extras)
-                    .setBackoffCriteria(2_000, JobInfo.BACKOFF_POLICY_LINEAR)
+                    .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_EXPONENTIAL)
                     .build()
 
             val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler

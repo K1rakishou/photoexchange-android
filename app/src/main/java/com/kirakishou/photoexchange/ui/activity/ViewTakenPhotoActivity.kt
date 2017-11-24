@@ -16,12 +16,12 @@ import com.kirakishou.photoexchange.di.component.DaggerViewTakenPhotoActivityCom
 import com.kirakishou.photoexchange.di.module.ViewTakenPhotoActivityModule
 import com.kirakishou.photoexchange.helper.service.UploadPhotoService
 import com.kirakishou.photoexchange.mwvm.model.other.LonLat
-import com.kirakishou.photoexchange.mwvm.model.other.ServiceCommand
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.viewmodel.ViewTakenPhotoActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.ViewTakenPhotoActivityViewModelFactory
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 
@@ -84,16 +84,9 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    startServiceToUploadPhoto()
+                    schedulePhotoUpload()
                     switchToAllPhotosViewActivity()
                 })
-    }
-
-    private fun deletePhoto() {
-        val photoFile = File(takenPhoto.photoFilePath)
-        if (photoFile.exists()) {
-            photoFile.delete()
-        }
     }
 
     private fun switchToAllPhotosViewActivity() {
@@ -103,16 +96,9 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
         finish()
     }
 
-    private fun startServiceToUploadPhoto() {
-        val intent = Intent(this, UploadPhotoService::class.java)
-        intent.putExtra("id", takenPhoto.id)
-        intent.putExtra("command", ServiceCommand.SEND_PHOTO.value)
-        intent.putExtra("lon", takenPhoto.location.lon)
-        intent.putExtra("lat", takenPhoto.location.lat)
-        intent.putExtra("user_id", takenPhoto.userId)
-        intent.putExtra("photo_file_path", takenPhoto.photoFilePath)
-
-        startService(intent)
+    private fun schedulePhotoUpload() {
+        UploadPhotoService.scheduleImmediateJob(takenPhoto.id, this)
+        Timber.d("UploadPhoto has been job scheduled")
     }
 
     private fun setPhotoPreview() {

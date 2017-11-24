@@ -198,7 +198,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
         compositeDisposable += photoAvailabilitySubject
                 .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
+                .observeOn(Schedulers.io())
                 .combineLatest(locationObservable)
                 .doOnError { unknownErrorsSubject.onNext(it) }
                 .map {
@@ -208,14 +208,12 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
                     return@map TakenPhoto(-1L, location, photoFilePath, userId, "")
                 }
-                .doOnNext { takenPhoto ->
-                    getViewModel().inputs.saveTakenPhoto(takenPhoto)
-                }
-                .zipWith(getViewModel().outputs.onTakenPhotoSavedObservable())
-                .map { it.second }
+                .subscribe({ getViewModel().inputs.saveTakenPhoto(it) }, this::onUnknownError)
+
+        compositeDisposable += getViewModel().outputs.onTakenPhotoSavedObservable()
                 .subscribe({ savedTakenPhoto ->
                     hideNotification()
-                    switchToViewTakenPhotoActivity(savedTakenPhoto.id, savedTakenPhoto.location, savedTakenPhoto.photoFilePath, savedTakenPhoto.userId)
+                    switchToViewTakenPhotoActivity(savedTakenPhoto.id)
                 })
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
@@ -229,13 +227,9 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         startActivity(intent)
     }
 
-    private fun switchToViewTakenPhotoActivity(id: Long, location: LonLat, photoFilePath: String, userId: String) {
+    private fun switchToViewTakenPhotoActivity(id: Long) {
         val intent = Intent(this, ViewTakenPhotoActivity::class.java)
         intent.putExtra("id", id)
-        intent.putExtra("lon", location.lon)
-        intent.putExtra("lat", location.lat)
-        intent.putExtra("photo_file_path", photoFilePath)
-        intent.putExtra("user_id", userId)
         startActivity(intent)
     }
 
