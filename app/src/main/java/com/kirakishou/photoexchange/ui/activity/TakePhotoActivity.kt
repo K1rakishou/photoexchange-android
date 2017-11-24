@@ -211,9 +211,10 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .subscribe({ getViewModel().inputs.saveTakenPhoto(it) }, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onTakenPhotoSavedObservable()
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ savedTakenPhoto ->
                     hideNotification()
-                    switchToViewTakenPhotoActivity(savedTakenPhoto.id)
+                    switchToViewTakenPhotoActivity(savedTakenPhoto.id, savedTakenPhoto.location, savedTakenPhoto.photoFilePath, savedTakenPhoto.userId)
                 })
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
@@ -227,9 +228,13 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         startActivity(intent)
     }
 
-    private fun switchToViewTakenPhotoActivity(id: Long) {
+    private fun switchToViewTakenPhotoActivity(id: Long, location: LonLat, photoFilePath: String, userId: String) {
         val intent = Intent(this, ViewTakenPhotoActivity::class.java)
         intent.putExtra("id", id)
+        intent.putExtra("lon", location.lon)
+        intent.putExtra("lat", location.lat)
+        intent.putExtra("photo_file_path", photoFilePath)
+        intent.putExtra("user_id", userId)
         startActivity(intent)
     }
 

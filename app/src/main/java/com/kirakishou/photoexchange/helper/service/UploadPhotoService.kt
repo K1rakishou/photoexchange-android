@@ -77,14 +77,6 @@ class UploadPhotoService : JobService() {
         return START_NOT_STICKY
     }
 
-    private fun handleCommand(params: JobParameters) {
-        val bundle = params.extras
-        val id = bundle.getLong("id", -1L)
-        check(id != -1L)
-
-        viewModel.inputs.uploadPhoto(id)
-    }
-
     override fun onStartJob(params: JobParameters): Boolean {
         Timber.d("UploadPhotoService onStartJob")
 
@@ -99,6 +91,14 @@ class UploadPhotoService : JobService() {
 
         //startAsForeground()
         return true
+    }
+
+    private fun handleCommand(params: JobParameters) {
+        val bundle = params.extras
+        val id = bundle.getLong("id", -1L)
+        check(id != -1L)
+
+        viewModel.inputs.uploadPhoto(id)
     }
 
     override fun onStopJob(params: JobParameters): Boolean {
@@ -300,7 +300,7 @@ class UploadPhotoService : JobService() {
             val extras = PersistableBundle()
             extras.putLong("id", photoId)
 
-            val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, FindPhotoAnswerService::class.java))
+            val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, UploadPhotoService::class.java))
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_UNMETERED)
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
