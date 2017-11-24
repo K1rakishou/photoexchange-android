@@ -17,7 +17,6 @@ import com.kirakishou.photoexchange.base.BaseAdapter
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
-import com.kirakishou.photoexchange.mwvm.model.other.UploadedPhoto
 import io.reactivex.subjects.PublishSubject
 import java.io.File
 
@@ -26,15 +25,15 @@ import java.io.File
  */
 class UploadedPhotosAdapter(
         private val context: Context,
-        private val retryButtonSubject: PublishSubject<UploadedPhoto>
-) : BaseAdapter<UploadedPhoto>(context) {
+        private val retryButtonSubject: PublishSubject<TakenPhoto>
+) : BaseAdapter<TakenPhoto>(context) {
 
     private val selector = UploadedPhotosIdSelectorFunction()
     private val duplicatesCheckerSet = mutableSetOf<Long>()
 
     private val noPhotosUploadedMessage: String = context.getString(R.string.no_photos_uploaded)
 
-    private fun isDuplicate(item: AdapterItem<UploadedPhoto>): Boolean {
+    private fun isDuplicate(item: AdapterItem<TakenPhoto>): Boolean {
         if (item.getType() != AdapterItemType.VIEW_ITEM.ordinal) {
             return false
         }
@@ -54,14 +53,14 @@ class UploadedPhotosAdapter(
         }
 
         val converted = queuedUpPhotosList
-                .map { takenPhoto -> AdapterItem(UploadedPhoto.fromTakenPhoto(takenPhoto), AdapterItemType.VIEW_ITEM) }
+                .map { takenPhoto -> AdapterItem(takenPhoto, AdapterItemType.VIEW_ITEM) }
                 .filter { convertedPhoto -> !isDuplicate(convertedPhoto) }
 
         items.addAll(index, converted)
         notifyItemRangeInserted(index, converted.size)
     }
 
-    fun addFirst(item: AdapterItem<UploadedPhoto>) {
+    fun addFirst(item: AdapterItem<TakenPhoto>) {
         if (isDuplicate(item)) {
             return
         }
@@ -70,7 +69,7 @@ class UploadedPhotosAdapter(
         notifyItemInserted(0)
     }
 
-    override fun add(item: AdapterItem<UploadedPhoto>) {
+    override fun add(item: AdapterItem<TakenPhoto>) {
         if (isDuplicate(item)) {
             return
         }
@@ -78,7 +77,7 @@ class UploadedPhotosAdapter(
         super.add(item)
     }
 
-    override fun addAll(items: List<AdapterItem<UploadedPhoto>>) {
+    override fun addAll(items: List<AdapterItem<TakenPhoto>>) {
         super.addAll(items.filter { isDuplicate(it) })
     }
 
@@ -264,7 +263,7 @@ class UploadedPhotosAdapter(
     }
 
     inner class UploadedPhotosIdSelectorFunction {
-        fun select(item: UploadedPhoto): Long = item.id
+        fun select(item: TakenPhoto): Long = item.id
     }
 }
 

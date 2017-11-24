@@ -4,22 +4,16 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.helper.CompositeJob
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.mwvm.model.dto.PhotoToBeUploaded
+import com.kirakishou.photoexchange.mwvm.model.exception.ApiException
+import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
+import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.wires.errors.UploadPhotoServiceErrors
 import com.kirakishou.photoexchange.mwvm.wires.inputs.UploadPhotoServiceInputs
 import com.kirakishou.photoexchange.mwvm.wires.outputs.UploadPhotoServiceOutputs
-import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
-import com.kirakishou.photoexchange.mwvm.model.other.LonLat
-import com.kirakishou.photoexchange.mwvm.model.other.UploadedPhoto
-import com.kirakishou.photoexchange.mwvm.model.dto.PhotoToBeUploaded
-import com.kirakishou.photoexchange.mwvm.model.exception.ApiException
-import com.kirakishou.photoexchange.mwvm.model.net.response.StatusResponse
-import com.kirakishou.photoexchange.mwvm.model.net.response.UploadPhotoResponse
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.rxkotlin.Observables
-import io.reactivex.rxkotlin.zipWith
 import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.rx2.await
@@ -33,8 +27,7 @@ import timber.log.Timber
 class UploadPhotoServiceViewModel(
         private val apiClient: ApiClient,
         private val schedulers: SchedulerProvider,
-        private val takenPhotosRepo: TakenPhotosRepository,
-        private val uploadedPhotosRepo: UploadedPhotosRepository
+        private val takenPhotosRepo: TakenPhotosRepository
 ) : UploadPhotoServiceInputs,
         UploadPhotoServiceOutputs,
         UploadPhotoServiceErrors {
@@ -47,16 +40,17 @@ class UploadPhotoServiceViewModel(
     private val compositeJob = CompositeJob()
     private val MAX_ATTEMPTS = 3
 
-    private val sendPhotoResponseSubject = PublishSubject.create<UploadedPhoto>()
+    private val sendPhotoResponseSubject = PublishSubject.create<TakenPhoto>()
     private val badResponseSubject = PublishSubject.create<ServerErrorCode>()
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
 
-    override fun uploadPhoto(id: Long, photoFilePath: String, location: LonLat, userId: String) {
+    override fun uploadPhoto(id: Long) {
         compositeJob += async {
             try {
+                val takenPhoto = takenPhotosRepo.findOne(id).await()
                 takenPhotosRepo.updateOneSetIsUploading(id, true).await()
 
-                val response = repeatRequest(MAX_ATTEMPTS, PhotoToBeUploaded(photoFilePath, location, userId)) { arg ->
+                val response = repeatRequest(MAX_ATTEMPTS, PhotoToBeUploaded(takenPhoto.photoFilePath, takenPhoto.location, takenPhoto.userId)) { arg ->
                     apiClient.sendPhoto(arg).await()
                 }
 
@@ -73,12 +67,11 @@ class UploadPhotoServiceViewModel(
                     return@async
                 }
 
-                val photoId = uploadedPhotosRepo.saveOne(id, location.lon, location.lat, userId, photoFilePath, response.photoName).await()
-                val uploadedPhoto = UploadedPhoto(photoId, location.lon, location.lat, userId, response.photoName, photoFilePath)
+                takenPhotosRepo.updateOneSetUploaded(id, response.photoName).await()
 
-                sendPhotoResponseSubject.onNext(uploadedPhoto)
+                takenPhoto.photoName = response.photoName
+                sendPhotoResponseSubject.onNext(takenPhoto)
             } catch (error: Throwable) {
-                //handleErrors(error)
                 sendPhotoResponseSubject.onError(error)
             }
         }
@@ -113,7 +106,7 @@ class UploadPhotoServiceViewModel(
         return null
     }
 
-    override fun onSendPhotoResponseObservable(): Observable<UploadedPhoto> = sendPhotoResponseSubject
+    override fun onUploadPhotoResponseObservable(): Observable<TakenPhoto> = sendPhotoResponseSubject
     override fun onBadResponseObservable(): Observable<ServerErrorCode> = badResponseSubject
     override fun onUnknownErrorObservable(): Observable<Throwable> = unknownErrorSubject
 }

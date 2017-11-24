@@ -4,23 +4,19 @@ import android.arch.persistence.room.Database
 import android.arch.persistence.room.RoomDatabase
 import com.kirakishou.photoexchange.helper.database.dao.PhotoAnswerDao
 import com.kirakishou.photoexchange.helper.database.dao.TakenPhotosDao
-import com.kirakishou.photoexchange.helper.database.dao.UploadedPhotosDao
 import com.kirakishou.photoexchange.helper.database.entity.PhotoAnswerEntity
 import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
-import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
 
 /**
  * Created by kirakishou on 9/12/2017.
  */
 
 @Database(entities = arrayOf(
-        UploadedPhotoEntity::class,
         TakenPhotoEntity::class,
         PhotoAnswerEntity::class
 ), version = 1)
 abstract class MyDatabase : RoomDatabase() {
 
-    abstract fun uploadedPhotosDao(): UploadedPhotosDao
     abstract fun takenPhotosDao(): TakenPhotosDao
     abstract fun photoAnswerDao(): PhotoAnswerDao
 

@@ -3,13 +3,11 @@ package com.kirakishou.photoexchange.mwvm.viewmodel
 import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mwvm.model.dto.PhotoAnswerAllFound
 import com.kirakishou.photoexchange.mwvm.model.other.Pageable
 import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
-import com.kirakishou.photoexchange.mwvm.model.other.UploadedPhoto
 import com.kirakishou.photoexchange.mwvm.wires.errors.AllPhotosViewActivityViewModelErrors
 import com.kirakishou.photoexchange.mwvm.wires.inputs.AllPhotosViewActivityViewModelInputs
 import com.kirakishou.photoexchange.mwvm.wires.outputs.AllPhotosViewActivityViewModelOutputs
@@ -25,7 +23,6 @@ import java.util.concurrent.TimeUnit
  * Created by kirakishou on 11/7/2017.
  */
 class AllPhotosViewActivityViewModel(
-        private val uploadedPhotosRepository: UploadedPhotosRepository,
         private val photoAnswerRepository: PhotoAnswerRepository,
         private val takenPhotosRepository: TakenPhotosRepository,
         private val schedulers: SchedulerProvider
@@ -43,7 +40,6 @@ class AllPhotosViewActivityViewModel(
     private val fetchOnePageReceivedPhotosSubject = PublishSubject.create<Pageable>()
     private val scrollToTopInput = PublishSubject.create<Unit>()
     private val showLookingForPhotoIndicatorInput = PublishSubject.create<Unit>()
-    private val showPhotoUploadedInput = PublishSubject.create<UploadedPhoto>()
     private val showFailedToUploadPhotoInput = PublishSubject.create<Unit>()
     private val showPhotoReceivedInput = PublishSubject.create<PhotoAnswerAllFound>()
     private val showErrorWhileTryingToLookForPhotoInput = PublishSubject.create<Unit>()
@@ -51,11 +47,11 @@ class AllPhotosViewActivityViewModel(
     private val showUserNeedsToUploadMorePhotosInput = PublishSubject.create<Unit>()
 
     //outputs
-    private val onUploadedPhotosPageReceivedSubject = PublishSubject.create<List<UploadedPhoto>>()
+    private val onUploadedPhotosPageReceivedSubject = PublishSubject.create<List<TakenPhoto>>()
     private val onReceivedPhotosPageReceivedSubject = PublishSubject.create<List<PhotoAnswer>>()
     private val scrollToTopOutput = PublishSubject.create<Unit>()
     private val showLookingForPhotoIndicatorOutput = PublishSubject.create<Unit>()
-    private val showPhotoUploadedOutput = PublishSubject.create<UploadedPhoto>()
+    private val showPhotoUploadedOutput = PublishSubject.create<TakenPhoto>()
     private val showFailedToUploadPhotoOutput = PublishSubject.create<Unit>()
     private val showPhotoReceivedOutput = PublishSubject.create<PhotoAnswerAllFound>()
     private val showErrorWhileTryingToLookForPhotoOutput = PublishSubject.create<Unit>()
@@ -71,7 +67,7 @@ class AllPhotosViewActivityViewModel(
         compositeDisposable += fetchOnePageUploadedPhotosSubject
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
-                .flatMap(uploadedPhotosRepository::findOnePage)
+                .flatMap(takenPhotosRepository::findOnePage)
                 .subscribe(onUploadedPhotosPageReceivedSubject::onNext, this::handleErrors)
 
         compositeDisposable += fetchOnePageReceivedPhotosSubject
@@ -90,11 +86,6 @@ class AllPhotosViewActivityViewModel(
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .subscribe(showLookingForPhotoIndicatorOutput::onNext, this::handleErrors)
-
-        compositeDisposable += showPhotoUploadedInput
-                .subscribeOn(schedulers.provideIo())
-                .observeOn(schedulers.provideIo())
-                .subscribe(showPhotoUploadedOutput::onNext, this::handleErrors)
 
         compositeDisposable += showFailedToUploadPhotoInput
                 .subscribeOn(schedulers.provideIo())
@@ -138,8 +129,15 @@ class AllPhotosViewActivityViewModel(
         showLookingForPhotoIndicatorInput.onNext(Unit)
     }
 
-    override fun uploadedPhotosFragmentShowPhotoUploaded(photo: UploadedPhoto) {
-        showPhotoUploadedInput.onNext(photo)
+    override fun uploadedPhotosFragmentShowPhotoUploaded(photoId: Long) {
+        compositeJob += async {
+            try {
+                val photo = takenPhotosRepository.findOne(photoId).await()
+                showPhotoUploadedOutput.onNext(photo)
+            } catch (error: Throwable) {
+                showPhotoUploadedOutput.onError(error)
+            }
+        }
     }
 
     override fun uploadedPhotosFragmentShowFailedToUploadPhoto() {
@@ -166,7 +164,7 @@ class AllPhotosViewActivityViewModel(
         compositeJob += async {
             try {
                 val receivedCount = photoAnswerRepository.countAll().await()
-                val uploadedCount = uploadedPhotosRepository.countAll().await()
+                val uploadedCount = takenPhotosRepository.countAll().await()
 
                 if (uploadedCount > receivedCount) {
                     Timber.d("uploadedCount GREATER THAN receivedCount")
@@ -203,11 +201,11 @@ class AllPhotosViewActivityViewModel(
         super.onCleared()
     }
 
-    override fun onUploadedPhotosPageReceivedObservable(): Observable<List<UploadedPhoto>> = onUploadedPhotosPageReceivedSubject
+    override fun onUploadedPhotosPageReceivedObservable(): Observable<List<TakenPhoto>> = onUploadedPhotosPageReceivedSubject
     override fun onReceivedPhotosPageReceivedObservable(): Observable<List<PhotoAnswer>> = onReceivedPhotosPageReceivedSubject
     override fun onScrollToTopObservable(): Observable<Unit> = scrollToTopOutput
     override fun onShowLookingForPhotoIndicatorObservable(): Observable<Unit> = showLookingForPhotoIndicatorOutput
-    override fun onShowPhotoUploadedOutputObservable(): Observable<UploadedPhoto> = showPhotoUploadedOutput
+    override fun onShowPhotoUploadedOutputObservable(): Observable<TakenPhoto> = showPhotoUploadedOutput
     override fun onShowFailedToUploadPhotoObservable(): Observable<Unit> = showFailedToUploadPhotoOutput
     override fun onShowPhotoReceivedObservable(): Observable<PhotoAnswerAllFound> = showPhotoReceivedOutput
     override fun onShowErrorWhileTryingToLookForPhotoObservable(): Observable<Unit> = showErrorWhileTryingToLookForPhotoOutput

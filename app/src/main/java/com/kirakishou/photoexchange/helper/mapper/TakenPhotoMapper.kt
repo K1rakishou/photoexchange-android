@@ -14,7 +14,8 @@ class TakenPhotoMapper : Mapper {
                 entity.id,
                 LonLat(entity.lon, entity.lat),
                 entity.photoFilePath,
-                entity.userId
+                entity.userId,
+                entity.photoName
         )
     }
 

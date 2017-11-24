@@ -2,7 +2,6 @@ package com.kirakishou.photoexchange.helper.service
 
 import android.app.*
 import android.content.Intent
-import android.os.IBinder
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
@@ -14,7 +13,6 @@ import android.support.v4.app.NotificationCompat
 import com.crashlytics.android.Crashlytics
 import com.kirakishou.photoexchange.di.component.DaggerUploadPhotoServiceComponent
 import com.kirakishou.photoexchange.di.module.*
-import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mwvm.model.event.PhotoUploadedEvent
 import com.kirakishou.photoexchange.mwvm.model.other.*
@@ -25,8 +23,11 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import org.greenrobot.eventbus.EventBus
 import android.app.NotificationManager
+import android.app.job.JobInfo
 import android.app.job.JobParameters
+import android.app.job.JobScheduler
 import android.app.job.JobService
+import android.content.ComponentName
 import android.os.Build
 import android.os.PersistableBundle
 import android.support.annotation.RequiresApi
@@ -45,9 +46,6 @@ class UploadPhotoService : JobService() {
     lateinit var eventBus: EventBus
 
     @Inject
-    lateinit var uploadedPhotosRepo: UploadedPhotosRepository
-
-    @Inject
     lateinit var takenPhotosRepo: TakenPhotosRepository
 
     private var notificationManager: NotificationManager? = null
@@ -61,7 +59,7 @@ class UploadPhotoService : JobService() {
 
         Fabric.with(this, Crashlytics())
         resolveDaggerDependency()
-        viewModel = UploadPhotoServiceViewModel(apiClient, schedulers, takenPhotosRepo, uploadedPhotosRepo)
+        viewModel = UploadPhotoServiceViewModel(apiClient, schedulers, takenPhotosRepo)
     }
 
     override fun onDestroy() {
@@ -81,25 +79,10 @@ class UploadPhotoService : JobService() {
 
     private fun handleCommand(params: JobParameters) {
         val bundle = params.extras
-        val commandRaw = bundle.getInt("command", -1)
-        check(commandRaw != -1)
+        val id = bundle.getLong("id", -1L)
+        check(id != -1L)
 
-        val serviceCommand = ServiceCommand.from(commandRaw)
-        when (serviceCommand) {
-            ServiceCommand.SEND_PHOTO -> {
-                val id = bundle.getLong("id", -1L)
-                val lon = bundle.getDouble("lon", 0.0)
-                val lat = bundle.getDouble("lat", 0.0)
-                val userId = bundle.getString("user_id")
-                val photoFilePath = bundle.getString("photo_file_path")
-                val location = LonLat(lon, lat)
-                check(id != -1L)
-
-                viewModel.inputs.uploadPhoto(id, photoFilePath, location, userId)
-            }
-
-            else -> onUnknownError(params, IllegalArgumentException("Unknown serviceCommand: $serviceCommand"))
-        }
+        viewModel.inputs.uploadPhoto(id)
     }
 
     override fun onStartJob(params: JobParameters): Boolean {
@@ -130,15 +113,15 @@ class UploadPhotoService : JobService() {
 
         isRxInited = true
 
-        compositeDisposable += viewModel.outputs.onSendPhotoResponseObservable()
+        compositeDisposable += viewModel.outputs.onUploadPhotoResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onSendPhotoResponseObservable)
+                .subscribe({ onSendPhotoResponseObservable(params, it) })
 
         compositeDisposable += viewModel.errors.onBadResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onBadResponse)
+                .subscribe({ onBadResponse(params, it) })
 
         compositeDisposable += viewModel.errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -146,22 +129,22 @@ class UploadPhotoService : JobService() {
                 .subscribe({ onUnknownError(params, it) })
     }
 
-    private fun onSendPhotoResponseObservable(uploadedPhoto: UploadedPhoto) {
-        Timber.d("onSendPhotoResponseObservable() photoName: ${uploadedPhoto.photoName}")
+    private fun onSendPhotoResponseObservable(params: JobParameters, takenPhoto: TakenPhoto) {
+        Timber.d("onUploadPhotoResponseObservable() photoName: ${takenPhoto.photoName}")
 
-        eventBus.post(PhotoUploadedEvent.success(uploadedPhoto))
+        eventBus.post(PhotoUploadedEvent.success(takenPhoto.id))
 
         updateUploadingNotificationShowSuccess()
-        stopService()
+        finish(params, false)
     }
 
-    private fun onBadResponse(errorCode: ServerErrorCode) {
+    private fun onBadResponse(params: JobParameters, errorCode: ServerErrorCode) {
         Timber.d("BadResponse: errorCode: $errorCode")
 
         eventBus.post(PhotoUploadedEvent.fail())
 
         updateUploadingNotificationShowError()
-        stopService()
+        finish(params, true)
     }
 
     private fun onUnknownError(params: JobParameters, error: Throwable) {
@@ -170,18 +153,11 @@ class UploadPhotoService : JobService() {
         eventBus.post(PhotoUploadedEvent.fail())
 
         updateUploadingNotificationShowError()
-        stopService()
+        finish(params, true)
     }
 
-    private fun stopService() {
-        Timber.d("Stopping service")
-
-        stopForeground(false)
-    }
-
-    private fun startAsForeground() {
-        val notification = createNotificationUploading()
-        startForeground(Constants.NOTIFICATION_ID, notification)
+    private fun finish(params: JobParameters, reschedule: Boolean) {
+        jobFinished(params, reschedule)
     }
 
     private fun updateUploadingNotificationShowSuccess() {
@@ -315,5 +291,32 @@ class UploadPhotoService : JobService() {
                 .mapperModule(MapperModule())
                 .build()
                 .inject(this)
+    }
+
+    companion object {
+        private val JOB_ID = 2
+
+        //TODO
+        private val IMMEDIATE_JOB_TYPE = 0
+
+        fun scheduleImmediateJob(userId: String, context: Context) {
+            val extras = PersistableBundle()
+
+            val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, FindPhotoAnswerService::class.java))
+                    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                    .setRequiresDeviceIdle(false)
+                    .setRequiresCharging(false)
+                    .setMinimumLatency(0)
+                    .setOverrideDeadline(5_000)
+                    .setExtras(extras)
+                    .setBackoffCriteria(2_000, JobInfo.BACKOFF_POLICY_LINEAR)
+                    .build()
+
+            val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
+            jobScheduler.cancel(JOB_ID)
+            val result = jobScheduler.schedule(jobInfo)
+
+            check(result == JobScheduler.RESULT_SUCCESS)
+        }
     }
 }

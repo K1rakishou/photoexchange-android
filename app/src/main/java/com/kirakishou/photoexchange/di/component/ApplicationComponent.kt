@@ -8,7 +8,6 @@ import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import dagger.Component
 import org.greenrobot.eventbus.EventBus
@@ -36,7 +35,6 @@ interface ApplicationComponent {
     fun exposeSchedulers(): SchedulerProvider
     fun exposeSharedPreferences(): SharedPreferences
     fun exposeDatabase(): MyDatabase
-    fun exposeUploadedPhotosRepository(): UploadedPhotosRepository
     fun exposeTakenPhotosRepository(): TakenPhotosRepository
     fun exposePhotoAnswerRepository(): PhotoAnswerRepository
     fun exposeEventBust(): EventBus

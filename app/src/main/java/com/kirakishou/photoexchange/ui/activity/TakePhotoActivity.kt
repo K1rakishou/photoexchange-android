@@ -206,7 +206,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                     val location = it.second
                     val userId = userInfoPreference.getUserId()
 
-                    return@map TakenPhoto(-1L, location, photoFilePath, userId)
+                    return@map TakenPhoto(-1L, location, photoFilePath, userId, "")
                 }
                 .doOnNext { takenPhoto ->
                     getViewModel().inputs.saveTakenPhoto(takenPhoto)

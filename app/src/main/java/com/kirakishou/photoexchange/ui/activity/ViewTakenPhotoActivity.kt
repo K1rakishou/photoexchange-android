@@ -136,7 +136,7 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
         check(photoFilePath.isNotEmpty())
         check(userId.isNotEmpty())
 
-        takenPhoto = TakenPhoto(id, LonLat(lon, lat), photoFilePath, userId)
+        takenPhoto = TakenPhoto(id, LonLat(lon, lat), photoFilePath, userId, "")
     }
 
     override fun resolveDaggerDependency() {

@@ -2,7 +2,6 @@ package com.kirakishou.photoexchange.di.module
 
 import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.TakePhotoActivityViewModelFactory
 import dagger.Module
@@ -17,9 +16,8 @@ class TakePhotoActivityModule {
 
     @PerActivity
     @Provides
-    fun provideViewModelFactory(uploadedPhotosRepository: UploadedPhotosRepository,
-                                schedulers: SchedulerProvider,
+    fun provideViewModelFactory(schedulers: SchedulerProvider,
                                 takenPhotosRepo: TakenPhotosRepository): TakePhotoActivityViewModelFactory {
-        return TakePhotoActivityViewModelFactory(uploadedPhotosRepository, takenPhotosRepo, schedulers)
+        return TakePhotoActivityViewModelFactory(takenPhotosRepo, schedulers)
     }
 }

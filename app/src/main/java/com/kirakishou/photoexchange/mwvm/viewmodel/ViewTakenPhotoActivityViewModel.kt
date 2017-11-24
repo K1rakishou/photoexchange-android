@@ -2,7 +2,6 @@ package com.kirakishou.photoexchange.mwvm.viewmodel
 
 import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.mwvm.wires.errors.ViewTakenPhotoActivityViewModelErrors
@@ -17,7 +16,6 @@ import timber.log.Timber
  */
 class ViewTakenPhotoActivityViewModel(
         private val takenPhotosRepo: TakenPhotosRepository,
-        private val uploadedPhotosRepo: UploadedPhotosRepository,
         private val schedulers: SchedulerProvider
 ) : BaseViewModel(),
         ViewTakenPhotoActivityViewModelInputs,
