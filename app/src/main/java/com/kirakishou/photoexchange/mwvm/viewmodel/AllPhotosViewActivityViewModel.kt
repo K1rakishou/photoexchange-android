@@ -181,7 +181,7 @@ class AllPhotosViewActivityViewModel(
 
     override fun getQueuedUpPhotos() {
         compositeJob += async {
-            delay(200, TimeUnit.MILLISECONDS)
+            delay(500, TimeUnit.MILLISECONDS)
 
             try {
                 val queuedUpPhotos = takenPhotosRepository.findAllQueuedUp().await()
