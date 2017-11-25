@@ -29,7 +29,6 @@ import android.app.job.JobScheduler
 import android.app.job.JobService
 import android.content.ComponentName
 import android.os.Build
-import android.os.PersistableBundle
 import android.support.annotation.RequiresApi
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.util.NetUtils
@@ -101,11 +100,7 @@ class UploadPhotoService : JobService() {
     }
 
     private fun handleCommand(params: JobParameters) {
-        val bundle = params.extras
-        val id = bundle.getLong("id", -1L)
-        check(id != -1L)
-
-        viewModel.inputs.uploadPhoto(id)
+        viewModel.inputs.uploadPhotos()
     }
 
     override fun onStopJob(params: JobParameters): Boolean {
@@ -123,7 +118,7 @@ class UploadPhotoService : JobService() {
         compositeDisposable += viewModel.outputs.onUploadPhotoResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onSendPhotoResponseObservable(params, it) })
+                .subscribe({ onUploadPhotoResponse(params, it) })
 
         compositeDisposable += viewModel.errors.onBadResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -136,7 +131,12 @@ class UploadPhotoService : JobService() {
                 .subscribe({ onUnknownError(params, it) })
     }
 
-    private fun onSendPhotoResponseObservable(params: JobParameters, takenPhoto: TakenPhoto) {
+    private fun onUploadPhotoResponse(params: JobParameters, takenPhoto: TakenPhoto) {
+        if (takenPhoto.isEmpty()) {
+            finish(params, false)
+            return
+        }
+
         Timber.d("onUploadPhotoResponseObservable() photoName: ${takenPhoto.photoName}")
 
         eventBus.post(PhotoUploadedEvent.success(takenPhoto.id))
@@ -303,17 +303,13 @@ class UploadPhotoService : JobService() {
     companion object {
         private val JOB_ID = 2
 
-        fun scheduleImmediateJob(photoId: Long, context: Context) {
-            val extras = PersistableBundle()
-            extras.putLong("id", photoId)
-
+        fun scheduleImmediateJob(context: Context) {
             val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, UploadPhotoService::class.java))
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_UNMETERED)
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
                     .setMinimumLatency(0)
                     .setOverrideDeadline(5_000)
-                    .setExtras(extras)
                     .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_EXPONENTIAL)
                     .build()
 

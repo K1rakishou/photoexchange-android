@@ -44,39 +44,47 @@ class UploadPhotoServiceViewModel(
     private val badResponseSubject = PublishSubject.create<ServerErrorCode>()
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
 
-    override fun uploadPhoto(id: Long) {
+    override fun uploadPhotos() {
         compositeJob += async {
             try {
-                val takenPhoto = takenPhotosRepo.findOne(id).await()
-                check(!takenPhoto.isEmpty())
-
-                takenPhotosRepo.updateOneSetIsUploading(id, true).await()
-
-                val response = repeatRequest(MAX_ATTEMPTS, PhotoToBeUploaded(takenPhoto.photoFilePath, takenPhoto.location, takenPhoto.userId)) { arg ->
-                    apiClient.uploadPhoto(arg).await()
+                val queuedUpPhotos = takenPhotosRepo.findAllQueuedUp().await()
+                if (queuedUpPhotos.isNotEmpty()) {
+                    for (queuedUpPhoto in queuedUpPhotos) {
+                        uploadPhoto(queuedUpPhoto)
+                    }
+                } else {
+                    sendPhotoResponseSubject.onNext(TakenPhoto.empty())
                 }
-
-                if (response == null) {
-                    unknownErrorSubject.onNext(ApiException(ServerErrorCode.UNKNOWN_ERROR))
-                    return@async
-                }
-
-                val errorCode = ServerErrorCode.from(response.serverErrorCode)
-                Timber.d("Received response, serverErrorCode: $errorCode")
-
-                if (errorCode != ServerErrorCode.OK) {
-                    badResponseSubject.onNext(errorCode)
-                    return@async
-                }
-
-                takenPhotosRepo.updateOneSetUploaded(id, response.photoName).await()
-
-                takenPhoto.photoName = response.photoName
-                sendPhotoResponseSubject.onNext(takenPhoto)
             } catch (error: Throwable) {
                 sendPhotoResponseSubject.onError(error)
             }
         }
+    }
+
+    private suspend fun uploadPhoto(queuedUpPhoto: TakenPhoto) {
+        takenPhotosRepo.updateOneSetIsUploading(queuedUpPhoto.id, true).await()
+
+        val response = repeatRequest(MAX_ATTEMPTS, PhotoToBeUploaded(queuedUpPhoto.photoFilePath, queuedUpPhoto.location, queuedUpPhoto.userId)) { arg ->
+            apiClient.uploadPhoto(arg).await()
+        }
+
+        if (response == null) {
+            unknownErrorSubject.onNext(ApiException(ServerErrorCode.UNKNOWN_ERROR))
+            return
+        }
+
+        val errorCode = ServerErrorCode.from(response.serverErrorCode)
+        Timber.d("Received response, serverErrorCode: $errorCode")
+
+        if (errorCode != ServerErrorCode.OK) {
+            badResponseSubject.onNext(errorCode)
+            return
+        }
+
+        takenPhotosRepo.updateOneSetUploaded(queuedUpPhoto.id, response.photoName).await()
+
+        queuedUpPhoto.photoName = response.photoName
+        sendPhotoResponseSubject.onNext(queuedUpPhoto)
     }
 
     private fun handleErrors(error: Throwable) {

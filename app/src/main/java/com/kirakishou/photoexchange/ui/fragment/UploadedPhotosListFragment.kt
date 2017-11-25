@@ -11,6 +11,8 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseFragment
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
+import com.kirakishou.photoexchange.di.module.UploadPhotoServiceModule
+import com.kirakishou.photoexchange.helper.service.UploadPhotoService
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
@@ -228,6 +230,8 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
             adapter.runOnAdapterHandler {
                 adapter.addQueuedUpPhotos(queuedUpPhotosList)
             }
+        } else {
+            //TODO: add message saying user should upload a photo first
         }
 
         recyclerStartLoadingItems()
