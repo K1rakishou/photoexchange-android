@@ -120,6 +120,11 @@ class UploadPhotoService : JobService() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ onUploadPhotoResponse(params, it) })
 
+        compositeDisposable += viewModel.outputs.onAllPhotosUploadedObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ onAllPhotosUploaded(params) })
+
         compositeDisposable += viewModel.errors.onBadResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -131,18 +136,21 @@ class UploadPhotoService : JobService() {
                 .subscribe({ onUnknownError(params, it) })
     }
 
+    private fun onAllPhotosUploaded(params: JobParameters) {
+        Timber.d("onAllPhotosUploaded()")
+
+        updateUploadingNotificationShowSuccess()
+        finish(params, false)
+    }
+
     private fun onUploadPhotoResponse(params: JobParameters, takenPhoto: TakenPhoto) {
         if (takenPhoto.isEmpty()) {
             finish(params, false)
             return
         }
 
-        Timber.d("onUploadPhotoResponseObservable() photoName: ${takenPhoto.photoName}")
-
+        Timber.d("onUploadPhotoResponse() photoName: ${takenPhoto.photoName}")
         eventBus.post(PhotoUploadedEvent.success(takenPhoto.id))
-
-        updateUploadingNotificationShowSuccess()
-        finish(params, false)
     }
 
     private fun onBadResponse(params: JobParameters, errorCode: ServerErrorCode) {
