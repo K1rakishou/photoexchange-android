@@ -111,7 +111,7 @@ class UploadPhotoServiceViewModel(
                 response = block(arg)
                 return response!!
             } catch (error: Throwable) {
-                Timber.d(error)
+                Timber.e(error)
             }
         }
 
