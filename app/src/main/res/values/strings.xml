@@ -13,5 +13,6 @@
     <string name="looking_for_your_photo_text">Looking for your photo...</string>
     <string name="photo_is_uploading_text">Photo is uploading...</string>
     <string name="could_not_upload_a_photo_text">Could not upload a photo</string>
-    <string name="photo_is_queued_up_to_upload">Photo is queued up to upload</string>
+    <string name="waiting_for_wifi">Waiting for Wi-Fi...</string>
+    <string name="cancel_title">CANCEL</string>
 </resources>

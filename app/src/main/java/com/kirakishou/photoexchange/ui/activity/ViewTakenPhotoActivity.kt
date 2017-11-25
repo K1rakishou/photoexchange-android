@@ -84,7 +84,6 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    schedulePhotoUpload()
                     switchToAllPhotosViewActivity()
                 })
     }
@@ -94,11 +93,6 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
         intent.putExtra("is_photo_uploading", true)
         startActivity(intent)
         finish()
-    }
-
-    private fun schedulePhotoUpload() {
-        UploadPhotoService.scheduleImmediateJob(takenPhoto.id, this)
-        Timber.d("UploadPhoto has been job scheduled")
     }
 
     private fun setPhotoPreview() {

@@ -10,7 +10,7 @@ import com.kirakishou.photoexchange.helper.util.TimeUtils
  */
 
 @Entity(tableName = TakenPhotoEntity.TABLE_NAME)
-class TakenPhotoEntity(
+data class TakenPhotoEntity(
         @PrimaryKey(autoGenerate = true)
         @ColumnInfo(name = "id")
         var id: Long,
@@ -47,8 +47,8 @@ class TakenPhotoEntity(
     }
 
     companion object {
-        fun new(lon: Double, lat: Double, userId: String, photoFilePath: String) =
-                TakenPhotoEntity(0L, lon, lat, userId, "", photoFilePath, false, false, TimeUtils.getTimeFast())
+        fun new(lon: Double, lat: Double, userId: String, photoFilePath: String, isUploading: Boolean) =
+                TakenPhotoEntity(0L, lon, lat, userId, "", photoFilePath, isUploading, false, TimeUtils.getTimeFast())
 
         fun empty() =
                 TakenPhotoEntity(-1L, 0.0, 0.0, "", "", "", false, false, 0L)

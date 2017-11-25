@@ -1,7 +1,9 @@
 package com.kirakishou.photoexchange.base
 
+import android.app.Activity
 import android.arch.lifecycle.LifecycleRegistry
 import android.arch.lifecycle.ViewModel
+import android.content.Context
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.view.LayoutInflater
@@ -10,6 +12,7 @@ import android.view.ViewGroup
 import butterknife.ButterKnife
 import butterknife.Unbinder
 import com.kirakishou.photoexchange.PhotoExchangeApplication
+import com.kirakishou.photoexchange.helper.CompositeJob
 import io.reactivex.disposables.CompositeDisposable
 import timber.log.Timber
 
@@ -28,17 +31,24 @@ abstract class BaseFragment<out T : ViewModel> : Fragment() {
     private lateinit var unBinder: Unbinder
     private lateinit var viewModel: T
     protected val compositeDisposable = CompositeDisposable()
+    protected val compositeJob = CompositeJob()
 
     protected fun getViewModel(): T {
         return viewModel
     }
 
+    override fun onAttach(context: Context?) {
+        super.onAttach(context)
+
+        resolveDaggerDependency()
+
+        viewModel = initViewModel()
+        initRx()
+    }
+
     @Suppress("UNCHECKED_CAST")
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         super.onCreateView(inflater, container, savedInstanceState)
-
-        resolveDaggerDependency()
-        viewModel = initViewModel()
 
         val viewId = getContentView()
         val root = inflater.inflate(viewId, container, false)
@@ -63,6 +73,7 @@ abstract class BaseFragment<out T : ViewModel> : Fragment() {
     override fun onDetach() {
         Timber.d("Fragment.onDetach")
         compositeDisposable.clear()
+        compositeJob.cancelAll()
 
         PhotoExchangeApplication.watch(this, this::class.simpleName)
         super.onDetach()
@@ -70,6 +81,7 @@ abstract class BaseFragment<out T : ViewModel> : Fragment() {
 
     protected abstract fun initViewModel(): T
     protected abstract fun getContentView(): Int
+    protected abstract fun initRx()
     protected abstract fun onFragmentViewCreated(savedInstanceState: Bundle?)
     protected abstract fun onFragmentViewDestroy()
     protected abstract fun resolveDaggerDependency()

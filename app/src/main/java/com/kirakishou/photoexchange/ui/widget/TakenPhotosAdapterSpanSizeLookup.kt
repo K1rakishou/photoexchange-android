@@ -20,7 +20,8 @@ class TakenPhotosAdapterSpanSizeLookup(
 
             AdapterItemType.VIEW_ITEM.ordinal,
             AdapterItemType.VIEW_FAILED_TO_UPLOAD.ordinal,
-            AdapterItemType.VIEW_PHOTO_UPLOADING.ordinal -> 1
+            AdapterItemType.VIEW_PHOTO_UPLOADING.ordinal,
+            AdapterItemType.VIEW_QUEUED_UP_PHOTO.ordinal -> 1
 
             else -> throw RuntimeException("Unknown item view type: $type")
         }

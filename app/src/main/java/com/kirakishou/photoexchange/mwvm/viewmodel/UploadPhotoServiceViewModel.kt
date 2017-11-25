@@ -40,43 +40,52 @@ class UploadPhotoServiceViewModel(
     private val compositeJob = CompositeJob()
     private val MAX_ATTEMPTS = 3
 
-    private val sendPhotoResponseSubject = PublishSubject.create<TakenPhoto>()
-    private val badResponseSubject = PublishSubject.create<ServerErrorCode>()
+    private val onAllPhotosUploadedOutput = PublishSubject.create<Unit>()
+    private val sendPhotoResponseOutput = PublishSubject.create<TakenPhoto>()
+    private val badResponseError = PublishSubject.create<ServerErrorCode>()
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
 
-    override fun uploadPhoto(id: Long) {
+    override fun uploadPhotos() {
         compositeJob += async {
             try {
-                val takenPhoto = takenPhotosRepo.findOne(id).await()
-                check(!takenPhoto.isEmpty())
-
-                takenPhotosRepo.updateOneSetIsUploading(id, true).await()
-
-                val response = repeatRequest(MAX_ATTEMPTS, PhotoToBeUploaded(takenPhoto.photoFilePath, takenPhoto.location, takenPhoto.userId)) { arg ->
-                    apiClient.uploadPhoto(arg).await()
+                val queuedUpPhotos = takenPhotosRepo.findAllQueuedUp().await()
+                if (queuedUpPhotos.isNotEmpty()) {
+                    for (queuedUpPhoto in queuedUpPhotos) {
+                        val photoName = uploadPhoto(queuedUpPhoto)
+                        if (photoName != null) {
+                            queuedUpPhoto.photoName = photoName
+                            sendPhotoResponseOutput.onNext(queuedUpPhoto)
+                        }
+                    }
                 }
 
-                if (response == null) {
-                    unknownErrorSubject.onNext(ApiException(ServerErrorCode.UNKNOWN_ERROR))
-                    return@async
-                }
-
-                val errorCode = ServerErrorCode.from(response.serverErrorCode)
-                Timber.d("Received response, serverErrorCode: $errorCode")
-
-                if (errorCode != ServerErrorCode.OK) {
-                    badResponseSubject.onNext(errorCode)
-                    return@async
-                }
-
-                takenPhotosRepo.updateOneSetUploaded(id, response.photoName).await()
-
-                takenPhoto.photoName = response.photoName
-                sendPhotoResponseSubject.onNext(takenPhoto)
+                onAllPhotosUploadedOutput.onNext(Unit)
             } catch (error: Throwable) {
-                sendPhotoResponseSubject.onError(error)
+                sendPhotoResponseOutput.onError(error)
             }
         }
+    }
+
+    private suspend fun uploadPhoto(queuedUpPhoto: TakenPhoto): String? {
+        val response = repeatRequest(MAX_ATTEMPTS, PhotoToBeUploaded(queuedUpPhoto.photoFilePath, queuedUpPhoto.location, queuedUpPhoto.userId)) { arg ->
+            apiClient.uploadPhoto(arg).await()
+        }
+
+        if (response == null) {
+            unknownErrorSubject.onNext(ApiException(ServerErrorCode.UNKNOWN_ERROR))
+            return null
+        }
+
+        val errorCode = ServerErrorCode.from(response.serverErrorCode)
+        Timber.d("Received response, serverErrorCode: $errorCode")
+
+        if (errorCode != ServerErrorCode.OK) {
+            badResponseError.onNext(errorCode)
+            return null
+        }
+
+        takenPhotosRepo.updateOneSetUploaded(queuedUpPhoto.id, response.photoName).await()
+        return response.photoName
     }
 
     private fun handleErrors(error: Throwable) {
@@ -98,19 +107,19 @@ class UploadPhotoServiceViewModel(
 
         while (attempt-- > 0) {
             try {
-                Timber.d("Trying to send request, attempt #$attempt")
+                Timber.d("Trying to send request, attempt #${maxAttempts - attempt}")
                 response = block(arg)
                 return response!!
             } catch (error: Throwable) {
-                Timber.d(error)
+                Timber.e(error)
             }
         }
 
         return null
     }
-
-    override fun onUploadPhotoResponseObservable(): Observable<TakenPhoto> = sendPhotoResponseSubject
-    override fun onBadResponseObservable(): Observable<ServerErrorCode> = badResponseSubject
+    override fun onAllPhotosUploadedObservable(): Observable<Unit> = onAllPhotosUploadedOutput
+    override fun onUploadPhotoResponseObservable(): Observable<TakenPhoto> = sendPhotoResponseOutput
+    override fun onBadResponseObservable(): Observable<ServerErrorCode> = badResponseError
     override fun onUnknownErrorObservable(): Observable<Throwable> = unknownErrorSubject
 }
 

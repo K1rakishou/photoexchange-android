@@ -15,6 +15,7 @@ import io.reactivex.Observable
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.rx2.await
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
@@ -180,6 +181,8 @@ class AllPhotosViewActivityViewModel(
 
     override fun getQueuedUpPhotos() {
         compositeJob += async {
+            delay(500, TimeUnit.MILLISECONDS)
+
             try {
                 val queuedUpPhotos = takenPhotosRepository.findAllQueuedUp().await()
                 onQueuedUpPhotosLoadedOutput.onNext(queuedUpPhotos)

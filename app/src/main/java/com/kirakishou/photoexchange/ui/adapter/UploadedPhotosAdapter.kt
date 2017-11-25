@@ -53,7 +53,7 @@ class UploadedPhotosAdapter(
         }
 
         val converted = queuedUpPhotosList
-                .map { takenPhoto -> AdapterItem(takenPhoto, AdapterItemType.VIEW_ITEM) }
+                .map { takenPhoto -> AdapterItem(takenPhoto, AdapterItemType.VIEW_QUEUED_UP_PHOTO) }
                 .filter { convertedPhoto -> !isDuplicate(convertedPhoto) }
 
         items.addAll(index, converted)
@@ -146,7 +146,7 @@ class UploadedPhotosAdapter(
                 BaseAdapterInfo(AdapterItemType.VIEW_FAILED_TO_UPLOAD, R.layout.adapter_item_upload_photo_error, PhotoUploadErrorViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_MESSAGE, R.layout.adapter_item_message, MessageViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_PHOTO_UPLOADING, R.layout.adapter_item_photo_uploading, PhotoUploadingViewHolder::class.java),
-                BaseAdapterInfo(AdapterItemType.VIEW_QUEUED_UP_PHOTO, R.layout.adapter_item_photo_uploading_queued_up, QueuedUpPhotoViewHolder::class.java)
+                BaseAdapterInfo(AdapterItemType.VIEW_QUEUED_UP_PHOTO, R.layout.adapter_item_photo_queued_up, QueuedUpPhotoViewHolder::class.java)
         )
     }
 

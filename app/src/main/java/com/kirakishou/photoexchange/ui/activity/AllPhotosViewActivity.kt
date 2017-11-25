@@ -19,6 +19,7 @@ import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService
+import com.kirakishou.photoexchange.helper.service.UploadPhotoService
 import com.kirakishou.photoexchange.mwvm.model.event.PhotoReceivedEvent
 import com.kirakishou.photoexchange.mwvm.model.event.PhotoReceivedEventStatus
 import com.kirakishou.photoexchange.mwvm.model.event.PhotoUploadedEvent
@@ -82,6 +83,8 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
         initTabs(intent)
         getNotificationIntent(getIntent())
+
+        schedulePhotoUpload()
     }
 
     override fun onActivityDestroy() {
@@ -169,6 +172,11 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     private fun selectReceivedPhotosTab() {
         val tab = tabLayout.getTabAt(RECEIVED_PHOTOS_FRAGMENT_TAB_INDEX)
         tab!!.select()
+    }
+
+    fun schedulePhotoUpload() {
+        UploadPhotoService.scheduleImmediateJob(this)
+        Timber.d("UploadPhoto has been job scheduled")
     }
 
     fun startLookingForPhotoAnswerService() {
