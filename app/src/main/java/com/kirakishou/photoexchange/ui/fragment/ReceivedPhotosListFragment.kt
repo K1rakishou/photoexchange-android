@@ -61,18 +61,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     override fun getContentView(): Int = R.layout.fragment_received_photos_list
 
-    override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
-        initRx()
-        initRecyclerView()
-
-        getViewModel().inputs.shouldStartLookingForPhotos()
-        recyclerStartLoadingItems()
-    }
-    
-    override fun onFragmentViewDestroy() {
-    }
-
-    private fun initRx() {
+    override fun initRx() {
         compositeDisposable += loadMoreSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -134,6 +123,16 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onUnknownError)
+    }
+
+    override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
+        initRecyclerView()
+
+        getViewModel().inputs.shouldStartLookingForPhotos()
+        recyclerStartLoadingItems()
+    }
+    
+    override fun onFragmentViewDestroy() {
     }
 
     private fun showLookingForPhotoIndicator() {

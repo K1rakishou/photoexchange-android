@@ -11,7 +11,7 @@ import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
  */
 
 @Entity(tableName = PhotoAnswerEntity.TABLE_NAME)
-class PhotoAnswerEntity(
+data class PhotoAnswerEntity(
 
         @PrimaryKey(autoGenerate = false)
         @ColumnInfo(name = "photo_id")

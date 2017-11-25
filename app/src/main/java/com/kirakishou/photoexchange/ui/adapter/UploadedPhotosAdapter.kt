@@ -53,7 +53,7 @@ class UploadedPhotosAdapter(
         }
 
         val converted = queuedUpPhotosList
-                .map { takenPhoto -> AdapterItem(takenPhoto, AdapterItemType.VIEW_ITEM) }
+                .map { takenPhoto -> AdapterItem(takenPhoto, AdapterItemType.VIEW_QUEUED_UP_PHOTO) }
                 .filter { convertedPhoto -> !isDuplicate(convertedPhoto) }
 
         items.addAll(index, converted)

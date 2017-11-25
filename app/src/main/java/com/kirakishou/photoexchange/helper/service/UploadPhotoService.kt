@@ -32,6 +32,7 @@ import android.os.Build
 import android.os.PersistableBundle
 import android.support.annotation.RequiresApi
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.helper.util.NetUtils
 
 
 class UploadPhotoService : JobService() {
@@ -79,6 +80,12 @@ class UploadPhotoService : JobService() {
 
     override fun onStartJob(params: JobParameters): Boolean {
         Timber.d("UploadPhotoService onStartJob")
+
+        if (!NetUtils.isWifiConnected(this)) {
+            Timber.d("Wifi is not connected. Rescheduling the job.")
+            finish(params, true)
+            return false
+        }
 
         initRx(params)
 

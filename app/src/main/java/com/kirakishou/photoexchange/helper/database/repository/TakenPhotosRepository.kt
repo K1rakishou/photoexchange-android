@@ -10,6 +10,7 @@ import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
+import timber.log.Timber
 
 /**
  * Created by kirakishou on 11/10/2017.
@@ -23,7 +24,7 @@ class TakenPhotosRepository(
 
     fun saveOne(lon: Double, lat: Double, photoFilePath: String, userId: String): Single<Long> {
         val resultSingle = Single.fromCallable {
-            takenPhotosDao.saveOne(TakenPhotoEntity.new(lon, lat, userId, photoFilePath))
+            takenPhotosDao.saveOne(TakenPhotoEntity.new(lon, lat, userId, photoFilePath, true))
         }
 
         return resultSingle
