@@ -80,11 +80,11 @@ class UploadPhotoService : JobService() {
     override fun onStartJob(params: JobParameters): Boolean {
         Timber.d("UploadPhotoService onStartJob")
 
-        if (!NetUtils.isWifiConnected(this)) {
+        /*if (!NetUtils.isWifiConnected(this)) {
             Timber.d("Wifi is not connected. Rescheduling the job.")
             finish(params, true)
             return false
-        }
+        }*/
 
         initRx(params)
 
@@ -100,6 +100,7 @@ class UploadPhotoService : JobService() {
     }
 
     private fun handleCommand(params: JobParameters) {
+        updateUploadingNotificationShowUploading()
         viewModel.inputs.uploadPhotos()
     }
 
@@ -118,22 +119,22 @@ class UploadPhotoService : JobService() {
         compositeDisposable += viewModel.outputs.onUploadPhotoResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onUploadPhotoResponse(params, it) })
+                .subscribe({ onUploadPhotoResponse(it) }, { onUnknownError(params, it) })
 
         compositeDisposable += viewModel.outputs.onAllPhotosUploadedObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onAllPhotosUploaded(params) })
+                .subscribe({ onAllPhotosUploaded(params) }, { onUnknownError(params, it) })
 
         compositeDisposable += viewModel.errors.onBadResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onBadResponse(params, it) })
+                .subscribe({ onBadResponse(params, it) }, { onUnknownError(params, it) })
 
         compositeDisposable += viewModel.errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onUnknownError(params, it) })
+                .subscribe({ onUnknownError(params, it) }, { onUnknownError(params, it) })
     }
 
     private fun onAllPhotosUploaded(params: JobParameters) {
@@ -143,12 +144,7 @@ class UploadPhotoService : JobService() {
         finish(params, false)
     }
 
-    private fun onUploadPhotoResponse(params: JobParameters, takenPhoto: TakenPhoto) {
-        if (takenPhoto.isEmpty()) {
-            finish(params, false)
-            return
-        }
-
+    private fun onUploadPhotoResponse(takenPhoto: TakenPhoto) {
         Timber.d("onUploadPhotoResponse() photoName: ${takenPhoto.photoName}")
         eventBus.post(PhotoUploadedEvent.success(takenPhoto.id))
     }
@@ -173,6 +169,11 @@ class UploadPhotoService : JobService() {
 
     private fun finish(params: JobParameters, reschedule: Boolean) {
         jobFinished(params, reschedule)
+    }
+
+    private fun updateUploadingNotificationShowUploading() {
+        val newNotification = createNotificationUploading()
+        getNotificationManager().notify(Constants.NOTIFICATION_ID, newNotification)
     }
 
     private fun updateUploadingNotificationShowSuccess() {
