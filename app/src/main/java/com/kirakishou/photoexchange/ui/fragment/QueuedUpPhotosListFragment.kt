@@ -106,6 +106,8 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onStartUploadingPhotos(ids: List<Long>) {
+        Timber.d("QueuedUpPhotosListFragment.onStartUploadingPhotos()")
+
         adapter.runOnAdapterHandler {
             //TODO: disable cancel button or some shit like that
             //adapter.removeQueuedUpPhotos(ids)
@@ -118,7 +120,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
         adapter.runOnAdapterHandler {
             adapter.removeQueuedUpPhoto(photo.id)
-            adapter.add(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
+            //adapter.add(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
         }
     }
 

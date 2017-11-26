@@ -170,7 +170,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onPhotoUploaded(photo: TakenPhoto) {
-        Timber.d("onPhotoUploaded()")
+        Timber.d("UploadedPhotosListFragment.onPhotoUploaded()")
         check(isAdded)
 
         adapter.runOnAdapterHandler {
@@ -179,13 +179,14 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onStartUploadingPhotos(ids: List<Long>) {
+        Timber.d("UploadedPhotosListFragment.onStartUploadingPhotos()")
         /*adapter.runOnAdapterHandler {
             adapter.removeQueuedUpPhotos(ids)
         }*/
     }
 
     private fun onFailedToUploadPhoto() {
-        Timber.d("onFailedToUploadPhoto()")
+        Timber.d("UploadedPhotosListFragment.onFailedToUploadPhoto()")
         check(isAdded)
 
         adapter.runOnAdapterHandler {
