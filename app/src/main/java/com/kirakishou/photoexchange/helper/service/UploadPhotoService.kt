@@ -111,7 +111,7 @@ class UploadPhotoService : JobService() {
         compositeDisposable += viewModel.outputs.onStartUploadQueuedUpPhotosObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onStartUploadQueuedUpPhotos() }, { onUnknownError(params, it) })
+                .subscribe({ onStartUploadQueuedUpPhotos(it) }, { onUnknownError(params, it) })
 
         compositeDisposable += viewModel.outputs.onUploadPhotoResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -134,14 +134,14 @@ class UploadPhotoService : JobService() {
                 .subscribe({ onUnknownError(params, it) }, { onUnknownError(params, it) })
     }
 
-    private fun onStartUploadQueuedUpPhotos() {
+    private fun onStartUploadQueuedUpPhotos(ids: List<Long>) {
         Timber.d("onStartUploadQueuedUpPhotos()")
-        sendEvent(PhotoUploadedEvent.startUploading())
+        sendEvent(PhotoUploadedEvent.startUploading(ids))
     }
 
     private fun onPhotoUploaded(takenPhoto: TakenPhoto) {
         Timber.d("onPhotoUploaded() photoName: ${takenPhoto.photoName}")
-        sendEvent(PhotoUploadedEvent.success(takenPhoto.id))
+        sendEvent(PhotoUploadedEvent.photoUploaded(takenPhoto.id))
     }
 
     private fun onAllPhotosUploaded(params: JobParameters) {

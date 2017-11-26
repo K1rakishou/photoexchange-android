@@ -15,4 +15,5 @@
     <string name="could_not_upload_a_photo_text">Could not upload a photo</string>
     <string name="waiting_for_wifi">Waiting for Wi-Fi...</string>
     <string name="cancel_title">CANCEL</string>
+    <string name="tab_title_queued_up">Queued up</string>
 </resources>

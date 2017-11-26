@@ -11,6 +11,7 @@ interface AllPhotosViewActivityViewModelInputs {
     fun fetchOnePageReceivedPhotos(page: Int, count: Int)
     fun receivedPhotosFragmentScrollToTop()
     fun receivedPhotosFragmentShowLookingForPhotoIndicator()
+    fun uploadedPhotosFragmentStartUploadingPhotos(ids: List<Long>)
     fun uploadedPhotosFragmentShowPhotoUploaded(photoId: Long)
     fun uploadedPhotosFragmentShowFailedToUploadPhoto()
     fun receivedPhotosFragmentShowPhotoReceived(photo: PhotoAnswer, allFound: Boolean)
