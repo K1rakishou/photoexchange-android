@@ -31,7 +31,6 @@ import android.content.ComponentName
 import android.os.Build
 import android.support.annotation.RequiresApi
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import com.kirakishou.photoexchange.helper.util.NetUtils
 
 
 class UploadPhotoService : JobService() {
@@ -109,10 +108,15 @@ class UploadPhotoService : JobService() {
 
         isRxInited = true
 
+        compositeDisposable += viewModel.outputs.onStartUploadQueuedUpPhotosObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ onStartUploadQueuedUpPhotos() }, { onUnknownError(params, it) })
+
         compositeDisposable += viewModel.outputs.onUploadPhotoResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onUploadPhotoResponse(it) }, { onUnknownError(params, it) })
+                .subscribe({ onPhotoUploaded(it) }, { onUnknownError(params, it) })
 
         compositeDisposable += viewModel.outputs.onAllPhotosUploadedObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -130,23 +134,28 @@ class UploadPhotoService : JobService() {
                 .subscribe({ onUnknownError(params, it) }, { onUnknownError(params, it) })
     }
 
+    private fun onStartUploadQueuedUpPhotos() {
+        Timber.d("onStartUploadQueuedUpPhotos()")
+        sendEvent(PhotoUploadedEvent.startUploading())
+    }
+
+    private fun onPhotoUploaded(takenPhoto: TakenPhoto) {
+        Timber.d("onPhotoUploaded() photoName: ${takenPhoto.photoName}")
+        sendEvent(PhotoUploadedEvent.success(takenPhoto.id))
+    }
+
     private fun onAllPhotosUploaded(params: JobParameters) {
         Timber.d("onAllPhotosUploaded()")
 
+        sendEvent(PhotoUploadedEvent.done())
         updateUploadingNotificationShowSuccess()
         finish(params, false)
-    }
-
-    private fun onUploadPhotoResponse(takenPhoto: TakenPhoto) {
-        Timber.d("onUploadPhotoResponse() photoName: ${takenPhoto.photoName}")
-        eventBus.post(PhotoUploadedEvent.success(takenPhoto.id))
     }
 
     private fun onBadResponse(params: JobParameters, errorCode: ServerErrorCode) {
         Timber.d("BadResponse: errorCode: $errorCode")
 
-        eventBus.post(PhotoUploadedEvent.fail())
-
+        sendEvent(PhotoUploadedEvent.fail())
         updateUploadingNotificationShowError()
         finish(params, false)
     }
@@ -154,10 +163,14 @@ class UploadPhotoService : JobService() {
     private fun onUnknownError(params: JobParameters, error: Throwable) {
         Timber.d("Unknown error: $error")
 
-        eventBus.post(PhotoUploadedEvent.fail())
+        sendEvent(PhotoUploadedEvent.fail())
 
         updateUploadingNotificationShowError()
         finish(params, false)
+    }
+
+    private fun sendEvent(event: PhotoUploadedEvent) {
+        eventBus.post(event)
     }
 
     private fun finish(params: JobParameters, reschedule: Boolean) {

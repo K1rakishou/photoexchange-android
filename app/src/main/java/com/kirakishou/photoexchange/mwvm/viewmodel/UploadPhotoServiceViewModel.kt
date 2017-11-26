@@ -41,6 +41,7 @@ class UploadPhotoServiceViewModel(
     private val MAX_ATTEMPTS = 3
 
     private val onAllPhotosUploadedOutput = PublishSubject.create<Unit>()
+    private val onStartUploadQueuedUpPhotosOutput = PublishSubject.create<Unit>()
     private val sendPhotoResponseOutput = PublishSubject.create<TakenPhoto>()
     private val badResponseError = PublishSubject.create<ServerErrorCode>()
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
@@ -48,6 +49,8 @@ class UploadPhotoServiceViewModel(
     override fun uploadPhotos() {
         compositeJob += async {
             try {
+                onStartUploadQueuedUpPhotosOutput.onNext(Unit)
+
                 val queuedUpPhotos = takenPhotosRepo.findAllQueuedUp().await()
                 if (queuedUpPhotos.isNotEmpty()) {
                     for (queuedUpPhoto in queuedUpPhotos) {
@@ -117,6 +120,8 @@ class UploadPhotoServiceViewModel(
 
         return null
     }
+
+    override fun onStartUploadQueuedUpPhotosObservable(): Observable<Unit> = onStartUploadQueuedUpPhotosOutput
     override fun onAllPhotosUploadedObservable(): Observable<Unit> = onAllPhotosUploadedOutput
     override fun onUploadPhotoResponseObservable(): Observable<TakenPhoto> = sendPhotoResponseOutput
     override fun onBadResponseObservable(): Observable<ServerErrorCode> = badResponseError

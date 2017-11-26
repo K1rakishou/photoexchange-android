@@ -9,4 +9,5 @@ import io.reactivex.Observable
 interface UploadPhotoServiceOutputs {
     fun onUploadPhotoResponseObservable(): Observable<TakenPhoto>
     fun onAllPhotosUploadedObservable(): Observable<Unit>
+    fun onStartUploadQueuedUpPhotosObservable(): Observable<Unit>
 }
