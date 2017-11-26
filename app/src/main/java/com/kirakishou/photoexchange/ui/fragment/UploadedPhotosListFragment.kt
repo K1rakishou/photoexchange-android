@@ -90,10 +90,10 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ onFailedToUploadPhoto() }, this::onUnknownError)
 
-        compositeDisposable += getViewModel().outputs.onQueuedUpPhotosLoadedObservable()
+        compositeDisposable += getViewModel().outputs.onStartUploadingPhotosObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onQueuedUpPhotosLoaded, this::onUnknownError)
+                .subscribe(this::onStartUploadingPhotos, this::onUnknownError)
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -103,42 +103,10 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRecyclerView()
-
-        if (savedInstanceState != null) {
-            isPhotoUploading = savedInstanceState.getBoolean("is_photo_uploading")
-        } else if (arguments != null) {
-            isPhotoUploading = arguments!!.getBoolean("is_photo_uploading", false)
-        }
-
-        if (isPhotoUploading) {
-            Timber.d("Showing startPhotoUploadingIndicator")
-            startPhotoUploadingIndicator()
-        }
-
-        showQueuedUpPhotos()
+        recyclerStartLoadingItems()
     }
 
     override fun onFragmentViewDestroy() {
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-
-        outState.putBoolean("is_photo_uploading", isPhotoUploading)
-    }
-
-    private fun startPhotoUploadingIndicator() {
-        if (!NetUtils.isWifiConnected(activity!!.applicationContext)) {
-            return
-        }
-
-        adapter.runOnAdapterHandlerWithDelay(DELAY_BEFORE_PROGRESS_FOOTER_ADDED) {
-            adapter.addPhotoUploadingIndicator()
-        }
-    }
-
-    private fun showQueuedUpPhotos() {
-        getViewModel().inputs.getQueuedUpPhotos()
     }
 
     private fun recyclerStartLoadingItems() {
@@ -202,19 +170,23 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onPhotoUploaded(photo: TakenPhoto) {
-        Timber.d("onPhotoUploaded()")
+        Timber.d("UploadedPhotosListFragment.onPhotoUploaded()")
         check(isAdded)
 
         adapter.runOnAdapterHandler {
-            adapter.removePhotoUploadingIndicator()
-            adapter.addFirst(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
+            adapter.add(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
         }
+    }
 
-        isPhotoUploading = false
+    private fun onStartUploadingPhotos(ids: List<Long>) {
+        Timber.d("UploadedPhotosListFragment.onStartUploadingPhotos()")
+        /*adapter.runOnAdapterHandler {
+            adapter.removeQueuedUpPhotos(ids)
+        }*/
     }
 
     private fun onFailedToUploadPhoto() {
-        Timber.d("onFailedToUploadPhoto()")
+        Timber.d("UploadedPhotosListFragment.onFailedToUploadPhoto()")
         check(isAdded)
 
         adapter.runOnAdapterHandler {
@@ -222,19 +194,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
             adapter.addFirst(AdapterItem(AdapterItemType.VIEW_FAILED_TO_UPLOAD))
         }
 
-        isPhotoUploading = false
-    }
-
-    private fun onQueuedUpPhotosLoaded(queuedUpPhotosList: List<TakenPhoto>) {
-        if (queuedUpPhotosList.isNotEmpty()) {
-            adapter.runOnAdapterHandler {
-                adapter.addQueuedUpPhotos(queuedUpPhotosList)
-            }
-        } else {
-            //TODO: add message saying user should upload a photo first
-        }
-
-        recyclerStartLoadingItems()
+        //isPhotoUploading = false
     }
 
     private fun onUnknownError(error: Throwable) {
@@ -250,10 +210,9 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     companion object {
-        fun newInstance(isPhotoUploading: Boolean): UploadedPhotosListFragment {
+        fun newInstance(): UploadedPhotosListFragment {
             val fragment = UploadedPhotosListFragment()
             val args = Bundle()
-            args.putBoolean("is_photo_uploading", isPhotoUploading)
 
             fragment.arguments = args
             return fragment

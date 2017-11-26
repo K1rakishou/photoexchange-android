@@ -7,7 +7,6 @@ import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.Snackbar
 import android.support.design.widget.TabLayout
 import android.support.v4.view.ViewPager
-import android.support.v7.widget.AppCompatButton
 import android.widget.ImageView
 import butterknife.BindView
 import com.jakewharton.rxbinding2.view.RxView
@@ -26,8 +25,6 @@ import com.kirakishou.photoexchange.mwvm.model.event.PhotoUploadedEvent
 import com.kirakishou.photoexchange.mwvm.model.event.SendPhotoEventStatus
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
-import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosListFragment
-import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosListFragment
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
@@ -61,8 +58,9 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     @Inject
     lateinit var appSharedPreference: AppSharedPreference
 
-    private val UPLOADED_PHOTOS_FRAGMENT_TAB_INDEX = 0
-    private val RECEIVED_PHOTOS_FRAGMENT_TAB_INDEX = 1
+    private val QUEUED_UP_PHOTOS_FRAGMENT_TAB_INDEX = 0
+    private val UPLOADED_PHOTOS_FRAGMENT_TAB_INDEX = 1
+    private val RECEIVED_PHOTOS_FRAGMENT_TAB_INDEX = 2
 
     private val adapter = FragmentTabsPager(supportFragmentManager)
     private val userInfoPreference by lazy { appSharedPreference.prepare<UserInfoPreference>() }
@@ -131,14 +129,13 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     }
 
     private fun initTabs(intent: Intent) {
+        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_queued_up)))
         tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_sent)))
         tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_received)))
         tabLayout.tabGravity = TabLayout.GRAVITY_FILL
 
-        adapter.isPhotoUploading = intent.getBooleanExtra("is_photo_uploading", false)
-
         viewPager.adapter = adapter
-        viewPager.offscreenPageLimit = 1
+        viewPager.offscreenPageLimit = 2
 
         viewPager.addOnPageChangeListener(this)
         tabLayout.addOnTabSelectedListener(this)
@@ -175,7 +172,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     }
 
     fun schedulePhotoUpload() {
-        UploadPhotoService.scheduleImmediateJob(this)
+        UploadPhotoService.scheduleJob(this)
         Timber.d("UploadPhoto has been job scheduled")
     }
 
@@ -197,13 +194,27 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onPhotoUploadedEvent(event: PhotoUploadedEvent) {
-        if (event.status == SendPhotoEventStatus.SUCCESS) {
-            checkNotNull(event.photoId)
+        when (event.status) {
+            SendPhotoEventStatus.START -> {
+                Timber.d("SendPhotoEventStatus.START")
+                getViewModel().inputs.uploadedPhotosFragmentStartUploadingPhotos(event.photosToUpload)
+            }
+            SendPhotoEventStatus.PHOTO_UPLOADED -> {
+                Timber.d("SendPhotoEventStatus.PHOTO_UPLOADED")
 
-            getViewModel().inputs.uploadedPhotosFragmentShowPhotoUploaded(event.photoId)
-            startLookingForPhotoAnswerService()
-        } else {
-            getViewModel().inputs.uploadedPhotosFragmentShowFailedToUploadPhoto()
+                check(event.photoId != -1L)
+                getViewModel().inputs.uploadedPhotosFragmentShowPhotoUploaded(event.photoId)
+            }
+            SendPhotoEventStatus.FAIL -> {
+                Timber.d("SendPhotoEventStatus.FAIL")
+                //TODO: add id of the photo here
+                getViewModel().inputs.uploadedPhotosFragmentShowFailedToUploadPhoto()
+            }
+            SendPhotoEventStatus.DONE -> {
+                Timber.d("SendPhotoEventStatus.DONE")
+                startLookingForPhotoAnswerService()
+            }
+            else -> IllegalArgumentException("Unknown event status: ${event.status}")
         }
     }
 
@@ -211,25 +222,28 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     fun onPhotoReceivedEvent(event: PhotoReceivedEvent) {
         when (event.status) {
             PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED -> {
-                Timber.d("SUCCESS_ALL_RECEIVED")
+                Timber.d("PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED")
+                checkNotNull(event.photoAnswer)
                 getViewModel().inputs.receivedPhotosFragmentShowPhotoReceived(event.photoAnswer!!, event.allFound)
             }
             PhotoReceivedEventStatus.SUCCESS_NOT_ALL_RECEIVED -> {
-                Timber.d("SUCCESS_NOT_ALL_RECEIVED")
+                Timber.d("PhotoReceivedEventStatus.SUCCESS_NOT_ALL_RECEIVED")
+                checkNotNull(event.photoAnswer)
                 getViewModel().inputs.receivedPhotosFragmentShowPhotoReceived(event.photoAnswer!!, event.allFound)
             }
             PhotoReceivedEventStatus.FAIL -> {
-                Timber.d("FAIL")
+                Timber.d("PhotoReceivedEventStatus.FAIL")
                 getViewModel().inputs.receivedPhotosFragmentShowErrorWhileTryingToLookForPhoto()
             }
             PhotoReceivedEventStatus.NO_PHOTOS_ON_SERVER -> {
-                Timber.d("NO_PHOTOS_ON_SERVER")
+                Timber.d("PhotoReceivedEventStatus.NO_PHOTOS_ON_SERVER")
                 getViewModel().inputs.receivedPhotosFragmentShowNoPhotoOnServer()
             }
             PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS -> {
-                Timber.d("UPLOAD_MORE_PHOTOS")
+                Timber.d("PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS")
                 getViewModel().inputs.receivedPhotosFragmentShowUserNeedsToUploadMorePhotos()
             }
+            else -> IllegalArgumentException("Unknown event status: ${event.status}")
         }
     }
 

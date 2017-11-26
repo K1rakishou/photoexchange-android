@@ -7,17 +7,26 @@ import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
  */
 class PhotoUploadedEvent(
         val status: SendPhotoEventStatus,
-        val photoId: Long
+        val photoId: Long,
+        val photosToUpload: List<Long>
 
 ) : BaseEvent() {
 
     companion object {
-        fun success(id: Long): PhotoUploadedEvent {
-            return PhotoUploadedEvent(SendPhotoEventStatus.SUCCESS, id)
+        fun startUploading(ids: List<Long>): PhotoUploadedEvent {
+            return PhotoUploadedEvent(SendPhotoEventStatus.START, -1L, ids)
+        }
+
+        fun photoUploaded(id: Long): PhotoUploadedEvent {
+            return PhotoUploadedEvent(SendPhotoEventStatus.PHOTO_UPLOADED, id, emptyList())
         }
 
         fun fail(): PhotoUploadedEvent {
-            return PhotoUploadedEvent(SendPhotoEventStatus.FAIL, -1L)
+            return PhotoUploadedEvent(SendPhotoEventStatus.FAIL, -1L, emptyList())
+        }
+
+        fun done(): PhotoUploadedEvent {
+            return PhotoUploadedEvent(SendPhotoEventStatus.DONE, -1L, emptyList())
         }
     }
 }

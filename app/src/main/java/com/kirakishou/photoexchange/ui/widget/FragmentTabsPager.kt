@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.ui.widget
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentManager
 import android.support.v4.app.FragmentStatePagerAdapter
+import com.kirakishou.photoexchange.ui.fragment.QueuedUpPhotosListFragment
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosListFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosListFragment
 
@@ -12,23 +13,29 @@ import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosListFragment
 
 class FragmentTabsPager(fm: FragmentManager) : FragmentStatePagerAdapter(fm) {
 
-    var isPhotoUploading = false
-
+    var queuedUpPhotosFragment: QueuedUpPhotosListFragment? = null
     var uploadedPhotosFragment: UploadedPhotosListFragment? = null
     var receivedPhotosFragment: ReceivedPhotosListFragment? = null
 
     override fun getItem(position: Int): Fragment {
         when (position) {
             0 -> {
+                if (queuedUpPhotosFragment == null) {
+                    queuedUpPhotosFragment = QueuedUpPhotosListFragment.newInstance()
+                }
+
+                return queuedUpPhotosFragment!!
+            }
+            1 -> {
                 if (uploadedPhotosFragment == null) {
-                    uploadedPhotosFragment = UploadedPhotosListFragment.newInstance(isPhotoUploading)
+                    uploadedPhotosFragment = UploadedPhotosListFragment.newInstance()
                 }
 
                 return uploadedPhotosFragment!!
             }
-            1 -> {
+            2 -> {
                 if (receivedPhotosFragment == null) {
-                    receivedPhotosFragment = ReceivedPhotosListFragment.newInstance(isPhotoUploading)
+                    receivedPhotosFragment = ReceivedPhotosListFragment.newInstance()
                 }
 
                 return receivedPhotosFragment!!
@@ -37,5 +44,5 @@ class FragmentTabsPager(fm: FragmentManager) : FragmentStatePagerAdapter(fm) {
         }
     }
 
-    override fun getCount(): Int = 2
+    override fun getCount(): Int = 3
 }

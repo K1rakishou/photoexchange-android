@@ -5,6 +5,8 @@ package com.kirakishou.photoexchange.mwvm.model.event
  */
 
 enum class SendPhotoEventStatus {
-    SUCCESS,
-    FAIL
+    START,
+    PHOTO_UPLOADED,
+    FAIL,
+    DONE
 }

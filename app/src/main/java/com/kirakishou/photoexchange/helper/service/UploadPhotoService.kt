@@ -31,7 +31,6 @@ import android.content.ComponentName
 import android.os.Build
 import android.support.annotation.RequiresApi
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import com.kirakishou.photoexchange.helper.util.NetUtils
 
 
 class UploadPhotoService : JobService() {
@@ -79,13 +78,6 @@ class UploadPhotoService : JobService() {
 
     override fun onStartJob(params: JobParameters): Boolean {
         Timber.d("UploadPhotoService onStartJob")
-
-        /*if (!NetUtils.isWifiConnected(this)) {
-            Timber.d("Wifi is not connected. Rescheduling the job.")
-            finish(params, true)
-            return false
-        }*/
-
         initRx(params)
 
         try {
@@ -116,10 +108,15 @@ class UploadPhotoService : JobService() {
 
         isRxInited = true
 
+        compositeDisposable += viewModel.outputs.onStartUploadQueuedUpPhotosObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ onStartUploadQueuedUpPhotos(it) }, { onUnknownError(params, it) })
+
         compositeDisposable += viewModel.outputs.onUploadPhotoResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onUploadPhotoResponse(it) }, { onUnknownError(params, it) })
+                .subscribe({ onPhotoUploaded(it) }, { onUnknownError(params, it) })
 
         compositeDisposable += viewModel.outputs.onAllPhotosUploadedObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -137,23 +134,28 @@ class UploadPhotoService : JobService() {
                 .subscribe({ onUnknownError(params, it) }, { onUnknownError(params, it) })
     }
 
+    private fun onStartUploadQueuedUpPhotos(ids: List<Long>) {
+        Timber.d("onStartUploadQueuedUpPhotos()")
+        sendEvent(PhotoUploadedEvent.startUploading(ids))
+    }
+
+    private fun onPhotoUploaded(takenPhoto: TakenPhoto) {
+        Timber.d("onPhotoUploaded() photoName: ${takenPhoto.photoName}")
+        sendEvent(PhotoUploadedEvent.photoUploaded(takenPhoto.id))
+    }
+
     private fun onAllPhotosUploaded(params: JobParameters) {
         Timber.d("onAllPhotosUploaded()")
 
+        sendEvent(PhotoUploadedEvent.done())
         updateUploadingNotificationShowSuccess()
         finish(params, false)
-    }
-
-    private fun onUploadPhotoResponse(takenPhoto: TakenPhoto) {
-        Timber.d("onUploadPhotoResponse() photoName: ${takenPhoto.photoName}")
-        eventBus.post(PhotoUploadedEvent.success(takenPhoto.id))
     }
 
     private fun onBadResponse(params: JobParameters, errorCode: ServerErrorCode) {
         Timber.d("BadResponse: errorCode: $errorCode")
 
-        eventBus.post(PhotoUploadedEvent.fail())
-
+        sendEvent(PhotoUploadedEvent.fail())
         updateUploadingNotificationShowError()
         finish(params, false)
     }
@@ -161,10 +163,14 @@ class UploadPhotoService : JobService() {
     private fun onUnknownError(params: JobParameters, error: Throwable) {
         Timber.d("Unknown error: $error")
 
-        eventBus.post(PhotoUploadedEvent.fail())
+        sendEvent(PhotoUploadedEvent.fail())
 
         updateUploadingNotificationShowError()
         finish(params, false)
+    }
+
+    private fun sendEvent(event: PhotoUploadedEvent) {
+        eventBus.post(event)
     }
 
     private fun finish(params: JobParameters, reschedule: Boolean) {
@@ -312,13 +318,11 @@ class UploadPhotoService : JobService() {
     companion object {
         private val JOB_ID = 2
 
-        fun scheduleImmediateJob(context: Context) {
+        fun scheduleJob(context: Context) {
             val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, UploadPhotoService::class.java))
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_UNMETERED)
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
-                    .setMinimumLatency(0)
-                    .setOverrideDeadline(5_000)
                     .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_EXPONENTIAL)
                     .build()
 
