@@ -7,7 +7,6 @@ import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.Snackbar
 import android.support.design.widget.TabLayout
 import android.support.v4.view.ViewPager
-import android.support.v7.widget.AppCompatButton
 import android.widget.ImageView
 import butterknife.BindView
 import com.jakewharton.rxbinding2.view.RxView
@@ -26,8 +25,6 @@ import com.kirakishou.photoexchange.mwvm.model.event.PhotoUploadedEvent
 import com.kirakishou.photoexchange.mwvm.model.event.SendPhotoEventStatus
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
-import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosListFragment
-import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosListFragment
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
@@ -175,7 +172,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     }
 
     fun schedulePhotoUpload() {
-        UploadPhotoService.scheduleImmediateJob(this)
+        UploadPhotoService.scheduleJob(this)
         Timber.d("UploadPhoto has been job scheduled")
     }
 

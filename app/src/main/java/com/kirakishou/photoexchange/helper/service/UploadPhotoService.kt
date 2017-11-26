@@ -79,13 +79,6 @@ class UploadPhotoService : JobService() {
 
     override fun onStartJob(params: JobParameters): Boolean {
         Timber.d("UploadPhotoService onStartJob")
-
-        /*if (!NetUtils.isWifiConnected(this)) {
-            Timber.d("Wifi is not connected. Rescheduling the job.")
-            finish(params, true)
-            return false
-        }*/
-
         initRx(params)
 
         try {
@@ -312,13 +305,11 @@ class UploadPhotoService : JobService() {
     companion object {
         private val JOB_ID = 2
 
-        fun scheduleImmediateJob(context: Context) {
+        fun scheduleJob(context: Context) {
             val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, UploadPhotoService::class.java))
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_UNMETERED)
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
-                    .setMinimumLatency(0)
-                    .setOverrideDeadline(5_000)
                     .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_EXPONENTIAL)
                     .build()
 
