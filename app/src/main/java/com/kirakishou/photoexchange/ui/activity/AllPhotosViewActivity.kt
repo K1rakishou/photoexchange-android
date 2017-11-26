@@ -134,10 +134,8 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_received)))
         tabLayout.tabGravity = TabLayout.GRAVITY_FILL
 
-        adapter.isPhotoUploading = intent.getBooleanExtra("is_photo_uploading", false)
-
         viewPager.adapter = adapter
-        viewPager.offscreenPageLimit = 1
+        viewPager.offscreenPageLimit = 2
 
         viewPager.addOnPageChangeListener(this)
         tabLayout.addOnTabSelectedListener(this)

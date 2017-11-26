@@ -209,10 +209,9 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     companion object {
-        fun newInstance(isPhotoUploading: Boolean): UploadedPhotosListFragment {
+        fun newInstance(): UploadedPhotosListFragment {
             val fragment = UploadedPhotosListFragment()
             val args = Bundle()
-            args.putBoolean("is_photo_uploading", isPhotoUploading)
 
             fragment.arguments = args
             return fragment

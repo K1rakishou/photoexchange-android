@@ -13,8 +13,6 @@ import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosListFragment
 
 class FragmentTabsPager(fm: FragmentManager) : FragmentStatePagerAdapter(fm) {
 
-    var isPhotoUploading = false
-
     var queuedUpPhotosFragment: QueuedUpPhotosListFragment? = null
     var uploadedPhotosFragment: UploadedPhotosListFragment? = null
     var receivedPhotosFragment: ReceivedPhotosListFragment? = null
@@ -28,17 +26,16 @@ class FragmentTabsPager(fm: FragmentManager) : FragmentStatePagerAdapter(fm) {
 
                 return queuedUpPhotosFragment!!
             }
-
             1 -> {
                 if (uploadedPhotosFragment == null) {
-                    uploadedPhotosFragment = UploadedPhotosListFragment.newInstance(isPhotoUploading)
+                    uploadedPhotosFragment = UploadedPhotosListFragment.newInstance()
                 }
 
                 return uploadedPhotosFragment!!
             }
             2 -> {
                 if (receivedPhotosFragment == null) {
-                    receivedPhotosFragment = ReceivedPhotosListFragment.newInstance(isPhotoUploading)
+                    receivedPhotosFragment = ReceivedPhotosListFragment.newInstance()
                 }
 
                 return receivedPhotosFragment!!

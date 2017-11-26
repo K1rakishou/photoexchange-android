@@ -289,10 +289,9 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     companion object {
-        fun newInstance(isPhotoUploading: Boolean): ReceivedPhotosListFragment {
+        fun newInstance(): ReceivedPhotosListFragment {
             val fragment = ReceivedPhotosListFragment()
             val args = Bundle()
-            args.putBoolean("is_photo_uploading", isPhotoUploading)
 
             fragment.arguments = args
             return fragment

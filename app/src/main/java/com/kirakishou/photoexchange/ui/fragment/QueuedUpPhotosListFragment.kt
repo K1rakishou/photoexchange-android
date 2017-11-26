@@ -93,47 +93,45 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         getViewModel().inputs.getQueuedUpPhotos()
     }
 
-    private fun onStartUploadingPhotos(ids: List<Long>) {
-        adapter.runOnAdapterHandler {
-            adapter.removeQueuedUpPhotos(ids)
-        }
-    }
-
-    private fun onPhotoUploaded(photo: TakenPhoto) {
-        Timber.d("onPhotoUploaded()")
-        check(isAdded)
-
-        adapter.runOnAdapterHandler {
-            /*adapter.removePhotoUploadingIndicator()
-            adapter.addFirst(AdapterItem(photo, AdapterItemType.VIEW_ITEM))*/
-
-            adapter.removeQueuedUpPhoto(photo.id)
-            adapter.add(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
-        }
-
-        //isPhotoUploading = false
-    }
-
-    private fun onAllPhotosUploaded() {
-
-    }
-
-    private fun onFailedToUploadPhoto() {
-        Timber.d("onFailedToUploadPhoto()")
-        check(isAdded)
-
-        adapter.runOnAdapterHandler {
-            adapter.add(AdapterItem(AdapterItemType.VIEW_FAILED_TO_UPLOAD))
-        }
-    }
-
     private fun onQueuedUpPhotosLoaded(queuedUpPhotosList: List<TakenPhoto>) {
+        Timber.d("QueuedUpPhotosListFragment.onQueuedUpPhotosLoaded()")
+
         if (queuedUpPhotosList.isNotEmpty()) {
             adapter.runOnAdapterHandler {
                 adapter.addQueuedUpPhotos(queuedUpPhotosList)
             }
         } else {
             //TODO: add message saying user should upload a photo first
+        }
+    }
+
+    private fun onStartUploadingPhotos(ids: List<Long>) {
+        adapter.runOnAdapterHandler {
+            //TODO: disable cancel button or some shit like that
+            //adapter.removeQueuedUpPhotos(ids)
+        }
+    }
+
+    private fun onPhotoUploaded(photo: TakenPhoto) {
+        Timber.d("QueuedUpPhotosListFragment.onPhotoUploaded()")
+        check(isAdded)
+
+        adapter.runOnAdapterHandler {
+            adapter.removeQueuedUpPhoto(photo.id)
+            adapter.add(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
+        }
+    }
+
+    private fun onAllPhotosUploaded() {
+        Timber.d("QueuedUpPhotosListFragment.onAllPhotosUploaded()")
+    }
+
+    private fun onFailedToUploadPhoto() {
+        Timber.d("QueuedUpPhotosListFragment.onFailedToUploadPhoto()")
+        check(isAdded)
+
+        adapter.runOnAdapterHandler {
+            adapter.add(AdapterItem(AdapterItemType.VIEW_FAILED_TO_UPLOAD))
         }
     }
 
