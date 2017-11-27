@@ -119,6 +119,11 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ startLookingForPhotos() }, this::onUnknownError)
 
+        compositeDisposable += getViewModel().outputs.onShowNoUploadedPhotosObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ onNoUploadedPhotos() }, this::onUnknownError)
+
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -215,11 +220,14 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun scrollToTop() {
-        receivedPhotosList.scrollToPosition(0)
+        adapter.runOnAdapterHandler {
+            adapter.notifyDataSetChanged()
+            receivedPhotosList.scrollToPosition(0)
+        }
     }
 
     private fun onPhotoReceived(data: PhotoAnswerAllFound) {
-        Timber.d("onPhotoReceived()")
+        Timber.d("ReceivedPhotosListFragment: onPhotoReceived()")
         check(isAdded)
 
         adapter.runOnAdapterHandler {
@@ -235,7 +243,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onNoPhotoOnTheServer() {
-        Timber.d("onNoPhoto()")
+        Timber.d("ReceivedPhotosListFragment: onNoPhoto()")
         check(isAdded)
 
         adapter.runOnAdapterHandler {
@@ -247,7 +255,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun errorWhileTryingToSearchForPhoto() {
-        Timber.d("errorWhileTryingToSearchForPhoto()")
+        Timber.d("ReceivedPhotosListFragment: errorWhileTryingToSearchForPhoto()")
         check(isAdded)
 
         adapter.runOnAdapterHandler {
@@ -259,7 +267,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun userNeedsToUploadMorePhotos() {
-        Timber.d("userNeedsToUploadMorePhotos()")
+        Timber.d("ReceivedPhotosListFragment: userNeedsToUploadMorePhotos()")
         check(isAdded)
 
         adapter.runOnAdapterHandler {
@@ -271,9 +279,17 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun startLookingForPhotos() {
-        Timber.d("Showing startLookingForPhotoAnswerService")
+        Timber.d("ReceivedPhotosListFragment: Showing startLookingForPhotoAnswerService")
         (activity as AllPhotosViewActivity).startLookingForPhotoAnswerService()
         showLookingForPhotoIndicator()
+    }
+
+    private fun onNoUploadedPhotos() {
+        Timber.d("ReceivedPhotosListFragment: onNoUploadedPhotos")
+
+        adapter.runOnAdapterHandler {
+            adapter.addMessage(ReceivedPhotosAdapter.MESSAGE_TYPE_UPLOAD_MORE_PHOTOS)
+        }
     }
 
     private fun onUnknownError(error: Throwable) {

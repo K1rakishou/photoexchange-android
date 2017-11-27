@@ -77,7 +77,7 @@ class UploadPhotoService : JobService() {
     }
 
     override fun onStartJob(params: JobParameters): Boolean {
-        Timber.d("UploadPhotoService onStartJob")
+        Timber.d("UploadPhotoService: onStartJob")
         initRx(params)
 
         try {
@@ -92,12 +92,11 @@ class UploadPhotoService : JobService() {
     }
 
     private fun handleCommand(params: JobParameters) {
-        updateUploadingNotificationShowUploading()
         viewModel.inputs.uploadPhotos()
     }
 
     override fun onStopJob(params: JobParameters): Boolean {
-        Timber.d("UploadPhotoService onStopJob")
+        Timber.d("UploadPhotoService: onStopJob")
         return true
     }
 
@@ -123,6 +122,11 @@ class UploadPhotoService : JobService() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ onAllPhotosUploaded(params) }, { onUnknownError(params, it) })
 
+        compositeDisposable += viewModel.outputs.onNoPhotosToUploadObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ onNoPhotosToUpload(params) }, { onUnknownError(params, it) })
+
         compositeDisposable += viewModel.errors.onBadResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -134,18 +138,24 @@ class UploadPhotoService : JobService() {
                 .subscribe({ onUnknownError(params, it) }, { onUnknownError(params, it) })
     }
 
+    private fun onNoPhotosToUpload(params: JobParameters) {
+        Timber.d("UploadPhotoService: onNoPhotosToUpload()")
+        finish(params, false)
+    }
+
     private fun onStartUploadQueuedUpPhotos(ids: List<Long>) {
-        Timber.d("onStartUploadQueuedUpPhotos()")
+        Timber.d("UploadPhotoService: onStartUploadQueuedUpPhotos()")
         sendEvent(PhotoUploadedEvent.startUploading(ids))
+        updateUploadingNotificationShowUploading()
     }
 
     private fun onPhotoUploaded(takenPhoto: TakenPhoto) {
-        Timber.d("onPhotoUploaded() photoName: ${takenPhoto.photoName}")
+        Timber.d("UploadPhotoService: onPhotoUploaded() photoName: ${takenPhoto.photoName}")
         sendEvent(PhotoUploadedEvent.photoUploaded(takenPhoto.id))
     }
 
     private fun onAllPhotosUploaded(params: JobParameters) {
-        Timber.d("onAllPhotosUploaded()")
+        Timber.d("UploadPhotoService: onAllPhotosUploaded()")
 
         sendEvent(PhotoUploadedEvent.done())
         updateUploadingNotificationShowSuccess()
@@ -153,7 +163,7 @@ class UploadPhotoService : JobService() {
     }
 
     private fun onBadResponse(params: JobParameters, errorCode: ServerErrorCode) {
-        Timber.d("BadResponse: errorCode: $errorCode")
+        Timber.d("UploadPhotoService: BadResponse: errorCode: $errorCode")
 
         sendEvent(PhotoUploadedEvent.fail())
         updateUploadingNotificationShowError()
@@ -161,7 +171,7 @@ class UploadPhotoService : JobService() {
     }
 
     private fun onUnknownError(params: JobParameters, error: Throwable) {
-        Timber.d("Unknown error: $error")
+        Timber.d("UploadPhotoService: Unknown error: $error")
 
         sendEvent(PhotoUploadedEvent.fail())
 
@@ -284,7 +294,7 @@ class UploadPhotoService : JobService() {
         val notificationIntent = Intent(this, TakePhotoActivity::class.java)
         notificationIntent.action = Intent.ACTION_MAIN
         notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER)
-        notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        //notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
         return PendingIntent.getActivity(
                 this,

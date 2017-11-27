@@ -59,7 +59,7 @@ class ReceivedPhotosAdapter(
         if (items.isEmpty() || items.first().getType() == AdapterItemType.VIEW_ITEM.ordinal) {
             items.add(0, item)
             notifyItemInserted(0)
-        } else if (items.size > 1) {
+        } else if (items.size >= 1) {
             items.add(1, item)
             notifyItemInserted(1)
         }

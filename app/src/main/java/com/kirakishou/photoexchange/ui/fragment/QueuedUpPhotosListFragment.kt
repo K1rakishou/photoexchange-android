@@ -64,14 +64,24 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onStartUploadingPhotos, this::onUnknownError)
+
+        compositeDisposable += getViewModel().outputs.onAllPhotosUploadedObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ onAllPhotosUploaded() }, this::onUnknownError)
     }
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRecyclerView()
-        showQueuedUpPhotos()
     }
 
     override fun onFragmentViewDestroy() {
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        showQueuedUpPhotos()
     }
 
     private fun initRecyclerView() {
@@ -94,42 +104,47 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onQueuedUpPhotosLoaded(queuedUpPhotosList: List<TakenPhoto>) {
-        Timber.d("QueuedUpPhotosListFragment.onQueuedUpPhotosLoaded()")
+        Timber.d("QueuedUpPhotosListFragment: onQueuedUpPhotosLoaded()")
 
-        if (queuedUpPhotosList.isNotEmpty()) {
-            adapter.runOnAdapterHandler {
+        adapter.runOnAdapterHandler {
+            adapter.clear()
+
+            if (queuedUpPhotosList.isNotEmpty()) {
                 adapter.addQueuedUpPhotos(queuedUpPhotosList)
+            } else {
+                adapter.addMessage(QueuedUpPhotosAdapter.MESSAGE_TYPE_NO_PHOTOS_TO_UPLOAD)
             }
-        } else {
-            //TODO: add message saying user should upload a photo first
         }
     }
 
     private fun onStartUploadingPhotos(ids: List<Long>) {
-        Timber.d("QueuedUpPhotosListFragment.onStartUploadingPhotos()")
+        Timber.d("QueuedUpPhotosListFragment: onStartUploadingPhotos()")
 
         adapter.runOnAdapterHandler {
             //TODO: disable cancel button or some shit like that
-            //adapter.removeQueuedUpPhotos(ids)
+            adapter.removeMessage()
         }
     }
 
     private fun onPhotoUploaded(photo: TakenPhoto) {
-        Timber.d("QueuedUpPhotosListFragment.onPhotoUploaded()")
+        Timber.d("QueuedUpPhotosListFragment: onPhotoUploaded()")
         check(isAdded)
 
         adapter.runOnAdapterHandler {
             adapter.removeQueuedUpPhoto(photo.id)
-            //adapter.add(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
         }
     }
 
     private fun onAllPhotosUploaded() {
-        Timber.d("QueuedUpPhotosListFragment.onAllPhotosUploaded()")
+        Timber.d("QueuedUpPhotosListFragment: onAllPhotosUploaded()")
+
+        adapter.runOnAdapterHandler {
+            adapter.addMessage(QueuedUpPhotosAdapter.MESSAGE_TYPE_ALL_PHOTOS_UPLOADED)
+        }
     }
 
     private fun onFailedToUploadPhoto() {
-        Timber.d("QueuedUpPhotosListFragment.onFailedToUploadPhoto()")
+        Timber.d("QueuedUpPhotosListFragment: onFailedToUploadPhoto()")
         check(isAdded)
 
         adapter.runOnAdapterHandler {

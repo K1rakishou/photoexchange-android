@@ -16,6 +16,8 @@ class QueuedUpPhotosAdapterSpanSizeLookup(
     override fun getSpanSize(position: Int): Int {
         val type = adapter.getItemViewType(position)
         return when (type) {
+            AdapterItemType.VIEW_MESSAGE.ordinal -> columnsCount
+
             AdapterItemType.VIEW_QUEUED_UP_PHOTO.ordinal -> 1
 
             else -> throw RuntimeException("Unknown item view type: $type")
