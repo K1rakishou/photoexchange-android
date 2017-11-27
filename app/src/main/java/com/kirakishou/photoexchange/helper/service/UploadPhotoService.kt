@@ -77,7 +77,7 @@ class UploadPhotoService : JobService() {
     }
 
     override fun onStartJob(params: JobParameters): Boolean {
-        Timber.d("UploadPhotoService onStartJob")
+        Timber.d("UploadPhotoService: onStartJob")
         initRx(params)
 
         try {
@@ -97,7 +97,7 @@ class UploadPhotoService : JobService() {
     }
 
     override fun onStopJob(params: JobParameters): Boolean {
-        Timber.d("UploadPhotoService onStopJob")
+        Timber.d("UploadPhotoService: onStopJob")
         return true
     }
 
@@ -135,17 +135,17 @@ class UploadPhotoService : JobService() {
     }
 
     private fun onStartUploadQueuedUpPhotos(ids: List<Long>) {
-        Timber.d("onStartUploadQueuedUpPhotos()")
+        Timber.d("UploadPhotoService: onStartUploadQueuedUpPhotos()")
         sendEvent(PhotoUploadedEvent.startUploading(ids))
     }
 
     private fun onPhotoUploaded(takenPhoto: TakenPhoto) {
-        Timber.d("onPhotoUploaded() photoName: ${takenPhoto.photoName}")
+        Timber.d("UploadPhotoService: onPhotoUploaded() photoName: ${takenPhoto.photoName}")
         sendEvent(PhotoUploadedEvent.photoUploaded(takenPhoto.id))
     }
 
     private fun onAllPhotosUploaded(params: JobParameters) {
-        Timber.d("onAllPhotosUploaded()")
+        Timber.d("UploadPhotoService: onAllPhotosUploaded()")
 
         sendEvent(PhotoUploadedEvent.done())
         updateUploadingNotificationShowSuccess()
@@ -153,7 +153,7 @@ class UploadPhotoService : JobService() {
     }
 
     private fun onBadResponse(params: JobParameters, errorCode: ServerErrorCode) {
-        Timber.d("BadResponse: errorCode: $errorCode")
+        Timber.d("UploadPhotoService: BadResponse: errorCode: $errorCode")
 
         sendEvent(PhotoUploadedEvent.fail())
         updateUploadingNotificationShowError()
@@ -161,7 +161,7 @@ class UploadPhotoService : JobService() {
     }
 
     private fun onUnknownError(params: JobParameters, error: Throwable) {
-        Timber.d("Unknown error: $error")
+        Timber.d("UploadPhotoService: Unknown error: $error")
 
         sendEvent(PhotoUploadedEvent.fail())
 

@@ -173,12 +173,12 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
     fun schedulePhotoUpload() {
         UploadPhotoService.scheduleJob(this)
-        Timber.d("UploadPhoto has been job scheduled")
+        Timber.d("AllPhotosViewActivity: UploadPhoto has been job scheduled")
     }
 
     fun startLookingForPhotoAnswerService() {
         FindPhotoAnswerService.scheduleImmediateJob(userInfoPreference.getUserId(), this)
-        Timber.d("A job has been scheduled")
+        Timber.d("AllPhotosViewActivity: A job has been scheduled")
 
         getViewModel().inputs.showLookingForPhotoIndicator()
     }
@@ -196,23 +196,23 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     fun onPhotoUploadedEvent(event: PhotoUploadedEvent) {
         when (event.status) {
             SendPhotoEventStatus.START -> {
-                Timber.d("SendPhotoEventStatus.START")
+                Timber.d("AllPhotosViewActivity: SendPhotoEventStatus.START")
                 getViewModel().inputs.startUploadingPhotos(event.photosToUpload)
             }
             SendPhotoEventStatus.PHOTO_UPLOADED -> {
-                Timber.d("SendPhotoEventStatus.PHOTO_UPLOADED")
+                Timber.d("AllPhotosViewActivity: SendPhotoEventStatus.PHOTO_UPLOADED")
 
                 check(event.photoId != -1L)
                 getViewModel().inputs.photoUploaded(event.photoId)
             }
             SendPhotoEventStatus.FAIL -> {
-                Timber.d("SendPhotoEventStatus.FAIL")
+                Timber.d("AllPhotosViewActivity: SendPhotoEventStatus.FAIL")
                 //TODO: add id of the photo here
                 getViewModel().inputs.showFailedToUploadPhoto()
             }
             SendPhotoEventStatus.DONE -> {
-                Timber.d("SendPhotoEventStatus.DONE")
-
+                Timber.d("AllPhotosViewActivity: SendPhotoEventStatus.DONE")
+                getViewModel().outputs.onAllPhotosUploadedObservable()
                 startLookingForPhotoAnswerService()
             }
             else -> IllegalArgumentException("Unknown event status: ${event.status}")
@@ -223,25 +223,25 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     fun onPhotoReceivedEvent(event: PhotoReceivedEvent) {
         when (event.status) {
             PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED -> {
-                Timber.d("PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED")
+                Timber.d("AllPhotosViewActivity: PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED")
                 checkNotNull(event.photoAnswer)
                 getViewModel().inputs.showPhotoReceived(event.photoAnswer!!, event.allFound)
             }
             PhotoReceivedEventStatus.SUCCESS_NOT_ALL_RECEIVED -> {
-                Timber.d("PhotoReceivedEventStatus.SUCCESS_NOT_ALL_RECEIVED")
+                Timber.d("AllPhotosViewActivity: PhotoReceivedEventStatus.SUCCESS_NOT_ALL_RECEIVED")
                 checkNotNull(event.photoAnswer)
                 getViewModel().inputs.showPhotoReceived(event.photoAnswer!!, event.allFound)
             }
             PhotoReceivedEventStatus.FAIL -> {
-                Timber.d("PhotoReceivedEventStatus.FAIL")
+                Timber.d("AllPhotosViewActivity: PhotoReceivedEventStatus.FAIL")
                 getViewModel().inputs.showErrorWhileTryingToLookForPhoto()
             }
             PhotoReceivedEventStatus.NO_PHOTOS_ON_SERVER -> {
-                Timber.d("PhotoReceivedEventStatus.NO_PHOTOS_ON_SERVER")
+                Timber.d("AllPhotosViewActivity: PhotoReceivedEventStatus.NO_PHOTOS_ON_SERVER")
                 getViewModel().inputs.showNoPhotoOnServer()
             }
             PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS -> {
-                Timber.d("PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS")
+                Timber.d("AllPhotosViewActivity: PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS")
                 getViewModel().inputs.showUserNeedsToUploadMorePhotos()
             }
             else -> IllegalArgumentException("Unknown event status: ${event.status}")

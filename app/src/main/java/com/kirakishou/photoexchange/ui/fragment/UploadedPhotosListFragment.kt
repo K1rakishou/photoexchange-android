@@ -171,11 +171,11 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onRetryButtonClicked(uploadedPhoto: TakenPhoto) {
-        Timber.d("photoName: ${uploadedPhoto.photoName}")
+        Timber.d("UploadedPhotosListFragment: photoName: ${uploadedPhoto.photoName}")
     }
 
     private fun onPhotoUploaded(photo: TakenPhoto) {
-        Timber.d("UploadedPhotosListFragment.onPhotoUploaded()")
+        Timber.d("UploadedPhotosListFragment: onPhotoUploaded()")
         check(isAdded)
 
         adapter.runOnAdapterHandler {
@@ -184,30 +184,30 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onStartUploadingPhotos(ids: List<Long>) {
-        Timber.d("UploadedPhotosListFragment.onStartUploadingPhotos()")
-        /*adapter.runOnAdapterHandler {
-            adapter.removeQueuedUpPhotos(ids)
-        }*/
+        Timber.d("UploadedPhotosListFragment: onStartUploadingPhotos()")
 
         adapter.runOnAdapterHandler {
+            adapter.removeMessageFooter()
             adapter.addPhotoUploadingIndicator()
         }
     }
 
     private fun onFailedToUploadPhoto() {
-        Timber.d("UploadedPhotosListFragment.onFailedToUploadPhoto()")
+        Timber.d("UploadedPhotosListFragment: onFailedToUploadPhoto()")
         check(isAdded)
 
         adapter.runOnAdapterHandler {
             adapter.removePhotoUploadingIndicator()
             adapter.addFirst(AdapterItem(AdapterItemType.VIEW_FAILED_TO_UPLOAD))
         }
-
-        //isPhotoUploading = false
     }
 
     private fun onAllPhotosUploaded() {
-        Timber.d("QueuedUpPhotosListFragment.onAllPhotosUploaded()")
+        Timber.d("UploadedPhotosListFragment: onAllPhotosUploaded()")
+
+        adapter.runOnAdapterHandler {
+            adapter.removePhotoUploadingIndicator()
+        }
     }
 
     private fun onUnknownError(error: Throwable) {

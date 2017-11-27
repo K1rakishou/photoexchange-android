@@ -38,7 +38,7 @@ interface TakenPhotosDao {
     @Query("UPDATE ${TakenPhotoEntity.TABLE_NAME} SET is_uploading = :arg0 WHERE id = :arg1")
     fun updateOneSetIsUploading(isUploading: Boolean, id: Long)
 
-    @Query("UPDATE ${TakenPhotoEntity.TABLE_NAME} SET photo_name = :arg0, photo_file_path = \"\" WHERE id = :arg1")
+    @Query("UPDATE ${TakenPhotoEntity.TABLE_NAME} SET uploaded = ${MyDatabase.SQLITE_TRUE}, photo_name = :arg0, photo_file_path = \"\" WHERE id = :arg1")
     fun updateOneSetUploaded(photoName: String, id: Long)
 
     @Query("DELETE FROM ${TakenPhotoEntity.TABLE_NAME} WHERE id = :arg0")

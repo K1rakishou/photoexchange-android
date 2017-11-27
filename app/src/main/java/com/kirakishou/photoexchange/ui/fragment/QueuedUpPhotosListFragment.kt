@@ -99,7 +99,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onQueuedUpPhotosLoaded(queuedUpPhotosList: List<TakenPhoto>) {
-        Timber.d("QueuedUpPhotosListFragment.onQueuedUpPhotosLoaded()")
+        Timber.d("QueuedUpPhotosListFragment: onQueuedUpPhotosLoaded()")
 
         if (queuedUpPhotosList.isNotEmpty()) {
             adapter.runOnAdapterHandler {
@@ -111,7 +111,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onStartUploadingPhotos(ids: List<Long>) {
-        Timber.d("QueuedUpPhotosListFragment.onStartUploadingPhotos()")
+        Timber.d("QueuedUpPhotosListFragment: onStartUploadingPhotos()")
 
         adapter.runOnAdapterHandler {
             //TODO: disable cancel button or some shit like that
@@ -120,7 +120,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onPhotoUploaded(photo: TakenPhoto) {
-        Timber.d("QueuedUpPhotosListFragment.onPhotoUploaded()")
+        Timber.d("QueuedUpPhotosListFragment: onPhotoUploaded()")
         check(isAdded)
 
         adapter.runOnAdapterHandler {
@@ -130,11 +130,11 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onAllPhotosUploaded() {
-        Timber.d("QueuedUpPhotosListFragment.onAllPhotosUploaded()")
+        Timber.d("QueuedUpPhotosListFragment: onAllPhotosUploaded()")
     }
 
     private fun onFailedToUploadPhoto() {
-        Timber.d("QueuedUpPhotosListFragment.onFailedToUploadPhoto()")
+        Timber.d("QueuedUpPhotosListFragment: onFailedToUploadPhoto()")
         check(isAdded)
 
         adapter.runOnAdapterHandler {

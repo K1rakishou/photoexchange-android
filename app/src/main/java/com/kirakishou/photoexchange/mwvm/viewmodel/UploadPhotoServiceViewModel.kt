@@ -89,7 +89,16 @@ class UploadPhotoServiceViewModel(
             return null
         }
 
+        val allPhotos = takenPhotosRepo.findAll().await()
+        Timber.d("AllPhotos #1")
+        allPhotos.forEach { Timber.d("photo: $it") }
+
         takenPhotosRepo.updateOneSetUploaded(queuedUpPhoto.id, response.photoName).await()
+
+        val allPhotos2 = takenPhotosRepo.findAll().await()
+        Timber.d("AllPhotos #2")
+        allPhotos2.forEach { Timber.d("photo: $it") }
+
         return response.photoName
     }
 

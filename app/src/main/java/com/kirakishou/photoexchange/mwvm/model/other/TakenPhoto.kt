@@ -3,7 +3,7 @@ package com.kirakishou.photoexchange.mwvm.model.other
 /**
  * Created by kirakishou on 11/10/2017.
  */
-class TakenPhoto(
+data class TakenPhoto(
         val id: Long,
         val location: LonLat,
         val photoFilePath: String,
