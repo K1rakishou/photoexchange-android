@@ -32,7 +32,6 @@ class UploadPhotoServiceViewModel(
 ) : UploadPhotoServiceInputs,
         UploadPhotoServiceOutputs,
         UploadPhotoServiceErrors {
-
     val inputs: UploadPhotoServiceInputs = this
     val outputs: UploadPhotoServiceOutputs = this
     val errors: UploadPhotoServiceErrors = this
@@ -41,6 +40,7 @@ class UploadPhotoServiceViewModel(
     private val compositeJob = CompositeJob()
     private val MAX_ATTEMPTS = 3
 
+    private val onNoPhotosToUploadOutput = PublishSubject.create<Unit>()
     private val onAllPhotosUploadedOutput = PublishSubject.create<Unit>()
     private val onStartUploadQueuedUpPhotosOutput = PublishSubject.create<List<Long>>()
     private val sendPhotoResponseOutput = PublishSubject.create<TakenPhoto>()
@@ -51,17 +51,19 @@ class UploadPhotoServiceViewModel(
         compositeJob += async {
             try {
                 val queuedUpPhotos = takenPhotosRepo.findAllQueuedUp().await()
-                if (queuedUpPhotos.isNotEmpty()) {
-                    val ids = queuedUpPhotos.map { it.id }
+                if (queuedUpPhotos.isEmpty()) {
+                    onNoPhotosToUploadOutput.onNext(Unit)
+                    return@async
+                }
 
-                    onStartUploadQueuedUpPhotosOutput.onNext(ids)
+                val ids = queuedUpPhotos.map { it.id }
+                onStartUploadQueuedUpPhotosOutput.onNext(ids)
 
-                    for (queuedUpPhoto in queuedUpPhotos) {
-                        val photoName = uploadPhoto(queuedUpPhoto)
-                        if (photoName != null) {
-                            queuedUpPhoto.photoName = photoName
-                            sendPhotoResponseOutput.onNext(queuedUpPhoto)
-                        }
+                for (queuedUpPhoto in queuedUpPhotos) {
+                    val photoName = uploadPhoto(queuedUpPhoto)
+                    if (photoName != null) {
+                        queuedUpPhoto.photoName = photoName
+                        sendPhotoResponseOutput.onNext(queuedUpPhoto)
                     }
                 }
 
@@ -126,6 +128,7 @@ class UploadPhotoServiceViewModel(
         return null
     }
 
+    override fun onNoPhotosToUploadObservable(): Observable<Unit> = onNoPhotosToUploadOutput
     override fun onStartUploadQueuedUpPhotosObservable(): Observable<List<Long>> = onStartUploadQueuedUpPhotosOutput
     override fun onAllPhotosUploadedObservable(): Observable<Unit> = onAllPhotosUploadedOutput
     override fun onUploadPhotoResponseObservable(): Observable<TakenPhoto> = sendPhotoResponseOutput

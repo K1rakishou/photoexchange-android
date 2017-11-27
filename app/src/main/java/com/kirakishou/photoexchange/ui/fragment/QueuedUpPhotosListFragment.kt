@@ -73,10 +73,15 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRecyclerView()
-        showQueuedUpPhotos()
     }
 
     override fun onFragmentViewDestroy() {
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        showQueuedUpPhotos()
     }
 
     private fun initRecyclerView() {
@@ -102,6 +107,8 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         Timber.d("QueuedUpPhotosListFragment: onQueuedUpPhotosLoaded()")
 
         adapter.runOnAdapterHandler {
+            adapter.clear()
+
             if (queuedUpPhotosList.isNotEmpty()) {
                 adapter.addQueuedUpPhotos(queuedUpPhotosList)
             } else {

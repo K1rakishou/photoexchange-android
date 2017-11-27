@@ -130,7 +130,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
     private fun initTabs(intent: Intent) {
         tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_queued_up)))
-        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_sent)))
+        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_uploaded)))
         tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_received)))
         tabLayout.tabGravity = TabLayout.GRAVITY_FILL
 
