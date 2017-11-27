@@ -64,6 +64,7 @@ class AllPhotosViewActivityViewModel(
     private val startLookingForPhotosOutput = PublishSubject.create<Unit>()
     private val onQueuedUpPhotosLoadedOutput = PublishSubject.create<List<TakenPhoto>>()
     private val allPhotosUploadedOutput = PublishSubject.create<Unit>()
+    private val showNoUploadedPhotosOutput = PublishSubject.create<Unit>()
 
     //errors
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
@@ -187,11 +188,16 @@ class AllPhotosViewActivityViewModel(
                 val receivedCount = photoAnswerRepository.countAll().await()
                 val uploadedCount = takenPhotosRepository.countAll().await()
 
-                if (uploadedCount > receivedCount) {
-                    Timber.d("uploadedCount GREATER THAN receivedCount")
-                    startLookingForPhotosOutput.onNext(Unit)
-                } else {
-                    Timber.d("uploadedCount LESS OR EQUALS THAN receivedCount")
+                when {
+                    uploadedCount == 0L -> {
+                        Timber.d("No uploaded photos, show a message")
+                        showNoUploadedPhotosOutput.onNext(Unit)
+                    }
+                    uploadedCount > receivedCount -> {
+                        Timber.d("uploadedCount GREATER THAN receivedCount")
+                        startLookingForPhotosOutput.onNext(Unit)
+                    }
+                    else -> Timber.d("uploadedCount LESS OR EQUALS THAN receivedCount")
                 }
             } catch (error: Throwable) {
                 startLookingForPhotosOutput.onError(error)
@@ -242,6 +248,7 @@ class AllPhotosViewActivityViewModel(
     override fun onShowUserNeedsToUploadMorePhotosObservable(): Observable<Unit> = showUserNeedsToUploadMorePhotosOutput
     override fun onStartLookingForPhotosObservable(): Observable<Unit> = startLookingForPhotosOutput
     override fun onQueuedUpPhotosLoadedObservable(): Observable<List<TakenPhoto>> = onQueuedUpPhotosLoadedOutput
+    override fun onShowNoUploadedPhotosObservable(): Observable<Unit> = showNoUploadedPhotosOutput
     override fun onUnknownErrorObservable(): Observable<Throwable> = unknownErrorSubject
 }
 

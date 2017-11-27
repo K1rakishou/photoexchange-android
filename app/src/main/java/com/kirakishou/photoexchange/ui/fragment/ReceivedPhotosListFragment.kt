@@ -119,6 +119,11 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ startLookingForPhotos() }, this::onUnknownError)
 
+        compositeDisposable += getViewModel().outputs.onShowNoUploadedPhotosObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ onNoUploadedPhotos() }, this::onUnknownError)
+
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -277,6 +282,14 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         Timber.d("ReceivedPhotosListFragment: Showing startLookingForPhotoAnswerService")
         (activity as AllPhotosViewActivity).startLookingForPhotoAnswerService()
         showLookingForPhotoIndicator()
+    }
+
+    private fun onNoUploadedPhotos() {
+        Timber.d("ReceivedPhotosListFragment: onNoUploadedPhotos")
+
+        adapter.runOnAdapterHandler {
+            adapter.addMessage(ReceivedPhotosAdapter.MESSAGE_TYPE_UPLOAD_MORE_PHOTOS)
+        }
     }
 
     private fun onUnknownError(error: Throwable) {
