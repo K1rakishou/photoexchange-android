@@ -294,7 +294,7 @@ class UploadPhotoService : JobService() {
         val notificationIntent = Intent(this, TakePhotoActivity::class.java)
         notificationIntent.action = Intent.ACTION_MAIN
         notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER)
-        notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        //notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
         return PendingIntent.getActivity(
                 this,
