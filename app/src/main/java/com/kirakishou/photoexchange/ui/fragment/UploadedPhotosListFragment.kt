@@ -95,6 +95,11 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onStartUploadingPhotos, this::onUnknownError)
 
+        compositeDisposable += getViewModel().outputs.onAllPhotosUploadedObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ onAllPhotosUploaded() }, this::onUnknownError)
+
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -183,6 +188,10 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         /*adapter.runOnAdapterHandler {
             adapter.removeQueuedUpPhotos(ids)
         }*/
+
+        adapter.runOnAdapterHandler {
+            adapter.addPhotoUploadingIndicator()
+        }
     }
 
     private fun onFailedToUploadPhoto() {
@@ -195,6 +204,10 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
 
         //isPhotoUploading = false
+    }
+
+    private fun onAllPhotosUploaded() {
+        Timber.d("QueuedUpPhotosListFragment.onAllPhotosUploaded()")
     }
 
     private fun onUnknownError(error: Throwable) {

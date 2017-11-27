@@ -107,7 +107,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         val openReceivedPhotosFragment = extras.getBoolean("open_received_photos_fragment", false)
         if (openReceivedPhotosFragment) {
             selectReceivedPhotosTab()
-            getViewModel().inputs.receivedPhotosFragmentScrollToTop()
+            getViewModel().inputs.scrollToTop()
         }
     }
 
@@ -180,14 +180,14 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         FindPhotoAnswerService.scheduleImmediateJob(userInfoPreference.getUserId(), this)
         Timber.d("A job has been scheduled")
 
-        getViewModel().inputs.receivedPhotosFragmentShowLookingForPhotoIndicator()
+        getViewModel().inputs.showLookingForPhotoIndicator()
     }
 
     fun showNewPhotoReceivedNotification() {
         Snackbar.make(takePhotoButton, getString(R.string.new_photo_received), Snackbar.LENGTH_LONG)
                 .setAction(getString(R.string.snackbar_button_title_show), {
                     selectReceivedPhotosTab()
-                    getViewModel().inputs.receivedPhotosFragmentScrollToTop()
+                    getViewModel().inputs.scrollToTop()
                 })
                 .show()
     }
@@ -197,21 +197,22 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         when (event.status) {
             SendPhotoEventStatus.START -> {
                 Timber.d("SendPhotoEventStatus.START")
-                getViewModel().inputs.uploadedPhotosFragmentStartUploadingPhotos(event.photosToUpload)
+                getViewModel().inputs.startUploadingPhotos(event.photosToUpload)
             }
             SendPhotoEventStatus.PHOTO_UPLOADED -> {
                 Timber.d("SendPhotoEventStatus.PHOTO_UPLOADED")
 
                 check(event.photoId != -1L)
-                getViewModel().inputs.uploadedPhotosFragmentShowPhotoUploaded(event.photoId)
+                getViewModel().inputs.photoUploaded(event.photoId)
             }
             SendPhotoEventStatus.FAIL -> {
                 Timber.d("SendPhotoEventStatus.FAIL")
                 //TODO: add id of the photo here
-                getViewModel().inputs.uploadedPhotosFragmentShowFailedToUploadPhoto()
+                getViewModel().inputs.showFailedToUploadPhoto()
             }
             SendPhotoEventStatus.DONE -> {
                 Timber.d("SendPhotoEventStatus.DONE")
+
                 startLookingForPhotoAnswerService()
             }
             else -> IllegalArgumentException("Unknown event status: ${event.status}")
@@ -224,24 +225,24 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
             PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED -> {
                 Timber.d("PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED")
                 checkNotNull(event.photoAnswer)
-                getViewModel().inputs.receivedPhotosFragmentShowPhotoReceived(event.photoAnswer!!, event.allFound)
+                getViewModel().inputs.showPhotoReceived(event.photoAnswer!!, event.allFound)
             }
             PhotoReceivedEventStatus.SUCCESS_NOT_ALL_RECEIVED -> {
                 Timber.d("PhotoReceivedEventStatus.SUCCESS_NOT_ALL_RECEIVED")
                 checkNotNull(event.photoAnswer)
-                getViewModel().inputs.receivedPhotosFragmentShowPhotoReceived(event.photoAnswer!!, event.allFound)
+                getViewModel().inputs.showPhotoReceived(event.photoAnswer!!, event.allFound)
             }
             PhotoReceivedEventStatus.FAIL -> {
                 Timber.d("PhotoReceivedEventStatus.FAIL")
-                getViewModel().inputs.receivedPhotosFragmentShowErrorWhileTryingToLookForPhoto()
+                getViewModel().inputs.showErrorWhileTryingToLookForPhoto()
             }
             PhotoReceivedEventStatus.NO_PHOTOS_ON_SERVER -> {
                 Timber.d("PhotoReceivedEventStatus.NO_PHOTOS_ON_SERVER")
-                getViewModel().inputs.receivedPhotosFragmentShowNoPhotoOnServer()
+                getViewModel().inputs.showNoPhotoOnServer()
             }
             PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS -> {
                 Timber.d("PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS")
-                getViewModel().inputs.receivedPhotosFragmentShowUserNeedsToUploadMorePhotos()
+                getViewModel().inputs.showUserNeedsToUploadMorePhotos()
             }
             else -> IllegalArgumentException("Unknown event status: ${event.status}")
         }

@@ -47,6 +47,7 @@ class AllPhotosViewActivityViewModel(
     private val showErrorWhileTryingToLookForPhotoInput = PublishSubject.create<Unit>()
     private val showNoPhotoOnServerInput = PublishSubject.create<Unit>()
     private val showUserNeedsToUploadMorePhotosInput = PublishSubject.create<Unit>()
+    private val allPhotosUploadedInput = PublishSubject.create<Unit>()
 
     //outputs
     private val startUploadingPhotosOutput = PublishSubject.create<List<Long>>()
@@ -62,6 +63,7 @@ class AllPhotosViewActivityViewModel(
     private val showUserNeedsToUploadMorePhotosOutput = PublishSubject.create<Unit>()
     private val startLookingForPhotosOutput = PublishSubject.create<Unit>()
     private val onQueuedUpPhotosLoadedOutput = PublishSubject.create<List<TakenPhoto>>()
+    private val allPhotosUploadedOutput = PublishSubject.create<Unit>()
 
     //errors
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
@@ -119,6 +121,11 @@ class AllPhotosViewActivityViewModel(
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .subscribe(showUserNeedsToUploadMorePhotosOutput::onNext, this::handleErrors)
+
+        compositeDisposable += allPhotosUploadedInput
+                .subscribeOn(schedulers.provideIo())
+                .observeOn(schedulers.provideIo())
+                .subscribe(allPhotosUploadedOutput::onNext, this::handleErrors)
     }
 
     override fun fetchOnePageUploadedPhotos(page: Int, count: Int) {
@@ -129,19 +136,19 @@ class AllPhotosViewActivityViewModel(
         fetchOnePageReceivedPhotosInput.onNext(Pageable(page, count))
     }
 
-    override fun receivedPhotosFragmentScrollToTop() {
+    override fun scrollToTop() {
         scrollToTopInput.onNext(Unit)
     }
 
-    override fun receivedPhotosFragmentShowLookingForPhotoIndicator() {
+    override fun showLookingForPhotoIndicator() {
         showLookingForPhotoIndicatorInput.onNext(Unit)
     }
 
-    override fun uploadedPhotosFragmentStartUploadingPhotos(ids: List<Long>) {
+    override fun startUploadingPhotos(ids: List<Long>) {
         startUploadingPhotosInput.onNext(ids)
     }
 
-    override fun uploadedPhotosFragmentShowPhotoUploaded(photoId: Long) {
+    override fun photoUploaded(photoId: Long) {
         compositeJob += async {
             try {
                 val photo = takenPhotosRepository.findOne(photoId).await()
@@ -152,23 +159,23 @@ class AllPhotosViewActivityViewModel(
         }
     }
 
-    override fun uploadedPhotosFragmentShowFailedToUploadPhoto() {
+    override fun showFailedToUploadPhoto() {
         showFailedToUploadPhotoInput.onNext(Unit)
     }
 
-    override fun receivedPhotosFragmentShowPhotoReceived(photo: PhotoAnswer, allFound: Boolean) {
+    override fun showPhotoReceived(photo: PhotoAnswer, allFound: Boolean) {
         showPhotoReceivedInput.onNext(PhotoAnswerAllFound(photo, allFound))
     }
 
-    override fun receivedPhotosFragmentShowErrorWhileTryingToLookForPhoto() {
+    override fun showErrorWhileTryingToLookForPhoto() {
         showErrorWhileTryingToLookForPhotoInput.onNext(Unit)
     }
 
-    override fun receivedPhotosFragmentShowNoPhotoOnServer() {
+    override fun showNoPhotoOnServer() {
         showNoPhotoOnServerInput.onNext(Unit)
     }
 
-    override fun receivedPhotosFragmentShowUserNeedsToUploadMorePhotos() {
+    override fun showUserNeedsToUploadMorePhotos() {
         showUserNeedsToUploadMorePhotosInput.onNext(Unit)
     }
 
@@ -204,6 +211,10 @@ class AllPhotosViewActivityViewModel(
         }
     }
 
+    override fun allPhotosUploaded() {
+        allPhotosUploadedInput.onNext(Unit)
+    }
+
     private fun handleErrors(error: Throwable) {
         Timber.e(error)
         unknownErrorSubject.onNext(error)
@@ -215,6 +226,7 @@ class AllPhotosViewActivityViewModel(
         super.onCleared()
     }
 
+    override fun onAllPhotosUploadedObservable(): Observable<Unit> = allPhotosUploadedOutput
     override fun onStartUploadingPhotosObservable(): Observable<List<Long>> = startUploadingPhotosOutput
     override fun onUploadedPhotosPageReceivedObservable(): Observable<List<TakenPhoto>> = onUploadedPhotosPageReceivedOutput
     override fun onReceivedPhotosPageReceivedObservable(): Observable<List<PhotoAnswer>> = onReceivedPhotosPageReceivedOutput

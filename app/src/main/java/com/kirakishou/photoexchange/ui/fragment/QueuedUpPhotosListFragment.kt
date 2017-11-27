@@ -64,6 +64,11 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onStartUploadingPhotos, this::onUnknownError)
+
+        compositeDisposable += getViewModel().outputs.onAllPhotosUploadedObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ onAllPhotosUploaded() }, this::onUnknownError)
     }
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
