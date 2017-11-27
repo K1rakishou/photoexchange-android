@@ -5,6 +5,7 @@ import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.widget.ImageView
 import android.widget.ProgressBar
+import android.widget.TextView
 import butterknife.BindView
 import butterknife.ButterKnife
 import com.bumptech.glide.Glide
@@ -22,6 +23,34 @@ import java.io.File
 class QueuedUpPhotosAdapter(
         private val context: Context
 ) : BaseAdapter<TakenPhoto>(context) {
+
+    private val messages = arrayOf(
+            "No photos to upload",
+            "All photos has been uploaded"
+    )
+
+    @Volatile
+    private var messageType = -1
+
+    fun addMessage(messageType: Int) {
+        checkInited()
+
+        if (items.isEmpty() || items.first().getType() != AdapterItemType.VIEW_MESSAGE.ordinal) {
+            this.messageType = messageType
+
+            items.add(0, AdapterItem(AdapterItemType.VIEW_MESSAGE))
+            notifyItemInserted(0)
+        }
+    }
+
+    fun removeMessage() {
+        checkInited()
+
+        if (items.isNotEmpty() && items.first().getType() == AdapterItemType.VIEW_MESSAGE.ordinal) {
+            items.removeAt(0)
+            notifyItemRemoved(0)
+        }
+    }
 
     fun addQueuedUpPhotos(queuedUpPhotosList: List<TakenPhoto>) {
         checkInited()
@@ -53,7 +82,9 @@ class QueuedUpPhotosAdapter(
 
     override fun getBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
         return mutableListOf(
-                BaseAdapterInfo(AdapterItemType.VIEW_QUEUED_UP_PHOTO, R.layout.adapter_item_photo_queued_up, QueuedUpPhotoViewHolder::class.java))
+                BaseAdapterInfo(AdapterItemType.VIEW_QUEUED_UP_PHOTO, R.layout.adapter_item_photo_queued_up, QueuedUpPhotoViewHolder::class.java),
+                BaseAdapterInfo(AdapterItemType.VIEW_MESSAGE, R.layout.adapter_item_message, MessageViewHolder::class.java)
+        )
     }
 
     override fun onViewHolderBound(holder: RecyclerView.ViewHolder, position: Int) {
@@ -83,5 +114,20 @@ class QueuedUpPhotosAdapter(
         init {
             ButterKnife.bind(this, itemView)
         }
+    }
+
+    class MessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        @BindView(R.id.message)
+        lateinit var messageTv: TextView
+
+        init {
+            ButterKnife.bind(this, itemView)
+        }
+    }
+
+    companion object {
+        val MESSAGE_TYPE_NO_PHOTOS_TO_UPLOAD = 0
+        val MESSAGE_TYPE_ALL_PHOTOS_UPLOADED = 1
     }
 }
