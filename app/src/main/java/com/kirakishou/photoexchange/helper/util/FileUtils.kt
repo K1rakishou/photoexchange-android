@@ -9,12 +9,12 @@ import java.io.File
  */
 object FileUtils {
 
-    fun deletePhotoFile(takenPhotooto: TakenPhoto) {
-        val photoFile = File(takenPhotooto.photoFilePath)
+    fun deletePhotoFile(takenPhototo: TakenPhoto) {
+        val photoFile = File(takenPhototo.photoFilePath)
         if (photoFile.exists()) {
             val wasDeleted = photoFile.delete()
             if (!wasDeleted) {
-                Timber.d("Could not delete file: ${takenPhotooto.photoFilePath}")
+                Timber.d("Could not delete file: ${takenPhototo.photoFilePath}")
             }
         }
     }

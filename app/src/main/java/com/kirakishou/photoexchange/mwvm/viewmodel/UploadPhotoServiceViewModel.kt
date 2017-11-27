@@ -5,6 +5,7 @@ import com.kirakishou.photoexchange.helper.CompositeJob
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.mwvm.model.dto.PhotoToBeUploaded
 import com.kirakishou.photoexchange.mwvm.model.exception.ApiException
 import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
@@ -89,16 +90,9 @@ class UploadPhotoServiceViewModel(
             return null
         }
 
-        val allPhotos = takenPhotosRepo.findAll().await()
-        Timber.d("AllPhotos #1")
-        allPhotos.forEach { Timber.d("photo: $it") }
+        FileUtils.deletePhotoFile(queuedUpPhoto)
 
         takenPhotosRepo.updateOneSetUploaded(queuedUpPhoto.id, response.photoName).await()
-
-        val allPhotos2 = takenPhotosRepo.findAll().await()
-        Timber.d("AllPhotos #2")
-        allPhotos2.forEach { Timber.d("photo: $it") }
-
         return response.photoName
     }
 

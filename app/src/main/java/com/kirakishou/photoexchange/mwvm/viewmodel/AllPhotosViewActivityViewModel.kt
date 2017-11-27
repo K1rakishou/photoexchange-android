@@ -182,6 +182,8 @@ class AllPhotosViewActivityViewModel(
     override fun shouldStartLookingForPhotos() {
         compositeJob += async {
             try {
+                delay(500, TimeUnit.MILLISECONDS)
+
                 val receivedCount = photoAnswerRepository.countAll().await()
                 val uploadedCount = takenPhotosRepository.countAll().await()
 

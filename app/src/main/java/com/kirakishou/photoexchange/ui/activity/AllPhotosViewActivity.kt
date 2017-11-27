@@ -212,7 +212,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
             }
             SendPhotoEventStatus.DONE -> {
                 Timber.d("AllPhotosViewActivity: SendPhotoEventStatus.DONE")
-                getViewModel().outputs.onAllPhotosUploadedObservable()
+                getViewModel().inputs.allPhotosUploaded()
                 startLookingForPhotoAnswerService()
             }
             else -> IllegalArgumentException("Unknown event status: ${event.status}")

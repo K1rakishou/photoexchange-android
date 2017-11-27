@@ -215,7 +215,10 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun scrollToTop() {
-        receivedPhotosList.scrollToPosition(0)
+        adapter.runOnAdapterHandler {
+            adapter.notifyDataSetChanged()
+            receivedPhotosList.scrollToPosition(0)
+        }
     }
 
     private fun onPhotoReceived(data: PhotoAnswerAllFound) {
