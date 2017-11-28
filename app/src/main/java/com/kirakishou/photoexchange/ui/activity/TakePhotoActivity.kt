@@ -94,6 +94,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         getPermissions()
         generateOrReadUserId()
 
+        getViewModel().showDatabaseDebugInfo()
         //getViewModel().inputs.cleanTakenPhotosDB()
     }
 

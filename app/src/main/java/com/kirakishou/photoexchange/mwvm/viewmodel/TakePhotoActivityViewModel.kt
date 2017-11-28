@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.mwvm.viewmodel
 
 import com.kirakishou.photoexchange.base.BaseViewModel
+import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.util.FileUtils
@@ -20,6 +21,7 @@ import timber.log.Timber
  */
 class TakePhotoActivityViewModel(
         private val takenPhotosRepo: TakenPhotosRepository,
+        private val photoAnswerRepo: PhotoAnswerRepository,
         private val schedulers: SchedulerProvider
 ) : BaseViewModel(),
         MainActivityViewModelInputs,
@@ -32,6 +34,23 @@ class TakePhotoActivityViewModel(
 
     private val onTakenPhotoSavedOutput = PublishSubject.create<TakenPhoto>()
     private val onUnknownErrorErrorSubject = PublishSubject.create<Throwable>()
+
+    fun showDatabaseDebugInfo() {
+        if (!Constants.isDebugBuild) {
+            return
+        }
+
+        compositeJob += async {
+            val allTakenPhotos = takenPhotosRepo.findAllDebug().await()
+            val allPhotoAnswers = photoAnswerRepo.findAllDebug().await()
+
+            Timber.d("=== Taken photos ===")
+            allTakenPhotos.forEach { Timber.d("photo: $it") }
+
+            Timber.d("=== Photo answer ===")
+            allPhotoAnswers.forEach { Timber.d("photo: $it") }
+        }
+    }
 
     override fun cleanTakenPhotosDB() {
         compositeJob += async {

@@ -60,6 +60,12 @@ class PhotoAnswerRepository(
                 .map(mapper::toPhotoAnswers)
     }
 
+    fun findAllDebug(): Single<List<PhotoAnswerEntity>> {
+        return photoAnswerDao.findAll()
+                .subscribeOn(schedulers.provideIo())
+                .observeOn(schedulers.provideIo())
+    }
+
     fun countAll(): Single<Long> {
         return photoAnswerDao.countAll()
                 .subscribeOn(schedulers.provideIo())

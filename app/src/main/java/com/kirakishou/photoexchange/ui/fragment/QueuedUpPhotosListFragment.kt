@@ -120,8 +120,14 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onTakenPhotoUploadingCanceled(id: Long) {
+        Timber.d("QueuedUpPhotosListFragment: onTakenPhotoUploadingCanceled()")
+
         adapter.runOnAdapterHandler {
             adapter.removeQueuedUpPhoto(id)
+
+            if (adapter.itemCount == 0) {
+                adapter.addMessage(QueuedUpPhotosAdapter.MESSAGE_TYPE_NO_PHOTOS_TO_UPLOAD)
+            }
         }
     }
 
