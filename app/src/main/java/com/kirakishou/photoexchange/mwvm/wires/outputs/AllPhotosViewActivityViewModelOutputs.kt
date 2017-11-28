@@ -24,4 +24,5 @@ interface AllPhotosViewActivityViewModelOutputs {
     fun onQueuedUpPhotosLoadedObservable(): Observable<List<TakenPhoto>>
     fun onAllPhotosUploadedObservable(): Observable<Unit>
     fun onShowNoUploadedPhotosObservable(): Observable<Unit>
+    fun onTakenPhotoUploadingCanceledObservable(): Observable<Long>
 }

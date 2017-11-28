@@ -30,8 +30,11 @@ class UploadedPhotosAdapter(
 
     private val selector = UploadedPhotosIdSelectorFunction()
     private val duplicatesCheckerSet = mutableSetOf<Long>()
-
     private val noPhotosUploadedMessage: String = context.getString(R.string.no_photos_uploaded)
+    private val notificationTypes = arrayListOf(
+            AdapterItemType.VIEW_PROGRESSBAR.ordinal,
+            AdapterItemType.VIEW_MESSAGE.ordinal,
+            AdapterItemType.VIEW_PHOTO_UPLOADING.ordinal)
 
     private fun isDuplicate(item: AdapterItem<TakenPhoto>): Boolean {
         if (item.getType() != AdapterItemType.VIEW_ITEM.ordinal) {
@@ -60,19 +63,25 @@ class UploadedPhotosAdapter(
             return
         }
 
-        super.add(item)
+        if (items.isEmpty() || items.first().getType() !in notificationTypes) {
+            items.add(0, item)
+            notifyItemInserted(0)
+        } else {
+            items.add(1, item)
+            notifyItemInserted(1)
+        }
     }
 
     override fun addAll(items: List<AdapterItem<TakenPhoto>>) {
-        super.addAll(items.filter { isDuplicate(it) })
+        items.forEach { add(it) }
     }
 
     fun addPhotoUploadingIndicator() {
         checkInited()
 
         if (items.isEmpty() || items.first().getType() != AdapterItemType.VIEW_PHOTO_UPLOADING.ordinal) {
-            items.add(AdapterItem(AdapterItemType.VIEW_PHOTO_UPLOADING))
-            notifyItemInserted(items.lastIndex)
+            items.add(0, AdapterItem(AdapterItemType.VIEW_PHOTO_UPLOADING))
+            notifyItemInserted(0)
         }
     }
 
@@ -150,10 +159,6 @@ class UploadedPhotosAdapter(
                 }
             }
 
-            is ProgressBarViewHolder -> {
-                holder.progressBar.isIndeterminate = true
-            }
-
             is PhotoUploadErrorViewHolder -> {
                 if (items[position].value.isPresent()) {
                     val item = items[position].value.get()
@@ -166,8 +171,10 @@ class UploadedPhotosAdapter(
                 holder.messageTv.text = noPhotosUploadedMessage
             }
 
+            is ProgressBarViewHolder -> {
+            }
+
             is PhotoUploadingViewHolder -> {
-                holder.progressBar.isIndeterminate = true
             }
         }
     }

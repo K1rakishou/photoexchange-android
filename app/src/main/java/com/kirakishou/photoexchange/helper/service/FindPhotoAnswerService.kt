@@ -292,7 +292,7 @@ class FindPhotoAnswerService : JobService() {
                     .setSmallIcon(android.R.drawable.stat_sys_download_done)
                     .setWhen(System.currentTimeMillis())
                     .setContentIntent(getNotificationIntent())
-                    .setAutoCancel(false)
+                    .setAutoCancel(true)
                     .build()
         } else {
             return NotificationCompat.Builder(this)
@@ -301,7 +301,7 @@ class FindPhotoAnswerService : JobService() {
                     .setSmallIcon(android.R.drawable.stat_sys_download_done)
                     .setWhen(System.currentTimeMillis())
                     .setContentIntent(getNotificationIntent())
-                    .setAutoCancel(false)
+                    .setAutoCancel(true)
                     .build()
         }
     }

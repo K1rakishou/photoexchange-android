@@ -4,6 +4,7 @@ import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.mwvm.model.dto.PhotoAnswerAllFound
 import com.kirakishou.photoexchange.mwvm.model.other.Pageable
 import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
@@ -65,6 +66,7 @@ class AllPhotosViewActivityViewModel(
     private val onQueuedUpPhotosLoadedOutput = PublishSubject.create<List<TakenPhoto>>()
     private val allPhotosUploadedOutput = PublishSubject.create<Unit>()
     private val showNoUploadedPhotosOutput = PublishSubject.create<Unit>()
+    private val onTakenPhotoUploadingCanceledOutput = PublishSubject.create<Long>()
 
     //errors
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
@@ -223,6 +225,20 @@ class AllPhotosViewActivityViewModel(
         allPhotosUploadedInput.onNext(Unit)
     }
 
+    override fun cancelTakenPhotoUploading(id: Long) {
+        compositeJob += async {
+            try {
+                val takenPhoto = takenPhotosRepository.findOne(id).await()
+                FileUtils.deletePhotoFile(takenPhoto)
+                takenPhotosRepository.deleteOne(id).await()
+
+                onTakenPhotoUploadingCanceledOutput.onNext(id)
+            } catch (error: Throwable) {
+                onTakenPhotoUploadingCanceledOutput.onError(error)
+            }
+        }
+    }
+
     private fun handleErrors(error: Throwable) {
         Timber.e(error)
         unknownErrorSubject.onNext(error)
@@ -234,6 +250,7 @@ class AllPhotosViewActivityViewModel(
         super.onCleared()
     }
 
+    override fun onTakenPhotoUploadingCanceledObservable(): Observable<Long> = onTakenPhotoUploadingCanceledOutput
     override fun onAllPhotosUploadedObservable(): Observable<Unit> = allPhotosUploadedOutput
     override fun onStartUploadingPhotosObservable(): Observable<List<Long>> = startUploadingPhotosOutput
     override fun onUploadedPhotosPageReceivedObservable(): Observable<List<TakenPhoto>> = onUploadedPhotosPageReceivedOutput

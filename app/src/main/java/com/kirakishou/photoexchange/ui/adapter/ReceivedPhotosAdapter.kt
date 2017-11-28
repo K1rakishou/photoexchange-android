@@ -169,11 +169,9 @@ class ReceivedPhotosAdapter(
             }
 
             is ProgressBarViewHolder -> {
-                holder.progressBar.isIndeterminate = true
             }
 
             is LookingForPhotoViewHolder -> {
-                holder.progressBar.isIndeterminate = true
             }
 
             is MessageViewHolder -> {

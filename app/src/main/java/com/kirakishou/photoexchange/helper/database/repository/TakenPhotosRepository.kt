@@ -62,6 +62,12 @@ class TakenPhotosRepository(
                 .map(mapper::toTakenPhotos)
     }
 
+    fun findAllDebug(): Single<List<TakenPhotoEntity>> {
+        return takenPhotosDao.findAll()
+                .subscribeOn(schedulers.provideIo())
+                .observeOn(schedulers.provideIo())
+    }
+
     fun countAll(): Single<Long> {
         return takenPhotosDao.countAll()
                 .subscribeOn(schedulers.provideIo())

@@ -17,6 +17,7 @@ import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
+import com.kirakishou.photoexchange.mwvm.model.other.Constants.PHOTO_ADAPTER_VIEW_WIDTH
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
@@ -48,7 +49,6 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private lateinit var layoutManager: GridLayoutManager
 
     private val DELAY_BEFORE_PROGRESS_FOOTER_ADDED = 100L
-    private val PHOTO_ADAPTER_VIEW_WIDTH = 288
     private val PHOTOS_PER_PAGE = 5
     private var columnsCount: Int = 1
 
