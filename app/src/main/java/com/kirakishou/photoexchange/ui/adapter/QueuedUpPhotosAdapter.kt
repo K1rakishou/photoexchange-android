@@ -35,6 +35,13 @@ class QueuedUpPhotosAdapter(
     @Volatile
     private var messageType = -1
 
+    private var buttonsEnabled = true
+
+    fun setButtonsEnabled(enabled: Boolean) {
+        buttonsEnabled = enabled
+        notifyDataSetChanged()
+    }
+
     fun addMessage(messageType: Int) {
         checkInited()
 
@@ -103,8 +110,14 @@ class QueuedUpPhotosAdapter(
                             .apply(RequestOptions().centerCrop())
                             .into(holder.photoView)
 
-                    holder.cancelUploadingButton.setOnClickListener {
-                        cancelButtonSubject.onNext(item)
+                    holder.cancelUploadingButton.isEnabled = buttonsEnabled
+
+                    if (buttonsEnabled) {
+                        holder.cancelUploadingButton.setOnClickListener {
+                            cancelButtonSubject.onNext(item)
+                        }
+                    } else {
+                        holder.cancelUploadingButton.setOnClickListener(null)
                     }
                 }
             }

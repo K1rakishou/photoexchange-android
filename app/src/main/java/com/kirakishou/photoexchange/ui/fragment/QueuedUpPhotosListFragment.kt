@@ -143,8 +143,8 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         Timber.d("QueuedUpPhotosListFragment: onStartUploadingPhotos()")
 
         adapter.runOnAdapterHandler {
-            //TODO: disable cancel button or some shit like that
             adapter.removeMessage()
+            adapter.setButtonsEnabled(false)
         }
     }
 
@@ -162,6 +162,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
         adapter.runOnAdapterHandler {
             adapter.addMessage(QueuedUpPhotosAdapter.MESSAGE_TYPE_ALL_PHOTOS_UPLOADED)
+            adapter.setButtonsEnabled(true)
         }
     }
 
