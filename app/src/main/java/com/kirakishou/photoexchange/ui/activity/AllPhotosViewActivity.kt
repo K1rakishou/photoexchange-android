@@ -80,8 +80,6 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         eventBus.register(this)
 
         initTabs(intent)
-        getNotificationIntent(getIntent())
-
         schedulePhotoUpload()
     }
 
@@ -95,6 +93,11 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     override fun onPause() {
         super.onPause()
         userInfoPreference.save()
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        getNotificationIntent(intent)
     }
 
     private fun getNotificationIntent(intent: Intent?) {

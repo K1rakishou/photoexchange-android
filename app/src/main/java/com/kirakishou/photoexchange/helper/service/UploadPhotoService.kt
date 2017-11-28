@@ -31,6 +31,7 @@ import android.content.ComponentName
 import android.os.Build
 import android.support.annotation.RequiresApi
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
 
 
 class UploadPhotoService : JobService() {
@@ -212,7 +213,7 @@ class UploadPhotoService : JobService() {
                     .setSmallIcon(android.R.drawable.stat_notify_error)
                     .setWhen(System.currentTimeMillis())
                     .setContentIntent(getNotificationIntent())
-                    .setAutoCancel(false)
+                    .setAutoCancel(true)
                     .build()
         } else {
             return NotificationCompat.Builder(this, Constants.CHANNEL_ID)
@@ -221,7 +222,7 @@ class UploadPhotoService : JobService() {
                     .setSmallIcon(android.R.drawable.stat_notify_error)
                     .setWhen(System.currentTimeMillis())
                     .setContentIntent(getNotificationIntent())
-                    .setAutoCancel(false)
+                    .setAutoCancel(true)
                     .build()
         }
     }
@@ -236,7 +237,7 @@ class UploadPhotoService : JobService() {
                     .setSmallIcon(android.R.drawable.stat_sys_upload_done)
                     .setWhen(System.currentTimeMillis())
                     .setContentIntent(getNotificationIntent())
-                    .setAutoCancel(false)
+                    .setAutoCancel(true)
                     .build()
         } else {
             return NotificationCompat.Builder(this)
@@ -245,7 +246,7 @@ class UploadPhotoService : JobService() {
                     .setSmallIcon(android.R.drawable.stat_sys_upload_done)
                     .setWhen(System.currentTimeMillis())
                     .setContentIntent(getNotificationIntent())
-                    .setAutoCancel(false)
+                    .setAutoCancel(true)
                     .build()
         }
     }
@@ -291,7 +292,7 @@ class UploadPhotoService : JobService() {
     }
 
     private fun getNotificationIntent(): PendingIntent {
-        val notificationIntent = Intent(this, TakePhotoActivity::class.java)
+        val notificationIntent = Intent(this, AllPhotosViewActivity::class.java)
         notificationIntent.action = Intent.ACTION_MAIN
         notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER)
         //notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
