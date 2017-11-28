@@ -16,6 +16,7 @@ import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mwvm.model.dto.PhotoAnswerAllFound
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
+import com.kirakishou.photoexchange.mwvm.model.other.Constants.PHOTO_ADAPTER_VIEW_WIDTH
 import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
@@ -46,7 +47,6 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private lateinit var layoutManager: GridLayoutManager
 
     private val DELAY_BEFORE_PROGRESS_FOOTER_ADDED = 100L
-    private val PHOTO_ADAPTER_VIEW_WIDTH = 288
     private val PHOTOS_PER_PAGE = 5
     private var columnsCount: Int = 1
     private var isPhotoUploading = true

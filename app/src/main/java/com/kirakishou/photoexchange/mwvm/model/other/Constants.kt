@@ -12,4 +12,6 @@ object Constants {
     val NOTIFICATION_ID = 1
     val CHANNEL_ID = "$appid.UPLOAD_PHOTO_CHANNEL_ID"
     val CHANNEL_NAME = "$appid.UPLOAD_PHOTO_CHANNEL_NAME"
+
+    val PHOTO_ADAPTER_VIEW_WIDTH = 288
 }

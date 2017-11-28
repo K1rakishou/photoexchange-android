@@ -14,6 +14,7 @@ import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
+import com.kirakishou.photoexchange.mwvm.model.other.Constants.PHOTO_ADAPTER_VIEW_WIDTH
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
@@ -33,8 +34,6 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     @Inject
     lateinit var viewModelFactory: AllPhotosViewActivityViewModelFactory
-
-    private val PHOTO_ADAPTER_VIEW_WIDTH = 288
 
     private lateinit var adapter: QueuedUpPhotosAdapter
 
