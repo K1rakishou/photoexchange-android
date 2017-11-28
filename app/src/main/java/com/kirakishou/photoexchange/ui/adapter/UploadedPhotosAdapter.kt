@@ -159,10 +159,6 @@ class UploadedPhotosAdapter(
                 }
             }
 
-            is ProgressBarViewHolder -> {
-                holder.progressBar.isIndeterminate = true
-            }
-
             is PhotoUploadErrorViewHolder -> {
                 if (items[position].value.isPresent()) {
                     val item = items[position].value.get()
@@ -175,8 +171,10 @@ class UploadedPhotosAdapter(
                 holder.messageTv.text = noPhotosUploadedMessage
             }
 
+            is ProgressBarViewHolder -> {
+            }
+
             is PhotoUploadingViewHolder -> {
-                holder.progressBar.isIndeterminate = true
             }
         }
     }
