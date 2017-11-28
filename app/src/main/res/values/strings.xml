@@ -15,5 +15,4 @@
     <string name="could_not_upload_a_photo_text">Could not upload a photo</string>
     <string name="cancel_title">CANCEL</string>
     <string name="tab_title_queued_up">Queued up</string>
-    <string name="uploading_will_begin_when_there_is_a_wi_fi_connection">Uploading will begin when there is a Wi-Fi connection</string>
 </resources>
