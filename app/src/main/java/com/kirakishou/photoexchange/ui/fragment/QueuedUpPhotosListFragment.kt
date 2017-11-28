@@ -23,6 +23,7 @@ import com.kirakishou.photoexchange.ui.adapter.QueuedUpPhotosAdapter
 import com.kirakishou.photoexchange.ui.widget.QueuedUpPhotosAdapterSpanSizeLookup
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -35,6 +36,8 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     @Inject
     lateinit var viewModelFactory: AllPhotosViewActivityViewModelFactory
 
+    private val cancelButtonSubject = PublishSubject.create<TakenPhoto>()
+
     private lateinit var adapter: QueuedUpPhotosAdapter
 
     override fun initViewModel(): AllPhotosViewActivityViewModel {
@@ -44,6 +47,11 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     override fun getContentView(): Int = R.layout.fragment_queued_up_photos_list
 
     override fun initRx() {
+        compositeDisposable += cancelButtonSubject
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onCancelButtonClick, this::onUnknownError)
+
         compositeDisposable += getViewModel().outputs.onQueuedUpPhotosLoadedObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -63,6 +71,11 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onStartUploadingPhotos, this::onUnknownError)
+
+        compositeDisposable += getViewModel().outputs.onTakenPhotoUploadingCanceledObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onTakenPhotoUploadingCanceled, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onAllPhotosUploadedObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -86,7 +99,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private fun initRecyclerView() {
         val columnsCount = AndroidUtils.calculateNoOfColumns(activity!!, PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = QueuedUpPhotosAdapter(activity!!)
+        adapter = QueuedUpPhotosAdapter(activity!!, cancelButtonSubject)
         adapter.init()
 
         val layoutManager = GridLayoutManager(activity, columnsCount)
@@ -100,6 +113,16 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     private fun showQueuedUpPhotos() {
         getViewModel().inputs.getQueuedUpPhotos()
+    }
+
+    private fun onCancelButtonClick(takenPhoto: TakenPhoto) {
+        getViewModel().inputs.cancelTakenPhotoUploading(takenPhoto.id)
+    }
+
+    private fun onTakenPhotoUploadingCanceled(id: Long) {
+        adapter.runOnAdapterHandler {
+            adapter.removeQueuedUpPhoto(id)
+        }
     }
 
     private fun onQueuedUpPhotosLoaded(queuedUpPhotosList: List<TakenPhoto>) {

@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.ui.adapter
 
 import android.content.Context
+import android.support.v7.widget.AppCompatButton
 import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.widget.ImageView
@@ -15,13 +16,15 @@ import com.kirakishou.photoexchange.base.BaseAdapter
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
+import io.reactivex.subjects.PublishSubject
 import java.io.File
 
 /**
  * Created by kirakishou on 11/26/2017.
  */
 class QueuedUpPhotosAdapter(
-        private val context: Context
+        private val context: Context,
+        private val cancelButtonSubject: PublishSubject<TakenPhoto>
 ) : BaseAdapter<TakenPhoto>(context) {
 
     private val messages = arrayOf(
@@ -99,6 +102,10 @@ class QueuedUpPhotosAdapter(
                             .load(File(item.photoFilePath))
                             .apply(RequestOptions().centerCrop())
                             .into(holder.photoView)
+
+                    holder.cancelUploadingButton.setOnClickListener {
+                        cancelButtonSubject.onNext(item)
+                    }
                 }
             }
         }
@@ -111,6 +118,9 @@ class QueuedUpPhotosAdapter(
 
         @BindView(R.id.loading_indicator)
         lateinit var progressBar: ProgressBar
+
+        @BindView(R.id.cancel_uploading_button)
+        lateinit var cancelUploadingButton: AppCompatButton
 
         init {
             ButterKnife.bind(this, itemView)
