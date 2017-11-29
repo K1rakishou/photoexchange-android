@@ -178,12 +178,12 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     private fun onFailedToUploadPhoto(takenPhoto: TakenPhoto) {
         Timber.d("UploadedPhotosListFragment: onFailedToUploadPhoto()")
-        /*check(isAdded)
+        check(isAdded)
 
         adapter.runOnAdapterHandler {
             adapter.removePhotoUploadingIndicator()
-            adapter.addFirst(AdapterItem(AdapterItemType.VIEW_FAILED_TO_UPLOAD))
-        }*/
+            //adapter.addFirst(AdapterItem(AdapterItemType.VIEW_FAILED_TO_UPLOAD))
+        }
     }
 
     private fun onAllPhotosUploaded() {

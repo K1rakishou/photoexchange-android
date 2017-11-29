@@ -77,7 +77,11 @@ class QueuedUpPhotosAdapter(
         checkInited()
 
         val index = items
-                .indexOfFirst { it.getType() == AdapterItemType.VIEW_QUEUED_UP_PHOTO.ordinal && it.value.get().id == id }
+                .indexOfFirst {
+                    (it.getType() == AdapterItemType.VIEW_QUEUED_UP_PHOTO.ordinal ||
+                    it.getType() == AdapterItemType.VIEW_FAILED_TO_UPLOAD.ordinal) &&
+                    it.value.get().id == id
+                }
 
         check(index != -1)
 
