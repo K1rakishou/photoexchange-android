@@ -12,10 +12,10 @@ interface AllPhotosViewActivityViewModelOutputs {
     fun onUploadedPhotosPageReceivedObservable(): Observable<List<TakenPhoto>>
     fun onReceivedPhotosPageReceivedObservable(): Observable<List<PhotoAnswer>>
     fun onScrollToTopObservable(): Observable<Unit>
-    fun onStartUploadingPhotosObservable(): Observable<List<Long>>
+    fun onStartUploadingPhotosObservable(): Observable<Unit>
     fun onShowLookingForPhotoIndicatorObservable(): Observable<Unit>
     fun onShowPhotoUploadedOutputObservable(): Observable<TakenPhoto>
-    fun onShowFailedToUploadPhotoObservable(): Observable<Unit>
+    fun onShowFailedToUploadPhotoObservable(): Observable<TakenPhoto>
     fun onShowPhotoReceivedObservable(): Observable<PhotoAnswerAllFound>
     fun onShowErrorWhileTryingToLookForPhotoObservable(): Observable<Unit>
     fun onShowNoPhotoOnServerObservable(): Observable<Unit>

@@ -11,10 +11,7 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseFragment
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
-import com.kirakishou.photoexchange.di.module.UploadPhotoServiceModule
-import com.kirakishou.photoexchange.helper.service.UploadPhotoService
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
 import com.kirakishou.photoexchange.mwvm.model.other.Constants.PHOTO_ADAPTER_VIEW_WIDTH
@@ -24,16 +21,13 @@ import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivity
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
 import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapter
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
-import com.kirakishou.photoexchange.ui.widget.TakenPhotosAdapterSpanSizeLookup
+import com.kirakishou.photoexchange.ui.widget.UploadedPhotosAdapterSpanSizeLookup
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.delay
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
@@ -52,7 +46,6 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private val PHOTOS_PER_PAGE = 5
     private var columnsCount: Int = 1
 
-    private val retryButtonSubject = PublishSubject.create<TakenPhoto>()
     private val loadMoreSubject = PublishSubject.create<Int>()
     private var isPhotoUploading = false
 
@@ -75,11 +68,6 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .doOnNext { adapter.removeProgressFooter() }
                 .subscribe(this::onPageReceived, this::onUnknownError)
 
-        compositeDisposable += retryButtonSubject
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onRetryButtonClicked, this::onUnknownError)
-
         compositeDisposable += getViewModel().outputs.onShowPhotoUploadedOutputObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -88,12 +76,12 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         compositeDisposable += getViewModel().outputs.onShowFailedToUploadPhotoObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onFailedToUploadPhoto() }, this::onUnknownError)
+                .subscribe({ onFailedToUploadPhoto(it) }, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onStartUploadingPhotosObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onStartUploadingPhotos, this::onUnknownError)
+                .subscribe({ onStartUploadingPhotos() }, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onAllPhotosUploadedObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -130,11 +118,11 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private fun initRecyclerView() {
         columnsCount = AndroidUtils.calculateNoOfColumns(activity!!, PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = UploadedPhotosAdapter(activity!!, retryButtonSubject)
+        adapter = UploadedPhotosAdapter(activity!!)
         adapter.init()
 
         layoutManager = GridLayoutManager(activity, columnsCount)
-        layoutManager.spanSizeLookup = TakenPhotosAdapterSpanSizeLookup(adapter, columnsCount)
+        layoutManager.spanSizeLookup = UploadedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
 
         endlessScrollListener = EndlessRecyclerOnScrollListener(layoutManager, loadMoreSubject)
 
@@ -170,10 +158,6 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
-    private fun onRetryButtonClicked(uploadedPhoto: TakenPhoto) {
-        Timber.d("UploadedPhotosListFragment: photoName: ${uploadedPhoto.photoName}")
-    }
-
     private fun onPhotoUploaded(photo: TakenPhoto) {
         Timber.d("UploadedPhotosListFragment: onPhotoUploaded()")
         check(isAdded)
@@ -183,7 +167,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
-    private fun onStartUploadingPhotos(ids: List<Long>) {
+    private fun onStartUploadingPhotos() {
         Timber.d("UploadedPhotosListFragment: onStartUploadingPhotos()")
 
         adapter.runOnAdapterHandler {
@@ -192,13 +176,13 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
-    private fun onFailedToUploadPhoto() {
+    private fun onFailedToUploadPhoto(takenPhoto: TakenPhoto) {
         Timber.d("UploadedPhotosListFragment: onFailedToUploadPhoto()")
         check(isAdded)
 
         adapter.runOnAdapterHandler {
             adapter.removePhotoUploadingIndicator()
-            adapter.addFirst(AdapterItem(AdapterItemType.VIEW_FAILED_TO_UPLOAD))
+            //adapter.addFirst(AdapterItem(AdapterItemType.VIEW_FAILED_TO_UPLOAD))
         }
     }
 

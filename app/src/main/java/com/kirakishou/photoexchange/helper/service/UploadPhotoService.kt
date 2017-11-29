@@ -111,7 +111,7 @@ class UploadPhotoService : JobService() {
         compositeDisposable += viewModel.outputs.onStartUploadQueuedUpPhotosObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onStartUploadQueuedUpPhotos(it) }, { onUnknownError(params, it) })
+                .subscribe({ onStartUploadQueuedUpPhotos() }, { onUnknownError(params, it) })
 
         compositeDisposable += viewModel.outputs.onUploadPhotoResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -127,6 +127,11 @@ class UploadPhotoService : JobService() {
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ onNoPhotosToUpload(params) }, { onUnknownError(params, it) })
+
+        compositeDisposable += viewModel.outputs.onFailedToUploadPhotoObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ onFailedToUploadPhoto(params, it) }, { onUnknownError(params, it) })
 
         compositeDisposable += viewModel.errors.onBadResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -144,15 +149,20 @@ class UploadPhotoService : JobService() {
         finish(params, false)
     }
 
-    private fun onStartUploadQueuedUpPhotos(ids: List<Long>) {
+    private fun onStartUploadQueuedUpPhotos() {
         Timber.d("UploadPhotoService: onStartUploadQueuedUpPhotos()")
-        sendEvent(PhotoUploadedEvent.startUploading(ids))
+        sendEvent(PhotoUploadedEvent.startUploading())
         updateUploadingNotificationShowUploading()
     }
 
     private fun onPhotoUploaded(takenPhoto: TakenPhoto) {
         Timber.d("UploadPhotoService: onPhotoUploaded() photoName: ${takenPhoto.photoName}")
-        sendEvent(PhotoUploadedEvent.photoUploaded(takenPhoto.id))
+        sendEvent(PhotoUploadedEvent.photoUploaded(takenPhoto))
+    }
+
+    private fun onFailedToUploadPhoto(params: JobParameters, takenPhoto: TakenPhoto) {
+        Timber.d("UploadPhotoService: onFailedToUploadPhoto")
+        sendEvent(PhotoUploadedEvent.fail(takenPhoto))
     }
 
     private fun onAllPhotosUploaded(params: JobParameters) {
@@ -166,15 +176,12 @@ class UploadPhotoService : JobService() {
     private fun onBadResponse(params: JobParameters, errorCode: ServerErrorCode) {
         Timber.d("UploadPhotoService: BadResponse: errorCode: $errorCode")
 
-        sendEvent(PhotoUploadedEvent.fail())
         updateUploadingNotificationShowError()
         finish(params, false)
     }
 
     private fun onUnknownError(params: JobParameters, error: Throwable) {
         Timber.d("UploadPhotoService: Unknown error: $error")
-
-        sendEvent(PhotoUploadedEvent.fail())
 
         updateUploadingNotificationShowError()
         finish(params, false)
@@ -333,7 +340,7 @@ class UploadPhotoService : JobService() {
             val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, UploadPhotoService::class.java))
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_UNMETERED)
                     .setRequiresDeviceIdle(false)
-                    .setRequiresCharging(false)
+                    .setRequiresCharging(false).setOverrideDeadline(1_000) //TODO: remove this
                     .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_EXPONENTIAL)
                     .build()
 

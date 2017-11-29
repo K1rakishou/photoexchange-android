@@ -59,7 +59,7 @@ class FindPhotoAnswerServiceViewModel(
                     ServerErrorCode.NO_PHOTOS_TO_SEND_BACK -> noPhotosToSendBackSubject.onNext(Unit)
                     ServerErrorCode.UPLOAD_MORE_PHOTOS -> uploadMorePhotosSubject.onNext(Unit)
                     ServerErrorCode.OK -> {
-                        val photoAnswer = PhotoAnswer.fromPhotoAnswerJsonObject(findPhotoResponse.photoAnswer)
+                        val photoAnswer = PhotoAnswer.fromPhotoAnswerJsonObject(findPhotoResponse.photoAnswer!!)
                         val markPhotoResponse = apiClient.markPhotoAsReceived(photoAnswer.photoRemoteId, userId).await()
 
                         val markPhotoErrorCode = ServerErrorCode.from(markPhotoResponse.serverErrorCode)

@@ -37,6 +37,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     lateinit var viewModelFactory: AllPhotosViewActivityViewModelFactory
 
     private val cancelButtonSubject = PublishSubject.create<TakenPhoto>()
+    private val retryButtonSubject = PublishSubject.create<TakenPhoto>()
 
     private lateinit var adapter: QueuedUpPhotosAdapter
 
@@ -47,6 +48,11 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     override fun getContentView(): Int = R.layout.fragment_queued_up_photos_list
 
     override fun initRx() {
+        compositeDisposable += retryButtonSubject
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onRetryButtonClicked, this::onUnknownError)
+
         compositeDisposable += cancelButtonSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -65,12 +71,12 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         compositeDisposable += getViewModel().outputs.onShowFailedToUploadPhotoObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onFailedToUploadPhoto() }, this::onUnknownError)
+                .subscribe(this::onFailedToUploadPhoto, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onStartUploadingPhotosObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onStartUploadingPhotos, this::onUnknownError)
+                .subscribe({ onStartUploadingPhotos() }, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onTakenPhotoUploadingCanceledObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -85,21 +91,16 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRecyclerView()
+        showQueuedUpPhotos()
     }
 
     override fun onFragmentViewDestroy() {
     }
 
-    override fun onStart() {
-        super.onStart()
-
-        showQueuedUpPhotos()
-    }
-
     private fun initRecyclerView() {
         val columnsCount = AndroidUtils.calculateNoOfColumns(activity!!, PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = QueuedUpPhotosAdapter(activity!!, cancelButtonSubject)
+        adapter = QueuedUpPhotosAdapter(activity!!, cancelButtonSubject, retryButtonSubject)
         adapter.init()
 
         val layoutManager = GridLayoutManager(activity, columnsCount)
@@ -117,6 +118,10 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     private fun onCancelButtonClick(takenPhoto: TakenPhoto) {
         getViewModel().inputs.cancelTakenPhotoUploading(takenPhoto.id)
+    }
+
+    private fun onRetryButtonClicked(takenPhoto: TakenPhoto) {
+        Timber.d("QueuedUpPhotosListFragment: photoName: ${takenPhoto.photoName}")
     }
 
     private fun onTakenPhotoUploadingCanceled(id: Long) {
@@ -145,7 +150,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
-    private fun onStartUploadingPhotos(ids: List<Long>) {
+    private fun onStartUploadingPhotos() {
         Timber.d("QueuedUpPhotosListFragment: onStartUploadingPhotos()")
 
         adapter.runOnAdapterHandler {
@@ -172,12 +177,13 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
-    private fun onFailedToUploadPhoto() {
+    private fun onFailedToUploadPhoto(photo: TakenPhoto) {
         Timber.d("QueuedUpPhotosListFragment: onFailedToUploadPhoto()")
         check(isAdded)
 
         adapter.runOnAdapterHandler {
-            adapter.add(AdapterItem(AdapterItemType.VIEW_FAILED_TO_UPLOAD))
+            adapter.removeQueuedUpPhoto(photo.id)
+            adapter.add(AdapterItem(photo, AdapterItemType.VIEW_FAILED_TO_UPLOAD))
         }
     }
 

@@ -17,6 +17,7 @@
         android:focusable="true"
         android:src="@drawable/ic_photo_camera"
         android:layout_gravity="bottom|end"
+        app:fabSize="normal"
         app:elevation="4dp" />
 
     <android.support.constraint.ConstraintLayout

@@ -9,16 +9,21 @@ import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
  */
 class PhotoAnswerResponse(
 
-        @Expose
-        @SerializedName("photo_answer")
-        val photoAnswer: PhotoAnswerJsonObject,
+    @Expose
+    @SerializedName("photo_answer")
+    val photoAnswer: PhotoAnswerJsonObject?,
 
-        @Expose
-        @SerializedName("all_found")
-        val allFound: Boolean,
+    @Expose
+    @SerializedName("all_found")
+    val allFound: Boolean,
 
-        serverErrorCode: ServerErrorCode
+    serverErrorCode: ServerErrorCode
 
 ) : StatusResponse(serverErrorCode.value) {
 
+    companion object {
+        fun error(errorCode: ServerErrorCode): PhotoAnswerResponse {
+            return PhotoAnswerResponse(null, false, errorCode)
+        }
+    }
 }

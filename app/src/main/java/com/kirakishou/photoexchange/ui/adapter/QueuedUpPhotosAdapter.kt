@@ -24,7 +24,8 @@ import java.io.File
  */
 class QueuedUpPhotosAdapter(
         private val context: Context,
-        private val cancelButtonSubject: PublishSubject<TakenPhoto>
+        private val cancelButtonSubject: PublishSubject<TakenPhoto>,
+        private val retryButtonSubject: PublishSubject<TakenPhoto>
 ) : BaseAdapter<TakenPhoto>(context) {
 
     private val messages = arrayOf(
@@ -76,7 +77,11 @@ class QueuedUpPhotosAdapter(
         checkInited()
 
         val index = items
-                .indexOfFirst { it.getType() == AdapterItemType.VIEW_QUEUED_UP_PHOTO.ordinal && it.value.get().id == id }
+                .indexOfFirst {
+                    (it.getType() == AdapterItemType.VIEW_QUEUED_UP_PHOTO.ordinal ||
+                    it.getType() == AdapterItemType.VIEW_FAILED_TO_UPLOAD.ordinal) &&
+                    it.value.get().id == id
+                }
 
         check(index != -1)
 
@@ -93,6 +98,7 @@ class QueuedUpPhotosAdapter(
     override fun getBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
         return mutableListOf(
                 BaseAdapterInfo(AdapterItemType.VIEW_QUEUED_UP_PHOTO, R.layout.adapter_item_photo_queued_up, QueuedUpPhotoViewHolder::class.java),
+                BaseAdapterInfo(AdapterItemType.VIEW_FAILED_TO_UPLOAD, R.layout.adapter_item_upload_photo_error, PhotoUploadErrorViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_MESSAGE, R.layout.adapter_item_message, MessageViewHolder::class.java)
         )
     }
@@ -120,6 +126,20 @@ class QueuedUpPhotosAdapter(
                     }
                 }
             }
+
+            is PhotoUploadErrorViewHolder -> {
+                if (items[position].value.isPresent()) {
+                    val item = items[position].value.get()
+
+                    holder.retryButton.setOnClickListener {
+                        retryButtonSubject.onNext(item)
+                    }
+
+                    holder.cancelButton.setOnClickListener {
+                        cancelButtonSubject.onNext(item)
+                    }
+                }
+            }
         }
     }
 
@@ -143,6 +163,19 @@ class QueuedUpPhotosAdapter(
 
         @BindView(R.id.message)
         lateinit var messageTv: TextView
+
+        init {
+            ButterKnife.bind(this, itemView)
+        }
+    }
+
+    class PhotoUploadErrorViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        @BindView(R.id.cancel_button)
+        lateinit var cancelButton: AppCompatButton
+
+        @BindView(R.id.retry_button)
+        lateinit var retryButton: AppCompatButton
 
         init {
             ButterKnife.bind(this, itemView)
