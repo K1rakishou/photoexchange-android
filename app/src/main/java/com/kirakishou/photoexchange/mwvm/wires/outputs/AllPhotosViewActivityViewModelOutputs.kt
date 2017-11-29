@@ -15,7 +15,7 @@ interface AllPhotosViewActivityViewModelOutputs {
     fun onStartUploadingPhotosObservable(): Observable<Unit>
     fun onShowLookingForPhotoIndicatorObservable(): Observable<Unit>
     fun onShowPhotoUploadedOutputObservable(): Observable<TakenPhoto>
-    fun onShowFailedToUploadPhotoObservable(): Observable<Long>
+    fun onShowFailedToUploadPhotoObservable(): Observable<TakenPhoto>
     fun onShowPhotoReceivedObservable(): Observable<PhotoAnswerAllFound>
     fun onShowErrorWhileTryingToLookForPhotoObservable(): Observable<Unit>
     fun onShowNoPhotoOnServerObservable(): Observable<Unit>

@@ -48,7 +48,7 @@ class UploadPhotoServiceViewModel(
     private val onStartUploadQueuedUpPhotosOutput = PublishSubject.create<Unit>()
     private val sendPhotoResponseOutput = PublishSubject.create<TakenPhoto>()
     private val badResponseError = PublishSubject.create<ServerErrorCode>()
-    private val failedToUploadPhotoOutput = PublishSubject.create<Long>()
+    private val failedToUploadPhotoOutput = PublishSubject.create<TakenPhoto>()
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
 
     override fun uploadPhotos() {
@@ -85,14 +85,14 @@ class UploadPhotoServiceViewModel(
         }
 
         if (response == null) {
-            failedToUploadPhotoOutput.onNext(queuedUpPhoto.id)
+            failedToUploadPhotoOutput.onNext(queuedUpPhoto)
             unknownErrorSubject.onNext(ApiException(ServerErrorCode.UNKNOWN_ERROR))
             return null
         }
 
         val errorCode = ServerErrorCode.from(response.serverErrorCode)
         if (errorCode != ServerErrorCode.OK) {
-            failedToUploadPhotoOutput.onNext(queuedUpPhoto.id)
+            failedToUploadPhotoOutput.onNext(queuedUpPhoto)
             badResponseError.onNext(errorCode)
             return null
         }
@@ -128,7 +128,7 @@ class UploadPhotoServiceViewModel(
         return null
     }
 
-    override fun onFailedToUploadPhotoObservable(): Observable<Long> = failedToUploadPhotoOutput
+    override fun onFailedToUploadPhotoObservable(): Observable<TakenPhoto> = failedToUploadPhotoOutput
     override fun onNoPhotosToUploadObservable(): Observable<Unit> = onNoPhotosToUploadOutput
     override fun onStartUploadQueuedUpPhotosObservable(): Observable<Unit> = onStartUploadQueuedUpPhotosOutput
     override fun onAllPhotosUploadedObservable(): Observable<Unit> = onAllPhotosUploadedOutput

@@ -157,12 +157,12 @@ class UploadPhotoService : JobService() {
 
     private fun onPhotoUploaded(takenPhoto: TakenPhoto) {
         Timber.d("UploadPhotoService: onPhotoUploaded() photoName: ${takenPhoto.photoName}")
-        sendEvent(PhotoUploadedEvent.photoUploaded(takenPhoto.id))
+        sendEvent(PhotoUploadedEvent.photoUploaded(takenPhoto))
     }
 
-    private fun onFailedToUploadPhoto(params: JobParameters, photoId: Long) {
+    private fun onFailedToUploadPhoto(params: JobParameters, takenPhoto: TakenPhoto) {
         Timber.d("UploadPhotoService: onFailedToUploadPhoto")
-        sendEvent(PhotoUploadedEvent.fail(photoId))
+        sendEvent(PhotoUploadedEvent.fail(takenPhoto))
     }
 
     private fun onAllPhotosUploaded(params: JobParameters) {

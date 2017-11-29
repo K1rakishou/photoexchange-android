@@ -76,7 +76,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         compositeDisposable += getViewModel().outputs.onShowFailedToUploadPhotoObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onFailedToUploadPhoto() }, this::onUnknownError)
+                .subscribe({ onFailedToUploadPhoto(it) }, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onStartUploadingPhotosObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -176,7 +176,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
-    private fun onFailedToUploadPhoto() {
+    private fun onFailedToUploadPhoto(takenPhoto: TakenPhoto) {
         Timber.d("UploadedPhotosListFragment: onFailedToUploadPhoto()")
         /*check(isAdded)
 

@@ -91,15 +91,10 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRecyclerView()
+        showQueuedUpPhotos()
     }
 
     override fun onFragmentViewDestroy() {
-    }
-
-    override fun onStart() {
-        super.onStart()
-
-        showQueuedUpPhotos()
     }
 
     private fun initRecyclerView() {
@@ -182,13 +177,13 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
-    private fun onFailedToUploadPhoto(photoId: Long) {
+    private fun onFailedToUploadPhoto(photo: TakenPhoto) {
         Timber.d("QueuedUpPhotosListFragment: onFailedToUploadPhoto()")
         check(isAdded)
 
         adapter.runOnAdapterHandler {
-            adapter.removeQueuedUpPhoto(photoId)
-            adapter.add(AdapterItem(AdapterItemType.VIEW_FAILED_TO_UPLOAD))
+            adapter.removeQueuedUpPhoto(photo.id)
+            adapter.add(AdapterItem(photo, AdapterItemType.VIEW_FAILED_TO_UPLOAD))
         }
     }
 

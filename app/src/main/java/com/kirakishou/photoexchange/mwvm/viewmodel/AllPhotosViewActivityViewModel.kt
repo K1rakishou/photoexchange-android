@@ -43,7 +43,8 @@ class AllPhotosViewActivityViewModel(
     private val fetchOnePageReceivedPhotosInput = PublishSubject.create<Pageable>()
     private val scrollToTopInput = PublishSubject.create<Unit>()
     private val showLookingForPhotoIndicatorInput = PublishSubject.create<Unit>()
-    private val showFailedToUploadPhotoInput = PublishSubject.create<Long>()
+    private val showPhotoUploadedInput = PublishSubject.create<TakenPhoto>()
+    private val showFailedToUploadPhotoInput = PublishSubject.create<TakenPhoto>()
     private val showPhotoReceivedInput = PublishSubject.create<PhotoAnswerAllFound>()
     private val showErrorWhileTryingToLookForPhotoInput = PublishSubject.create<Unit>()
     private val showNoPhotoOnServerInput = PublishSubject.create<Unit>()
@@ -57,7 +58,7 @@ class AllPhotosViewActivityViewModel(
     private val scrollToTopOutput = PublishSubject.create<Unit>()
     private val showLookingForPhotoIndicatorOutput = PublishSubject.create<Unit>()
     private val showPhotoUploadedOutput = PublishSubject.create<TakenPhoto>()
-    private val showFailedToUploadPhotoOutput = PublishSubject.create<Long>()
+    private val showFailedToUploadPhotoOutput = PublishSubject.create<TakenPhoto>()
     private val showPhotoReceivedOutput = PublishSubject.create<PhotoAnswerAllFound>()
     private val showErrorWhileTryingToLookForPhotoOutput = PublishSubject.create<Unit>()
     private val showNoPhotoOnServerOutput = PublishSubject.create<Unit>()
@@ -94,6 +95,11 @@ class AllPhotosViewActivityViewModel(
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .subscribe(startUploadingPhotosOutput::onNext, this::handleErrors)
+
+        compositeDisposable += showPhotoUploadedInput
+                .subscribeOn(schedulers.provideIo())
+                .observeOn(schedulers.provideIo())
+                .subscribe(showPhotoUploadedOutput::onNext, this::handleErrors)
 
         compositeDisposable += showLookingForPhotoIndicatorInput
                 .subscribeOn(schedulers.provideIo())
@@ -151,19 +157,12 @@ class AllPhotosViewActivityViewModel(
         startUploadingPhotosInput.onNext(Unit)
     }
 
-    override fun photoUploaded(photoId: Long) {
-        compositeJob += async {
-            try {
-                val photo = takenPhotosRepository.findOne(photoId).await()
-                showPhotoUploadedOutput.onNext(photo)
-            } catch (error: Throwable) {
-                showPhotoUploadedOutput.onError(error)
-            }
-        }
+    override fun photoUploaded(photo: TakenPhoto) {
+        showPhotoUploadedOutput.onNext(photo)
     }
 
-    override fun showFailedToUploadPhoto(photoId: Long) {
-        showFailedToUploadPhotoInput.onNext(photoId)
+    override fun showFailedToUploadPhoto(photo: TakenPhoto) {
+        showFailedToUploadPhotoInput.onNext(photo)
     }
 
     override fun showPhotoReceived(photo: PhotoAnswer, allFound: Boolean) {
@@ -258,7 +257,7 @@ class AllPhotosViewActivityViewModel(
     override fun onScrollToTopObservable(): Observable<Unit> = scrollToTopOutput
     override fun onShowLookingForPhotoIndicatorObservable(): Observable<Unit> = showLookingForPhotoIndicatorOutput
     override fun onShowPhotoUploadedOutputObservable(): Observable<TakenPhoto> = showPhotoUploadedOutput
-    override fun onShowFailedToUploadPhotoObservable(): Observable<Long> = showFailedToUploadPhotoOutput
+    override fun onShowFailedToUploadPhotoObservable(): Observable<TakenPhoto> = showFailedToUploadPhotoOutput
     override fun onShowPhotoReceivedObservable(): Observable<PhotoAnswerAllFound> = showPhotoReceivedOutput
     override fun onShowErrorWhileTryingToLookForPhotoObservable(): Observable<Unit> = showErrorWhileTryingToLookForPhotoOutput
     override fun onShowNoPhotoOnServerObservable(): Observable<Unit> = showNoPhotoOnServerOutput

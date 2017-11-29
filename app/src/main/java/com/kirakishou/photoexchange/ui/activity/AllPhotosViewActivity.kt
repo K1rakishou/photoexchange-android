@@ -204,13 +204,11 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
             }
             SendPhotoEventStatus.PHOTO_UPLOADED -> {
                 Timber.d("AllPhotosViewActivity: SendPhotoEventStatus.PHOTO_UPLOADED")
-
-                check(event.photoId != -1L)
-                getViewModel().inputs.photoUploaded(event.photoId)
+                getViewModel().inputs.photoUploaded(event.photo!!)
             }
             SendPhotoEventStatus.FAIL -> {
                 Timber.d("AllPhotosViewActivity: SendPhotoEventStatus.FAIL")
-                getViewModel().inputs.showFailedToUploadPhoto(event.photoId)
+                getViewModel().inputs.showFailedToUploadPhoto(event.photo!!)
             }
             SendPhotoEventStatus.DONE -> {
                 Timber.d("AllPhotosViewActivity: SendPhotoEventStatus.DONE")
