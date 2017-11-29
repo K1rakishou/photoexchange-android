@@ -43,7 +43,7 @@ class AllPhotosViewActivityViewModel(
     private val fetchOnePageReceivedPhotosInput = PublishSubject.create<Pageable>()
     private val scrollToTopInput = PublishSubject.create<Unit>()
     private val showLookingForPhotoIndicatorInput = PublishSubject.create<Unit>()
-    private val showFailedToUploadPhotoInput = PublishSubject.create<Unit>()
+    private val showFailedToUploadPhotoInput = PublishSubject.create<Long>()
     private val showPhotoReceivedInput = PublishSubject.create<PhotoAnswerAllFound>()
     private val showErrorWhileTryingToLookForPhotoInput = PublishSubject.create<Unit>()
     private val showNoPhotoOnServerInput = PublishSubject.create<Unit>()
@@ -57,7 +57,7 @@ class AllPhotosViewActivityViewModel(
     private val scrollToTopOutput = PublishSubject.create<Unit>()
     private val showLookingForPhotoIndicatorOutput = PublishSubject.create<Unit>()
     private val showPhotoUploadedOutput = PublishSubject.create<TakenPhoto>()
-    private val showFailedToUploadPhotoOutput = PublishSubject.create<Unit>()
+    private val showFailedToUploadPhotoOutput = PublishSubject.create<Long>()
     private val showPhotoReceivedOutput = PublishSubject.create<PhotoAnswerAllFound>()
     private val showErrorWhileTryingToLookForPhotoOutput = PublishSubject.create<Unit>()
     private val showNoPhotoOnServerOutput = PublishSubject.create<Unit>()
@@ -162,8 +162,8 @@ class AllPhotosViewActivityViewModel(
         }
     }
 
-    override fun showFailedToUploadPhoto() {
-        showFailedToUploadPhotoInput.onNext(Unit)
+    override fun showFailedToUploadPhoto(photoId: Long) {
+        showFailedToUploadPhotoInput.onNext(photoId)
     }
 
     override fun showPhotoReceived(photo: PhotoAnswer, allFound: Boolean) {
@@ -258,7 +258,7 @@ class AllPhotosViewActivityViewModel(
     override fun onScrollToTopObservable(): Observable<Unit> = scrollToTopOutput
     override fun onShowLookingForPhotoIndicatorObservable(): Observable<Unit> = showLookingForPhotoIndicatorOutput
     override fun onShowPhotoUploadedOutputObservable(): Observable<TakenPhoto> = showPhotoUploadedOutput
-    override fun onShowFailedToUploadPhotoObservable(): Observable<Unit> = showFailedToUploadPhotoOutput
+    override fun onShowFailedToUploadPhotoObservable(): Observable<Long> = showFailedToUploadPhotoOutput
     override fun onShowPhotoReceivedObservable(): Observable<PhotoAnswerAllFound> = showPhotoReceivedOutput
     override fun onShowErrorWhileTryingToLookForPhotoObservable(): Observable<Unit> = showErrorWhileTryingToLookForPhotoOutput
     override fun onShowNoPhotoOnServerObservable(): Observable<Unit> = showNoPhotoOnServerOutput

@@ -13,7 +13,7 @@ interface AllPhotosViewActivityViewModelInputs {
     fun showLookingForPhotoIndicator()
     fun startUploadingPhotos()
     fun photoUploaded(photoId: Long)
-    fun showFailedToUploadPhoto()
+    fun showFailedToUploadPhoto(photoId: Long)
     fun showPhotoReceived(photo: PhotoAnswer, allFound: Boolean)
     fun showErrorWhileTryingToLookForPhoto()
     fun showNoPhotoOnServer()

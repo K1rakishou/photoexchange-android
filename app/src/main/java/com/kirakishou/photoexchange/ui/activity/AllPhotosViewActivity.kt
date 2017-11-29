@@ -210,7 +210,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
             }
             SendPhotoEventStatus.FAIL -> {
                 Timber.d("AllPhotosViewActivity: SendPhotoEventStatus.FAIL")
-                getViewModel().inputs.showFailedToUploadPhoto()
+                getViewModel().inputs.showFailedToUploadPhoto(event.photoId)
             }
             SendPhotoEventStatus.DONE -> {
                 Timber.d("AllPhotosViewActivity: SendPhotoEventStatus.DONE")

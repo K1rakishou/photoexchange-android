@@ -65,7 +65,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         compositeDisposable += getViewModel().outputs.onShowFailedToUploadPhotoObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onFailedToUploadPhoto() }, this::onUnknownError)
+                .subscribe(this::onFailedToUploadPhoto, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onStartUploadingPhotosObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -172,12 +172,12 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
-    private fun onFailedToUploadPhoto() {
+    private fun onFailedToUploadPhoto(photoId: Long) {
         Timber.d("QueuedUpPhotosListFragment: onFailedToUploadPhoto()")
         check(isAdded)
 
         adapter.runOnAdapterHandler {
-            //adapter.removeQueuedUpPhoto(photo.id)
+            adapter.removeQueuedUpPhoto(photoId)
             adapter.add(AdapterItem(AdapterItemType.VIEW_FAILED_TO_UPLOAD))
         }
     }
