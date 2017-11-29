@@ -8,12 +8,14 @@ import com.kirakishou.photoexchange.mwvm.model.dto.PhotoToBeUploaded
 import com.kirakishou.photoexchange.mwvm.model.exception.ApiException
 import com.kirakishou.photoexchange.mwvm.model.exception.PhotoDoesNotExistsException
 import com.kirakishou.photoexchange.mwvm.model.net.packet.SendPhotoPacket
+import com.kirakishou.photoexchange.mwvm.model.net.response.StatusResponse
 import com.kirakishou.photoexchange.mwvm.model.net.response.UploadPhotoResponse
 import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
 import io.reactivex.Single
 import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import timber.log.Timber
 import java.io.File
 import java.util.concurrent.TimeUnit
 
@@ -25,7 +27,7 @@ class UploadPhotoRequest(
         private val apiService: ApiService,
         private val schedulers: SchedulerProvider,
         private val gson: Gson
-) : AbstractRequest<Single<UploadPhotoResponse>>() {
+) : AbstractRequest<UploadPhotoResponse>() {
 
     override fun build(): Single<UploadPhotoResponse> {
         val packet = SendPhotoPacket(info.location.lon, info.location.lat, info.userId)
@@ -42,6 +44,20 @@ class UploadPhotoRequest(
                 }
                 .delay(3, TimeUnit.SECONDS)
                 .onErrorResumeNext { error -> convertExceptionToErrorCode(error) }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun convertExceptionToErrorCode(error: Throwable): Single<UploadPhotoResponse> {
+        val response = when (error) {
+            is ApiException -> UploadPhotoResponse.error(error.serverErrorCode)
+
+            else -> {
+                Timber.d("Unknown exception")
+                throw error
+            }
+        }
+
+        return Single.just(response)
     }
 
     private fun getBodySingle(photoFilePath: String, packet: SendPhotoPacket): Single<MultipartBody> {

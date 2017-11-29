@@ -24,8 +24,7 @@ import java.io.File
  * Created by kirakishou on 11/7/2017.
  */
 class UploadedPhotosAdapter(
-        private val context: Context,
-        private val retryButtonSubject: PublishSubject<TakenPhoto>
+        private val context: Context
 ) : BaseAdapter<TakenPhoto>(context) {
 
     private val selector = UploadedPhotosIdSelectorFunction()
@@ -138,7 +137,6 @@ class UploadedPhotosAdapter(
         return mutableListOf(
                 BaseAdapterInfo(AdapterItemType.VIEW_ITEM, R.layout.adapter_item_sent_photos, SentPhotoViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_PROGRESSBAR, R.layout.adapter_item_progress, ProgressBarViewHolder::class.java),
-                BaseAdapterInfo(AdapterItemType.VIEW_FAILED_TO_UPLOAD, R.layout.adapter_item_upload_photo_error, PhotoUploadErrorViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_MESSAGE, R.layout.adapter_item_message, MessageViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_PHOTO_UPLOADING, R.layout.adapter_item_photo_uploading, PhotoUploadingViewHolder::class.java)
         )
@@ -156,14 +154,6 @@ class UploadedPhotosAdapter(
                             .load(fullPath)
                             .apply(RequestOptions().centerCrop())
                             .into(holder.photoView)
-                }
-            }
-
-            is PhotoUploadErrorViewHolder -> {
-                if (items[position].value.isPresent()) {
-                    val item = items[position].value.get()
-
-                    retryButtonSubject.onNext(item)
                 }
             }
 
@@ -193,16 +183,6 @@ class UploadedPhotosAdapter(
 
         @BindView(R.id.progressbar)
         lateinit var progressBar: ProgressBar
-
-        init {
-            ButterKnife.bind(this, itemView)
-        }
-    }
-
-    class PhotoUploadErrorViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-
-        @BindView(R.id.retry_button)
-        lateinit var retryButton: AppCompatButton
 
         init {
             ButterKnife.bind(this, itemView)

@@ -46,7 +46,6 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private val PHOTOS_PER_PAGE = 5
     private var columnsCount: Int = 1
 
-    private val retryButtonSubject = PublishSubject.create<TakenPhoto>()
     private val loadMoreSubject = PublishSubject.create<Int>()
     private var isPhotoUploading = false
 
@@ -68,11 +67,6 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext { adapter.removeProgressFooter() }
                 .subscribe(this::onPageReceived, this::onUnknownError)
-
-        compositeDisposable += retryButtonSubject
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onRetryButtonClicked, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onShowPhotoUploadedOutputObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -124,7 +118,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private fun initRecyclerView() {
         columnsCount = AndroidUtils.calculateNoOfColumns(activity!!, PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = UploadedPhotosAdapter(activity!!, retryButtonSubject)
+        adapter = UploadedPhotosAdapter(activity!!)
         adapter.init()
 
         layoutManager = GridLayoutManager(activity, columnsCount)
@@ -162,10 +156,6 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 }
             }
         }
-    }
-
-    private fun onRetryButtonClicked(uploadedPhoto: TakenPhoto) {
-        Timber.d("UploadedPhotosListFragment: photoName: ${uploadedPhoto.photoName}")
     }
 
     private fun onPhotoUploaded(photo: TakenPhoto) {

@@ -37,6 +37,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     lateinit var viewModelFactory: AllPhotosViewActivityViewModelFactory
 
     private val cancelButtonSubject = PublishSubject.create<TakenPhoto>()
+    private val retryButtonSubject = PublishSubject.create<TakenPhoto>()
 
     private lateinit var adapter: QueuedUpPhotosAdapter
 
@@ -47,6 +48,11 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     override fun getContentView(): Int = R.layout.fragment_queued_up_photos_list
 
     override fun initRx() {
+        compositeDisposable += retryButtonSubject
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::onRetryButtonClicked, this::onUnknownError)
+
         compositeDisposable += cancelButtonSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -99,7 +105,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private fun initRecyclerView() {
         val columnsCount = AndroidUtils.calculateNoOfColumns(activity!!, PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = QueuedUpPhotosAdapter(activity!!, cancelButtonSubject)
+        adapter = QueuedUpPhotosAdapter(activity!!, cancelButtonSubject, retryButtonSubject)
         adapter.init()
 
         val layoutManager = GridLayoutManager(activity, columnsCount)
@@ -117,6 +123,10 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     private fun onCancelButtonClick(takenPhoto: TakenPhoto) {
         getViewModel().inputs.cancelTakenPhotoUploading(takenPhoto.id)
+    }
+
+    private fun onRetryButtonClicked(takenPhoto: TakenPhoto) {
+        Timber.d("QueuedUpPhotosListFragment: photoName: ${takenPhoto.photoName}")
     }
 
     private fun onTakenPhotoUploadingCanceled(id: Long) {
