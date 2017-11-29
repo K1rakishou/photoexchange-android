@@ -5,9 +5,11 @@ import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mwvm.model.dto.PhotoToBeUploaded
+import com.kirakishou.photoexchange.mwvm.model.exception.ApiException
 import com.kirakishou.photoexchange.mwvm.model.exception.PhotoDoesNotExistsException
 import com.kirakishou.photoexchange.mwvm.model.net.packet.SendPhotoPacket
 import com.kirakishou.photoexchange.mwvm.model.net.response.UploadPhotoResponse
+import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
 import io.reactivex.Single
 import okhttp3.MediaType
 import okhttp3.MultipartBody
@@ -31,6 +33,9 @@ class UploadPhotoRequest(
         return getBodySingle(info.photoFilePath, packet)
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
+                .doOnSuccess {
+                    throw ApiException(ServerErrorCode.UNKNOWN_ERROR)
+                }
                 .flatMap { multipartBody ->
                     return@flatMap apiService.sendPhoto(multipartBody.part(0), multipartBody.part(1))
                             .lift(OnApiErrorSingle(gson))

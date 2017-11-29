@@ -21,8 +21,8 @@ class PhotoUploadedEvent(
             return PhotoUploadedEvent(SendPhotoEventStatus.PHOTO_UPLOADED, id, emptyList())
         }
 
-        fun fail(): PhotoUploadedEvent {
-            return PhotoUploadedEvent(SendPhotoEventStatus.FAIL, -1L, emptyList())
+        fun fail(id: Long): PhotoUploadedEvent {
+            return PhotoUploadedEvent(SendPhotoEventStatus.FAIL, id, emptyList())
         }
 
         fun done(): PhotoUploadedEvent {

@@ -11,4 +11,5 @@ interface UploadPhotoServiceOutputs {
     fun onAllPhotosUploadedObservable(): Observable<Unit>
     fun onStartUploadQueuedUpPhotosObservable(): Observable<List<Long>>
     fun onNoPhotosToUploadObservable(): Observable<Unit>
+    fun onFailedToUploadPhotoObservable(): Observable<TakenPhoto>
 }

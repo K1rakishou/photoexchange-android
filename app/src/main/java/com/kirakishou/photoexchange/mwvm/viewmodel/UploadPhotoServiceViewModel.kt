@@ -34,6 +34,7 @@ class UploadPhotoServiceViewModel(
 ) : UploadPhotoServiceInputs,
         UploadPhotoServiceOutputs,
         UploadPhotoServiceErrors {
+
     val inputs: UploadPhotoServiceInputs = this
     val outputs: UploadPhotoServiceOutputs = this
     val errors: UploadPhotoServiceErrors = this
@@ -47,6 +48,7 @@ class UploadPhotoServiceViewModel(
     private val onStartUploadQueuedUpPhotosOutput = PublishSubject.create<List<Long>>()
     private val sendPhotoResponseOutput = PublishSubject.create<TakenPhoto>()
     private val badResponseError = PublishSubject.create<ServerErrorCode>()
+    private val failedToUploadPhotoOutput = PublishSubject.create<TakenPhoto>()
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
 
     override fun uploadPhotos() {
@@ -69,6 +71,8 @@ class UploadPhotoServiceViewModel(
                     }
                 }
 
+                //ensure that we receive AllPhotosUploaded event last
+                delay(100, TimeUnit.MILLISECONDS)
                 onAllPhotosUploadedOutput.onNext(Unit)
             } catch (error: Throwable) {
                 sendPhotoResponseOutput.onError(error)
@@ -87,22 +91,15 @@ class UploadPhotoServiceViewModel(
         }
 
         val errorCode = ServerErrorCode.from(response.serverErrorCode)
-        Timber.d("Received response, serverErrorCode: $errorCode")
-
         if (errorCode != ServerErrorCode.OK) {
             badResponseError.onNext(errorCode)
             return null
         }
 
         FileUtils.deletePhotoFile(queuedUpPhoto)
-
         takenPhotosRepo.updateOneSetUploaded(queuedUpPhoto.id, response.photoName).await()
-        return response.photoName
-    }
 
-    private fun handleErrors(error: Throwable) {
-        Timber.e(error)
-        unknownErrorSubject.onNext(error)
+        return response.photoName
     }
 
     fun cleanUp() {
@@ -130,6 +127,7 @@ class UploadPhotoServiceViewModel(
         return null
     }
 
+    override fun onFailedToUploadPhotoObservable(): Observable<TakenPhoto> = failedToUploadPhotoOutput
     override fun onNoPhotosToUploadObservable(): Observable<Unit> = onNoPhotosToUploadOutput
     override fun onStartUploadQueuedUpPhotosObservable(): Observable<List<Long>> = onStartUploadQueuedUpPhotosOutput
     override fun onAllPhotosUploadedObservable(): Observable<Unit> = onAllPhotosUploadedOutput

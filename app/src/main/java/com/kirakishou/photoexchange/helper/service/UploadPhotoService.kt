@@ -128,6 +128,11 @@ class UploadPhotoService : JobService() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ onNoPhotosToUpload(params) }, { onUnknownError(params, it) })
 
+        compositeDisposable += viewModel.outputs.onFailedToUploadPhotoObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ onFailedToUploadPhoto(params, it) }, { onUnknownError(params, it) })
+
         compositeDisposable += viewModel.errors.onBadResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -155,6 +160,11 @@ class UploadPhotoService : JobService() {
         sendEvent(PhotoUploadedEvent.photoUploaded(takenPhoto.id))
     }
 
+    private fun onFailedToUploadPhoto(params: JobParameters, takenPhoto: TakenPhoto) {
+        Timber.d("UploadPhotoService: onFailedToUploadPhoto")
+        sendEvent(PhotoUploadedEvent.fail(takenPhoto.id))
+    }
+
     private fun onAllPhotosUploaded(params: JobParameters) {
         Timber.d("UploadPhotoService: onAllPhotosUploaded()")
 
@@ -166,15 +176,12 @@ class UploadPhotoService : JobService() {
     private fun onBadResponse(params: JobParameters, errorCode: ServerErrorCode) {
         Timber.d("UploadPhotoService: BadResponse: errorCode: $errorCode")
 
-        sendEvent(PhotoUploadedEvent.fail())
         updateUploadingNotificationShowError()
         finish(params, false)
     }
 
     private fun onUnknownError(params: JobParameters, error: Throwable) {
         Timber.d("UploadPhotoService: Unknown error: $error")
-
-        sendEvent(PhotoUploadedEvent.fail())
 
         updateUploadingNotificationShowError()
         finish(params, false)
@@ -333,7 +340,7 @@ class UploadPhotoService : JobService() {
             val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, UploadPhotoService::class.java))
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_UNMETERED)
                     .setRequiresDeviceIdle(false)
-                    .setRequiresCharging(false)
+                    .setRequiresCharging(false).setOverrideDeadline(1_000) //TODO: remove this
                     .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_EXPONENTIAL)
                     .build()
 

@@ -177,6 +177,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         check(isAdded)
 
         adapter.runOnAdapterHandler {
+            //adapter.removeQueuedUpPhoto(photo.id)
             adapter.add(AdapterItem(AdapterItemType.VIEW_FAILED_TO_UPLOAD))
         }
     }
