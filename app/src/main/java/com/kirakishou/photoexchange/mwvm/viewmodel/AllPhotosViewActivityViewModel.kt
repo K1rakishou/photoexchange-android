@@ -38,7 +38,7 @@ class AllPhotosViewActivityViewModel(
     val errors: AllPhotosViewActivityViewModelErrors = this
 
     //inputs
-    private val startUploadingPhotosInput = PublishSubject.create<List<Long>>()
+    private val startUploadingPhotosInput = PublishSubject.create<Unit>()
     private val fetchOnePageUploadedPhotosInput = PublishSubject.create<Pageable>()
     private val fetchOnePageReceivedPhotosInput = PublishSubject.create<Pageable>()
     private val scrollToTopInput = PublishSubject.create<Unit>()
@@ -51,7 +51,7 @@ class AllPhotosViewActivityViewModel(
     private val allPhotosUploadedInput = PublishSubject.create<Unit>()
 
     //outputs
-    private val startUploadingPhotosOutput = PublishSubject.create<List<Long>>()
+    private val startUploadingPhotosOutput = PublishSubject.create<Unit>()
     private val onUploadedPhotosPageReceivedOutput = PublishSubject.create<List<TakenPhoto>>()
     private val onReceivedPhotosPageReceivedOutput = PublishSubject.create<List<PhotoAnswer>>()
     private val scrollToTopOutput = PublishSubject.create<Unit>()
@@ -147,8 +147,8 @@ class AllPhotosViewActivityViewModel(
         showLookingForPhotoIndicatorInput.onNext(Unit)
     }
 
-    override fun startUploadingPhotos(ids: List<Long>) {
-        startUploadingPhotosInput.onNext(ids)
+    override fun startUploadingPhotos() {
+        startUploadingPhotosInput.onNext(Unit)
     }
 
     override fun photoUploaded(photoId: Long) {
@@ -252,7 +252,7 @@ class AllPhotosViewActivityViewModel(
 
     override fun onTakenPhotoUploadingCanceledObservable(): Observable<Long> = onTakenPhotoUploadingCanceledOutput
     override fun onAllPhotosUploadedObservable(): Observable<Unit> = allPhotosUploadedOutput
-    override fun onStartUploadingPhotosObservable(): Observable<List<Long>> = startUploadingPhotosOutput
+    override fun onStartUploadingPhotosObservable(): Observable<Unit> = startUploadingPhotosOutput
     override fun onUploadedPhotosPageReceivedObservable(): Observable<List<TakenPhoto>> = onUploadedPhotosPageReceivedOutput
     override fun onReceivedPhotosPageReceivedObservable(): Observable<List<PhotoAnswer>> = onReceivedPhotosPageReceivedOutput
     override fun onScrollToTopObservable(): Observable<Unit> = scrollToTopOutput

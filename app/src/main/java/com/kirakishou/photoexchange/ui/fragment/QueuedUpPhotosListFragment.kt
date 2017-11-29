@@ -70,7 +70,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         compositeDisposable += getViewModel().outputs.onStartUploadingPhotosObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onStartUploadingPhotos, this::onUnknownError)
+                .subscribe({ onStartUploadingPhotos() }, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onTakenPhotoUploadingCanceledObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -145,7 +145,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
-    private fun onStartUploadingPhotos(ids: List<Long>) {
+    private fun onStartUploadingPhotos() {
         Timber.d("QueuedUpPhotosListFragment: onStartUploadingPhotos()")
 
         adapter.runOnAdapterHandler {
