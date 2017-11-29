@@ -127,7 +127,13 @@ class QueuedUpPhotosAdapter(
                 if (items[position].value.isPresent()) {
                     val item = items[position].value.get()
 
-                    retryButtonSubject.onNext(item)
+                    holder.retryButton.setOnClickListener {
+                        retryButtonSubject.onNext(item)
+                    }
+
+                    holder.cancelButton.setOnClickListener {
+                        cancelButtonSubject.onNext(item)
+                    }
                 }
             }
         }
@@ -160,6 +166,9 @@ class QueuedUpPhotosAdapter(
     }
 
     class PhotoUploadErrorViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+        @BindView(R.id.cancel_button)
+        lateinit var cancelButton: AppCompatButton
 
         @BindView(R.id.retry_button)
         lateinit var retryButton: AppCompatButton
