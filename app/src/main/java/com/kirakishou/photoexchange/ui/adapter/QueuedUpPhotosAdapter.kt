@@ -140,6 +140,11 @@ class QueuedUpPhotosAdapter(
                     }
                 }
             }
+
+            is MessageViewHolder -> {
+                check(messageType != -1)
+                holder.messageTv.text = messages[messageType]
+            }
         }
     }
 

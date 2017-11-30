@@ -6,11 +6,11 @@ import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
 import com.kirakishou.photoexchange.helper.mapper.TakenPhotoMapper
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mwvm.model.other.Pageable
+import com.kirakishou.photoexchange.mwvm.model.other.PhotoState
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
-import timber.log.Timber
 
 /**
  * Created by kirakishou on 11/10/2017.
@@ -24,7 +24,7 @@ class TakenPhotosRepository(
 
     fun saveOne(lon: Double, lat: Double, photoFilePath: String, userId: String): Single<Long> {
         val resultSingle = Single.fromCallable {
-            takenPhotosDao.saveOne(TakenPhotoEntity.new(lon, lat, userId, photoFilePath, true))
+            takenPhotosDao.saveOne(TakenPhotoEntity.new(lon, lat, userId, photoFilePath))
         }
 
         return resultSingle
@@ -40,12 +40,11 @@ class TakenPhotosRepository(
                 .map(mapper::toTakenPhoto)
     }
 
-    fun findOnePage(pageable: Pageable): Observable<List<TakenPhoto>> {
+    fun findOnePage(pageable: Pageable): Single<List<TakenPhoto>> {
         return takenPhotosDao.findPage(pageable.page, pageable.count)
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .map(mapper::toTakenPhotos)
-                .toObservable()
     }
 
     fun findAllQueuedUp(): Single<List<TakenPhoto>> {
@@ -74,9 +73,12 @@ class TakenPhotosRepository(
                 .observeOn(schedulers.provideIo())
     }
 
-    fun updateOneSetIsUploading(id: Long, isUploading: Boolean): Completable {
+    fun updateSetUploaded(id: Long, photoName: String): Completable {
         val result = Completable.fromCallable {
-            takenPhotosDao.updateOneSetIsUploading(isUploading, id)
+            database.runInTransaction {
+                takenPhotosDao.updateSetState(PhotoState.UPLOADED.state, id)
+                takenPhotosDao.updateSetPhotoName(photoName, id)
+            }
         }
 
         return result
@@ -84,9 +86,9 @@ class TakenPhotosRepository(
                 .observeOn(schedulers.provideIo())
     }
 
-    fun updateOneSetUploaded(id: Long, photoName: String): Completable {
+    fun updateSetFailedToUpload(id: Long): Completable {
         val result = Completable.fromCallable {
-            takenPhotosDao.updateOneSetUploaded(photoName, id)
+            takenPhotosDao.updateSetState(PhotoState.FAILED_TO_UPLOAD.state, id)
         }
 
         return result
@@ -100,9 +102,9 @@ class TakenPhotosRepository(
                 .observeOn(schedulers.provideIo())
     }
 
-    fun deleteAll(): Single<Int> {
+    /*fun deleteAll(): Single<Int> {
         return Single.fromCallable { takenPhotosDao.deleteAll() }
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
-    }
+    }*/
 }

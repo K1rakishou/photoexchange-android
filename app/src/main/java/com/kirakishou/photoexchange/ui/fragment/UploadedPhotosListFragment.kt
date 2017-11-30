@@ -106,7 +106,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         //FIXME:
         //HACK
         //For some mysterious reason if we do not add a delay before calling addProgressFooter
-        //loadMoreSubject won't get any observables from EndlessRecyclerOnScrollListener at all, so we have to add a slight delay
+        //loadMoreSubject won't get any observables from EndlessRecyclerOnScrollListener at all, so we have to add a slight delay.
         //The subscription to loadMoreSubject happens before scroll listener generates any observables,
         //so I have no idea why loadMoreSubject doesn't receive any observables
 
@@ -160,7 +160,6 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     private fun onPhotoUploaded(photo: TakenPhoto) {
         Timber.d("UploadedPhotosListFragment: onPhotoUploaded()")
-        check(isAdded)
 
         adapter.runOnAdapterHandler {
             adapter.add(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
@@ -178,10 +177,10 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     private fun onFailedToUploadPhoto(takenPhoto: TakenPhoto) {
         Timber.d("UploadedPhotosListFragment: onFailedToUploadPhoto()")
-        check(isAdded)
 
         adapter.runOnAdapterHandler {
             adapter.removePhotoUploadingIndicator()
+            adapter.addMessageFooter()
             //adapter.addFirst(AdapterItem(AdapterItemType.VIEW_FAILED_TO_UPLOAD))
         }
     }
