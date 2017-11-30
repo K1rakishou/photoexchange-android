@@ -7,5 +7,4 @@ import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
  */
 interface MainActivityViewModelInputs {
     fun saveTakenPhoto(takenPhoto: TakenPhoto)
-    fun cleanTakenPhotosDB()
 }

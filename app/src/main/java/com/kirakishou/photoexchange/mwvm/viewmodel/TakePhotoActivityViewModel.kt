@@ -52,7 +52,7 @@ class TakePhotoActivityViewModel(
         }
     }
 
-    override fun cleanTakenPhotosDB() {
+    /*override fun cleanTakenPhotosDB() {
         compositeJob += async {
             try {
                 val takenPhotos = takenPhotosRepo.findAll().await()
@@ -64,7 +64,7 @@ class TakePhotoActivityViewModel(
                 handleErrors(error)
             }
         }
-    }
+    }*/
 
     override fun saveTakenPhoto(takenPhoto: TakenPhoto) {
         compositeJob += async {

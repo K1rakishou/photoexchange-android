@@ -66,6 +66,8 @@ class UploadPhotoServiceViewModel(
                     val photoName = uploadPhoto(queuedUpPhoto)
                     if (photoName != null) {
                         queuedUpPhoto.photoName = photoName
+
+                        takenPhotosRepo.updateSetFailedToUpload(queuedUpPhoto.id).await()
                         sendPhotoResponseOutput.onNext(queuedUpPhoto)
                     }
                 }
@@ -98,7 +100,7 @@ class UploadPhotoServiceViewModel(
         }
 
         FileUtils.deletePhotoFile(queuedUpPhoto)
-        takenPhotosRepo.updateOneSetUploaded(queuedUpPhoto.id, response.photoName).await()
+        takenPhotosRepo.updateSetUploaded(queuedUpPhoto.id, response.photoName).await()
 
         return response.photoName
     }

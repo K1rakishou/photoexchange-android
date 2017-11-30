@@ -4,6 +4,7 @@ import android.arch.persistence.room.ColumnInfo
 import android.arch.persistence.room.Entity
 import android.arch.persistence.room.PrimaryKey
 import com.kirakishou.photoexchange.helper.util.TimeUtils
+import com.kirakishou.photoexchange.mwvm.model.other.PhotoState
 
 /**
  * Created by kirakishou on 11/10/2017.
@@ -30,28 +31,25 @@ data class TakenPhotoEntity(
         @ColumnInfo(name = "photo_file_path")
         var photoFilePath: String,
 
-        @ColumnInfo(name = "is_uploading")
-        var isUploading: Boolean,
-
-        @ColumnInfo(name = "uploaded")
-        var uploaded: Boolean,
+        @ColumnInfo(name = "photo_state")
+        var photoState: String,
 
         @ColumnInfo(name = "created_on", index = true)
         var createdOn: Long
 ) {
 
-    constructor() : this(0L, 0.0, 0.0, "", "", "", false, false, 0L)
+    constructor() : this(0L, 0.0, 0.0, "", "", "", PhotoState.QUEUED_UP.state, 0L)
 
     fun isEmpty(): Boolean {
         return id == -1L
     }
 
     companion object {
-        fun new(lon: Double, lat: Double, userId: String, photoFilePath: String, isUploading: Boolean) =
-                TakenPhotoEntity(0L, lon, lat, userId, "", photoFilePath, isUploading, false, TimeUtils.getTimeFast())
+        fun new(lon: Double, lat: Double, userId: String, photoFilePath: String) =
+                TakenPhotoEntity(0L, lon, lat, userId, "", photoFilePath,  PhotoState.QUEUED_UP.state, TimeUtils.getTimeFast())
 
         fun empty() =
-                TakenPhotoEntity(-1L, 0.0, 0.0, "", "", "", false, false, 0L)
+                TakenPhotoEntity(-1L, 0.0, 0.0, "", "", "", PhotoState.QUEUED_UP.state, 0L)
 
         const val TABLE_NAME = "taken_photos"
     }

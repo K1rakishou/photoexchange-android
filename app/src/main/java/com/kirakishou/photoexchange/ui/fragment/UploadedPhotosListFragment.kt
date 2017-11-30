@@ -106,7 +106,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         //FIXME:
         //HACK
         //For some mysterious reason if we do not add a delay before calling addProgressFooter
-        //loadMoreSubject won't get any observables from EndlessRecyclerOnScrollListener at all, so we have to add a slight delay
+        //loadMoreSubject won't get any observables from EndlessRecyclerOnScrollListener at all, so we have to add a slight delay.
         //The subscription to loadMoreSubject happens before scroll listener generates any observables,
         //so I have no idea why loadMoreSubject doesn't receive any observables
 
