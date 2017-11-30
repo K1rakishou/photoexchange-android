@@ -36,10 +36,10 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     @Inject
     lateinit var viewModelFactory: AllPhotosViewActivityViewModelFactory
 
-    private val cancelButtonSubject = PublishSubject.create<TakenPhoto>()
-    private val retryButtonSubject = PublishSubject.create<TakenPhoto>()
+    val cancelButtonSubject = PublishSubject.create<TakenPhoto>()
+    val retryButtonSubject = PublishSubject.create<TakenPhoto>()
 
-    private lateinit var adapter: QueuedUpPhotosAdapter
+    lateinit var adapter: QueuedUpPhotosAdapter
 
     override fun initViewModel(): AllPhotosViewActivityViewModel {
         return ViewModelProviders.of(activity!!, viewModelFactory).get(AllPhotosViewActivityViewModel::class.java)
