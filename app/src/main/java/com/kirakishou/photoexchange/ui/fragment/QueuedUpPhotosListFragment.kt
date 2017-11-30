@@ -161,7 +161,6 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     private fun onPhotoUploaded(photo: TakenPhoto) {
         Timber.d("QueuedUpPhotosListFragment: onPhotoUploaded()")
-        check(isAdded)
 
         adapter.runOnAdapterHandler {
             adapter.removeQueuedUpPhoto(photo.id)
@@ -179,7 +178,6 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     private fun onFailedToUploadPhoto(photo: TakenPhoto) {
         Timber.d("QueuedUpPhotosListFragment: onFailedToUploadPhoto()")
-        check(isAdded)
 
         adapter.runOnAdapterHandler {
             adapter.removeQueuedUpPhoto(photo.id)

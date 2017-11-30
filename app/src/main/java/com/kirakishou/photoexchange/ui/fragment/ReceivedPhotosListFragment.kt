@@ -157,6 +157,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         //so I have no idea why loadMoreSubject doesn't receive any observables
 
         adapter.runOnAdapterHandlerWithDelay(DELAY_BEFORE_PROGRESS_FOOTER_ADDED) {
+            adapter.removeMessage()
             adapter.addProgressFooter()
         }
     }
@@ -228,7 +229,6 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     private fun onPhotoReceived(data: PhotoAnswerAllFound) {
         Timber.d("ReceivedPhotosListFragment: onPhotoReceived()")
-        check(isAdded)
 
         adapter.runOnAdapterHandler {
             if (data.allFound) {
@@ -244,7 +244,6 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     private fun onNoPhotoOnTheServer() {
         Timber.d("ReceivedPhotosListFragment: onNoPhoto()")
-        check(isAdded)
 
         adapter.runOnAdapterHandler {
             adapter.removeLookingForPhotoIndicator()
@@ -256,7 +255,6 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     private fun errorWhileTryingToSearchForPhoto() {
         Timber.d("ReceivedPhotosListFragment: errorWhileTryingToSearchForPhoto()")
-        check(isAdded)
 
         adapter.runOnAdapterHandler {
             adapter.removeLookingForPhotoIndicator()
@@ -268,7 +266,6 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     private fun userNeedsToUploadMorePhotos() {
         Timber.d("ReceivedPhotosListFragment: userNeedsToUploadMorePhotos()")
-        check(isAdded)
 
         adapter.runOnAdapterHandler {
             adapter.removeLookingForPhotoIndicator()

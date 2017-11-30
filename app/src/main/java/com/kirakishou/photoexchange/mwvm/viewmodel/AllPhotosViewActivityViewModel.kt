@@ -18,6 +18,7 @@ import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.rx2.await
+import kotlinx.coroutines.experimental.rx2.awaitSingle
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
@@ -39,7 +40,6 @@ class AllPhotosViewActivityViewModel(
 
     //inputs
     private val startUploadingPhotosInput = PublishSubject.create<Unit>()
-    private val fetchOnePageUploadedPhotosInput = PublishSubject.create<Pageable>()
     private val fetchOnePageReceivedPhotosInput = PublishSubject.create<Pageable>()
     private val scrollToTopInput = PublishSubject.create<Unit>()
     private val showLookingForPhotoIndicatorInput = PublishSubject.create<Unit>()
@@ -73,12 +73,6 @@ class AllPhotosViewActivityViewModel(
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
 
     init {
-        compositeDisposable += fetchOnePageUploadedPhotosInput
-                .subscribeOn(schedulers.provideIo())
-                .observeOn(schedulers.provideIo())
-                .flatMap(takenPhotosRepository::findOnePage)
-                .subscribe(onUploadedPhotosPageReceivedOutput::onNext, this::handleErrors)
-
         compositeDisposable += fetchOnePageReceivedPhotosInput
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
@@ -138,7 +132,14 @@ class AllPhotosViewActivityViewModel(
     }
 
     override fun fetchOnePageUploadedPhotos(page: Int, count: Int) {
-        fetchOnePageUploadedPhotosInput.onNext(Pageable(page, count))
+        compositeJob += async {
+            try {
+                val uploadedPhotos = takenPhotosRepository.findOnePage(Pageable(page, count)).await()
+                onUploadedPhotosPageReceivedOutput.onNext(uploadedPhotos)
+            } catch (error: Throwable) {
+                onUploadedPhotosPageReceivedOutput.onError(error)
+            }
+        }
     }
 
     override fun fetchOnePageReceivedPhotos(page: Int, count: Int) {

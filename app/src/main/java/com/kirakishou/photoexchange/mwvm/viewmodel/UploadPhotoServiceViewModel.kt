@@ -66,9 +66,10 @@ class UploadPhotoServiceViewModel(
                     val photoName = uploadPhoto(queuedUpPhoto)
                     if (photoName != null) {
                         queuedUpPhoto.photoName = photoName
-
-                        takenPhotosRepo.updateSetFailedToUpload(queuedUpPhoto.id).await()
+                        takenPhotosRepo.updateSetUploaded(queuedUpPhoto.id, photoName)
                         sendPhotoResponseOutput.onNext(queuedUpPhoto)
+                    } else {
+                        takenPhotosRepo.updateSetFailedToUpload(queuedUpPhoto.id).await()
                     }
                 }
 

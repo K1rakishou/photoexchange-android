@@ -35,9 +35,6 @@ class UploadPhotoRequest(
         return getBodySingle(info.photoFilePath, packet)
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
-                .doOnSuccess {
-                    throw ApiException(ServerErrorCode.UNKNOWN_ERROR)
-                }
                 .flatMap { multipartBody ->
                     return@flatMap apiService.sendPhoto(multipartBody.part(0), multipartBody.part(1))
                             .lift(OnApiErrorSingle(gson))

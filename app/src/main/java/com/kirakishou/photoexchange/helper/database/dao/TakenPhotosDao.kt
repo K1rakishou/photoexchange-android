@@ -22,18 +22,18 @@ interface TakenPhotosDao {
     @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} WHERE id = :arg0")
     fun findOne(id: Long): Single<TakenPhotoEntity>
 
-    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} WHERE photo_state = \"uploaded\" " +
+    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} WHERE photo_state = \'uploaded\' " +
             "ORDER BY created_on DESC " +
             "LIMIT :arg1 OFFSET :arg0")
     fun findPage(page: Int, count: Int): Single<List<TakenPhotoEntity>>
 
-    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} WHERE photo_state = \"queued_up\" ORDER BY created_on DESC ")
+    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} WHERE photo_state = \'queued_up\' ORDER BY created_on DESC ")
     fun findAllQueuedUp(): Single<List<TakenPhotoEntity>>
 
     @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} ORDER BY created_on DESC ")
     fun findAll(): Single<List<TakenPhotoEntity>>
 
-    @Query("SELECT COUNT(id) FROM ${TakenPhotoEntity.TABLE_NAME} WHERE photo_state = \"uploaded\"")
+    @Query("SELECT COUNT(id) FROM ${TakenPhotoEntity.TABLE_NAME} WHERE photo_state = \'uploaded\'")
     fun countAll(): Single<Long>
 
     @Query("UPDATE ${TakenPhotoEntity.TABLE_NAME} SET photo_state = :arg0 WHERE id = :arg1")

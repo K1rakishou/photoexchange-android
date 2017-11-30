@@ -40,12 +40,11 @@ class TakenPhotosRepository(
                 .map(mapper::toTakenPhoto)
     }
 
-    fun findOnePage(pageable: Pageable): Observable<List<TakenPhoto>> {
+    fun findOnePage(pageable: Pageable): Single<List<TakenPhoto>> {
         return takenPhotosDao.findPage(pageable.page, pageable.count)
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .map(mapper::toTakenPhotos)
-                .toObservable()
     }
 
     fun findAllQueuedUp(): Single<List<TakenPhoto>> {
