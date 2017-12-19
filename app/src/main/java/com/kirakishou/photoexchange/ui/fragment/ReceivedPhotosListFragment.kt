@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.widget.Toast
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
@@ -144,6 +145,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         isPhotoUploading = false
 
         adapter.runOnAdapterHandlerWithDelay(DELAY_BEFORE_PROGRESS_FOOTER_ADDED) {
+            adapter.removeMessage()
             adapter.addLookingForPhotoIndicator()
         }
     }
@@ -189,6 +191,11 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onPhotoAnswerLongClick(photo: PhotoAnswer) {
+        if (photo.isAnonymous()) {
+            Toast.makeText(activity, "This photo was made anonymously", Toast.LENGTH_LONG).show()
+            return
+        }
+
         val intent = Intent(activity, ViewPhotoFullSizeActivity::class.java)
         intent.putExtra("photo_name", photo.photoName)
 
