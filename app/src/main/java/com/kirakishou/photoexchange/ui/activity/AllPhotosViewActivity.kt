@@ -19,6 +19,7 @@ import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService
 import com.kirakishou.photoexchange.helper.service.UploadPhotoService
+import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.mwvm.model.event.PhotoReceivedEvent
 import com.kirakishou.photoexchange.mwvm.model.event.PhotoReceivedEventStatus
 import com.kirakishou.photoexchange.mwvm.model.event.PhotoUploadedEvent
@@ -174,9 +175,14 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         tab!!.select()
     }
 
-    fun schedulePhotoUpload() {
-        UploadPhotoService.scheduleJob(this)
-        Timber.d("AllPhotosViewActivity: UploadPhoto has been job scheduled")
+    private fun schedulePhotoUpload() {
+        if (NetUtils.isWifiConnected(this)) {
+            Timber.d("AllPhotosViewActivity: Wi-Fi is connected. Scheduling upload job immediate")
+            UploadPhotoService.scheduleJobImmediate(this)
+        } else {
+            UploadPhotoService.scheduleJobWhenWiFiAvailable(this)
+            Timber.d("AllPhotosViewActivity: Wi-Fi is not connected. Scheduling upload job upon Wi-Fi connection available")
+        }
     }
 
     fun startLookingForPhotoAnswerService() {
