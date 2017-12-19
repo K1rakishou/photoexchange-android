@@ -14,6 +14,10 @@ data class PhotoAnswer(
         val lat: Double
 ) {
 
+    fun isAnonymous(): Boolean {
+        return LonLat(lon, lat).isEmpty()
+    }
+
     companion object {
         fun fromPhotoAnswerJsonObject(answer: PhotoAnswerJsonObject) =
                 PhotoAnswer(answer.id, answer.userId, answer.photoName, answer.lon, answer.lat)

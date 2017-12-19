@@ -336,10 +336,28 @@ class UploadPhotoService : JobService() {
     companion object {
         private val JOB_ID = 2
 
-        fun scheduleJob(context: Context) {
+        fun scheduleJobImmediate(context: Context) {
+            val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, UploadPhotoService::class.java))
+                    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                    .setRequiresDeviceIdle(false)
+                    .setRequiresCharging(false)
+                    .setMinimumLatency(1_000)
+                    .setOverrideDeadline(0)
+                    .setBackoffCriteria(1_000, JobInfo.BACKOFF_POLICY_LINEAR)
+                    .build()
+
+            val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
+            jobScheduler.cancel(JOB_ID)
+            val result = jobScheduler.schedule(jobInfo)
+
+            check(result == JobScheduler.RESULT_SUCCESS)
+        }
+
+        fun scheduleJobWhenWiFiAvailable(context: Context) {
             val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, UploadPhotoService::class.java))
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_UNMETERED)
                     .setRequiresDeviceIdle(false)
+                    .setRequiresCharging(false)
                     .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_EXPONENTIAL)
                     .build()
 

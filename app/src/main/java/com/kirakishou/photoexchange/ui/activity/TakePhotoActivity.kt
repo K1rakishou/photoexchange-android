@@ -10,6 +10,7 @@ import android.support.v7.widget.CardView
 import android.view.View
 import android.widget.ImageView
 import butterknife.BindView
+import com.afollestad.materialdialogs.MaterialDialog
 import com.jakewharton.rxbinding2.view.RxView
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.MultiplePermissionsReport
@@ -47,6 +48,7 @@ import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.io.File
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
@@ -104,7 +106,9 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                         Manifest.permission.ACCESS_FINE_LOCATION)
                 .withListener(object : MultiplePermissionsListener {
                     override fun onPermissionsChecked(report: MultiplePermissionsReport) {
-                        if (!report.areAllPermissionsGranted()) {
+                        val cameraPermissionDenied = report.deniedPermissionResponses.any { it.permissionName == Manifest.permission.CAMERA }
+                        if (cameraPermissionDenied) {
+                            Timber.d("Could not obtain camera permission")
                             finish()
                             return
                         }
@@ -114,10 +118,25 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                     }
 
                     override fun onPermissionRationaleShouldBeShown(permissions: MutableList<PermissionRequest>, token: PermissionToken) {
-                        token.continuePermissionRequest()
+                        showCameraRationale(token)
                     }
 
                 }).check()
+    }
+
+    private fun showCameraRationale(token: PermissionToken) {
+        MaterialDialog.Builder(this)
+                .title("Why do we need camera?")
+                .content("How would you take pictures without camera?")
+                .positiveText("Allow")
+                .negativeText("Close app")
+                .onPositive { _, _ ->
+                    token.continuePermissionRequest()
+                }
+                .onNegative { _, _ ->
+                    token.cancelPermissionRequest()
+                }
+                .show()
     }
 
     override fun onActivityDestroy() {
@@ -191,10 +210,16 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                     takePhoto(fotoapparat)
                 })
 
-        val locationObservable = locationPermissionSubject
+        val locationObservableGranted = locationPermissionSubject
                 .filter { granted -> granted }
                 .combineLatest(getLocationObservable())
                 .map { it.second }
+
+        val locationObservableDenied = locationPermissionSubject
+                .filter { granted -> !granted }
+                .map { LonLat.empty() }
+
+        val locationObservable = Observable.merge(locationObservableDenied, locationObservableGranted)
 
         compositeDisposable += photoAvailabilitySubject
                 .subscribeOn(Schedulers.io())
@@ -268,7 +293,12 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .location()
                 .config(LocationParams.NAVIGATION)
                 .oneFix())
+                .timeout(5, TimeUnit.SECONDS)
                 .map { location -> getTruncatedLonLat(location) }
+                .onErrorReturn {
+                    Timber.d("Could not get current location. Returning empty location")
+                    LonLat.empty()
+                }
     }
 
     private fun getTruncatedLonLat(location: Location): LonLat {
