@@ -341,7 +341,7 @@ class UploadPhotoService : JobService() {
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
-                    .setMinimumLatency(0)
+                    .setMinimumLatency(1_000)
                     .setOverrideDeadline(0)
                     .setBackoffCriteria(1_000, JobInfo.BACKOFF_POLICY_LINEAR)
                     .build()
