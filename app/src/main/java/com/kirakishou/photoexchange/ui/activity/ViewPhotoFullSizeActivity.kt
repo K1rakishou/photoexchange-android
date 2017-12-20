@@ -26,8 +26,6 @@ class ViewPhotoFullSizeActivity : BaseActivityWithoutViewModel() {
     @Inject
     lateinit var imageLoader: ImageLoader
 
-    private var photoFile: File? = null
-
     override fun getContentView(): Int = R.layout.activity_view_photo_full_size
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
@@ -43,8 +41,7 @@ class ViewPhotoFullSizeActivity : BaseActivityWithoutViewModel() {
         compositeDisposable += imageLoader.downloadPhotoAsync(photoName, ImageLoader.PhotoSize.Original)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnSuccess { imageFile ->
-                    photoFile = imageFile
+                .doOnSuccess { photoFile ->
                     fullSizeImageView.setImage(ImageSource.uri(Uri.fromFile(photoFile)))
                 }
                 .subscribe()

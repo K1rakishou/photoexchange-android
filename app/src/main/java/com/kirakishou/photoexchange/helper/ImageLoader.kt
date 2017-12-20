@@ -15,7 +15,7 @@ class ImageLoader
 @Inject constructor(
         private val glideRequestManager: RequestManager
 ) {
-    private val basePhotosUrl = "${PhotoExchangeApplication.baseUrl}v1/api/get_photo/"
+    private val basePhotosUrl = "${PhotoExchangeApplication.baseUrl}v1/api/get_photo"
 
     fun loadImageFromDiskInto(imageFile: File, view: ImageView) {
         glideRequestManager
