@@ -27,7 +27,6 @@ class ViewPhotoFullSizeActivity : BaseActivityWithoutViewModel() {
     lateinit var imageLoader: ImageLoader
 
     private var photoFile: File? = null
-    private val compositeJob = CompositeJob()
 
     override fun getContentView(): Int = R.layout.activity_view_photo_full_size
 
@@ -36,8 +35,6 @@ class ViewPhotoFullSizeActivity : BaseActivityWithoutViewModel() {
     }
 
     override fun onActivityDestroy() {
-        deleteFile()
-        compositeJob.cancelAll()
     }
 
     private fun loadFullSizePhoto(intent: Intent) {
@@ -51,14 +48,6 @@ class ViewPhotoFullSizeActivity : BaseActivityWithoutViewModel() {
                     fullSizeImageView.setImage(ImageSource.uri(Uri.fromFile(photoFile)))
                 }
                 .subscribe()
-    }
-
-    private fun deleteFile() {
-        if (photoFile != null) {
-            if (photoFile!!.exists()) {
-                photoFile!!.delete()
-            }
-        }
     }
 
     override fun resolveDaggerDependency() {

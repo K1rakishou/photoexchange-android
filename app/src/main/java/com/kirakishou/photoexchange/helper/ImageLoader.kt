@@ -1,9 +1,7 @@
 package com.kirakishou.photoexchange.helper
 
 import android.widget.ImageView
-import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestManager
-import com.bumptech.glide.annotation.GlideModule
 import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import io.reactivex.Single

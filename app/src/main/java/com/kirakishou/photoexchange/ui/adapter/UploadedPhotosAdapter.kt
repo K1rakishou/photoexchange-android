@@ -150,8 +150,7 @@ class UploadedPhotosAdapter(
                 if (items[position].value.isPresent()) {
                     val item = items[position].value.get()
 
-                    val fullUrl = "${PhotoExchangeApplication.baseUrl}v1/api/get_photo/${item.photoName}/s"
-                    imageLoader.loadImageFromNetInto(fullUrl, holder.photoView)
+                    imageLoader.loadImageFromNetInto(item.photoName, ImageLoader.PhotoSize.Small, holder.photoView)
                 }
             }
 
