@@ -13,12 +13,12 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
-import com.kirakishou.photoexchange.base.BaseActivityWithoutViewModel
+import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.mwvm.model.other.LonLat
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 
-class MapActivity : BaseActivityWithoutViewModel(), OnMapReadyCallback {
+class MapActivity : BaseActivity<Nothing>(), OnMapReadyCallback {
 
     @BindView(R.id.iv_close_activity)
     lateinit var ivCloseActivity: ImageView
@@ -27,6 +27,8 @@ class MapActivity : BaseActivityWithoutViewModel(), OnMapReadyCallback {
     private var location: LatLng? = null
 
     override fun getContentView(): Int = R.layout.activity_map
+    override fun initViewModel(): Nothing? = null
+    override fun onInitRx() {}
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         getLocation(intent)

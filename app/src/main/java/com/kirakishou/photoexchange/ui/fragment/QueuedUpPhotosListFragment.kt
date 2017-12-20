@@ -11,6 +11,7 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseFragment
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
+import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
@@ -35,6 +36,9 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     @Inject
     lateinit var viewModelFactory: AllPhotosViewActivityViewModelFactory
+
+    @Inject
+    lateinit var imageLoader: ImageLoader
 
     val cancelButtonSubject = PublishSubject.create<TakenPhoto>()
     val retryButtonSubject = PublishSubject.create<TakenPhoto>()
@@ -100,7 +104,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private fun initRecyclerView() {
         val columnsCount = AndroidUtils.calculateNoOfColumns(activity!!, PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = QueuedUpPhotosAdapter(activity!!, cancelButtonSubject, retryButtonSubject)
+        adapter = QueuedUpPhotosAdapter(activity!!, imageLoader, cancelButtonSubject, retryButtonSubject)
         adapter.init()
 
         val layoutManager = GridLayoutManager(activity, columnsCount)

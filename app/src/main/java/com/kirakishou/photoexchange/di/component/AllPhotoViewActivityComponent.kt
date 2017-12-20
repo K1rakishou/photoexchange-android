@@ -13,7 +13,7 @@ import dagger.Component
  */
 
 @PerActivity
-@Component(modules = arrayOf(AllPhotoViewActivityModule::class), dependencies = arrayOf(ApplicationComponent::class))
+@Component(modules = [AllPhotoViewActivityModule::class], dependencies = [ApplicationComponent::class])
 interface AllPhotoViewActivityComponent {
     fun inject(activity: AllPhotosViewActivity)
     fun inject(fragment: UploadedPhotosListFragment)

@@ -11,6 +11,7 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseFragment
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
+import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
@@ -37,6 +38,9 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     @Inject
     lateinit var viewModelFactory: AllPhotosViewActivityViewModelFactory
+
+    @Inject
+    lateinit var imageLoader: ImageLoader
 
     private lateinit var adapter: UploadedPhotosAdapter
     private lateinit var endlessScrollListener: EndlessRecyclerOnScrollListener
@@ -118,7 +122,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private fun initRecyclerView() {
         columnsCount = AndroidUtils.calculateNoOfColumns(activity!!, PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = UploadedPhotosAdapter(activity!!)
+        adapter = UploadedPhotosAdapter(activity!!, imageLoader)
         adapter.init()
 
         layoutManager = GridLayoutManager(activity, columnsCount)

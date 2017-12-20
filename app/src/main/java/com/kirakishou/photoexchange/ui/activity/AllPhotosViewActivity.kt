@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.ui.activity
 
+import android.arch.lifecycle.Lifecycle
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.os.Bundle
@@ -15,6 +16,7 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
+import com.kirakishou.photoexchange.helper.EventAccumulator
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService
@@ -59,6 +61,9 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     @Inject
     lateinit var appSharedPreference: AppSharedPreference
 
+    @Inject
+    lateinit var eventAccumulator: EventAccumulator
+
     private val QUEUED_UP_PHOTOS_FRAGMENT_TAB_INDEX = 0
     private val UPLOADED_PHOTOS_FRAGMENT_TAB_INDEX = 1
     private val RECEIVED_PHOTOS_FRAGMENT_TAB_INDEX = 2
@@ -91,9 +96,26 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         viewPager.clearOnPageChangeListeners()
     }
 
+    override fun onResume() {
+        handleAccumulatedEvents()
+        super.onResume()
+    }
+
     override fun onPause() {
         super.onPause()
         userInfoPreference.save()
+    }
+
+    private fun handleAccumulatedEvents() {
+        while (eventAccumulator.hasEvent(this::class.java)) {
+            val event = eventAccumulator.getEvent(this::class.java)
+
+            if (event is PhotoUploadedEvent) {
+                handlePhotoUploadedEvent(event)
+            } else if (event is PhotoReceivedEvent) {
+                handlePhotoReceivedEvent(event)
+            }
+        }
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -203,6 +225,23 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onPhotoUploadedEvent(event: PhotoUploadedEvent) {
+        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+            eventAccumulator.rememberEvent(this::class.java, event)
+        } else {
+            handlePhotoUploadedEvent(event)
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onPhotoReceivedEvent(event: PhotoReceivedEvent) {
+        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+            eventAccumulator.rememberEvent(this::class.java, event)
+        } else {
+            handlePhotoReceivedEvent(event)
+        }
+    }
+
+    private fun handlePhotoUploadedEvent(event: PhotoUploadedEvent) {
         when (event.status) {
             SendPhotoEventStatus.START -> {
                 Timber.d("AllPhotosViewActivity: SendPhotoEventStatus.START")
@@ -225,8 +264,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         }
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onPhotoReceivedEvent(event: PhotoReceivedEvent) {
+    private fun handlePhotoReceivedEvent(event: PhotoReceivedEvent) {
         when (event.status) {
             PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED -> {
                 Timber.d("AllPhotosViewActivity: PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED")

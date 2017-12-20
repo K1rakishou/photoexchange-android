@@ -3,6 +3,8 @@ package com.kirakishou.photoexchange.di.component
 import android.content.Context
 import android.content.SharedPreferences
 import com.kirakishou.photoexchange.di.module.*
+import com.kirakishou.photoexchange.helper.EventAccumulator
+import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.database.MyDatabase
@@ -27,7 +29,9 @@ import javax.inject.Singleton
         AppSharedPreferenceModule::class,
         DatabaseModule::class,
         MapperModule::class,
-        EventBusModule::class))
+        EventBusModule::class,
+        ImageLoaderModule::class,
+        EventAccumulatorModule::class))
 interface ApplicationComponent {
     fun exposeContext(): Context
     fun exposeApiService(): ApiService
@@ -38,4 +42,6 @@ interface ApplicationComponent {
     fun exposeTakenPhotosRepository(): TakenPhotosRepository
     fun exposePhotoAnswerRepository(): PhotoAnswerRepository
     fun exposeEventBust(): EventBus
+    fun exposeImageLoaderModule(): ImageLoader
+    fun exposeEventAccumulator(): EventAccumulator
 }

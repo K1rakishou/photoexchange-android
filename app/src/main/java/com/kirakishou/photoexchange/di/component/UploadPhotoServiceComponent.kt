@@ -16,15 +16,15 @@ import javax.inject.Singleton
  */
 
 @Singleton
-@Component(modules = arrayOf(
-        UploadPhotoServiceModule::class,
-        NetworkModule::class,
-        GsonModule::class,
-        ApiClientModule::class,
-        SchedulerProviderModule::class,
-        EventBusModule::class,
-        DatabaseModule::class,
-        MapperModule::class))
+@Component(modules = [UploadPhotoServiceModule::class,
+    NetworkModule::class,
+    GsonModule::class,
+    ApiClientModule::class,
+    SchedulerProviderModule::class,
+    EventBusModule::class,
+    DatabaseModule::class,
+    MapperModule::class]
+)
 interface UploadPhotoServiceComponent {
     fun inject(service: UploadPhotoService)
 

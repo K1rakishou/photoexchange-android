@@ -5,6 +5,7 @@ import android.arch.lifecycle.LifecycleRegistry
 import android.arch.lifecycle.ViewModel
 import android.content.Context
 import android.os.Bundle
+import android.support.annotation.CallSuper
 import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -39,6 +40,7 @@ abstract class BaseFragment<out T : ViewModel> : Fragment() {
 
     override fun onAttach(context: Context?) {
         super.onAttach(context)
+        Timber.d("${this::class.java}.onAttach")
 
         resolveDaggerDependency()
 
@@ -71,12 +73,25 @@ abstract class BaseFragment<out T : ViewModel> : Fragment() {
     }
 
     override fun onDetach() {
-        Timber.d("Fragment.onDetach")
+        Timber.d("${this::class.java}.onDetach")
+
         compositeDisposable.clear()
         compositeJob.cancelAll()
 
         PhotoExchangeApplication.watch(this, this::class.simpleName)
         super.onDetach()
+    }
+
+    @CallSuper
+    override fun onResume() {
+        Timber.d("${this::class.java}.onResume")
+        super.onResume()
+    }
+
+    @CallSuper
+    override fun onPause() {
+        Timber.d("${this::class.java}.onPause")
+        super.onPause()
     }
 
     protected abstract fun initViewModel(): T
