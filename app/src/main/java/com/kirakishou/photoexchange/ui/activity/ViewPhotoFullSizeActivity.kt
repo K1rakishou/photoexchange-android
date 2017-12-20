@@ -12,12 +12,10 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerViewPhotoFullSizeActivityComponent
-import com.kirakishou.photoexchange.helper.CompositeJob
 import com.kirakishou.photoexchange.helper.ImageLoader
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
-import java.io.File
 import javax.inject.Inject
 
 class ViewPhotoFullSizeActivity : BaseActivity<Nothing>() {
@@ -50,6 +48,7 @@ class ViewPhotoFullSizeActivity : BaseActivity<Nothing>() {
 
     private fun loadFullSizePhoto(intent: Intent) {
         val photoName = intent.getStringExtra("photo_name")
+        checkNotNull(photoName)
 
         compositeDisposable += imageLoader.downloadPhotoAsync(photoName, ImageLoader.PhotoSize.Original)
                 .subscribeOn(Schedulers.io())
