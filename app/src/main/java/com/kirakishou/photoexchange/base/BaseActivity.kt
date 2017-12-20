@@ -36,16 +36,21 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
     protected val compositeDisposable = CompositeDisposable()
     protected val unknownErrorsSubject = PublishSubject.create<Throwable>()!!
 
-    private lateinit var viewModel: T
+    private var viewModel: T? = null
     private var unBinder: Fickle<Unbinder> = Fickle.empty()
 
     protected fun getViewModel(): T {
-        return viewModel
+        if (viewModel == null) {
+            throw IllegalStateException("Cannot call get viewModel from the activity that has not viewModel!")
+        }
+
+        return viewModel!!
     }
 
     @Suppress("UNCHECKED_CAST")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Timber.d("${this::class.java}.onCreate")
 
         setContentView(getContentView())
         unBinder = Fickle.of(ButterKnife.bind(this))
@@ -64,7 +69,7 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        Timber.d("Activity.onDestroy")
+        Timber.d("${this::class.java}.onDestroy")
 
         compositeDisposable.clear()
         onActivityDestroy()
@@ -76,6 +81,19 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
         PhotoExchangeApplication.watch(this, this::class.simpleName)
         super.onDestroy()
     }
+
+    @CallSuper
+    override fun onResume() {
+        Timber.d("${this::class.java}.onResume")
+        super.onResume()
+    }
+
+    @CallSuper
+    override fun onPause() {
+        Timber.d("${this::class.java}.onPause")
+        super.onPause()
+    }
+
 
     open fun onShowToast(message: String, duration: Int = Toast.LENGTH_LONG) {
         runOnUiThread {
@@ -124,7 +142,7 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
         }
     }
 
-    protected abstract fun initViewModel(): T
+    protected abstract fun initViewModel(): T?
     protected abstract fun getContentView(): Int
     protected abstract fun onInitRx()
     protected abstract fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent)
