@@ -8,15 +8,15 @@ import kotlin.NoSuchElementException
  * Created by kirakishou on 12/20/2017.
  */
 class EventAccumulator {
-    private val eventMap = hashMapOf<Class<*>, LinkedList<BaseEvent>>()
+    private val eventMap = hashMapOf<Class<*>, Queue<BaseEvent>>()
 
     fun rememberEvent(clazz: Class<*>, event: BaseEvent) {
         synchronized(eventMap) {
-            if (eventMap[clazz]!!.isEmpty()) {
-                eventMap[clazz] = LinkedList()
+            if (!eventMap.containsKey(clazz)) {
+                eventMap.put(clazz, LinkedList())
             }
 
-            eventMap[clazz]!!.push(event)
+            eventMap[clazz]!!.add(event)
         }
     }
 
@@ -30,7 +30,7 @@ class EventAccumulator {
                 throw IllegalStateException("eventMap does not have any events with key $clazz")
             }
 
-            return@synchronized eventMap[clazz]!!.pop()
+            return@synchronized eventMap[clazz]!!.poll()
         }
     }
 
