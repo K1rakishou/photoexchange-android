@@ -5,6 +5,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestManager
 import com.bumptech.glide.annotation.GlideModule
 import com.bumptech.glide.request.RequestOptions
+import com.kirakishou.photoexchange.PhotoExchangeApplication
 import io.reactivex.Single
 import java.io.File
 import javax.inject.Inject
@@ -16,6 +17,7 @@ class ImageLoader
 @Inject constructor(
         private val glideRequestManager: RequestManager
 ) {
+    private val basePhotosUrl = "${PhotoExchangeApplication.baseUrl}v1/api/get_photo/"
 
     fun loadImageFromDiskInto(imageFile: File, view: ImageView) {
         glideRequestManager
@@ -24,17 +26,26 @@ class ImageLoader
                 .into(view)
     }
 
-    fun loadImageFromNetInto(url: String, view: ImageView) {
+    fun loadImageFromNetInto(photoName: String, photoSize: PhotoSize, view: ImageView) {
+        val fullUrl = "$basePhotosUrl/$photoName/${photoSize.value}"
         glideRequestManager
-                .load(url)
+                .load(fullUrl)
                 .apply(RequestOptions().centerCrop())
                 .into(view)
     }
 
-    fun downloadImageAsync(url: String): Single<File> {
-        return Single.fromFuture(glideRequestManager
+    fun downloadPhotoAsync(photoName: String, photoSize: PhotoSize): Single<File> {
+        val fullUrl = "$basePhotosUrl/$photoName/${photoSize.value}"
+        val future = glideRequestManager
                 .downloadOnly()
-                .load(url)
-                .submit())
+                .load(fullUrl)
+                .submit()
+
+        return Single.fromFuture(future)
+    }
+
+    enum class PhotoSize(val value: String) {
+        Original("o"),
+        Small("s")
     }
 }
