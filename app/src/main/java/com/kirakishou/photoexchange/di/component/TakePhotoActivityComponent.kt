@@ -10,7 +10,7 @@ import dagger.Component
  */
 
 @PerActivity
-@Component(modules = arrayOf(TakePhotoActivityModule::class), dependencies = arrayOf(ApplicationComponent::class))
+@Component(modules = [TakePhotoActivityModule::class], dependencies = [ApplicationComponent::class])
 interface TakePhotoActivityComponent {
     fun inject(activity: TakePhotoActivity)
 }

@@ -13,6 +13,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.base.BaseAdapter
+import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
@@ -24,6 +25,7 @@ import java.io.File
  */
 class QueuedUpPhotosAdapter(
         private val context: Context,
+        private val imageLoader: ImageLoader,
         private val cancelButtonSubject: PublishSubject<TakenPhoto>,
         private val retryButtonSubject: PublishSubject<TakenPhoto>
 ) : BaseAdapter<TakenPhoto>(context) {
@@ -108,14 +110,11 @@ class QueuedUpPhotosAdapter(
             is QueuedUpPhotoViewHolder -> {
                 if (items[position].value.isPresent()) {
                     val item = items[position].value.get()
+
                     holder.progressBar.isIndeterminate = true
-
-                    Glide.with(context)
-                            .load(File(item.photoFilePath))
-                            .apply(RequestOptions().centerCrop())
-                            .into(holder.photoView)
-
                     holder.cancelUploadingButton.isEnabled = buttonsEnabled
+
+                    imageLoader.loadImageFromDiskInto(File(item.photoFilePath), holder.photoView)
 
                     if (buttonsEnabled) {
                         holder.cancelUploadingButton.setOnClickListener {

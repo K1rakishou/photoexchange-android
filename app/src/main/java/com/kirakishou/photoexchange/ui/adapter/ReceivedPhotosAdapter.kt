@@ -14,6 +14,7 @@ import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseAdapter
+import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
 import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
@@ -25,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 class ReceivedPhotosAdapter(
         private val context: Context,
+        private val imageLoader: ImageLoader,
         private val photoAnswerClickSubject: PublishSubject<PhotoAnswer>,
         private val photoAnswerLongClickSubject: PublishSubject<PhotoAnswer>
 ) : BaseAdapter<PhotoAnswer>(context) {
@@ -149,13 +151,9 @@ class ReceivedPhotosAdapter(
             is ReceivedPhotoViewHolder -> {
                 if (items[position].value.isPresent()) {
                     val item = items[position].value.get()
-                    val fullPath = "${PhotoExchangeApplication.baseUrl}v1/api/get_photo/${item.photoName}/s"
 
-                    //TODO: do image loading via ImageLoader class
-                    Glide.with(context)
-                            .load(fullPath)
-                            .apply(RequestOptions().centerCrop())
-                            .into(holder.photoView)
+                    val fullUrl = "${PhotoExchangeApplication.baseUrl}v1/api/get_photo/${item.photoName}/s"
+                    imageLoader.loadImageFromNetInto(fullUrl, holder.photoView)
 
                     holder.clickView.setOnClickListener {
                         photoAnswerClickSubject.onNext(item)

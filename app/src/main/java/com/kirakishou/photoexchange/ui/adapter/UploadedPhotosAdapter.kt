@@ -14,6 +14,7 @@ import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseAdapter
+import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
@@ -24,7 +25,8 @@ import java.io.File
  * Created by kirakishou on 11/7/2017.
  */
 class UploadedPhotosAdapter(
-        private val context: Context
+        private val context: Context,
+        private val imageLoader: ImageLoader
 ) : BaseAdapter<TakenPhoto>(context) {
 
     private val selector = UploadedPhotosIdSelectorFunction()
@@ -147,13 +149,9 @@ class UploadedPhotosAdapter(
             is SentPhotoViewHolder -> {
                 if (items[position].value.isPresent()) {
                     val item = items[position].value.get()
-                    val fullPath = "${PhotoExchangeApplication.baseUrl}v1/api/get_photo/${item.photoName}/s"
 
-                    //TODO: do image loading via ImageLoader class
-                    Glide.with(context)
-                            .load(fullPath)
-                            .apply(RequestOptions().centerCrop())
-                            .into(holder.photoView)
+                    val fullUrl = "${PhotoExchangeApplication.baseUrl}v1/api/get_photo/${item.photoName}/s"
+                    imageLoader.loadImageFromNetInto(fullUrl, holder.photoView)
                 }
             }
 

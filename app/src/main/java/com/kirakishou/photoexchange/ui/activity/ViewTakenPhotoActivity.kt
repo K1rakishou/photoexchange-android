@@ -14,6 +14,7 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerViewTakenPhotoActivityComponent
 import com.kirakishou.photoexchange.di.module.ViewTakenPhotoActivityModule
+import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.service.UploadPhotoService
 import com.kirakishou.photoexchange.mwvm.model.other.LonLat
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
@@ -42,6 +43,9 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
 
     @Inject
     lateinit var viewModelFactory: ViewTakenPhotoActivityViewModelFactory
+
+    @Inject
+    lateinit var imageLoader: ImageLoader
 
     private var takenPhoto = TakenPhoto.empty()
 
@@ -95,10 +99,7 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
     }
 
     private fun setPhotoPreview() {
-        Glide.with(this)
-                .load(File(takenPhoto.photoFilePath))
-                .apply(RequestOptions().centerCrop())
-                .into(photoView)
+        imageLoader.loadImageFromDiskInto(File(takenPhoto.photoFilePath), photoView)
     }
 
     private fun getTakenPhoto(intent: Intent) {

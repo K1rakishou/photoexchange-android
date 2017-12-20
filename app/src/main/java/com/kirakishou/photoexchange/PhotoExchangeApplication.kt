@@ -33,6 +33,7 @@ class PhotoExchangeApplication : Application() {
                 .databaseModule(DatabaseModule(databaseName))
                 .mapperModule(MapperModule())
                 .eventBusModule(EventBusModule())
+                .imageLoaderModule(ImageLoaderModule())
                 .build()
 
         initTimber()
