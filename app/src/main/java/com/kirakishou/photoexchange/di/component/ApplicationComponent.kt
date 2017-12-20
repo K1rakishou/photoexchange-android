@@ -2,8 +2,8 @@ package com.kirakishou.photoexchange.di.component
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.bumptech.glide.Glide
 import com.kirakishou.photoexchange.di.module.*
+import com.kirakishou.photoexchange.helper.EventAccumulator
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.api.ApiService
@@ -30,7 +30,8 @@ import javax.inject.Singleton
         DatabaseModule::class,
         MapperModule::class,
         EventBusModule::class,
-        ImageLoaderModule::class))
+        ImageLoaderModule::class,
+        EventAccumulatorModule::class))
 interface ApplicationComponent {
     fun exposeContext(): Context
     fun exposeApiService(): ApiService
@@ -42,4 +43,5 @@ interface ApplicationComponent {
     fun exposePhotoAnswerRepository(): PhotoAnswerRepository
     fun exposeEventBust(): EventBus
     fun exposeImageLoaderModule(): ImageLoader
+    fun exposeEventAccumulator(): EventAccumulator
 }

@@ -34,6 +34,7 @@ class PhotoExchangeApplication : Application() {
                 .mapperModule(MapperModule())
                 .eventBusModule(EventBusModule())
                 .imageLoaderModule(ImageLoaderModule())
+                .eventAccumulator(EventAccumulatorModule())
                 .build()
 
         initTimber()
