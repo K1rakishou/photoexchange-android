@@ -108,30 +108,10 @@ class UploadPhotoService : JobService() {
 
         isRxInited = true
 
-        compositeDisposable += viewModel.outputs.onStartUploadQueuedUpPhotosObservable()
+        compositeDisposable += viewModel.outputs.onPhotoUploadStatusObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onStartUploadQueuedUpPhotos() }, { onUnknownError(params, it) })
-
-        compositeDisposable += viewModel.outputs.onUploadPhotoResponseObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onPhotoUploaded(it) }, { onUnknownError(params, it) })
-
-        compositeDisposable += viewModel.outputs.onAllPhotosUploadedObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onAllPhotosUploaded(params) }, { onUnknownError(params, it) })
-
-        compositeDisposable += viewModel.outputs.onNoPhotosToUploadObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onNoPhotosToUpload(params) }, { onUnknownError(params, it) })
-
-        compositeDisposable += viewModel.outputs.onFailedToUploadPhotoObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onFailedToUploadPhoto(params, it) }, { onUnknownError(params, it) })
+                .subscribe({ status -> onPhotoUploadStatus(params, status) })
 
         compositeDisposable += viewModel.errors.onBadResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -144,33 +124,41 @@ class UploadPhotoService : JobService() {
                 .subscribe({ onUnknownError(params, it) }, { onUnknownError(params, it) })
     }
 
-    private fun onNoPhotosToUpload(params: JobParameters) {
-        Timber.d("UploadPhotoService: onNoPhotosToUpload()")
-        finish(params, false)
-    }
+    private fun onPhotoUploadStatus(params: JobParameters, status: PhotoUploadingStatus) {
+        when (status) {
+            is PhotoUploadingStatus.NoPhotoToUpload -> {
+                Timber.d("UploadPhotoService: PhotoUploadingStatus.NoPhotoToUpload")
+                finish(params, false)
+            }
 
-    private fun onStartUploadQueuedUpPhotos() {
-        Timber.d("UploadPhotoService: onStartUploadQueuedUpPhotos()")
-        sendEvent(PhotoUploadedEvent.startUploading())
-        updateUploadingNotificationShowUploading()
-    }
+            is PhotoUploadingStatus.StartPhotoUploading -> {
+                Timber.d("UploadPhotoService: PhotoUploadingStatus.StartPhotoUploading")
+                sendEvent(PhotoUploadedEvent.startUploading())
+                updateUploadingNotificationShowUploading()
+            }
 
-    private fun onPhotoUploaded(takenPhoto: TakenPhoto) {
-        Timber.d("UploadPhotoService: onPhotoUploaded() photoName: ${takenPhoto.photoName}")
-        sendEvent(PhotoUploadedEvent.photoUploaded(takenPhoto))
-    }
+            is PhotoUploadingStatus.PhotoUploaded -> {
+                Timber.d("UploadPhotoService: PhotoUploadingStatus.PhotoUploaded photoName: ${status.photo.photoName}")
+                sendEvent(PhotoUploadedEvent.photoUploaded(status.photo))
+            }
 
-    private fun onFailedToUploadPhoto(params: JobParameters, takenPhoto: TakenPhoto) {
-        Timber.d("UploadPhotoService: onFailedToUploadPhoto")
-        sendEvent(PhotoUploadedEvent.fail(takenPhoto))
-    }
+            is PhotoUploadingStatus.FailedToUploadPhoto -> {
+                Timber.d("UploadPhotoService: PhotoUploadingStatus.FailedToUploadPhoto")
+                sendEvent(PhotoUploadedEvent.fail(status.photo))
+            }
 
-    private fun onAllPhotosUploaded(params: JobParameters) {
-        Timber.d("UploadPhotoService: onAllPhotosUploaded()")
+            is PhotoUploadingStatus.AllPhotosUploaded -> {
+                Timber.d("PhotoUploadingStatus.AllPhotosUploaded")
 
-        sendEvent(PhotoUploadedEvent.done())
-        updateUploadingNotificationShowSuccess()
-        finish(params, false)
+                sendEvent(PhotoUploadedEvent.done())
+                updateUploadingNotificationShowSuccess()
+                finish(params, false)
+            }
+
+            is PhotoUploadingStatus.UnknownErrorWhileUploading -> {
+                Timber.d("PhotoUploadingStatus.PhotoUploadingStatus.UnknownErrorWhileUploading")
+            }
+        }
     }
 
     private fun onBadResponse(params: JobParameters, errorCode: ServerErrorCode) {
