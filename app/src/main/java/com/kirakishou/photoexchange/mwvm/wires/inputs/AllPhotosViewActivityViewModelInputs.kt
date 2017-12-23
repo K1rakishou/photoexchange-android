@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
  * Created by kirakishou on 11/8/2017.
  */
 interface AllPhotosViewActivityViewModelInputs {
+    fun getAccumulatedEventsForFragment(clazz: Class<*>)
     fun fetchOnePageUploadedPhotos(page: Int, count: Int)
     fun fetchOnePageReceivedPhotos(page: Int, count: Int)
     fun scrollToTop()

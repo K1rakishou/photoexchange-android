@@ -47,4 +47,14 @@ class EventAccumulator {
             return@synchronized true
         }
     }
+
+    fun eventsCount(clazz: Class<*>): Int {
+        return synchronized(eventMap) {
+            if (!eventMap.containsKey(clazz)) {
+                return@synchronized 0
+            }
+
+            return@synchronized eventMap[clazz]!!.size
+        }
+    }
 }

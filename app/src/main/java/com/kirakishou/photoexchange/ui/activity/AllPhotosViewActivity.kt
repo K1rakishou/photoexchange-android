@@ -27,6 +27,9 @@ import com.kirakishou.photoexchange.mwvm.model.status.PhotoReceivedEventStatus
 import com.kirakishou.photoexchange.mwvm.model.status.SendPhotoEventStatus
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
+import com.kirakishou.photoexchange.ui.fragment.QueuedUpPhotosListFragment
+import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosListFragment
+import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosListFragment
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
@@ -95,26 +98,9 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         viewPager.clearOnPageChangeListeners()
     }
 
-    override fun onResume() {
-        handleAccumulatedEvents()
-        super.onResume()
-    }
-
     override fun onPause() {
         super.onPause()
         userInfoPreference.save()
-    }
-
-    private fun handleAccumulatedEvents() {
-        while (eventAccumulator.hasEvent(this::class.java)) {
-            val event = eventAccumulator.getEvent(this::class.java)
-
-            if (event is PhotoUploadedEvent) {
-                handlePhotoUploadedEvent(event)
-            } else if (event is PhotoReceivedEvent) {
-                handlePhotoReceivedEvent(event)
-            }
-        }
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -147,6 +133,11 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ finish() })
 
+        compositeDisposable += getViewModel().outputs.onGetAccumulatedEventsObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ clazz -> onGetAccumulatedEvents(clazz) })
+
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -160,7 +151,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         tabLayout.tabGravity = TabLayout.GRAVITY_FILL
 
         viewPager.adapter = adapter
-        viewPager.offscreenPageLimit = 2
+        viewPager.offscreenPageLimit = 1
 
         viewPager.addOnPageChangeListener(this)
         tabLayout.addOnTabSelectedListener(this)
@@ -222,27 +213,32 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                 .show()
     }
 
+    private fun onGetAccumulatedEvents(clazz: Class<*>) {
+        while (eventAccumulator.hasEvent(clazz)) {
+            val event = eventAccumulator.getEvent(clazz)
+
+            if (event is PhotoUploadedEvent) {
+                handlePhotoUploadedEvent(event)
+            } else if (event is PhotoReceivedEvent) {
+                handlePhotoReceivedEvent(event)
+            }
+        }
+    }
+
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onEvent(event: BaseEvent) {
         when (event) {
             is PhotoUploadedEvent -> {
-                if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-                    eventAccumulator.rememberEvent(this::class.java, event)
-                } else {
-                    handlePhotoUploadedEvent(event)
-                }
+                eventAccumulator.rememberEvent(QueuedUpPhotosListFragment::class.java, event)
+                eventAccumulator.rememberEvent(UploadedPhotosListFragment::class.java, event)
             }
 
             is PhotoReceivedEvent -> {
-                if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-                    eventAccumulator.rememberEvent(this::class.java, event)
-                } else {
-                    handlePhotoReceivedEvent(event)
-                }
+                eventAccumulator.rememberEvent(ReceivedPhotosListFragment::class.java, event)
             }
         }
     }
-    
+
     private fun handlePhotoUploadedEvent(event: PhotoUploadedEvent) {
         when (event.status) {
             SendPhotoEventStatus.START -> {

@@ -101,6 +101,11 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     override fun onFragmentViewDestroy() {
     }
 
+    override fun onResume() {
+        getViewModel().inputs.getAccumulatedEventsForFragment(this::class.java)
+        super.onResume()
+    }
+
     private fun initRecyclerView() {
         val columnsCount = AndroidUtils.calculateNoOfColumns(activity!!, PHOTO_ADAPTER_VIEW_WIDTH)
 

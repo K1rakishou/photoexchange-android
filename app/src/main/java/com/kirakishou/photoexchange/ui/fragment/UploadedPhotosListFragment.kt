@@ -106,6 +106,11 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     override fun onFragmentViewDestroy() {
     }
 
+    override fun onResume() {
+        getViewModel().inputs.getAccumulatedEventsForFragment(this::class.java)
+        super.onResume()
+    }
+
     private fun recyclerStartLoadingItems() {
         //FIXME:
         //HACK
