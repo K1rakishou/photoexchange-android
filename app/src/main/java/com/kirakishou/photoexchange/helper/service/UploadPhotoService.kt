@@ -342,7 +342,11 @@ class UploadPhotoService : JobService() {
 
         fun scheduleJobWhenWiFiAvailable(context: Context) {
             val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, UploadPhotoService::class.java))
-                    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_UNMETERED)
+                    //TODO:
+                    //HACK: Google's emulators does not support changing internet type to Wi-Fi therefore
+                    //we need this hack to be able to test the app on google's emulators
+                    //Change this on release build!!!
+                    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
                     .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_EXPONENTIAL)
