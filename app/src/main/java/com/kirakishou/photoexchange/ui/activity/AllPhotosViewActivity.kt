@@ -22,10 +22,9 @@ import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService
 import com.kirakishou.photoexchange.helper.service.UploadPhotoService
 import com.kirakishou.photoexchange.helper.util.NetUtils
-import com.kirakishou.photoexchange.mwvm.model.event.PhotoReceivedEvent
-import com.kirakishou.photoexchange.mwvm.model.event.PhotoReceivedEventStatus
-import com.kirakishou.photoexchange.mwvm.model.event.PhotoUploadedEvent
-import com.kirakishou.photoexchange.mwvm.model.event.SendPhotoEventStatus
+import com.kirakishou.photoexchange.mwvm.model.event.*
+import com.kirakishou.photoexchange.mwvm.model.status.PhotoReceivedEventStatus
+import com.kirakishou.photoexchange.mwvm.model.status.SendPhotoEventStatus
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
@@ -224,23 +223,26 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onPhotoUploadedEvent(event: PhotoUploadedEvent) {
-        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-            eventAccumulator.rememberEvent(this::class.java, event)
-        } else {
-            handlePhotoUploadedEvent(event)
+    fun onEvent(event: BaseEvent) {
+        when (event) {
+            is PhotoUploadedEvent -> {
+                if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                    eventAccumulator.rememberEvent(this::class.java, event)
+                } else {
+                    handlePhotoUploadedEvent(event)
+                }
+            }
+
+            is PhotoReceivedEvent -> {
+                if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                    eventAccumulator.rememberEvent(this::class.java, event)
+                } else {
+                    handlePhotoReceivedEvent(event)
+                }
+            }
         }
     }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onPhotoReceivedEvent(event: PhotoReceivedEvent) {
-        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-            eventAccumulator.rememberEvent(this::class.java, event)
-        } else {
-            handlePhotoReceivedEvent(event)
-        }
-    }
-
+    
     private fun handlePhotoUploadedEvent(event: PhotoUploadedEvent) {
         when (event.status) {
             SendPhotoEventStatus.START -> {

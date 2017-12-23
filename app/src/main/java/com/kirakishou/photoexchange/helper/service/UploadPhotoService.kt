@@ -7,7 +7,6 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import timber.log.Timber
 import javax.inject.Inject
-import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
 import android.content.Context
 import android.support.v4.app.NotificationCompat
 import com.crashlytics.android.Crashlytics
@@ -108,10 +107,10 @@ class UploadPhotoService : JobService() {
 
         isRxInited = true
 
-        compositeDisposable += viewModel.outputs.onPhotoUploadStatusObservable()
+        compositeDisposable += viewModel.outputs.onPhotoUploadStateObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ status -> onPhotoUploadStatus(params, status) })
+                .subscribe({ status -> onPhotoUploadState(params, status) })
 
         compositeDisposable += viewModel.errors.onBadResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -124,39 +123,39 @@ class UploadPhotoService : JobService() {
                 .subscribe({ onUnknownError(params, it) }, { onUnknownError(params, it) })
     }
 
-    private fun onPhotoUploadStatus(params: JobParameters, status: PhotoUploadingStatus) {
-        when (status) {
-            is PhotoUploadingStatus.NoPhotoToUpload -> {
-                Timber.d("UploadPhotoService: PhotoUploadingStatus.NoPhotoToUpload")
+    private fun onPhotoUploadState(params: JobParameters, state: PhotoUploadingState) {
+        when (state) {
+            is PhotoUploadingState.NoPhotoToUpload -> {
+                Timber.d("UploadPhotoService: PhotoUploadingState.NoPhotoToUpload")
                 finish(params, false)
             }
 
-            is PhotoUploadingStatus.StartPhotoUploading -> {
-                Timber.d("UploadPhotoService: PhotoUploadingStatus.StartPhotoUploading")
+            is PhotoUploadingState.StartPhotoUploading -> {
+                Timber.d("UploadPhotoService: PhotoUploadingState.StartPhotoUploading")
                 sendEvent(PhotoUploadedEvent.startUploading())
                 updateUploadingNotificationShowUploading()
             }
 
-            is PhotoUploadingStatus.PhotoUploaded -> {
-                Timber.d("UploadPhotoService: PhotoUploadingStatus.PhotoUploaded photoName: ${status.photo.photoName}")
-                sendEvent(PhotoUploadedEvent.photoUploaded(status.photo))
+            is PhotoUploadingState.PhotoUploaded -> {
+                Timber.d("UploadPhotoService: PhotoUploadingState.PhotoUploaded photoName: ${state.photo.photoName}")
+                sendEvent(PhotoUploadedEvent.photoUploaded(state.photo))
             }
 
-            is PhotoUploadingStatus.FailedToUploadPhoto -> {
-                Timber.d("UploadPhotoService: PhotoUploadingStatus.FailedToUploadPhoto")
-                sendEvent(PhotoUploadedEvent.fail(status.photo))
+            is PhotoUploadingState.FailedToUploadPhoto -> {
+                Timber.d("UploadPhotoService: PhotoUploadingState.FailedToUploadPhoto")
+                sendEvent(PhotoUploadedEvent.fail(state.photo))
             }
 
-            is PhotoUploadingStatus.AllPhotosUploaded -> {
-                Timber.d("PhotoUploadingStatus.AllPhotosUploaded")
+            is PhotoUploadingState.AllPhotosUploaded -> {
+                Timber.d("PhotoUploadingState.AllPhotosUploaded")
 
                 sendEvent(PhotoUploadedEvent.done())
                 updateUploadingNotificationShowSuccess()
                 finish(params, false)
             }
 
-            is PhotoUploadingStatus.UnknownErrorWhileUploading -> {
-                Timber.d("PhotoUploadingStatus.PhotoUploadingStatus.UnknownErrorWhileUploading")
+            is PhotoUploadingState.UnknownErrorWhileUploading -> {
+                Timber.d("PhotoUploadingState.PhotoUploadingState.UnknownErrorWhileUploading")
             }
         }
     }

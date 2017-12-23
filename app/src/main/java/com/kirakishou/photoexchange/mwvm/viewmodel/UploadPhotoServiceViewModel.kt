@@ -9,7 +9,7 @@ import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.mwvm.model.dto.PhotoToBeUploaded
 import com.kirakishou.photoexchange.mwvm.model.exception.ApiException
-import com.kirakishou.photoexchange.mwvm.model.other.PhotoUploadingStatus
+import com.kirakishou.photoexchange.mwvm.model.other.PhotoUploadingState
 import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.wires.errors.UploadPhotoServiceErrors
@@ -45,7 +45,7 @@ class UploadPhotoServiceViewModel(
     private val compositeJob = CompositeJob()
     private val MAX_ATTEMPTS = 3
 
-    private val onPhotoUploadStatusOutput = PublishSubject.create<PhotoUploadingStatus>()
+    private val onPhotoUploadStateOutput = PublishSubject.create<PhotoUploadingState>()
 
     private val badResponseError = PublishSubject.create<ServerErrorCode>()
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
@@ -55,18 +55,18 @@ class UploadPhotoServiceViewModel(
             try {
                 val queuedUpPhotos = takenPhotosRepo.findAllQueuedUp().await()
                 if (queuedUpPhotos.isEmpty()) {
-                    onPhotoUploadStatusOutput.onNext(PhotoUploadingStatus.NoPhotoToUpload())
+                    onPhotoUploadStateOutput.onNext(PhotoUploadingState.NoPhotoToUpload())
                     return@async
                 }
 
-                onPhotoUploadStatusOutput.onNext(PhotoUploadingStatus.StartPhotoUploading())
+                onPhotoUploadStateOutput.onNext(PhotoUploadingState.StartPhotoUploading())
 
                 for (photo in queuedUpPhotos) {
                     val photoName = uploadPhoto(photo)
                     if (photoName != null) {
                         photo.photoName = photoName
                         takenPhotosRepo.updateSetUploaded(photo.id, photoName)
-                        onPhotoUploadStatusOutput.onNext(PhotoUploadingStatus.PhotoUploaded(photo))
+                        onPhotoUploadStateOutput.onNext(PhotoUploadingState.PhotoUploaded(photo))
                     } else {
                         takenPhotosRepo.updateSetFailedToUpload(photo.id).await()
                     }
@@ -74,9 +74,9 @@ class UploadPhotoServiceViewModel(
 
                 //ensure that we receive AllPhotosUploaded event last
                 delay(10, TimeUnit.MILLISECONDS)
-                onPhotoUploadStatusOutput.onNext(PhotoUploadingStatus.AllPhotosUploaded())
+                onPhotoUploadStateOutput.onNext(PhotoUploadingState.AllPhotosUploaded())
             } catch (error: Throwable) {
-                onPhotoUploadStatusOutput.onNext(PhotoUploadingStatus.UnknownErrorWhileUploading(error))
+                onPhotoUploadStateOutput.onNext(PhotoUploadingState.UnknownErrorWhileUploading(error))
             }
         }
     }
@@ -87,14 +87,14 @@ class UploadPhotoServiceViewModel(
         }
 
         if (response == null) {
-            onPhotoUploadStatusOutput.onNext(PhotoUploadingStatus.FailedToUploadPhoto(photo))
+            onPhotoUploadStateOutput.onNext(PhotoUploadingState.FailedToUploadPhoto(photo))
             unknownErrorSubject.onNext(ApiException(ServerErrorCode.UNKNOWN_ERROR))
             return null
         }
 
         val errorCode = ServerErrorCode.from(response.serverErrorCode)
         if (errorCode != ServerErrorCode.OK) {
-            onPhotoUploadStatusOutput.onNext(PhotoUploadingStatus.FailedToUploadPhoto(photo))
+            onPhotoUploadStateOutput.onNext(PhotoUploadingState.FailedToUploadPhoto(photo))
             badResponseError.onNext(errorCode)
             return null
         }
@@ -113,7 +113,7 @@ class UploadPhotoServiceViewModel(
         Timber.d("UploadPhotoServiceViewModel cleanUp")
     }
 
-    override fun onPhotoUploadStatusObservable(): Observable<PhotoUploadingStatus> = onPhotoUploadStatusOutput
+    override fun onPhotoUploadStateObservable(): Observable<PhotoUploadingState> = onPhotoUploadStateOutput
 
     override fun onBadResponseObservable(): Observable<ServerErrorCode> = badResponseError
     override fun onUnknownErrorObservable(): Observable<Throwable> = unknownErrorSubject

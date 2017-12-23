@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.mwvm.model.event
+package com.kirakishou.photoexchange.mwvm.model.status
 
 /**
  * Created by kirakishou on 11/17/2017.
