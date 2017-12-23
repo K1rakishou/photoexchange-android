@@ -2,26 +2,28 @@ package com.kirakishou.photoexchange.helper.rx
 
 import io.reactivex.Observable
 import io.reactivex.functions.Predicate
+import kotlinx.coroutines.experimental.async
+import timber.log.Timber
 
 /**
  * Created by kirakishou on 9/16/2017.
  */
 object RxUtils {
 
-    fun <T> splitRxStream(inStream: Observable<T>, vararg predicateArray: List<Predicate<T>>): List<Observable<T>> {
-        val outStreams = ArrayList<Observable<T>>(predicateArray.size)
-        val publishedObservable = inStream.publish().autoConnect(predicateArray.size)
+    suspend fun <Argument, Result> repeatRequest(maxAttempts: Int, arg: Argument, block: suspend (arg: Argument) -> Result): Result? {
+        var attempt = maxAttempts
 
-        for (predicateList in predicateArray) {
-            var stream: Observable<T> = publishedObservable
-
-            for (predicate in predicateList) {
-                stream = stream.filter(predicate)
+        return async {
+            while (attempt-- > 0 && isActive) {
+                try {
+                    Timber.d("Trying to send request, attempt #${maxAttempts - attempt}")
+                    return@async block(arg)
+                } catch (error: Throwable) {
+                    Timber.e(error)
+                }
             }
 
-            outStreams += stream
-        }
-
-        return outStreams
+            return@async null
+        }.await()
     }
 }

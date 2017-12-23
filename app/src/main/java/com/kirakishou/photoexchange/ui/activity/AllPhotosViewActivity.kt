@@ -22,12 +22,14 @@ import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService
 import com.kirakishou.photoexchange.helper.service.UploadPhotoService
 import com.kirakishou.photoexchange.helper.util.NetUtils
-import com.kirakishou.photoexchange.mwvm.model.event.PhotoReceivedEvent
-import com.kirakishou.photoexchange.mwvm.model.event.PhotoReceivedEventStatus
-import com.kirakishou.photoexchange.mwvm.model.event.PhotoUploadedEvent
-import com.kirakishou.photoexchange.mwvm.model.event.SendPhotoEventStatus
+import com.kirakishou.photoexchange.mwvm.model.event.*
+import com.kirakishou.photoexchange.mwvm.model.status.PhotoReceivedEventStatus
+import com.kirakishou.photoexchange.mwvm.model.status.SendPhotoEventStatus
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
+import com.kirakishou.photoexchange.ui.fragment.QueuedUpPhotosListFragment
+import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosListFragment
+import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosListFragment
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
@@ -35,6 +37,7 @@ import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import timber.log.Timber
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
@@ -68,8 +71,16 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     private val UPLOADED_PHOTOS_FRAGMENT_TAB_INDEX = 1
     private val RECEIVED_PHOTOS_FRAGMENT_TAB_INDEX = 2
 
+    //fragmentClass, isActiveListener
+    private val fragmentsEventListeners = ConcurrentHashMap<Class<*>, Boolean>()
     private val adapter = FragmentTabsPager(supportFragmentManager)
     private val userInfoPreference by lazy { appSharedPreference.prepare<UserInfoPreference>() }
+
+    init {
+        fragmentsEventListeners += Pair(QueuedUpPhotosListFragment::class.java, false)
+        fragmentsEventListeners += Pair(UploadedPhotosListFragment::class.java, false)
+        fragmentsEventListeners += Pair(ReceivedPhotosListFragment::class.java, false)
+    }
 
     override fun initViewModel(): AllPhotosViewActivityViewModel {
         return ViewModelProviders.of(this, viewModelFactory).get(AllPhotosViewActivityViewModel::class.java)
@@ -96,26 +107,9 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         viewPager.clearOnPageChangeListeners()
     }
 
-    override fun onResume() {
-        handleAccumulatedEvents()
-        super.onResume()
-    }
-
     override fun onPause() {
         super.onPause()
         userInfoPreference.save()
-    }
-
-    private fun handleAccumulatedEvents() {
-        while (eventAccumulator.hasEvent(this::class.java)) {
-            val event = eventAccumulator.getEvent(this::class.java)
-
-            if (event is PhotoUploadedEvent) {
-                handlePhotoUploadedEvent(event)
-            } else if (event is PhotoReceivedEvent) {
-                handlePhotoReceivedEvent(event)
-            }
-        }
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -148,6 +142,16 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ finish() })
 
+        compositeDisposable += getViewModel().outputs.onBeginReceivingEventsObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ clazz -> onBeginReceivingEvents(clazz) })
+
+        compositeDisposable += getViewModel().outputs.onStopReceivingEventsObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ clazz -> onStopReceivingEvents(clazz) })
+
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -161,7 +165,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         tabLayout.tabGravity = TabLayout.GRAVITY_FILL
 
         viewPager.adapter = adapter
-        viewPager.offscreenPageLimit = 2
+        viewPager.offscreenPageLimit = 1
 
         viewPager.addOnPageChangeListener(this)
         tabLayout.addOnTabSelectedListener(this)
@@ -223,20 +227,56 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                 .show()
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onPhotoUploadedEvent(event: PhotoUploadedEvent) {
-        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-            eventAccumulator.rememberEvent(this::class.java, event)
-        } else {
-            handlePhotoUploadedEvent(event)
-        }
+    private fun onBeginReceivingEvents(clazz: Class<*>) {
+        Timber.d("AllPhotosViewActivity: Begin event sending for Fragment ${clazz.simpleName}")
+
+        fragmentsEventListeners[clazz] = true
+        sendAllEvents(clazz)
+    }
+
+    private fun onStopReceivingEvents(clazz: Class<*>) {
+        Timber.d("AllPhotosViewActivity: Stop event sending for Fragment ${clazz.simpleName}")
+
+        fragmentsEventListeners[clazz] = false
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onPhotoReceivedEvent(event: PhotoReceivedEvent) {
-        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-            eventAccumulator.rememberEvent(this::class.java, event)
+    fun onEvent(event: BaseEvent) {
+        when (event) {
+            is PhotoUploadedEvent -> {
+                rememberOrSendEvent(QueuedUpPhotosListFragment::class.java, event)
+                rememberOrSendEvent(UploadedPhotosListFragment::class.java, event)
+            }
+
+            is PhotoReceivedEvent -> {
+                rememberOrSendEvent(ReceivedPhotosListFragment::class.java, event)
+            }
+        }
+    }
+
+    private fun rememberOrSendEvent(clazz: Class<*>, event: BaseEvent) {
+        if (!fragmentsEventListeners[clazz]!!) {
+            Timber.d("AllPhotosViewActivity: Fragment ${clazz.simpleName} is currently paused, remembering event")
+            eventAccumulator.rememberEvent(clazz, event)
         } else {
+            Timber.d("AllPhotosViewActivity: Fragment ${clazz.simpleName} is currently resumed, sending event")
+            sendEvent(event)
+        }
+    }
+
+    private fun sendAllEvents(clazz: Class<*>) {
+        Timber.d("Fragment ${clazz.simpleName} has ${eventAccumulator.eventsCount(clazz)} accumulated events")
+
+        while (eventAccumulator.hasEvent(clazz)) {
+            val event = eventAccumulator.getEvent(clazz)
+            sendEvent(event)
+        }
+    }
+
+    private fun sendEvent(event: BaseEvent) {
+        if (event is PhotoUploadedEvent) {
+            handlePhotoUploadedEvent(event)
+        } else if (event is PhotoReceivedEvent) {
             handlePhotoReceivedEvent(event)
         }
     }

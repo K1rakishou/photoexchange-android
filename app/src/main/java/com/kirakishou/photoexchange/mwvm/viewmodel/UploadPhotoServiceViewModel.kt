@@ -4,10 +4,12 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.helper.CompositeJob
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.helper.rx.RxUtils
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.mwvm.model.dto.PhotoToBeUploaded
 import com.kirakishou.photoexchange.mwvm.model.exception.ApiException
+import com.kirakishou.photoexchange.mwvm.model.other.PhotoUploadingState
 import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.wires.errors.UploadPhotoServiceErrors
@@ -43,65 +45,64 @@ class UploadPhotoServiceViewModel(
     private val compositeJob = CompositeJob()
     private val MAX_ATTEMPTS = 3
 
-    private val onNoPhotosToUploadOutput = PublishSubject.create<Unit>()
-    private val onAllPhotosUploadedOutput = PublishSubject.create<Unit>()
-    private val onStartUploadQueuedUpPhotosOutput = PublishSubject.create<Unit>()
-    private val sendPhotoResponseOutput = PublishSubject.create<TakenPhoto>()
+    private val onPhotoUploadStateOutput = PublishSubject.create<PhotoUploadingState>()
+
     private val badResponseError = PublishSubject.create<ServerErrorCode>()
-    private val failedToUploadPhotoOutput = PublishSubject.create<TakenPhoto>()
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
 
     override fun uploadPhotos() {
         compositeJob += async {
             try {
+                delay(300, TimeUnit.MILLISECONDS)
+
                 val queuedUpPhotos = takenPhotosRepo.findAllQueuedUp().await()
                 if (queuedUpPhotos.isEmpty()) {
-                    onNoPhotosToUploadOutput.onNext(Unit)
+                    onPhotoUploadStateOutput.onNext(PhotoUploadingState.NoPhotoToUpload())
                     return@async
                 }
 
-                onStartUploadQueuedUpPhotosOutput.onNext(Unit)
+                onPhotoUploadStateOutput.onNext(PhotoUploadingState.StartPhotoUploading())
 
-                for (queuedUpPhoto in queuedUpPhotos) {
-                    val photoName = uploadPhoto(queuedUpPhoto)
+                for (photo in queuedUpPhotos) {
+                    val photoName = uploadPhoto(photo)
                     if (photoName != null) {
-                        queuedUpPhoto.photoName = photoName
-                        takenPhotosRepo.updateSetUploaded(queuedUpPhoto.id, photoName)
-                        sendPhotoResponseOutput.onNext(queuedUpPhoto)
+                        photo.photoName = photoName
+                        takenPhotosRepo.updateSetUploaded(photo.id, photoName)
+                        onPhotoUploadStateOutput.onNext(PhotoUploadingState.PhotoUploaded(photo))
                     } else {
-                        takenPhotosRepo.updateSetFailedToUpload(queuedUpPhoto.id).await()
+                        takenPhotosRepo.updateSetFailedToUpload(photo.id).await()
                     }
                 }
 
                 //ensure that we receive AllPhotosUploaded event last
-                delay(100, TimeUnit.MILLISECONDS)
-                onAllPhotosUploadedOutput.onNext(Unit)
+                delay(10, TimeUnit.MILLISECONDS)
+                onPhotoUploadStateOutput.onNext(PhotoUploadingState.AllPhotosUploaded())
             } catch (error: Throwable) {
-                sendPhotoResponseOutput.onError(error)
+                onPhotoUploadStateOutput.onNext(PhotoUploadingState.UnknownErrorWhileUploading(error))
             }
         }
     }
 
-    private suspend fun uploadPhoto(queuedUpPhoto: TakenPhoto): String? {
-        val response = repeatRequest(MAX_ATTEMPTS, PhotoToBeUploaded(queuedUpPhoto.photoFilePath, queuedUpPhoto.location, queuedUpPhoto.userId)) { arg ->
+    private suspend fun uploadPhoto(photo: TakenPhoto): String? {
+        val response = RxUtils.repeatRequest(MAX_ATTEMPTS, PhotoToBeUploaded(photo.photoFilePath, photo.location, photo.userId)) { arg ->
             apiClient.uploadPhoto(arg).await()
         }
 
         if (response == null) {
-            failedToUploadPhotoOutput.onNext(queuedUpPhoto)
+            onPhotoUploadStateOutput.onNext(PhotoUploadingState.FailedToUploadPhoto(photo))
             unknownErrorSubject.onNext(ApiException(ServerErrorCode.UNKNOWN_ERROR))
             return null
         }
 
         val errorCode = ServerErrorCode.from(response.serverErrorCode)
         if (errorCode != ServerErrorCode.OK) {
-            failedToUploadPhotoOutput.onNext(queuedUpPhoto)
+            onPhotoUploadStateOutput.onNext(PhotoUploadingState.FailedToUploadPhoto(photo))
             badResponseError.onNext(errorCode)
             return null
         }
 
-        FileUtils.deletePhotoFile(queuedUpPhoto)
-        takenPhotosRepo.updateSetUploaded(queuedUpPhoto.id, response.photoName).await()
+        FileUtils.deletePhotoFile(photo)
+        takenPhotosRepo.updateSetUploaded(photo.id, response.photoName).await()
 
         return response.photoName
     }
@@ -110,32 +111,12 @@ class UploadPhotoServiceViewModel(
         compositeDisposable.clear()
         compositeJob.cancelAll()
 
-        PhotoExchangeApplication.watch(this, this::class.simpleName)
+        PhotoExchangeApplication.refWatcher!!.watch(this, this::class.java.simpleName)
         Timber.d("UploadPhotoServiceViewModel cleanUp")
     }
 
-    private suspend fun <Argument, Result> repeatRequest(maxAttempts: Int, arg: Argument, block: suspend (arg: Argument) -> Result): Result? {
-        var attempt = maxAttempts
-        var response: Result? = null
+    override fun onPhotoUploadStateObservable(): Observable<PhotoUploadingState> = onPhotoUploadStateOutput
 
-        while (attempt-- > 0) {
-            try {
-                Timber.d("Trying to send request, attempt #${maxAttempts - attempt}")
-                response = block(arg)
-                return response!!
-            } catch (error: Throwable) {
-                Timber.e(error)
-            }
-        }
-
-        return null
-    }
-
-    override fun onFailedToUploadPhotoObservable(): Observable<TakenPhoto> = failedToUploadPhotoOutput
-    override fun onNoPhotosToUploadObservable(): Observable<Unit> = onNoPhotosToUploadOutput
-    override fun onStartUploadQueuedUpPhotosObservable(): Observable<Unit> = onStartUploadQueuedUpPhotosOutput
-    override fun onAllPhotosUploadedObservable(): Observable<Unit> = onAllPhotosUploadedOutput
-    override fun onUploadPhotoResponseObservable(): Observable<TakenPhoto> = sendPhotoResponseOutput
     override fun onBadResponseObservable(): Observable<ServerErrorCode> = badResponseError
     override fun onUnknownErrorObservable(): Observable<Throwable> = unknownErrorSubject
 }

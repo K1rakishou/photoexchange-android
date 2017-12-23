@@ -13,33 +13,11 @@ import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosListFragment
 
 class FragmentTabsPager(fm: FragmentManager) : FragmentStatePagerAdapter(fm) {
 
-    var queuedUpPhotosFragment: QueuedUpPhotosListFragment? = null
-    var uploadedPhotosFragment: UploadedPhotosListFragment? = null
-    var receivedPhotosFragment: ReceivedPhotosListFragment? = null
-
     override fun getItem(position: Int): Fragment {
-        when (position) {
-            0 -> {
-                if (queuedUpPhotosFragment == null) {
-                    queuedUpPhotosFragment = QueuedUpPhotosListFragment.newInstance()
-                }
-
-                return queuedUpPhotosFragment!!
-            }
-            1 -> {
-                if (uploadedPhotosFragment == null) {
-                    uploadedPhotosFragment = UploadedPhotosListFragment.newInstance()
-                }
-
-                return uploadedPhotosFragment!!
-            }
-            2 -> {
-                if (receivedPhotosFragment == null) {
-                    receivedPhotosFragment = ReceivedPhotosListFragment.newInstance()
-                }
-
-                return receivedPhotosFragment!!
-            }
+        return when (position) {
+            0 -> QueuedUpPhotosListFragment.newInstance()
+            1 -> UploadedPhotosListFragment.newInstance()
+            2 -> ReceivedPhotosListFragment.newInstance()
             else -> throw IllegalArgumentException("No fragment for the current position $position")
         }
     }

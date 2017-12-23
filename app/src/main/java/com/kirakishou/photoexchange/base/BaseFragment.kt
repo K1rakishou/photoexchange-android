@@ -40,7 +40,6 @@ abstract class BaseFragment<out T : ViewModel> : Fragment() {
 
     override fun onAttach(context: Context?) {
         super.onAttach(context)
-        Timber.d("${this::class.java}.onAttach")
 
         resolveDaggerDependency()
 
@@ -73,8 +72,6 @@ abstract class BaseFragment<out T : ViewModel> : Fragment() {
     }
 
     override fun onDetach() {
-        Timber.d("${this::class.java}.onDetach")
-
         compositeDisposable.clear()
         compositeJob.cancelAll()
 

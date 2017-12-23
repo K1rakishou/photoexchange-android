@@ -85,7 +85,9 @@ class QueuedUpPhotosAdapter(
                     it.value.get().id == id
                 }
 
-        check(index != -1)
+        if (index == -1) {
+            return
+        }
 
         items.removeAt(index)
         notifyItemRemoved(index)

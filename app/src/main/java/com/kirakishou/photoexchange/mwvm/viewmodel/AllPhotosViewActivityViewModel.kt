@@ -68,6 +68,8 @@ class AllPhotosViewActivityViewModel(
     private val allPhotosUploadedOutput = PublishSubject.create<Unit>()
     private val showNoUploadedPhotosOutput = PublishSubject.create<Unit>()
     private val onTakenPhotoUploadingCanceledOutput = PublishSubject.create<Long>()
+    private val beginReceivingEventsOutput = PublishSubject.create<Class<*>>()
+    private val stopReceivingEventsOutput = PublishSubject.create<Class<*>>()
 
     //errors
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
@@ -129,6 +131,28 @@ class AllPhotosViewActivityViewModel(
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .subscribe(allPhotosUploadedOutput::onNext, this::handleErrors)
+    }
+
+    override fun beginReceivingEvents(clazz: Class<*>) {
+        compositeJob += async {
+            try {
+                delay(300, TimeUnit.MILLISECONDS)
+                beginReceivingEventsOutput.onNext(clazz)
+            } catch (error: Throwable) {
+                beginReceivingEventsOutput.onError(error)
+            }
+        }
+    }
+
+    override fun stopReceivingEvents(clazz: Class<*>) {
+        compositeJob += async {
+            try {
+                delay(300, TimeUnit.MILLISECONDS)
+                stopReceivingEventsOutput.onNext(clazz)
+            } catch (error: Throwable) {
+                stopReceivingEventsOutput.onError(error)
+            }
+        }
     }
 
     override fun fetchOnePageUploadedPhotos(page: Int, count: Int) {
@@ -266,6 +290,9 @@ class AllPhotosViewActivityViewModel(
     override fun onStartLookingForPhotosObservable(): Observable<Unit> = startLookingForPhotosOutput
     override fun onQueuedUpPhotosLoadedObservable(): Observable<List<TakenPhoto>> = onQueuedUpPhotosLoadedOutput
     override fun onShowNoUploadedPhotosObservable(): Observable<Unit> = showNoUploadedPhotosOutput
+    override fun onBeginReceivingEventsObservable(): Observable<Class<*>> = beginReceivingEventsOutput
+    override fun onStopReceivingEventsObservable(): Observable<Class<*>> = stopReceivingEventsOutput
+
     override fun onUnknownErrorObservable(): Observable<Throwable> = unknownErrorSubject
 }
 

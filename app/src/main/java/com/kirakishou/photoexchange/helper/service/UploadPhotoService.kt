@@ -7,7 +7,6 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import timber.log.Timber
 import javax.inject.Inject
-import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
 import android.content.Context
 import android.support.v4.app.NotificationCompat
 import com.crashlytics.android.Crashlytics
@@ -108,30 +107,10 @@ class UploadPhotoService : JobService() {
 
         isRxInited = true
 
-        compositeDisposable += viewModel.outputs.onStartUploadQueuedUpPhotosObservable()
+        compositeDisposable += viewModel.outputs.onPhotoUploadStateObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onStartUploadQueuedUpPhotos() }, { onUnknownError(params, it) })
-
-        compositeDisposable += viewModel.outputs.onUploadPhotoResponseObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onPhotoUploaded(it) }, { onUnknownError(params, it) })
-
-        compositeDisposable += viewModel.outputs.onAllPhotosUploadedObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onAllPhotosUploaded(params) }, { onUnknownError(params, it) })
-
-        compositeDisposable += viewModel.outputs.onNoPhotosToUploadObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onNoPhotosToUpload(params) }, { onUnknownError(params, it) })
-
-        compositeDisposable += viewModel.outputs.onFailedToUploadPhotoObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onFailedToUploadPhoto(params, it) }, { onUnknownError(params, it) })
+                .subscribe({ status -> onPhotoUploadState(params, status) })
 
         compositeDisposable += viewModel.errors.onBadResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -144,33 +123,41 @@ class UploadPhotoService : JobService() {
                 .subscribe({ onUnknownError(params, it) }, { onUnknownError(params, it) })
     }
 
-    private fun onNoPhotosToUpload(params: JobParameters) {
-        Timber.d("UploadPhotoService: onNoPhotosToUpload()")
-        finish(params, false)
-    }
+    private fun onPhotoUploadState(params: JobParameters, state: PhotoUploadingState) {
+        when (state) {
+            is PhotoUploadingState.NoPhotoToUpload -> {
+                Timber.d("UploadPhotoService: PhotoUploadingState.NoPhotoToUpload")
+                finish(params, false)
+            }
 
-    private fun onStartUploadQueuedUpPhotos() {
-        Timber.d("UploadPhotoService: onStartUploadQueuedUpPhotos()")
-        sendEvent(PhotoUploadedEvent.startUploading())
-        updateUploadingNotificationShowUploading()
-    }
+            is PhotoUploadingState.StartPhotoUploading -> {
+                Timber.d("UploadPhotoService: PhotoUploadingState.StartPhotoUploading")
+                sendEvent(PhotoUploadedEvent.startUploading())
+                updateUploadingNotificationShowUploading()
+            }
 
-    private fun onPhotoUploaded(takenPhoto: TakenPhoto) {
-        Timber.d("UploadPhotoService: onPhotoUploaded() photoName: ${takenPhoto.photoName}")
-        sendEvent(PhotoUploadedEvent.photoUploaded(takenPhoto))
-    }
+            is PhotoUploadingState.PhotoUploaded -> {
+                Timber.d("UploadPhotoService: PhotoUploadingState.PhotoUploaded photoName: ${state.photo.photoName}")
+                sendEvent(PhotoUploadedEvent.photoUploaded(state.photo))
+            }
 
-    private fun onFailedToUploadPhoto(params: JobParameters, takenPhoto: TakenPhoto) {
-        Timber.d("UploadPhotoService: onFailedToUploadPhoto")
-        sendEvent(PhotoUploadedEvent.fail(takenPhoto))
-    }
+            is PhotoUploadingState.FailedToUploadPhoto -> {
+                Timber.d("UploadPhotoService: PhotoUploadingState.FailedToUploadPhoto")
+                sendEvent(PhotoUploadedEvent.fail(state.photo))
+            }
 
-    private fun onAllPhotosUploaded(params: JobParameters) {
-        Timber.d("UploadPhotoService: onAllPhotosUploaded()")
+            is PhotoUploadingState.AllPhotosUploaded -> {
+                Timber.d("PhotoUploadingState.AllPhotosUploaded")
 
-        sendEvent(PhotoUploadedEvent.done())
-        updateUploadingNotificationShowSuccess()
-        finish(params, false)
+                sendEvent(PhotoUploadedEvent.done())
+                updateUploadingNotificationShowSuccess()
+                finish(params, false)
+            }
+
+            is PhotoUploadingState.UnknownErrorWhileUploading -> {
+                Timber.d("PhotoUploadingState.PhotoUploadingState.UnknownErrorWhileUploading")
+            }
+        }
     }
 
     private fun onBadResponse(params: JobParameters, errorCode: ServerErrorCode) {
@@ -355,7 +342,11 @@ class UploadPhotoService : JobService() {
 
         fun scheduleJobWhenWiFiAvailable(context: Context) {
             val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, UploadPhotoService::class.java))
-                    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_UNMETERED)
+                    //TODO:
+                    //HACK: Google's emulators does not support changing internet type to Wi-Fi therefore
+                    //we need this hack to be able to test the app on google's emulators
+                    //Change this on release build!!!
+                    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
                     .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_EXPONENTIAL)

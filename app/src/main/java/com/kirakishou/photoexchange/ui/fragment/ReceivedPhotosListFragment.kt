@@ -145,6 +145,16 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     override fun onFragmentViewDestroy() {
     }
 
+    override fun onResume() {
+        getViewModel().inputs.beginReceivingEvents(this::class.java)
+        super.onResume()
+    }
+
+    override fun onPause() {
+        getViewModel().inputs.stopReceivingEvents(this::class.java)
+        super.onPause()
+    }
+
     private fun showLookingForPhotoIndicator() {
         isPhotoUploading = false
 
