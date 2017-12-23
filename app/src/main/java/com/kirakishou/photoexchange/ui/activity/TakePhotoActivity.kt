@@ -205,14 +205,8 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                         }
                     } else {
                         when (lifecycle) {
-                            ON_START -> {
-                                Timber.d("ON_START")
-                                fotoapparat.start()
-                            }
-                            ON_STOP -> {
-                                Timber.d("ON_STOP")
-                                fotoapparat.stop()
-                            }
+                            ON_START ->  fotoapparat.start()
+                            ON_STOP -> fotoapparat.stop()
                         }
                     }
                 }
