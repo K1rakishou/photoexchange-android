@@ -33,6 +33,7 @@ class AllPhotosViewActivityViewModel(
         AllPhotosViewActivityViewModelInputs,
         AllPhotosViewActivityViewModelOutputs,
         AllPhotosViewActivityViewModelErrors {
+
     val inputs: AllPhotosViewActivityViewModelInputs = this
     val outputs: AllPhotosViewActivityViewModelOutputs = this
     val errors: AllPhotosViewActivityViewModelErrors = this
@@ -67,7 +68,8 @@ class AllPhotosViewActivityViewModel(
     private val allPhotosUploadedOutput = PublishSubject.create<Unit>()
     private val showNoUploadedPhotosOutput = PublishSubject.create<Unit>()
     private val onTakenPhotoUploadingCanceledOutput = PublishSubject.create<Long>()
-    private val getAccumulatedEventsOutput = PublishSubject.create<Class<*>>()
+    private val beginReceivingEventsOutput = PublishSubject.create<Class<*>>()
+    private val stopReceivingEventsOutput = PublishSubject.create<Class<*>>()
 
     //errors
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
@@ -131,12 +133,22 @@ class AllPhotosViewActivityViewModel(
                 .subscribe(allPhotosUploadedOutput::onNext, this::handleErrors)
     }
 
-    override fun getAccumulatedEventsForFragment(clazz: Class<*>) {
+    override fun beginReceivingEvents(clazz: Class<*>) {
         compositeJob += async {
             try {
-                getAccumulatedEventsOutput.onNext(clazz)
+                beginReceivingEventsOutput.onNext(clazz)
             } catch (error: Throwable) {
-                getAccumulatedEventsOutput.onError(error)
+                beginReceivingEventsOutput.onError(error)
+            }
+        }
+    }
+
+    override fun stopReceivingEvents(clazz: Class<*>) {
+        compositeJob += async {
+            try {
+                stopReceivingEventsOutput.onNext(clazz)
+            } catch (error: Throwable) {
+                stopReceivingEventsOutput.onError(error)
             }
         }
     }
@@ -276,7 +288,8 @@ class AllPhotosViewActivityViewModel(
     override fun onStartLookingForPhotosObservable(): Observable<Unit> = startLookingForPhotosOutput
     override fun onQueuedUpPhotosLoadedObservable(): Observable<List<TakenPhoto>> = onQueuedUpPhotosLoadedOutput
     override fun onShowNoUploadedPhotosObservable(): Observable<Unit> = showNoUploadedPhotosOutput
-    override fun onGetAccumulatedEventsObservable(): Observable<Class<*>> = getAccumulatedEventsOutput
+    override fun onBeginReceivingEventsObservable(): Observable<Class<*>> = beginReceivingEventsOutput
+    override fun onStopReceivingEventsObservable(): Observable<Class<*>> = stopReceivingEventsOutput
 
     override fun onUnknownErrorObservable(): Observable<Throwable> = unknownErrorSubject
 }
