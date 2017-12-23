@@ -25,6 +25,7 @@ import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.helper.util.Utils
+import com.kirakishou.photoexchange.mwvm.model.exception.CameraIsNotAvailableException
 import com.kirakishou.photoexchange.mwvm.model.other.LonLat
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.viewmodel.TakePhotoActivityViewModel
@@ -100,6 +101,26 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         getViewModel().showDatabaseDebugInfo()
     }
 
+    override fun onActivityDestroy() {
+    }
+
+    override fun onPause() {
+        super.onPause()
+        userInfoPreference.save()
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        lifecycleSubject.onNext(ON_START)
+    }
+
+    override fun onStop() {
+        super.onStop()
+
+        lifecycleSubject.onNext(ON_STOP)
+    }
+
     private fun getPermissions() {
         Dexter.withActivity(this)
                 .withPermissions(
@@ -131,7 +152,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .title("Why do we need these permissions?")
                 .content("We need camera so you can take a picture to send it to someone. " +
                         "We don't necessarily need gps permission so you can disable it and the person " +
-                        "who receives your photo won't be able to see where it was take from")
+                        "who receives your photo won't be able to see where it was taken.")
                 .positiveText("Allow")
                 .negativeText("Close app")
                 .onPositive { _, _ ->
@@ -143,24 +164,15 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .show()
     }
 
-    override fun onActivityDestroy() {
-    }
-
-    override fun onPause() {
-        super.onPause()
-        userInfoPreference.save()
-    }
-
-    override fun onStart() {
-        super.onStart()
-
-        lifecycleSubject.onNext(ON_START)
-    }
-
-    override fun onStop() {
-        super.onStop()
-
-        lifecycleSubject.onNext(ON_STOP)
+    private fun showCameraIsNotAvailableDialog() {
+        MaterialDialog.Builder(this)
+                .title("Camera is not available")
+                .content("It look like your device does not support a camera. This app cannot work without a camera.")
+                .positiveText("OK")
+                .onPositive { _, _ ->
+                    finish()
+                }
+                .show()
     }
 
     private fun initCamera(): Observable<Fotoapparat> {
@@ -176,11 +188,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     }
 
     private fun initRx() {
-        compositeDisposable += RxView.clicks(ivShowAllPhotos)
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ switchToAllPhotosViewActivity() })
-
         val fotoapparatObservable = initCameraSubject
                 .flatMap {
                     initCamera()
@@ -189,18 +196,32 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
         compositeDisposable += Observables.combineLatest(fotoapparatObservable, lifecycleSubject)
                 .doOnNext { (fotoapparat, lifecycle) ->
-                    when (lifecycle) {
-                        ON_START -> {
-                            Timber.d("ON_START")
-                            fotoapparat.start()
+                    if (!fotoapparat.isAvailable) {
+                        if (lifecycle == ON_START) {
+                            Timber.d("Camera IS NOT available!!!")
+                            hideTakePhotoButton()
+                            hideShowAllPhotosButton()
+                            showCameraIsNotAvailableDialog()
                         }
-                        ON_STOP -> {
-                            Timber.d("ON_STOP")
-                            fotoapparat.stop()
+                    } else {
+                        when (lifecycle) {
+                            ON_START -> {
+                                Timber.d("ON_START")
+                                fotoapparat.start()
+                            }
+                            ON_STOP -> {
+                                Timber.d("ON_STOP")
+                                fotoapparat.stop()
+                            }
                         }
                     }
                 }
                 .subscribe()
+
+        compositeDisposable += RxView.clicks(ivShowAllPhotos)
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ switchToAllPhotosViewActivity() })
 
         compositeDisposable += RxView.clicks(takePhotoButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -250,6 +271,14 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onUnknownError)
+    }
+
+    private fun hideShowAllPhotosButton() {
+        ivShowAllPhotos.visibility = View.GONE
+    }
+
+    private fun hideTakePhotoButton() {
+        takePhotoButton.visibility = View.GONE
     }
 
     private fun switchToAllPhotosViewActivity() {
