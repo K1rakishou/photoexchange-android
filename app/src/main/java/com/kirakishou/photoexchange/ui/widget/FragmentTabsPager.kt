@@ -12,6 +12,7 @@ import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosListFragment
  */
 
 class FragmentTabsPager(fm: FragmentManager) : FragmentStatePagerAdapter(fm) {
+
     override fun getItem(position: Int): Fragment {
         return when (position) {
             0 -> QueuedUpPhotosListFragment.newInstance()
