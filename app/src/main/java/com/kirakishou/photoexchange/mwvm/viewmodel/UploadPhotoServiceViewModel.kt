@@ -53,6 +53,8 @@ class UploadPhotoServiceViewModel(
     override fun uploadPhotos() {
         compositeJob += async {
             try {
+                delay(300, TimeUnit.MILLISECONDS)
+
                 val queuedUpPhotos = takenPhotosRepo.findAllQueuedUp().await()
                 if (queuedUpPhotos.isEmpty()) {
                     onPhotoUploadStateOutput.onNext(PhotoUploadingState.NoPhotoToUpload())
@@ -109,7 +111,7 @@ class UploadPhotoServiceViewModel(
         compositeDisposable.clear()
         compositeJob.cancelAll()
 
-        PhotoExchangeApplication.watch(this, this::class.simpleName)
+        PhotoExchangeApplication.refWatcher!!.watch(this, this::class.java.simpleName)
         Timber.d("UploadPhotoServiceViewModel cleanUp")
     }
 

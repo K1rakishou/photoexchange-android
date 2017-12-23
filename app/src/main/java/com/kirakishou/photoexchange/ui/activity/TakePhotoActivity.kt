@@ -39,6 +39,7 @@ import io.nlopez.smartlocation.location.config.LocationParams
 import io.nlopez.smartlocation.rx.ObservableFactory
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.functions.Function
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.combineLatest
 import io.reactivex.rxkotlin.plusAssign
@@ -125,9 +126,12 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     }
 
     private fun showCameraRationale(token: PermissionToken) {
+        //TODO: change this to homemade dialog and get rid of the MaterialDialogs dependency
         MaterialDialog.Builder(this)
-                .title("Why do we need camera?")
-                .content("How would you take pictures without camera?")
+                .title("Why do we need these permissions?")
+                .content("We need camera so you can take a picture to send it to someone. " +
+                        "We don't necessarily need gps permission so you can disable it and the person " +
+                        "who receives your photo won't be able to see where it was take from")
                 .positiveText("Allow")
                 .negativeText("Close app")
                 .onPositive { _, _ ->
@@ -287,18 +291,18 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     }
 
     private fun getLocationObservable(): Observable<LonLat> {
-        Timber.d("getLocation() Getting current location...")
+        Timber.d("getLocation() Trying to obtain current location...")
+
+        if (!SmartLocation.with(applicationContext).location().state().isGpsAvailable) {
+            Timber.d("Gps is disabled so we return empty location")
+            return Observable.just(LonLat.empty())
+        }
 
         return ObservableFactory.from(SmartLocation.with(applicationContext)
                 .location()
                 .config(LocationParams.NAVIGATION)
                 .oneFix())
-                .timeout(5, TimeUnit.SECONDS)
                 .map { location -> getTruncatedLonLat(location) }
-                .onErrorReturn {
-                    Timber.d("Could not get current location. Returning empty location")
-                    LonLat.empty()
-                }
     }
 
     private fun getTruncatedLonLat(location: Location): LonLat {

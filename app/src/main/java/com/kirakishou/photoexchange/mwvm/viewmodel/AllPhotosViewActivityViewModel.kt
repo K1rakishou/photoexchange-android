@@ -136,6 +136,7 @@ class AllPhotosViewActivityViewModel(
     override fun beginReceivingEvents(clazz: Class<*>) {
         compositeJob += async {
             try {
+                delay(300, TimeUnit.MILLISECONDS)
                 beginReceivingEventsOutput.onNext(clazz)
             } catch (error: Throwable) {
                 beginReceivingEventsOutput.onError(error)
@@ -146,6 +147,7 @@ class AllPhotosViewActivityViewModel(
     override fun stopReceivingEvents(clazz: Class<*>) {
         compositeJob += async {
             try {
+                delay(300, TimeUnit.MILLISECONDS)
                 stopReceivingEventsOutput.onNext(clazz)
             } catch (error: Throwable) {
                 stopReceivingEventsOutput.onError(error)

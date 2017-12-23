@@ -228,14 +228,14 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     }
 
     private fun onBeginReceivingEvents(clazz: Class<*>) {
-        Timber.d("Begin event sending for Fragment ${clazz.simpleName}")
+        Timber.d("AllPhotosViewActivity: Begin event sending for Fragment ${clazz.simpleName}")
 
         fragmentsEventListeners[clazz] = true
         sendAllEvents(clazz)
     }
 
     private fun onStopReceivingEvents(clazz: Class<*>) {
-        Timber.d("Stop event sending for Fragment ${clazz.simpleName}")
+        Timber.d("AllPhotosViewActivity: Stop event sending for Fragment ${clazz.simpleName}")
 
         fragmentsEventListeners[clazz] = false
     }
@@ -256,23 +256,28 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
     private fun rememberOrSendEvent(clazz: Class<*>, event: BaseEvent) {
         if (!fragmentsEventListeners[clazz]!!) {
-            Timber.d("Fragment ${clazz.simpleName} is currently paused, remembering event")
+            Timber.d("AllPhotosViewActivity: Fragment ${clazz.simpleName} is currently paused, remembering event")
             eventAccumulator.rememberEvent(clazz, event)
         } else {
-            Timber.d("Fragment ${clazz.simpleName} is currently resumed, sending event")
-            sendAllEvents(clazz)
+            Timber.d("AllPhotosViewActivity: Fragment ${clazz.simpleName} is currently resumed, sending event")
+            sendEvent(event)
         }
     }
 
     private fun sendAllEvents(clazz: Class<*>) {
+        Timber.d("Fragment ${clazz.simpleName} has ${eventAccumulator.eventsCount(clazz)} accumulated events")
+
         while (eventAccumulator.hasEvent(clazz)) {
             val event = eventAccumulator.getEvent(clazz)
+            sendEvent(event)
+        }
+    }
 
-            if (event is PhotoUploadedEvent) {
-                handlePhotoUploadedEvent(event)
-            } else if (event is PhotoReceivedEvent) {
-                handlePhotoReceivedEvent(event)
-            }
+    private fun sendEvent(event: BaseEvent) {
+        if (event is PhotoUploadedEvent) {
+            handlePhotoUploadedEvent(event)
+        } else if (event is PhotoReceivedEvent) {
+            handlePhotoReceivedEvent(event)
         }
     }
 
