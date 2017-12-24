@@ -4,6 +4,7 @@ import android.Manifest
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.location.Location
+import android.location.LocationManager
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.support.v7.widget.CardView
@@ -22,6 +23,8 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerTakePhotoActivityComponent
 import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
+import com.kirakishou.photoexchange.helper.location.MyLocationManager
+import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.helper.util.Utils
@@ -35,9 +38,6 @@ import io.fotoapparat.parameter.ScaleType
 import io.fotoapparat.parameter.selector.LensPositionSelectors.back
 import io.fotoapparat.parameter.selector.SizeSelectors.biggestSize
 import io.fotoapparat.view.CameraView
-import io.nlopez.smartlocation.SmartLocation
-import io.nlopez.smartlocation.location.config.LocationParams
-import io.nlopez.smartlocation.rx.ObservableFactory
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.functions.Function
@@ -81,6 +81,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     private val locationPermissionSubject = BehaviorSubject.create<Boolean>()
     private val photoAvailabilitySubject = PublishSubject.create<String>()
     private val lifecycleSubject = BehaviorSubject.create<Int>()
+    private val locationManager = MyLocationManager(applicationContext)
 
     override fun initViewModel(): TakePhotoActivityViewModel {
         return ViewModelProviders.of(this, viewModelFactory).get(TakePhotoActivityViewModel::class.java)
@@ -325,7 +326,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     private fun getLocationObservable(): Observable<LonLat> {
         Timber.d("getLocation() Trying to obtain current location...")
 
-        if (!SmartLocation.with(applicationContext).location().state().isGpsAvailable) {
+        /*if (!SmartLocation.with(applicationContext).location().state().isGpsAvailable) {
             Timber.d("Gps is disabled so we return empty location")
             return Observable.just(LonLat.empty())
         }
@@ -334,6 +335,14 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .location()
                 .config(LocationParams.NAVIGATION)
                 .oneFix())
+                .map { location -> getTruncatedLonLat(location) }*/
+
+        if (!locationManager.isGpsEnabled()) {
+            Timber.d("Gps is disabled so we return empty location")
+            return Observable.just(LonLat.empty())
+        }
+
+        return RxLocationManager.start(locationManager)
                 .map { location -> getTruncatedLonLat(location) }
     }
 
