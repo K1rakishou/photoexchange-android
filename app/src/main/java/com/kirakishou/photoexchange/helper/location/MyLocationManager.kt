@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.helper.location
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -18,7 +19,6 @@ class MyLocationManager(
         val context: Context
 ) {
     private val GPS_PROVIDER = "gps"
-    private var initialized = false
     private var listener: OnLocationChanged? = null
 
     private val locationManager: LocationManager by lazy {
@@ -48,10 +48,8 @@ class MyLocationManager(
 
         checkNotNull(listener)
         this.listener = listener
-        initialized = true
 
         checkPermissions()
-
         locationManager.requestSingleUpdate(GPS_PROVIDER, locationListener, Looper.getMainLooper())
     }
 
@@ -59,19 +57,12 @@ class MyLocationManager(
     fun stop() {
         Timber.d("MyLocationManager: stop")
 
-        if (!initialized) {
-            throw IllegalStateException("Should call start first!!!")
-        }
-
         checkPermissions()
-
-        initialized = false
         locationManager.removeUpdates(locationListener)
     }
 
     private fun checkPermissions() {
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != 0 &&
-                ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != 0) {
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED) {
             throw IllegalStateException("Permission check failed")
         }
     }

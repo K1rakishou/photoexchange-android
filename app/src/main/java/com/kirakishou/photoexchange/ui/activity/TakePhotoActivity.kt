@@ -77,11 +77,12 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     private val ON_STOP = 1
 
     private val userInfoPreference by lazy { appSharedPreference.prepare<UserInfoPreference>() }
+    private val locationManager by lazy { MyLocationManager(applicationContext) }
+
     private val initCameraSubject = BehaviorSubject.create<Boolean>()
     private val locationPermissionSubject = BehaviorSubject.create<Boolean>()
     private val photoAvailabilitySubject = PublishSubject.create<String>()
     private val lifecycleSubject = BehaviorSubject.create<Int>()
-    private val locationManager = MyLocationManager(applicationContext)
 
     override fun initViewModel(): TakePhotoActivityViewModel {
         return ViewModelProviders.of(this, viewModelFactory).get(TakePhotoActivityViewModel::class.java)
