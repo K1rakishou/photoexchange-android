@@ -21,11 +21,11 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerTakePhotoActivityComponent
-import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
+import com.kirakishou.photoexchange.helper.location.MyLocationManager
+import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.helper.util.Utils
-import com.kirakishou.photoexchange.mwvm.model.exception.CameraIsNotAvailableException
 import com.kirakishou.photoexchange.mwvm.model.other.LonLat
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.viewmodel.TakePhotoActivityViewModel
@@ -35,22 +35,16 @@ import io.fotoapparat.parameter.ScaleType
 import io.fotoapparat.parameter.selector.LensPositionSelectors.back
 import io.fotoapparat.parameter.selector.SizeSelectors.biggestSize
 import io.fotoapparat.view.CameraView
-import io.nlopez.smartlocation.SmartLocation
-import io.nlopez.smartlocation.location.config.LocationParams
-import io.nlopez.smartlocation.rx.ObservableFactory
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.functions.Function
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.combineLatest
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.io.File
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
@@ -77,6 +71,8 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     private val ON_STOP = 1
 
     private val userInfoPreference by lazy { appSharedPreference.prepare<UserInfoPreference>() }
+    private val locationManager by lazy { MyLocationManager(applicationContext) }
+
     private val initCameraSubject = BehaviorSubject.create<Boolean>()
     private val locationPermissionSubject = BehaviorSubject.create<Boolean>()
     private val photoAvailabilitySubject = PublishSubject.create<String>()
@@ -131,7 +127,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                         val cameraPermissionDenied = report.deniedPermissionResponses.any { it.permissionName == Manifest.permission.CAMERA }
                         if (cameraPermissionDenied) {
                             Timber.d("Could not obtain camera permission")
-                            finish()
+                            showAppCannotWorkWithoutCameraPermissionDialog()
                             return
                         }
 
@@ -144,6 +140,17 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                     }
 
                 }).check()
+    }
+
+    private fun showAppCannotWorkWithoutCameraPermissionDialog() {
+        MaterialDialog.Builder(this)
+                .title("Error")
+                .content("This app cannon work without a camera permission")
+                .positiveText("OK")
+                .onPositive { _, _ ->
+                    finish()
+                }
+                .show()
     }
 
     private fun showCameraRationale(token: PermissionToken) {
@@ -205,7 +212,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                         }
                     } else {
                         when (lifecycle) {
-                            ON_START ->  fotoapparat.start()
+                            ON_START -> fotoapparat.start()
                             ON_STOP -> fotoapparat.stop()
                         }
                     }
@@ -229,16 +236,10 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                     takePhoto(fotoapparat)
                 })
 
-        val locationObservableGranted = locationPermissionSubject
+        val locationObservable = locationPermissionSubject
                 .filter { granted -> granted }
                 .combineLatest(getLocationObservable())
                 .map { it.second }
-
-        val locationObservableDenied = locationPermissionSubject
-                .filter { granted -> !granted }
-                .map { LonLat.empty() }
-
-        val locationObservable = Observable.merge(locationObservableDenied, locationObservableGranted)
 
         compositeDisposable += photoAvailabilitySubject
                 .subscribeOn(Schedulers.io())
@@ -293,9 +294,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     private fun generateOrReadUserId() {
         if (!userInfoPreference.exists()) {
             Timber.d("App first run. Generating userId")
-
-            val newUserId = Utils.generateUserId()
-            userInfoPreference.setUserId(newUserId)
+            userInfoPreference.setUserId(Utils.generateUserId())
         } else {
             Timber.d("UserId already exists")
         }
@@ -314,20 +313,24 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     }
 
     private fun getLocationObservable(): Observable<LonLat> {
-        Timber.d("getLocation() Trying to obtain current location...")
+        return Observable.fromCallable {
+            Timber.d("getLocation() Trying to obtain current location...")
 
-        if (!SmartLocation.with(applicationContext).location().state().isGpsAvailable) {
-            Timber.d("Gps is disabled so we return empty location")
-            return Observable.just(LonLat.empty())
+            if (!locationManager.isGpsEnabled()) {
+                Timber.d("Gps is disabled so we return empty location")
+                return@fromCallable LonLat.empty()
+            }
+
+            return@fromCallable RxLocationManager.start(locationManager)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(Schedulers.io())
+                    .map { location -> getTruncatedLonLat(location) }
+                    //TODO: fix this
+                    .blockingFirst()
         }
-
-        return ObservableFactory.from(SmartLocation.with(applicationContext)
-                .location()
-                .config(LocationParams.NAVIGATION)
-                .oneFix())
-                .map { location -> getTruncatedLonLat(location) }
     }
 
+    //we don't need the exact location where the photo was made, so we can slightly round it off
     private fun getTruncatedLonLat(location: Location): LonLat {
         val lon = Math.floor(location.longitude * 100) / 100
         val lat = Math.floor(location.latitude * 100) / 100
