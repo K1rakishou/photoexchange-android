@@ -31,6 +31,6 @@ object Utils {
     }
 
     fun generateUserId(): String {
-        return generateRandomString(128, numericAlphabetic)
+        return generateRandomString(64, numericAlphabetic) + "_photoexchange"
     }
 }

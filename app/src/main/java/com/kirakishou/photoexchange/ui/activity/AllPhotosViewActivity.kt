@@ -160,8 +160,9 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
     private fun runTakePhotoActivity() {
         val intent = Intent(this, TakePhotoActivity::class.java)
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         startActivity(intent)
+
+        finish()
     }
 
     private fun initTabs(intent: Intent) {

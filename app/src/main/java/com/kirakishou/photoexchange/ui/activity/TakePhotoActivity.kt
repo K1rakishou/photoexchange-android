@@ -131,7 +131,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                         val cameraPermissionDenied = report.deniedPermissionResponses.any { it.permissionName == Manifest.permission.CAMERA }
                         if (cameraPermissionDenied) {
                             Timber.d("Could not obtain camera permission")
-                            finish()
+                            showAppCannotWorkWithoutCameraPermissionDialog()
                             return
                         }
 
@@ -144,6 +144,17 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                     }
 
                 }).check()
+    }
+
+    private fun showAppCannotWorkWithoutCameraPermissionDialog() {
+        MaterialDialog.Builder(this)
+                .title("Error")
+                .content("This app cannon work without a camera permission")
+                .positiveText("OK")
+                .onPositive { _, _ ->
+                    finish()
+                }
+                .show()
     }
 
     private fun showCameraRationale(token: PermissionToken) {
@@ -293,9 +304,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     private fun generateOrReadUserId() {
         if (!userInfoPreference.exists()) {
             Timber.d("App first run. Generating userId")
-
-            val newUserId = Utils.generateUserId()
-            userInfoPreference.setUserId(newUserId)
+            userInfoPreference.setUserId(Utils.generateUserId())
         } else {
             Timber.d("UserId already exists")
         }
@@ -328,6 +337,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .map { location -> getTruncatedLonLat(location) }
     }
 
+    //we don't need the exact location where the photo was made, so we can slightly round it off
     private fun getTruncatedLonLat(location: Location): LonLat {
         val lon = Math.floor(location.longitude * 100) / 100
         val lat = Math.floor(location.latitude * 100) / 100
