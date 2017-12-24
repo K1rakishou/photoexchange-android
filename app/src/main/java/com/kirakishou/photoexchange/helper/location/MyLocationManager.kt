@@ -18,7 +18,6 @@ import timber.log.Timber
 class MyLocationManager(
         val context: Context
 ) {
-    private val GPS_PROVIDER = "gps"
     private var listener: OnLocationChanged? = null
 
     private val locationManager: LocationManager by lazy {
@@ -36,11 +35,13 @@ class MyLocationManager(
         }
 
         override fun onLocationChanged(location: Location) {
+            Timber.d("New location retrieved")
             listener!!.onNewLocation(location)
         }
     }
 
-    fun isGpsEnabled(): Boolean = locationManager.isProviderEnabled(GPS_PROVIDER)
+    fun isGpsEnabled(): Boolean =
+            locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
 
     @SuppressLint("MissingPermission")
     fun start(listener: OnLocationChanged) {
@@ -50,7 +51,7 @@ class MyLocationManager(
         this.listener = listener
 
         checkPermissions()
-        locationManager.requestSingleUpdate(GPS_PROVIDER, locationListener, Looper.getMainLooper())
+        locationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER, locationListener, Looper.getMainLooper())
     }
 
     @SuppressLint("MissingPermission")
