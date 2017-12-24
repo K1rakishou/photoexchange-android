@@ -135,12 +135,12 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         compositeDisposable += RxView.clicks(ivCloseActivityButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ finish() })
+                .subscribe({ runTakePhotoActivity() })
 
         compositeDisposable += RxView.clicks(takePhotoButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ finish() })
+                .subscribe({ runTakePhotoActivity() })
 
         compositeDisposable += getViewModel().outputs.onBeginReceivingEventsObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -156,6 +156,12 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onUnknownError)
+    }
+
+    private fun runTakePhotoActivity() {
+        val intent = Intent(this, TakePhotoActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        startActivity(intent)
     }
 
     private fun initTabs(intent: Intent) {
@@ -300,7 +306,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                 getViewModel().inputs.allPhotosUploaded()
                 startLookingForPhotoAnswerService()
             }
-            else -> IllegalArgumentException("Unknown event status: ${event.status}")
+            else -> throw IllegalArgumentException("Unknown event status: ${event.status}")
         }
     }
 
@@ -328,7 +334,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                 Timber.d("AllPhotosViewActivity: PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS")
                 getViewModel().inputs.showUserNeedsToUploadMorePhotos()
             }
-            else -> IllegalArgumentException("Unknown event status: ${event.status}")
+            else -> throw IllegalArgumentException("Unknown event status: ${event.status}")
         }
     }
 
