@@ -55,7 +55,7 @@ class UploadPhotoServiceViewModel(
     override fun uploadPhotos() {
         compositeJob += async {
             try {
-                delay(300, TimeUnit.MILLISECONDS)
+                delay(400, TimeUnit.MILLISECONDS)
 
                 val queuedUpPhotos = takenPhotosRepo.findAllQueuedUp().await()
                 if (queuedUpPhotos.isEmpty()) {
@@ -76,8 +76,6 @@ class UploadPhotoServiceViewModel(
                     }
                 }
 
-                //ensure that we receive AllPhotosUploaded event last
-                delay(10, TimeUnit.MILLISECONDS)
                 onPhotoUploadStateOutput.onNext(PhotoUploadingState.AllPhotosUploaded())
             } catch (error: Throwable) {
                 onPhotoUploadStateOutput.onNext(PhotoUploadingState.UnknownErrorWhileUploading(error))
