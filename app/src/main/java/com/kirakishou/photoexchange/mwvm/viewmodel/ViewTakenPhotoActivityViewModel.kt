@@ -22,6 +22,8 @@ class ViewTakenPhotoActivityViewModel(
         ViewTakenPhotoActivityViewModelOutputs,
         ViewTakenPhotoActivityViewModelErrors {
 
+    private val tag = "[${this::class.java.simpleName}]: "
+
     val inputs: ViewTakenPhotoActivityViewModelInputs = this
     val outputs: ViewTakenPhotoActivityViewModelOutputs = this
     val errors: ViewTakenPhotoActivityViewModelErrors = this
@@ -44,7 +46,7 @@ class ViewTakenPhotoActivityViewModel(
     }
 
     override fun onCleared() {
-        Timber.d("ViewTakenPhotoActivityViewModel.onCleared()")
+        Timber.tag(tag).d("onCleared()")
 
         super.onCleared()
     }

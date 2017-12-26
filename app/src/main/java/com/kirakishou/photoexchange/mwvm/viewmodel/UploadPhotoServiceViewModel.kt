@@ -37,6 +37,8 @@ class UploadPhotoServiceViewModel(
         UploadPhotoServiceOutputs,
         UploadPhotoServiceErrors {
 
+    private val tag = "[${this::class.java.simpleName}]: "
+
     val inputs: UploadPhotoServiceInputs = this
     val outputs: UploadPhotoServiceOutputs = this
     val errors: UploadPhotoServiceErrors = this
@@ -112,7 +114,7 @@ class UploadPhotoServiceViewModel(
         compositeJob.cancelAll()
 
         PhotoExchangeApplication.refWatcher!!.watch(this, this::class.java.simpleName)
-        Timber.d("UploadPhotoServiceViewModel cleanUp")
+        Timber.tag(tag).d("cleanUp")
     }
 
     override fun onPhotoUploadStateObservable(): Observable<PhotoUploadingState> = onPhotoUploadStateOutput

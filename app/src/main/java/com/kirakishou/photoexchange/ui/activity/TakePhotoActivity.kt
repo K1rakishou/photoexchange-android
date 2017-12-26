@@ -30,18 +30,15 @@ import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.TakePhotoActivityViewModelFactory
 import io.fotoapparat.Fotoapparat
-import io.fotoapparat.hardware.provider.CameraProviders
 import io.fotoapparat.parameter.ScaleType
 import io.fotoapparat.parameter.selector.LensPositionSelectors.back
 import io.fotoapparat.parameter.selector.SizeSelectors.biggestSize
 import io.fotoapparat.view.CameraView
 import io.reactivex.Observable
-import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.combineLatest
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
@@ -70,6 +67,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     @Inject
     lateinit var appSharedPreference: AppSharedPreference
 
+    private val tag = "[${this::class.java.simpleName}]: "
     private val ON_START = 0
     private val ON_STOP = 1
 
@@ -127,12 +125,12 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                     override fun onPermissionsChecked(report: MultiplePermissionsReport) {
                         val cameraPermissionDenied = report.deniedPermissionResponses.any { it.permissionName == Manifest.permission.CAMERA }
                         if (cameraPermissionDenied) {
-                            Timber.d("Could not obtain camera permission")
+                            Timber.tag(tag).d("getPermissions() Could not obtain camera permission")
                             showAppCannotWorkWithoutCameraPermissionDialog()
                             return
                         }
 
-                        Timber.d("TakePhotoActivity: Got permissions")
+                        Timber.tag(tag).d("getPermissions() Got permissions")
                         initCameraSubject.onNext(true)
                         locationPermissionSubject.onNext(true)
                     }
@@ -186,7 +184,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
     private fun initCamera(): Observable<Fotoapparat> {
         return Observable.fromCallable {
-            Timber.d("TakePhotoActivity: initCamera")
+            Timber.tag(tag).d("initCamera() initCamera")
 
             return@fromCallable Fotoapparat
                     .with(applicationContext)
@@ -210,7 +208,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .doOnNext { (fotoapparat, lifecycle) ->
                     if (!fotoapparat.isAvailable) {
                         if (lifecycle == ON_START) {
-                            Timber.d("TakePhotoActivity: Camera IS NOT available!!!")
+                            Timber.tag(tag).d("initRx() Camera IS NOT available!!!")
                             hideTakePhotoButton()
                             hideShowAllPhotosButton()
                             showCameraIsNotAvailableDialog()
@@ -218,11 +216,11 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                     } else {
                         when (lifecycle) {
                             ON_START -> {
-                                Timber.d("TakePhotoActivity: ON_START")
+                                Timber.tag(tag).d("initRx() ON_START")
                                 fotoapparat.start()
                             }
                             ON_STOP -> {
-                                Timber.d("TakePhotoActivity: ON_STOP")
+                                Timber.tag(tag).d("initRx() ON_STOP")
                                 fotoapparat.stop()
                             }
                         }
@@ -298,21 +296,21 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
     private fun generateOrReadUserId() {
         if (!userInfoPreference.exists()) {
-            Timber.d("App first run. Generating userId")
+            Timber.tag(tag).d("generateOrReadUserId() App first run. Generating userId")
             userInfoPreference.setUserId(Utils.generateUserId())
         } else {
-            Timber.d("UserId already exists")
+            Timber.tag(tag).d("generateOrReadUserId() UserId already exists")
         }
     }
 
     private fun takePhoto(fotoapparat: Fotoapparat) {
-        Timber.d("takePhoto() Taking a photo...")
+        Timber.tag(tag).d("takePhoto() Taking a photo...")
         val tempFile = File.createTempFile("photo", ".tmp")
 
         fotoapparat.takePicture()
                 .saveToFile(tempFile)
                 .whenAvailable {
-                    Timber.d("takePhoto() Done")
+                    Timber.tag(tag).d("takePhoto() Done")
                     photoAvailabilitySubject.onNext(tempFile.absolutePath)
                 }
     }
@@ -323,7 +321,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
         val gpsEnabledObservable = gpsStateObservable
                 .filter { isEnabled -> isEnabled }
-                .doOnNext { Timber.d("getLocationObservable() Gps is enabled. Trying to obtain current location") }
+                .doOnNext { Timber.tag(tag).d("getLocationObservable() Gps is enabled. Trying to obtain current location") }
                 .flatMap {
                     return@flatMap RxLocationManager.start(locationManager)
                             .first(LonLat.empty())
@@ -334,11 +332,11 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
         val gpsDisabledObservable = gpsStateObservable
                 .filter { isEnabled -> !isEnabled }
-                .doOnNext { Timber.d("getLocationObservable() Gps is disabled. Returning empty location") }
+                .doOnNext { Timber.tag(tag).d("getLocationObservable() Gps is disabled. Returning empty location") }
                 .map { LonLat.empty() }
 
         return Observable.merge(gpsEnabledObservable, gpsDisabledObservable)
-                .doOnNext { location -> Timber.d("getLocationObservable() Current location is [lon: ${location.lon}, lat: ${location.lat}]") }
+                .doOnNext { location -> Timber.tag(tag).d("getLocationObservable() Current location is [lon: ${location.lon}, lat: ${location.lat}]") }
     }
 
     private fun showNotification() {

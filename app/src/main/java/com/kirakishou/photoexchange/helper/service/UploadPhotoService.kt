@@ -49,6 +49,7 @@ class UploadPhotoService : JobService() {
 
     private var notificationManager: NotificationManager? = null
 
+    private val tag = "[${this::class.java.simpleName}]: "
     private var isRxInited = false
     private val compositeDisposable = CompositeDisposable()
     private lateinit var viewModel: UploadPhotoServiceViewModel
@@ -77,7 +78,7 @@ class UploadPhotoService : JobService() {
     }
 
     override fun onStartJob(params: JobParameters): Boolean {
-        Timber.d("UploadPhotoService: onStartJob")
+        Timber.tag(tag).d("onStartJob() onStartJob")
         initRx(params)
 
         try {
@@ -96,7 +97,7 @@ class UploadPhotoService : JobService() {
     }
 
     override fun onStopJob(params: JobParameters): Boolean {
-        Timber.d("UploadPhotoService: onStopJob")
+        Timber.tag(tag).d("onStopJob() onStopJob")
         return true
     }
 
@@ -126,28 +127,28 @@ class UploadPhotoService : JobService() {
     private fun onPhotoUploadState(params: JobParameters, state: PhotoUploadingState) {
         when (state) {
             is PhotoUploadingState.NoPhotoToUpload -> {
-                Timber.d("UploadPhotoService: PhotoUploadingState.NoPhotoToUpload")
+                Timber.tag(tag).d("onPhotoUploadState() PhotoUploadingState.NoPhotoToUpload")
                 finish(params, false)
             }
 
             is PhotoUploadingState.StartPhotoUploading -> {
-                Timber.d("UploadPhotoService: PhotoUploadingState.StartPhotoUploading")
+                Timber.tag(tag).d("onPhotoUploadState() PhotoUploadingState.StartPhotoUploading")
                 sendEvent(PhotoUploadedEvent.startUploading())
                 updateUploadingNotificationShowUploading()
             }
 
             is PhotoUploadingState.PhotoUploaded -> {
-                Timber.d("UploadPhotoService: PhotoUploadingState.PhotoUploaded photoName: ${state.photo.photoName}")
+                Timber.tag(tag).d("onPhotoUploadState() PhotoUploadingState.PhotoUploaded photoName: ${state.photo.photoName}")
                 sendEvent(PhotoUploadedEvent.photoUploaded(state.photo))
             }
 
             is PhotoUploadingState.FailedToUploadPhoto -> {
-                Timber.d("UploadPhotoService: PhotoUploadingState.FailedToUploadPhoto")
+                Timber.tag(tag).d("onPhotoUploadState() PhotoUploadingState.FailedToUploadPhoto")
                 sendEvent(PhotoUploadedEvent.fail(state.photo))
             }
 
             is PhotoUploadingState.AllPhotosUploaded -> {
-                Timber.d("PhotoUploadingState.AllPhotosUploaded")
+                Timber.tag(tag).d("onPhotoUploadState() PhotoUploadingState.AllPhotosUploaded")
 
                 sendEvent(PhotoUploadedEvent.done())
                 updateUploadingNotificationShowSuccess()
@@ -155,20 +156,20 @@ class UploadPhotoService : JobService() {
             }
 
             is PhotoUploadingState.UnknownErrorWhileUploading -> {
-                Timber.d("PhotoUploadingState.PhotoUploadingState.UnknownErrorWhileUploading")
+                Timber.tag(tag).d("onPhotoUploadState() PhotoUploadingState.UnknownErrorWhileUploading")
             }
         }
     }
 
     private fun onBadResponse(params: JobParameters, errorCode: ServerErrorCode) {
-        Timber.d("UploadPhotoService: BadResponse: errorCode: $errorCode")
+        Timber.tag(tag).d("onBadResponse() BadResponse: errorCode: $errorCode")
 
         updateUploadingNotificationShowError()
         finish(params, false)
     }
 
     private fun onUnknownError(params: JobParameters, error: Throwable) {
-        Timber.d("UploadPhotoService: Unknown error: $error")
+        Timber.tag(tag).d("onUnknownError() Unknown error: $error")
 
         updateUploadingNotificationShowError()
         finish(params, false)
