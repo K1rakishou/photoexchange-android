@@ -10,6 +10,7 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.os.Looper
 import android.support.v4.app.ActivityCompat
+import com.kirakishou.photoexchange.mwvm.model.other.LonLat
 import timber.log.Timber
 
 /**
@@ -35,8 +36,8 @@ class MyLocationManager(
         }
 
         override fun onLocationChanged(location: Location) {
-            Timber.d("New location retrieved")
-            listener!!.onNewLocation(location)
+            Timber.d("MyLocationManager: New location retrieved")
+            listener!!.onNewLocation(getTruncatedLonLat(location))
         }
     }
 
@@ -68,8 +69,16 @@ class MyLocationManager(
         }
     }
 
+    //we don't need the exact location where the photo was made, so we can slightly round it off
+    private fun getTruncatedLonLat(location: Location): LonLat {
+        val lon = Math.floor(location.longitude * 100) / 100
+        val lat = Math.floor(location.latitude * 100) / 100
+
+        return LonLat(lon, lat)
+    }
+
     interface OnLocationChanged {
-        fun onNewLocation(location: Location)
+        fun onNewLocation(location: LonLat)
     }
 }
 

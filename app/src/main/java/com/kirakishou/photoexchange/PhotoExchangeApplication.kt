@@ -70,41 +70,49 @@ class PhotoExchangeApplication : Application() {
 
     private fun initTimber() {
         if (Constants.isDebugBuild) {
-            //TODO: Timber.plant(Timber.DebugTree())
-            Timber.plant(CrashlyticsTree())
+            Timber.plant(Timber.DebugTree())
         } else {
             Timber.plant(CrashlyticsTree())
         }
     }
 
     class CrashlyticsTree : Timber.Tree() {
-        override fun log(priority: Int, tagParam: String?, messageParam: String?, t: Throwable?) {
-            if (priority == Log.VERBOSE || priority == Log.DEBUG || priority == Log.INFO) {
-                if (messageParam != null) {
-                    println(messageParam)
-                }
-                return
-            }
-
-            if (priority == Log.WARN) {
-                if (messageParam != null) {
-                    System.err.println(messageParam)
-                }
+        override fun log(priority: Int, tagParam: String?, messageParam: String?, error: Throwable?) {
+            if (priority != Log.WARN && priority != Log.ERROR && priority != Log.DEBUG) {
                 return
             }
 
             val tag = tagParam ?: "Empty tag"
-            val message = messageParam ?: "Empty message"
 
             Crashlytics.setInt(CRASHLYTICS_KEY_PRIORITY, priority)
             Crashlytics.setString(CRASHLYTICS_KEY_TAG, tag)
-            Crashlytics.setString(CRASHLYTICS_KEY_MESSAGE, message)
 
-            if (t == null) {
-                println(message)
-            } else {
-                Crashlytics.logException(t)
-                t.printStackTrace()
+            when (priority) {
+                Log.DEBUG -> {
+                    if (messageParam != null) {
+                        Crashlytics.log(Log.DEBUG, tag, messageParam)
+                    }
+                }
+
+                Log.WARN -> {
+                    if (error == null) {
+                        if (messageParam != null) {
+                            Crashlytics.log(Log.WARN, tag, messageParam)
+                        }
+                    } else {
+                        Crashlytics.logException(error)
+                    }
+                }
+
+                Log.ERROR -> {
+                    if (error == null) {
+                        if (messageParam != null) {
+                            Crashlytics.log(Log.ERROR, tag, messageParam)
+                        }
+                    } else {
+                        Crashlytics.logException(error)
+                    }
+                }
             }
         }
     }

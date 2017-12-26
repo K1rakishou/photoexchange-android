@@ -3,7 +3,6 @@ package com.kirakishou.photoexchange.ui.activity
 import android.Manifest
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
-import android.location.Location
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.support.v7.widget.CardView
@@ -31,20 +30,24 @@ import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.TakePhotoActivityViewModelFactory
 import io.fotoapparat.Fotoapparat
+import io.fotoapparat.hardware.provider.CameraProviders
 import io.fotoapparat.parameter.ScaleType
 import io.fotoapparat.parameter.selector.LensPositionSelectors.back
 import io.fotoapparat.parameter.selector.SizeSelectors.biggestSize
 import io.fotoapparat.view.CameraView
 import io.reactivex.Observable
+import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.combineLatest
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.io.File
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
@@ -107,14 +110,12 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
     override fun onStart() {
         super.onStart()
-
         lifecycleSubject.onNext(ON_START)
     }
 
     override fun onStop() {
-        super.onStop()
-
         lifecycleSubject.onNext(ON_STOP)
+        super.onStop()
     }
 
     private fun getPermissions() {
@@ -131,6 +132,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                             return
                         }
 
+                        Timber.d("TakePhotoActivity: Got permissions")
                         initCameraSubject.onNext(true)
                         locationPermissionSubject.onNext(true)
                     }
@@ -183,19 +185,22 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     }
 
     private fun initCamera(): Observable<Fotoapparat> {
-        val foto = Fotoapparat
-                .with(applicationContext)
-                .into(cameraView)
-                .previewScaleType(ScaleType.CENTER_CROP)
-                .photoSize(biggestSize())
-                .lensPosition(back())
-                .build()
+        return Observable.fromCallable {
+            Timber.d("TakePhotoActivity: initCamera")
 
-        return Observable.just(foto)
+            return@fromCallable Fotoapparat
+                    .with(applicationContext)
+                    .into(cameraView)
+                    .previewScaleType(ScaleType.CENTER_CROP)
+                    .photoSize(biggestSize())
+                    .lensPosition(back())
+                    .build()
+        }
     }
 
     private fun initRx() {
         val fotoapparatObservable = initCameraSubject
+                .subscribeOn(AndroidSchedulers.mainThread())
                 .flatMap {
                     initCamera()
                 }
@@ -205,15 +210,21 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .doOnNext { (fotoapparat, lifecycle) ->
                     if (!fotoapparat.isAvailable) {
                         if (lifecycle == ON_START) {
-                            Timber.d("Camera IS NOT available!!!")
+                            Timber.d("TakePhotoActivity: Camera IS NOT available!!!")
                             hideTakePhotoButton()
                             hideShowAllPhotosButton()
                             showCameraIsNotAvailableDialog()
                         }
                     } else {
                         when (lifecycle) {
-                            ON_START -> fotoapparat.start()
-                            ON_STOP -> fotoapparat.stop()
+                            ON_START -> {
+                                Timber.d("TakePhotoActivity: ON_START")
+                                fotoapparat.start()
+                            }
+                            ON_STOP -> {
+                                Timber.d("TakePhotoActivity: ON_STOP")
+                                fotoapparat.stop()
+                            }
                         }
                     }
                 }
@@ -221,12 +232,10 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
         compositeDisposable += RxView.clicks(ivShowAllPhotos)
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ switchToAllPhotosViewActivity() })
 
         compositeDisposable += RxView.clicks(takePhotoButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .map { lifecycleSubject.value }
                 .filter { lifecycle -> lifecycle == ON_START }
                 .combineLatest(fotoapparatObservable)
@@ -236,15 +245,10 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                     takePhoto(fotoapparat)
                 })
 
-        val locationObservable = locationPermissionSubject
-                .filter { granted -> granted }
-                .combineLatest(getLocationObservable())
-                .map { it.second }
-
         compositeDisposable += photoAvailabilitySubject
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.io())
-                .combineLatest(locationObservable)
+                .combineLatest(getLocationObservable())
                 .doOnError { unknownErrorsSubject.onNext(it) }
                 .map {
                     val photoFilePath = it.first
@@ -267,6 +271,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onUnknownError)
     }
+
 
     private fun hideShowAllPhotosButton() {
         ivShowAllPhotos.visibility = View.GONE
@@ -313,29 +318,27 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     }
 
     private fun getLocationObservable(): Observable<LonLat> {
-        return Observable.fromCallable {
-            Timber.d("getLocation() Trying to obtain current location...")
+        val gpsStateObservable = Observable.fromCallable { locationManager.isGpsEnabled() }
+                .share()
 
-            if (!locationManager.isGpsEnabled()) {
-                Timber.d("Gps is disabled so we return empty location")
-                return@fromCallable LonLat.empty()
-            }
+        val gpsEnabledObservable = gpsStateObservable
+                .filter { isEnabled -> isEnabled }
+                .doOnNext { Timber.d("getLocationObservable() Gps is enabled. Trying to obtain current location") }
+                .flatMap {
+                    return@flatMap RxLocationManager.start(locationManager)
+                            .first(LonLat.empty())
+                            .timeout(5, TimeUnit.SECONDS)
+                            .onErrorReturnItem(LonLat.empty())
+                            .toObservable()
+                }
 
-            return@fromCallable RxLocationManager.start(locationManager)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(Schedulers.io())
-                    .map { location -> getTruncatedLonLat(location) }
-                    //TODO: fix this
-                    .blockingFirst()
-        }
-    }
+        val gpsDisabledObservable = gpsStateObservable
+                .filter { isEnabled -> !isEnabled }
+                .doOnNext { Timber.d("getLocationObservable() Gps is disabled. Returning empty location") }
+                .map { LonLat.empty() }
 
-    //we don't need the exact location where the photo was made, so we can slightly round it off
-    private fun getTruncatedLonLat(location: Location): LonLat {
-        val lon = Math.floor(location.longitude * 100) / 100
-        val lat = Math.floor(location.latitude * 100) / 100
-
-        return LonLat(lon, lat)
+        return Observable.merge(gpsEnabledObservable, gpsDisabledObservable)
+                .doOnNext { location -> Timber.d("getLocationObservable() Current location is [lon: ${location.lon}, lat: ${location.lat}]") }
     }
 
     private fun showNotification() {

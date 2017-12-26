@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.helper.location
 
-import android.location.Location
+import com.kirakishou.photoexchange.mwvm.model.other.LonLat
 import io.reactivex.Observable
 
 /**
@@ -8,10 +8,10 @@ import io.reactivex.Observable
  */
 object RxLocationManager {
 
-    fun start(locationManager: MyLocationManager): Observable<Location> {
-        val observable = Observable.create<Location> { emitter ->
+    fun start(locationManager: MyLocationManager): Observable<LonLat> {
+        val observable = Observable.create<LonLat> { emitter ->
             locationManager.start(object : MyLocationManager.OnLocationChanged {
-                override fun onNewLocation(location: Location) {
+                override fun onNewLocation(location: LonLat) {
                     emitter.onNext(location)
                 }
             })
