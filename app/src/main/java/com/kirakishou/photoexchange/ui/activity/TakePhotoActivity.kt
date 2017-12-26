@@ -36,16 +36,15 @@ import io.fotoapparat.parameter.selector.SizeSelectors.biggestSize
 import io.fotoapparat.view.CameraView
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.internal.observers.FutureObserver
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.combineLatest
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.io.File
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
@@ -75,8 +74,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     private val userInfoPreference by lazy { appSharedPreference.prepare<UserInfoPreference>() }
     private val locationManager by lazy { MyLocationManager(applicationContext) }
 
-    private val initCameraSubject = BehaviorSubject.create<Boolean>()
-    private val locationPermissionSubject = BehaviorSubject.create<Boolean>()
+    private val permissionsGrantedSubject = PublishSubject.create<Boolean>()
     private val lifecycleSubject = BehaviorSubject.create<Int>()
 
     override fun initViewModel(): TakePhotoActivityViewModel {
@@ -131,8 +129,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                         }
 
                         Timber.tag(tag).d("getPermissions() Got permissions")
-                        initCameraSubject.onNext(true)
-                        locationPermissionSubject.onNext(true)
+                        permissionsGrantedSubject.onNext(true)
                     }
 
                     override fun onPermissionRationaleShouldBeShown(permissions: MutableList<PermissionRequest>, token: PermissionToken) {
@@ -197,11 +194,9 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     }
 
     private fun initRx() {
-        val fotoapparatObservable = initCameraSubject
+        val fotoapparatObservable = permissionsGrantedSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .flatMap {
-                    initCamera()
-                }
+                .flatMap { initCamera() }
                 .share()
 
         compositeDisposable += Observables.combineLatest(fotoapparatObservable, lifecycleSubject)
@@ -220,6 +215,8 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .map { it.second }
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext { showNotification() }
+                //FIXME: for some reason fotoapparat doesn't want to work on the io schedulers,
+                //so we have to take photo in a blocking way
                 .flatMap { fotoapparat -> takePhoto(fotoapparat) }
                 .observeOn(Schedulers.io())
                 .zipWith(getLocationObservable())
@@ -267,8 +264,8 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         val photoFilePath = it.first
         val location = it.second
         val userId = userInfoPreference.getUserId()
-
-        val photo = TakenPhoto(-1L, location, photoFilePath, userId, "")
+        
+        val photo = TakenPhoto.create(location, photoFilePath, userId)
         getViewModel().inputs.saveTakenPhoto(photo)
     }
 
@@ -327,10 +324,10 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .doOnNext { Timber.tag(tag).d("getLocationObservable() Gps is enabled. Trying to obtain current location") }
                 .flatMap {
                     return@flatMap RxLocationManager.start(locationManager)
-                            /*.first(LonLat.empty())
-                            .timeout(5, TimeUnit.SECONDS)
-                            .onErrorReturnItem(LonLat.empty())
-                            .toObservable()*/
+                    /*.first(LonLat.empty())
+                    .timeout(5, TimeUnit.SECONDS)
+                    .onErrorReturnItem(LonLat.empty())
+                    .toObservable()*/
                 }
 
         val gpsDisabledObservable = gpsStateObservable

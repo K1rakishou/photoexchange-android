@@ -3,7 +3,7 @@ package com.kirakishou.photoexchange.mwvm.model.other
 /**
  * Created by kirakishou on 11/10/2017.
  */
-data class TakenPhoto(
+class TakenPhoto private constructor(
         val id: Long,
         val location: LonLat,
         val photoFilePath: String,
@@ -22,6 +22,10 @@ data class TakenPhoto(
     companion object {
         fun empty(): TakenPhoto {
             return TakenPhoto(-1L, LonLat.empty(), "", "", "")
+        }
+
+        fun create(location: LonLat, photoFilePath: String, userId: String): TakenPhoto {
+            return TakenPhoto(-1L, location, photoFilePath, userId, "")
         }
     }
 }
