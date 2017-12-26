@@ -91,7 +91,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         userInfoPreference.load()
 
         getPermissions()
-        generateOrReadUserId()
 
         getViewModel().showDatabaseDebugInfo()
     }
@@ -196,6 +195,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     private fun initRx() {
         val fotoapparatObservable = permissionsGrantedSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
+                .doOnNext { generateOrReadUserId() }
                 .flatMap { initCamera() }
                 .share()
 
@@ -215,7 +215,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .map { it.second }
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext { showNotification() }
-                //FIXME: for some reason fotoapparat doesn't want to work on the io schedulers,
+                //FIXME: for some reason fotoapparat doesn't want to work on Schedulers.io(),
                 //so we have to take photo in a blocking way
                 .flatMap { fotoapparat -> takePhoto(fotoapparat) }
                 .observeOn(Schedulers.io())
@@ -264,7 +264,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         val photoFilePath = it.first
         val location = it.second
         val userId = userInfoPreference.getUserId()
-        
+
         val photo = TakenPhoto.create(location, photoFilePath, userId)
         getViewModel().inputs.saveTakenPhoto(photo)
     }
