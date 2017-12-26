@@ -28,6 +28,8 @@ class TakePhotoActivityViewModel(
         MainActivityViewModelOutputs,
         MainActivityViewModelErrors {
 
+    private val tag = "[${this::class.java.simpleName}]: "
+
     val inputs: MainActivityViewModelInputs = this
     val outputs: MainActivityViewModelOutputs = this
     val errors: MainActivityViewModelErrors = this
@@ -44,11 +46,11 @@ class TakePhotoActivityViewModel(
             val allTakenPhotos = takenPhotosRepo.findAllDebug().await()
             val allPhotoAnswers = photoAnswerRepo.findAllDebug().await()
 
-            Timber.d("=== Taken photos ===")
-            allTakenPhotos.forEach { Timber.d("photo: $it") }
+            Timber.tag(tag).d("showDatabaseDebugInfo() === Taken photos ===")
+            allTakenPhotos.forEach { Timber.tag(tag).d("showDatabaseDebugInfo() photo: $it") }
 
-            Timber.d("=== Photo answer ===")
-            allPhotoAnswers.forEach { Timber.d("photo: $it") }
+            Timber.tag(tag).d("showDatabaseDebugInfo() === Photo answer ===")
+            allPhotoAnswers.forEach { Timber.tag(tag).d("showDatabaseDebugInfo() photo: $it") }
         }
     }
 
@@ -84,7 +86,7 @@ class TakePhotoActivityViewModel(
     private suspend fun printTakenPhotoTable() {
         if (Constants.isDebugBuild) {
             val allPhotos = takenPhotosRepo.findAll().await()
-            allPhotos.forEach { Timber.d("photo: $it") }
+            allPhotos.forEach { Timber.tag(tag).d("printTakenPhotoTable() photo: $it") }
         }
     }
 
@@ -94,7 +96,7 @@ class TakePhotoActivityViewModel(
     }
 
     override fun onCleared() {
-        Timber.d("TakePhotoActivityViewModel.onCleared()")
+        Timber.tag(tag).d("onCleared()")
 
         super.onCleared()
     }

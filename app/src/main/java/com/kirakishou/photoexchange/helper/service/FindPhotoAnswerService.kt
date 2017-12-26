@@ -53,8 +53,9 @@ class FindPhotoAnswerService : JobService() {
     lateinit var eventBus: EventBus
 
     private lateinit var viewModel: FindPhotoAnswerServiceViewModel
-    private var isRxInited = false
 
+    private val tag = "[${this::class.java.simpleName}]: "
+    private var isRxInited = false
     private var notificationManager: NotificationManager? = null
     private val compositeDisposable = CompositeDisposable()
 
@@ -77,17 +78,16 @@ class FindPhotoAnswerService : JobService() {
     }
 
     override fun onStartJob(params: JobParameters): Boolean {
-        Timber.d("")
-        Timber.d("FindPhotoAnswerService: onStartJob")
+        Timber.tag(tag).d("onStartJob()")
 
         when (getJobTypeFromParams(params)) {
-            IMMEDIATE_JOB_TYPE -> Timber.d("IMMEDIATE_JOB_TYPE")
-            PERIODIC_JOB_TYPE -> Timber.d("PERIODIC_JOB_TYPE")
+            IMMEDIATE_JOB_TYPE -> Timber.tag(tag).d("onStartJob() IMMEDIATE_JOB_TYPE")
+            PERIODIC_JOB_TYPE -> Timber.tag(tag).d("onStartJob() PERIODIC_JOB_TYPE")
         }
 
         val currentTime = TimeUtils.getTimeFast()
         val formattedTime = TimeUtils.formatDateAndTime(currentTime)
-        Timber.d("FindPhotoAnswerService: Job started at: $formattedTime")
+        Timber.tag(tag).d("onStartJob() Job started at: $formattedTime")
 
         initRx(params)
 
@@ -108,7 +108,7 @@ class FindPhotoAnswerService : JobService() {
     }
 
     override fun onStopJob(params: JobParameters): Boolean {
-        Timber.d("FindPhotoAnswerService: onStopJob")
+        Timber.tag(tag).d("onStopJob() onStopJob")
         return true
     }
 
@@ -152,7 +152,7 @@ class FindPhotoAnswerService : JobService() {
 
     //API responses
     private fun uploadMorePhotos(params: JobParameters) {
-        Timber.d("FindPhotoAnswerService: Upload more photos")
+        Timber.tag(tag).d("uploadMorePhotos() Upload more photos")
 
         eventBus.post(PhotoReceivedEvent.uploadMorePhotos())
         cancelAll(this)
@@ -162,7 +162,7 @@ class FindPhotoAnswerService : JobService() {
     }
 
     private fun couldNotMarkPhotoAsReceived(params: JobParameters) {
-        Timber.d("FindPhotoAnswerService: Could not mark a photo as received")
+        Timber.tag(tag).d("couldNotMarkPhotoAsReceived() Could not mark a photo as received")
 
         eventBus.post(PhotoReceivedEvent.fail())
         cancelAll(this)
@@ -172,16 +172,16 @@ class FindPhotoAnswerService : JobService() {
     }
 
     private fun noPhotosToSendBack(params: JobParameters) {
-        Timber.d("FindPhotoAnswerService: No photos on server to send back")
+        Timber.tag(tag).d("noPhotosToSendBack() No photos on server to send back")
 
         eventBus.post(PhotoReceivedEvent.noPhotos())
 
         if (isJobImmediate(params)) {
-            Timber.d("FindPhotoAnswerService: Current job is immediate, changing it to periodic")
+            Timber.tag(tag).d("noPhotosToSendBack() Current job is immediate, changing it to periodic")
             finish(params, false)
             changeJobToPeriodic(getUserIdFromParams(params))
         } else {
-            Timber.d("FindPhotoAnswerService: Current job is periodic, no need to change it")
+            Timber.tag(tag).d("noPhotosToSendBack() Current job is periodic, no need to change it")
             finish(params, true)
         }
     }
@@ -190,20 +190,20 @@ class FindPhotoAnswerService : JobService() {
         val userId = getUserIdFromParams(params)
 
         if (!returnValue.allFound) {
-            Timber.d("FindPhotoAnswerService: allFound = ${returnValue.allFound} Reschedule job")
-            Timber.d(returnValue.photoAnswer.toString())
+            Timber.tag(tag).d("onPhotoAnswerFound() allFound = ${returnValue.allFound} Reschedule job")
+            Timber.tag(tag).d(returnValue.photoAnswer.toString())
 
             eventBus.post(PhotoReceivedEvent.successNotAllReceived(returnValue.photoAnswer))
 
             if (isJobPeriodic(params)) {
-                Timber.d("FindPhotoAnswerService: Current job is periodic, changing it to immediate")
+                Timber.tag(tag).d("onPhotoAnswerFound() Current job is periodic, changing it to immediate")
                 changeJobToImmediate(userId)
             } else {
-                Timber.d("FindPhotoAnswerService: Current job is immediate, no need to change it")
+                Timber.tag(tag).d("onPhotoAnswerFound() Current job is immediate, no need to change it")
                 finish(params, true)
             }
         } else {
-            Timber.d("FindPhotoAnswerService: allFound = ${returnValue.allFound} we are done")
+            Timber.tag(tag).d("onPhotoAnswerFound() allFound = ${returnValue.allFound} we are done")
             eventBus.post(PhotoReceivedEvent.successAllReceived(returnValue.photoAnswer))
 
             finish(params, false)
@@ -213,14 +213,14 @@ class FindPhotoAnswerService : JobService() {
     }
 
     private fun onBadResponse(params: JobParameters, errorCode: ServerErrorCode) {
-        Timber.d("FindPhotoAnswerService: BadResponse errorCode: $errorCode")
+        Timber.tag(tag).d("onBadResponse() BadResponse errorCode: $errorCode")
 
         eventBus.post(PhotoReceivedEvent.fail())
         finish(params, false)
     }
 
     private fun onUnknownError(params: JobParameters, error: Throwable) {
-        Timber.d("FindPhotoAnswerService: onUnknownError")
+        Timber.tag(tag).d("onUnknownError() onUnknownError")
         Timber.e(error)
 
         eventBus.post(PhotoReceivedEvent.fail())
@@ -232,7 +232,7 @@ class FindPhotoAnswerService : JobService() {
     }
 
     private fun cleanUp() {
-        Timber.d("FindPhotoAnswerService:  cleanUp()")
+        Timber.tag(tag).d("cleanUp()")
 
         compositeDisposable.clear()
         viewModel.cleanUp()

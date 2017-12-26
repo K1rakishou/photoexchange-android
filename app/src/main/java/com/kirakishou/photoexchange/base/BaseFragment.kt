@@ -81,13 +81,13 @@ abstract class BaseFragment<out T : ViewModel> : Fragment() {
 
     @CallSuper
     override fun onResume() {
-        Timber.d("${this::class.java}.onResume")
+        //Timber.d("${this::class.java}.onResume")
         super.onResume()
     }
 
     @CallSuper
     override fun onPause() {
-        Timber.d("${this::class.java}.onPause")
+        //Timber.d("${this::class.java}.onPause")
         super.onPause()
     }
 

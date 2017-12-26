@@ -37,6 +37,8 @@ class UploadPhotoServiceViewModel(
         UploadPhotoServiceOutputs,
         UploadPhotoServiceErrors {
 
+    private val tag = "[${this::class.java.simpleName}]: "
+
     val inputs: UploadPhotoServiceInputs = this
     val outputs: UploadPhotoServiceOutputs = this
     val errors: UploadPhotoServiceErrors = this
@@ -53,7 +55,7 @@ class UploadPhotoServiceViewModel(
     override fun uploadPhotos() {
         compositeJob += async {
             try {
-                delay(300, TimeUnit.MILLISECONDS)
+                delay(400, TimeUnit.MILLISECONDS)
 
                 val queuedUpPhotos = takenPhotosRepo.findAllQueuedUp().await()
                 if (queuedUpPhotos.isEmpty()) {
@@ -74,8 +76,6 @@ class UploadPhotoServiceViewModel(
                     }
                 }
 
-                //ensure that we receive AllPhotosUploaded event last
-                delay(10, TimeUnit.MILLISECONDS)
                 onPhotoUploadStateOutput.onNext(PhotoUploadingState.AllPhotosUploaded())
             } catch (error: Throwable) {
                 onPhotoUploadStateOutput.onNext(PhotoUploadingState.UnknownErrorWhileUploading(error))
@@ -112,7 +112,7 @@ class UploadPhotoServiceViewModel(
         compositeJob.cancelAll()
 
         PhotoExchangeApplication.refWatcher!!.watch(this, this::class.java.simpleName)
-        Timber.d("UploadPhotoServiceViewModel cleanUp")
+        Timber.tag(tag).d("cleanUp")
     }
 
     override fun onPhotoUploadStateObservable(): Observable<PhotoUploadingState> = onPhotoUploadStateOutput

@@ -50,7 +50,7 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
     @Suppress("UNCHECKED_CAST")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Timber.d("${this::class.java}.onCreate")
+        //Timber.d("${this::class.java}.onCreate")
 
         setContentView(getContentView())
         unBinder = Fickle.of(ButterKnife.bind(this))
@@ -69,7 +69,7 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        Timber.d("${this::class.java}.onDestroy")
+        //Timber.d("${this::class.java}.onDestroy")
 
         compositeDisposable.clear()
         onActivityDestroy()
@@ -84,13 +84,13 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
 
     @CallSuper
     override fun onResume() {
-        Timber.d("${this::class.java}.onResume")
+        //Timber.d("${this::class.java}.onResume")
         super.onResume()
     }
 
     @CallSuper
     override fun onPause() {
-        Timber.d("${this::class.java}.onPause")
+        //Timber.d("${this::class.java}.onPause")
         super.onPause()
     }
 

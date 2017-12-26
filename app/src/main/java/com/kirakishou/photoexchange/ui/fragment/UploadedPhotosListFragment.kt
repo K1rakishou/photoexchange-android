@@ -46,6 +46,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private lateinit var endlessScrollListener: EndlessRecyclerOnScrollListener
     private lateinit var layoutManager: GridLayoutManager
 
+    private val ttag = "[${this::class.java.simpleName}]: "
     private val DELAY_BEFORE_PROGRESS_FOOTER_ADDED = 100L
     private val PHOTOS_PER_PAGE = 5
     private var columnsCount: Int = 1
@@ -173,7 +174,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onPhotoUploaded(photo: TakenPhoto) {
-        Timber.d("UploadedPhotosListFragment: onPhotoUploaded()")
+        Timber.tag(ttag).d("onPhotoUploaded() onPhotoUploaded()")
 
         adapter.runOnAdapterHandler {
             adapter.add(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
@@ -181,7 +182,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onStartUploadingPhotos() {
-        Timber.d("UploadedPhotosListFragment: onStartUploadingPhotos()")
+        Timber.tag(ttag).d("onStartUploadingPhotos() onStartUploadingPhotos()")
 
         adapter.runOnAdapterHandler {
             adapter.removeMessageFooter()
@@ -190,7 +191,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onFailedToUploadPhoto(takenPhoto: TakenPhoto) {
-        Timber.d("UploadedPhotosListFragment: onFailedToUploadPhoto()")
+        Timber.tag(ttag).d("onFailedToUploadPhoto() onFailedToUploadPhoto()")
 
         adapter.runOnAdapterHandler {
             adapter.removePhotoUploadingIndicator()
@@ -200,7 +201,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onAllPhotosUploaded() {
-        Timber.d("UploadedPhotosListFragment: onAllPhotosUploaded()")
+        Timber.tag(ttag).d("onAllPhotosUploaded() onAllPhotosUploaded()")
 
         adapter.runOnAdapterHandler {
             adapter.removePhotoUploadingIndicator()

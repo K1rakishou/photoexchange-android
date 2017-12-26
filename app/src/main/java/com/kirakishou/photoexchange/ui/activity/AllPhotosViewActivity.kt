@@ -67,6 +67,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     @Inject
     lateinit var eventAccumulator: EventAccumulator
 
+    private val tag = "[${this::class.java.simpleName}]: "
     private val QUEUED_UP_PHOTOS_FRAGMENT_TAB_INDEX = 0
     private val UPLOADED_PHOTOS_FRAGMENT_TAB_INDEX = 1
     private val RECEIVED_PHOTOS_FRAGMENT_TAB_INDEX = 2
@@ -119,7 +120,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
     private fun getNotificationIntent(intent: Intent?) {
         if (intent == null || intent.extras == null) {
-            Timber.d("No extras. Nothing to handle")
+            Timber.tag(tag).d("No extras. Nothing to handle")
             return
         }
 
@@ -210,17 +211,17 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
     private fun schedulePhotoUpload() {
         if (NetUtils.isWifiConnected(this)) {
-            Timber.d("AllPhotosViewActivity: Wi-Fi is connected. Scheduling upload job immediate")
+            Timber.tag(tag).d("schedulePhotoUpload() Wi-Fi is connected. Scheduling upload job immediate")
             UploadPhotoService.scheduleJobImmediate(this)
         } else {
             UploadPhotoService.scheduleJobWhenWiFiAvailable(this)
-            Timber.d("AllPhotosViewActivity: Wi-Fi is not connected. Scheduling upload job upon Wi-Fi connection available")
+            Timber.tag(tag).d("schedulePhotoUpload() Wi-Fi is not connected. Scheduling upload job upon Wi-Fi connection available")
         }
     }
 
     fun startLookingForPhotoAnswerService() {
         FindPhotoAnswerService.scheduleImmediateJob(userInfoPreference.getUserId(), this)
-        Timber.d("AllPhotosViewActivity: A job has been scheduled")
+        Timber.tag(tag).d("startLookingForPhotoAnswerService() A job has been scheduled")
 
         getViewModel().inputs.showLookingForPhotoIndicator()
     }
@@ -235,14 +236,14 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     }
 
     private fun onBeginReceivingEvents(clazz: Class<*>) {
-        Timber.d("AllPhotosViewActivity: Begin event sending for Fragment ${clazz.simpleName}")
+        Timber.tag(tag).d("onBeginReceivingEvents() Begin event sending for Fragment ${clazz.simpleName}")
 
         fragmentsEventListeners[clazz] = true
         sendAllEvents(clazz)
     }
 
     private fun onStopReceivingEvents(clazz: Class<*>) {
-        Timber.d("AllPhotosViewActivity: Stop event sending for Fragment ${clazz.simpleName}")
+        Timber.tag(tag).d("onStopReceivingEvents() Stop event sending for Fragment ${clazz.simpleName}")
 
         fragmentsEventListeners[clazz] = false
     }
@@ -263,16 +264,16 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
     private fun rememberOrSendEvent(clazz: Class<*>, event: BaseEvent) {
         if (!fragmentsEventListeners[clazz]!!) {
-            Timber.d("AllPhotosViewActivity: Fragment ${clazz.simpleName} is currently paused, remembering event")
+            Timber.tag(tag).d("rememberOrSendEvent() Fragment ${clazz.simpleName} is currently paused, remembering event")
             eventAccumulator.rememberEvent(clazz, event)
         } else {
-            Timber.d("AllPhotosViewActivity: Fragment ${clazz.simpleName} is currently resumed, sending event")
+            Timber.tag(tag).d("rememberOrSendEvent() Fragment ${clazz.simpleName} is currently resumed, sending event")
             sendEvent(event)
         }
     }
 
     private fun sendAllEvents(clazz: Class<*>) {
-        Timber.d("Fragment ${clazz.simpleName} has ${eventAccumulator.eventsCount(clazz)} accumulated events")
+        Timber.tag(tag).d("sendAllEvents() Fragment ${clazz.simpleName} has ${eventAccumulator.eventsCount(clazz)} accumulated events")
 
         while (eventAccumulator.hasEvent(clazz)) {
             val event = eventAccumulator.getEvent(clazz)
@@ -291,19 +292,19 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     private fun handlePhotoUploadedEvent(event: PhotoUploadedEvent) {
         when (event.status) {
             SendPhotoEventStatus.START -> {
-                Timber.d("AllPhotosViewActivity: SendPhotoEventStatus.START")
+                Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.START")
                 getViewModel().inputs.startUploadingPhotos()
             }
             SendPhotoEventStatus.PHOTO_UPLOADED -> {
-                Timber.d("AllPhotosViewActivity: SendPhotoEventStatus.PHOTO_UPLOADED")
+                Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.PHOTO_UPLOADED")
                 getViewModel().inputs.photoUploaded(event.photo!!)
             }
             SendPhotoEventStatus.FAIL -> {
-                Timber.d("AllPhotosViewActivity: SendPhotoEventStatus.FAIL")
+                Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.FAIL")
                 getViewModel().inputs.showFailedToUploadPhoto(event.photo!!)
             }
             SendPhotoEventStatus.DONE -> {
-                Timber.d("AllPhotosViewActivity: SendPhotoEventStatus.DONE")
+                Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.DONE")
                 getViewModel().inputs.allPhotosUploaded()
                 startLookingForPhotoAnswerService()
             }
@@ -314,25 +315,25 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     private fun handlePhotoReceivedEvent(event: PhotoReceivedEvent) {
         when (event.status) {
             PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED -> {
-                Timber.d("AllPhotosViewActivity: PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED")
+                Timber.tag(tag).d("handlePhotoReceivedEvent() PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED")
                 checkNotNull(event.photoAnswer)
                 getViewModel().inputs.showPhotoReceived(event.photoAnswer!!, event.allFound)
             }
             PhotoReceivedEventStatus.SUCCESS_NOT_ALL_RECEIVED -> {
-                Timber.d("AllPhotosViewActivity: PhotoReceivedEventStatus.SUCCESS_NOT_ALL_RECEIVED")
+                Timber.tag(tag).d("handlePhotoReceivedEvent() PhotoReceivedEventStatus.SUCCESS_NOT_ALL_RECEIVED")
                 checkNotNull(event.photoAnswer)
                 getViewModel().inputs.showPhotoReceived(event.photoAnswer!!, event.allFound)
             }
             PhotoReceivedEventStatus.FAIL -> {
-                Timber.d("AllPhotosViewActivity: PhotoReceivedEventStatus.FAIL")
+                Timber.tag(tag).d("handlePhotoReceivedEvent() PhotoReceivedEventStatus.FAIL")
                 getViewModel().inputs.showErrorWhileTryingToLookForPhoto()
             }
             PhotoReceivedEventStatus.NO_PHOTOS_ON_SERVER -> {
-                Timber.d("AllPhotosViewActivity: PhotoReceivedEventStatus.NO_PHOTOS_ON_SERVER")
+                Timber.tag(tag).d("handlePhotoReceivedEvent() PhotoReceivedEventStatus.NO_PHOTOS_ON_SERVER")
                 getViewModel().inputs.showNoPhotoOnServer()
             }
             PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS -> {
-                Timber.d("AllPhotosViewActivity: PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS")
+                Timber.tag(tag).d("handlePhotoReceivedEvent() PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS")
                 getViewModel().inputs.showUserNeedsToUploadMorePhotos()
             }
             else -> throw IllegalArgumentException("Unknown event status: ${event.status}")

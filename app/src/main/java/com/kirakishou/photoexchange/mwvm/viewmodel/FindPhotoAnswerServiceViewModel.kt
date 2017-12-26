@@ -30,6 +30,8 @@ class FindPhotoAnswerServiceViewModel(
     FindPhotoAnswerServiceOutputs,
     FindPhotoAnswerServiceErrors {
 
+    private val tag = "[${this::class.java.simpleName}]: "
+
     val inputs: FindPhotoAnswerServiceInputs = this
     val outputs: FindPhotoAnswerServiceOutputs = this
     val errors: FindPhotoAnswerServiceErrors = this
@@ -70,7 +72,7 @@ class FindPhotoAnswerServiceViewModel(
 
                             if (Constants.isDebugBuild) {
                                 val allPhotoAnswers = photoAnswerRepo.findAll().await()
-                                allPhotoAnswers.forEach { Timber.d(it.toString()) }
+                                allPhotoAnswers.forEach { Timber.tag(tag).d(it.toString()) }
                             }
 
                             onPhotoAnswerFoundSubject.onNext(PhotoAnswerReturnValue(photoAnswer, findPhotoResponse.allFound))
@@ -95,7 +97,7 @@ class FindPhotoAnswerServiceViewModel(
         compositeJob.cancelAll()
 
         PhotoExchangeApplication.refWatcher!!.watch(this, this::class.java.simpleName)
-        Timber.d("FindPhotoAnswerServiceViewModel cleanUp")
+        Timber.tag(tag).d("cleanUp()")
     }
 
     //outputs

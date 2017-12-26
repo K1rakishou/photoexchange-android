@@ -1,7 +1,5 @@
 package com.kirakishou.photoexchange.helper.rx
 
-import io.reactivex.Observable
-import io.reactivex.functions.Predicate
 import kotlinx.coroutines.experimental.async
 import timber.log.Timber
 

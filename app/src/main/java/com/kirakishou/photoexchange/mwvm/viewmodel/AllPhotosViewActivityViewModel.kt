@@ -34,6 +34,8 @@ class AllPhotosViewActivityViewModel(
         AllPhotosViewActivityViewModelOutputs,
         AllPhotosViewActivityViewModelErrors {
 
+    private val tag = "[${this::class.java.simpleName}]: "
+
     val inputs: AllPhotosViewActivityViewModelInputs = this
     val outputs: AllPhotosViewActivityViewModelOutputs = this
     val errors: AllPhotosViewActivityViewModelErrors = this
@@ -216,14 +218,14 @@ class AllPhotosViewActivityViewModel(
 
                 when {
                     uploadedCount == 0L -> {
-                        Timber.d("No uploaded photos, show a message")
+                        Timber.tag(tag).d("shouldStartLookingForPhotos() No uploaded photos, show a message")
                         showNoUploadedPhotosOutput.onNext(Unit)
                     }
                     uploadedCount > receivedCount -> {
-                        Timber.d("uploadedCount GREATER THAN receivedCount")
+                        Timber.tag(tag).d("shouldStartLookingForPhotos() uploadedCount GREATER THAN receivedCount")
                         startLookingForPhotosOutput.onNext(Unit)
                     }
-                    else -> Timber.d("uploadedCount LESS OR EQUALS THAN receivedCount")
+                    else -> Timber.tag(tag).d("shouldStartLookingForPhotos() uploadedCount LESS OR EQUALS THAN receivedCount")
                 }
             } catch (error: Throwable) {
                 startLookingForPhotosOutput.onError(error)
@@ -269,7 +271,7 @@ class AllPhotosViewActivityViewModel(
     }
 
     override fun onCleared() {
-        Timber.d("AllPhotosViewActivityViewModel.onCleared()")
+        Timber.tag(tag).d("onCleared()")
 
         super.onCleared()
     }
