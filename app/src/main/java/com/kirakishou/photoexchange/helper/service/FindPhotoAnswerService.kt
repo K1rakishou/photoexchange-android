@@ -232,7 +232,7 @@ class FindPhotoAnswerService : JobService() {
     }
 
     private fun cleanUp() {
-        Timber.tag(tag).d("cleanUp()  cleanUp()")
+        Timber.tag(tag).d("cleanUp()")
 
         compositeDisposable.clear()
         viewModel.cleanUp()

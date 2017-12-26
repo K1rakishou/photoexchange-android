@@ -1,6 +1,8 @@
 package com.kirakishou.photoexchange.helper
 
 import kotlinx.coroutines.experimental.Job
+import kotlinx.coroutines.experimental.cancelAndJoin
+import kotlinx.coroutines.experimental.runBlocking
 import timber.log.Timber
 
 /**
@@ -15,13 +17,9 @@ class CompositeJob {
     }
 
     fun cancelAll() {
-        val results = jobs.map { it.cancel() }
-        val anyNotCanceled = results.any { !it }
-
-        if (anyNotCanceled) {
-            Timber.w("One or more jobs was already canceled before")
+        runBlocking {
+            jobs.map { it.cancelAndJoin() }
+            jobs.clear()
         }
-
-        jobs.clear()
     }
 }
