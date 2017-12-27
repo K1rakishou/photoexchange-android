@@ -10,7 +10,7 @@ import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 class TakenPhotoMapper : Mapper {
 
     fun toTakenPhoto(entity: TakenPhotoEntity): TakenPhoto {
-        return TakenPhoto(
+        return TakenPhoto.create(
                 entity.id,
                 LonLat(entity.lon, entity.lat),
                 entity.photoFilePath,

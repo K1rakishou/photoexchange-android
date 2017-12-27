@@ -37,12 +37,9 @@ import io.fotoapparat.view.CameraView
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.Observables
-import io.reactivex.rxkotlin.combineLatest
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
-import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
@@ -74,7 +71,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     private val userInfoPreference by lazy { appSharedPreference.prepare<UserInfoPreference>() }
     private val locationManager by lazy { MyLocationManager(applicationContext) }
 
-    private val permissionsGrantedSubject = PublishSubject.create<Boolean>()
+    private val permissionsGrantedSubject = BehaviorSubject.create<Boolean>()
     private val lifecycleSubject = BehaviorSubject.create<Int>()
 
     override fun initViewModel(): TakePhotoActivityViewModel {
@@ -91,6 +88,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         userInfoPreference.load()
 
         getPermissions()
+        generateOrReadUserId()
 
         getViewModel().showDatabaseDebugInfo()
     }
@@ -180,7 +178,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
     private fun initCamera(): Observable<Fotoapparat> {
         return Observable.fromCallable {
-            Timber.tag(tag).d("initCamera() initCamera")
+            Timber.tag(tag).d("initCamera()")
 
             return@fromCallable Fotoapparat
                     .with(applicationContext)
@@ -195,9 +193,18 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     private fun initRx() {
         val fotoapparatObservable = permissionsGrantedSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .doOnNext { generateOrReadUserId() }
                 .flatMap { initCamera() }
-                .share()
+                //WTF: I don't know why, but this works
+                //
+                //I've tried to use operator share(), but it didn't work -
+                //the observable from "RxView.clicks(takePhotoButton)" would hang after "flatMap { fotoapparatObservable }"
+                //
+                //I've also tried to use publish() + autoconnect(2), but it also didn't work -
+                //both "Observables.combineLatest(fotoapparatObservable, lifecycleSubject)" and "RxView.clicks(takePhotoButton)"
+                //would hang until I click takePhotoButton button
+                //
+                //But cache works (why???)
+                .cache()
 
         compositeDisposable += Observables.combineLatest(fotoapparatObservable, lifecycleSubject)
                 .doOnNext { (fotoapparat, lifecycle) -> startOrStopCamera(fotoapparat, lifecycle) }
@@ -211,15 +218,12 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .observeOn(Schedulers.io())
                 .map { lifecycleSubject.value }
                 .filter { lifecycle -> lifecycle == ON_START }
-                .combineLatest(fotoapparatObservable)
-                .map { it.second }
+                .flatMap { fotoapparatObservable }
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext { showNotification() }
-                //FIXME: for some reason fotoapparat doesn't want to work on Schedulers.io(),
-                //so we have to take photo in a blocking way
                 .flatMap { fotoapparat -> takePhoto(fotoapparat) }
                 .observeOn(Schedulers.io())
-                .zipWith(getLocationObservable())
+                .flatMap { photoName -> Observables.combineLatest(Observable.just(photoName), getLocationObservable()) }
                 .doOnNext(this::saveTakenPhoto)
                 .doOnError(this::onUnknownError)
                 .subscribe()
@@ -238,7 +242,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .subscribe(this::onUnknownError)
     }
 
-    private fun TakePhotoActivity.startOrStopCamera(fotoapparat: Fotoapparat, lifecycle: Int?) {
+    private fun startOrStopCamera(fotoapparat: Fotoapparat, lifecycle: Int?) {
         if (!fotoapparat.isAvailable) {
             if (lifecycle == ON_START) {
                 Timber.tag(tag).d("initRx() Camera IS NOT available!!!")
@@ -317,6 +321,8 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
     private fun getLocationObservable(): Observable<LonLat> {
         val gpsStateObservable = Observable.fromCallable { locationManager.isGpsEnabled() }
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
                 .share()
 
         val gpsEnabledObservable = gpsStateObservable
@@ -324,10 +330,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .doOnNext { Timber.tag(tag).d("getLocationObservable() Gps is enabled. Trying to obtain current location") }
                 .flatMap {
                     return@flatMap RxLocationManager.start(locationManager)
-                    /*.first(LonLat.empty())
-                    .timeout(5, TimeUnit.SECONDS)
-                    .onErrorReturnItem(LonLat.empty())
-                    .toObservable()*/
                 }
 
         val gpsDisabledObservable = gpsStateObservable

@@ -27,5 +27,9 @@ class TakenPhoto private constructor(
         fun create(location: LonLat, photoFilePath: String, userId: String): TakenPhoto {
             return TakenPhoto(-1L, location, photoFilePath, userId, "")
         }
+
+        fun create(id: Long, location: LonLat, photoFilePath: String, userId: String, photoName: String): TakenPhoto {
+            return TakenPhoto(id, location, photoFilePath, userId, photoName)
+        }
     }
 }
