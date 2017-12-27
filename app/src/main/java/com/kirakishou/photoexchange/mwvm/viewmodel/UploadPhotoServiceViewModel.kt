@@ -68,10 +68,13 @@ class UploadPhotoServiceViewModel(
                 for (photo in queuedUpPhotos) {
                     val photoName = uploadPhoto(photo)
                     if (photoName != null) {
+                        Timber.tag(tag).d("Photo uploaded")
+
                         photo.photoName = photoName
                         takenPhotosRepo.updateSetUploaded(photo.id, photoName)
                         onPhotoUploadStateOutput.onNext(PhotoUploadingState.PhotoUploaded(photo))
                     } else {
+                        Timber.tag(tag).d("Could not upload photo. Marking it as failed in the database")
                         takenPhotosRepo.updateSetFailedToUpload(photo.id).await()
                     }
                 }
@@ -90,14 +93,12 @@ class UploadPhotoServiceViewModel(
 
         if (response == null) {
             onPhotoUploadStateOutput.onNext(PhotoUploadingState.FailedToUploadPhoto(photo))
-            unknownErrorSubject.onNext(ApiException(ServerErrorCode.UNKNOWN_ERROR))
             return null
         }
 
         val errorCode = ServerErrorCode.from(response.serverErrorCode)
         if (errorCode != ServerErrorCode.OK) {
             onPhotoUploadStateOutput.onNext(PhotoUploadingState.FailedToUploadPhoto(photo))
-            badResponseError.onNext(errorCode)
             return null
         }
 
