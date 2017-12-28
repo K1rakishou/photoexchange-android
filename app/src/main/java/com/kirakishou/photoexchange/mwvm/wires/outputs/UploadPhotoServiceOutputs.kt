@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.mwvm.wires.outputs
 
-import com.kirakishou.photoexchange.mwvm.model.other.PhotoUploadingState
+import com.kirakishou.photoexchange.mwvm.model.state.PhotoUploadingState
 import io.reactivex.Observable
 
 /**

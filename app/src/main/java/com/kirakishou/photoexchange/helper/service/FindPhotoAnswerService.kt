@@ -21,13 +21,14 @@ import com.kirakishou.photoexchange.di.component.DaggerFindPhotoAnswerServiceCom
 import com.kirakishou.photoexchange.di.module.*
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
-import com.kirakishou.photoexchange.mwvm.model.dto.PhotoAnswerReturnValue
 import com.kirakishou.photoexchange.mwvm.model.event.PhotoReceivedEvent
 import com.kirakishou.photoexchange.mwvm.model.other.Constants
+import com.kirakishou.photoexchange.mwvm.model.state.FindPhotoState
 import com.kirakishou.photoexchange.mwvm.viewmodel.FindPhotoAnswerServiceViewModel
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
 import io.fabric.sdk.android.Fabric
@@ -50,6 +51,9 @@ class FindPhotoAnswerService : JobService() {
     lateinit var photoAnswerRepo: PhotoAnswerRepository
 
     @Inject
+    lateinit var takenPhotosRepo: TakenPhotosRepository
+
+    @Inject
     lateinit var eventBus: EventBus
 
     private lateinit var viewModel: FindPhotoAnswerServiceViewModel
@@ -64,7 +68,7 @@ class FindPhotoAnswerService : JobService() {
 
         Fabric.with(this, Crashlytics())
         resolveDaggerDependency()
-        viewModel = FindPhotoAnswerServiceViewModel(photoAnswerRepo, apiClient, schedulers)
+        viewModel = FindPhotoAnswerServiceViewModel(photoAnswerRepo, takenPhotosRepo, apiClient, schedulers)
     }
 
     override fun onDestroy() {
@@ -119,25 +123,9 @@ class FindPhotoAnswerService : JobService() {
 
         isRxInited = true
 
-        compositeDisposable += viewModel.outputs.onPhotoAnswerFoundObservable()
+        compositeDisposable += viewModel.outputs.findPhotoStateObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onPhotoAnswerFound(params, it) })
-
-        compositeDisposable += viewModel.outputs.noPhotosToSendBackObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ noPhotosToSendBack(params) })
-
-        compositeDisposable += viewModel.outputs.couldNotMarkPhotoAsReceivedObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ couldNotMarkPhotoAsReceived(params) })
-
-        compositeDisposable += viewModel.outputs.uploadMorePhotosObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ uploadMorePhotos(params) })
+                .subscribe({ state -> onFindPhotoStateChanged(params, state) })
 
         compositeDisposable += viewModel.errors.onBadResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -150,66 +138,73 @@ class FindPhotoAnswerService : JobService() {
                 .subscribe({ onUnknownError(params, it) })
     }
 
-    //API responses
-    private fun uploadMorePhotos(params: JobParameters) {
-        Timber.tag(tag).d("uploadMorePhotos() Upload more photos")
+    private fun onFindPhotoStateChanged(params: JobParameters, state: FindPhotoState) {
+        when (state) {
+            is FindPhotoState.UploadMorePhotos -> {
+                Timber.tag(tag).d("onFindPhotoStateChanged() UploadMorePhotos Upload more photos")
 
-        eventBus.post(PhotoReceivedEvent.uploadMorePhotos())
-        cancelAll(this)
-        finish(params, false)
+                eventBus.post(PhotoReceivedEvent.uploadMorePhotos())
+                cancelAll(this)
+                finish(params, false)
 
-        cancelNotification()
-    }
-
-    private fun couldNotMarkPhotoAsReceived(params: JobParameters) {
-        Timber.tag(tag).d("couldNotMarkPhotoAsReceived() Could not mark a photo as received")
-
-        eventBus.post(PhotoReceivedEvent.fail())
-        cancelAll(this)
-        finish(params, false)
-
-        cancelNotification()
-    }
-
-    private fun noPhotosToSendBack(params: JobParameters) {
-        Timber.tag(tag).d("noPhotosToSendBack() No photos on server to send back")
-
-        eventBus.post(PhotoReceivedEvent.noPhotos())
-
-        if (isJobImmediate(params)) {
-            Timber.tag(tag).d("noPhotosToSendBack() Current job is immediate, changing it to periodic")
-            finish(params, false)
-            changeJobToPeriodic(getUserIdFromParams(params))
-        } else {
-            Timber.tag(tag).d("noPhotosToSendBack() Current job is periodic, no need to change it")
-            finish(params, true)
-        }
-    }
-
-    private fun onPhotoAnswerFound(params: JobParameters, returnValue: PhotoAnswerReturnValue) {
-        val userId = getUserIdFromParams(params)
-
-        if (!returnValue.allFound) {
-            Timber.tag(tag).d("onPhotoAnswerFound() allFound = ${returnValue.allFound} Reschedule job")
-            Timber.tag(tag).d(returnValue.photoAnswer.toString())
-
-            eventBus.post(PhotoReceivedEvent.successNotAllReceived(returnValue.photoAnswer))
-
-            if (isJobPeriodic(params)) {
-                Timber.tag(tag).d("onPhotoAnswerFound() Current job is periodic, changing it to immediate")
-                changeJobToImmediate(userId)
-            } else {
-                Timber.tag(tag).d("onPhotoAnswerFound() Current job is immediate, no need to change it")
-                finish(params, true)
+                cancelNotification()
             }
-        } else {
-            Timber.tag(tag).d("onPhotoAnswerFound() allFound = ${returnValue.allFound} we are done")
-            eventBus.post(PhotoReceivedEvent.successAllReceived(returnValue.photoAnswer))
 
-            finish(params, false)
+            is FindPhotoState.LocalRepositoryError -> {
+                Timber.tag(tag).d("onFindPhotoStateChanged() LocalRepositoryError Could not mark a photo as received")
+
+                eventBus.post(PhotoReceivedEvent.fail())
+                cancelAll(this)
+                finish(params, false)
+
+                cancelNotification()
+            }
+
+            is FindPhotoState.ServerHasNoPhotos -> {
+                Timber.tag(tag).d("onFindPhotoStateChanged() ServerHasNoPhotos No photos on server to send back")
+
+                eventBus.post(PhotoReceivedEvent.noPhotos())
+
+                if (isJobImmediate(params)) {
+                    Timber.tag(tag).d("onFindPhotoStateChanged() ServerHasNoPhotos Current job is immediate, changing it to periodic")
+                    finish(params, false)
+                    switchJobToPeriodic(getUserIdFromParams(params))
+                } else {
+                    Timber.tag(tag).d("onFindPhotoStateChanged() ServerHasNoPhotos Current job is periodic, no need to change it")
+                    finish(params, true)
+                }
+            }
+
+            is FindPhotoState.PhotoFound -> {
+                val userId = getUserIdFromParams(params)
+
+                if (!state.allFound) {
+                    Timber.tag(tag).d("onFindPhotoStateChanged() PhotoFound allFound = ${state.allFound} Reschedule job")
+                    Timber.tag(tag).d(state.photoAnswer.toString())
+
+                    eventBus.post(PhotoReceivedEvent.successNotAllReceived(state.photoAnswer))
+
+                    if (isJobPeriodic(params)) {
+                        Timber.tag(tag).d("onFindPhotoStateChanged() PhotoFound Current job is periodic, changing it to immediate")
+                        switchJobToImmediate(userId)
+                    } else {
+                        Timber.tag(tag).d("onFindPhotoStateChanged() PhotoFound Current job is immediate, no need to change it")
+                        finish(params, true)
+                    }
+                } else {
+                    Timber.tag(tag).d("onFindPhotoStateChanged() PhotoFound allFound = ${state.allFound} we are done")
+                    eventBus.post(PhotoReceivedEvent.successAllReceived(state.photoAnswer))
+
+                    finish(params, false)
+                }
+
+                updateNotificationShowPhotoFound()
+            }
+
+            is FindPhotoState.UnknownError -> {
+                onUnknownError(params, state.error)
+            }
         }
-
-        updateNotificationShowPhotoFound()
     }
 
     private fun onBadResponse(params: JobParameters, errorCode: ServerErrorCode) {
@@ -263,11 +258,11 @@ class FindPhotoAnswerService : JobService() {
         return jobType == IMMEDIATE_JOB_TYPE
     }
 
-    private fun changeJobToImmediate(userId: String) {
+    private fun switchJobToImmediate(userId: String) {
         scheduleImmediateJob(userId, this)
     }
 
-    private fun changeJobToPeriodic(userId: String) {
+    private fun switchJobToPeriodic(userId: String) {
         schedulePeriodicJob(userId, this)
     }
 
@@ -401,7 +396,7 @@ class FindPhotoAnswerService : JobService() {
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
-                    .setMinimumLatency(0)
+                    .setMinimumLatency(5_000)
                     .setOverrideDeadline(5_000)
                     .setExtras(extras)
                     .setBackoffCriteria(2_000, JobInfo.BACKOFF_POLICY_LINEAR)
@@ -423,8 +418,8 @@ class FindPhotoAnswerService : JobService() {
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
-                    .setMinimumLatency(1_000)
-                    .setOverrideDeadline(15_000)
+                    .setMinimumLatency(5_000)
+                    .setOverrideDeadline(30_000)
                     .setExtras(extras)
                     .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_EXPONENTIAL)
                     .build()

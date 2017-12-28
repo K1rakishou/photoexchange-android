@@ -32,7 +32,8 @@ class QueuedUpPhotosAdapter(
 
     private val messages = arrayOf(
             "No photos to upload",
-            "All photos has been uploaded"
+            "All photos has been uploaded",
+            "Could not upload one or more photos"
     )
 
     @Volatile
@@ -91,6 +92,10 @@ class QueuedUpPhotosAdapter(
 
         items.removeAt(index)
         notifyItemRemoved(index)
+    }
+
+    fun containsFailedToUploadPhotos(): Boolean {
+        return items.any { it.getType() == AdapterItemType.VIEW_FAILED_TO_UPLOAD.ordinal }
     }
 
     fun removeQueuedUpPhotos(ids: List<Long>) {
@@ -196,5 +201,6 @@ class QueuedUpPhotosAdapter(
     companion object {
         val MESSAGE_TYPE_NO_PHOTOS_TO_UPLOAD = 0
         val MESSAGE_TYPE_ALL_PHOTOS_UPLOADED = 1
+        val MESSAGE_TYPE_COULD_NOT_UPLOAD_PHOTOS = 2
     }
 }

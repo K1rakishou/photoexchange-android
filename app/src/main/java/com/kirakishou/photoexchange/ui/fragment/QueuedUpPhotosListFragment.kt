@@ -193,10 +193,15 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onAllPhotosUploaded() {
-        Timber.tag(ttag).d("onAllPhotosUploaded()  onAllPhotosUploaded()")
+        Timber.tag(ttag).d("onAllPhotosUploaded() onAllPhotosUploaded()")
 
         adapter.runOnAdapterHandler {
-            adapter.addMessage(QueuedUpPhotosAdapter.MESSAGE_TYPE_ALL_PHOTOS_UPLOADED)
+            if (!adapter.containsFailedToUploadPhotos()) {
+                adapter.addMessage(QueuedUpPhotosAdapter.MESSAGE_TYPE_ALL_PHOTOS_UPLOADED)
+            } else {
+                adapter.addMessage(QueuedUpPhotosAdapter.MESSAGE_TYPE_COULD_NOT_UPLOAD_PHOTOS)
+            }
+
             adapter.setButtonsEnabled(true)
         }
     }

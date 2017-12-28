@@ -8,8 +8,7 @@ import com.kirakishou.photoexchange.helper.rx.RxUtils
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.mwvm.model.dto.PhotoToBeUploaded
-import com.kirakishou.photoexchange.mwvm.model.exception.ApiException
-import com.kirakishou.photoexchange.mwvm.model.other.PhotoUploadingState
+import com.kirakishou.photoexchange.mwvm.model.state.PhotoUploadingState
 import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.wires.errors.UploadPhotoServiceErrors

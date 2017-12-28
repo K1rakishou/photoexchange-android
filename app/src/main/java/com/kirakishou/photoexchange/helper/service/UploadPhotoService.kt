@@ -30,6 +30,7 @@ import android.content.ComponentName
 import android.os.Build
 import android.support.annotation.RequiresApi
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.mwvm.model.state.PhotoUploadingState
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
 
 
