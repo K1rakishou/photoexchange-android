@@ -9,8 +9,6 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import butterknife.BindView
 import butterknife.ButterKnife
-import com.bumptech.glide.Glide
-import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.base.BaseAdapter
 import com.kirakishou.photoexchange.helper.ImageLoader
@@ -32,7 +30,8 @@ class QueuedUpPhotosAdapter(
 
     private val messages = arrayOf(
             "No photos to upload",
-            "All photos has been uploaded"
+            "All photos has been uploaded",
+            "Could not upload one or more photos"
     )
 
     @Volatile
@@ -80,9 +79,7 @@ class QueuedUpPhotosAdapter(
 
         val index = items
                 .indexOfFirst {
-                    (it.getType() == AdapterItemType.VIEW_QUEUED_UP_PHOTO.ordinal ||
-                    it.getType() == AdapterItemType.VIEW_FAILED_TO_UPLOAD.ordinal) &&
-                    it.value.get().id == id
+                    it.getType() == AdapterItemType.VIEW_QUEUED_UP_PHOTO.ordinal && it.value.get().id == id
                 }
 
         if (index == -1) {
@@ -91,6 +88,25 @@ class QueuedUpPhotosAdapter(
 
         items.removeAt(index)
         notifyItemRemoved(index)
+    }
+
+    fun removeFailedToUploadPhoto(id: Long) {
+        checkInited()
+
+        val index= items.indexOfFirst {
+            it.getType() == AdapterItemType.VIEW_FAILED_TO_UPLOAD.ordinal && it.value.get().id == id
+        }
+
+        if (index == -1) {
+            return
+        }
+
+        items.removeAt(index)
+        notifyItemRemoved(index)
+    }
+
+    fun containsFailedToUploadPhotos(): Boolean {
+        return items.any { it.getType() == AdapterItemType.VIEW_FAILED_TO_UPLOAD.ordinal }
     }
 
     fun removeQueuedUpPhotos(ids: List<Long>) {
@@ -139,6 +155,8 @@ class QueuedUpPhotosAdapter(
                     holder.cancelButton.setOnClickListener {
                         cancelButtonSubject.onNext(item)
                     }
+
+                    imageLoader.loadImageFromDiskInto(File(item.photoFilePath), holder.photoView)
                 }
             }
 
@@ -183,6 +201,9 @@ class QueuedUpPhotosAdapter(
         @BindView(R.id.retry_button)
         lateinit var retryButton: AppCompatButton
 
+        @BindView(R.id.photo)
+        lateinit var photoView: ImageView
+
         init {
             ButterKnife.bind(this, itemView)
         }
@@ -191,5 +212,6 @@ class QueuedUpPhotosAdapter(
     companion object {
         val MESSAGE_TYPE_NO_PHOTOS_TO_UPLOAD = 0
         val MESSAGE_TYPE_ALL_PHOTOS_UPLOADED = 1
+        val MESSAGE_TYPE_COULD_NOT_UPLOAD_PHOTOS = 2
     }
 }

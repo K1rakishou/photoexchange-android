@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.helper.mapper
 
 import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
 import com.kirakishou.photoexchange.mwvm.model.other.LonLat
+import com.kirakishou.photoexchange.mwvm.model.other.PhotoState
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 
 /**
@@ -15,7 +16,8 @@ class TakenPhotoMapper : Mapper {
                 LonLat(entity.lon, entity.lat),
                 entity.photoFilePath,
                 entity.userId,
-                entity.photoName
+                entity.photoName,
+                PhotoState.from(entity.photoState)
         )
     }
 

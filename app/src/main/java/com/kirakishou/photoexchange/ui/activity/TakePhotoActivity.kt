@@ -137,6 +137,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     }
 
     private fun showAppCannotWorkWithoutCameraPermissionDialog() {
+        //TODO: change this to homemade dialog and get rid of the MaterialDialogs dependency
         MaterialDialog.Builder(this)
                 .title("Error")
                 .content("This app cannon work without a camera permission")
@@ -150,9 +151,9 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     private fun showCameraRationale(token: PermissionToken) {
         //TODO: change this to homemade dialog and get rid of the MaterialDialogs dependency
         MaterialDialog.Builder(this)
-                .title("Why do we need these permissions?")
-                .content("We need camera so you can take a picture to send it to someone. " +
-                        "We don't necessarily need gps permission so you can disable it and the person " +
+                .title("Why do we need permissions?")
+                .content("We need camera permission so you can take a picture that will be sent to someone. " +
+                        "We don't necessarily need gps permission so you can disable it but the person " +
                         "who receives your photo won't be able to see where it was taken.")
                 .positiveText("Allow")
                 .negativeText("Close app")
@@ -166,9 +167,10 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     }
 
     private fun showCameraIsNotAvailableDialog() {
+        //TODO: change this to homemade dialog and get rid of the MaterialDialogs dependency
         MaterialDialog.Builder(this)
                 .title("Camera is not available")
-                .content("It look like your device does not support a camera. This app cannot work without a camera.")
+                .content("It looks like your device does not support camera. This app cannot work without a camera.")
                 .positiveText("OK")
                 .onPositive { _, _ ->
                     finish()
@@ -194,6 +196,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         val fotoapparatObservable = permissionsGrantedSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .flatMap { initCamera() }
+                //FIXME:
                 //WTF: I don't know why, but this works
                 //
                 //I've tried to use operator share(), but it didn't work -

@@ -1,4 +1,6 @@
-package com.kirakishou.photoexchange.mwvm.model.other
+package com.kirakishou.photoexchange.mwvm.model.state
+
+import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 
 /**
  * Created by kirakishou on 12/23/2017.

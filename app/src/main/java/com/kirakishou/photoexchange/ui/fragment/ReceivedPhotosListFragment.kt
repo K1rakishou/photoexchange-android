@@ -298,8 +298,8 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun startLookingForPhotos() {
-        Timber.tag(ttag).d("startLookingForPhotos() Showing startLookingForPhotoAnswerService")
-        (activity as AllPhotosViewActivity).startLookingForPhotoAnswerService()
+        Timber.tag(ttag).d("startLookingForPhotos() Showing scheduleLookingForPhotoAnswer")
+        (activity as AllPhotosViewActivity).scheduleLookingForPhotoAnswer()
         showLookingForPhotoIndicator()
     }
 

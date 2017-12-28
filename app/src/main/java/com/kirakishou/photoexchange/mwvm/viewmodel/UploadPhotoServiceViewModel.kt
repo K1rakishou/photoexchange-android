@@ -8,8 +8,7 @@ import com.kirakishou.photoexchange.helper.rx.RxUtils
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.mwvm.model.dto.PhotoToBeUploaded
-import com.kirakishou.photoexchange.mwvm.model.exception.ApiException
-import com.kirakishou.photoexchange.mwvm.model.other.PhotoUploadingState
+import com.kirakishou.photoexchange.mwvm.model.state.PhotoUploadingState
 import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.wires.errors.UploadPhotoServiceErrors
@@ -45,7 +44,9 @@ class UploadPhotoServiceViewModel(
 
     private val compositeDisposable = CompositeDisposable()
     private val compositeJob = CompositeJob()
-    private val MAX_ATTEMPTS = 3
+
+    //TODO: change this
+    private val MAX_ATTEMPTS = 1
 
     private val onPhotoUploadStateOutput = PublishSubject.create<PhotoUploadingState>()
 
@@ -55,7 +56,8 @@ class UploadPhotoServiceViewModel(
     override fun uploadPhotos() {
         compositeJob += async {
             try {
-                delay(400, TimeUnit.MILLISECONDS)
+                //FIXME: rx chain doesn't work without delay
+                delay(500, TimeUnit.MILLISECONDS)
 
                 val queuedUpPhotos = takenPhotosRepo.findAllQueuedUp().await()
                 if (queuedUpPhotos.isEmpty()) {
@@ -75,7 +77,9 @@ class UploadPhotoServiceViewModel(
                         onPhotoUploadStateOutput.onNext(PhotoUploadingState.PhotoUploaded(photo))
                     } else {
                         Timber.tag(tag).d("Could not upload photo. Marking it as failed in the database")
+
                         takenPhotosRepo.updateSetFailedToUpload(photo.id).await()
+                        onPhotoUploadStateOutput.onNext(PhotoUploadingState.FailedToUploadPhoto(photo))
                     }
                 }
 
@@ -92,13 +96,11 @@ class UploadPhotoServiceViewModel(
         }
 
         if (response == null) {
-            onPhotoUploadStateOutput.onNext(PhotoUploadingState.FailedToUploadPhoto(photo))
             return null
         }
 
         val errorCode = ServerErrorCode.from(response.serverErrorCode)
         if (errorCode != ServerErrorCode.OK) {
-            onPhotoUploadStateOutput.onNext(PhotoUploadingState.FailedToUploadPhoto(photo))
             return null
         }
 
