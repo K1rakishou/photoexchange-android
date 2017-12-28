@@ -77,7 +77,9 @@ class UploadPhotoServiceViewModel(
                         onPhotoUploadStateOutput.onNext(PhotoUploadingState.PhotoUploaded(photo))
                     } else {
                         Timber.tag(tag).d("Could not upload photo. Marking it as failed in the database")
+
                         takenPhotosRepo.updateSetFailedToUpload(photo.id).await()
+                        onPhotoUploadStateOutput.onNext(PhotoUploadingState.FailedToUploadPhoto(photo))
                     }
                 }
 
@@ -94,13 +96,11 @@ class UploadPhotoServiceViewModel(
         }
 
         if (response == null) {
-            onPhotoUploadStateOutput.onNext(PhotoUploadingState.FailedToUploadPhoto(photo))
             return null
         }
 
         val errorCode = ServerErrorCode.from(response.serverErrorCode)
         if (errorCode != ServerErrorCode.OK) {
-            onPhotoUploadStateOutput.onNext(PhotoUploadingState.FailedToUploadPhoto(photo))
             return null
         }
 

@@ -1,6 +1,5 @@
 package com.kirakishou.photoexchange.ui.activity
 
-import android.arch.lifecycle.Lifecycle
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.os.Bundle
@@ -98,7 +97,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         eventBus.register(this)
 
         initTabs(intent)
-        schedulePhotoUpload()
+        schedulePhotoUploading()
     }
 
     override fun onActivityDestroy() {
@@ -146,12 +145,17 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         compositeDisposable += getViewModel().outputs.onBeginReceivingEventsObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ clazz -> onBeginReceivingEvents(clazz) })
+                .subscribe({ clazz -> onBeginReceivingEvents(clazz) }, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onStopReceivingEventsObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ clazz -> onStopReceivingEvents(clazz) })
+                .subscribe({ clazz -> onStopReceivingEvents(clazz) }, this::onUnknownError)
+
+        compositeDisposable += getViewModel().outputs.onPhotoMarkedToBeUploadedObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ onPhotoMarkedToBeUploaded() }, this::onUnknownError)
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -209,19 +213,19 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         tab!!.select()
     }
 
-    private fun schedulePhotoUpload() {
+    private fun schedulePhotoUploading() {
         if (NetUtils.isWifiConnected(this)) {
-            Timber.tag(tag).d("schedulePhotoUpload() Wi-Fi is connected. Scheduling upload job immediate")
+            Timber.tag(tag).d("schedulePhotoUploading() Wi-Fi is connected. Scheduling upload job immediate")
             UploadPhotoService.scheduleJobImmediate(this)
         } else {
             UploadPhotoService.scheduleJobWhenWiFiAvailable(this)
-            Timber.tag(tag).d("schedulePhotoUpload() Wi-Fi is not connected. Scheduling upload job upon Wi-Fi connection available")
+            Timber.tag(tag).d("schedulePhotoUploading() Wi-Fi is not connected. Scheduling upload job upon Wi-Fi connection available")
         }
     }
 
-    fun startLookingForPhotoAnswerService() {
+    fun scheduleLookingForPhotoAnswer() {
         FindPhotoAnswerService.scheduleImmediateJob(userInfoPreference.getUserId(), this)
-        Timber.tag(tag).d("startLookingForPhotoAnswerService() A job has been scheduled")
+        Timber.tag(tag).d("scheduleLookingForPhotoAnswer() A job has been scheduled")
 
         getViewModel().inputs.showLookingForPhotoIndicator()
     }
@@ -233,6 +237,10 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                     getViewModel().inputs.scrollToTop()
                 })
                 .show()
+    }
+
+    private fun onPhotoMarkedToBeUploaded() {
+        schedulePhotoUploading()
     }
 
     private fun onBeginReceivingEvents(clazz: Class<*>) {
@@ -293,20 +301,25 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         when (event.status) {
             SendPhotoEventStatus.START -> {
                 Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.START")
-                getViewModel().inputs.startUploadingPhotos()
+
+                getViewModel().inputs.startUploadingPhotos(QueuedUpPhotosListFragment::class.java)
+                getViewModel().inputs.startUploadingPhotos(UploadedPhotosListFragment::class.java)
             }
             SendPhotoEventStatus.PHOTO_UPLOADED -> {
                 Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.PHOTO_UPLOADED")
-                getViewModel().inputs.photoUploaded(event.photo!!)
+                getViewModel().inputs.photoUploaded(QueuedUpPhotosListFragment::class.java, event.photo!!)
+                getViewModel().inputs.photoUploaded(UploadedPhotosListFragment::class.java, event.photo!!)
             }
             SendPhotoEventStatus.FAIL -> {
                 Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.FAIL")
-                getViewModel().inputs.showFailedToUploadPhoto(event.photo!!)
+                getViewModel().inputs.showFailedToUploadPhoto(QueuedUpPhotosListFragment::class.java, event.photo!!)
+                getViewModel().inputs.showFailedToUploadPhoto(UploadedPhotosListFragment::class.java, event.photo!!)
             }
             SendPhotoEventStatus.DONE -> {
                 Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.DONE")
-                getViewModel().inputs.allPhotosUploaded()
-                startLookingForPhotoAnswerService()
+                getViewModel().inputs.allPhotosUploaded(QueuedUpPhotosListFragment::class.java)
+                getViewModel().inputs.allPhotosUploaded(UploadedPhotosListFragment::class.java)
+                scheduleLookingForPhotoAnswer()
             }
             else -> throw IllegalArgumentException("Unknown event status: ${event.status}")
         }

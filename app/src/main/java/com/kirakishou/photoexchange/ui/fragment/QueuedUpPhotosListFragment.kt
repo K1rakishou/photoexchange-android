@@ -72,11 +72,15 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         compositeDisposable += getViewModel().outputs.onShowPhotoUploadedOutputObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
+                .filter { it.receiver == QueuedUpPhotosListFragment::class.java }
+                .map { it.obj!! }
                 .subscribe(this::onPhotoUploaded, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onShowFailedToUploadPhotoObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
+                .filter { it.receiver == QueuedUpPhotosListFragment::class.java }
+                .map { it.obj!! }
                 .subscribe(this::onFailedToUploadPhoto, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onStartUploadingPhotosObservable()
@@ -138,10 +142,17 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     private fun onRetryButtonClicked(takenPhoto: TakenPhoto) {
         Timber.tag(ttag).d("onRetryButtonClicked() photoName: ${takenPhoto.photoName}")
+
+        adapter.runOnAdapterHandler {
+            adapter.removeFailedToUploadPhoto(takenPhoto.id)
+            adapter.add(AdapterItem(takenPhoto, AdapterItemType.VIEW_QUEUED_UP_PHOTO))
+        }
+
+        getViewModel().markPhotoToBeUploadedAgain(takenPhoto.id)
     }
 
     private fun onTakenPhotoUploadingCanceled(id: Long) {
-        Timber.tag(ttag).d("onTakenPhotoUploadingCanceled() onTakenPhotoUploadingCanceled()")
+        Timber.tag(ttag).d("onTakenPhotoUploadingCanceled()")
 
         adapter.runOnAdapterHandler {
             adapter.removeQueuedUpPhoto(id)
@@ -153,7 +164,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onQueuedUpAndFailedToUploadLoaded(photosList: List<TakenPhoto>) {
-        Timber.tag(ttag).d("onQueuedUpAndFailedToUploadLoaded() onQueuedUpAndFailedToUploadLoaded()")
+        Timber.tag(ttag).d("onQueuedUpAndFailedToUploadLoaded()")
 
         val failedToUploadPhotos = photosList.filter { it.photoState == PhotoState.FAILED_TO_UPLOAD }
         val queuedUpPhotos = photosList.filter { it.photoState == PhotoState.QUEUED_UP }
@@ -176,7 +187,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onStartUploadingPhotos() {
-        Timber.tag(ttag).d("onStartUploadingPhotos() onStartUploadingPhotos()")
+        Timber.tag(ttag).d("onStartUploadingPhotos()")
 
         adapter.runOnAdapterHandler {
             adapter.removeMessage()
@@ -185,7 +196,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onPhotoUploaded(photo: TakenPhoto) {
-        Timber.tag(ttag).d("onPhotoUploaded() onPhotoUploaded()")
+        Timber.tag(ttag).d("onPhotoUploaded()")
 
         adapter.runOnAdapterHandler {
             adapter.removeQueuedUpPhoto(photo.id)
@@ -193,7 +204,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onAllPhotosUploaded() {
-        Timber.tag(ttag).d("onAllPhotosUploaded() onAllPhotosUploaded()")
+        Timber.tag(ttag).d("onAllPhotosUploaded()")
 
         adapter.runOnAdapterHandler {
             if (!adapter.containsFailedToUploadPhotos()) {
@@ -207,7 +218,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onFailedToUploadPhoto(photo: TakenPhoto) {
-        Timber.tag(ttag).d("onFailedToUploadPhoto() onFailedToUploadPhoto()")
+        Timber.tag(ttag).d("onFailedToUploadPhoto()")
 
         adapter.runOnAdapterHandler {
             adapter.removeQueuedUpPhoto(photo.id)

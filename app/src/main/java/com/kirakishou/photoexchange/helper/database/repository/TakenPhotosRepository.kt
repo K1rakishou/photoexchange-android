@@ -77,7 +77,7 @@ class TakenPhotosRepository(
     fun updateSetUploaded(id: Long, photoName: String): Completable {
         val result = Completable.fromCallable {
             database.runInTransaction {
-                takenPhotosDao.updateSetState(PhotoState.UPLOADED.state, id)
+                takenPhotosDao.updateSetState(PhotoState.UPLOADED_STATE, id)
                 takenPhotosDao.updateSetPhotoName(photoName, id)
             }
         }
@@ -89,7 +89,17 @@ class TakenPhotosRepository(
 
     fun updateSetFailedToUpload(id: Long): Completable {
         val result = Completable.fromCallable {
-            takenPhotosDao.updateSetState(PhotoState.FAILED_TO_UPLOAD.state, id)
+            takenPhotosDao.updateSetState(PhotoState.FAILED_TO_UPLOAD_STATE, id)
+        }
+
+        return result
+                .subscribeOn(schedulers.provideIo())
+                .observeOn(schedulers.provideIo())
+    }
+
+    fun updateSetQueuedUp(id: Long): Completable {
+        val result = Completable.fromCallable {
+            takenPhotosDao.updateSetState(PhotoState.QUEUED_UP_STATE, id)
         }
 
         return result

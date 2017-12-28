@@ -9,8 +9,6 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import butterknife.BindView
 import butterknife.ButterKnife
-import com.bumptech.glide.Glide
-import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.base.BaseAdapter
 import com.kirakishou.photoexchange.helper.ImageLoader
@@ -81,10 +79,23 @@ class QueuedUpPhotosAdapter(
 
         val index = items
                 .indexOfFirst {
-                    (it.getType() == AdapterItemType.VIEW_QUEUED_UP_PHOTO.ordinal ||
-                    it.getType() == AdapterItemType.VIEW_FAILED_TO_UPLOAD.ordinal) &&
-                    it.value.get().id == id
+                    it.getType() == AdapterItemType.VIEW_QUEUED_UP_PHOTO.ordinal && it.value.get().id == id
                 }
+
+        if (index == -1) {
+            return
+        }
+
+        items.removeAt(index)
+        notifyItemRemoved(index)
+    }
+
+    fun removeFailedToUploadPhoto(id: Long) {
+        checkInited()
+
+        val index= items.indexOfFirst {
+            it.getType() == AdapterItemType.VIEW_FAILED_TO_UPLOAD.ordinal && it.value.get().id == id
+        }
 
         if (index == -1) {
             return

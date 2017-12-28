@@ -76,11 +76,15 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         compositeDisposable += getViewModel().outputs.onShowPhotoUploadedOutputObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
+                .filter { it.receiver == QueuedUpPhotosListFragment::class.java }
+                .map { it.obj!! }
                 .subscribe(this::onPhotoUploaded, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onShowFailedToUploadPhotoObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
+                .filter { it.receiver == QueuedUpPhotosListFragment::class.java }
+                .map { it.obj!! }
                 .subscribe({ onFailedToUploadPhoto(it) }, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onStartUploadingPhotosObservable()
