@@ -45,7 +45,9 @@ class UploadPhotoServiceViewModel(
 
     private val compositeDisposable = CompositeDisposable()
     private val compositeJob = CompositeJob()
-    private val MAX_ATTEMPTS = 3
+
+    //TODO: change this
+    private val MAX_ATTEMPTS = 1
 
     private val onPhotoUploadStateOutput = PublishSubject.create<PhotoUploadingState>()
 

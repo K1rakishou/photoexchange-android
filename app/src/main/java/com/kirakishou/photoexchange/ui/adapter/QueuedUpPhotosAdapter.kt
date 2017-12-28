@@ -139,6 +139,8 @@ class QueuedUpPhotosAdapter(
                     holder.cancelButton.setOnClickListener {
                         cancelButtonSubject.onNext(item)
                     }
+
+                    imageLoader.loadImageFromDiskInto(File(item.photoFilePath), holder.photoView)
                 }
             }
 
@@ -182,6 +184,9 @@ class QueuedUpPhotosAdapter(
 
         @BindView(R.id.retry_button)
         lateinit var retryButton: AppCompatButton
+
+        @BindView(R.id.photo)
+        lateinit var photoView: ImageView
 
         init {
             ButterKnife.bind(this, itemView)

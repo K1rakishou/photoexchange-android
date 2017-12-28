@@ -17,6 +17,7 @@ import com.kirakishou.photoexchange.di.module.ViewTakenPhotoActivityModule
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.service.UploadPhotoService
 import com.kirakishou.photoexchange.mwvm.model.other.LonLat
+import com.kirakishou.photoexchange.mwvm.model.other.PhotoState
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.viewmodel.ViewTakenPhotoActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.ViewTakenPhotoActivityViewModelFactory
@@ -116,7 +117,7 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
         check(photoFilePath.isNotEmpty())
         check(userId.isNotEmpty())
 
-        takenPhoto = TakenPhoto.create(id, LonLat(lon, lat), photoFilePath, userId, "")
+        takenPhoto = TakenPhoto.create(id, LonLat(lon, lat), photoFilePath, userId, "", PhotoState.TAKEN)
     }
 
     override fun resolveDaggerDependency() {

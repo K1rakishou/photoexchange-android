@@ -16,11 +16,11 @@ import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
 import com.kirakishou.photoexchange.mwvm.model.other.Constants.PHOTO_ADAPTER_VIEW_WIDTH
+import com.kirakishou.photoexchange.mwvm.model.other.PhotoState
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
-import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
 import com.kirakishou.photoexchange.ui.adapter.QueuedUpPhotosAdapter
 import com.kirakishou.photoexchange.ui.widget.QueuedUpPhotosAdapterSpanSizeLookup
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -64,10 +64,10 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onCancelButtonClick, this::onUnknownError)
 
-        compositeDisposable += getViewModel().outputs.onQueuedUpPhotosLoadedObservable()
+        compositeDisposable += getViewModel().outputs.onQueuedUpAndFailedToUploadLoadedObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onQueuedUpPhotosLoaded, this::onUnknownError)
+                .subscribe(this::onQueuedUpAndFailedToUploadLoaded, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onShowPhotoUploadedOutputObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -97,7 +97,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRecyclerView()
-        showQueuedUpPhotos()
+        showQueuedUpAndFailedToUploadPhotos()
     }
 
     override fun onFragmentViewDestroy() {
@@ -128,8 +128,8 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         queuedUpPhotosRv.setHasFixedSize(true)
     }
 
-    private fun showQueuedUpPhotos() {
-        getViewModel().inputs.getQueuedUpPhotos()
+    private fun showQueuedUpAndFailedToUploadPhotos() {
+        getViewModel().inputs.getQueuedUpAndFailedToUploadPhotos()
     }
 
     private fun onCancelButtonClick(takenPhoto: TakenPhoto) {
@@ -152,16 +152,25 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
-    private fun onQueuedUpPhotosLoaded(queuedUpPhotosList: List<TakenPhoto>) {
-        Timber.tag(ttag).d("onQueuedUpPhotosLoaded() onQueuedUpPhotosLoaded()")
+    private fun onQueuedUpAndFailedToUploadLoaded(photosList: List<TakenPhoto>) {
+        Timber.tag(ttag).d("onQueuedUpAndFailedToUploadLoaded() onQueuedUpAndFailedToUploadLoaded()")
+
+        val failedToUploadPhotos = photosList.filter { it.photoState == PhotoState.FAILED_TO_UPLOAD }
+        val queuedUpPhotos = photosList.filter { it.photoState == PhotoState.QUEUED_UP }
 
         adapter.runOnAdapterHandler {
             adapter.clear()
 
-            if (queuedUpPhotosList.isNotEmpty()) {
-                adapter.addQueuedUpPhotos(queuedUpPhotosList)
-            } else {
+            if (failedToUploadPhotos.isEmpty() && queuedUpPhotos.isEmpty()) {
                 adapter.addMessage(QueuedUpPhotosAdapter.MESSAGE_TYPE_NO_PHOTOS_TO_UPLOAD)
+            } else {
+                failedToUploadPhotos.forEach { photo ->
+                    adapter.add(AdapterItem(photo, AdapterItemType.VIEW_FAILED_TO_UPLOAD))
+                }
+
+                if (queuedUpPhotos.isNotEmpty()) {
+                    adapter.addQueuedUpPhotos(queuedUpPhotos)
+                }
             }
         }
     }

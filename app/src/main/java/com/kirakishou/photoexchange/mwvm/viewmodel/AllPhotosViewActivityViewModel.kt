@@ -13,12 +13,12 @@ import com.kirakishou.photoexchange.mwvm.wires.errors.AllPhotosViewActivityViewM
 import com.kirakishou.photoexchange.mwvm.wires.inputs.AllPhotosViewActivityViewModelInputs
 import com.kirakishou.photoexchange.mwvm.wires.outputs.AllPhotosViewActivityViewModelOutputs
 import io.reactivex.Observable
+import io.reactivex.rxkotlin.Singles
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.rx2.await
-import kotlinx.coroutines.experimental.rx2.awaitSingle
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
@@ -66,7 +66,7 @@ class AllPhotosViewActivityViewModel(
     private val showNoPhotoOnServerOutput = PublishSubject.create<Unit>()
     private val showUserNeedsToUploadMorePhotosOutput = PublishSubject.create<Unit>()
     private val startLookingForPhotosOutput = PublishSubject.create<Unit>()
-    private val onQueuedUpPhotosLoadedOutput = PublishSubject.create<List<TakenPhoto>>()
+    private val onQueuedUpAndFailedToUploadLoadedOutput = PublishSubject.create<List<TakenPhoto>>()
     private val allPhotosUploadedOutput = PublishSubject.create<Unit>()
     private val showNoUploadedPhotosOutput = PublishSubject.create<Unit>()
     private val onTakenPhotoUploadingCanceledOutput = PublishSubject.create<Long>()
@@ -233,16 +233,28 @@ class AllPhotosViewActivityViewModel(
         }
     }
 
-    override fun getQueuedUpPhotos() {
+    override fun getQueuedUpAndFailedToUploadPhotos() {
         compositeJob += async {
             delay(500, TimeUnit.MILLISECONDS)
 
             try {
-                val queuedUpPhotos = takenPhotosRepository.findAllQueuedUp().await()
-                onQueuedUpPhotosLoadedOutput.onNext(queuedUpPhotos)
+//                val queuedUpPhotos = takenPhotosRepository.findAllQueuedUp().await()
+//                val failedToUploadPhotos = takenPhotosRepository.findAllFailedToUpload().await()
+
+                val zippedPhotos = Singles.zip(takenPhotosRepository.findAllQueuedUp(),
+                        takenPhotosRepository.findAllFailedToUpload()) { queuedUpPhotos, failedToUploadPhotos ->
+
+                    val resultList = mutableListOf<TakenPhoto>()
+                    resultList.addAll(failedToUploadPhotos)
+                    resultList.addAll(queuedUpPhotos)
+
+                    return@zip resultList
+                }.await()
+
+                onQueuedUpAndFailedToUploadLoadedOutput.onNext(zippedPhotos)
 
             } catch (error: Throwable) {
-                onQueuedUpPhotosLoadedOutput.onError(error)
+                onQueuedUpAndFailedToUploadLoadedOutput.onError(error)
             }
         }
     }
@@ -290,7 +302,7 @@ class AllPhotosViewActivityViewModel(
     override fun onShowNoPhotoOnServerObservable(): Observable<Unit> = showNoPhotoOnServerOutput
     override fun onShowUserNeedsToUploadMorePhotosObservable(): Observable<Unit> = showUserNeedsToUploadMorePhotosOutput
     override fun onStartLookingForPhotosObservable(): Observable<Unit> = startLookingForPhotosOutput
-    override fun onQueuedUpPhotosLoadedObservable(): Observable<List<TakenPhoto>> = onQueuedUpPhotosLoadedOutput
+    override fun onQueuedUpAndFailedToUploadLoadedObservable(): Observable<List<TakenPhoto>> = onQueuedUpAndFailedToUploadLoadedOutput
     override fun onShowNoUploadedPhotosObservable(): Observable<Unit> = showNoUploadedPhotosOutput
     override fun onBeginReceivingEventsObservable(): Observable<Class<*>> = beginReceivingEventsOutput
     override fun onStopReceivingEventsObservable(): Observable<Class<*>> = stopReceivingEventsOutput

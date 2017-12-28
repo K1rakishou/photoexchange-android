@@ -54,17 +54,18 @@ class TakenPhotosRepository(
                 .map(mapper::toTakenPhotos)
     }
 
-    fun findAll(): Single<List<TakenPhoto>> {
-        return takenPhotosDao.findAll()
+    fun findAllFailedToUpload(): Single<List<TakenPhoto>> {
+        return takenPhotosDao.findAllFailedToUpload()
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .map(mapper::toTakenPhotos)
     }
 
-    fun findAllDebug(): Single<List<TakenPhotoEntity>> {
+    fun findAll(): Single<List<TakenPhoto>> {
         return takenPhotosDao.findAll()
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
+                .map(mapper::toTakenPhotos)
     }
 
     fun countAll(): Single<Long> {
@@ -103,8 +104,15 @@ class TakenPhotosRepository(
     }
 
     /*fun deleteAll(): Single<Int> {
-        return Single.fromCallable { takenPhotosDao.deleteAll() }
+       return Single.fromCallable { takenPhotosDao.deleteAll() }
+               .subscribeOn(schedulers.provideIo())
+               .observeOn(schedulers.provideIo())
+   }*/
+
+    //Debug DB requests
+    fun findAllDebug(): Single<List<TakenPhotoEntity>> {
+        return takenPhotosDao.findAll()
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
-    }*/
+    }
 }

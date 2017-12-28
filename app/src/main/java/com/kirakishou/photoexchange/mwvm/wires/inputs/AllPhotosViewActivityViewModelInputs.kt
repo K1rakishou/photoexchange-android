@@ -22,6 +22,6 @@ interface AllPhotosViewActivityViewModelInputs {
     fun showUserNeedsToUploadMorePhotos()
     fun shouldStartLookingForPhotos()
     fun allPhotosUploaded()
-    fun getQueuedUpPhotos()
+    fun getQueuedUpAndFailedToUploadPhotos()
     fun cancelTakenPhotoUploading(id: Long)
 }

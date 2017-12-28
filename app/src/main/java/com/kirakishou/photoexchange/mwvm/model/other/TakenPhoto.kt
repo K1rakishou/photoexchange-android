@@ -8,7 +8,8 @@ class TakenPhoto private constructor(
         val location: LonLat,
         val photoFilePath: String,
         val userId: String,
-        var photoName: String
+        var photoName: String,
+        val photoState: PhotoState
 ) {
 
     fun isEmpty(): Boolean {
@@ -16,20 +17,20 @@ class TakenPhoto private constructor(
     }
 
     fun copy(id: Long): TakenPhoto {
-        return TakenPhoto(id, location, photoFilePath, userId, photoName)
+        return TakenPhoto(id, location, photoFilePath, userId, photoName, photoState)
     }
 
     companion object {
         fun empty(): TakenPhoto {
-            return TakenPhoto(-1L, LonLat.empty(), "", "", "")
+            return TakenPhoto(-1L, LonLat.empty(), "", "", "", PhotoState.TAKEN)
         }
 
         fun create(location: LonLat, photoFilePath: String, userId: String): TakenPhoto {
-            return TakenPhoto(-1L, location, photoFilePath, userId, "")
+            return TakenPhoto(-1L, location, photoFilePath, userId, "", PhotoState.TAKEN)
         }
 
-        fun create(id: Long, location: LonLat, photoFilePath: String, userId: String, photoName: String): TakenPhoto {
-            return TakenPhoto(id, location, photoFilePath, userId, photoName)
+        fun create(id: Long, location: LonLat, photoFilePath: String, userId: String, photoName: String, photoState: PhotoState): TakenPhoto {
+            return TakenPhoto(id, location, photoFilePath, userId, photoName, photoState)
         }
     }
 }
