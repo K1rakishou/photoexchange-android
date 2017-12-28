@@ -211,6 +211,7 @@ class AllPhotosViewActivityViewModel(
     override fun shouldStartLookingForPhotos() {
         compositeJob += async {
             try {
+                //FIXME: rx chain doesn't work without delay
                 delay(500, TimeUnit.MILLISECONDS)
 
                 val receivedCount = photoAnswerRepository.countAll().await()
@@ -235,6 +236,7 @@ class AllPhotosViewActivityViewModel(
 
     override fun getQueuedUpAndFailedToUploadPhotos() {
         compositeJob += async {
+            //FIXME: rx chain doesn't work without delay
             delay(500, TimeUnit.MILLISECONDS)
 
             try {

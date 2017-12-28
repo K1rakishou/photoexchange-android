@@ -56,7 +56,8 @@ class UploadPhotoServiceViewModel(
     override fun uploadPhotos() {
         compositeJob += async {
             try {
-                delay(400, TimeUnit.MILLISECONDS)
+                //FIXME: rx chain doesn't work without delay
+                delay(500, TimeUnit.MILLISECONDS)
 
                 val queuedUpPhotos = takenPhotosRepo.findAllQueuedUp().await()
                 if (queuedUpPhotos.isEmpty()) {
