@@ -325,6 +325,8 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
             SendPhotoEventStatus.DONE -> {
                 Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.DONE")
                 getViewModel().inputs.allPhotosUploaded(clazz)
+
+                //FIXME: this function is being called twice because this event type is being sent to two fragments
                 scheduleLookingForPhotoAnswer()
             }
             else -> throw IllegalArgumentException("Unknown event status: ${event.status}")

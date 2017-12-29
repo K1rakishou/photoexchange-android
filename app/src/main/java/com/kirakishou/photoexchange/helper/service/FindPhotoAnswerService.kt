@@ -387,6 +387,8 @@ class FindPhotoAnswerService : JobService() {
         private val IMMEDIATE_JOB_TYPE = 0
         private val PERIODIC_JOB_TYPE = 1
 
+        //Add slight delay so we have time to cancel previous job if the schedule
+        //function was called twice over minimumDelay period of time
         fun scheduleImmediateJob(userId: String, context: Context) {
             val extras = PersistableBundle()
             extras.putString("user_id", userId)

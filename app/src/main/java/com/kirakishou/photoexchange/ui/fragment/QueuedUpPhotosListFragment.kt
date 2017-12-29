@@ -87,17 +87,26 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         compositeDisposable += getViewModel().outputs.onStartUploadingPhotosObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
+                .filter { it.receiver == QueuedUpPhotosListFragment::class.java }
+                .map { it.obj!! }
                 .subscribe({ onStartUploadingPhotos() }, this::onUnknownError)
+
+        compositeDisposable += getViewModel().outputs.onAllPhotosUploadedObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .filter { it.receiver == QueuedUpPhotosListFragment::class.java }
+                .map { it.obj!! }
+                .subscribe({ onAllPhotosUploaded() }, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onTakenPhotoUploadingCanceledObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onTakenPhotoUploadingCanceled, this::onUnknownError)
 
-        compositeDisposable += getViewModel().outputs.onAllPhotosUploadedObservable()
+        compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onAllPhotosUploaded() }, this::onUnknownError)
+                .subscribe(this::onUnknownError)
     }
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
