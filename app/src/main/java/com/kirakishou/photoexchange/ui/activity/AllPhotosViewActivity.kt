@@ -70,6 +70,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     private val QUEUED_UP_PHOTOS_FRAGMENT_TAB_INDEX = 0
     private val UPLOADED_PHOTOS_FRAGMENT_TAB_INDEX = 1
     private val RECEIVED_PHOTOS_FRAGMENT_TAB_INDEX = 2
+    private val JOB_START_DELAY = 30_000L
 
     //fragmentClass, isActiveListener
     private val fragmentsEventListeners = ConcurrentHashMap<Class<*>, Boolean>()
@@ -97,7 +98,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         eventBus.register(this)
 
         initTabs(intent)
-        schedulePhotoUploading()
+        schedulePhotoUploadingASAP()
     }
 
     override fun onActivityDestroy() {
@@ -213,20 +214,30 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         tab!!.select()
     }
 
-    private fun schedulePhotoUploading() {
+    private fun schedulePhotoUploadingASAP() {
         if (NetUtils.isWifiConnected(this)) {
-            Timber.tag(tag).d("schedulePhotoUploading() Wi-Fi is connected. Scheduling upload job immediate")
-            UploadPhotoService.scheduleJobImmediate(this)
+            Timber.tag(tag).d("schedulePhotoUploadingASAP() Wi-Fi is connected. Scheduling upload job immediate")
+            UploadPhotoService.scheduleJob(this)
         } else {
+            Timber.tag(tag).d("schedulePhotoUploadingASAP() Wi-Fi is not connected. Scheduling upload job upon Wi-Fi connection available")
             UploadPhotoService.scheduleJobWhenWiFiAvailable(this)
-            Timber.tag(tag).d("schedulePhotoUploading() Wi-Fi is not connected. Scheduling upload job upon Wi-Fi connection available")
+        }
+    }
+
+    private fun schedulePhotoUploadWithDelay() {
+        if (NetUtils.isWifiConnected(this)) {
+            Timber.tag(tag).d("schedulePhotoUploadWithDelay() Wi-Fi is connected. Scheduling upload job with half minute delay")
+            UploadPhotoService.scheduleJob(this, JOB_START_DELAY)
+        } else {
+            Timber.tag(tag).d("schedulePhotoUploadWithDelay() Wi-Fi is not connected. Scheduling upload job upon Wi-Fi connection available")
+            UploadPhotoService.scheduleJobWhenWiFiAvailable(this, JOB_START_DELAY)
         }
     }
 
     fun scheduleLookingForPhotoAnswer() {
-        FindPhotoAnswerService.scheduleImmediateJob(userInfoPreference.getUserId(), this)
-        Timber.tag(tag).d("scheduleLookingForPhotoAnswer() A job has been scheduled")
+        Timber.tag(tag).d("scheduleLookingForPhotoAnswer() Schedule Look for photo answer job immediately")
 
+        FindPhotoAnswerService.scheduleImmediateJob(userInfoPreference.getUserId(), this)
         getViewModel().inputs.showLookingForPhotoIndicator()
     }
 
@@ -240,7 +251,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     }
 
     private fun onPhotoMarkedToBeUploaded() {
-        schedulePhotoUploading()
+        schedulePhotoUploadWithDelay()
     }
 
     private fun onBeginReceivingEvents(clazz: Class<*>) {

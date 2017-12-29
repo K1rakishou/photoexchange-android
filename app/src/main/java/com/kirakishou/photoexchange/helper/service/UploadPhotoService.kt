@@ -325,11 +325,12 @@ class UploadPhotoService : JobService() {
     companion object {
         private val JOB_ID = 2
 
-        fun scheduleJobImmediate(context: Context) {
+        fun scheduleJob(context: Context, minimumDelay: Long = 0) {
             val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, UploadPhotoService::class.java))
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
+                    .setMinimumLatency(minimumDelay)
                     .setOverrideDeadline(0)
                     .setBackoffCriteria(1_000, JobInfo.BACKOFF_POLICY_LINEAR)
                     .build()
@@ -341,7 +342,7 @@ class UploadPhotoService : JobService() {
             check(result == JobScheduler.RESULT_SUCCESS)
         }
 
-        fun scheduleJobWhenWiFiAvailable(context: Context) {
+        fun scheduleJobWhenWiFiAvailable(context: Context, minimumDelay: Long = 0) {
             val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, UploadPhotoService::class.java))
                     //TODO:
                     //HACK: Google's emulators do not support changing internet type to Wi-Fi
@@ -350,6 +351,8 @@ class UploadPhotoService : JobService() {
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
+                    .setMinimumLatency(minimumDelay)
+                    .setOverrideDeadline(0)
                     .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_EXPONENTIAL)
                     .build()
 

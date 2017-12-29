@@ -5,6 +5,7 @@ import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.widget.Toast
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
@@ -80,9 +81,6 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .filter { it.receiver == QueuedUpPhotosListFragment::class.java }
-                .doOnNext {
-                    Timber.tag(ttag).d("after filter: ${it.receiver.simpleName}")
-                }
                 .map { it.obj!! }
                 .subscribe(this::onFailedToUploadPhoto, this::onUnknownError)
 
@@ -213,7 +211,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
             if (!adapter.containsFailedToUploadPhotos()) {
                 adapter.addMessage(QueuedUpPhotosAdapter.MESSAGE_TYPE_ALL_PHOTOS_UPLOADED)
             } else {
-                adapter.addMessage(QueuedUpPhotosAdapter.MESSAGE_TYPE_COULD_NOT_UPLOAD_PHOTOS)
+                Toast.makeText(activity, "Could not upload one or more photos", Toast.LENGTH_LONG).show()
             }
 
             adapter.setButtonsEnabled(true)

@@ -30,8 +30,7 @@ class QueuedUpPhotosAdapter(
 
     private val messages = arrayOf(
             "No photos to upload",
-            "All photos has been uploaded",
-            "Could not upload one or more photos"
+            "All photos has been uploaded"
     )
 
     @Volatile
@@ -212,6 +211,5 @@ class QueuedUpPhotosAdapter(
     companion object {
         val MESSAGE_TYPE_NO_PHOTOS_TO_UPLOAD = 0
         val MESSAGE_TYPE_ALL_PHOTOS_UPLOADED = 1
-        val MESSAGE_TYPE_COULD_NOT_UPLOAD_PHOTOS = 2
     }
 }
