@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.mwvm.model.event
 
 import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
-import com.kirakishou.photoexchange.mwvm.model.status.PhotoReceivedEventStatus
+import com.kirakishou.photoexchange.mwvm.model.event.status.PhotoReceivedEventStatus
 
 /**
  * Created by kirakishou on 11/17/2017.

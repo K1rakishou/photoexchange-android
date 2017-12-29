@@ -4,9 +4,8 @@ import android.arch.persistence.room.Dao
 import android.arch.persistence.room.Insert
 import android.arch.persistence.room.OnConflictStrategy
 import android.arch.persistence.room.Query
-import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
-import com.kirakishou.photoexchange.mwvm.model.other.PhotoState
+import com.kirakishou.photoexchange.mwvm.model.state.PhotoState
 import io.reactivex.Single
 
 /**

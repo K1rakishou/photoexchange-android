@@ -43,6 +43,7 @@ class TakePhotoActivityViewModel(
         }
 
         compositeJob += async {
+            //we don't care about concurrency here
             val allTakenPhotos = takenPhotosRepo.findAllDebug().await()
             val allPhotoAnswers = photoAnswerRepo.findAllDebug().await()
 

@@ -6,8 +6,6 @@ import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.widget.ImageView
 import butterknife.BindView
-import com.bumptech.glide.Glide
-import com.bumptech.glide.request.RequestOptions
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
@@ -15,15 +13,13 @@ import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerViewTakenPhotoActivityComponent
 import com.kirakishou.photoexchange.di.module.ViewTakenPhotoActivityModule
 import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.helper.service.UploadPhotoService
 import com.kirakishou.photoexchange.mwvm.model.other.LonLat
-import com.kirakishou.photoexchange.mwvm.model.other.PhotoState
+import com.kirakishou.photoexchange.mwvm.model.state.PhotoState
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.viewmodel.ViewTakenPhotoActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.ViewTakenPhotoActivityViewModelFactory
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
-import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 

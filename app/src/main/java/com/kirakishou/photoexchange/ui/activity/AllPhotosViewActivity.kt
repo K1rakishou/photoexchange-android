@@ -22,8 +22,8 @@ import com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService
 import com.kirakishou.photoexchange.helper.service.UploadPhotoService
 import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.mwvm.model.event.*
-import com.kirakishou.photoexchange.mwvm.model.status.PhotoReceivedEventStatus
-import com.kirakishou.photoexchange.mwvm.model.status.SendPhotoEventStatus
+import com.kirakishou.photoexchange.mwvm.model.event.status.PhotoReceivedEventStatus
+import com.kirakishou.photoexchange.mwvm.model.event.status.SendPhotoEventStatus
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.fragment.QueuedUpPhotosListFragment
@@ -70,6 +70,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     private val QUEUED_UP_PHOTOS_FRAGMENT_TAB_INDEX = 0
     private val UPLOADED_PHOTOS_FRAGMENT_TAB_INDEX = 1
     private val RECEIVED_PHOTOS_FRAGMENT_TAB_INDEX = 2
+    private val JOB_START_DELAY = 30_000L
 
     //fragmentClass, isActiveListener
     private val fragmentsEventListeners = ConcurrentHashMap<Class<*>, Boolean>()
@@ -97,7 +98,9 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         eventBus.register(this)
 
         initTabs(intent)
-        schedulePhotoUploading()
+
+        //TODO: move to onResume and make it check DB first before starting a service
+        schedulePhotoUploadingASAP()
     }
 
     override fun onActivityDestroy() {
@@ -213,20 +216,35 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         tab!!.select()
     }
 
-    private fun schedulePhotoUploading() {
+    private fun schedulePhotoUploadingASAP() {
+        if (UploadPhotoService.isAlreadyRunning(this)) {
+            Timber.tag(tag).d("UploadPhotoService is already running. Do nothing")
+            return
+        }
+
         if (NetUtils.isWifiConnected(this)) {
-            Timber.tag(tag).d("schedulePhotoUploading() Wi-Fi is connected. Scheduling upload job immediate")
-            UploadPhotoService.scheduleJobImmediate(this)
+            Timber.tag(tag).d("schedulePhotoUploadingASAP() Wi-Fi is connected. Scheduling upload job immediate")
+            UploadPhotoService.scheduleJob(this)
         } else {
+            Timber.tag(tag).d("schedulePhotoUploadingASAP() Wi-Fi is not connected. Scheduling upload job upon Wi-Fi connection available")
             UploadPhotoService.scheduleJobWhenWiFiAvailable(this)
-            Timber.tag(tag).d("schedulePhotoUploading() Wi-Fi is not connected. Scheduling upload job upon Wi-Fi connection available")
+        }
+    }
+
+    private fun schedulePhotoUploadWithDelay() {
+        if (NetUtils.isWifiConnected(this)) {
+            Timber.tag(tag).d("schedulePhotoUploadWithDelay() Wi-Fi is connected. Scheduling upload job with half minute delay")
+            UploadPhotoService.scheduleJob(this, JOB_START_DELAY)
+        } else {
+            Timber.tag(tag).d("schedulePhotoUploadWithDelay() Wi-Fi is not connected. Scheduling upload job upon Wi-Fi connection available")
+            UploadPhotoService.scheduleJobWhenWiFiAvailable(this, JOB_START_DELAY)
         }
     }
 
     fun scheduleLookingForPhotoAnswer() {
-        FindPhotoAnswerService.scheduleImmediateJob(userInfoPreference.getUserId(), this)
-        Timber.tag(tag).d("scheduleLookingForPhotoAnswer() A job has been scheduled")
+        Timber.tag(tag).d("scheduleLookingForPhotoAnswer() Schedule Look for photo answer job immediately")
 
+        FindPhotoAnswerService.scheduleImmediateJob(userInfoPreference.getUserId(), this)
         getViewModel().inputs.showLookingForPhotoIndicator()
     }
 
@@ -240,7 +258,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     }
 
     private fun onPhotoMarkedToBeUploaded() {
-        schedulePhotoUploading()
+        schedulePhotoUploadWithDelay()
     }
 
     private fun onBeginReceivingEvents(clazz: Class<*>) {
@@ -276,7 +294,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
             eventAccumulator.rememberEvent(clazz, event)
         } else {
             Timber.tag(tag).d("rememberOrSendEvent() Fragment ${clazz.simpleName} is currently resumed, sending event")
-            sendEvent(event)
+            sendEvent(clazz, event)
         }
     }
 
@@ -285,40 +303,37 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
         while (eventAccumulator.hasEvent(clazz)) {
             val event = eventAccumulator.getEvent(clazz)
-            sendEvent(event)
+            sendEvent(clazz, event)
         }
     }
 
-    private fun sendEvent(event: BaseEvent) {
+    private fun sendEvent(clazz: Class<*>, event: BaseEvent) {
         if (event is PhotoUploadedEvent) {
-            handlePhotoUploadedEvent(event)
+            handlePhotoUploadedEvent(clazz, event)
         } else if (event is PhotoReceivedEvent) {
             handlePhotoReceivedEvent(event)
         }
     }
 
-    private fun handlePhotoUploadedEvent(event: PhotoUploadedEvent) {
+    private fun handlePhotoUploadedEvent(clazz: Class<*>, event: PhotoUploadedEvent) {
         when (event.status) {
             SendPhotoEventStatus.START -> {
                 Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.START")
-
-                getViewModel().inputs.startUploadingPhotos(QueuedUpPhotosListFragment::class.java)
-                getViewModel().inputs.startUploadingPhotos(UploadedPhotosListFragment::class.java)
+                getViewModel().inputs.startUploadingPhotos(clazz)
             }
             SendPhotoEventStatus.PHOTO_UPLOADED -> {
                 Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.PHOTO_UPLOADED")
-                getViewModel().inputs.photoUploaded(QueuedUpPhotosListFragment::class.java, event.photo!!)
-                getViewModel().inputs.photoUploaded(UploadedPhotosListFragment::class.java, event.photo!!)
+                getViewModel().inputs.photoUploaded(clazz, event.photo!!)
             }
             SendPhotoEventStatus.FAIL -> {
                 Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.FAIL")
-                getViewModel().inputs.showFailedToUploadPhoto(QueuedUpPhotosListFragment::class.java, event.photo!!)
-                getViewModel().inputs.showFailedToUploadPhoto(UploadedPhotosListFragment::class.java, event.photo!!)
+                getViewModel().inputs.showFailedToUploadPhoto(clazz, event.photo!!)
             }
             SendPhotoEventStatus.DONE -> {
                 Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.DONE")
-                getViewModel().inputs.allPhotosUploaded(QueuedUpPhotosListFragment::class.java)
-                getViewModel().inputs.allPhotosUploaded(UploadedPhotosListFragment::class.java)
+                getViewModel().inputs.allPhotosUploaded(clazz)
+
+                //FIXME: this function is being called twice because this event type is being sent to two fragments
                 scheduleLookingForPhotoAnswer()
             }
             else -> throw IllegalArgumentException("Unknown event status: ${event.status}")

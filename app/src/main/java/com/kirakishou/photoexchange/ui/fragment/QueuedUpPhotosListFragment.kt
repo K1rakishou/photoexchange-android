@@ -5,6 +5,7 @@ import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.widget.Toast
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
@@ -16,7 +17,7 @@ import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
 import com.kirakishou.photoexchange.mwvm.model.other.Constants.PHOTO_ADAPTER_VIEW_WIDTH
-import com.kirakishou.photoexchange.mwvm.model.other.PhotoState
+import com.kirakishou.photoexchange.mwvm.model.state.PhotoState
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
@@ -86,17 +87,26 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         compositeDisposable += getViewModel().outputs.onStartUploadingPhotosObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
+                .filter { it.receiver == QueuedUpPhotosListFragment::class.java }
+                .map { it.obj!! }
                 .subscribe({ onStartUploadingPhotos() }, this::onUnknownError)
+
+        compositeDisposable += getViewModel().outputs.onAllPhotosUploadedObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .filter { it.receiver == QueuedUpPhotosListFragment::class.java }
+                .map { it.obj!! }
+                .subscribe({ onAllPhotosUploaded() }, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onTakenPhotoUploadingCanceledObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onTakenPhotoUploadingCanceled, this::onUnknownError)
 
-        compositeDisposable += getViewModel().outputs.onAllPhotosUploadedObservable()
+        compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onAllPhotosUploaded() }, this::onUnknownError)
+                .subscribe(this::onUnknownError)
     }
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
@@ -210,7 +220,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
             if (!adapter.containsFailedToUploadPhotos()) {
                 adapter.addMessage(QueuedUpPhotosAdapter.MESSAGE_TYPE_ALL_PHOTOS_UPLOADED)
             } else {
-                adapter.addMessage(QueuedUpPhotosAdapter.MESSAGE_TYPE_COULD_NOT_UPLOAD_PHOTOS)
+                Toast.makeText(activity, "Could not upload one or more photos", Toast.LENGTH_LONG).show()
             }
 
             adapter.setButtonsEnabled(true)

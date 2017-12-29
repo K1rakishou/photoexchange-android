@@ -250,7 +250,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onPhotoReceived(data: PhotoAnswerAllFound) {
-        Timber.tag(ttag).d("onPhotoReceived() onPhotoReceived()")
+        Timber.tag(ttag).d("onPhotoReceived()")
 
         adapter.runOnAdapterHandler {
             if (data.allFound) {
@@ -265,7 +265,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onNoPhotoOnTheServer() {
-        Timber.tag(ttag).d("onNoPhotoOnTheServer() onNoPhoto()")
+        Timber.tag(ttag).d("onNoPhotoOnTheServer()")
 
         adapter.runOnAdapterHandler {
             adapter.removeLookingForPhotoIndicator()
@@ -276,7 +276,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun errorWhileTryingToSearchForPhoto() {
-        Timber.tag(ttag).d("errorWhileTryingToSearchForPhoto() errorWhileTryingToSearchForPhoto()")
+        Timber.tag(ttag).d("errorWhileTryingToSearchForPhoto()")
 
         adapter.runOnAdapterHandler {
             adapter.removeLookingForPhotoIndicator()
@@ -287,7 +287,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun userNeedsToUploadMorePhotos() {
-        Timber.tag(ttag).d("userNeedsToUploadMorePhotos() userNeedsToUploadMorePhotos()")
+        Timber.tag(ttag).d("userNeedsToUploadMorePhotos()")
 
         adapter.runOnAdapterHandler {
             adapter.removeLookingForPhotoIndicator()
@@ -304,7 +304,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onNoUploadedPhotos() {
-        Timber.tag(ttag).d("onNoUploadedPhotos(): onNoUploadedPhotos")
+        Timber.tag(ttag).d("onNoUploadedPhotos()")
 
         adapter.runOnAdapterHandler {
             adapter.addMessage(ReceivedPhotosAdapter.MESSAGE_TYPE_UPLOAD_MORE_PHOTOS)

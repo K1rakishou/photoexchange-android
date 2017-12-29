@@ -1,5 +1,7 @@
 package com.kirakishou.photoexchange.mwvm.model.other
 
+import com.kirakishou.photoexchange.mwvm.model.state.PhotoState
+
 /**
  * Created by kirakishou on 11/10/2017.
  */

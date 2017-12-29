@@ -8,6 +8,7 @@ import com.kirakishou.photoexchange.helper.rx.RxUtils
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.mwvm.model.dto.PhotoToBeUploaded
+import com.kirakishou.photoexchange.mwvm.model.other.Constants.ASYNC_DELAY
 import com.kirakishou.photoexchange.mwvm.model.state.PhotoUploadingState
 import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
@@ -56,8 +57,9 @@ class UploadPhotoServiceViewModel(
     override fun uploadPhotos() {
         compositeJob += async {
             try {
-                //FIXME: rx chain doesn't work without delay
-                delay(500, TimeUnit.MILLISECONDS)
+                //FIXME: doesn't work without delay
+                delay(ASYNC_DELAY, TimeUnit.MILLISECONDS)
+                Timber.d("uploadPhotos start")
 
                 val queuedUpPhotos = takenPhotosRepo.findAllQueuedUp().await()
                 if (queuedUpPhotos.isEmpty()) {
@@ -76,7 +78,7 @@ class UploadPhotoServiceViewModel(
                         takenPhotosRepo.updateSetUploaded(photo.id, photoName)
                         onPhotoUploadStateOutput.onNext(PhotoUploadingState.PhotoUploaded(photo))
                     } else {
-                        Timber.tag(tag).d("Could not upload photo. Marking it as failed in the database")
+                        Timber.tag(tag).d("Could not upload photo. Marking it's state as failed in the database")
 
                         takenPhotosRepo.updateSetFailedToUpload(photo.id).await()
                         onPhotoUploadStateOutput.onNext(PhotoUploadingState.FailedToUploadPhoto(photo))

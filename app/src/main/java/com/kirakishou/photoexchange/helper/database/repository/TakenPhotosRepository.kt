@@ -6,10 +6,9 @@ import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
 import com.kirakishou.photoexchange.helper.mapper.TakenPhotoMapper
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mwvm.model.other.Pageable
-import com.kirakishou.photoexchange.mwvm.model.other.PhotoState
+import com.kirakishou.photoexchange.mwvm.model.state.PhotoState
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import io.reactivex.Completable
-import io.reactivex.Observable
 import io.reactivex.Single
 
 /**
