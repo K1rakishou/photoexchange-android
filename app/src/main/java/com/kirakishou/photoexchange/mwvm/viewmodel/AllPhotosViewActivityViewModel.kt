@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosReposi
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.mwvm.model.dto.PhotoAnswerAllFound
+import com.kirakishou.photoexchange.mwvm.model.other.Constants.ASYNC_DELAY
 import com.kirakishou.photoexchange.mwvm.model.other.MulticastEvent
 import com.kirakishou.photoexchange.mwvm.model.other.Pageable
 import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
@@ -36,7 +37,6 @@ class AllPhotosViewActivityViewModel(
         AllPhotosViewActivityViewModelErrors {
 
     private val tag = "[${this::class.java.simpleName}]: "
-    private val FIVE_HUNDRED_MS = 500L
 
     val inputs: AllPhotosViewActivityViewModelInputs = this
     val outputs: AllPhotosViewActivityViewModelOutputs = this
@@ -81,7 +81,7 @@ class AllPhotosViewActivityViewModel(
         compositeJob += async {
             try {
                 //FIXME: doesn't work without delay
-                delay(FIVE_HUNDRED_MS, TimeUnit.MILLISECONDS)
+                delay(ASYNC_DELAY, TimeUnit.MILLISECONDS)
                 beginReceivingEventsOutput.onNext(clazz)
             } catch (error: Throwable) {
                 beginReceivingEventsOutput.onError(error)
@@ -93,7 +93,7 @@ class AllPhotosViewActivityViewModel(
         compositeJob += async {
             try {
                 //FIXME: doesn't work without delay
-                delay(FIVE_HUNDRED_MS, TimeUnit.MILLISECONDS)
+                delay(ASYNC_DELAY, TimeUnit.MILLISECONDS)
                 stopReceivingEventsOutput.onNext(clazz)
             } catch (error: Throwable) {
                 stopReceivingEventsOutput.onError(error)
@@ -127,7 +127,7 @@ class AllPhotosViewActivityViewModel(
         compositeJob += async {
             try {
                 //FIXME: doesn't work without delay
-                delay(FIVE_HUNDRED_MS, TimeUnit.MILLISECONDS)
+                delay(ASYNC_DELAY, TimeUnit.MILLISECONDS)
                 scrollToTopOutput.onNext(Unit)
             } catch (error: Throwable) {
                 scrollToTopOutput.onError(error)
@@ -187,7 +187,7 @@ class AllPhotosViewActivityViewModel(
         compositeJob += async {
             try {
                 //FIXME: doesn't work without delay
-                delay(FIVE_HUNDRED_MS, TimeUnit.MILLISECONDS)
+                delay(ASYNC_DELAY, TimeUnit.MILLISECONDS)
 
                 val receivedCount = photoAnswerRepository.countAll().await()
                 val uploadedCount = takenPhotosRepository.countAll().await()
@@ -212,7 +212,7 @@ class AllPhotosViewActivityViewModel(
     override fun getQueuedUpAndFailedToUploadPhotos() {
         compositeJob += async {
             //FIXME: doesn't work without delay
-            delay(FIVE_HUNDRED_MS, TimeUnit.MILLISECONDS)
+            delay(ASYNC_DELAY, TimeUnit.MILLISECONDS)
 
             try {
                 //rxjava is still a more convenient way to start concurrent requests

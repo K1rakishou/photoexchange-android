@@ -28,10 +28,6 @@ class ViewTakenPhotoActivityViewModel(
     val outputs: ViewTakenPhotoActivityViewModelOutputs = this
     val errors: ViewTakenPhotoActivityViewModelErrors = this
 
-    init {
-
-    }
-
     override fun deleteTakenPhoto(id: Long) {
         compositeJob += async {
             val takenPhoto = takenPhotosRepo.findOne(id).await()

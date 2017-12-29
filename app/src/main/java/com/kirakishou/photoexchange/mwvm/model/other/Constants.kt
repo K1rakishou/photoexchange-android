@@ -15,4 +15,5 @@ object Constants {
     val CHANNEL_NAME = "$appid.UPLOAD_PHOTO_CHANNEL_NAME"
 
     val PHOTO_ADAPTER_VIEW_WIDTH = 288
+    val ASYNC_DELAY = 500L
 }
