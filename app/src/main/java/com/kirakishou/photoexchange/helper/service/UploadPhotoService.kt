@@ -327,7 +327,7 @@ class UploadPhotoService : JobService() {
 
         //Add slight delay so we have time to cancel previous job if the schedule
         //function was called twice over minimumDelay period of time
-        fun scheduleJob(context: Context, minimumDelay: Long = 2_000) {
+        fun scheduleJob(context: Context, minimumDelay: Long = 5_000) {
             val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, UploadPhotoService::class.java))
                     .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                     .setRequiresDeviceIdle(false)
@@ -344,7 +344,7 @@ class UploadPhotoService : JobService() {
             check(result == JobScheduler.RESULT_SUCCESS)
         }
 
-        fun scheduleJobWhenWiFiAvailable(context: Context, minimumDelay: Long = 2_000) {
+        fun scheduleJobWhenWiFiAvailable(context: Context, minimumDelay: Long = 5_000) {
             val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, UploadPhotoService::class.java))
                     //TODO:
                     //HACK: Google's emulators do not support changing internet type to Wi-Fi
@@ -363,6 +363,11 @@ class UploadPhotoService : JobService() {
             val result = jobScheduler.schedule(jobInfo)
 
             check(result == JobScheduler.RESULT_SUCCESS)
+        }
+
+        fun isAlreadyRunning(context: Context): Boolean {
+            val scheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
+            return scheduler.allPendingJobs.any { it.id == JOB_ID }
         }
     }
 }

@@ -98,6 +98,8 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         eventBus.register(this)
 
         initTabs(intent)
+
+        //TODO: move to onResume and make it check DB first before starting a service
         schedulePhotoUploadingASAP()
     }
 
@@ -215,6 +217,11 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     }
 
     private fun schedulePhotoUploadingASAP() {
+        if (UploadPhotoService.isAlreadyRunning(this)) {
+            Timber.tag(tag).d("UploadPhotoService is already running. Do nothing")
+            return
+        }
+
         if (NetUtils.isWifiConnected(this)) {
             Timber.tag(tag).d("schedulePhotoUploadingASAP() Wi-Fi is connected. Scheduling upload job immediate")
             UploadPhotoService.scheduleJob(this)

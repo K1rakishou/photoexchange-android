@@ -59,6 +59,7 @@ class UploadPhotoServiceViewModel(
             try {
                 //FIXME: doesn't work without delay
                 delay(ASYNC_DELAY, TimeUnit.MILLISECONDS)
+                Timber.d("uploadPhotos start")
 
                 val queuedUpPhotos = takenPhotosRepo.findAllQueuedUp().await()
                 if (queuedUpPhotos.isEmpty()) {

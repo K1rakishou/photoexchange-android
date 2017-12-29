@@ -18,7 +18,12 @@ class CompositeJob {
 
     fun cancelAll() {
         runBlocking {
-            jobs.map { it.cancelAndJoin() }
+            for (job in jobs) {
+                if (job.isActive) {
+                    job.cancelAndJoin()
+                }
+            }
+
             jobs.clear()
         }
     }
