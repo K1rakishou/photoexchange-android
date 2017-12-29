@@ -80,6 +80,9 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .filter { it.receiver == QueuedUpPhotosListFragment::class.java }
+                .doOnNext {
+                    Timber.tag(ttag).d("after filter: ${it.receiver.simpleName}")
+                }
                 .map { it.obj!! }
                 .subscribe(this::onFailedToUploadPhoto, this::onUnknownError)
 

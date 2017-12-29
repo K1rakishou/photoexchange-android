@@ -276,7 +276,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
             eventAccumulator.rememberEvent(clazz, event)
         } else {
             Timber.tag(tag).d("rememberOrSendEvent() Fragment ${clazz.simpleName} is currently resumed, sending event")
-            sendEvent(event)
+            sendEvent(clazz, event)
         }
     }
 
@@ -285,40 +285,35 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
         while (eventAccumulator.hasEvent(clazz)) {
             val event = eventAccumulator.getEvent(clazz)
-            sendEvent(event)
+            sendEvent(clazz, event)
         }
     }
 
-    private fun sendEvent(event: BaseEvent) {
+    private fun sendEvent(clazz: Class<*>, event: BaseEvent) {
         if (event is PhotoUploadedEvent) {
-            handlePhotoUploadedEvent(event)
+            handlePhotoUploadedEvent(clazz, event)
         } else if (event is PhotoReceivedEvent) {
             handlePhotoReceivedEvent(event)
         }
     }
 
-    private fun handlePhotoUploadedEvent(event: PhotoUploadedEvent) {
+    private fun handlePhotoUploadedEvent(clazz: Class<*>, event: PhotoUploadedEvent) {
         when (event.status) {
             SendPhotoEventStatus.START -> {
                 Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.START")
-
-                getViewModel().inputs.startUploadingPhotos(QueuedUpPhotosListFragment::class.java)
-                getViewModel().inputs.startUploadingPhotos(UploadedPhotosListFragment::class.java)
+                getViewModel().inputs.startUploadingPhotos(clazz)
             }
             SendPhotoEventStatus.PHOTO_UPLOADED -> {
                 Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.PHOTO_UPLOADED")
-                getViewModel().inputs.photoUploaded(QueuedUpPhotosListFragment::class.java, event.photo!!)
-                getViewModel().inputs.photoUploaded(UploadedPhotosListFragment::class.java, event.photo!!)
+                getViewModel().inputs.photoUploaded(clazz, event.photo!!)
             }
             SendPhotoEventStatus.FAIL -> {
                 Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.FAIL")
-                getViewModel().inputs.showFailedToUploadPhoto(QueuedUpPhotosListFragment::class.java, event.photo!!)
-                getViewModel().inputs.showFailedToUploadPhoto(UploadedPhotosListFragment::class.java, event.photo!!)
+                getViewModel().inputs.showFailedToUploadPhoto(clazz, event.photo!!)
             }
             SendPhotoEventStatus.DONE -> {
                 Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.DONE")
-                getViewModel().inputs.allPhotosUploaded(QueuedUpPhotosListFragment::class.java)
-                getViewModel().inputs.allPhotosUploaded(UploadedPhotosListFragment::class.java)
+                getViewModel().inputs.allPhotosUploaded(clazz)
                 scheduleLookingForPhotoAnswer()
             }
             else -> throw IllegalArgumentException("Unknown event status: ${event.status}")
