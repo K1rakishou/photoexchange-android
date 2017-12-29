@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.mwvm.model.other
+package com.kirakishou.photoexchange.mwvm.model.state
 
 /**
  * Created by kirakishou on 11/30/2017.

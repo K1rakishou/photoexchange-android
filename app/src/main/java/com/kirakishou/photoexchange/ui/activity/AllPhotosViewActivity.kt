@@ -22,8 +22,8 @@ import com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService
 import com.kirakishou.photoexchange.helper.service.UploadPhotoService
 import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.mwvm.model.event.*
-import com.kirakishou.photoexchange.mwvm.model.status.PhotoReceivedEventStatus
-import com.kirakishou.photoexchange.mwvm.model.status.SendPhotoEventStatus
+import com.kirakishou.photoexchange.mwvm.model.event.status.PhotoReceivedEventStatus
+import com.kirakishou.photoexchange.mwvm.model.event.status.SendPhotoEventStatus
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.fragment.QueuedUpPhotosListFragment

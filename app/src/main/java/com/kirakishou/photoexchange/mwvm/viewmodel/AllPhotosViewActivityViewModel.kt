@@ -15,7 +15,6 @@ import com.kirakishou.photoexchange.mwvm.wires.inputs.AllPhotosViewActivityViewM
 import com.kirakishou.photoexchange.mwvm.wires.outputs.AllPhotosViewActivityViewModelOutputs
 import io.reactivex.Observable
 import io.reactivex.rxkotlin.Singles
-import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.delay
@@ -37,6 +36,7 @@ class AllPhotosViewActivityViewModel(
         AllPhotosViewActivityViewModelErrors {
 
     private val tag = "[${this::class.java.simpleName}]: "
+    private val FIVE_HUNDRED_MS = 500L
 
     val inputs: AllPhotosViewActivityViewModelInputs = this
     val outputs: AllPhotosViewActivityViewModelOutputs = this
@@ -70,7 +70,6 @@ class AllPhotosViewActivityViewModel(
         compositeJob += async {
             try {
                 takenPhotosRepository.updateSetQueuedUp(photoId).await()
-
                 onPhotoMarkedToBeUploadedOutput.onNext(Unit)
             } catch (error: Throwable) {
                 onPhotoMarkedToBeUploadedOutput.onError(error)
@@ -81,7 +80,8 @@ class AllPhotosViewActivityViewModel(
     override fun beginReceivingEvents(clazz: Class<*>) {
         compositeJob += async {
             try {
-                delay(300, TimeUnit.MILLISECONDS)
+                //FIXME: doesn't work without delay
+                delay(FIVE_HUNDRED_MS, TimeUnit.MILLISECONDS)
                 beginReceivingEventsOutput.onNext(clazz)
             } catch (error: Throwable) {
                 beginReceivingEventsOutput.onError(error)
@@ -92,7 +92,8 @@ class AllPhotosViewActivityViewModel(
     override fun stopReceivingEvents(clazz: Class<*>) {
         compositeJob += async {
             try {
-                delay(300, TimeUnit.MILLISECONDS)
+                //FIXME: doesn't work without delay
+                delay(FIVE_HUNDRED_MS, TimeUnit.MILLISECONDS)
                 stopReceivingEventsOutput.onNext(clazz)
             } catch (error: Throwable) {
                 stopReceivingEventsOutput.onError(error)
@@ -125,7 +126,8 @@ class AllPhotosViewActivityViewModel(
     override fun scrollToTop() {
         compositeJob += async {
             try {
-                delay(500, TimeUnit.MILLISECONDS)
+                //FIXME: doesn't work without delay
+                delay(FIVE_HUNDRED_MS, TimeUnit.MILLISECONDS)
                 scrollToTopOutput.onNext(Unit)
             } catch (error: Throwable) {
                 scrollToTopOutput.onError(error)
@@ -184,8 +186,8 @@ class AllPhotosViewActivityViewModel(
     override fun shouldStartLookingForPhotos() {
         compositeJob += async {
             try {
-                //FIXME: rx chain doesn't work without delay
-                delay(500, TimeUnit.MILLISECONDS)
+                //FIXME: doesn't work without delay
+                delay(FIVE_HUNDRED_MS, TimeUnit.MILLISECONDS)
 
                 val receivedCount = photoAnswerRepository.countAll().await()
                 val uploadedCount = takenPhotosRepository.countAll().await()
@@ -209,8 +211,8 @@ class AllPhotosViewActivityViewModel(
 
     override fun getQueuedUpAndFailedToUploadPhotos() {
         compositeJob += async {
-            //FIXME: rx chain doesn't work without delay
-            delay(500, TimeUnit.MILLISECONDS)
+            //FIXME: doesn't work without delay
+            delay(FIVE_HUNDRED_MS, TimeUnit.MILLISECONDS)
 
             try {
                 //rxjava is still a more convenient way to start concurrent requests
@@ -223,7 +225,8 @@ class AllPhotosViewActivityViewModel(
                     resultList.addAll(queuedUpPhotos)
 
                     return@zip resultList
-                }.await()
+                }.subscribeOn(schedulers.provideIo())
+                        .await()
 
                 onQueuedUpAndFailedToUploadLoadedOutput.onNext(zippedPhotos)
 
