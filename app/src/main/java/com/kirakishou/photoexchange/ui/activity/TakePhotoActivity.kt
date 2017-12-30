@@ -272,22 +272,25 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
             when (rotation) {
                 0 -> {
-                    Timber.tag(tag).d("Additional photo rotation: 0f")
+                    Timber.tag(tag).d("Applying additional photo rotation: 0f")
                     matrix.setRotate(0f)
                 }
                 90 -> {
-                    Timber.tag(tag).d("Additional photo rotation: -90f")
+                    Timber.tag(tag).d("Applying additional photo rotation: -90f")
                     matrix.setRotate(-90f)
                 }
                 180 -> {
-                    Timber.tag(tag).d("Additional photo rotation: -180f")
+                    Timber.tag(tag).d("Applying additional photo rotation: -180f")
                     matrix.setRotate(-180f)
                 }
                 270 -> {
-                    Timber.tag(tag).d("Additional photo rotation: -270f")
+                    Timber.tag(tag).d("Applying additional photo rotation: -270f")
                     matrix.setRotate(-270f)
                 }
-                else -> IllegalArgumentException("Unknown rotation $rotation")
+                else -> {
+                    Timber.tag(tag).d("Unknown rotation. Applying no additional rotation")
+                    matrix.setRotate(0f)
+                }
             }
 
             try {

@@ -15,6 +15,7 @@ object RxLocationManager {
                 override fun onNewLocation(location: LonLat) {
                     if (!subscriber.isDisposed) {
                         subscriber.onNext(location)
+                        subscriber.onComplete()
                     }
                 }
             })

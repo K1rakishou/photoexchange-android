@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.helper
 
 import kotlinx.coroutines.experimental.Job
+import kotlinx.coroutines.experimental.JobCancellationException
 import kotlinx.coroutines.experimental.cancelAndJoin
 import kotlinx.coroutines.experimental.runBlocking
 import timber.log.Timber
@@ -17,14 +18,7 @@ class CompositeJob {
     }
 
     fun cancelAll() {
-        runBlocking {
-            for (job in jobs) {
-                if (job.isActive) {
-                    job.cancelAndJoin()
-                }
-            }
-
-            jobs.clear()
-        }
+        jobs.forEach { it.cancel() }
+        jobs.clear()
     }
 }

@@ -18,7 +18,7 @@ abstract class BaseViewModel : ViewModel() {
         compositeDisposable.clear()
         compositeJob.cancelAll()
 
-        PhotoExchangeApplication.watch(this, this::class.simpleName)
+        //PhotoExchangeApplication.watch(this, this::class.simpleName)
         super.onCleared()
     }
 }
