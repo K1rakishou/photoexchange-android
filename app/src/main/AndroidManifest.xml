@@ -6,6 +6,11 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
+    <!-- Required OpenGL ES 2.0. for Maps V2 -->
+    <uses-feature
+        android:glEsVersion="0x00020000"
+        android:required="true" />
+
     <application
         android:name="com.kirakishou.photoexchange.PhotoExchangeApplication"
         android:allowBackup="true"
@@ -43,7 +48,7 @@
             android:value="25e246425284f02064665b2dc30323200c19a724" />
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyAx_qyt-Mz65VNxITphSCUCulk071YIABc" />
+            android:value="AIzaSyAGVBH_OihoUtvM-VCqQKOvcp5n_3kUs1U" />
 
     </application>
 

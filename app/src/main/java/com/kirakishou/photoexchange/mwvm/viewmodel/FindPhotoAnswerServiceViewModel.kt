@@ -98,7 +98,7 @@ class FindPhotoAnswerServiceViewModel(
         compositeDisposable.clear()
         compositeJob.cancelAll()
 
-        PhotoExchangeApplication.refWatcher!!.watch(this, this::class.java.simpleName)
+        //PhotoExchangeApplication.refWatcher!!.watch(this, this::class.java.simpleName)
         Timber.tag(tag).d("cleanUp()")
     }
 

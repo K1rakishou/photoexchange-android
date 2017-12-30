@@ -198,6 +198,11 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onPhotoAnswerClick(photo: PhotoAnswer) {
+        if (photo.isAnonymous()) {
+            Toast.makeText(activity, "This photo was made anonymously", Toast.LENGTH_LONG).show()
+            return
+        }
+
         val intent = Intent(activity, MapActivity::class.java)
         intent.putExtra("lon", photo.lon)
         intent.putExtra("lat", photo.lat)
@@ -206,11 +211,6 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     private fun onPhotoAnswerLongClick(photo: PhotoAnswer) {
-        if (photo.isAnonymous()) {
-            Toast.makeText(activity, "This photo was made anonymously", Toast.LENGTH_LONG).show()
-            return
-        }
-
         val intent = Intent(activity, ViewPhotoFullSizeActivity::class.java)
         intent.putExtra("photo_name", photo.photoName)
 
