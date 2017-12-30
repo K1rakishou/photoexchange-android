@@ -3,11 +3,14 @@ package com.kirakishou.photoexchange.ui.activity
 import android.Manifest
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Matrix
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.support.v7.widget.CardView
 import android.view.View
 import android.widget.ImageView
+import android.widget.TextView
 import butterknife.BindView
 import com.afollestad.materialdialogs.MaterialDialog
 import com.jakewharton.rxbinding2.view.RxView
@@ -25,6 +28,8 @@ import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.helper.util.Utils
+import com.kirakishou.photoexchange.mwvm.model.exception.CouldNotTakePhotoException
+import com.kirakishou.photoexchange.mwvm.model.other.Fickle
 import com.kirakishou.photoexchange.mwvm.model.other.LonLat
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.viewmodel.TakePhotoActivityViewModel
@@ -42,6 +47,8 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import timber.log.Timber
 import java.io.File
+import java.io.FileOutputStream
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
@@ -51,6 +58,9 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
     @BindView(R.id.notification)
     lateinit var notification: CardView
+
+    @BindView(R.id.notification_text)
+    lateinit var notificationText: TextView
 
     @BindView(R.id.camera_view)
     lateinit var cameraView: CameraView
@@ -223,18 +233,25 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .filter { lifecycle -> lifecycle == ON_START }
                 .flatMap { fotoapparatObservable }
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext { showNotification() }
+                .doOnNext { showNotification("Taking a photo...") }
                 .flatMap { fotoapparat -> takePhoto(fotoapparat) }
+                .doOnNext { hideNotification() }
+                .doOnNext { showNotification("Obtaining current location...") }
                 .observeOn(Schedulers.io())
                 .flatMap { photoName -> Observables.combineLatest(Observable.just(photoName), getLocationObservable()) }
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext { hideNotification() }
+                .doOnNext { showNotification("Saving photo to disk...") }
+                .observeOn(Schedulers.io())
                 .doOnNext(this::saveTakenPhoto)
                 .doOnError(this::onUnknownError)
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe()
 
         compositeDisposable += getViewModel().outputs.onTakenPhotoSavedObservable()
                 .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext { hideNotification() }
                 .subscribe({ savedTakenPhoto ->
-                    hideNotification()
                     switchToViewTakenPhotoActivity(savedTakenPhoto.id, savedTakenPhoto.location,
                             savedTakenPhoto.photoFilePath, savedTakenPhoto.userId)
                 })
@@ -245,7 +262,58 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .subscribe(this::onUnknownError)
     }
 
-    private fun startOrStopCamera(fotoapparat: Fotoapparat, lifecycle: Int?) {
+    private fun rotateBitmap(oldBitmap: Bitmap, rotation: Int): Fickle<String> {
+        val tempFile = File.createTempFile("photo", ".tmp")
+
+        try {
+            val matrix = Matrix()
+
+            when (rotation) {
+                0 -> {
+                    Timber.tag(tag).d("Additional photo rotation: 0f")
+                    matrix.setRotate(0f)
+                }
+                90 -> {
+                    Timber.tag(tag).d("Additional photo rotation: -90f")
+                    matrix.setRotate(-90f)
+                }
+                180 -> {
+                    Timber.tag(tag).d("Additional photo rotation: -180f")
+                    matrix.setRotate(-180f)
+                }
+                270 -> {
+                    Timber.tag(tag).d("Additional photo rotation: -270f")
+                    matrix.setRotate(-270f)
+                }
+                else -> IllegalArgumentException("Unknown rotation $rotation")
+            }
+
+            try {
+                val rotatedBitmap = Bitmap.createBitmap(oldBitmap, 0, 0, oldBitmap.width, oldBitmap.height, matrix, true)
+                val out = FileOutputStream(tempFile)
+
+                try {
+                    rotatedBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                } finally {
+                    rotatedBitmap.recycle()
+                }
+            } finally {
+                oldBitmap.recycle()
+            }
+
+            return Fickle.of(tempFile.absolutePath)
+        } catch (error: Throwable) {
+            Timber.e(error)
+
+            if (tempFile.exists()) {
+                tempFile.delete()
+            }
+
+            return Fickle.empty()
+        }
+    }
+
+    private fun startOrStopCamera(fotoapparat: Fotoapparat, lifecycle: Int) {
         if (!fotoapparat.isAvailable) {
             if (lifecycle == ON_START) {
                 Timber.tag(tag).d("initRx() Camera IS NOT available!!!")
@@ -311,13 +379,21 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     private fun takePhoto(fotoapparat: Fotoapparat): Observable<String> {
         return Observable.create<String> { emitter ->
             Timber.tag(tag).d("takePhoto() Taking a photo...")
-            val tempFile = File.createTempFile("photo", ".tmp")
 
             fotoapparat.takePicture()
-                    .saveToFile(tempFile)
-                    .whenAvailable {
+                    .toBitmap()
+                    .transform { bitmapPhoto ->
+                        Timber.e("rotation = ${bitmapPhoto.rotationDegrees}")
+                        return@transform rotateBitmap(bitmapPhoto.bitmap, bitmapPhoto.rotationDegrees)
+                    }
+                    .whenAvailable { rotatedPhotoFickle ->
                         Timber.tag(tag).d("takePhoto() Done")
-                        emitter.onNext(tempFile.absolutePath)
+
+                        if (!rotatedPhotoFickle.isPresent()) {
+                            emitter.onError(CouldNotTakePhotoException())
+                        } else {
+                            emitter.onNext(rotatedPhotoFickle.get())
+                        }
                     }
         }
     }
@@ -333,6 +409,8 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .doOnNext { Timber.tag(tag).d("getLocationObservable() Gps is enabled. Trying to obtain current location") }
                 .flatMap {
                     return@flatMap RxLocationManager.start(locationManager)
+                            .timeout(7, TimeUnit.SECONDS)
+                            .onErrorResumeNext(Observable.just(LonLat.empty()))
                 }
 
         val gpsDisabledObservable = gpsStateObservable
@@ -344,11 +422,13 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .doOnNext { location -> Timber.tag(tag).d("getLocationObservable() Current location is [lon: ${location.lon}, lat: ${location.lat}]") }
     }
 
-    private fun showNotification() {
+    private fun showNotification(text: String) {
+        notificationText.text = text
         notification.visibility = View.VISIBLE
     }
 
     private fun hideNotification() {
+        notificationText.text = ""
         notification.visibility = View.GONE
     }
 
