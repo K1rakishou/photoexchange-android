@@ -11,6 +11,7 @@ import android.support.v7.widget.CardView
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import butterknife.BindView
 import com.afollestad.materialdialogs.MaterialDialog
 import com.jakewharton.rxbinding2.view.RxView
@@ -233,7 +234,8 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .filter { lifecycle -> lifecycle == ON_START }
                 .flatMap { fotoapparatObservable }
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext { showNotification("Taking a photo...") }
+                .doOnNext { onShowToast("Photo has been taken", Toast.LENGTH_SHORT) }
+                .doOnNext { showNotification("Compressing photo...") }
                 .flatMap { fotoapparat -> takePhoto(fotoapparat) }
                 .doOnNext { hideNotification() }
                 .doOnNext { showNotification("Obtaining current location...") }
