@@ -21,7 +21,15 @@ class CompositeJob {
         //FIXME:
         //sometimes cancel throws kotlinx.coroutines.experimental.JobCancellationException: Job was cancelled normally; job=DeferredCoroutine{Cancelling}@c804443
         //dunno why
-        jobs.forEach { it.cancel() }
+        jobs.forEach {
+            //HACK:
+            try {
+                it.cancel()
+            } catch (error: JobCancellationException) {
+                error.printStackTrace()
+            }
+
+        }
         jobs.clear()
     }
 }
