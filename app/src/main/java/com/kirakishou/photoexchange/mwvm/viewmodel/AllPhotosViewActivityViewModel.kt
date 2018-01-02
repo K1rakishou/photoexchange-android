@@ -80,10 +80,10 @@ class AllPhotosViewActivityViewModel(
         compositeDisposable += startLookingForPhotosInput
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.io())
+                .doOnNext { Timber.e("startLookingForPhotos before debounce") }
                 .debounce(LOOK_FOR_PHOTOS_EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .doOnNext { Timber.e("startLookingForPhotos after debounce") }
                 .flatMap {
-                    Timber.e("startLookingForPhotos after debounce")
-
                     return@flatMap Singles.zip(takenPhotosRepository.countAll(), photoAnswerRepository.countAll()) { uploadedCount, receivedCount ->
                         return@zip uploadedCount - receivedCount
                     }.toObservable()
@@ -91,14 +91,14 @@ class AllPhotosViewActivityViewModel(
                 .doOnNext { difference ->
                     when {
                         difference > 0 -> {
-                            Timber.tag(tag).d("shouldStartLookingForPhotos() uploadedCount GREATER THAN receivedCount")
+                            Timber.tag(tag).d("startLookingForPhotosInput uploadedCount GREATER THAN receivedCount")
                             startLookingForPhotosOutput.onNext(Unit)
                         }
                         difference == 0L -> {
-                            Timber.tag(tag).d("shouldStartLookingForPhotos() No uploaded photos, show a message")
+                            Timber.tag(tag).d("startLookingForPhotosInput No uploaded photos, show a message")
                         }
                         difference < 0 -> {
-                            Timber.tag(tag).d("shouldStartLookingForPhotos() uploadedCount LESS OR EQUALS THAN receivedCount")
+                            Timber.tag(tag).d("startLookingForPhotosInput uploadedCount LESS OR EQUALS THAN receivedCount")
                         }
                     }
                 }
@@ -108,11 +108,22 @@ class AllPhotosViewActivityViewModel(
         compositeDisposable += startPhotosUploadingInput
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.io())
+                .doOnNext { Timber.e("startPhotosUploading before debounce") }
                 .debounce(START_PHOTO_UPLOADING_EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .doOnNext { Timber.e("startPhotosUploading after debounce") }
                 .flatMap { takenPhotosRepository.countQueuedUp().toObservable() }
-                .filter { queuedUpCount -> queuedUpCount > 0 }
-                .map { Unit }
-                .doOnNext(startPhotosUploadingOutput::onNext)
+                .doOnNext { queuedUpCount ->
+                    when {
+                        queuedUpCount > 0 -> {
+                            Timber.d("startPhotosUploadingInput queued up photos count > 0")
+                            startPhotosUploadingOutput.onNext(Unit)
+                        }
+
+                        else -> {
+                            Timber.d("startPhotosUploadingInput queued up photos count <= 0")
+                        }
+                    }
+                }
                 .doOnError(startPhotosUploadingOutput::onError)
                 .subscribe()
     }
@@ -239,8 +250,6 @@ class AllPhotosViewActivityViewModel(
     }
 
     override fun startLookingForPhotos() {
-        Timber.e("startLookingForPhotos before debounce")
-
         startLookingForPhotosInput.onNext(Unit)
     }
 

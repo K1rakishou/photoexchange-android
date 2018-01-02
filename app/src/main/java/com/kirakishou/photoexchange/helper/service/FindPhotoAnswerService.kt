@@ -437,5 +437,10 @@ class FindPhotoAnswerService : JobService() {
             val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
             jobScheduler.cancelAll()
         }
+
+        fun isAlreadyRunning(context: Context): Boolean {
+            val scheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
+            return scheduler.allPendingJobs.any { it.id == JOB_ID }
+        }
     }
 }

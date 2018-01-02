@@ -163,12 +163,14 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         compositeDisposable += getViewModel().outputs.onStartPhotosUploadingObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onStartPhotosUploading() }, this::onUnknownError)
+                .filter { !UploadPhotoService.isAlreadyRunning(this) }
+                .subscribe({ schedulePhotoUploadWithDelay() }, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onStartLookingForPhotosObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onStartLookingForPhotos() }, this::onUnknownError)
+                .filter { !FindPhotoAnswerService.isAlreadyRunning(this) }
+                .subscribe({ scheduleLookingForPhotoAnswer() }, this::onUnknownError)
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -265,14 +267,6 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                     getViewModel().inputs.scrollToTop()
                 })
                 .show()
-    }
-
-    private fun onStartLookingForPhotos() {
-        scheduleLookingForPhotoAnswer()
-    }
-
-    private fun onStartPhotosUploading() {
-        schedulePhotoUploadWithDelay()
     }
 
     private fun onBeginReceivingEvents(clazz: Class<*>) {
