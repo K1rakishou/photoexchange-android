@@ -73,6 +73,12 @@ class TakenPhotosRepository(
                 .observeOn(schedulers.provideIo())
     }
 
+    fun countQueuedUp(): Single<Long> {
+        return takenPhotosDao.countQueuedUp()
+                .subscribeOn(schedulers.provideIo())
+                .observeOn(schedulers.provideIo())
+    }
+
     fun updateSetUploaded(id: Long, photoName: String): Completable {
         val result = Completable.fromCallable {
             database.runInTransaction {

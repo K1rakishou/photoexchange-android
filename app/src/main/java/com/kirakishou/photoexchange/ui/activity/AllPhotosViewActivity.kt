@@ -155,10 +155,20 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ clazz -> onStopReceivingEvents(clazz) }, this::onUnknownError)
 
-        compositeDisposable += getViewModel().outputs.onPhotoMarkedToBeUploadedObservable()
+        /*compositeDisposable += getViewModel().outputs.onPhotoMarkedToBeUploadedObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onPhotoMarkedToBeUploaded() }, this::onUnknownError)
+                .subscribe({ onPhotoMarkedToBeUploaded() }, this::onUnknownError)*/
+
+        compositeDisposable += getViewModel().outputs.onStartPhotosUploadingObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ onStartPhotosUploading() }, this::onUnknownError)
+
+        compositeDisposable += getViewModel().outputs.onStartLookingForPhotosObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ onStartLookingForPhotos() }, this::onUnknownError)
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -257,7 +267,11 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                 .show()
     }
 
-    private fun onPhotoMarkedToBeUploaded() {
+    private fun onStartLookingForPhotos() {
+        scheduleLookingForPhotoAnswer()
+    }
+
+    private fun onStartPhotosUploading() {
         schedulePhotoUploadWithDelay()
     }
 
@@ -319,7 +333,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         when (event.status) {
             SendPhotoEventStatus.START -> {
                 Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.START")
-                getViewModel().inputs.startUploadingPhotos(clazz)
+                getViewModel().inputs.preparePhotosUploading(clazz)
             }
             SendPhotoEventStatus.PHOTO_UPLOADED -> {
                 Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.PHOTO_UPLOADED")
