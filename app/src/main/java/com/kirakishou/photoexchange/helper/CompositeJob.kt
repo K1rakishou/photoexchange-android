@@ -18,6 +18,9 @@ class CompositeJob {
     }
 
     fun cancelAll() {
+        //FIXME:
+        //sometimes cancel throws kotlinx.coroutines.experimental.JobCancellationException: Job was cancelled normally; job=DeferredCoroutine{Cancelling}@c804443
+        //dunno why
         jobs.forEach { it.cancel() }
         jobs.clear()
     }

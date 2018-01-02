@@ -39,6 +39,8 @@ object Utils {
     }
 
     fun rotateBitmap(oldBitmap: Bitmap, rotation: Int): Fickle<String> {
+        checkNotNull(oldBitmap)
+
         val tempFile = File.createTempFile("photo", ".tmp")
 
         try {
@@ -75,6 +77,7 @@ object Utils {
                     rotatedBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
                 } finally {
                     rotatedBitmap.recycle()
+                    out.close()
                 }
             } finally {
                 oldBitmap.recycle()

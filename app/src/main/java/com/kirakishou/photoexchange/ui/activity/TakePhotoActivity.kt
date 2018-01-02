@@ -214,13 +214,13 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 //WTF: I don't know why, but this works
                 //
                 //I've tried to use operator share(), but it didn't work -
-                //the observable from "RxView.clicks(takePhotoButton)" would hang after "flatMap { fotoapparatObservable }"
+                //the rx chain from "RxView.clicks(takePhotoButton)" would hang after "flatMap { fotoapparatObservable }"
                 //
                 //I've also tried to use publish() + autoconnect(2), but it also didn't work -
                 //both "Observables.combineLatest(fotoapparatObservable, lifecycleSubject)" and "RxView.clicks(takePhotoButton)"
                 //would hang until I click takePhotoButton button
                 //
-                //But cache works (why???)
+                //But cache works for some reason (why???)
                 .cache()
 
         compositeDisposable += Observables.combineLatest(fotoapparatObservable, lifecycleSubject)

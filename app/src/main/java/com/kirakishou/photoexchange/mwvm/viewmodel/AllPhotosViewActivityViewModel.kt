@@ -80,9 +80,7 @@ class AllPhotosViewActivityViewModel(
         compositeDisposable += startLookingForPhotosInput
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.io())
-                .doOnNext { Timber.e("startLookingForPhotos before debounce") }
                 .debounce(LOOK_FOR_PHOTOS_EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                .doOnNext { Timber.e("startLookingForPhotos after debounce") }
                 .flatMap {
                     return@flatMap Singles.zip(takenPhotosRepository.countAll(), photoAnswerRepository.countAll()) { uploadedCount, receivedCount ->
                         return@zip uploadedCount - receivedCount
@@ -90,15 +88,16 @@ class AllPhotosViewActivityViewModel(
                 }
                 .doOnNext { difference ->
                     when {
-                        difference > 0 -> {
-                            Timber.tag(tag).d("startLookingForPhotosInput uploadedCount GREATER THAN receivedCount")
+                        difference > 0L -> {
+                            Timber.tag(tag).d("startLookingForPhotosInput difference > 0L")
                             startLookingForPhotosOutput.onNext(Unit)
                         }
                         difference == 0L -> {
-                            Timber.tag(tag).d("startLookingForPhotosInput No uploaded photos, show a message")
+                            Timber.tag(tag).d("startLookingForPhotosInput difference == 0L")
+                            //TODO: show message
                         }
-                        difference < 0 -> {
-                            Timber.tag(tag).d("startLookingForPhotosInput uploadedCount LESS OR EQUALS THAN receivedCount")
+                        difference < 0L -> {
+                            Timber.tag(tag).d("startLookingForPhotosInput difference < 0L")
                         }
                     }
                 }
@@ -108,13 +107,11 @@ class AllPhotosViewActivityViewModel(
         compositeDisposable += startPhotosUploadingInput
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.io())
-                .doOnNext { Timber.e("startPhotosUploading before debounce") }
                 .debounce(START_PHOTO_UPLOADING_EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                .doOnNext { Timber.e("startPhotosUploading after debounce") }
                 .flatMap { takenPhotosRepository.countQueuedUp().toObservable() }
                 .doOnNext { queuedUpCount ->
                     when {
-                        queuedUpCount > 0 -> {
+                        queuedUpCount > 0L -> {
                             Timber.d("startPhotosUploadingInput queued up photos count > 0")
                             startPhotosUploadingOutput.onNext(Unit)
                         }

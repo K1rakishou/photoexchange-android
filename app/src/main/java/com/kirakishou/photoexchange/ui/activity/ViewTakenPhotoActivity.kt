@@ -20,6 +20,7 @@ import com.kirakishou.photoexchange.mwvm.viewmodel.ViewTakenPhotoActivityViewMod
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.ViewTakenPhotoActivityViewModelFactory
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 
