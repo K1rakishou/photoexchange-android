@@ -20,6 +20,7 @@ import com.kirakishou.photoexchange.mwvm.viewmodel.ViewTakenPhotoActivityViewMod
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.ViewTakenPhotoActivityViewModelFactory
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 
@@ -68,25 +69,19 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
         compositeDisposable += RxView.clicks(closeActivityButtonIv)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext {
-                    getViewModel().inputs.deleteTakenPhoto(takenPhoto.id)
-                }
+                .doOnNext { getViewModel().inputs.deleteTakenPhoto(takenPhoto.id) }
                 .subscribe({ finish() }, this::onUnknownError)
 
         compositeDisposable += RxView.clicks(closeActivityButtonFab)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext {
-                    getViewModel().inputs.deleteTakenPhoto(takenPhoto.id)
-                }
+                .doOnNext { getViewModel().inputs.deleteTakenPhoto(takenPhoto.id) }
                 .subscribe({ finish() }, this::onUnknownError)
 
         compositeDisposable += RxView.clicks(sendPhotoButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    switchToAllPhotosViewActivity()
-                })
+                .subscribe({ switchToAllPhotosViewActivity() })
     }
 
     private fun switchToAllPhotosViewActivity() {

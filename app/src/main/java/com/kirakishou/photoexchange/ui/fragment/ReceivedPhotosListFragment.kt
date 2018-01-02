@@ -125,11 +125,6 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ startLookingForPhotos() }, this::onUnknownError)
 
-        compositeDisposable += getViewModel().outputs.onShowNoUploadedPhotosObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onNoUploadedPhotos() }, this::onUnknownError)
-
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -139,7 +134,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRecyclerView()
 
-        getViewModel().inputs.shouldStartLookingForPhotos()
+        //getViewModel().inputs.shouldStartLookingForPhotos()
         recyclerStartLoadingItems()
     }
     
@@ -148,6 +143,8 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     override fun onResume() {
         getViewModel().inputs.beginReceivingEvents(this::class.java)
+        getViewModel().inputs.startLookingForPhotos()
+        getViewModel().inputs.startPhotosUploading()
         super.onResume()
     }
 

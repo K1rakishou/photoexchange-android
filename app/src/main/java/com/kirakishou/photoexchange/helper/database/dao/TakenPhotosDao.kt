@@ -38,6 +38,9 @@ interface TakenPhotosDao {
     @Query("SELECT COUNT(id) FROM ${TakenPhotoEntity.TABLE_NAME} WHERE photo_state = \'${PhotoState.UPLOADED_STATE}\'")
     fun countAll(): Single<Long>
 
+    @Query("SELECT COUNT(id) FROM ${TakenPhotoEntity.TABLE_NAME} WHERE photo_state = \'${PhotoState.QUEUED_UP_STATE}\'")
+    fun countQueuedUp(): Single<Long>
+
     @Query("UPDATE ${TakenPhotoEntity.TABLE_NAME} SET photo_state = :arg0 WHERE id = :arg1")
     fun updateSetState(photoState: String, id: Long)
 

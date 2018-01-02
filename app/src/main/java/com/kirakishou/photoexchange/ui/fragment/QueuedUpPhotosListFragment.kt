@@ -84,12 +84,12 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .map { it.obj!! }
                 .subscribe(this::onFailedToUploadPhoto, this::onUnknownError)
 
-        compositeDisposable += getViewModel().outputs.onStartUploadingPhotosObservable()
+        compositeDisposable += getViewModel().outputs.onPrepareForPhotosUploadingObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .filter { it.receiver == QueuedUpPhotosListFragment::class.java }
                 .map { it.obj!! }
-                .subscribe({ onStartUploadingPhotos() }, this::onUnknownError)
+                .subscribe({ onPrepareForPhotosUploading() }, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onAllPhotosUploadedObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -119,6 +119,8 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     override fun onResume() {
         getViewModel().inputs.beginReceivingEvents(this::class.java)
+        getViewModel().inputs.startLookingForPhotos()
+        getViewModel().inputs.startPhotosUploading()
         super.onResume()
     }
 
@@ -196,8 +198,8 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
-    private fun onStartUploadingPhotos() {
-        Timber.tag(ttag).d("onStartUploadingPhotos()")
+    private fun onPrepareForPhotosUploading() {
+        Timber.tag(ttag).d("onPrepareForPhotosUploading()")
 
         adapter.runOnAdapterHandler {
             adapter.removeMessage()

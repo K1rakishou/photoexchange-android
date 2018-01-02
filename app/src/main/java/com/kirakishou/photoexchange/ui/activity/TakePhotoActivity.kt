@@ -24,6 +24,7 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerTakePhotoActivityComponent
+import com.kirakishou.photoexchange.helper.PhotoSizeSelector
 import com.kirakishou.photoexchange.helper.location.MyLocationManager
 import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
@@ -37,7 +38,9 @@ import com.kirakishou.photoexchange.mwvm.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.TakePhotoActivityViewModelFactory
 import io.fotoapparat.Fotoapparat
 import io.fotoapparat.parameter.ScaleType
+import io.fotoapparat.parameter.Size
 import io.fotoapparat.parameter.selector.LensPositionSelectors.back
+import io.fotoapparat.parameter.selector.SelectorFunction
 import io.fotoapparat.parameter.selector.SizeSelectors.biggestSize
 import io.fotoapparat.view.CameraView
 import io.reactivex.Observable
@@ -197,7 +200,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                     .with(applicationContext)
                     .into(cameraView)
                     .previewScaleType(ScaleType.CENTER_CROP)
-                    .photoSize(biggestSize())
+                    .photoSize(PhotoSizeSelector())
                     .lensPosition(back())
                     .build()
         }
@@ -211,13 +214,13 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 //WTF: I don't know why, but this works
                 //
                 //I've tried to use operator share(), but it didn't work -
-                //the observable from "RxView.clicks(takePhotoButton)" would hang after "flatMap { fotoapparatObservable }"
+                //the rx chain from "RxView.clicks(takePhotoButton)" would hang after "flatMap { fotoapparatObservable }"
                 //
                 //I've also tried to use publish() + autoconnect(2), but it also didn't work -
                 //both "Observables.combineLatest(fotoapparatObservable, lifecycleSubject)" and "RxView.clicks(takePhotoButton)"
                 //would hang until I click takePhotoButton button
                 //
-                //But cache works (why???)
+                //But cache works for some reason (why???)
                 .cache()
 
         compositeDisposable += Observables.combineLatest(fotoapparatObservable, lifecycleSubject)
@@ -262,60 +265,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onUnknownError)
-    }
-
-    private fun rotateBitmap(oldBitmap: Bitmap, rotation: Int): Fickle<String> {
-        val tempFile = File.createTempFile("photo", ".tmp")
-
-        try {
-            val matrix = Matrix()
-
-            when (rotation) {
-                0 -> {
-                    Timber.tag(tag).d("Applying additional photo rotation: 0f")
-                    matrix.setRotate(0f)
-                }
-                90 -> {
-                    Timber.tag(tag).d("Applying additional photo rotation: -90f")
-                    matrix.setRotate(-90f)
-                }
-                180 -> {
-                    Timber.tag(tag).d("Applying additional photo rotation: -180f")
-                    matrix.setRotate(-180f)
-                }
-                270 -> {
-                    Timber.tag(tag).d("Applying additional photo rotation: -270f")
-                    matrix.setRotate(-270f)
-                }
-                else -> {
-                    Timber.tag(tag).d("Unknown rotation. Applying no additional rotation")
-                    matrix.setRotate(0f)
-                }
-            }
-
-            try {
-                val rotatedBitmap = Bitmap.createBitmap(oldBitmap, 0, 0, oldBitmap.width, oldBitmap.height, matrix, true)
-                val out = FileOutputStream(tempFile)
-
-                try {
-                    rotatedBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
-                } finally {
-                    rotatedBitmap.recycle()
-                }
-            } finally {
-                oldBitmap.recycle()
-            }
-
-            return Fickle.of(tempFile.absolutePath)
-        } catch (error: Throwable) {
-            Timber.e(error)
-
-            if (tempFile.exists()) {
-                tempFile.delete()
-            }
-
-            return Fickle.empty()
-        }
     }
 
     private fun startOrStopCamera(fotoapparat: Fotoapparat, lifecycle: Int) {
@@ -389,7 +338,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                     .toBitmap()
                     .transform { bitmapPhoto ->
                         Timber.e("rotation = ${bitmapPhoto.rotationDegrees}")
-                        return@transform rotateBitmap(bitmapPhoto.bitmap, bitmapPhoto.rotationDegrees)
+                        return@transform Utils.rotateBitmap(bitmapPhoto.bitmap, bitmapPhoto.rotationDegrees)
                     }
                     .whenAvailable { rotatedPhotoFickle ->
                         Timber.tag(tag).d("takePhoto() Done")
@@ -444,8 +393,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .inject(this)
     }
 }
-
-
 
 
 
