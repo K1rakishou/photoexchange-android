@@ -23,7 +23,7 @@ class MapActivity : BaseActivity<Nothing>(), OnMapReadyCallback {
     @BindView(R.id.iv_close_activity)
     lateinit var ivCloseActivity: ImageView
 
-    private val DEFAULT_MAP_ZOOM = 9f
+    private val DEFAULT_MAP_ZOOM = 5.5f
     private var location: LatLng? = null
 
     override fun getContentView(): Int = R.layout.activity_map
@@ -56,6 +56,7 @@ class MapActivity : BaseActivity<Nothing>(), OnMapReadyCallback {
     }
 
     override fun onMapReady(map: GoogleMap) {
+        map.uiSettings.setAllGesturesEnabled(false)
         map.addMarker(MarkerOptions().position(location!!))
         map.animateCamera(CameraUpdateFactory.newLatLngZoom(location, DEFAULT_MAP_ZOOM))
     }
