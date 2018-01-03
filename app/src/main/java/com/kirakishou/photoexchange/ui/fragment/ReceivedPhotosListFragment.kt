@@ -170,8 +170,6 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
                     adapter.removeMessage()
                     adapter.addFirst(AdapterItem(state.photoAnswer, AdapterItemType.VIEW_ITEM))
-
-                    (activity as AllPhotosViewActivity).showNewPhotoReceivedNotification()
                 }
             }
 

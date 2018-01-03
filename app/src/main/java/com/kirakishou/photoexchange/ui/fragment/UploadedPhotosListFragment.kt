@@ -111,8 +111,6 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
                 adapter.runOnAdapterHandler {
                     adapter.removePhotoUploadingIndicator()
-                    adapter.addMessageFooter()
-                    //adapter.addFirst(AdapterItem(AdapterItemType.VIEW_FAILED_TO_UPLOAD))
                 }
             }
 
@@ -121,6 +119,8 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
                 adapter.runOnAdapterHandler {
                     adapter.removePhotoUploadingIndicator()
+                    adapter.addMessageFooter()
+                    //adapter.addFirst(AdapterItem(AdapterItemType.VIEW_FAILED_TO_UPLOAD))
                 }
             }
 

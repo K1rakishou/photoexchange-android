@@ -58,7 +58,7 @@ class MapActivity : BaseActivity<Nothing>(), OnMapReadyCallback {
     override fun onMapReady(map: GoogleMap) {
         map.uiSettings.setAllGesturesEnabled(false)
         map.addMarker(MarkerOptions().position(location!!))
-        map.animateCamera(CameraUpdateFactory.newLatLngZoom(location, DEFAULT_MAP_ZOOM))
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(location, DEFAULT_MAP_ZOOM))
     }
 
     override fun resolveDaggerDependency() {

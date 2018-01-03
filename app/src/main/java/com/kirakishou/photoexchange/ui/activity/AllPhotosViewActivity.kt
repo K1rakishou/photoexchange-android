@@ -355,6 +355,8 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
                 getViewModel().inputs.updateLookingForPhotoState(clazz,
                         LookingForPhotoState.PhotoFound(event.photoAnswer!!, event.allFound))
+
+                showNewPhotoReceivedNotification()
             }
             PhotoReceivedEventStatus.SUCCESS_NOT_ALL_RECEIVED -> {
                 Timber.tag(tag).d("handlePhotoReceivedEvent($clazz) PhotoReceivedEventStatus.SUCCESS_NOT_ALL_RECEIVED")
@@ -362,6 +364,8 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
                 getViewModel().inputs.updateLookingForPhotoState(clazz,
                         LookingForPhotoState.PhotoFound(event.photoAnswer!!, event.allFound))
+
+                showNewPhotoReceivedNotification()
             }
             PhotoReceivedEventStatus.FAIL -> {
                 Timber.tag(tag).d("handlePhotoReceivedEvent($clazz) PhotoReceivedEventStatus.FAIL")
