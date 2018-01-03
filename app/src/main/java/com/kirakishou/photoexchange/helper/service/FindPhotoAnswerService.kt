@@ -28,7 +28,7 @@ import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
 import com.kirakishou.photoexchange.mwvm.model.event.PhotoReceivedEvent
 import com.kirakishou.photoexchange.mwvm.model.other.Constants
-import com.kirakishou.photoexchange.mwvm.model.state.FindPhotoState
+import com.kirakishou.photoexchange.mwvm.model.state.LookingForPhotoState
 import com.kirakishou.photoexchange.mwvm.viewmodel.FindPhotoAnswerServiceViewModel
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
 import io.fabric.sdk.android.Fabric
@@ -138,9 +138,9 @@ class FindPhotoAnswerService : JobService() {
                 .subscribe({ onUnknownError(params, it) })
     }
 
-    private fun onFindPhotoStateChanged(params: JobParameters, state: FindPhotoState) {
+    private fun onFindPhotoStateChanged(params: JobParameters, state: LookingForPhotoState) {
         when (state) {
-            is FindPhotoState.UploadMorePhotos -> {
+            is LookingForPhotoState.UploadMorePhotos -> {
                 Timber.tag(tag).d("onFindPhotoStateChanged() UploadMorePhotos Upload more photos")
 
                 eventBus.post(PhotoReceivedEvent.uploadMorePhotos())
@@ -150,7 +150,7 @@ class FindPhotoAnswerService : JobService() {
                 cancelNotification()
             }
 
-            is FindPhotoState.LocalRepositoryError -> {
+            is LookingForPhotoState.LocalRepositoryError -> {
                 Timber.tag(tag).d("onFindPhotoStateChanged() LocalRepositoryError Could not mark a photo as received")
 
                 eventBus.post(PhotoReceivedEvent.fail())
@@ -160,7 +160,7 @@ class FindPhotoAnswerService : JobService() {
                 cancelNotification()
             }
 
-            is FindPhotoState.ServerHasNoPhotos -> {
+            is LookingForPhotoState.ServerHasNoPhotos -> {
                 Timber.tag(tag).d("onFindPhotoStateChanged() ServerHasNoPhotos No photos on server to send back")
 
                 eventBus.post(PhotoReceivedEvent.noPhotos())
@@ -175,7 +175,7 @@ class FindPhotoAnswerService : JobService() {
                 }
             }
 
-            is FindPhotoState.PhotoFound -> {
+            is LookingForPhotoState.PhotoFound -> {
                 val userId = getUserIdFromParams(params)
 
                 if (!state.allFound) {
@@ -201,7 +201,7 @@ class FindPhotoAnswerService : JobService() {
                 updateNotificationShowPhotoFound()
             }
 
-            is FindPhotoState.UnknownError -> {
+            is LookingForPhotoState.UnknownError -> {
                 onUnknownError(params, state.error)
             }
         }

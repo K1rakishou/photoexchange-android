@@ -19,6 +19,7 @@ import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
 import com.kirakishou.photoexchange.mwvm.model.other.Constants.PHOTO_ADAPTER_VIEW_WIDTH
 import com.kirakishou.photoexchange.mwvm.model.state.PhotoState
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
+import com.kirakishou.photoexchange.mwvm.model.state.PhotoUploadingState
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
@@ -70,33 +71,12 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onQueuedUpAndFailedToUploadLoaded, this::onUnknownError)
 
-        compositeDisposable += getViewModel().outputs.onShowPhotoUploadedOutputObservable()
+        compositeDisposable += getViewModel().outputs.onPhotoUploadingStateObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .filter { it.receiver == QueuedUpPhotosListFragment::class.java }
                 .map { it.obj!! }
-                .subscribe(this::onPhotoUploaded, this::onUnknownError)
-
-        compositeDisposable += getViewModel().outputs.onShowFailedToUploadPhotoObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .filter { it.receiver == QueuedUpPhotosListFragment::class.java }
-                .map { it.obj!! }
-                .subscribe(this::onFailedToUploadPhoto, this::onUnknownError)
-
-        compositeDisposable += getViewModel().outputs.onPrepareForPhotosUploadingObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .filter { it.receiver == QueuedUpPhotosListFragment::class.java }
-                .map { it.obj!! }
-                .subscribe({ onPrepareForPhotosUploading() }, this::onUnknownError)
-
-        compositeDisposable += getViewModel().outputs.onAllPhotosUploadedObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .filter { it.receiver == QueuedUpPhotosListFragment::class.java }
-                .map { it.obj!! }
-                .subscribe({ onAllPhotosUploaded() }, this::onUnknownError)
+                .subscribe(this::onPhotoUploadingState, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onTakenPhotoUploadingCanceledObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -107,6 +87,52 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onUnknownError)
+    }
+
+    private fun onPhotoUploadingState(state: PhotoUploadingState) {
+        when (state) {
+            is PhotoUploadingState.StartPhotoUploading -> {
+                Timber.tag(ttag).d("onPhotoUploadingState() PhotoUploadingState.StartPhotoUploading")
+
+                adapter.runOnAdapterHandler {
+                    adapter.removeMessage()
+                    adapter.setButtonsEnabled(false)
+                }
+            }
+
+            is PhotoUploadingState.PhotoUploaded -> {
+                Timber.tag(ttag).d("onPhotoUploadingState() PhotoUploadingState.PhotoUploaded")
+
+                adapter.runOnAdapterHandler {
+                    adapter.removeQueuedUpPhoto(state.photo.id)
+                }
+            }
+
+            is PhotoUploadingState.AllPhotosUploaded -> {
+                Timber.tag(ttag).d("onPhotoUploadingState() PhotoUploadingState.AllPhotosUploaded")
+
+                adapter.runOnAdapterHandler {
+                    if (!adapter.containsFailedToUploadPhotos()) {
+                        adapter.addMessage(QueuedUpPhotosAdapter.MESSAGE_TYPE_ALL_PHOTOS_UPLOADED)
+                    } else {
+                        Toast.makeText(activity, "Could not upload one or more photos", Toast.LENGTH_LONG).show()
+                    }
+
+                    adapter.setButtonsEnabled(true)
+                }
+            }
+
+            is PhotoUploadingState.FailedToUploadPhoto -> {
+                Timber.tag(ttag).d("onPhotoUploadingState() PhotoUploadingState.FailedToUploadPhoto")
+
+                adapter.runOnAdapterHandler {
+                    adapter.removeQueuedUpPhoto(state.photo.id)
+                    adapter.add(AdapterItem(state.photo, AdapterItemType.VIEW_FAILED_TO_UPLOAD))
+                }
+            }
+
+            else -> IllegalStateException("Bad state")
+        }
     }
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
@@ -195,46 +221,6 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                     adapter.addQueuedUpPhotos(queuedUpPhotos)
                 }
             }
-        }
-    }
-
-    private fun onPrepareForPhotosUploading() {
-        Timber.tag(ttag).d("onPrepareForPhotosUploading()")
-
-        adapter.runOnAdapterHandler {
-            adapter.removeMessage()
-            adapter.setButtonsEnabled(false)
-        }
-    }
-
-    private fun onPhotoUploaded(photo: TakenPhoto) {
-        Timber.tag(ttag).d("onPhotoUploaded()")
-
-        adapter.runOnAdapterHandler {
-            adapter.removeQueuedUpPhoto(photo.id)
-        }
-    }
-
-    private fun onAllPhotosUploaded() {
-        Timber.tag(ttag).d("onAllPhotosUploaded()")
-
-        adapter.runOnAdapterHandler {
-            if (!adapter.containsFailedToUploadPhotos()) {
-                adapter.addMessage(QueuedUpPhotosAdapter.MESSAGE_TYPE_ALL_PHOTOS_UPLOADED)
-            } else {
-                Toast.makeText(activity, "Could not upload one or more photos", Toast.LENGTH_LONG).show()
-            }
-
-            adapter.setButtonsEnabled(true)
-        }
-    }
-
-    private fun onFailedToUploadPhoto(photo: TakenPhoto) {
-        Timber.tag(ttag).d("onFailedToUploadPhoto()")
-
-        adapter.runOnAdapterHandler {
-            adapter.removeQueuedUpPhoto(photo.id)
-            adapter.add(AdapterItem(photo, AdapterItemType.VIEW_FAILED_TO_UPLOAD))
         }
     }
 
