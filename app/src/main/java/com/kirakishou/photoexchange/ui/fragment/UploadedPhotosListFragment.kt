@@ -12,6 +12,7 @@ import com.kirakishou.photoexchange.base.BaseFragment
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.helper.ImageLoader
+import com.kirakishou.photoexchange.helper.extension.filterMulticastEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
@@ -77,8 +78,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         compositeDisposable += getViewModel().outputs.onPhotoUploadingStateObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .filter { it.receiver == UploadedPhotosListFragment::class.java }
-                .map { it.obj!! }
+                .filterMulticastEvent(UploadedPhotosListFragment::class.java)
                 .subscribe(this::onPhotoUploadingState, this::onUnknownError)
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()

@@ -85,15 +85,15 @@ class AllPhotosViewActivityViewModel(
                 .doOnNext { difference ->
                     when {
                         difference > 0L -> {
-                            Timber.tag(tag).d("startLookingForPhotosInput difference > 0L")
+                            Timber.tag(tag).d("startLookingForPhotosInput difference > 0L, start looking for photos")
                             startLookingForPhotosOutput.onNext(Unit)
                         }
                         difference == 0L -> {
-                            Timber.tag(tag).d("startLookingForPhotosInput difference == 0L")
+                            Timber.tag(tag).d("startLookingForPhotosInput difference == 0L, show message that user needs to upload more photos")
                             //TODO: show message
                         }
                         difference < 0L -> {
-                            Timber.tag(tag).d("startLookingForPhotosInput difference < 0L")
+                            Timber.tag(tag).d("startLookingForPhotosInput difference < 0L, do nothing")
                         }
                     }
                 }
@@ -108,12 +108,12 @@ class AllPhotosViewActivityViewModel(
                 .doOnNext { queuedUpCount ->
                     when {
                         queuedUpCount > 0L -> {
-                            Timber.d("startPhotosUploadingInput queued up photos count > 0")
+                            Timber.d("startPhotosUploadingInput queued up photos count > 0, start uploading")
                             startPhotosUploadingOutput.onNext(Unit)
                         }
 
                         else -> {
-                            Timber.d("startPhotosUploadingInput queued up photos count <= 0")
+                            Timber.d("startPhotosUploadingInput queued up photos count <= 0, do nothing")
                         }
                     }
                 }
@@ -227,8 +227,7 @@ class AllPhotosViewActivityViewModel(
                     resultList.addAll(queuedUpPhotos)
 
                     return@zip resultList
-                }.subscribeOn(schedulers.provideIo())
-                        .await()
+                }.subscribeOn(schedulers.provideIo()).await()
 
                 onQueuedUpAndFailedToUploadLoadedOutput.onNext(zippedPhotos)
             } catch (error: Throwable) {
