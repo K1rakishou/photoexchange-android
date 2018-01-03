@@ -1,6 +1,8 @@
 package com.kirakishou.photoexchange.helper
 
+import android.content.Context
 import android.widget.ImageView
+import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestManager
 import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.photoexchange.PhotoExchangeApplication
@@ -13,12 +15,12 @@ import javax.inject.Inject
  */
 class ImageLoader
 @Inject constructor(
-        private val glideRequestManager: RequestManager
+        private val context: Context
 ) {
     private val basePhotosUrl = "${PhotoExchangeApplication.baseUrl}v1/api/get_photo"
 
     fun loadImageFromDiskInto(imageFile: File, view: ImageView) {
-        glideRequestManager
+        Glide.with(context)
                 .load(imageFile)
                 .apply(RequestOptions().centerCrop())
                 .into(view)
@@ -26,7 +28,7 @@ class ImageLoader
 
     fun loadImageFromNetInto(photoName: String, photoSize: PhotoSize, view: ImageView) {
         val fullUrl = "$basePhotosUrl/$photoName/${photoSize.value}"
-        glideRequestManager
+        Glide.with(context)
                 .load(fullUrl)
                 .apply(RequestOptions().centerCrop())
                 .into(view)
@@ -34,7 +36,7 @@ class ImageLoader
 
     fun downloadPhotoAsync(photoName: String, photoSize: PhotoSize): Single<File> {
         val fullUrl = "$basePhotosUrl/$photoName/${photoSize.value}"
-        val future = glideRequestManager
+        val future = Glide.with(context)
                 .downloadOnly()
                 .load(fullUrl)
                 .submit()
