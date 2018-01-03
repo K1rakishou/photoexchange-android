@@ -104,7 +104,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 Timber.tag(ttag).d("onPhotoUploadingState() PhotoUploadingState.PhotoUploaded")
 
                 adapter.runOnAdapterHandler {
-                    adapter.removeQueuedUpPhoto(state.photo.id)
+                    adapter.removeQueuedUpPhoto(state.photo!!.id)
                 }
             }
 

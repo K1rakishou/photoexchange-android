@@ -256,6 +256,11 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     }
 
     fun scheduleLookingForPhotoAnswer() {
+        if (FindPhotoAnswerService.isAlreadyRunning(this)) {
+            Timber.tag(tag).d("Service has already started. Do nothing.")
+            return
+        }
+
         Timber.tag(tag).d("scheduleLookingForPhotoAnswer() Schedule Look for photo answer job immediately")
 
         FindPhotoAnswerService.scheduleImmediateJob(userInfoPreference.getUserId(), this)
@@ -272,15 +277,11 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     }
 
     private fun onBeginReceivingEvents(clazz: Class<*>) {
-        Timber.tag(tag).d("onBeginReceivingEvents() Begin event sending for Fragment ${clazz.simpleName}")
-
         fragmentsEventListeners[clazz] = true
         sendAllEvents(clazz)
     }
 
     private fun onStopReceivingEvents(clazz: Class<*>) {
-        Timber.tag(tag).d("onStopReceivingEvents() Stop event sending for Fragment ${clazz.simpleName}")
-
         fragmentsEventListeners[clazz] = false
     }
 
@@ -300,17 +301,13 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
     private fun rememberOrSendEvent(clazz: Class<*>, event: BaseEvent) {
         if (!fragmentsEventListeners[clazz]!!) {
-            Timber.tag(tag).d("rememberOrSendEvent() Fragment ${clazz.simpleName} is currently paused, remembering event")
             eventAccumulator.rememberEvent(clazz, event)
         } else {
-            Timber.tag(tag).d("rememberOrSendEvent() Fragment ${clazz.simpleName} is currently resumed, sending event")
             sendEvent(clazz, event)
         }
     }
 
     private fun sendAllEvents(clazz: Class<*>) {
-        Timber.tag(tag).d("sendAllEvents() Fragment ${clazz.simpleName} has ${eventAccumulator.eventsCount(clazz)} accumulated events")
-
         while (eventAccumulator.hasEvent(clazz)) {
             val event = eventAccumulator.getEvent(clazz)
             sendEvent(clazz, event)
@@ -321,27 +318,27 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         if (event is PhotoUploadedEvent) {
             handlePhotoUploadedEvent(clazz, event)
         } else if (event is PhotoReceivedEvent) {
-            handlePhotoReceivedEvent(event)
+            handlePhotoReceivedEvent(clazz, event)
         }
     }
 
     private fun handlePhotoUploadedEvent(clazz: Class<*>, event: PhotoUploadedEvent) {
         when (event.status) {
             SendPhotoEventStatus.START -> {
-                Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.START")
+                Timber.tag(tag).d("handlePhotoUploadedEvent($clazz) SendPhotoEventStatus.START")
                 getViewModel().inputs.updatePhotoUploadingState(clazz, PhotoUploadingState.StartPhotoUploading())
             }
             SendPhotoEventStatus.PHOTO_UPLOADED -> {
-                Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.PHOTO_UPLOADED")
+                Timber.tag(tag).d("handlePhotoUploadedEvent($clazz) SendPhotoEventStatus.PHOTO_UPLOADED")
                 getViewModel().inputs.updatePhotoUploadingState(clazz, PhotoUploadingState.PhotoUploaded(event.photo!!))
             }
             SendPhotoEventStatus.FAIL -> {
-                Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.FAIL")
+                Timber.tag(tag).d("handlePhotoUploadedEvent($clazz) SendPhotoEventStatus.FAIL")
                 getViewModel().inputs.updatePhotoUploadingState(clazz, PhotoUploadingState.FailedToUploadPhoto(event.photo!!))
             }
             SendPhotoEventStatus.DONE -> {
-                Timber.tag(tag).d("handlePhotoUploadedEvent() SendPhotoEventStatus.DONE")
-                getViewModel().inputs.updatePhotoUploadingState(clazz, PhotoUploadingState.PhotoUploaded(event.photo!!))
+                Timber.tag(tag).d("handlePhotoUploadedEvent($clazz) SendPhotoEventStatus.DONE")
+                getViewModel().inputs.updatePhotoUploadingState(clazz, PhotoUploadingState.AllPhotosUploaded())
 
                 //FIXME: this function is being called twice because this event type is being sent to two fragments
                 scheduleLookingForPhotoAnswer()
@@ -350,35 +347,35 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         }
     }
 
-    private fun handlePhotoReceivedEvent(event: PhotoReceivedEvent) {
+    private fun handlePhotoReceivedEvent(clazz: Class<*>, event: PhotoReceivedEvent) {
         when (event.status) {
             PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED -> {
-                Timber.tag(tag).d("handlePhotoReceivedEvent() PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED")
+                Timber.tag(tag).d("handlePhotoReceivedEvent($clazz) PhotoReceivedEventStatus.SUCCESS_ALL_RECEIVED")
                 checkNotNull(event.photoAnswer)
 
-                getViewModel().inputs.updateLookingForPhotoState(ReceivedPhotosListFragment::class.java,
+                getViewModel().inputs.updateLookingForPhotoState(clazz,
                         LookingForPhotoState.PhotoFound(event.photoAnswer!!, event.allFound))
             }
             PhotoReceivedEventStatus.SUCCESS_NOT_ALL_RECEIVED -> {
-                Timber.tag(tag).d("handlePhotoReceivedEvent() PhotoReceivedEventStatus.SUCCESS_NOT_ALL_RECEIVED")
+                Timber.tag(tag).d("handlePhotoReceivedEvent($clazz) PhotoReceivedEventStatus.SUCCESS_NOT_ALL_RECEIVED")
                 checkNotNull(event.photoAnswer)
 
-                getViewModel().inputs.updateLookingForPhotoState(ReceivedPhotosListFragment::class.java,
+                getViewModel().inputs.updateLookingForPhotoState(clazz,
                         LookingForPhotoState.PhotoFound(event.photoAnswer!!, event.allFound))
             }
             PhotoReceivedEventStatus.FAIL -> {
-                Timber.tag(tag).d("handlePhotoReceivedEvent() PhotoReceivedEventStatus.FAIL")
-                getViewModel().inputs.updateLookingForPhotoState(ReceivedPhotosListFragment::class.java,
+                Timber.tag(tag).d("handlePhotoReceivedEvent($clazz) PhotoReceivedEventStatus.FAIL")
+                getViewModel().inputs.updateLookingForPhotoState(clazz,
                         LookingForPhotoState.LocalRepositoryError())
             }
             PhotoReceivedEventStatus.NO_PHOTOS_ON_SERVER -> {
-                Timber.tag(tag).d("handlePhotoReceivedEvent() PhotoReceivedEventStatus.NO_PHOTOS_ON_SERVER")
-                getViewModel().inputs.updateLookingForPhotoState(ReceivedPhotosListFragment::class.java,
+                Timber.tag(tag).d("handlePhotoReceivedEvent($clazz) PhotoReceivedEventStatus.NO_PHOTOS_ON_SERVER")
+                getViewModel().inputs.updateLookingForPhotoState(clazz,
                         LookingForPhotoState.ServerHasNoPhotos())
             }
             PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS -> {
-                Timber.tag(tag).d("handlePhotoReceivedEvent() PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS")
-                getViewModel().inputs.updateLookingForPhotoState(ReceivedPhotosListFragment::class.java,
+                Timber.tag(tag).d("handlePhotoReceivedEvent($clazz) PhotoReceivedEventStatus.UPLOAD_MORE_PHOTOS")
+                getViewModel().inputs.updateLookingForPhotoState(clazz,
                         LookingForPhotoState.UploadMorePhotos())
             }
             else -> throw IllegalArgumentException("Unknown event status: ${event.status}")

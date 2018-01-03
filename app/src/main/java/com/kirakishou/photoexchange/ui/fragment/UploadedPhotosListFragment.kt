@@ -102,7 +102,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 Timber.tag(ttag).d("onPhotoUploadingState() PhotoUploadingState.PhotoUploaded")
 
                 adapter.runOnAdapterHandler {
-                    adapter.add(AdapterItem(state.photo, AdapterItemType.VIEW_ITEM))
+                    adapter.add(AdapterItem(state.photo!!, AdapterItemType.VIEW_ITEM))
                 }
             }
 

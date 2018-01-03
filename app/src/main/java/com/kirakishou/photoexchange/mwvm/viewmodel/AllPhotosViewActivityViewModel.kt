@@ -62,6 +62,7 @@ class AllPhotosViewActivityViewModel(
     private val onTakenPhotoUploadingCanceledOutput = PublishSubject.create<Long>()
     private val beginReceivingEventsOutput = PublishSubject.create<Class<*>>()
     private val stopReceivingEventsOutput = PublishSubject.create<Class<*>>()
+    private val showUploadMorePhotosMessageOutput = PublishSubject.create<Unit>()
 
     private val onPhotoUploadingStateOutput = PublishSubject.create<MulticastEvent<PhotoUploadingState>>()
     private val onLookingForPhotoStateOutput = PublishSubject.create<MulticastEvent<LookingForPhotoState>>()
@@ -90,7 +91,7 @@ class AllPhotosViewActivityViewModel(
                         }
                         difference == 0L -> {
                             Timber.tag(tag).d("startLookingForPhotosInput difference == 0L, show message that user needs to upload more photos")
-                            //TODO: show message
+                            showUploadMorePhotosMessageOutput.onNext(Unit)
                         }
                         difference < 0L -> {
                             Timber.tag(tag).d("startLookingForPhotosInput difference < 0L, do nothing")
@@ -271,6 +272,7 @@ class AllPhotosViewActivityViewModel(
     override fun onQueuedUpAndFailedToUploadLoadedObservable(): Observable<List<TakenPhoto>> = onQueuedUpAndFailedToUploadLoadedOutput
     override fun onBeginReceivingEventsObservable(): Observable<Class<*>> = beginReceivingEventsOutput
     override fun onStopReceivingEventsObservable(): Observable<Class<*>> = stopReceivingEventsOutput
+    override fun onShowUploadMorePhotosMessageObservable(): Observable<Unit> = showUploadMorePhotosMessageOutput
 
     override fun onPhotoUploadingStateObservable(): Observable<MulticastEvent<PhotoUploadingState>> = onPhotoUploadingStateOutput
     override fun onLookingForPhotoStateObservable(): Observable<MulticastEvent<LookingForPhotoState>> = onLookingForPhotoStateOutput

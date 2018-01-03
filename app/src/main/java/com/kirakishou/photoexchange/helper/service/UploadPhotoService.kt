@@ -139,7 +139,7 @@ class UploadPhotoService : JobService() {
             }
 
             is PhotoUploadingState.PhotoUploaded -> {
-                Timber.tag(tag).d("onPhotoUploadState() PhotoUploadingState.PhotoUploaded photoName: ${state.photo.photoName}")
+                Timber.tag(tag).d("onPhotoUploadState() PhotoUploadingState.PhotoUploaded photoName: ${state.photo!!.photoName}")
                 sendEvent(PhotoUploadedEvent.photoUploaded(state.photo))
             }
 

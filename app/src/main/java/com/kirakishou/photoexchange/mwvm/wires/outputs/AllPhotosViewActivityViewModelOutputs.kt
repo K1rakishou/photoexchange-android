@@ -21,6 +21,7 @@ interface AllPhotosViewActivityViewModelOutputs {
     fun onTakenPhotoUploadingCanceledObservable(): Observable<Long>
     fun onBeginReceivingEventsObservable(): Observable<Class<*>>
     fun onStopReceivingEventsObservable(): Observable<Class<*>>
+    fun onShowUploadMorePhotosMessageObservable(): Observable<Unit>
 
     fun onPhotoUploadingStateObservable(): Observable<MulticastEvent<PhotoUploadingState>>
     fun onLookingForPhotoStateObservable(): Observable<MulticastEvent<LookingForPhotoState>>
