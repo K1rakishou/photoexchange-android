@@ -7,7 +7,10 @@ import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.mwvm.wires.errors.ViewTakenPhotoActivityViewModelErrors
 import com.kirakishou.photoexchange.mwvm.wires.inputs.ViewTakenPhotoActivityViewModelInputs
 import com.kirakishou.photoexchange.mwvm.wires.outputs.ViewTakenPhotoActivityViewModelOutputs
+import io.reactivex.rxkotlin.plusAssign
+import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.rx2.asCompletable
 import kotlinx.coroutines.experimental.rx2.await
 import timber.log.Timber
 
@@ -29,12 +32,12 @@ class ViewTakenPhotoActivityViewModel(
     val errors: ViewTakenPhotoActivityViewModelErrors = this
 
     override fun deleteTakenPhoto(id: Long) {
-        compositeJob += async {
+        compositeDisposable += async {
             val takenPhoto = takenPhotosRepo.findOne(id).await()
             FileUtils.deletePhotoFile(takenPhoto)
 
             takenPhotosRepo.deleteOne(id).await()
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     private fun handleErrors(error: Throwable) {

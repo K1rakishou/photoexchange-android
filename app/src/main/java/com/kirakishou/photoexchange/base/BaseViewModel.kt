@@ -11,12 +11,14 @@ import io.reactivex.disposables.CompositeDisposable
  */
 abstract class BaseViewModel : ViewModel() {
     protected val compositeDisposable = CompositeDisposable()
-    protected val compositeJob = CompositeJob()
+    //protected val compositeJob = CompositeJob()
 
     @CallSuper
     override fun onCleared() {
         compositeDisposable.clear()
-        compositeJob.cancelAll()
+
+        //doesn't work
+        //compositeJob.cancelAll()
 
         //PhotoExchangeApplication.watch(this, this::class.simpleName)
         super.onCleared()

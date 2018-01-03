@@ -12,11 +12,13 @@ import com.kirakishou.photoexchange.base.BaseFragment
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.helper.ImageLoader
+import com.kirakishou.photoexchange.helper.extension.filterMulticastEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
 import com.kirakishou.photoexchange.mwvm.model.other.Constants.PHOTO_ADAPTER_VIEW_WIDTH
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
+import com.kirakishou.photoexchange.mwvm.model.state.PhotoUploadingState
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
@@ -73,38 +75,57 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .doOnNext { adapter.removeProgressFooter() }
                 .subscribe(this::onPageReceived, this::onUnknownError)
 
-        compositeDisposable += getViewModel().outputs.onShowPhotoUploadedOutputObservable()
+        compositeDisposable += getViewModel().outputs.onPhotoUploadingStateObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .filter { it.receiver == UploadedPhotosListFragment::class.java }
-                .map { it.obj!! }
-                .subscribe(this::onPhotoUploaded, this::onUnknownError)
-
-        compositeDisposable += getViewModel().outputs.onShowFailedToUploadPhotoObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .filter { it.receiver == UploadedPhotosListFragment::class.java }
-                .map { it.obj!! }
-                .subscribe({ onFailedToUploadPhoto(it) }, this::onUnknownError)
-
-        compositeDisposable += getViewModel().outputs.onPrepareForPhotosUploadingObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .filter { it.receiver == QueuedUpPhotosListFragment::class.java }
-                .map { it.obj!! }
-                .subscribe({ onStartUploadingPhotos() }, this::onUnknownError)
-
-        compositeDisposable += getViewModel().outputs.onAllPhotosUploadedObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .filter { it.receiver == QueuedUpPhotosListFragment::class.java }
-                .map { it.obj!! }
-                .subscribe({ onAllPhotosUploaded() }, this::onUnknownError)
+                .filterMulticastEvent(UploadedPhotosListFragment::class.java)
+                .subscribe(this::onPhotoUploadingState, this::onUnknownError)
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onUnknownError)
+    }
+
+    private fun onPhotoUploadingState(state: PhotoUploadingState) {
+        when (state) {
+            is PhotoUploadingState.StartPhotoUploading -> {
+                Timber.tag(ttag).d("onPhotoUploadingState() PhotoUploadingState.StartPhotoUploading")
+
+                adapter.runOnAdapterHandler {
+                    adapter.removeMessageFooter()
+                    adapter.addPhotoUploadingIndicator()
+                }
+            }
+
+            is PhotoUploadingState.PhotoUploaded -> {
+                Timber.tag(ttag).d("onPhotoUploadingState() PhotoUploadingState.PhotoUploaded")
+
+                adapter.runOnAdapterHandler {
+                    adapter.add(AdapterItem(state.photo!!, AdapterItemType.VIEW_ITEM))
+                }
+            }
+
+            is PhotoUploadingState.AllPhotosUploaded -> {
+                Timber.tag(ttag).d("onPhotoUploadingState() PhotoUploadingState.AllPhotosUploaded")
+
+                adapter.runOnAdapterHandler {
+                    adapter.removePhotoUploadingIndicator()
+                }
+            }
+
+            is PhotoUploadingState.FailedToUploadPhoto -> {
+                Timber.tag(ttag).d("onPhotoUploadingState() PhotoUploadingState.FailedToUploadPhoto")
+
+                adapter.runOnAdapterHandler {
+                    adapter.removePhotoUploadingIndicator()
+                    adapter.addMessageFooter()
+                    //adapter.addFirst(AdapterItem(AdapterItemType.VIEW_FAILED_TO_UPLOAD))
+                }
+            }
+
+            else -> IllegalStateException("Bad state")
+        }
     }
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
@@ -180,41 +201,6 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                     adapter.addMessageFooter()
                 }
             }
-        }
-    }
-
-    private fun onPhotoUploaded(photo: TakenPhoto) {
-        Timber.tag(ttag).d("onPhotoUploaded()")
-
-        adapter.runOnAdapterHandler {
-            adapter.add(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
-        }
-    }
-
-    private fun onStartUploadingPhotos() {
-        Timber.tag(ttag).d("onStartUploadingPhotos()")
-
-        adapter.runOnAdapterHandler {
-            adapter.removeMessageFooter()
-            adapter.addPhotoUploadingIndicator()
-        }
-    }
-
-    private fun onFailedToUploadPhoto(takenPhoto: TakenPhoto) {
-        Timber.tag(ttag).d("onFailedToUploadPhoto()")
-
-        adapter.runOnAdapterHandler {
-            adapter.removePhotoUploadingIndicator()
-            adapter.addMessageFooter()
-            //adapter.addFirst(AdapterItem(AdapterItemType.VIEW_FAILED_TO_UPLOAD))
-        }
-    }
-
-    private fun onAllPhotosUploaded() {
-        Timber.tag(ttag).d("onAllPhotosUploaded()")
-
-        adapter.runOnAdapterHandler {
-            adapter.removePhotoUploadingIndicator()
         }
     }
 

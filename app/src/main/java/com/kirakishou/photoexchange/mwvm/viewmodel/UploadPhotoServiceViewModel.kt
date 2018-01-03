@@ -17,9 +17,12 @@ import com.kirakishou.photoexchange.mwvm.wires.inputs.UploadPhotoServiceInputs
 import com.kirakishou.photoexchange.mwvm.wires.outputs.UploadPhotoServiceOutputs
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.delay
+import kotlinx.coroutines.experimental.rx2.asCompletable
 import kotlinx.coroutines.experimental.rx2.await
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
@@ -44,7 +47,7 @@ class UploadPhotoServiceViewModel(
     val errors: UploadPhotoServiceErrors = this
 
     private val compositeDisposable = CompositeDisposable()
-    private val compositeJob = CompositeJob()
+    //private val compositeJob = CompositeJob()
 
     //TODO: change this
     private val MAX_ATTEMPTS = 1
@@ -55,7 +58,7 @@ class UploadPhotoServiceViewModel(
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
 
     override fun uploadPhotos() {
-        compositeJob += async {
+        compositeDisposable += async {
             try {
                 //FIXME: doesn't work without delay
                 delay(ASYNC_DELAY, TimeUnit.MILLISECONDS)
@@ -89,7 +92,7 @@ class UploadPhotoServiceViewModel(
             } catch (error: Throwable) {
                 onPhotoUploadStateOutput.onNext(PhotoUploadingState.UnknownErrorWhileUploading(error))
             }
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     private suspend fun uploadPhoto(photo: TakenPhoto): String? {
@@ -114,7 +117,7 @@ class UploadPhotoServiceViewModel(
 
     fun cleanUp() {
         compositeDisposable.clear()
-        compositeJob.cancelAll()
+        //compositeJob.cancelAll()
 
         //PhotoExchangeApplication.refWatcher!!.watch(this, this::class.java.simpleName)
         Timber.tag(tag).d("cleanUp")

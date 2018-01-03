@@ -18,13 +18,7 @@ class ImageLoaderModule {
 
     @Singleton
     @Provides
-    fun provideGlideRequestManager(context: Context): RequestManager {
-        return GlideBuilder().build(context).requestManagerRetriever.get(context)
-    }
-
-    @Singleton
-    @Provides
-    fun provideImageLoader(glideRequestManager: RequestManager): ImageLoader {
-        return ImageLoader(glideRequestManager)
+    fun provideImageLoader(context: Context): ImageLoader {
+        return ImageLoader(context)
     }
 }

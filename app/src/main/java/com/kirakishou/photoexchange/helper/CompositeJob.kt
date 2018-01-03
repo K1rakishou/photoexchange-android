@@ -19,7 +19,7 @@ class CompositeJob {
 
     fun cancelAll() {
         //FIXME:
-        //sometimes cancel throws kotlinx.coroutines.experimental.JobCancellationException: Job was cancelled normally; job=DeferredCoroutine{Cancelling}@c804443
+        //sometimes cancel throws JobCancellationException: Job was cancelled normally; job=DeferredCoroutine{Cancelling}
         //dunno why
         jobs.forEach {
             //HACK:
@@ -30,6 +30,7 @@ class CompositeJob {
             }
 
         }
+
         jobs.clear()
     }
 }

@@ -1,7 +1,5 @@
 package com.kirakishou.photoexchange.mwvm.viewmodel
 
-import com.kirakishou.photoexchange.PhotoExchangeApplication
-import com.kirakishou.photoexchange.helper.CompositeJob
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
@@ -9,16 +7,18 @@ import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mwvm.wires.errors.FindPhotoAnswerServiceErrors
 import com.kirakishou.photoexchange.mwvm.wires.inputs.FindPhotoAnswerServiceInputs
 import com.kirakishou.photoexchange.mwvm.wires.outputs.FindPhotoAnswerServiceOutputs
-import com.kirakishou.photoexchange.mwvm.model.dto.PhotoAnswerReturnValue
 import com.kirakishou.photoexchange.mwvm.model.exception.ApiException
 import com.kirakishou.photoexchange.mwvm.model.other.Constants
 import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
 import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
-import com.kirakishou.photoexchange.mwvm.model.state.FindPhotoState
+import com.kirakishou.photoexchange.mwvm.model.state.LookingForPhotoState
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.rx2.asCompletable
 import kotlinx.coroutines.experimental.rx2.await
 import timber.log.Timber
 
@@ -41,23 +41,23 @@ class FindPhotoAnswerServiceViewModel(
     val errors: FindPhotoAnswerServiceErrors = this
 
     private val compositeDisposable = CompositeDisposable()
-    private val compositeJob = CompositeJob()
+    //private val compositeJob = CompositeJob()
 
     //outputs
-    private val findPhotoStateOutput = PublishSubject.create<FindPhotoState>()
+    private val findPhotoStateOutput = PublishSubject.create<LookingForPhotoState>()
 
     //errors
     private val badResponseSubject = PublishSubject.create<ServerErrorCode>()
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
 
     override fun findPhotoAnswer(userId: String) {
-        compositeJob += async {
+        compositeDisposable += async {
             try {
                 val receivedCount = photoAnswerRepository.countAll().await()
                 val uploadedCount = takenPhotosRepository.countAll().await()
 
                 if (uploadedCount <= receivedCount) {
-                    findPhotoStateOutput.onNext(FindPhotoState.UploadMorePhotos())
+                    findPhotoStateOutput.onNext(LookingForPhotoState.UploadMorePhotos())
                     return@async
                 }
 
@@ -65,15 +65,15 @@ class FindPhotoAnswerServiceViewModel(
                 val findPhotoErrorCode = ServerErrorCode.from(findPhotoResponse.serverErrorCode)
 
                 when (findPhotoErrorCode) {
-                    ServerErrorCode.NO_PHOTOS_TO_SEND_BACK -> findPhotoStateOutput.onNext(FindPhotoState.ServerHasNoPhotos())
-                    ServerErrorCode.UPLOAD_MORE_PHOTOS -> findPhotoStateOutput.onNext(FindPhotoState.UploadMorePhotos())
+                    ServerErrorCode.NO_PHOTOS_TO_SEND_BACK -> findPhotoStateOutput.onNext(LookingForPhotoState.ServerHasNoPhotos())
+                    ServerErrorCode.UPLOAD_MORE_PHOTOS -> findPhotoStateOutput.onNext(LookingForPhotoState.UploadMorePhotos())
                     ServerErrorCode.OK -> {
                         val photoAnswer = PhotoAnswer.fromPhotoAnswerJsonObject(findPhotoResponse.photoAnswer!!)
                         val markPhotoResponse = apiClient.markPhotoAsReceived(photoAnswer.photoRemoteId, userId).await()
                         val markPhotoErrorCode = ServerErrorCode.from(markPhotoResponse.serverErrorCode)
 
                         if (markPhotoErrorCode != ServerErrorCode.OK) {
-                            findPhotoStateOutput.onNext(FindPhotoState.LocalRepositoryError())
+                            findPhotoStateOutput.onNext(LookingForPhotoState.LocalRepositoryError())
                         } else {
                             photoAnswerRepository.saveOne(photoAnswer).await()
 
@@ -82,28 +82,28 @@ class FindPhotoAnswerServiceViewModel(
                                 allPhotoAnswers.forEach { Timber.tag(tag).d(it.toString()) }
                             }
 
-                            findPhotoStateOutput.onNext(FindPhotoState.PhotoFound(photoAnswer, findPhotoResponse.allFound))
+                            findPhotoStateOutput.onNext(LookingForPhotoState.PhotoFound(photoAnswer, findPhotoResponse.allFound))
                         }
                     }
 
-                    else -> findPhotoStateOutput.onNext(FindPhotoState.UnknownError(ApiException(findPhotoErrorCode)))
+                    else -> findPhotoStateOutput.onNext(LookingForPhotoState.UnknownError(ApiException(findPhotoErrorCode)))
                 }
             } catch (error: Throwable) {
-                findPhotoStateOutput.onNext(FindPhotoState.UnknownError(error))
+                findPhotoStateOutput.onNext(LookingForPhotoState.UnknownError(error))
             }
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     fun cleanUp() {
         compositeDisposable.clear()
-        compositeJob.cancelAll()
+        //compositeJob.cancelAll()
 
         //PhotoExchangeApplication.refWatcher!!.watch(this, this::class.java.simpleName)
         Timber.tag(tag).d("cleanUp()")
     }
 
     //outputs
-    override fun findPhotoStateObservable(): Observable<FindPhotoState> = findPhotoStateOutput
+    override fun findPhotoStateObservable(): Observable<LookingForPhotoState> = findPhotoStateOutput
 
     //errors
     override fun onBadResponseObservable(): Observable<ServerErrorCode> = badResponseSubject

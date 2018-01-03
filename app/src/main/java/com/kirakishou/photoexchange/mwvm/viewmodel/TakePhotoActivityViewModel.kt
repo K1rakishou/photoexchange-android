@@ -11,8 +11,11 @@ import com.kirakishou.photoexchange.mwvm.wires.errors.MainActivityViewModelError
 import com.kirakishou.photoexchange.mwvm.wires.inputs.MainActivityViewModelInputs
 import com.kirakishou.photoexchange.mwvm.wires.outputs.MainActivityViewModelOutputs
 import io.reactivex.Observable
+import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.rx2.asCompletable
 import kotlinx.coroutines.experimental.rx2.await
 import timber.log.Timber
 
@@ -42,7 +45,7 @@ class TakePhotoActivityViewModel(
             return
         }
 
-        compositeJob += async {
+        compositeDisposable += async {
             //we don't care about concurrency here
             val allTakenPhotos = takenPhotosRepo.findAllDebug().await()
             val allPhotoAnswers = photoAnswerRepo.findAllDebug().await()
@@ -52,7 +55,7 @@ class TakePhotoActivityViewModel(
 
             Timber.tag(tag).d("showDatabaseDebugInfo() === Photo answer ===")
             allPhotoAnswers.forEach { Timber.tag(tag).d("showDatabaseDebugInfo() photo: $it") }
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     /*override fun cleanTakenPhotosDB() {
@@ -70,7 +73,7 @@ class TakePhotoActivityViewModel(
     }*/
 
     override fun saveTakenPhoto(takenPhoto: TakenPhoto) {
-        compositeJob += async {
+        compositeDisposable += async {
             try {
                 val id = takenPhotosRepo.saveOne(takenPhoto.location.lon, takenPhoto.location.lat,
                         takenPhoto.photoFilePath, takenPhoto.userId).await()
@@ -81,7 +84,7 @@ class TakePhotoActivityViewModel(
             } catch (error: Throwable) {
                 onTakenPhotoSavedOutput.onError(error)
             }
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     private suspend fun printTakenPhotoTable() {

@@ -14,12 +14,15 @@ import com.kirakishou.photoexchange.base.BaseFragment
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.helper.ImageLoader
+import com.kirakishou.photoexchange.helper.extension.filterMulticastEvent
+import com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mwvm.model.dto.PhotoAnswerAllFound
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
 import com.kirakishou.photoexchange.mwvm.model.other.Constants.PHOTO_ADAPTER_VIEW_WIDTH
 import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
+import com.kirakishou.photoexchange.mwvm.model.state.LookingForPhotoState
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
@@ -100,35 +103,78 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ showLookingForPhotoIndicator() }, this::onUnknownError)
 
-        compositeDisposable += getViewModel().outputs.onShowPhotoReceivedObservable()
+        compositeDisposable += getViewModel().outputs.onLookingForPhotoStateObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onPhotoReceived, this::onUnknownError)
-
-        compositeDisposable += getViewModel().outputs.onShowErrorWhileTryingToLookForPhotoObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ errorWhileTryingToSearchForPhoto() }, this::onUnknownError)
-
-        compositeDisposable += getViewModel().outputs.onShowNoPhotoOnServerObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onNoPhotoOnTheServer() }, this::onUnknownError)
-
-        compositeDisposable += getViewModel().outputs.onShowUserNeedsToUploadMorePhotosObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ userNeedsToUploadMorePhotos() }, this::onUnknownError)
+                .filterMulticastEvent(ReceivedPhotosListFragment::class.java)
+                .subscribe(this::onLookingForPhotoState, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onStartLookingForPhotosObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ startLookingForPhotos() }, this::onUnknownError)
 
+        compositeDisposable += getViewModel().outputs.onShowUploadMorePhotosMessageObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ onUploadMorePhotos() }, this::onUnknownError)
+
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onUnknownError)
+    }
+
+    private fun onLookingForPhotoState(state: LookingForPhotoState) {
+        when (state) {
+            is LookingForPhotoState.UploadMorePhotos -> {
+                Timber.tag(ttag).d("onLookingForPhotoState() LookingForPhotoState.UploadMorePhotos")
+
+                adapter.runOnAdapterHandler {
+                    adapter.removeLookingForPhotoIndicator()
+                    adapter.removeMessage()
+
+                    adapter.addMessage(ReceivedPhotosAdapter.MESSAGE_TYPE_UPLOAD_MORE_PHOTOS)
+                }
+            }
+
+            is LookingForPhotoState.LocalRepositoryError -> {
+                Timber.tag(ttag).d("onLookingForPhotoState() LookingForPhotoState.LocalRepositoryError")
+
+                adapter.runOnAdapterHandler {
+                    adapter.removeLookingForPhotoIndicator()
+                    adapter.removeMessage()
+
+                    adapter.addMessage(ReceivedPhotosAdapter.MESSAGE_TYPE_ERROR)
+                }
+            }
+
+            is LookingForPhotoState.ServerHasNoPhotos -> {
+                Timber.tag(ttag).d("onLookingForPhotoState() LookingForPhotoState.ServerHasNoPhotos")
+
+                adapter.runOnAdapterHandler {
+                    adapter.removeLookingForPhotoIndicator()
+                    adapter.removeMessage()
+
+                    adapter.addLookingForPhotoIndicator()
+                }
+            }
+
+            is LookingForPhotoState.PhotoFound -> {
+                Timber.tag(ttag).d("onLookingForPhotoState() LookingForPhotoState.PhotoFound")
+
+                adapter.runOnAdapterHandler {
+                    if (state.allFound) {
+                        adapter.removeLookingForPhotoIndicator()
+                    }
+
+                    adapter.removeMessage()
+                    adapter.addFirst(AdapterItem(state.photoAnswer, AdapterItemType.VIEW_ITEM))
+                }
+            }
+
+            else -> IllegalArgumentException("Bad state")
+        }
     }
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
@@ -145,7 +191,16 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         getViewModel().inputs.beginReceivingEvents(this::class.java)
         getViewModel().inputs.startLookingForPhotos()
         getViewModel().inputs.startPhotosUploading()
+
+        addIndicatorIfServiceIsRunning()
+
         super.onResume()
+    }
+
+    private fun addIndicatorIfServiceIsRunning() {
+        if (FindPhotoAnswerService.isAlreadyRunning(context!!)) {
+            showLookingForPhotoIndicator()
+        }
     }
 
     override fun onPause() {
@@ -246,62 +301,14 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
-    private fun onPhotoReceived(data: PhotoAnswerAllFound) {
-        Timber.tag(ttag).d("onPhotoReceived()")
-
-        adapter.runOnAdapterHandler {
-            if (data.allFound) {
-                adapter.removeLookingForPhotoIndicator()
-            }
-
-            adapter.removeMessage()
-            adapter.addFirst(AdapterItem(data.photoAnswer, AdapterItemType.VIEW_ITEM))
-
-            (activity as AllPhotosViewActivity).showNewPhotoReceivedNotification()
-        }
-    }
-
-    private fun onNoPhotoOnTheServer() {
-        Timber.tag(ttag).d("onNoPhotoOnTheServer()")
-
-        adapter.runOnAdapterHandler {
-            adapter.removeLookingForPhotoIndicator()
-            adapter.removeMessage()
-
-            adapter.addLookingForPhotoIndicator()
-        }
-    }
-
-    private fun errorWhileTryingToSearchForPhoto() {
-        Timber.tag(ttag).d("errorWhileTryingToSearchForPhoto()")
-
-        adapter.runOnAdapterHandler {
-            adapter.removeLookingForPhotoIndicator()
-            adapter.removeMessage()
-
-            adapter.addMessage(ReceivedPhotosAdapter.MESSAGE_TYPE_ERROR)
-        }
-    }
-
-    private fun userNeedsToUploadMorePhotos() {
-        Timber.tag(ttag).d("userNeedsToUploadMorePhotos()")
-
-        adapter.runOnAdapterHandler {
-            adapter.removeLookingForPhotoIndicator()
-            adapter.removeMessage()
-
-            adapter.addMessage(ReceivedPhotosAdapter.MESSAGE_TYPE_UPLOAD_MORE_PHOTOS)
-        }
-    }
-
     private fun startLookingForPhotos() {
         Timber.tag(ttag).d("startLookingForPhotos() Showing scheduleLookingForPhotoAnswer")
         (activity as AllPhotosViewActivity).scheduleLookingForPhotoAnswer()
         showLookingForPhotoIndicator()
     }
 
-    private fun onNoUploadedPhotos() {
-        Timber.tag(ttag).d("onNoUploadedPhotos()")
+    private fun onUploadMorePhotos() {
+        Timber.tag(ttag).d("onUploadMorePhotos()")
 
         adapter.runOnAdapterHandler {
             adapter.addMessage(ReceivedPhotosAdapter.MESSAGE_TYPE_UPLOAD_MORE_PHOTOS)

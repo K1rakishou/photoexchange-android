@@ -207,6 +207,10 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     }
 
     private fun initRx() {
+        compositeDisposable += RxView.clicks(ivShowAllPhotos)
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .subscribe({ switchToAllPhotosViewActivity() })
+
         val fotoapparatObservable = permissionsGrantedSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .flatMap { initCamera() }
@@ -226,10 +230,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         compositeDisposable += Observables.combineLatest(fotoapparatObservable, lifecycleSubject)
                 .doOnNext { (fotoapparat, lifecycle) -> startOrStopCamera(fotoapparat, lifecycle) }
                 .subscribe()
-
-        compositeDisposable += RxView.clicks(ivShowAllPhotos)
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe({ switchToAllPhotosViewActivity() })
 
         compositeDisposable += RxView.clicks(takePhotoButton)
                 .observeOn(Schedulers.io())
@@ -270,7 +270,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     private fun startOrStopCamera(fotoapparat: Fotoapparat, lifecycle: Int) {
         if (!fotoapparat.isAvailable) {
             if (lifecycle == ON_START) {
-                Timber.tag(tag).d("initRx() Camera IS NOT available!!!")
+                Timber.tag(tag).d("startOrStopCamera() Camera IS NOT available!!!")
                 hideTakePhotoButton()
                 hideShowAllPhotosButton()
                 showCameraIsNotAvailableDialog()
@@ -278,11 +278,11 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         } else {
             when (lifecycle) {
                 ON_START -> {
-                    Timber.tag(tag).d("initRx() ON_START")
+                    Timber.tag(tag).d("startOrStopCamera() ON_START")
                     fotoapparat.start()
                 }
                 ON_STOP -> {
-                    Timber.tag(tag).d("initRx() ON_STOP")
+                    Timber.tag(tag).d("startOrStopCamera() ON_STOP")
                     fotoapparat.stop()
                 }
             }
