@@ -19,8 +19,11 @@ import io.reactivex.rxkotlin.Singles
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.delay
+import kotlinx.coroutines.experimental.rx2.asCompletable
+import kotlinx.coroutines.experimental.rx2.asSingle
 import kotlinx.coroutines.experimental.rx2.await
 import kotlinx.coroutines.experimental.rx2.awaitFirst
 import timber.log.Timber
@@ -130,18 +133,18 @@ class AllPhotosViewActivityViewModel(
     }
 
     fun markPhotoToBeUploadedAgain(photoId: Long) {
-        compositeJob += async {
+        compositeDisposable += async {
             try {
                 takenPhotosRepository.updateSetQueuedUp(photoId).await()
                 startPhotosUploadingInput.onNext(Unit)
             } catch (error: Throwable) {
                 startPhotosUploadingInput.onError(error)
             }
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     override fun beginReceivingEvents(clazz: Class<*>) {
-        compositeJob += async {
+        compositeDisposable += async {
             try {
                 //FIXME: doesn't work without delay
                 delay(ASYNC_DELAY, TimeUnit.MILLISECONDS)
@@ -149,11 +152,11 @@ class AllPhotosViewActivityViewModel(
             } catch (error: Throwable) {
                 beginReceivingEventsOutput.onError(error)
             }
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     override fun stopReceivingEvents(clazz: Class<*>) {
-        compositeJob += async {
+        compositeDisposable += async {
             try {
                 //FIXME: doesn't work without delay
                 delay(ASYNC_DELAY, TimeUnit.MILLISECONDS)
@@ -161,33 +164,33 @@ class AllPhotosViewActivityViewModel(
             } catch (error: Throwable) {
                 stopReceivingEventsOutput.onError(error)
             }
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     override fun fetchOnePageUploadedPhotos(page: Int, count: Int) {
-        compositeJob += async {
+        compositeDisposable += async {
             try {
                 val uploadedPhotos = takenPhotosRepository.findOnePage(Pageable(page, count)).await()
                 onUploadedPhotosPageReceivedOutput.onNext(uploadedPhotos)
             } catch (error: Throwable) {
                 onUploadedPhotosPageReceivedOutput.onError(error)
             }
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     override fun fetchOnePageReceivedPhotos(page: Int, count: Int) {
-        compositeJob += async {
+        compositeDisposable += async {
             try {
                 val onePage = photoAnswerRepository.findOnePage(Pageable(page, count)).awaitFirst()
                 onReceivedPhotosPageReceivedOutput.onNext(onePage)
             } catch (error: Throwable) {
                 onReceivedPhotosPageReceivedOutput.onError(error)
             }
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     override fun scrollToTop() {
-        compositeJob += async {
+        compositeDisposable += async {
             try {
                 //FIXME: doesn't work without delay
                 delay(ASYNC_DELAY, TimeUnit.MILLISECONDS)
@@ -195,55 +198,55 @@ class AllPhotosViewActivityViewModel(
             } catch (error: Throwable) {
                 scrollToTopOutput.onError(error)
             }
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     override fun showLookingForPhotoIndicator() {
-        compositeJob += async {
+        compositeDisposable += async {
             showLookingForPhotoIndicatorOutput.onNext(Unit)
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     override fun preparePhotosUploading(receiver: Class<*>) {
-        compositeJob += async {
+        compositeDisposable += async {
             preparePhotosUploadingOutput.onNext(MulticastEvent(receiver, Unit))
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     override fun photoUploaded(receiver: Class<*>, photo: TakenPhoto) {
-        compositeJob += async {
+        compositeDisposable += async {
             showPhotoUploadedOutput.onNext(MulticastEvent(receiver, photo))
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     override fun showFailedToUploadPhoto(receiver: Class<*>, photo: TakenPhoto) {
-        compositeJob += async {
+        compositeDisposable += async {
             showFailedToUploadPhotoOutput.onNext(MulticastEvent(receiver, photo))
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     override fun showPhotoReceived(photo: PhotoAnswer, allFound: Boolean) {
-        compositeJob += async {
+        compositeDisposable += async {
             showPhotoReceivedOutput.onNext(PhotoAnswerAllFound(photo, allFound))
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     override fun showErrorWhileTryingToLookForPhoto() {
-        compositeJob += async {
+        compositeDisposable += async {
             showErrorWhileTryingToLookForPhotoOutput.onNext(Unit)
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     override fun showNoPhotoOnServer() {
-        compositeJob += async {
+        compositeDisposable += async {
             showNoPhotoOnServerOutput.onNext(Unit)
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     override fun showUserNeedsToUploadMorePhotos() {
-        compositeJob += async {
+        compositeDisposable += async {
             showUserNeedsToUploadMorePhotosOutput.onNext(Unit)
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     override fun startLookingForPhotos() {
@@ -251,7 +254,7 @@ class AllPhotosViewActivityViewModel(
     }
 
     override fun getQueuedUpAndFailedToUploadPhotos() {
-        compositeJob += async {
+        compositeDisposable += async {
             //FIXME: doesn't work without delay
             delay(ASYNC_DELAY, TimeUnit.MILLISECONDS)
 
@@ -273,17 +276,17 @@ class AllPhotosViewActivityViewModel(
             } catch (error: Throwable) {
                 onQueuedUpAndFailedToUploadLoadedOutput.onError(error)
             }
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     override fun allPhotosUploaded(receiver: Class<*>) {
-        compositeJob += async {
+        compositeDisposable += async {
             allPhotosUploadedOutput.onNext(MulticastEvent(receiver, Unit))
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     override fun cancelTakenPhotoUploading(id: Long) {
-        compositeJob += async {
+        compositeDisposable += async {
             try {
                 val takenPhoto = takenPhotosRepository.findOne(id).await()
                 FileUtils.deletePhotoFile(takenPhoto)
@@ -293,7 +296,7 @@ class AllPhotosViewActivityViewModel(
             } catch (error: Throwable) {
                 onTakenPhotoUploadingCanceledOutput.onError(error)
             }
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     private fun handleErrors(error: Throwable) {

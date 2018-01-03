@@ -17,8 +17,11 @@ import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
 import com.kirakishou.photoexchange.mwvm.model.state.FindPhotoState
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.rx2.asCompletable
 import kotlinx.coroutines.experimental.rx2.await
 import timber.log.Timber
 
@@ -41,7 +44,7 @@ class FindPhotoAnswerServiceViewModel(
     val errors: FindPhotoAnswerServiceErrors = this
 
     private val compositeDisposable = CompositeDisposable()
-    private val compositeJob = CompositeJob()
+    //private val compositeJob = CompositeJob()
 
     //outputs
     private val findPhotoStateOutput = PublishSubject.create<FindPhotoState>()
@@ -51,7 +54,7 @@ class FindPhotoAnswerServiceViewModel(
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
 
     override fun findPhotoAnswer(userId: String) {
-        compositeJob += async {
+        compositeDisposable += async {
             try {
                 val receivedCount = photoAnswerRepository.countAll().await()
                 val uploadedCount = takenPhotosRepository.countAll().await()
@@ -91,12 +94,12 @@ class FindPhotoAnswerServiceViewModel(
             } catch (error: Throwable) {
                 findPhotoStateOutput.onNext(FindPhotoState.UnknownError(error))
             }
-        }
+        }.asCompletable(CommonPool).subscribe()
     }
 
     fun cleanUp() {
         compositeDisposable.clear()
-        compositeJob.cancelAll()
+        //compositeJob.cancelAll()
 
         //PhotoExchangeApplication.refWatcher!!.watch(this, this::class.java.simpleName)
         Timber.tag(tag).d("cleanUp()")
