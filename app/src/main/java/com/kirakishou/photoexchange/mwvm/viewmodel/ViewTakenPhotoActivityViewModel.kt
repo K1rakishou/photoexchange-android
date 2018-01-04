@@ -40,6 +40,12 @@ class ViewTakenPhotoActivityViewModel(
         }.asCompletable(CommonPool).subscribe()
     }
 
+    override fun updateTakenPhotoAsQueuedUp(id: Long) {
+        compositeDisposable += async {
+            takenPhotosRepo.updateSetQueuedUp(id).await()
+        }.asCompletable(CommonPool).subscribe()
+    }
+
     private fun handleErrors(error: Throwable) {
         Timber.e(error)
     }

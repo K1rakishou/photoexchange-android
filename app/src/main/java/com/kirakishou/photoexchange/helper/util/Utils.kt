@@ -87,10 +87,7 @@ object Utils {
         } catch (error: Throwable) {
             Timber.e(error)
 
-            if (tempFile.exists()) {
-                tempFile.delete()
-            }
-
+            FileUtils.deleteFile(tempFile)
             return Fickle.empty()
         }
     }

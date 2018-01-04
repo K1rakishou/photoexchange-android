@@ -94,7 +94,6 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
         super.onPause()
     }
 
-
     open fun onShowToast(message: String, duration: Int = Toast.LENGTH_LONG) {
         runOnUiThread {
             Toast.makeText(this, message, duration).show()

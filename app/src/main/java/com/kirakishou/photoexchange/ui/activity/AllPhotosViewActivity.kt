@@ -100,9 +100,6 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         eventBus.register(this)
 
         initTabs(intent)
-
-        //TODO: move to onResume and make it check DB first before starting a service
-        schedulePhotoUploadingASAP()
     }
 
     override fun onActivityDestroy() {
@@ -140,12 +137,12 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         compositeDisposable += RxView.clicks(ivCloseActivityButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ runTakePhotoActivity() })
+                .subscribe({ switchToTakePhotoActivity() })
 
         compositeDisposable += RxView.clicks(takePhotoButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ runTakePhotoActivity() })
+                .subscribe({ switchToTakePhotoActivity() })
 
         compositeDisposable += getViewModel().outputs.onBeginReceivingEventsObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -156,11 +153,6 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ clazz -> onStopReceivingEvents(clazz) }, this::onUnknownError)
-
-        /*compositeDisposable += getViewModel().outputs.onPhotoMarkedToBeUploadedObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onPhotoMarkedToBeUploaded() }, this::onUnknownError)*/
 
         compositeDisposable += getViewModel().outputs.onStartPhotosUploadingObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -180,10 +172,9 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                 .subscribe(this::onUnknownError)
     }
 
-    private fun runTakePhotoActivity() {
-        val intent = Intent(this, TakePhotoActivity::class.java)
-        startActivity(intent)
-
+    private fun switchToTakePhotoActivity() {
+        //val intent = Intent(this, TakePhotoActivity::class.java)
+        //startActivity(intent)
         finish()
     }
 
@@ -267,7 +258,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         getViewModel().inputs.showLookingForPhotoIndicator()
     }
 
-    fun showNewPhotoReceivedNotification() {
+    private fun showNewPhotoReceivedNotification() {
         Snackbar.make(takePhotoButton, getString(R.string.new_photo_received), Snackbar.LENGTH_LONG)
                 .setAction(getString(R.string.snackbar_button_title_show), {
                     selectReceivedPhotosTab()

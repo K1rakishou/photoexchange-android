@@ -1,9 +1,6 @@
 package com.kirakishou.photoexchange.helper.database.dao
 
-import android.arch.persistence.room.Dao
-import android.arch.persistence.room.Insert
-import android.arch.persistence.room.OnConflictStrategy
-import android.arch.persistence.room.Query
+import android.arch.persistence.room.*
 import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
 import com.kirakishou.photoexchange.mwvm.model.state.PhotoState
 import io.reactivex.Single
@@ -26,7 +23,10 @@ interface TakenPhotosDao {
             "LIMIT :arg1 OFFSET :arg0")
     fun findPage(page: Int, count: Int): Single<List<TakenPhotoEntity>>
 
-    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} WHERE photo_state = \'${PhotoState.QUEUED_UP_STATE}\' ORDER BY created_on DESC ")
+    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} WHERE photo_state = '${PhotoState.TAKEN_PHOTO_STATE}'")
+    fun findAllTaken(): Single<List<TakenPhotoEntity>>
+
+    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} WHERE photo_state = \'${PhotoState.QUEUED_UP_STATE}\' ORDER BY created_on DESC")
     fun findAllQueuedUp(): Single<List<TakenPhotoEntity>>
 
     @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} WHERE photo_state = \'${PhotoState.FAILED_TO_UPLOAD_STATE}\' ORDER BY created_on DESC ")
@@ -49,6 +49,9 @@ interface TakenPhotosDao {
 
     @Query("DELETE FROM ${TakenPhotoEntity.TABLE_NAME} WHERE id = :arg0")
     fun deleteOne(id: Long): Int
+
+    @Query("DELETE FROM ${TakenPhotoEntity.TABLE_NAME} WHERE id IN (:arg0)")
+    fun deleteManyById(ids: List<Long>): Int
 
     /*@Query("DELETE FROM ${TakenPhotoEntity.TABLE_NAME} WHERE is_uploading = ${MyDatabase.SQLITE_FALSE} AND uploaded = ${MyDatabase.SQLITE_FALSE}")
     fun deleteAll(): Int*/

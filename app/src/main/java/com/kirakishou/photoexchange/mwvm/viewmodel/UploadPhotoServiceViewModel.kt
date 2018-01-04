@@ -1,7 +1,5 @@
 package com.kirakishou.photoexchange.mwvm.viewmodel
 
-import com.kirakishou.photoexchange.PhotoExchangeApplication
-import com.kirakishou.photoexchange.helper.CompositeJob
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.RxUtils
@@ -81,7 +79,7 @@ class UploadPhotoServiceViewModel(
                         takenPhotosRepo.updateSetUploaded(photo.id, photoName)
                         onPhotoUploadStateOutput.onNext(PhotoUploadingState.PhotoUploaded(photo))
                     } else {
-                        Timber.tag(tag).d("Could not upload photo. Marking it's state as failed in the database")
+                        Timber.tag(tag).d("Could not upload photo. Marking it's value as failed in the database")
 
                         takenPhotosRepo.updateSetFailedToUpload(photo.id).await()
                         onPhotoUploadStateOutput.onNext(PhotoUploadingState.FailedToUploadPhoto(photo))

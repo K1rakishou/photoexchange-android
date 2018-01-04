@@ -131,7 +131,7 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 }
             }
 
-            else -> IllegalStateException("Bad state")
+            else -> IllegalStateException("Bad value")
         }
     }
 

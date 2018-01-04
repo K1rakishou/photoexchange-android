@@ -22,6 +22,11 @@ class TakenPhoto private constructor(
         return TakenPhoto(id, location, photoFilePath, userId, photoName, photoState)
     }
 
+    override fun toString(): String {
+        return "[id: $id, location: $location, photoFilePath: $photoFilePath, " +
+                "userId: $userId, photoName: $photoName, photoState: $photoState]"
+    }
+
     companion object {
         fun empty(): TakenPhoto {
             return TakenPhoto(-1L, LonLat.empty(), "", "", "", PhotoState.TAKEN)

@@ -54,7 +54,6 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private var columnsCount: Int = 1
 
     private val loadMoreSubject = PublishSubject.create<Int>()
-    private var isPhotoUploading = false
 
     override fun initViewModel(): AllPhotosViewActivityViewModel {
         return ViewModelProviders.of(activity!!, viewModelFactory).get(AllPhotosViewActivityViewModel::class.java)
@@ -124,7 +123,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 }
             }
 
-            else -> IllegalStateException("Bad state")
+            else -> IllegalStateException("Bad value")
         }
     }
 
