@@ -73,8 +73,8 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     lateinit var appSharedPreference: AppSharedPreference
 
     private val tag = "[${this::class.java.simpleName}]: "
-    private val ON_START = 0
-    private val ON_STOP = 1
+    private val ON_RESUME = 0
+    private val ON_PAUSE = 1
 
     private val userInfoPreference by lazy { appSharedPreference.prepare<UserInfoPreference>() }
     private val locationManager by lazy { MyLocationManager(applicationContext) }
@@ -105,19 +105,15 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     override fun onActivityDestroy() {
     }
 
+    override fun onResume() {
+        super.onResume()
+        lifecycleSubject.onNext(ON_RESUME)
+    }
+
     override fun onPause() {
         super.onPause()
+        lifecycleSubject.onNext(ON_PAUSE)
         userInfoPreference.save()
-    }
-
-    override fun onStart() {
-        super.onStart()
-        lifecycleSubject.onNext(ON_START)
-    }
-
-    override fun onStop() {
-        lifecycleSubject.onNext(ON_STOP)
-        super.onStop()
     }
 
     private fun getPermissions() {
@@ -230,7 +226,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         compositeDisposable += RxView.clicks(takePhotoButton)
                 .observeOn(Schedulers.io())
                 .map { lifecycleSubject.value }
-                .filter { lifecycle -> lifecycle == ON_START }
+                .filter { lifecycle -> lifecycle == ON_RESUME }
                 .flatMap { fotoapparatObservable }
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext { hideControls() }
@@ -265,7 +261,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
     private fun startOrStopCamera(fotoapparat: Fotoapparat, lifecycle: Int) {
         if (!fotoapparat.isAvailable) {
-            if (lifecycle == ON_START) {
+            if (lifecycle == ON_RESUME) {
                 Timber.tag(tag).d("startOrStopCamera() Camera IS NOT available!!!")
                 hideTakePhotoButton()
                 hideShowAllPhotosButton()
@@ -273,13 +269,13 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
             }
         } else {
             when (lifecycle) {
-                ON_START -> {
-                    Timber.tag(tag).d("startOrStopCamera() ON_START")
+                ON_RESUME -> {
+                    Timber.tag(tag).d("startOrStopCamera() ON_RESUME")
                     fotoapparat.start()
                     showControls()
                 }
-                ON_STOP -> {
-                    Timber.tag(tag).d("startOrStopCamera() ON_STOP")
+                ON_PAUSE -> {
+                    Timber.tag(tag).d("startOrStopCamera() ON_PAUSE")
                     fotoapparat.stop()
                     hideControls()
                 }
@@ -316,7 +312,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         intent.putExtra("lat", location.lat)
         intent.putExtra("photo_file_path", photoFilePath)
         intent.putExtra("user_id", userId)
-        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
         startActivity(intent)
     }
 
@@ -411,29 +406,33 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     }
 
     private fun hideControls() {
-        takePhotoButton.animate()
-                .scaleX(0f)
-                .scaleY(0f)
-                .setDuration(500)
-                .setInterpolator(AnticipateInterpolator())
-                .mySetListener {
-                    onAnimationEnd {
-                        takePhotoButton?.visibility = View.GONE
+        if (this::takePhotoButton.isInitialized) {
+            takePhotoButton.animate()
+                    .scaleX(0f)
+                    .scaleY(0f)
+                    .setDuration(500)
+                    .setInterpolator(AnticipateInterpolator())
+                    .mySetListener {
+                        onAnimationEnd {
+                            takePhotoButton?.visibility = View.GONE
+                        }
                     }
-                }
-                .start()
+                    .start()
+        }
 
-        ivShowAllPhotos.animate()
-                .scaleX(0f)
-                .scaleY(0f)
-                .setDuration(500)
-                .setInterpolator(AnticipateInterpolator())
-                .mySetListener {
-                    onAnimationEnd {
-                        ivShowAllPhotos?.visibility = View.GONE
+        if (this::ivShowAllPhotos.isInitialized) {
+            ivShowAllPhotos.animate()
+                    .scaleX(0f)
+                    .scaleY(0f)
+                    .setDuration(500)
+                    .setInterpolator(AnticipateInterpolator())
+                    .mySetListener {
+                        onAnimationEnd {
+                            ivShowAllPhotos?.visibility = View.GONE
+                        }
                     }
-                }
-                .start()
+                    .start()
+        }
     }
 
     override fun resolveDaggerDependency() {

@@ -7,9 +7,6 @@ import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.Snackbar
 import android.support.design.widget.TabLayout
 import android.support.v4.view.ViewPager
-import android.view.View
-import android.view.animation.AnticipateInterpolator
-import android.view.animation.OvershootInterpolator
 import android.widget.ImageView
 import butterknife.BindView
 import com.jakewharton.rxbinding2.view.RxView
@@ -19,7 +16,6 @@ import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.helper.EventAccumulator
-import com.kirakishou.photoexchange.helper.extension.mySetListener
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService
@@ -141,12 +137,12 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         compositeDisposable += RxView.clicks(ivCloseActivityButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ runTakePhotoActivity() })
+                .subscribe({ switchToTakePhotoActivity() })
 
         compositeDisposable += RxView.clicks(takePhotoButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ runTakePhotoActivity() })
+                .subscribe({ switchToTakePhotoActivity() })
 
         compositeDisposable += getViewModel().outputs.onBeginReceivingEventsObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -176,10 +172,9 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                 .subscribe(this::onUnknownError)
     }
 
-    private fun runTakePhotoActivity() {
-        val intent = Intent(this, TakePhotoActivity::class.java)
-        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        startActivity(intent)
+    private fun switchToTakePhotoActivity() {
+        //val intent = Intent(this, TakePhotoActivity::class.java)
+        //startActivity(intent)
         finish()
     }
 
