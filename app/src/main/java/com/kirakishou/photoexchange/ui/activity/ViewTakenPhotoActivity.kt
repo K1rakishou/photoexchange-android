@@ -20,8 +20,10 @@ import com.kirakishou.photoexchange.mwvm.viewmodel.ViewTakenPhotoActivityViewMod
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.ViewTakenPhotoActivityViewModelFactory
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.io.File
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 
@@ -80,8 +82,10 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
 
         compositeDisposable += RxView.clicks(sendPhotoButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
+                .observeOn(Schedulers.io())
                 .doOnNext { getViewModel().inputs.updateTakenPhotoAsQueuedUp(takenPhoto.id) }
+                .delay(1, TimeUnit.SECONDS)
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ switchToAllPhotosViewActivity() })
     }
 

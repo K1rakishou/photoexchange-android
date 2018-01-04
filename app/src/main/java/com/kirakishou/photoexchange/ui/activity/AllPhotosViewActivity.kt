@@ -104,9 +104,6 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         eventBus.register(this)
 
         initTabs(intent)
-
-        //TODO: move to onResume and make it check DB first before starting a service
-        schedulePhotoUploadingASAP()
     }
 
     override fun onActivityDestroy() {

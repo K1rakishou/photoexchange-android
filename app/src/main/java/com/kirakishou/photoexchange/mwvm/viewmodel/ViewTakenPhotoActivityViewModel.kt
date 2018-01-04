@@ -42,7 +42,7 @@ class ViewTakenPhotoActivityViewModel(
 
     override fun updateTakenPhotoAsQueuedUp(id: Long) {
         compositeDisposable += async {
-            takenPhotosRepo.updateSetQueuedUp(id)
+            takenPhotosRepo.updateSetQueuedUp(id).await()
         }.asCompletable(CommonPool).subscribe()
     }
 
