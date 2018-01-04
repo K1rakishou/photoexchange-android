@@ -1,7 +1,5 @@
 package com.kirakishou.photoexchange.mwvm.viewmodel
 
-import com.kirakishou.photoexchange.PhotoExchangeApplication
-import com.kirakishou.photoexchange.helper.CompositeJob
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.RxUtils
@@ -109,7 +107,7 @@ class UploadPhotoServiceViewModel(
             return null
         }
 
-        FileUtils.deletePhotoFile(photo)
+        FileUtils.deleteFile(photo)
         takenPhotosRepo.updateSetUploaded(photo.id, response.photoName).await()
 
         return response.photoName

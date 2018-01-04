@@ -2,7 +2,6 @@ package com.kirakishou.photoexchange.helper.util
 
 import com.kirakishou.photoexchange.mwvm.model.other.Constants
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
-import timber.log.Timber
 import java.io.File
 
 /**
@@ -10,19 +9,18 @@ import java.io.File
  */
 object FileUtils {
 
-    fun deletePhotoFile(takenPhoto: TakenPhoto) {
-        val photoFile = File(takenPhoto.photoFilePath)
-        if (photoFile.exists()) {
-            val wasDeleted = photoFile.delete()
+    fun deleteFile(file: File) {
+        if (file.exists()) {
+            val wasDeleted = file.delete()
             if (Constants.isDebugBuild) {
-                check(wasDeleted, { "Could not delete file: ${takenPhoto.photoFilePath}" })
+                check(wasDeleted, { "Could not delete file: ${file.absolutePath}" })
             }
         }
     }
 
     fun deletePhotosFiles(allPhotos: List<TakenPhoto>) {
         allPhotos.forEach { takenPhoto ->
-            deletePhotoFile(takenPhoto)
+            deleteFile(File(takenPhoto.photoFilePath))
         }
     }
 }

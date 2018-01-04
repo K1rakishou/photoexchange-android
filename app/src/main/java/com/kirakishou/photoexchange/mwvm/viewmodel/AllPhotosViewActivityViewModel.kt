@@ -241,7 +241,7 @@ class AllPhotosViewActivityViewModel(
         compositeDisposable += async {
             try {
                 val takenPhoto = takenPhotosRepository.findOne(id).await()
-                FileUtils.deletePhotoFile(takenPhoto)
+                FileUtils.deleteFile(takenPhoto)
                 takenPhotosRepository.deleteOne(id).await()
 
                 onTakenPhotoUploadingCanceledOutput.onNext(id)
