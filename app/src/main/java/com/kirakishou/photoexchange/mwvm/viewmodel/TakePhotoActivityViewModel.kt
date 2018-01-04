@@ -62,7 +62,7 @@ class TakePhotoActivityViewModel(
     override fun cleanTakenPhotosDB() {
         compositeDisposable += async {
             try {
-                val takenPhotos = takenPhotosRepo.findAll().await()
+                val takenPhotos = takenPhotosRepo.findAllTaken().await()
                 FileUtils.deletePhotosFiles(takenPhotos)
 
                 takenPhotosRepo.deleteManyById(takenPhotos.map { it.id }).await()
