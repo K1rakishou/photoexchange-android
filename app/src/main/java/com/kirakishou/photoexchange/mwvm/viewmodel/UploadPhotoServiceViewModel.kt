@@ -107,7 +107,7 @@ class UploadPhotoServiceViewModel(
             return null
         }
 
-        FileUtils.deleteFile(photo)
+        FileUtils.deletePhotoFile(photo)
         takenPhotosRepo.updateSetUploaded(photo.id, response.photoName).await()
 
         return response.photoName

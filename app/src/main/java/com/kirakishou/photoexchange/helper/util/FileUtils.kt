@@ -18,9 +18,13 @@ object FileUtils {
         }
     }
 
+    fun deletePhotoFile(takenPhoto: TakenPhoto) {
+        deleteFile(File(takenPhoto.photoName))
+    }
+
     fun deletePhotosFiles(allPhotos: List<TakenPhoto>) {
         allPhotos.forEach { takenPhoto ->
-            deleteFile(File(takenPhoto.photoFilePath))
+            deletePhotoFile(takenPhoto)
         }
     }
 }

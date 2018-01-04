@@ -34,7 +34,7 @@ class ViewTakenPhotoActivityViewModel(
     override fun deleteTakenPhoto(id: Long) {
         compositeDisposable += async {
             val takenPhoto = takenPhotosRepo.findOne(id).await()
-            FileUtils.deleteFile(takenPhoto)
+            FileUtils.deletePhotoFile(takenPhoto)
 
             takenPhotosRepo.deleteOne(id).await()
         }.asCompletable(CommonPool).subscribe()
