@@ -70,8 +70,7 @@ class PhotoExchangeApplication : Application() {
 
     private fun initTimber() {
         if (Constants.isDebugBuild) {
-            //TODO: change this to Timber.DebugTree()
-            Timber.plant(CrashlyticsTree())
+            Timber.plant(Timber.DebugTree())
         } else {
             Timber.plant(CrashlyticsTree())
         }

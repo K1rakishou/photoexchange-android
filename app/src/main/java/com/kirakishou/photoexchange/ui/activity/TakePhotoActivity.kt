@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.ui.activity
 import android.Manifest
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.support.v7.widget.CardView
@@ -23,6 +24,7 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerTakePhotoActivityComponent
+import com.kirakishou.photoexchange.helper.CameraProvider
 import com.kirakishou.photoexchange.helper.PhotoSizeSelector
 import com.kirakishou.photoexchange.helper.extension.mySetListener
 import com.kirakishou.photoexchange.helper.location.MyLocationManager
@@ -39,6 +41,7 @@ import io.fotoapparat.Fotoapparat
 import io.fotoapparat.parameter.ScaleType
 import io.fotoapparat.parameter.selector.LensPositionSelectors.back
 import io.fotoapparat.view.CameraView
+import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.Observables
@@ -75,6 +78,10 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     private val tag = "[${this::class.java.simpleName}]: "
     private val ON_RESUME = 0
     private val ON_PAUSE = 1
+    private val ON_START = 2
+    private val ON_STOP = 3
+
+    private val cameraProvider = CameraProvider()
 
     private val userInfoPreference by lazy { appSharedPreference.prepare<UserInfoPreference>() }
     private val locationManager by lazy { MyLocationManager(applicationContext) }
@@ -107,13 +114,25 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
     override fun onResume() {
         super.onResume()
+
         lifecycleSubject.onNext(ON_RESUME)
     }
 
     override fun onPause() {
         super.onPause()
+
         lifecycleSubject.onNext(ON_PAUSE)
         userInfoPreference.save()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        lifecycleSubject.onNext(ON_START)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        lifecycleSubject.onNext(ON_STOP)
     }
 
     private fun getPermissions() {
@@ -183,17 +202,10 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .show()
     }
 
-    private fun initCamera(): Observable<Fotoapparat> {
-        return Observable.fromCallable {
+    private fun initCamera(): Completable {
+        return Completable.fromRunnable {
             Timber.tag(tag).d("initCamera()")
-
-            return@fromCallable Fotoapparat
-                    .with(applicationContext)
-                    .into(cameraView)
-                    .previewScaleType(ScaleType.CENTER_CROP)
-                    .photoSize(PhotoSizeSelector())
-                    .lensPosition(back())
-                    .build()
+            cameraProvider.provideCamera(applicationContext, cameraView)
         }
     }
 
@@ -204,7 +216,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
         val fotoapparatObservable = permissionsGrantedSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .flatMap { initCamera() }
+                .doOnNext { initCamera() }
                 //FIXME:
                 //WTF: I don't know why, but this works
                 //
@@ -220,7 +232,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
         compositeDisposable += Observables.combineLatest(fotoapparatObservable, lifecycleSubject)
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext { (fotoapparat, lifecycle) -> startOrStopCamera(fotoapparat, lifecycle) }
+                .doOnNext { (_, lifecycle) -> startOrStopCamera(lifecycle) }
                 .subscribe()
 
         compositeDisposable += RxView.clicks(takePhotoButton)
@@ -231,7 +243,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext { hideControls() }
                 .doOnNext { showNotification("Compressing photo...") }
-                .flatMap { fotoapparat -> takePhoto(fotoapparat) }
+                .flatMap { fotoapparat -> takePhoto() }
                 .doOnNext { hideNotification() }
                 .doOnNext { showNotification("Obtaining current location...") }
                 .observeOn(Schedulers.io())
@@ -259,8 +271,8 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .subscribe(this::onUnknownError)
     }
 
-    private fun startOrStopCamera(fotoapparat: Fotoapparat, lifecycle: Int) {
-        if (!fotoapparat.isAvailable) {
+    private fun startOrStopCamera(lifecycle: Int) {
+        if (!cameraProvider.isAvailable()) {
             if (lifecycle == ON_RESUME) {
                 Timber.tag(tag).d("startOrStopCamera() Camera IS NOT available!!!")
                 hideTakePhotoButton()
@@ -269,14 +281,14 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
             }
         } else {
             when (lifecycle) {
-                ON_RESUME -> {
-                    Timber.tag(tag).d("startOrStopCamera() ON_RESUME")
-                    fotoapparat.start()
+                ON_RESUME, ON_START -> {
+                    Timber.tag(tag).d("startOrStopCamera() $lifecycle")
+                    cameraProvider.startCamera()
                     showControls()
                 }
-                ON_PAUSE -> {
-                    Timber.tag(tag).d("startOrStopCamera() ON_PAUSE")
-                    fotoapparat.stop()
+                ON_PAUSE, ON_STOP -> {
+                    Timber.tag(tag).d("startOrStopCamera() $lifecycle")
+                    cameraProvider.stopCamera()
                     hideControls()
                 }
             }
@@ -324,24 +336,20 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         }
     }
 
-    private fun takePhoto(fotoapparat: Fotoapparat): Observable<String> {
-        return Observable.create<String> { emitter ->
+    private fun takePhoto(): Observable<String> {
+        return Observable.fromCallable {
             Timber.tag(tag).d("takePhoto() Taking a photo...")
 
-            fotoapparat.takePicture()
-                    .toBitmap()
-                    .transform { bitmapPhoto ->
-                        return@transform Utils.rotateBitmap(bitmapPhoto.bitmap, bitmapPhoto.rotationDegrees)
-                    }
-                    .whenAvailable { rotatedPhotoFickle ->
-                        Timber.tag(tag).d("takePhoto() Done")
+            val bitmapPhoto = cameraProvider.takePicture()
+            val imageFile = Utils.rotateBitmap(bitmapPhoto.bitmap, bitmapPhoto.rotationDegrees)
 
-                        if (!rotatedPhotoFickle.isPresent()) {
-                            emitter.onError(CouldNotTakePhotoException())
-                        } else {
-                            emitter.onNext(rotatedPhotoFickle.get())
-                        }
-                    }
+            Timber.tag(tag).d("takePhoto() Done")
+
+            if (!imageFile.isPresent()) {
+                throw CouldNotTakePhotoException()
+            }
+
+            return@fromCallable imageFile.get()
         }
     }
 

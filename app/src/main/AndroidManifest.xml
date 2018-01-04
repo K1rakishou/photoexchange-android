@@ -20,16 +20,13 @@
         android:supportsRtl="true"
         android:theme="@style/PhotoExchangeTheme">
         <activity
-            android:name="com.kirakishou.photoexchange.ui.activity.TakePhotoActivity"
-            android:launchMode="singleTop">
+            android:name="com.kirakishou.photoexchange.ui.activity.TakePhotoActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name="com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity"
-            android:launchMode="singleTop" />
+        <activity android:name="com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity"/>
         <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity" />
         <activity android:name="com.kirakishou.photoexchange.ui.activity.MapActivity" />
         <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewPhotoFullSizeActivity" />
