@@ -21,9 +21,9 @@ class TakenPhotosRepository(
 ) {
     private val takenPhotosDao: TakenPhotosDao by lazy { database.takenPhotosDao() }
 
-    fun saveOne(lon: Double, lat: Double, photoFilePath: String, userId: String): Single<Long> {
+    fun saveOne(lon: Double, lat: Double, photoFilePath: String, userId: String, state: PhotoState): Single<Long> {
         val resultSingle = Single.fromCallable {
-            takenPhotosDao.saveOne(TakenPhotoEntity.new(lon, lat, userId, photoFilePath))
+            takenPhotosDao.saveOne(TakenPhotoEntity.new(lon, lat, userId, photoFilePath, state))
         }
 
         return resultSingle
@@ -55,6 +55,13 @@ class TakenPhotosRepository(
 
     fun findAllFailedToUpload(): Single<List<TakenPhoto>> {
         return takenPhotosDao.findAllFailedToUpload()
+                .subscribeOn(schedulers.provideIo())
+                .observeOn(schedulers.provideIo())
+                .map(mapper::toTakenPhotos)
+    }
+
+    fun findAllTaken(): Single<List<TakenPhoto>> {
+        return takenPhotosDao.findAllTaken()
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .map(mapper::toTakenPhotos)
@@ -114,6 +121,12 @@ class TakenPhotosRepository(
 
     fun deleteOne(id: Long): Single<Int> {
         return Single.fromCallable { takenPhotosDao.deleteOne(id) }
+                .subscribeOn(schedulers.provideIo())
+                .observeOn(schedulers.provideIo())
+    }
+
+    fun deleteManyById(ids: List<Long>): Single<Int> {
+        return Single.fromCallable { takenPhotosDao.deleteManyById(ids) }
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
     }

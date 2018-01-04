@@ -38,18 +38,18 @@ data class TakenPhotoEntity(
         var createdOn: Long
 ) {
 
-    constructor() : this(0L, 0.0, 0.0, "", "", "", PhotoState.QUEUED_UP.state, 0L)
+    constructor() : this(0L, 0.0, 0.0, "", "", "", PhotoState.QUEUED_UP.value, 0L)
 
     fun isEmpty(): Boolean {
         return id == -1L
     }
 
     companion object {
-        fun new(lon: Double, lat: Double, userId: String, photoFilePath: String) =
-                TakenPhotoEntity(0L, lon, lat, userId, "", photoFilePath,  PhotoState.QUEUED_UP.state, TimeUtils.getTimeFast())
+        fun new(lon: Double, lat: Double, userId: String, photoFilePath: String, state: PhotoState) =
+                TakenPhotoEntity(0L, lon, lat, userId, "", photoFilePath, state.value, TimeUtils.getTimeFast())
 
         fun empty() =
-                TakenPhotoEntity(-1L, 0.0, 0.0, "", "", "", PhotoState.QUEUED_UP.state, 0L)
+                TakenPhotoEntity(-1L, 0.0, 0.0, "", "", "", PhotoState.TAKEN_PHOTO_STATE, 0L)
 
         const val TABLE_NAME = "taken_photos"
     }

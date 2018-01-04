@@ -173,7 +173,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 }
             }
 
-            else -> IllegalArgumentException("Bad state")
+            else -> IllegalArgumentException("Bad value")
         }
     }
 

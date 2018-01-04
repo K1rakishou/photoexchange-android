@@ -5,4 +5,5 @@ package com.kirakishou.photoexchange.mwvm.wires.inputs
  */
 interface ViewTakenPhotoActivityViewModelInputs {
     fun deleteTakenPhoto(id: Long)
+    fun updateTakenPhotoAsQueuedUp(id: Long)
 }

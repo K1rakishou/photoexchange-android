@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.mwvm.model.other.Constants
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
+import com.kirakishou.photoexchange.mwvm.model.state.PhotoState
 import com.kirakishou.photoexchange.mwvm.wires.errors.MainActivityViewModelErrors
 import com.kirakishou.photoexchange.mwvm.wires.inputs.MainActivityViewModelInputs
 import com.kirakishou.photoexchange.mwvm.wires.outputs.MainActivityViewModelOutputs
@@ -58,25 +59,25 @@ class TakePhotoActivityViewModel(
         }.asCompletable(CommonPool).subscribe()
     }
 
-    /*override fun cleanTakenPhotosDB() {
-        compositeJob += async {
+    override fun cleanTakenPhotosDB() {
+        compositeDisposable += async {
             try {
                 val takenPhotos = takenPhotosRepo.findAll().await()
                 FileUtils.deletePhotosFiles(takenPhotos)
 
-                takenPhotosRepo.deleteAll().await()
+                takenPhotosRepo.deleteManyById(takenPhotos.map { it.id }).await()
                 printTakenPhotoTable()
             } catch (error: Throwable) {
                 handleErrors(error)
             }
-        }
-    }*/
+        }.asCompletable(CommonPool).subscribe()
+    }
 
     override fun saveTakenPhoto(takenPhoto: TakenPhoto) {
         compositeDisposable += async {
             try {
                 val id = takenPhotosRepo.saveOne(takenPhoto.location.lon, takenPhoto.location.lat,
-                        takenPhoto.photoFilePath, takenPhoto.userId).await()
+                        takenPhoto.photoFilePath, takenPhoto.userId, PhotoState.TAKEN).await()
                 val savedTakenPhoto = takenPhoto.copy(id)
 
                 printTakenPhotoTable()

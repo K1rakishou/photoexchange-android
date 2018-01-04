@@ -124,7 +124,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 }
             }
 
-            else -> IllegalStateException("Bad state")
+            else -> IllegalStateException("Bad value")
         }
     }
 

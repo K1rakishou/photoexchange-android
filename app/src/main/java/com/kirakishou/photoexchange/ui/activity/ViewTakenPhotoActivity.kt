@@ -81,6 +81,7 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
         compositeDisposable += RxView.clicks(sendPhotoButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext { getViewModel().inputs.updateTakenPhotoAsQueuedUp(takenPhoto.id) }
                 .subscribe({ switchToAllPhotosViewActivity() })
     }
 

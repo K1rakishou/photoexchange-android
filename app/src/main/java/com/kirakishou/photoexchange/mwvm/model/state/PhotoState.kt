@@ -3,7 +3,7 @@ package com.kirakishou.photoexchange.mwvm.model.state
 /**
  * Created by kirakishou on 11/30/2017.
  */
-enum class PhotoState(val state: String) {
+enum class PhotoState(val value: String) {
     TAKEN(PhotoState.TAKEN_PHOTO_STATE),
     QUEUED_UP(PhotoState.QUEUED_UP_STATE),
     UPLOADING(PhotoState.UPLOADING_STATE),
@@ -19,12 +19,12 @@ enum class PhotoState(val state: String) {
 
         fun from(stateStr: String): PhotoState {
             for (photoState in PhotoState.values()) {
-                if (photoState.state == stateStr) {
+                if (photoState.value == stateStr) {
                     return photoState
                 }
             }
 
-            throw IllegalStateException("Could not find state $stateStr in PhotoState")
+            throw IllegalStateException("Could not find value $stateStr in PhotoState")
         }
     }
 }
