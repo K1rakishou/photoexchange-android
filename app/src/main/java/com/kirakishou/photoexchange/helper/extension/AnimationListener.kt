@@ -1,6 +1,7 @@
-package com.kirakishou.fixmypc.fixmypcapp.helper.extension
+package com.kirakishou.photoexchange.helper.extension
 
 import android.animation.Animator
+import android.view.ViewPropertyAnimator
 import com.kirakishou.photoexchange.mwvm.model.other.Fickle
 
 /**
@@ -11,6 +12,14 @@ inline fun Animator.myAddListener(func: MyAnimationListener.() -> Unit) {
     val listener = MyAnimationListener()
     listener.func()
     addListener(listener)
+}
+
+inline fun ViewPropertyAnimator.mySetListener(func: MyAnimationListener.() -> Unit): ViewPropertyAnimator {
+    val listener = MyAnimationListener()
+    listener.func()
+    setListener(listener)
+
+    return this
 }
 
 class MyAnimationListener : Animator.AnimatorListener {

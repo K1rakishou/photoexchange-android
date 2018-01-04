@@ -3,15 +3,14 @@ package com.kirakishou.photoexchange.ui.activity
 import android.Manifest
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.Matrix
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.support.v7.widget.CardView
 import android.view.View
+import android.view.animation.AnticipateInterpolator
+import android.view.animation.OvershootInterpolator
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
 import butterknife.BindView
 import com.afollestad.materialdialogs.MaterialDialog
 import com.jakewharton.rxbinding2.view.RxView
@@ -25,24 +24,20 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerTakePhotoActivityComponent
 import com.kirakishou.photoexchange.helper.PhotoSizeSelector
+import com.kirakishou.photoexchange.helper.extension.mySetListener
 import com.kirakishou.photoexchange.helper.location.MyLocationManager
 import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.helper.util.Utils
 import com.kirakishou.photoexchange.mwvm.model.exception.CouldNotTakePhotoException
-import com.kirakishou.photoexchange.mwvm.model.other.Fickle
 import com.kirakishou.photoexchange.mwvm.model.other.LonLat
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.TakePhotoActivityViewModelFactory
 import io.fotoapparat.Fotoapparat
-import io.fotoapparat.hardware.provider.CameraProviders
 import io.fotoapparat.parameter.ScaleType
-import io.fotoapparat.parameter.Size
 import io.fotoapparat.parameter.selector.LensPositionSelectors.back
-import io.fotoapparat.parameter.selector.SelectorFunction
-import io.fotoapparat.parameter.selector.SizeSelectors.biggestSize
 import io.fotoapparat.view.CameraView
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -51,8 +46,6 @@ import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import timber.log.Timber
-import java.io.File
-import java.io.FileOutputStream
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -201,7 +194,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
             return@fromCallable Fotoapparat
                     .with(applicationContext)
                     .into(cameraView)
-                    .cameraProvider(CameraProviders.v2(this))
                     .previewScaleType(ScaleType.CENTER_CROP)
                     .photoSize(PhotoSizeSelector())
                     .lensPosition(back())
@@ -231,6 +223,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .cache()
 
         compositeDisposable += Observables.combineLatest(fotoapparatObservable, lifecycleSubject)
+                .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext { (fotoapparat, lifecycle) -> startOrStopCamera(fotoapparat, lifecycle) }
                 .subscribe()
 
@@ -240,7 +233,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .filter { lifecycle -> lifecycle == ON_START }
                 .flatMap { fotoapparatObservable }
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnNext { onShowToast("Photo has been taken", Toast.LENGTH_SHORT) }
+                .doOnNext { hideControls() }
                 .doOnNext { showNotification("Compressing photo...") }
                 .flatMap { fotoapparat -> takePhoto(fotoapparat) }
                 .doOnNext { hideNotification() }
@@ -283,10 +276,12 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 ON_START -> {
                     Timber.tag(tag).d("startOrStopCamera() ON_START")
                     fotoapparat.start()
+                    showControls()
                 }
                 ON_STOP -> {
                     Timber.tag(tag).d("startOrStopCamera() ON_STOP")
                     fotoapparat.stop()
+                    hideControls()
                 }
             }
         }
@@ -386,6 +381,58 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     private fun hideNotification() {
         notificationText.text = ""
         notification.visibility = View.GONE
+    }
+
+    private fun showControls() {
+        takePhotoButton.animate()
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(500)
+                .setInterpolator(OvershootInterpolator())
+                .mySetListener {
+                    onAnimationStart {
+                        takePhotoButton.visibility = View.VISIBLE
+                    }
+                }
+                .start()
+
+        ivShowAllPhotos.animate()
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(500)
+                .setInterpolator(OvershootInterpolator())
+                .mySetListener {
+                    onAnimationStart {
+                        ivShowAllPhotos.visibility = View.VISIBLE
+                    }
+                }
+                .start()
+    }
+
+    private fun hideControls() {
+        takePhotoButton.animate()
+                .scaleX(0f)
+                .scaleY(0f)
+                .setDuration(500)
+                .setInterpolator(AnticipateInterpolator())
+                .mySetListener {
+                    onAnimationEnd {
+                        takePhotoButton?.visibility = View.GONE
+                    }
+                }
+                .start()
+
+        ivShowAllPhotos.animate()
+                .scaleX(0f)
+                .scaleY(0f)
+                .setDuration(500)
+                .setInterpolator(AnticipateInterpolator())
+                .mySetListener {
+                    onAnimationEnd {
+                        ivShowAllPhotos?.visibility = View.GONE
+                    }
+                }
+                .start()
     }
 
     override fun resolveDaggerDependency() {

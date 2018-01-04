@@ -179,8 +179,6 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRecyclerView()
-
-        //getViewModel().inputs.shouldStartLookingForPhotos()
         recyclerStartLoadingItems()
     }
     

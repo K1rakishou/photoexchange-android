@@ -7,6 +7,9 @@ import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.Snackbar
 import android.support.design.widget.TabLayout
 import android.support.v4.view.ViewPager
+import android.view.View
+import android.view.animation.AnticipateInterpolator
+import android.view.animation.OvershootInterpolator
 import android.widget.ImageView
 import butterknife.BindView
 import com.jakewharton.rxbinding2.view.RxView
@@ -16,6 +19,7 @@ import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerAllPhotoViewActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.helper.EventAccumulator
+import com.kirakishou.photoexchange.helper.extension.mySetListener
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService
@@ -157,11 +161,6 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ clazz -> onStopReceivingEvents(clazz) }, this::onUnknownError)
 
-        /*compositeDisposable += getViewModel().outputs.onPhotoMarkedToBeUploadedObservable()
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onPhotoMarkedToBeUploaded() }, this::onUnknownError)*/
-
         compositeDisposable += getViewModel().outputs.onStartPhotosUploadingObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -267,7 +266,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         getViewModel().inputs.showLookingForPhotoIndicator()
     }
 
-    fun showNewPhotoReceivedNotification() {
+    private fun showNewPhotoReceivedNotification() {
         Snackbar.make(takePhotoButton, getString(R.string.new_photo_received), Snackbar.LENGTH_LONG)
                 .setAction(getString(R.string.snackbar_button_title_show), {
                     selectReceivedPhotosTab()
