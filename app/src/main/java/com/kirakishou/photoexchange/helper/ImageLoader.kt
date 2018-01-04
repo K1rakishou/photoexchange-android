@@ -4,9 +4,12 @@ import android.content.Context
 import android.widget.ImageView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.RequestManager
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import io.reactivex.Single
+import kotlinx.coroutines.experimental.android.UI
+import kotlinx.coroutines.experimental.async
 import java.io.File
 import javax.inject.Inject
 
@@ -21,6 +24,8 @@ class ImageLoader
 
     fun loadImageFromDiskInto(imageFile: File, view: ImageView) {
         Glide.with(context)
+                //we do not need to cache this image
+                .applyDefaultRequestOptions(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.NONE))
                 .load(imageFile)
                 .apply(RequestOptions().centerCrop())
                 .into(view)

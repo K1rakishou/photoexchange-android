@@ -37,6 +37,7 @@ import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.TakePhotoActivityViewModelFactory
 import io.fotoapparat.Fotoapparat
+import io.fotoapparat.hardware.provider.CameraProviders
 import io.fotoapparat.parameter.ScaleType
 import io.fotoapparat.parameter.Size
 import io.fotoapparat.parameter.selector.LensPositionSelectors.back
@@ -199,6 +200,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
             return@fromCallable Fotoapparat
                     .with(applicationContext)
                     .into(cameraView)
+                    .cameraProvider(CameraProviders.v2(this))
                     .previewScaleType(ScaleType.CENTER_CROP)
                     .photoSize(PhotoSizeSelector())
                     .lensPosition(back())
@@ -337,7 +339,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
             fotoapparat.takePicture()
                     .toBitmap()
                     .transform { bitmapPhoto ->
-                        Timber.e("rotation = ${bitmapPhoto.rotationDegrees}")
                         return@transform Utils.rotateBitmap(bitmapPhoto.bitmap, bitmapPhoto.rotationDegrees)
                     }
                     .whenAvailable { rotatedPhotoFickle ->
