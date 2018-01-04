@@ -316,6 +316,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
         intent.putExtra("lat", location.lat)
         intent.putExtra("photo_file_path", photoFilePath)
         intent.putExtra("user_id", userId)
+        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
         startActivity(intent)
     }
 
