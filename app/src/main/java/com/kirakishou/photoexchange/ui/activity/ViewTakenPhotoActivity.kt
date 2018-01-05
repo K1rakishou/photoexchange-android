@@ -4,7 +4,10 @@ import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
+import android.support.v7.widget.CardView
+import android.view.View
 import android.widget.ImageView
+import android.widget.TextView
 import butterknife.BindView
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
@@ -13,12 +16,16 @@ import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerViewTakenPhotoActivityComponent
 import com.kirakishou.photoexchange.di.module.ViewTakenPhotoActivityModule
 import com.kirakishou.photoexchange.helper.ImageLoader
+import com.kirakishou.photoexchange.helper.location.MyLocationManager
+import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.mwvm.model.other.LonLat
 import com.kirakishou.photoexchange.mwvm.model.state.PhotoState
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.viewmodel.ViewTakenPhotoActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.ViewTakenPhotoActivityViewModelFactory
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
@@ -41,13 +48,22 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
     @BindView(R.id.fab_send_photo)
     lateinit var sendPhotoButton: FloatingActionButton
 
+    @BindView(R.id.notification)
+    lateinit var notification: CardView
+
+    @BindView(R.id.notification_text)
+    lateinit var notificationText: TextView
+
     @Inject
     lateinit var viewModelFactory: ViewTakenPhotoActivityViewModelFactory
 
     @Inject
     lateinit var imageLoader: ImageLoader
 
+    private val tag = "[${this::class.java.simpleName}]: "
     private var takenPhoto = TakenPhoto.empty()
+
+    private val locationManager by lazy { MyLocationManager(applicationContext) }
 
     override fun initViewModel(): ViewTakenPhotoActivityViewModel {
         return ViewModelProviders.of(this, viewModelFactory).get(ViewTakenPhotoActivityViewModel::class.java)
@@ -85,7 +101,12 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
                 .observeOn(Schedulers.io())
                 .doOnNext { getViewModel().inputs.updateTakenPhotoAsQueuedUp(takenPhoto.id) }
                 .delay(1, TimeUnit.SECONDS)
-                .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext { showNotification("Compressing photo...") }
+                .doOnNext { hideNotification() }
+                .doOnNext { showNotification("Obtaining current location...") }
+                .flatMap { photoName -> Observables.combineLatest(Observable.just(photoName), getLocationObservable()) }
+                .doOnNext { hideNotification() }
+                .doOnNext { showNotification("Saving photo to disk...") }
                 .subscribe({ switchToAllPhotosViewActivity() })
     }
 
@@ -114,6 +135,39 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
         check(userId.isNotEmpty())
 
         takenPhoto = TakenPhoto.create(id, LonLat(lon, lat), photoFilePath, userId, "", PhotoState.TAKEN)
+    }
+
+    private fun getLocationObservable(): Observable<LonLat> {
+        val gpsStateObservable = Observable.fromCallable { locationManager.isGpsEnabled() }
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .share()
+
+        val gpsEnabledObservable = gpsStateObservable
+                .filter { isEnabled -> isEnabled }
+                .doOnNext { Timber.tag(tag).d("getLocationObservable() Gps is enabled. Trying to obtain current location") }
+                .flatMap {
+                    return@flatMap RxLocationManager.start(locationManager)
+                            .timeout(7, TimeUnit.SECONDS)
+                            .onErrorResumeNext(Observable.just(LonLat.empty()))
+                }
+
+        val gpsDisabledObservable = gpsStateObservable
+                .filter { isEnabled -> !isEnabled }
+                .doOnNext { Timber.tag(tag).d("getLocationObservable() Gps is disabled. Returning empty location") }
+                .map { LonLat.empty() }
+
+        return Observable.merge(gpsEnabledObservable, gpsDisabledObservable)
+                .doOnNext { location -> Timber.tag(tag).d("getLocationObservable() Current location is [lon: ${location.lon}, lat: ${location.lat}]") }
+    }
+
+    private fun showNotification(text: String) {
+        notificationText.text = text
+        notification.visibility = View.VISIBLE
+    }
+
+    private fun hideNotification() {
+        notificationText.text = ""
+        notification.visibility = View.GONE
     }
 
     override fun resolveDaggerDependency() {

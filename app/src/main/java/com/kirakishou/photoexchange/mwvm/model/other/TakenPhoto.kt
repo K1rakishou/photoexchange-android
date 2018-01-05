@@ -32,8 +32,8 @@ class TakenPhoto private constructor(
             return TakenPhoto(-1L, LonLat.empty(), "", "", "", PhotoState.TAKEN)
         }
 
-        fun create(location: LonLat, photoFilePath: String, userId: String): TakenPhoto {
-            return TakenPhoto(-1L, location, photoFilePath, userId, "", PhotoState.TAKEN)
+        fun create(photoFilePath: String, userId: String): TakenPhoto {
+            return TakenPhoto(-1L, LonLat.empty(), photoFilePath, userId, "", PhotoState.TAKEN)
         }
 
         fun create(id: Long, location: LonLat, photoFilePath: String, userId: String, photoName: String, photoState: PhotoState): TakenPhoto {

@@ -1,15 +1,12 @@
 package com.kirakishou.photoexchange.helper
 
 import android.content.Context
-import com.kirakishou.photoexchange.helper.util.BitmapUtils
-import com.kirakishou.photoexchange.mwvm.model.exception.CouldNotTakePhotoException
 import io.fotoapparat.Fotoapparat
 import io.fotoapparat.parameter.ScaleType
 import io.fotoapparat.parameter.selector.LensPositionSelectors
-import io.fotoapparat.parameter.update.UpdateRequest
 import io.fotoapparat.view.CameraView
 import io.reactivex.ObservableEmitter
-import timber.log.Timber
+import java.io.File
 
 /**
  * Created by kirakishou on 1/4/2018.
@@ -49,8 +46,14 @@ class CameraProvider {
 
     fun takePicture(emitter: ObservableEmitter<String>) {
         if (isStarted) {
+            val file = File.createTempFile("photo", "tmp")
+
             camera.takePicture()
-                    .toBitmap()
+                    .saveToFile(file)
+                    .whenAvailable {
+                        emitter.onNext(file.absolutePath)
+                    }
+                    /*.toBitmap()
                     .transform { bitmapPhoto ->
                         Timber.d("Applying rotation ${bitmapPhoto.rotationDegrees}")
                         return@transform BitmapUtils.rotateBitmap(bitmapPhoto.bitmap, bitmapPhoto.rotationDegrees)
@@ -63,7 +66,7 @@ class CameraProvider {
                         } else {
                             emitter.onNext(rotatedPhotoFickle.get())
                         }
-                    }
+                    }*/
         } else {
             emitter.onError(IllegalStateException("Camera is not started"))
         }
