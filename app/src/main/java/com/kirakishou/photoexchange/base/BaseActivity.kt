@@ -82,18 +82,6 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
         super.onDestroy()
     }
 
-    @CallSuper
-    override fun onResume() {
-        //Timber.d("${this::class.java}.onResume")
-        super.onResume()
-    }
-
-    @CallSuper
-    override fun onPause() {
-        //Timber.d("${this::class.java}.onPause")
-        super.onPause()
-    }
-
     open fun onShowToast(message: String, duration: Int = Toast.LENGTH_LONG) {
         runOnUiThread {
             Toast.makeText(this, message, duration).show()
@@ -112,7 +100,7 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
         if (error.message != null) {
             onShowToast(error.message!!)
         } else {
-            onShowToast("Неизвестная ошибка")
+            onShowToast("Unknown error")
         }
 
         finish()

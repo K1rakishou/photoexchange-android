@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.helper.location
 
 import com.kirakishou.photoexchange.mwvm.model.other.LonLat
 import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 
 /**
@@ -22,8 +23,7 @@ object RxLocationManager {
         }
 
         return observable
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.io())
+                .subscribeOn(AndroidSchedulers.mainThread())
                 .doOnDispose { locationManager.stop() }
     }
 }
