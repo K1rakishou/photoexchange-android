@@ -17,7 +17,6 @@ import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.extension.filterMulticastEvent
 import com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mwvm.model.dto.PhotoAnswerAllFound
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
 import com.kirakishou.photoexchange.mwvm.model.other.Constants.PHOTO_ADAPTER_VIEW_WIDTH
@@ -33,7 +32,6 @@ import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
 import com.kirakishou.photoexchange.ui.widget.ReceivedPhotosAdapterSpanSizeLookup
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
@@ -58,7 +56,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private val DELAY_BEFORE_PROGRESS_FOOTER_ADDED = 100L
     private val PHOTOS_PER_PAGE = 5
     private var columnsCount: Int = 1
-    private var isPhotoUploading = true
+    private val totalItemsOnPageCount = PHOTOS_PER_PAGE * columnsCount
 
     private val loadMoreSubject = PublishSubject.create<Int>()
     private val photoAnswerClickSubject = PublishSubject.create<PhotoAnswer>()
@@ -73,56 +71,80 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     override fun initRx() {
         compositeDisposable += loadMoreSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext { adapter.addProgressFooter() }
-                .doOnNext(this::fetchPage)
-                .observeOn(Schedulers.io())
-                .zipWith(getViewModel().outputs.onReceivedPhotosPageReceivedObservable())
-                .map { it.second }
-                .observeOn(AndroidSchedulers.mainThread())
+                .doOnNext { page -> getViewModel().inputs.fetchOnePageReceivedPhotos(page * totalItemsOnPageCount, totalItemsOnPageCount) }
+                .doOnError(this::onUnknownError)
+                .subscribe()
+
+        compositeDisposable += getViewModel().outputs.onReceivedPhotosPageReceivedObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
                 .doOnNext { adapter.removeProgressFooter() }
-                .subscribe(this::onPageReceived, this::onUnknownError)
+                .doOnNext(this::onPageReceived)
+                .doOnError(this::onUnknownError)
+                .subscribe()
 
         compositeDisposable += photoAnswerClickSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onPhotoAnswerClick, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe(this::onPhotoAnswerClick)
 
         compositeDisposable += photoAnswerLongClickSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onPhotoAnswerLongClick, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe(this::onPhotoAnswerLongClick)
 
         compositeDisposable += getViewModel().outputs.onScrollToTopObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ scrollToTop() }, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe({ scrollToTop() })
 
         compositeDisposable += getViewModel().outputs.onShowLookingForPhotoIndicatorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ showLookingForPhotoIndicator() }, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe({ showLookingForPhotoIndicator() })
 
         compositeDisposable += getViewModel().outputs.onLookingForPhotoStateObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .filterMulticastEvent(ReceivedPhotosListFragment::class.java)
-                .subscribe(this::onLookingForPhotoState, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe(this::onLookingForPhotoState)
 
         compositeDisposable += getViewModel().outputs.onStartLookingForPhotosObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ startLookingForPhotos() }, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe({ startLookingForPhotos() })
 
         compositeDisposable += getViewModel().outputs.onShowUploadMorePhotosMessageObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onUploadMorePhotos() }, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe({ onUploadMorePhotos() })
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
+                .doOnError(this::onUnknownError)
                 .subscribe(this::onUnknownError)
+    }
+
+    override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
+        initRecyclerView()
+        recyclerStartLoadingItems()
+    }
+    
+    override fun onFragmentViewDestroy() {
+    }
+
+    override fun onResume() {
+        getViewModel().inputs.beginReceivingEvents(this::class.java)
+        getViewModel().inputs.startLookingForPhotos()
+
+        addIndicatorIfServiceIsRunning()
+
+        super.onResume()
+    }
+
+    override fun onPause() {
+        getViewModel().inputs.stopReceivingEvents(this::class.java)
+        super.onPause()
     }
 
     private fun onLookingForPhotoState(state: LookingForPhotoState) {
@@ -177,38 +199,13 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
-    override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
-        initRecyclerView()
-        recyclerStartLoadingItems()
-    }
-    
-    override fun onFragmentViewDestroy() {
-    }
-
-    override fun onResume() {
-        getViewModel().inputs.beginReceivingEvents(this::class.java)
-        getViewModel().inputs.startLookingForPhotos()
-        getViewModel().inputs.startPhotosUploading()
-
-        addIndicatorIfServiceIsRunning()
-
-        super.onResume()
-    }
-
     private fun addIndicatorIfServiceIsRunning() {
         if (FindPhotoAnswerService.isAlreadyRunning(context!!)) {
             showLookingForPhotoIndicator()
         }
     }
 
-    override fun onPause() {
-        getViewModel().inputs.stopReceivingEvents(this::class.java)
-        super.onPause()
-    }
-
     private fun showLookingForPhotoIndicator() {
-        isPhotoUploading = false
-
         adapter.runOnAdapterHandlerWithDelay(DELAY_BEFORE_PROGRESS_FOOTER_ADDED) {
             adapter.removeMessage()
             adapter.addLookingForPhotoIndicator()
@@ -249,7 +246,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     private fun onPhotoAnswerClick(photo: PhotoAnswer) {
         if (photo.isAnonymous()) {
-            Toast.makeText(activity, "This photo was made anonymously", Toast.LENGTH_LONG).show()
+            Toast.makeText(activity, getString(R.string.photo_sent_anonymously_msg), Toast.LENGTH_LONG).show()
             return
         }
 
@@ -265,11 +262,6 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         intent.putExtra("photo_name", photo.photoName)
 
         startActivity(intent)
-    }
-
-    private fun fetchPage(page: Int) {
-        val count = PHOTOS_PER_PAGE * columnsCount
-        getViewModel().inputs.fetchOnePageReceivedPhotos(page * count, count)
     }
 
     private fun onPageReceived(photoAnswerList: List<PhotoAnswer>) {

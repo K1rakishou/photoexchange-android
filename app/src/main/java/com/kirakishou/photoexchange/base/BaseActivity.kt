@@ -63,6 +63,7 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
 
         compositeDisposable += unknownErrorsSubject
                 .observeOn(AndroidSchedulers.mainThread())
+                .doOnError(this::onUnknownError)
                 .subscribe(this::onUnknownError)
 
         onActivityCreate(savedInstanceState, intent)

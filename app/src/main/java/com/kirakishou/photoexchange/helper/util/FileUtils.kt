@@ -18,6 +18,10 @@ object FileUtils {
         }
     }
 
+    fun deleteFile(filePath: String) {
+        deleteFile(File(filePath))
+    }
+
     fun deletePhotoFile(takenPhoto: TakenPhoto) {
         deleteFile(File(takenPhoto.photoFilePath))
     }

@@ -35,7 +35,7 @@ class ViewPhotoFullSizeActivity : BaseActivity<Nothing>() {
     override fun onInitRx() {
         compositeDisposable += RxView.clicks(ivCloseButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
+                .doOnError(this::onUnknownError)
                 .subscribe({ finish() })
     }
 
@@ -53,9 +53,8 @@ class ViewPhotoFullSizeActivity : BaseActivity<Nothing>() {
         compositeDisposable += imageLoader.downloadPhotoAsync(photoName, ImageLoader.PhotoSize.Original)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .doOnSuccess { photoFile ->
-                    fullSizeImageView.setImage(ImageSource.uri(Uri.fromFile(photoFile)))
-                }
+                .doOnSuccess { photoFile -> fullSizeImageView.setImage(ImageSource.uri(Uri.fromFile(photoFile))) }
+                .doOnError(this::onUnknownError)
                 .subscribe()
     }
 

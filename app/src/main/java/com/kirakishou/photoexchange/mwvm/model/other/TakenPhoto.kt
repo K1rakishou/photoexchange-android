@@ -18,8 +18,12 @@ class TakenPhoto private constructor(
         return id == -1L
     }
 
-    fun copy(id: Long): TakenPhoto {
-        return TakenPhoto(id, location, photoFilePath, userId, photoName, photoState)
+    fun copy(_photoFilePath: String, _location: LonLat): TakenPhoto {
+        return TakenPhoto(id, _location, _photoFilePath, userId, photoName, photoState)
+    }
+
+    fun copy(_id: Long): TakenPhoto {
+        return TakenPhoto(_id, location, photoFilePath, userId, photoName, photoState)
     }
 
     override fun toString(): String {

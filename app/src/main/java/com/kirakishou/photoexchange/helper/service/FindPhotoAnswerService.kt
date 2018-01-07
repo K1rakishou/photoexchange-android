@@ -129,12 +129,10 @@ class FindPhotoAnswerService : JobService() {
 
         compositeDisposable += viewModel.errors.onBadResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ onBadResponse(params, it) })
 
         compositeDisposable += viewModel.errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ onUnknownError(params, it) })
     }
 

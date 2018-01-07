@@ -194,10 +194,13 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
     private fun initRx() {
         compositeDisposable += RxView.clicks(ivShowAllPhotos)
                 .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnError(this::onUnknownError)
                 .subscribe({ switchToAllPhotosViewActivity() })
 
         val fotoapparatObservable = permissionsGrantedSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
                 .flatMap { initCamera() }
                 //FIXME:
                 //WTF: I don't know why, but this works
@@ -213,11 +216,14 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .cache()
 
         compositeDisposable += Observables.combineLatest(fotoapparatObservable, lifecycleSubject)
+                .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext { (_, lifecycle) -> startOrStopCamera(lifecycle) }
+                .doOnError(this::onUnknownError)
                 .subscribe()
 
         compositeDisposable += RxView.clicks(takePhotoButton)
+                .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .flatMap { fotoapparatObservable }
                 .doOnNext { hideControls() }
@@ -227,15 +233,19 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .subscribe()
 
         compositeDisposable += getViewModel().outputs.onTakenPhotoSavedObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ savedTakenPhoto ->
+                .doOnNext { savedTakenPhoto ->
                     switchToViewTakenPhotoActivity(savedTakenPhoto.id, savedTakenPhoto.location,
                             savedTakenPhoto.photoFilePath, savedTakenPhoto.userId)
-                })
+                }
+                .doOnError(this::onUnknownError)
+                .subscribe()
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
+                .doOnError(this::onUnknownError)
                 .subscribe(this::onUnknownError)
     }
 

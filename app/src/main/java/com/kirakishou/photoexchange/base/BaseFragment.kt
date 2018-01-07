@@ -1,11 +1,9 @@
 package com.kirakishou.photoexchange.base
 
-import android.app.Activity
 import android.arch.lifecycle.LifecycleRegistry
 import android.arch.lifecycle.ViewModel
 import android.content.Context
 import android.os.Bundle
-import android.support.annotation.CallSuper
 import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -15,7 +13,6 @@ import butterknife.Unbinder
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.helper.CompositeJob
 import io.reactivex.disposables.CompositeDisposable
-import timber.log.Timber
 
 /**
  * Created by kirakishou on 11/7/2017.
@@ -65,30 +62,19 @@ abstract class BaseFragment<out T : ViewModel> : Fragment() {
     }
 
     override fun onDestroyView() {
-        onFragmentViewDestroy()
-
-        unBinder.unbind()
         super.onDestroyView()
+
+        onFragmentViewDestroy()
+        unBinder.unbind()
     }
 
     override fun onDetach() {
+        super.onDetach()
+
         compositeDisposable.clear()
         compositeJob.cancelAll()
 
         PhotoExchangeApplication.watch(this, this::class.simpleName)
-        super.onDetach()
-    }
-
-    @CallSuper
-    override fun onResume() {
-        //Timber.d("${this::class.java}.onResume")
-        super.onResume()
-    }
-
-    @CallSuper
-    override fun onPause() {
-        //Timber.d("${this::class.java}.onPause")
-        super.onPause()
     }
 
     protected abstract fun initViewModel(): T

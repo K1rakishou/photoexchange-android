@@ -16,6 +16,7 @@ import com.kirakishou.photoexchange.mwvm.wires.errors.AllPhotosViewActivityViewM
 import com.kirakishou.photoexchange.mwvm.wires.inputs.AllPhotosViewActivityViewModelInputs
 import com.kirakishou.photoexchange.mwvm.wires.outputs.AllPhotosViewActivityViewModelOutputs
 import io.reactivex.Observable
+import io.reactivex.Single
 import io.reactivex.rxkotlin.Singles
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
@@ -70,32 +71,35 @@ class AllPhotosViewActivityViewModel(
     //errors
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
 
-    private val LOOK_FOR_PHOTOS_EVENT_TIMEOUT_SECONDS = 30L
-    private val START_PHOTO_UPLOADING_EVENT_TIMEOUT_SECONDS = 30L
+    private val LOOK_FOR_PHOTOS_EVENT_TIMEOUT_SECONDS = 5L
+    private val START_PHOTO_UPLOADING_EVENT_TIMEOUT_SECONDS = 5L
 
     init {
         compositeDisposable += startLookingForPhotosInput
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.io())
-                .throttleLast(LOOK_FOR_PHOTOS_EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                .flatMap {
-                    return@flatMap Singles.zip(takenPhotosRepository.countAll(), photoAnswerRepository.countAll()) { uploadedCount, receivedCount ->
-                        return@zip uploadedCount - receivedCount
-                    }.toObservable()
-                }
-                .doOnNext { difference ->
+                .delay(1, TimeUnit.SECONDS)
+                .throttleFirst(LOOK_FOR_PHOTOS_EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .flatMap { Singles.zip(takenPhotosRepository.countAll(), photoAnswerRepository.countAll()).toObservable() }
+                .doOnNext { (takenPhotosCount, receivedPhotosCount) ->
+                    val difference = takenPhotosCount - receivedPhotosCount
+
                     when {
                         difference > 0L -> {
                             Timber.tag(tag).d("startLookingForPhotosInput difference > 0L, start looking for photos")
                             startLookingForPhotosOutput.onNext(Unit)
                         }
                         difference == 0L -> {
-                            Timber.tag(tag).d("startLookingForPhotosInput difference == 0L, show message that user needs to upload more photos")
-                            showUploadMorePhotosMessageOutput.onNext(Unit)
+                            Timber.tag(tag).d("startLookingForPhotosInput difference == 0L, do nothing")
                         }
                         difference < 0L -> {
                             Timber.tag(tag).d("startLookingForPhotosInput difference < 0L, do nothing")
                         }
+                    }
+
+                    if (receivedPhotosCount == 0L) {
+                        Timber.tag(tag).d("receivedPhotosCount == 0L, show message that user needs to upload photos first")
+                        showUploadMorePhotosMessageOutput.onNext(Unit)
                     }
                 }
                 .doOnError(startLookingForPhotosOutput::onError)
@@ -104,7 +108,8 @@ class AllPhotosViewActivityViewModel(
         compositeDisposable += startPhotosUploadingInput
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.io())
-                .throttleLast(START_PHOTO_UPLOADING_EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .delay(1, TimeUnit.SECONDS)
+                .throttleFirst(START_PHOTO_UPLOADING_EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .flatMap { takenPhotosRepository.countQueuedUp().toObservable() }
                 .doOnNext { queuedUpCount ->
                     when {

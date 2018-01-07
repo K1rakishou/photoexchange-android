@@ -4,9 +4,11 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.RxUtils
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.helper.util.BitmapUtils
 import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.mwvm.model.dto.PhotoToBeUploaded
 import com.kirakishou.photoexchange.mwvm.model.other.Constants.ASYNC_DELAY
+import com.kirakishou.photoexchange.mwvm.model.other.LonLat
 import com.kirakishou.photoexchange.mwvm.model.state.PhotoUploadingState
 import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
@@ -23,6 +25,7 @@ import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.rx2.asCompletable
 import kotlinx.coroutines.experimental.rx2.await
 import timber.log.Timber
+import java.io.File
 import java.util.concurrent.TimeUnit
 
 /**
@@ -45,22 +48,18 @@ class UploadPhotoServiceViewModel(
     val errors: UploadPhotoServiceErrors = this
 
     private val compositeDisposable = CompositeDisposable()
-    //private val compositeJob = CompositeJob()
-
-    //TODO: change this
-    private val MAX_ATTEMPTS = 1
+    private val MAX_ATTEMPTS = 3
 
     private val onPhotoUploadStateOutput = PublishSubject.create<PhotoUploadingState>()
-
     private val badResponseError = PublishSubject.create<ServerErrorCode>()
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
 
-    override fun uploadPhotos() {
+    override fun uploadPhotos(location: LonLat) {
         compositeDisposable += async {
             try {
                 //FIXME: doesn't work without delay
                 delay(ASYNC_DELAY, TimeUnit.MILLISECONDS)
-                Timber.d("uploadPhotos start")
+                Timber.tag(tag).d("uploadPhotos start")
 
                 val queuedUpPhotos = takenPhotosRepo.findAllQueuedUp().await()
                 if (queuedUpPhotos.isEmpty()) {
@@ -71,19 +70,31 @@ class UploadPhotoServiceViewModel(
                 onPhotoUploadStateOutput.onNext(PhotoUploadingState.StartPhotoUploading())
 
                 for (photo in queuedUpPhotos) {
-                    val photoName = uploadPhoto(photo)
-                    if (photoName != null) {
-                        Timber.tag(tag).d("Photo uploaded")
+                    val rotatedPhotoFile = File.createTempFile("photo", ".tmp")
 
-                        photo.photoName = photoName
-                        takenPhotosRepo.updateSetUploaded(photo.id, photoName)
-                        onPhotoUploadStateOutput.onNext(PhotoUploadingState.PhotoUploaded(photo))
-                    } else {
-                        Timber.tag(tag).d("Could not upload photo. Marking it's value as failed in the database")
+                    if (BitmapUtils.rotatePhoto(photo.photoFilePath, rotatedPhotoFile)) {
+                        val rotatedPhotoPath = rotatedPhotoFile.absolutePath
+                        val newPhoto = photo.copy(rotatedPhotoPath, location)
+                        val photoName = uploadPhoto(newPhoto)
 
-                        takenPhotosRepo.updateSetFailedToUpload(photo.id).await()
-                        onPhotoUploadStateOutput.onNext(PhotoUploadingState.FailedToUploadPhoto(photo))
+                        if (photoName != null) {
+                            Timber.tag(tag).d("Photo uploaded")
+
+                            photo.photoName = photoName
+                            FileUtils.deleteFile(photo.photoFilePath)
+                            FileUtils.deleteFile(rotatedPhotoFile)
+
+                            takenPhotosRepo.updateSetUploaded(photo.id, photoName)
+                            onPhotoUploadStateOutput.onNext(PhotoUploadingState.PhotoUploaded(photo))
+
+                            continue
+                        }
                     }
+
+                    Timber.tag(tag).d("Could not upload photo. Marking it's state as failed in the database")
+                    FileUtils.deleteFile(rotatedPhotoFile)
+                    takenPhotosRepo.updateSetFailedToUpload(photo.id).await()
+                    onPhotoUploadStateOutput.onNext(PhotoUploadingState.FailedToUploadPhoto(photo))
                 }
 
                 onPhotoUploadStateOutput.onNext(PhotoUploadingState.AllPhotosUploaded())
