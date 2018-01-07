@@ -48,12 +48,6 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
     @BindView(R.id.fab_send_photo)
     lateinit var sendPhotoButton: FloatingActionButton
 
-    @BindView(R.id.notification)
-    lateinit var notification: CardView
-
-    @BindView(R.id.notification_text)
-    lateinit var notificationText: TextView
-
     @Inject
     lateinit var viewModelFactory: ViewTakenPhotoActivityViewModelFactory
 
@@ -62,8 +56,6 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
 
     private val tag = "[${this::class.java.simpleName}]: "
     private var takenPhoto = TakenPhoto.empty()
-
-    private val locationManager by lazy { MyLocationManager(applicationContext) }
 
     override fun initViewModel(): ViewTakenPhotoActivityViewModel {
         return ViewModelProviders.of(this, viewModelFactory).get(ViewTakenPhotoActivityViewModel::class.java)
@@ -101,12 +93,6 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
                 .observeOn(Schedulers.io())
                 .doOnNext { getViewModel().inputs.updateTakenPhotoAsQueuedUp(takenPhoto.id) }
                 .delay(1, TimeUnit.SECONDS)
-                .doOnNext { showNotification("Compressing photo...") }
-                .doOnNext { hideNotification() }
-                .doOnNext { showNotification("Obtaining current location...") }
-                .flatMap { photoName -> Observables.combineLatest(Observable.just(photoName), getLocationObservable()) }
-                .doOnNext { hideNotification() }
-                .doOnNext { showNotification("Saving photo to disk...") }
                 .subscribe({ switchToAllPhotosViewActivity() })
     }
 
@@ -135,39 +121,6 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
         check(userId.isNotEmpty())
 
         takenPhoto = TakenPhoto.create(id, LonLat(lon, lat), photoFilePath, userId, "", PhotoState.TAKEN)
-    }
-
-    private fun getLocationObservable(): Observable<LonLat> {
-        val gpsStateObservable = Observable.fromCallable { locationManager.isGpsEnabled() }
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .share()
-
-        val gpsEnabledObservable = gpsStateObservable
-                .filter { isEnabled -> isEnabled }
-                .doOnNext { Timber.tag(tag).d("getLocationObservable() Gps is enabled. Trying to obtain current location") }
-                .flatMap {
-                    return@flatMap RxLocationManager.start(locationManager)
-                            .timeout(7, TimeUnit.SECONDS)
-                            .onErrorResumeNext(Observable.just(LonLat.empty()))
-                }
-
-        val gpsDisabledObservable = gpsStateObservable
-                .filter { isEnabled -> !isEnabled }
-                .doOnNext { Timber.tag(tag).d("getLocationObservable() Gps is disabled. Returning empty location") }
-                .map { LonLat.empty() }
-
-        return Observable.merge(gpsEnabledObservable, gpsDisabledObservable)
-                .doOnNext { location -> Timber.tag(tag).d("getLocationObservable() Current location is [lon: ${location.lon}, lat: ${location.lat}]") }
-    }
-
-    private fun showNotification(text: String) {
-        notificationText.text = text
-        notification.visibility = View.VISIBLE
-    }
-
-    private fun hideNotification() {
-        notificationText.text = ""
-        notification.visibility = View.GONE
     }
 
     override fun resolveDaggerDependency() {

@@ -6,45 +6,27 @@ import com.kirakishou.photoexchange.mwvm.model.other.Fickle
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
+import android.graphics.BitmapFactory
+import android.support.media.ExifInterface
+
 
 /**
  * Created by kirakishou on 1/5/2018.
  */
 object BitmapUtils {
 
-    fun rotateBitmap(oldBitmap: Bitmap, rotation: Int): Fickle<String> {
-        checkNotNull(oldBitmap)
-
-        val tempFile = File.createTempFile("photo", ".tmp")
-
+    fun rotatePhoto(photoFilePath: String, tempFile: File): Boolean {
         try {
-            val matrix = Matrix()
+            val options = BitmapFactory.Options()
+            options.inPreferredConfig = Bitmap.Config.ARGB_8888
 
-            when (rotation) {
-                0 -> {
-                    Timber.d("Applying additional photo rotation: 0f")
-                    matrix.setRotate(0f)
-                }
-                90 -> {
-                    Timber.d("Applying additional photo rotation: -90f")
-                    matrix.setRotate(-90f)
-                }
-                180 -> {
-                    Timber.d("Applying additional photo rotation: -180f")
-                    matrix.setRotate(-180f)
-                }
-                270 -> {
-                    Timber.d("Applying additional photo rotation: -270f")
-                    matrix.setRotate(-270f)
-                }
-                else -> {
-                    Timber.d("Unknown rotation. Applying no additional rotation")
-                    matrix.setRotate(0f)
-                }
-            }
+            val photoBitmap = BitmapFactory.decodeFile(photoFilePath, options)
+            checkNotNull(photoBitmap)
 
             try {
-                val rotatedBitmap = Bitmap.createBitmap(oldBitmap, 0, 0, oldBitmap.width, oldBitmap.height, matrix, true)
+                val ei = ExifInterface(photoFilePath)
+                val orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+                val rotatedBitmap = doRotation(photoBitmap, orientation)
                 val out = FileOutputStream(tempFile)
 
                 try {
@@ -54,15 +36,54 @@ object BitmapUtils {
                     out.close()
                 }
             } finally {
-                oldBitmap.recycle()
+                photoBitmap.recycle()
             }
 
-            return Fickle.of(tempFile.absolutePath)
+            return true
         } catch (error: Throwable) {
             Timber.e(error)
-
-            FileUtils.deleteFile(tempFile)
-            return Fickle.empty()
+            return false
         }
+    }
+
+    private fun doRotation(bitmap: Bitmap, orientation: Int): Bitmap {
+        when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> {
+                return rotate(bitmap, 90f)
+            }
+
+            ExifInterface.ORIENTATION_ROTATE_180 -> {
+                return rotate(bitmap, 180f)
+            }
+
+            ExifInterface.ORIENTATION_ROTATE_270 -> {
+                return rotate(bitmap, 270f)
+            }
+
+            ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> {
+                return flip(bitmap, true, false)
+            }
+
+            ExifInterface.ORIENTATION_FLIP_VERTICAL -> {
+                return flip(bitmap, false, true)
+            }
+
+            else -> return bitmap
+        }
+    }
+
+    private fun rotate(bitmap: Bitmap, degrees: Float): Bitmap {
+        val matrix = Matrix()
+        matrix.postRotate(degrees)
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+    }
+
+    private fun flip(bitmap: Bitmap, horizontal: Boolean, vertical: Boolean): Bitmap {
+        val matrix = Matrix()
+        val sx = (if (horizontal) -1 else 1).toFloat()
+        val sy = (if (vertical) -1 else 1).toFloat()
+
+        matrix.preScale(sx, sy)
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
 }

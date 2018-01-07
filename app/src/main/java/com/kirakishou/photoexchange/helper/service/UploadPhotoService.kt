@@ -30,8 +30,13 @@ import android.content.ComponentName
 import android.os.Build
 import android.support.annotation.RequiresApi
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.helper.location.MyLocationManager
+import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.mwvm.model.state.PhotoUploadingState
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
+import io.reactivex.Observable
+import io.reactivex.schedulers.Schedulers
+import java.util.concurrent.TimeUnit
 
 
 class UploadPhotoService : JobService() {
@@ -49,10 +54,13 @@ class UploadPhotoService : JobService() {
     lateinit var takenPhotosRepo: TakenPhotosRepository
 
     private var notificationManager: NotificationManager? = null
+    private val locationManager by lazy { MyLocationManager(applicationContext) }
 
     private val tag = "[${this::class.java.simpleName}]: "
     private var isRxInited = false
+    private val MAX_GPS_TIMEOUT = 15L
     private val compositeDisposable = CompositeDisposable()
+
     private lateinit var viewModel: UploadPhotoServiceViewModel
 
     override fun onCreate() {
@@ -82,19 +90,14 @@ class UploadPhotoService : JobService() {
         Timber.tag(tag).d("onStartJob() onStartJob")
         initRx(params)
 
-        try {
-            handleCommand(params)
-        } catch (error: Throwable) {
-            onUnknownError(params, error)
-            return false
-        }
+        compositeDisposable += getLocationObservable()
+                .subscribeOn(Schedulers.io())
+                .doOnNext { location -> viewModel.inputs.uploadPhotos(location) }
+                .doOnError { onUnknownError(params, it) }
+                .subscribe()
 
         //startAsForeground()
         return true
-    }
-
-    private fun handleCommand(params: JobParameters) {
-        viewModel.inputs.uploadPhotos()
     }
 
     override fun onStopJob(params: JobParameters): Boolean {
@@ -174,6 +177,29 @@ class UploadPhotoService : JobService() {
 
         updateUploadingNotificationShowError()
         finish(params, false)
+    }
+
+    private fun getLocationObservable(): Observable<LonLat> {
+        val gpsStateObservable = Observable.fromCallable { locationManager.isGpsEnabled() }
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .share()
+
+        val gpsEnabledObservable = gpsStateObservable
+                .filter { isEnabled -> isEnabled }
+                .doOnNext { Timber.tag(tag).d("getLocationObservable() Gps is enabled. Trying to obtain current location") }
+                .flatMap {
+                    return@flatMap RxLocationManager.start(locationManager)
+                            .timeout(MAX_GPS_TIMEOUT, TimeUnit.SECONDS)
+                            .onErrorResumeNext(Observable.just(LonLat.empty()))
+                }
+
+        val gpsDisabledObservable = gpsStateObservable
+                .filter { isEnabled -> !isEnabled }
+                .doOnNext { Timber.tag(tag).d("getLocationObservable() Gps is disabled. Returning empty location") }
+                .map { LonLat.empty() }
+
+        return Observable.merge(gpsEnabledObservable, gpsDisabledObservable)
+                .doOnNext { location -> Timber.tag(tag).d("getLocationObservable() Current location is [lon: ${location.lon}, lat: ${location.lat}]") }
     }
 
     private fun sendEvent(event: PhotoUploadedEvent) {

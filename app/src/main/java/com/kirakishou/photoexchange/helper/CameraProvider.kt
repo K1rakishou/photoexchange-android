@@ -53,20 +53,6 @@ class CameraProvider {
                     .whenAvailable {
                         emitter.onNext(file.absolutePath)
                     }
-                    /*.toBitmap()
-                    .transform { bitmapPhoto ->
-                        Timber.d("Applying rotation ${bitmapPhoto.rotationDegrees}")
-                        return@transform BitmapUtils.rotateBitmap(bitmapPhoto.bitmap, bitmapPhoto.rotationDegrees)
-                    }
-                    .whenAvailable { rotatedPhotoFickle ->
-                        Timber.d("takePhoto() Done")
-
-                        if (!rotatedPhotoFickle.isPresent()) {
-                            emitter.onError(CouldNotTakePhotoException())
-                        } else {
-                            emitter.onNext(rotatedPhotoFickle.get())
-                        }
-                    }*/
         } else {
             emitter.onError(IllegalStateException("Camera is not started"))
         }
