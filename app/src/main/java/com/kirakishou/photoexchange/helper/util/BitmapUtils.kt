@@ -1,13 +1,12 @@
 package com.kirakishou.photoexchange.helper.util
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Matrix
-import com.kirakishou.photoexchange.mwvm.model.other.Fickle
+import android.support.media.ExifInterface
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
-import android.graphics.BitmapFactory
-import android.support.media.ExifInterface
 
 
 /**
@@ -30,7 +29,7 @@ object BitmapUtils {
                 val out = FileOutputStream(tempFile)
 
                 try {
-                    rotatedBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                    rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
                 } finally {
                     rotatedBitmap.recycle()
                     out.close()

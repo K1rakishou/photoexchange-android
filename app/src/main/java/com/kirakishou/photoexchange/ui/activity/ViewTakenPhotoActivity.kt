@@ -78,21 +78,19 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>() {
     private fun initRx() {
         compositeDisposable += RxView.clicks(closeActivityButtonIv)
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext { getViewModel().inputs.deleteTakenPhoto(takenPhoto.id) }
                 .subscribe({ finish() }, this::onUnknownError)
 
         compositeDisposable += RxView.clicks(closeActivityButtonFab)
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext { getViewModel().inputs.deleteTakenPhoto(takenPhoto.id) }
                 .subscribe({ finish() }, this::onUnknownError)
 
         compositeDisposable += RxView.clicks(sendPhotoButton)
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(Schedulers.io())
+                .subscribeOn(Schedulers.io())
                 .doOnNext { getViewModel().inputs.updateTakenPhotoAsQueuedUp(takenPhoto.id) }
                 .delay(1, TimeUnit.SECONDS)
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ switchToAllPhotosViewActivity() })
     }
 

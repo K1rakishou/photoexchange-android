@@ -70,10 +70,10 @@ class UploadPhotoServiceViewModel(
                 onPhotoUploadStateOutput.onNext(PhotoUploadingState.StartPhotoUploading())
 
                 for (photo in queuedUpPhotos) {
-                    val tempFile = File.createTempFile("photo", ".tmp")
+                    val rotatedPhotoFile = File.createTempFile("photo", ".tmp")
 
-                    if (BitmapUtils.rotatePhoto(photo.photoFilePath, tempFile)) {
-                        val rotatedPhotoPath = tempFile.absolutePath
+                    if (BitmapUtils.rotatePhoto(photo.photoFilePath, rotatedPhotoFile)) {
+                        val rotatedPhotoPath = rotatedPhotoFile.absolutePath
                         val newPhoto = photo.copy(rotatedPhotoPath, location)
                         val photoName = uploadPhoto(newPhoto)
 
@@ -82,7 +82,7 @@ class UploadPhotoServiceViewModel(
 
                             photo.photoName = photoName
                             FileUtils.deleteFile(photo.photoFilePath)
-                            FileUtils.deleteFile(tempFile)
+                            FileUtils.deleteFile(rotatedPhotoFile)
 
                             takenPhotosRepo.updateSetUploaded(photo.id, photoName)
                             onPhotoUploadStateOutput.onNext(PhotoUploadingState.PhotoUploaded(photo))
@@ -91,8 +91,8 @@ class UploadPhotoServiceViewModel(
                         }
                     }
 
-                    Timber.tag(tag).d("Could not upload photo. Marking it's value as failed in the database")
-                    FileUtils.deleteFile(tempFile)
+                    Timber.tag(tag).d("Could not upload photo. Marking it's state as failed in the database")
+                    FileUtils.deleteFile(rotatedPhotoFile)
                     takenPhotosRepo.updateSetFailedToUpload(photo.id).await()
                     onPhotoUploadStateOutput.onNext(PhotoUploadingState.FailedToUploadPhoto(photo))
                 }

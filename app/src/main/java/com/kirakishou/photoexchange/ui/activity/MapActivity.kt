@@ -38,7 +38,6 @@ class MapActivity : BaseActivity<Nothing>(), OnMapReadyCallback {
 
         compositeDisposable += RxView.clicks(ivCloseActivity)
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ finish() })
     }
 

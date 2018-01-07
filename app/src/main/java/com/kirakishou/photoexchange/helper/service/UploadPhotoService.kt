@@ -114,17 +114,14 @@ class UploadPhotoService : JobService() {
 
         compositeDisposable += viewModel.outputs.onPhotoUploadStateObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ status -> onPhotoUploadState(params, status) })
 
         compositeDisposable += viewModel.errors.onBadResponseObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ onBadResponse(params, it) }, { onUnknownError(params, it) })
 
         compositeDisposable += viewModel.errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ onUnknownError(params, it) }, { onUnknownError(params, it) })
     }
 

@@ -64,28 +64,23 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
         compositeDisposable += cancelButtonSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onCancelButtonClick, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onQueuedUpAndFailedToUploadLoadedObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onQueuedUpAndFailedToUploadLoaded, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onPhotoUploadingStateObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .filterMulticastEvent(QueuedUpPhotosListFragment::class.java)
                 .subscribe(this::onPhotoUploadingState, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onTakenPhotoUploadingCanceledObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onTakenPhotoUploadingCanceled, this::onUnknownError)
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onUnknownError)
     }
 
@@ -144,15 +139,16 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     override fun onResume() {
-        getViewModel().inputs.beginReceivingEvents(this::class.java)
-        getViewModel().inputs.startLookingForPhotos()
-        getViewModel().inputs.startPhotosUploading()
         super.onResume()
+
+        getViewModel().inputs.beginReceivingEvents(this::class.java)
+        getViewModel().inputs.startPhotosUploading()
     }
 
     override fun onPause() {
-        getViewModel().inputs.stopReceivingEvents(this::class.java)
         super.onPause()
+
+        getViewModel().inputs.stopReceivingEvents(this::class.java)
     }
 
     private fun initRecyclerView() {

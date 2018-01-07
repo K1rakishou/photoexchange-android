@@ -35,7 +35,6 @@ class ViewPhotoFullSizeActivity : BaseActivity<Nothing>() {
     override fun onInitRx() {
         compositeDisposable += RxView.clicks(ivCloseButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ finish() })
     }
 

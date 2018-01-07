@@ -136,39 +136,32 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     private fun initRx() {
         compositeDisposable += RxView.clicks(ivCloseActivityButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ switchToTakePhotoActivity() })
 
         compositeDisposable += RxView.clicks(takePhotoButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ switchToTakePhotoActivity() })
 
         compositeDisposable += getViewModel().outputs.onBeginReceivingEventsObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ clazz -> onBeginReceivingEvents(clazz) }, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onStopReceivingEventsObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ clazz -> onStopReceivingEvents(clazz) }, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onStartPhotosUploadingObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .filter { !UploadPhotoService.isAlreadyRunning(this) }
-                .subscribe({ schedulePhotoUploadWithDelay() }, this::onUnknownError)
+                .subscribe({ schedulePhotoUploading() }, this::onUnknownError)
 
         compositeDisposable += getViewModel().outputs.onStartLookingForPhotosObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .filter { !FindPhotoAnswerService.isAlreadyRunning(this) }
                 .subscribe({ scheduleLookingForPhotoAnswer() }, this::onUnknownError)
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onUnknownError)
     }
 
@@ -221,27 +214,12 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
         tab!!.select()
     }
 
-    private fun schedulePhotoUploadingASAP() {
-        if (UploadPhotoService.isAlreadyRunning(this)) {
-            Timber.tag(tag).d("UploadPhotoService is already running. Do nothing")
-            return
-        }
-
+    private fun schedulePhotoUploading() {
         if (NetUtils.isWifiConnected(this)) {
-            Timber.tag(tag).d("schedulePhotoUploadingASAP() Wi-Fi is connected. Scheduling upload job immediate")
-            UploadPhotoService.scheduleJob(this)
-        } else {
-            Timber.tag(tag).d("schedulePhotoUploadingASAP() Wi-Fi is not connected. Scheduling upload job upon Wi-Fi connection available")
-            UploadPhotoService.scheduleJobWhenWiFiAvailable(this)
-        }
-    }
-
-    private fun schedulePhotoUploadWithDelay() {
-        if (NetUtils.isWifiConnected(this)) {
-            Timber.tag(tag).d("schedulePhotoUploadWithDelay() Wi-Fi is connected. Scheduling upload job with half minute delay")
+            Timber.tag(tag).d("schedulePhotoUploading() Wi-Fi is connected. Scheduling upload job with half minute delay")
             UploadPhotoService.scheduleJob(this, JOB_START_DELAY)
         } else {
-            Timber.tag(tag).d("schedulePhotoUploadWithDelay() Wi-Fi is not connected. Scheduling upload job upon Wi-Fi connection available")
+            Timber.tag(tag).d("schedulePhotoUploading() Wi-Fi is not connected. Scheduling upload job upon Wi-Fi connection available")
             UploadPhotoService.scheduleJobWhenWiFiAvailable(this, JOB_START_DELAY)
         }
     }

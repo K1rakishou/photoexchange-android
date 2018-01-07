@@ -137,7 +137,6 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     override fun onResume() {
         getViewModel().inputs.beginReceivingEvents(this::class.java)
-        getViewModel().inputs.startLookingForPhotos()
         getViewModel().inputs.startPhotosUploading()
         super.onResume()
     }

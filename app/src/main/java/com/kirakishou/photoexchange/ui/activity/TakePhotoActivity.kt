@@ -235,7 +235,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::onUnknownError)
     }
 
