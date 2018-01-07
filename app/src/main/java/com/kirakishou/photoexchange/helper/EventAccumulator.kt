@@ -57,4 +57,8 @@ class EventAccumulator {
             return@synchronized eventMap[clazz]!!.size
         }
     }
+
+    fun clear() {
+        eventMap.clear()
+    }
 }

@@ -104,6 +104,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
 
     override fun onActivityDestroy() {
         eventBus.unregister(this)
+        eventAccumulator.clear()
 
         tabLayout.clearOnTabSelectedListeners()
         viewPager.clearOnPageChangeListeners()
@@ -136,32 +137,39 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     private fun initRx() {
         compositeDisposable += RxView.clicks(ivCloseActivityButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
+                .doOnError(this::onUnknownError)
                 .subscribe({ switchToTakePhotoActivity() })
 
         compositeDisposable += RxView.clicks(takePhotoButton)
                 .subscribeOn(AndroidSchedulers.mainThread())
+                .doOnError(this::onUnknownError)
                 .subscribe({ switchToTakePhotoActivity() })
 
         compositeDisposable += getViewModel().outputs.onBeginReceivingEventsObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe({ clazz -> onBeginReceivingEvents(clazz) }, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe({ clazz -> onBeginReceivingEvents(clazz) })
 
         compositeDisposable += getViewModel().outputs.onStopReceivingEventsObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe({ clazz -> onStopReceivingEvents(clazz) }, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe({ clazz -> onStopReceivingEvents(clazz) })
 
         compositeDisposable += getViewModel().outputs.onStartPhotosUploadingObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .filter { !UploadPhotoService.isAlreadyRunning(this) }
-                .subscribe({ schedulePhotoUploading() }, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe({ schedulePhotoUploading() })
 
         compositeDisposable += getViewModel().outputs.onStartLookingForPhotosObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .filter { !FindPhotoAnswerService.isAlreadyRunning(this) }
-                .subscribe({ scheduleLookingForPhotoAnswer() }, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe({ scheduleLookingForPhotoAnswer() })
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
+                .doOnError(this::onUnknownError)
                 .subscribe(this::onUnknownError)
     }
 

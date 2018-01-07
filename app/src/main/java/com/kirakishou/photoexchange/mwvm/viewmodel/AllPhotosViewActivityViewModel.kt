@@ -77,6 +77,7 @@ class AllPhotosViewActivityViewModel(
     init {
         compositeDisposable += startLookingForPhotosInput
                 .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
                 .delay(1, TimeUnit.SECONDS)
                 .throttleFirst(LOOK_FOR_PHOTOS_EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .flatMap { Singles.zip(takenPhotosRepository.countAll(), photoAnswerRepository.countAll()).toObservable() }
@@ -106,6 +107,8 @@ class AllPhotosViewActivityViewModel(
 
         compositeDisposable += startPhotosUploadingInput
                 .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .delay(1, TimeUnit.SECONDS)
                 .throttleFirst(START_PHOTO_UPLOADING_EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .flatMap { takenPhotosRepository.countQueuedUp().toObservable() }
                 .doOnNext { queuedUpCount ->

@@ -85,35 +85,43 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
         compositeDisposable += photoAnswerClickSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onPhotoAnswerClick, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe(this::onPhotoAnswerClick)
 
         compositeDisposable += photoAnswerLongClickSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onPhotoAnswerLongClick, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe(this::onPhotoAnswerLongClick)
 
         compositeDisposable += getViewModel().outputs.onScrollToTopObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe({ scrollToTop() }, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe({ scrollToTop() })
 
         compositeDisposable += getViewModel().outputs.onShowLookingForPhotoIndicatorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe({ showLookingForPhotoIndicator() }, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe({ showLookingForPhotoIndicator() })
 
         compositeDisposable += getViewModel().outputs.onLookingForPhotoStateObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .filterMulticastEvent(ReceivedPhotosListFragment::class.java)
-                .subscribe(this::onLookingForPhotoState, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe(this::onLookingForPhotoState)
 
         compositeDisposable += getViewModel().outputs.onStartLookingForPhotosObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe({ startLookingForPhotos() }, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe({ startLookingForPhotos() })
 
         compositeDisposable += getViewModel().outputs.onShowUploadMorePhotosMessageObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe({ onUploadMorePhotos() }, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe({ onUploadMorePhotos() })
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
+                .doOnError(this::onUnknownError)
                 .subscribe(this::onUnknownError)
     }
 

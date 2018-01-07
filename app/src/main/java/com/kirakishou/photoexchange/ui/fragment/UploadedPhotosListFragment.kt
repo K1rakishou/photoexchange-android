@@ -72,17 +72,20 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .map { it.second }
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext { adapter.removeProgressFooter() }
-                .subscribe(this::onPageReceived, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe(this::onPageReceived)
 
         compositeDisposable += getViewModel().outputs.onPhotoUploadingStateObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .filterMulticastEvent(UploadedPhotosListFragment::class.java)
-                .subscribe(this::onPhotoUploadingState, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe(this::onPhotoUploadingState)
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
+                .doOnError(this::onUnknownError)
                 .subscribe(this::onUnknownError)
     }
 

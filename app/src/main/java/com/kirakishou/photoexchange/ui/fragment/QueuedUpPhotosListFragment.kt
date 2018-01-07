@@ -59,28 +59,33 @@ class QueuedUpPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     override fun initRx() {
         compositeDisposable += retryButtonSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onRetryButtonClicked, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe(this::onRetryButtonClicked)
 
         compositeDisposable += cancelButtonSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onCancelButtonClick, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe(this::onCancelButtonClick)
 
         compositeDisposable += getViewModel().outputs.onQueuedUpAndFailedToUploadLoadedObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onQueuedUpAndFailedToUploadLoaded, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe(this::onQueuedUpAndFailedToUploadLoaded)
 
         compositeDisposable += getViewModel().outputs.onPhotoUploadingStateObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .filterMulticastEvent(QueuedUpPhotosListFragment::class.java)
-                .subscribe(this::onPhotoUploadingState, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe(this::onPhotoUploadingState)
 
         compositeDisposable += getViewModel().outputs.onTakenPhotoUploadingCanceledObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe(this::onTakenPhotoUploadingCanceled, this::onUnknownError)
+                .doOnError(this::onUnknownError)
+                .subscribe(this::onTakenPhotoUploadingCanceled)
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
+                .doOnError(this::onUnknownError)
                 .subscribe(this::onUnknownError)
     }
 
