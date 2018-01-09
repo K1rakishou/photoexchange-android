@@ -138,7 +138,7 @@ class AllPhotosViewActivityViewModel(
                 val userId = photos.first().userId
                 val alreadyCachedLocations = recipientLocationRepository.findMany(photos.map { it.photoName }).awaitFirst()
                 if (alreadyCachedLocations.isNotEmpty()) {
-                    alreadyCachedLocations.forEach { Timber.e("alreadyCachedLocation: $it") }
+                    Timber.tag(tag).d("getPhotoListUserNewLocations() cached recipient locations found (${alreadyCachedLocations.size} items)")
                     onRecipientLocationsOutput.onNext(alreadyCachedLocations)
                 }
 
@@ -147,24 +147,26 @@ class AllPhotosViewActivityViewModel(
                     return@filter location == null
                 }
 
-                notCachedPhotos.forEach { Timber.e("notCachedPhotos: $it") }
-
                 if (notCachedPhotos.isEmpty()) {
+                    Timber.tag(tag).d("getPhotoListUserNewLocations() no recipient locations")
                     return@async
                 }
+
+                Timber.tag(tag).d("getPhotoListUserNewLocations() not cached recipient locations count: ${notCachedPhotos.size}")
 
                 val joinedPhotoNames = notCachedPhotos.joinToString(",") { it.photoName }
-                Timber.e("joinedPhotoNames: $joinedPhotoNames")
-
                 val newRecipientLocations = apiClient.getPhotoRecipientsLocations(userId, joinedPhotoNames).await()
+
                 if (newRecipientLocations.locationList.isEmpty()) {
+                    Timber.tag(tag).d("getPhotoListUserNewLocations() no new recipient locations")
                     return@async
                 }
 
-                val converted = newRecipientLocations.locationList.map { RecipientLocation.fromUserNewLocationJsonObject(it) }
-                converted.forEach { Timber.e("converted: $it") }
+                Timber.tag(tag).d("getPhotoListUserNewLocations() received ${newRecipientLocations.locationList.size} recipient locations")
 
+                val converted = newRecipientLocations.locationList.map { RecipientLocation.fromUserNewLocationJsonObject(it) }
                 recipientLocationRepository.saveMany(converted).await()
+
                 onRecipientLocationsOutput.onNext(converted)
             } catch (error: Throwable) {
                 onRecipientLocationsOutput.onError(error)

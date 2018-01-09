@@ -19,7 +19,7 @@ interface TakenPhotosDao {
     fun findOne(id: Long): Single<TakenPhotoEntity>
 
     @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} WHERE photo_state = \'${PhotoState.UPLOADED_STATE}\' " +
-            "ORDER BY created_on DESC " +
+            "ORDER BY created_on ASC " +
             "LIMIT :arg1 OFFSET :arg0")
     fun findPage(page: Int, count: Int): Single<List<TakenPhotoEntity>>
 
