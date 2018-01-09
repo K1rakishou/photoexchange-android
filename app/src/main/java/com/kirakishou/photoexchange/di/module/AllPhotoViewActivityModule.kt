@@ -1,7 +1,9 @@
 package com.kirakishou.photoexchange.di.module
 
 import com.kirakishou.photoexchange.di.scope.PerActivity
+import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
+import com.kirakishou.photoexchange.helper.database.repository.RecipientLocationRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
@@ -25,9 +27,11 @@ class AllPhotoViewActivityModule(val activity: AllPhotosViewActivity) {
 
     @PerActivity
     @Provides
-    fun provideViewModelFactory(photoAnswerRepository: PhotoAnswerRepository,
+    fun provideViewModelFactory(apiClient: ApiClient,
+                                photoAnswerRepository: PhotoAnswerRepository,
                                 takenPhotosRepository: TakenPhotosRepository,
+                                recipientLocationRepository: RecipientLocationRepository,
                                 schedulers: SchedulerProvider): AllPhotosViewActivityViewModelFactory {
-        return AllPhotosViewActivityViewModelFactory(photoAnswerRepository, takenPhotosRepository, schedulers)
+        return AllPhotosViewActivityViewModelFactory(apiClient, photoAnswerRepository, takenPhotosRepository, recipientLocationRepository, schedulers)
     }
 }

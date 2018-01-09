@@ -2,10 +2,12 @@ package com.kirakishou.photoexchange.helper.api
 
 import com.google.gson.Gson
 import com.kirakishou.photoexchange.helper.api.request.FindPhotoAnswerRequest
+import com.kirakishou.photoexchange.helper.api.request.GetPhotoNewLocationRequest
 import com.kirakishou.photoexchange.helper.api.request.MarkPhotoAsReceivedRequest
 import com.kirakishou.photoexchange.helper.api.request.UploadPhotoRequest
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mwvm.model.dto.PhotoToBeUploaded
+import com.kirakishou.photoexchange.mwvm.model.net.response.GetUserLocationResponse
 import com.kirakishou.photoexchange.mwvm.model.net.response.PhotoAnswerResponse
 import com.kirakishou.photoexchange.mwvm.model.net.response.StatusResponse
 import com.kirakishou.photoexchange.mwvm.model.net.response.UploadPhotoResponse
@@ -36,6 +38,11 @@ class ApiClientImpl
 
     override fun markPhotoAsReceived(photoId: Long, userId: String): Single<StatusResponse> {
         return MarkPhotoAsReceivedRequest(photoId, userId, apiService, schedulers, gson)
+                .build()
+    }
+
+    override fun getPhotoRecipientsLocations(userId: String, photoIds: String): Single<GetUserLocationResponse> {
+        return GetPhotoNewLocationRequest(userId, photoIds, apiService, schedulers, gson)
                 .build()
     }
 }

@@ -14,9 +14,10 @@ import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.extension.filterMulticastEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
-import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
+import com.kirakishou.photoexchange.mwvm.model.adapter.AdapterItem
+import com.kirakishou.photoexchange.mwvm.model.adapter.AdapterItemType
 import com.kirakishou.photoexchange.mwvm.model.other.Constants.PHOTO_ADAPTER_VIEW_WIDTH
+import com.kirakishou.photoexchange.mwvm.model.other.RecipientLocation
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.model.state.PhotoUploadingState
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
@@ -31,6 +32,7 @@ import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>() {
@@ -54,6 +56,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private var columnsCount: Int = 1
 
     private val loadMoreSubject = PublishSubject.create<Int>()
+    private val visiblePhotosSubject = PublishSubject.create<TakenPhoto>()
 
     override fun initViewModel(): AllPhotosViewActivityViewModel {
         return ViewModelProviders.of(activity!!, viewModelFactory).get(AllPhotosViewActivityViewModel::class.java)
@@ -75,6 +78,19 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .doOnError(this::onUnknownError)
                 .subscribe(this::onPageReceived)
 
+        compositeDisposable += visiblePhotosSubject
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .buffer(3, TimeUnit.SECONDS)
+                .doOnNext { photos -> getViewModel().inputs.getPhotoListUserNewLocations(photos) }
+                .subscribe()
+
+        compositeDisposable += getViewModel().outputs.onRecipientLocationsObservable()
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .doOnError(this::onUnknownError)
+                .subscribe(this::onRecipientLocations)
+
         compositeDisposable += getViewModel().outputs.onPhotoUploadingStateObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -87,6 +103,87 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnError(this::onUnknownError)
                 .subscribe(this::onUnknownError)
+    }
+
+    override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
+        initRecyclerView()
+        recyclerStartLoadingItems()
+    }
+
+    override fun onFragmentViewDestroy() {
+    }
+
+    override fun onResume() {
+        super.onResume()
+        getViewModel().inputs.beginReceivingEvents(this::class.java)
+        getViewModel().inputs.startPhotosUploading()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        getViewModel().inputs.stopReceivingEvents(this::class.java)
+    }
+
+    private fun recyclerStartLoadingItems() {
+        //FIXME:
+        //HACK
+        //For some mysterious reason if we do not add a delay before calling addProgressFooter
+        //loadMoreSubject won't get any observables from EndlessRecyclerOnScrollListener at all, so we have to add a slight delay.
+        //The subscription to loadMoreSubject happens before scroll listener generates any observables,
+        //so I have no idea why loadMoreSubject doesn't receive any observables
+
+        adapter.runOnAdapterHandlerWithDelay(DELAY_BEFORE_PROGRESS_FOOTER_ADDED) {
+            adapter.addProgressFooter()
+        }
+    }
+
+    private fun initRecyclerView() {
+        columnsCount = AndroidUtils.calculateNoOfColumns(activity!!, PHOTO_ADAPTER_VIEW_WIDTH)
+
+        adapter = UploadedPhotosAdapter(activity!!, imageLoader, visiblePhotosSubject)
+        adapter.init()
+
+        layoutManager = GridLayoutManager(activity, columnsCount)
+        layoutManager.spanSizeLookup = UploadedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
+
+        endlessScrollListener = EndlessRecyclerOnScrollListener(layoutManager, loadMoreSubject)
+
+        sentPhotosRv.layoutManager = layoutManager
+        sentPhotosRv.clearOnScrollListeners()
+        sentPhotosRv.addOnScrollListener(endlessScrollListener)
+        sentPhotosRv.adapter = adapter
+        sentPhotosRv.setHasFixedSize(true)
+    }
+
+    private fun fetchPage(page: Int) {
+        val count = PHOTOS_PER_PAGE * columnsCount
+        getViewModel().inputs.fetchOnePageUploadedPhotos(page * count, count)
+    }
+
+    private fun onPageReceived(uploadedPhotosList: List<TakenPhoto>) {
+        adapter.runOnAdapterHandler {
+            endlessScrollListener.pageLoaded()
+
+            if (uploadedPhotosList.size < PHOTOS_PER_PAGE * columnsCount) {
+                endlessScrollListener.reachedEnd()
+            }
+
+            if (uploadedPhotosList.isNotEmpty()) {
+                for (photo in uploadedPhotosList) {
+                    adapter.add(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
+                }
+            } else {
+                if (adapter.itemCount == 0) {
+                    adapter.addMessageFooter()
+                }
+            }
+        }
+    }
+
+    private fun onRecipientLocations(recipientLocationList: List<RecipientLocation>) {
+        adapter.runOnAdapterHandler {
+            adapter.updatePhotosRecipientLocation(recipientLocationList)
+        }
     }
 
     private fun onPhotoUploadingState(state: PhotoUploadingState) {
@@ -127,81 +224,6 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
             }
 
             else -> IllegalStateException("Bad value")
-        }
-    }
-
-    override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
-        initRecyclerView()
-        recyclerStartLoadingItems()
-    }
-
-    override fun onFragmentViewDestroy() {
-    }
-
-    override fun onResume() {
-        getViewModel().inputs.beginReceivingEvents(this::class.java)
-        getViewModel().inputs.startPhotosUploading()
-        super.onResume()
-    }
-
-    override fun onPause() {
-        getViewModel().inputs.stopReceivingEvents(this::class.java)
-        super.onPause()
-    }
-
-    private fun recyclerStartLoadingItems() {
-        //FIXME:
-        //HACK
-        //For some mysterious reason if we do not add a delay before calling addProgressFooter
-        //loadMoreSubject won't get any observables from EndlessRecyclerOnScrollListener at all, so we have to add a slight delay.
-        //The subscription to loadMoreSubject happens before scroll listener generates any observables,
-        //so I have no idea why loadMoreSubject doesn't receive any observables
-
-        adapter.runOnAdapterHandlerWithDelay(DELAY_BEFORE_PROGRESS_FOOTER_ADDED) {
-            adapter.addProgressFooter()
-        }
-    }
-
-    private fun initRecyclerView() {
-        columnsCount = AndroidUtils.calculateNoOfColumns(activity!!, PHOTO_ADAPTER_VIEW_WIDTH)
-
-        adapter = UploadedPhotosAdapter(activity!!, imageLoader)
-        adapter.init()
-
-        layoutManager = GridLayoutManager(activity, columnsCount)
-        layoutManager.spanSizeLookup = UploadedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
-
-        endlessScrollListener = EndlessRecyclerOnScrollListener(layoutManager, loadMoreSubject)
-
-        sentPhotosRv.layoutManager = layoutManager
-        sentPhotosRv.clearOnScrollListeners()
-        sentPhotosRv.addOnScrollListener(endlessScrollListener)
-        sentPhotosRv.adapter = adapter
-        sentPhotosRv.setHasFixedSize(true)
-    }
-
-    private fun fetchPage(page: Int) {
-        val count = PHOTOS_PER_PAGE * columnsCount
-        getViewModel().inputs.fetchOnePageUploadedPhotos(page * count, count)
-    }
-
-    private fun onPageReceived(uploadedPhotosList: List<TakenPhoto>) {
-        adapter.runOnAdapterHandler {
-            endlessScrollListener.pageLoaded()
-
-            if (uploadedPhotosList.size < PHOTOS_PER_PAGE * columnsCount) {
-                endlessScrollListener.reachedEnd()
-            }
-
-            if (uploadedPhotosList.isNotEmpty()) {
-                for (photo in uploadedPhotosList) {
-                    adapter.add(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
-                }
-            } else {
-                if (adapter.itemCount == 0) {
-                    adapter.addMessageFooter()
-                }
-            }
         }
     }
 

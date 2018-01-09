@@ -14,10 +14,10 @@ import io.reactivex.Single
 @Dao
 interface PhotoAnswerDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun saveOne(photoAnswerEntity: PhotoAnswerEntity): Long
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun saveMany(vararg photoAnswerEntityArray: PhotoAnswerEntity): List<Long>
 
     @Query("SELECT * FROM ${PhotoAnswerEntity.TABLE_NAME} " +

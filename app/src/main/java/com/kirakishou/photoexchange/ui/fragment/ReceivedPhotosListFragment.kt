@@ -17,8 +17,8 @@ import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.extension.filterMulticastEvent
 import com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
-import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
+import com.kirakishou.photoexchange.mwvm.model.adapter.AdapterItem
+import com.kirakishou.photoexchange.mwvm.model.adapter.AdapterItemType
 import com.kirakishou.photoexchange.mwvm.model.other.Constants.PHOTO_ADAPTER_VIEW_WIDTH
 import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
 import com.kirakishou.photoexchange.mwvm.model.state.LookingForPhotoState
@@ -32,7 +32,6 @@ import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
 import com.kirakishou.photoexchange.ui.widget.ReceivedPhotosAdapterSpanSizeLookup
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import javax.inject.Inject
@@ -134,17 +133,18 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     }
 
     override fun onResume() {
+        super.onResume()
+
         getViewModel().inputs.beginReceivingEvents(this::class.java)
         getViewModel().inputs.startLookingForPhotos()
 
         addIndicatorIfServiceIsRunning()
-
-        super.onResume()
     }
 
     override fun onPause() {
-        getViewModel().inputs.stopReceivingEvents(this::class.java)
         super.onPause()
+
+        getViewModel().inputs.stopReceivingEvents(this::class.java)
     }
 
     private fun onLookingForPhotoState(state: LookingForPhotoState) {

@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.helper.api
 
 import com.kirakishou.photoexchange.mwvm.model.dto.PhotoToBeUploaded
+import com.kirakishou.photoexchange.mwvm.model.net.response.GetUserLocationResponse
 import com.kirakishou.photoexchange.mwvm.model.net.response.PhotoAnswerResponse
 import com.kirakishou.photoexchange.mwvm.model.net.response.StatusResponse
 import com.kirakishou.photoexchange.mwvm.model.net.response.UploadPhotoResponse
@@ -15,4 +16,5 @@ interface ApiClient {
     fun uploadPhoto(info: PhotoToBeUploaded): Single<UploadPhotoResponse>
     fun findPhotoAnswer(userId: String): Single<PhotoAnswerResponse>
     fun markPhotoAsReceived(photoId: Long, userId: String): Single<StatusResponse>
+    fun getPhotoRecipientsLocations(userId: String, photoIds: String): Single<GetUserLocationResponse>
 }

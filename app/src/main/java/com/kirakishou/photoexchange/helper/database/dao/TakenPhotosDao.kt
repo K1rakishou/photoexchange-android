@@ -12,7 +12,7 @@ import io.reactivex.Single
 @Dao
 interface TakenPhotosDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun saveOne(takenPhotoEntity: TakenPhotoEntity): Long
 
     @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} WHERE id = :arg0")

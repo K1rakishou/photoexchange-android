@@ -13,24 +13,24 @@ import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
 @Entity(tableName = PhotoAnswerEntity.TABLE_NAME)
 data class PhotoAnswerEntity(
 
-        @PrimaryKey(autoGenerate = false)
-        @ColumnInfo(name = "photo_id")
-        var photoRemoteId: Long,
+    @PrimaryKey(autoGenerate = false)
+    @ColumnInfo(name = "photo_id")
+    var photoRemoteId: Long,
 
-        @ColumnInfo(name = "user_id")
-        var userId: String,
+    @ColumnInfo(name = "user_id")
+    var userId: String,
 
-        @ColumnInfo(name = "photo_name", index = true)
-        var photoName: String,
+    @ColumnInfo(name = "photo_name", index = true)
+    var photoName: String,
 
-        @ColumnInfo(name = "lon")
-        var lon: Double,
+    @ColumnInfo(name = "lon")
+    var lon: Double,
 
-        @ColumnInfo(name = "lat")
-        var lat: Double,
+    @ColumnInfo(name = "lat")
+    var lat: Double,
 
-        @ColumnInfo(name = "created_on", index = true)
-        var createdOn: Long
+    @ColumnInfo(name = "created_on", index = true)
+    var createdOn: Long
 ) {
 
     constructor() : this(0L, "", "", 0.0, 0.0, 0L)

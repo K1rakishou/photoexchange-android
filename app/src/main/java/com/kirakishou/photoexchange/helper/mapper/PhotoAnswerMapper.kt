@@ -6,7 +6,7 @@ import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
 /**
  * Created by kirakishou on 11/14/2017.
  */
-class PhotoAnswerMapper {
+class PhotoAnswerMapper : Mapper {
 
     fun toPhotoAnswer(photoAnswerEntity: PhotoAnswerEntity) =
             PhotoAnswer.fromPhotoAnswerEntity(photoAnswerEntity)

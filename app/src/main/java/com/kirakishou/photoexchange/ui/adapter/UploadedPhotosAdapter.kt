@@ -1,7 +1,6 @@
 package com.kirakishou.photoexchange.ui.adapter
 
 import android.content.Context
-import android.support.v7.widget.AppCompatButton
 import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.widget.ImageView
@@ -9,24 +8,22 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import butterknife.BindView
 import butterknife.ButterKnife
-import com.bumptech.glide.Glide
-import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.fixmypc.photoexchange.R
-import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseAdapter
 import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
-import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
+import com.kirakishou.photoexchange.mwvm.model.adapter.AdapterItem
+import com.kirakishou.photoexchange.mwvm.model.adapter.AdapterItemType
+import com.kirakishou.photoexchange.mwvm.model.other.RecipientLocation
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import io.reactivex.subjects.PublishSubject
-import java.io.File
 
 /**
  * Created by kirakishou on 11/7/2017.
  */
 class UploadedPhotosAdapter(
         private val context: Context,
-        private val imageLoader: ImageLoader
+        private val imageLoader: ImageLoader,
+        private val visiblePhotosSubject: PublishSubject<TakenPhoto>
 ) : BaseAdapter<TakenPhoto>(context) {
 
     private val selector = UploadedPhotosIdSelectorFunction()
@@ -135,6 +132,20 @@ class UploadedPhotosAdapter(
         }
     }
 
+    fun updatePhotosRecipientLocation(recipientLocationList: List<RecipientLocation>) {
+        for (recipientLocation in recipientLocationList) {
+            val photoIndex = items.indexOfFirst { it.getType() == AdapterItemType.VIEW_ITEM.ordinal && it.value.get().photoName == recipientLocation.photoName }
+            if (photoIndex == -1) {
+                continue
+            }
+
+            val newPhoto = AdapterItem(TakenPhoto.createWithRecipientLocation(items[photoIndex].value.get(), recipientLocation.getLocation()), AdapterItemType.VIEW_ITEM)
+            items[photoIndex] = newPhoto
+
+            notifyItemChanged(photoIndex)
+        }
+    }
+
     override fun getBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
         return mutableListOf(
                 BaseAdapterInfo(AdapterItemType.VIEW_ITEM, R.layout.adapter_item_sent_photos, SentPhotoViewHolder::class.java),
@@ -149,8 +160,15 @@ class UploadedPhotosAdapter(
             is SentPhotoViewHolder -> {
                 if (items[position].value.isPresent()) {
                     val item = items[position].value.get()
-
                     imageLoader.loadImageFromNetInto(item.photoName, ImageLoader.PhotoSize.Small, holder.photoView)
+
+                    if (item.recipientLocation == null) {
+                        holder.stateIcon.setImageDrawable(context.getDrawable(R.drawable.ic_done))
+                    } else {
+                        holder.stateIcon.setImageDrawable(context.getDrawable(R.drawable.ic_done_all))
+                    }
+
+                    visiblePhotosSubject.onNext(item)
                 }
             }
 
@@ -170,6 +188,9 @@ class UploadedPhotosAdapter(
 
         @BindView(R.id.photo)
         lateinit var photoView: ImageView
+
+        @BindView(R.id.photo_uploading_state_icon)
+        lateinit var stateIcon: ImageView
 
         init {
             ButterKnife.bind(this, itemView)

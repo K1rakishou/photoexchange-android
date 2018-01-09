@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.mwvm.wires.outputs
 
 import com.kirakishou.photoexchange.mwvm.model.other.MulticastEvent
 import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
+import com.kirakishou.photoexchange.mwvm.model.other.RecipientLocation
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.model.state.LookingForPhotoState
 import com.kirakishou.photoexchange.mwvm.model.state.PhotoUploadingState
@@ -22,6 +23,7 @@ interface AllPhotosViewActivityViewModelOutputs {
     fun onBeginReceivingEventsObservable(): Observable<Class<*>>
     fun onStopReceivingEventsObservable(): Observable<Class<*>>
     fun onShowUploadMorePhotosMessageObservable(): Observable<Unit>
+    fun onRecipientLocationsObservable(): Observable<List<RecipientLocation>>
 
     fun onPhotoUploadingStateObservable(): Observable<MulticastEvent<PhotoUploadingState>>
     fun onLookingForPhotoStateObservable(): Observable<MulticastEvent<LookingForPhotoState>>

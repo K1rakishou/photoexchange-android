@@ -12,8 +12,8 @@ import butterknife.ButterKnife
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.base.BaseAdapter
 import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
-import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
+import com.kirakishou.photoexchange.mwvm.model.adapter.AdapterItem
+import com.kirakishou.photoexchange.mwvm.model.adapter.AdapterItemType
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import io.reactivex.subjects.PublishSubject
 import java.io.File
