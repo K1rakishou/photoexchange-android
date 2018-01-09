@@ -9,17 +9,13 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import butterknife.BindView
 import butterknife.ButterKnife
-import com.bumptech.glide.Glide
-import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.fixmypc.photoexchange.R
-import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseAdapter
 import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
-import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
+import com.kirakishou.photoexchange.mwvm.model.adapter.AdapterItem
+import com.kirakishou.photoexchange.mwvm.model.adapter.AdapterItemType
 import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
 import io.reactivex.subjects.PublishSubject
-import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Created by kirakishou on 11/17/2017.

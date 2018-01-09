@@ -1,22 +1,20 @@
 package com.kirakishou.photoexchange.mwvm.viewmodel
 
 import com.kirakishou.photoexchange.base.BaseViewModel
+import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.RecipientLocationRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.util.FileUtils
+import com.kirakishou.photoexchange.mwvm.model.other.*
 import com.kirakishou.photoexchange.mwvm.model.other.Constants.ASYNC_DELAY
-import com.kirakishou.photoexchange.mwvm.model.other.MulticastEvent
-import com.kirakishou.photoexchange.mwvm.model.other.Pageable
-import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
-import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.model.state.LookingForPhotoState
 import com.kirakishou.photoexchange.mwvm.model.state.PhotoUploadingState
 import com.kirakishou.photoexchange.mwvm.wires.errors.AllPhotosViewActivityViewModelErrors
 import com.kirakishou.photoexchange.mwvm.wires.inputs.AllPhotosViewActivityViewModelInputs
 import com.kirakishou.photoexchange.mwvm.wires.outputs.AllPhotosViewActivityViewModelOutputs
 import io.reactivex.Observable
-import io.reactivex.Single
 import io.reactivex.rxkotlin.Singles
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
@@ -34,8 +32,10 @@ import java.util.concurrent.TimeUnit
  * Created by kirakishou on 11/7/2017.
  */
 class AllPhotosViewActivityViewModel(
+        private val apiClient: ApiClient,
         private val photoAnswerRepository: PhotoAnswerRepository,
         private val takenPhotosRepository: TakenPhotosRepository,
+        private val recipientLocationRepository: RecipientLocationRepository,
         private val schedulers: SchedulerProvider
 ) : BaseViewModel(),
         AllPhotosViewActivityViewModelInputs,
@@ -64,6 +64,7 @@ class AllPhotosViewActivityViewModel(
     private val beginReceivingEventsOutput = PublishSubject.create<Class<*>>()
     private val stopReceivingEventsOutput = PublishSubject.create<Class<*>>()
     private val showUploadMorePhotosMessageOutput = PublishSubject.create<Unit>()
+    private val onRecipientLocationsOutput = PublishSubject.create<List<RecipientLocation>>()
 
     private val onPhotoUploadingStateOutput = PublishSubject.create<MulticastEvent<PhotoUploadingState>>()
     private val onLookingForPhotoStateOutput = PublishSubject.create<MulticastEvent<LookingForPhotoState>>()
@@ -127,6 +128,52 @@ class AllPhotosViewActivityViewModel(
                 .subscribe()
     }
 
+    override fun getPhotoListUserNewLocations(photos: List<TakenPhoto>) {
+        compositeDisposable += async {
+            try {
+                if (photos.isEmpty()) {
+                    return@async
+                }
+
+                val userId = photos.first().userId
+                val alreadyCachedLocations = recipientLocationRepository.findMany(photos.map { it.photoName }).awaitFirst()
+                if (alreadyCachedLocations.isNotEmpty()) {
+                    Timber.tag(tag).d("getPhotoListUserNewLocations() cached recipient locations found (${alreadyCachedLocations.size} items)")
+                    onRecipientLocationsOutput.onNext(alreadyCachedLocations)
+                }
+
+                val notCachedPhotos = photos.filter { photo ->
+                    val location = alreadyCachedLocations.firstOrNull { recipientLocation -> recipientLocation.photoName == photo.photoName }
+                    return@filter location == null
+                }
+
+                if (notCachedPhotos.isEmpty()) {
+                    Timber.tag(tag).d("getPhotoListUserNewLocations() no recipient locations")
+                    return@async
+                }
+
+                Timber.tag(tag).d("getPhotoListUserNewLocations() not cached recipient locations count: ${notCachedPhotos.size}")
+
+                val joinedPhotoNames = notCachedPhotos.joinToString(",") { it.photoName }
+                val newRecipientLocations = apiClient.getPhotoRecipientsLocations(userId, joinedPhotoNames).await()
+
+                if (newRecipientLocations.locationList.isEmpty()) {
+                    Timber.tag(tag).d("getPhotoListUserNewLocations() no new recipient locations")
+                    return@async
+                }
+
+                Timber.tag(tag).d("getPhotoListUserNewLocations() received ${newRecipientLocations.locationList.size} recipient locations")
+
+                val converted = newRecipientLocations.locationList.map { RecipientLocation.fromUserNewLocationJsonObject(it) }
+                recipientLocationRepository.saveMany(converted).await()
+
+                onRecipientLocationsOutput.onNext(converted)
+            } catch (error: Throwable) {
+                onRecipientLocationsOutput.onError(error)
+            }
+        }.asCompletable(CommonPool).subscribe()
+    }
+
     override fun updatePhotoUploadingState(receiver: Class<*>, newState: PhotoUploadingState) {
         onPhotoUploadingStateOutput.onNext(MulticastEvent(receiver, newState))
     }
@@ -178,7 +225,18 @@ class AllPhotosViewActivityViewModel(
         compositeDisposable += async {
             try {
                 val uploadedPhotos = takenPhotosRepository.findOnePage(Pageable(page, count)).await()
-                onUploadedPhotosPageReceivedOutput.onNext(uploadedPhotos)
+                val recipientLocations = recipientLocationRepository.findMany(uploadedPhotos.map { it.photoName }).awaitFirst()
+
+                val result = uploadedPhotos.map { takenPhoto ->
+                    val recipientLocation = recipientLocations.firstOrNull { location -> location.photoName == takenPhoto.photoName }
+                    return@map if (recipientLocation == null) {
+                        takenPhoto
+                    } else {
+                        TakenPhoto.createWithRecipientLocation(takenPhoto, recipientLocation.getLocation())
+                    }
+                }
+
+                onUploadedPhotosPageReceivedOutput.onNext(result)
             } catch (error: Throwable) {
                 onUploadedPhotosPageReceivedOutput.onError(error)
             }
@@ -278,9 +336,9 @@ class AllPhotosViewActivityViewModel(
     override fun onBeginReceivingEventsObservable(): Observable<Class<*>> = beginReceivingEventsOutput
     override fun onStopReceivingEventsObservable(): Observable<Class<*>> = stopReceivingEventsOutput
     override fun onShowUploadMorePhotosMessageObservable(): Observable<Unit> = showUploadMorePhotosMessageOutput
-
     override fun onPhotoUploadingStateObservable(): Observable<MulticastEvent<PhotoUploadingState>> = onPhotoUploadingStateOutput
     override fun onLookingForPhotoStateObservable(): Observable<MulticastEvent<LookingForPhotoState>> = onLookingForPhotoStateOutput
+    override fun onRecipientLocationsObservable(): Observable<List<RecipientLocation>> = onRecipientLocationsOutput
 
     override fun onUnknownErrorObservable(): Observable<Throwable> = unknownErrorSubject
 }

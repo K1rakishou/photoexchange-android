@@ -15,8 +15,8 @@ import com.kirakishou.photoexchange.di.module.AllPhotoViewActivityModule
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.extension.filterMulticastEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mwvm.model.other.AdapterItem
-import com.kirakishou.photoexchange.mwvm.model.other.AdapterItemType
+import com.kirakishou.photoexchange.mwvm.model.adapter.AdapterItem
+import com.kirakishou.photoexchange.mwvm.model.adapter.AdapterItemType
 import com.kirakishou.photoexchange.mwvm.model.other.Constants.PHOTO_ADAPTER_VIEW_WIDTH
 import com.kirakishou.photoexchange.mwvm.model.state.PhotoState
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto

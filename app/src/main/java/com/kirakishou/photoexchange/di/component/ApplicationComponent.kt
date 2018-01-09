@@ -9,6 +9,7 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
+import com.kirakishou.photoexchange.helper.database.repository.RecipientLocationRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import dagger.Component
@@ -41,6 +42,7 @@ interface ApplicationComponent {
     fun exposeDatabase(): MyDatabase
     fun exposeTakenPhotosRepository(): TakenPhotosRepository
     fun exposePhotoAnswerRepository(): PhotoAnswerRepository
+    fun exposeRecipientLocationRepository(): RecipientLocationRepository
     fun exposeEventBust(): EventBus
     fun exposeImageLoaderModule(): ImageLoader
     fun exposeEventAccumulator(): EventAccumulator

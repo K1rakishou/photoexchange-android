@@ -210,7 +210,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 //
                 //I've also tried to use publish() + autoconnect(2), but it also didn't work -
                 //both "Observables.combineLatest(fotoapparatObservable, lifecycleSubject)" and "RxView.clicks(takePhotoButton)"
-                //would hang until I click takePhotoButton button
+                //would hang until takePhotoButton is clicked
                 //
                 //But cache works for some reason (why???)
                 .cache()

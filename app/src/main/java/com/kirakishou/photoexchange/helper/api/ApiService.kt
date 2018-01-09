@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.helper.api
 
+import com.kirakishou.photoexchange.mwvm.model.net.response.GetUserLocationResponse
 import com.kirakishou.photoexchange.mwvm.model.net.response.PhotoAnswerResponse
 import com.kirakishou.photoexchange.mwvm.model.net.response.StatusResponse
 import com.kirakishou.photoexchange.mwvm.model.net.response.UploadPhotoResponse
@@ -24,6 +25,10 @@ interface ApiService {
     @POST("/v1/api/received/{photo_id}/{user_id}")
     fun markPhotoAsReceived(@Path("photo_id") photoId: Long,
                             @Path("user_id") userId: String): Single<Response<StatusResponse>>
+
+    @GET("/v1/api/get_location")
+    fun getPhotoNewLocation(@Query("user_id") userId: String,
+                            @Query("photo_names") photoIds: String): Single<Response<GetUserLocationResponse>>
 }
 
 
