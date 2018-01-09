@@ -137,22 +137,35 @@ class AllPhotosViewActivityViewModel(
 
                 val userId = photos.first().userId
                 val alreadyCachedLocations = recipientLocationRepository.findMany(photos.map { it.photoName }).awaitFirst()
+                if (alreadyCachedLocations.isNotEmpty()) {
+                    alreadyCachedLocations.forEach { Timber.e("alreadyCachedLocation: $it") }
+                    onRecipientLocationsOutput.onNext(alreadyCachedLocations)
+                }
 
                 val notCachedPhotos = photos.filter { photo ->
                     val location = alreadyCachedLocations.firstOrNull { recipientLocation -> recipientLocation.photoName == photo.photoName }
                     return@filter location == null
                 }
 
+                notCachedPhotos.forEach { Timber.e("notCachedPhotos: $it") }
+
+                if (notCachedPhotos.isEmpty()) {
+                    return@async
+                }
+
                 val joinedPhotoNames = notCachedPhotos.joinToString(",") { it.photoName }
                 Timber.e("joinedPhotoNames: $joinedPhotoNames")
 
                 val newRecipientLocations = apiClient.getPhotoRecipientsLocations(userId, joinedPhotoNames).await()
-                val converted = newRecipientLocations.locationList.map { RecipientLocation.fromUserNewLocationJsonObject(it) }
-                val saveResult = recipientLocationRepository.saveMany(converted).await()
-                Timber.tag(tag).d("getPhotoListUserNewLocations() recipientLocationRepository.saveMany result: $saveResult")
+                if (newRecipientLocations.locationList.isEmpty()) {
+                    return@async
+                }
 
-                val result = alreadyCachedLocations + converted
-                onRecipientLocationsOutput.onNext(result)
+                val converted = newRecipientLocations.locationList.map { RecipientLocation.fromUserNewLocationJsonObject(it) }
+                converted.forEach { Timber.e("converted: $it") }
+
+                recipientLocationRepository.saveMany(converted).await()
+                onRecipientLocationsOutput.onNext(converted)
             } catch (error: Throwable) {
                 onRecipientLocationsOutput.onError(error)
             }
@@ -210,7 +223,18 @@ class AllPhotosViewActivityViewModel(
         compositeDisposable += async {
             try {
                 val uploadedPhotos = takenPhotosRepository.findOnePage(Pageable(page, count)).await()
-                onUploadedPhotosPageReceivedOutput.onNext(uploadedPhotos)
+                val recipientLocations = recipientLocationRepository.findMany(uploadedPhotos.map { it.photoName }).awaitFirst()
+
+                val result = uploadedPhotos.map { takenPhoto ->
+                    val recipientLocation = recipientLocations.firstOrNull { location -> location.photoName == takenPhoto.photoName }
+                    return@map if (recipientLocation == null) {
+                        takenPhoto
+                    } else {
+                        TakenPhoto.createWithRecipientLocation(takenPhoto, recipientLocation.getLocation())
+                    }
+                }
+
+                onUploadedPhotosPageReceivedOutput.onNext(result)
             } catch (error: Throwable) {
                 onUploadedPhotosPageReceivedOutput.onError(error)
             }

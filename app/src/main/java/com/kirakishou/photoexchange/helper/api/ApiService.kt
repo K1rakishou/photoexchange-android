@@ -28,7 +28,7 @@ interface ApiService {
 
     @GET("/v1/api/get_location")
     fun getPhotoNewLocation(@Query("user_id") userId: String,
-                            @Query("photo_ids") photoIds: String): Single<Response<GetUserLocationResponse>>
+                            @Query("photo_names") photoIds: String): Single<Response<GetUserLocationResponse>>
 }
 
 

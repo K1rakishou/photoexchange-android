@@ -70,14 +70,14 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     override fun initRx() {
         compositeDisposable += loadMoreSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .doOnNext { adapter.addProgressFooter() }
+                .doOnNext { adapterAddProgressFooter() }
                 .doOnNext { page -> getViewModel().inputs.fetchOnePageReceivedPhotos(page * totalItemsOnPageCount, totalItemsOnPageCount) }
                 .doOnError(this::onUnknownError)
                 .subscribe()
 
         compositeDisposable += getViewModel().outputs.onReceivedPhotosPageReceivedObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .doOnNext { adapter.removeProgressFooter() }
+                .doOnNext { adapterRemoveProgressFooter() }
                 .doOnNext(this::onPageReceived)
                 .doOnError(this::onUnknownError)
                 .subscribe()
@@ -196,6 +196,18 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
             }
 
             else -> IllegalArgumentException("Bad value")
+        }
+    }
+
+    private fun adapterRemoveProgressFooter() {
+        adapter.runOnAdapterHandler {
+            adapter.removeProgressFooter()
+        }
+    }
+
+    private fun adapterAddProgressFooter() {
+        adapter.runOnAdapterHandler {
+            adapter.addProgressFooter()
         }
     }
 

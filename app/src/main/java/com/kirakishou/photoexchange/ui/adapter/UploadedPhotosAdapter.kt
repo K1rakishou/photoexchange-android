@@ -164,11 +164,10 @@ class UploadedPhotosAdapter(
 
                     if (item.recipientLocation == null) {
                         holder.stateIcon.setImageDrawable(context.getDrawable(R.drawable.ic_done))
+                        visiblePhotosSubject.onNext(item)
                     } else {
                         holder.stateIcon.setImageDrawable(context.getDrawable(R.drawable.ic_done_all))
                     }
-
-                    visiblePhotosSubject.onNext(item)
                 }
             }
 

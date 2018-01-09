@@ -15,6 +15,10 @@ class RecipientLocation(
         return LonLat(lon, lat)
     }
 
+    override fun toString(): String {
+        return "[photoName: $photoName, lon: $lon, lat: $lat]"
+    }
+
     companion object {
         fun fromEntity(entity: RecipientLocationEntity): RecipientLocation {
             return RecipientLocation(entity.photoName, entity.lon, entity.lat)
