@@ -27,6 +27,10 @@ class TakenPhoto private constructor(
         return TakenPhoto(_id, location, recipientLocation, photoFilePath, userId, photoName, photoState)
     }
 
+    fun hasRecipientLocation(): Boolean = recipientLocation != null
+
+    fun isAnonymous(): Boolean = recipientLocation!!.isEmpty()
+
     override fun toString(): String {
         return "[id: $id, location: $location, recipientLocation: $recipientLocation, photoFilePath: $photoFilePath, " +
                 "userId: $userId, photoName: $photoName, photoState: $photoState]"

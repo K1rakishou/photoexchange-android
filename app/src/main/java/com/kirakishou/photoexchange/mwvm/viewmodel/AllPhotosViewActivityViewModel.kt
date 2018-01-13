@@ -65,7 +65,6 @@ class AllPhotosViewActivityViewModel(
     private val stopReceivingEventsOutput = PublishSubject.create<Class<*>>()
     private val showUploadMorePhotosMessageOutput = PublishSubject.create<Unit>()
     private val onRecipientLocationsOutput = PublishSubject.create<List<RecipientLocation>>()
-
     private val onPhotoUploadingStateOutput = PublishSubject.create<MulticastEvent<PhotoUploadingState>>()
     private val onLookingForPhotoStateOutput = PublishSubject.create<MulticastEvent<LookingForPhotoState>>()
 
@@ -143,7 +142,10 @@ class AllPhotosViewActivityViewModel(
                 }
 
                 val notCachedPhotos = photos.filter { photo ->
-                    val location = alreadyCachedLocations.firstOrNull { recipientLocation -> recipientLocation.photoName == photo.photoName }
+                    val location = alreadyCachedLocations.firstOrNull { recipientLocation ->
+                        recipientLocation.photoName == photo.photoName
+                    }
+
                     return@filter location == null
                 }
 
