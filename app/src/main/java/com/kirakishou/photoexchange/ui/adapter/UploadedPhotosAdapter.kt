@@ -23,7 +23,8 @@ import io.reactivex.subjects.PublishSubject
 class UploadedPhotosAdapter(
         private val context: Context,
         private val imageLoader: ImageLoader,
-        private val visiblePhotosSubject: PublishSubject<TakenPhoto>
+        private val visiblePhotosSubject: PublishSubject<TakenPhoto>,
+        private val photoClickSubject: PublishSubject<TakenPhoto>
 ) : BaseAdapter<TakenPhoto>(context) {
 
     private val selector = UploadedPhotosIdSelectorFunction()
@@ -148,7 +149,7 @@ class UploadedPhotosAdapter(
 
     override fun getBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
         return mutableListOf(
-                BaseAdapterInfo(AdapterItemType.VIEW_ITEM, R.layout.adapter_item_sent_photos, SentPhotoViewHolder::class.java),
+                BaseAdapterInfo(AdapterItemType.VIEW_ITEM, R.layout.adapter_item_uploaded_photos, UploadedPhotoViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_PROGRESSBAR, R.layout.adapter_item_progress, ProgressBarViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_MESSAGE, R.layout.adapter_item_message, MessageViewHolder::class.java),
                 BaseAdapterInfo(AdapterItemType.VIEW_PHOTO_UPLOADING, R.layout.adapter_item_photo_uploading, PhotoUploadingViewHolder::class.java)
@@ -157,10 +158,15 @@ class UploadedPhotosAdapter(
 
     override fun onViewHolderBound(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
-            is SentPhotoViewHolder -> {
+            is UploadedPhotoViewHolder -> {
                 if (items[position].value.isPresent()) {
                     val item = items[position].value.get()
+
                     imageLoader.loadImageFromNetInto(item.photoName, ImageLoader.PhotoSize.Small, holder.photoView)
+
+                    holder.photoView.setOnClickListener {
+                        photoClickSubject.onNext(item)
+                    }
 
                     if (item.recipientLocation == null) {
                         holder.stateIcon.setImageDrawable(context.getDrawable(R.drawable.ic_done))
@@ -183,7 +189,7 @@ class UploadedPhotosAdapter(
         }
     }
 
-    class SentPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    class UploadedPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         @BindView(R.id.photo)
         lateinit var photoView: ImageView

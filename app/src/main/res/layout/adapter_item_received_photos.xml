@@ -13,9 +13,10 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clickable="true"
-        android:elevation="5dp"
         android:focusable="true"
-        android:foreground="?android:attr/selectableItemBackground">
+        android:foreground="?android:attr/selectableItemBackground"
+        app:cardCornerRadius="3dp"
+        app:cardElevation="8dp">
 
         <android.support.constraint.ConstraintLayout
             android:layout_width="match_parent"

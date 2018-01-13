@@ -2,9 +2,11 @@ package com.kirakishou.photoexchange.ui.fragment
 
 
 import android.arch.lifecycle.ViewModelProviders
+import android.content.Intent
 import android.os.Bundle
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.widget.Toast
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
@@ -23,6 +25,7 @@ import com.kirakishou.photoexchange.mwvm.model.state.PhotoUploadingState
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity
+import com.kirakishou.photoexchange.ui.activity.MapActivity
 import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapter
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
 import com.kirakishou.photoexchange.ui.widget.UploadedPhotosAdapterSpanSizeLookup
@@ -57,6 +60,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     private val loadMoreSubject = PublishSubject.create<Int>()
     private val visiblePhotosSubject = PublishSubject.create<TakenPhoto>()
+    private val photoClickSubject = PublishSubject.create<TakenPhoto>()
 
     override fun initViewModel(): AllPhotosViewActivityViewModel {
         return ViewModelProviders.of(activity!!, viewModelFactory).get(AllPhotosViewActivityViewModel::class.java)
@@ -83,7 +87,15 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .observeOn(Schedulers.io())
                 .buffer(3, TimeUnit.SECONDS)
                 .doOnNext { photos -> getViewModel().inputs.getPhotoListUserNewLocations(photos) }
+                .doOnError(this::onUnknownError)
                 .subscribe()
+
+        compositeDisposable += photoClickSubject
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnError(this::onUnknownError)
+                .subscribe(this::onPhotoClick)
+
 
         compositeDisposable += getViewModel().outputs.onRecipientLocationsObservable()
                 .subscribeOn(Schedulers.io())
@@ -103,6 +115,24 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnError(this::onUnknownError)
                 .subscribe(this::onUnknownError)
+    }
+
+    private fun onPhotoClick(photo: TakenPhoto) {
+        if (!photo.hasRecipientLocation()) {
+            Toast.makeText(activity, getString(R.string.no_recipient_yet_msg), Toast.LENGTH_LONG).show()
+            return
+        }
+
+        if (photo.isAnonymous()) {
+            Toast.makeText(activity, getString(R.string.photo_sent_anonymously_msg), Toast.LENGTH_LONG).show()
+            return
+        }
+
+        val intent = Intent(activity, MapActivity::class.java)
+        intent.putExtra("lon", photo.recipientLocation!!.lon)
+        intent.putExtra("lat", photo.recipientLocation!!.lat)
+
+        startActivity(intent)
     }
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
@@ -140,7 +170,7 @@ class UploadedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private fun initRecyclerView() {
         columnsCount = AndroidUtils.calculateNoOfColumns(activity!!, PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = UploadedPhotosAdapter(activity!!, imageLoader, visiblePhotosSubject)
+        adapter = UploadedPhotosAdapter(activity!!, imageLoader, visiblePhotosSubject, photoClickSubject)
         adapter.init()
 
         layoutManager = GridLayoutManager(activity, columnsCount)

@@ -58,7 +58,7 @@ class UploadPhotoService : JobService() {
 
     private val tag = "[${this::class.java.simpleName}]: "
     private var isRxInited = false
-    private val MAX_GPS_TIMEOUT = 15L
+    private val MAX_GPS_TIMEOUT_SECONDS = 30L
     private val compositeDisposable = CompositeDisposable()
 
     private lateinit var viewModel: UploadPhotoServiceViewModel
@@ -186,7 +186,7 @@ class UploadPhotoService : JobService() {
                 .doOnNext { Timber.tag(tag).d("getLocationObservable() Gps is enabled. Trying to obtain current location") }
                 .flatMap {
                     return@flatMap RxLocationManager.start(locationManager)
-                            .timeout(MAX_GPS_TIMEOUT, TimeUnit.SECONDS)
+                            .timeout(MAX_GPS_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                             .onErrorResumeNext(Observable.just(LonLat.empty()))
                 }
 

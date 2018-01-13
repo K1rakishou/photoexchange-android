@@ -16,4 +16,5 @@
     <string name="cancel_title">CANCEL</string>
     <string name="tab_title_queued_up">Queued up</string>
     <string name="photo_sent_anonymously_msg">This photo was sent anonymously</string>
+    <string name="no_recipient_yet_msg">No one has received this photo yet</string>
 </resources>
