@@ -69,7 +69,7 @@ class MyLocationManager(
         }
     }
 
-    //we don't need the exact location where the photo was made, so we can slightly round it off
+    //we don't need the exact location where the photo was taken, so we can slightly round it off
     private fun getTruncatedLonLat(location: Location): LonLat {
         val lon = Math.floor(location.longitude * 100) / 100
         val lat = Math.floor(location.latitude * 100) / 100

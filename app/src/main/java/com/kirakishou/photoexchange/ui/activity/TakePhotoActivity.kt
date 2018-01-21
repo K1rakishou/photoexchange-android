@@ -202,17 +202,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .flatMap { initCamera() }
-                //FIXME:
-                //WTF: I don't know why, but this works
-                //
-                //I've tried to use operator share(), but it didn't work -
-                //the rx chain from "RxView.clicks(takePhotoButton)" would hang after "flatMap { fotoapparatObservable }"
-                //
-                //I've also tried to use publish() + autoconnect(2), but it also didn't work -
-                //both "Observables.combineLatest(fotoapparatObservable, lifecycleSubject)" and "RxView.clicks(takePhotoButton)"
-                //would hang until takePhotoButton is clicked
-                //
-                //But cache works for some reason (why???)
                 .cache()
 
         compositeDisposable += Observables.combineLatest(fotoapparatObservable, lifecycleSubject)

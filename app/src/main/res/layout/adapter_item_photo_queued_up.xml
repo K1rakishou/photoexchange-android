@@ -74,7 +74,7 @@
                         android:maxLines="2"
                         android:ellipsize="end"
                         android:gravity="center"
-                        android:text="Uploading will begin shortly after there is a Wi-Fi connection"
+                        android:text="@string/uploading_will_begin_shortly"
                         android:textColor="@color/white"
                         android:textSize="16sp" />
 

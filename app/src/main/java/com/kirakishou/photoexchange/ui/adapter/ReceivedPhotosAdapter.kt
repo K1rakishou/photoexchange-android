@@ -3,8 +3,10 @@ package com.kirakishou.photoexchange.ui.adapter
 import android.content.Context
 import android.support.v7.widget.CardView
 import android.support.v7.widget.RecyclerView
+import android.view.MenuItem
 import android.view.View
 import android.widget.ImageView
+import android.widget.PopupMenu
 import android.widget.ProgressBar
 import android.widget.TextView
 import butterknife.BindView
@@ -16,6 +18,7 @@ import com.kirakishou.photoexchange.mwvm.model.adapter.AdapterItem
 import com.kirakishou.photoexchange.mwvm.model.adapter.AdapterItemType
 import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
 import io.reactivex.subjects.PublishSubject
+import timber.log.Timber
 
 /**
  * Created by kirakishou on 11/17/2017.
@@ -23,8 +26,7 @@ import io.reactivex.subjects.PublishSubject
 class ReceivedPhotosAdapter(
         private val context: Context,
         private val imageLoader: ImageLoader,
-        private val photoAnswerClickSubject: PublishSubject<PhotoAnswer>,
-        private val photoAnswerLongClickSubject: PublishSubject<PhotoAnswer>
+        private val photoClickSubject: PublishSubject<PhotoAnswerClick>
 ) : BaseAdapter<PhotoAnswer>(context) {
 
     private val selector = ReceivedPhotosIdSelectorFunction()
@@ -150,14 +152,8 @@ class ReceivedPhotosAdapter(
 
                     imageLoader.loadImageFromNetInto(item.photoName, ImageLoader.PhotoSize.Small, holder.photoView)
 
-                    holder.clickView.setOnClickListener {
-                        photoAnswerClickSubject.onNext(item)
-                    }
-
-                    holder.clickView.setOnLongClickListener {
-                        photoAnswerLongClickSubject.onNext(item)
-                        return@setOnLongClickListener true
-                    }
+                    holder.clickView.setOnClickListener { photoClickSubject.onNext(PhotoAnswerClick.ShowReceiverLocation(item)) }
+                    holder.itemMenu.setOnClickListener { onMenuClick(holder.itemMenu, item) }
                 }
             }
 
@@ -176,6 +172,24 @@ class ReceivedPhotosAdapter(
         }
     }
 
+    private fun onMenuClick(popupMenu: ImageView, photoAnswer: PhotoAnswer) {
+        val popup = PopupMenu(context, popupMenu)
+        popup.menuInflater.inflate(R.menu.photo_answer_menu, popup.menu)
+        popup.setOnMenuItemClickListener { item -> handleMenu(item, photoAnswer) }
+        popup.show()
+    }
+
+    private fun handleMenu(item: MenuItem, photoAnswer: PhotoAnswer): Boolean {
+        when (item.itemId) {
+            R.id.view_full -> photoClickSubject.onNext(PhotoAnswerClick.ShowFullPhoto(photoAnswer))
+            R.id.delete_photo -> photoClickSubject.onNext(PhotoAnswerClick.DeletePhoto(photoAnswer))
+            R.id.report_photo -> photoClickSubject.onNext(PhotoAnswerClick.ReportPhoto(photoAnswer))
+            else -> Timber.e("Unknown menu item " + item.itemId)
+        }
+
+        return true
+    }
+
     class ReceivedPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
         @BindView(R.id.click_view)
@@ -183,6 +197,9 @@ class ReceivedPhotosAdapter(
 
         @BindView(R.id.photo)
         lateinit var photoView: ImageView
+
+        @BindView(R.id.item_menu)
+        lateinit var itemMenu: ImageView
 
         init {
             ButterKnife.bind(this, itemView)
@@ -221,6 +238,13 @@ class ReceivedPhotosAdapter(
 
     inner class ReceivedPhotosIdSelectorFunction {
         fun select(item: PhotoAnswer): Long = item.photoRemoteId
+    }
+
+    sealed class PhotoAnswerClick {
+        class ShowReceiverLocation(val photo: PhotoAnswer) : PhotoAnswerClick()
+        class ShowFullPhoto(val photo: PhotoAnswer) : PhotoAnswerClick()
+        class DeletePhoto(val photo: PhotoAnswer) : PhotoAnswerClick()
+        class ReportPhoto(val photo: PhotoAnswer) : PhotoAnswerClick()
     }
 
     companion object {

@@ -16,4 +16,5 @@ object Constants {
 
     val PHOTO_ADAPTER_VIEW_WIDTH = 288
     val ASYNC_DELAY = 500L
+    const val SEVEN_DAYS = 604800000
 }

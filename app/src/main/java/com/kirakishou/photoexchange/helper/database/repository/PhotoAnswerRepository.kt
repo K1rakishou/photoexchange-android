@@ -5,6 +5,7 @@ import com.kirakishou.photoexchange.helper.database.dao.PhotoAnswerDao
 import com.kirakishou.photoexchange.helper.database.entity.PhotoAnswerEntity
 import com.kirakishou.photoexchange.helper.mapper.PhotoAnswerMapper
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mwvm.model.other.Pageable
 import com.kirakishou.photoexchange.mwvm.model.other.PhotoAnswer
 import io.reactivex.Observable
@@ -46,7 +47,7 @@ class PhotoAnswerRepository(
     }
 
     fun findOnePage(pageable: Pageable): Observable<List<PhotoAnswer>> {
-        return photoAnswerDao.findPage(pageable.page, pageable.count)
+        return photoAnswerDao.findPage(pageable.page, pageable.count, TimeUtils.getTimeFast())
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .map(mapper::toPhotoAnswers)

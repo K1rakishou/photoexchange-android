@@ -5,6 +5,7 @@ import android.arch.persistence.room.Insert
 import android.arch.persistence.room.OnConflictStrategy
 import android.arch.persistence.room.Query
 import com.kirakishou.photoexchange.helper.database.entity.PhotoAnswerEntity
+import com.kirakishou.photoexchange.mwvm.model.other.Constants
 import io.reactivex.Single
 
 /**
@@ -21,9 +22,10 @@ interface PhotoAnswerDao {
     fun saveMany(vararg photoAnswerEntityArray: PhotoAnswerEntity): List<Long>
 
     @Query("SELECT * FROM ${PhotoAnswerEntity.TABLE_NAME} " +
+            "WHERE (:arg2 - created_on) < ${Constants.SEVEN_DAYS} " +
             "ORDER BY created_on DESC " +
             "LIMIT :arg1 OFFSET :arg0")
-    fun findPage(page: Int, count: Int): Single<List<PhotoAnswerEntity>>
+    fun findPage(page: Int, count: Int, currentTime: Long): Single<List<PhotoAnswerEntity>>
 
     @Query("SELECT * FROM ${PhotoAnswerEntity.TABLE_NAME}")
     fun findAll(): Single<List<PhotoAnswerEntity>>

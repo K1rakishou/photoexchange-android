@@ -196,7 +196,10 @@ class UploadPhotoService : JobService() {
                 .map { LonLat.empty() }
 
         return Observable.merge(gpsEnabledObservable, gpsDisabledObservable)
-                .doOnNext { location -> Timber.tag(tag).d("getLocationObservable() Current location is [lon: ${location.lon}, lat: ${location.lat}]") }
+                .doOnNext { location ->
+                    Timber.tag(tag).d("getLocationObservable() " +
+                        "Current location is [lon: ${location.lon}, lat: ${location.lat}]")
+                }
     }
 
     private fun sendEvent(event: PhotoUploadedEvent) {
@@ -367,13 +370,9 @@ class UploadPhotoService : JobService() {
             check(result == JobScheduler.RESULT_SUCCESS)
         }
 
-        fun scheduleJobWhenWiFiAvailable(context: Context, minimumDelay: Long = 5_000) {
+        fun scheduleJobWhenUnmeteredConnectionAvailable(context: Context, minimumDelay: Long = 5_000) {
             val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, UploadPhotoService::class.java))
-                    //TODO:
-                    //HACK: Google's emulators do not support changing internet type to Wi-Fi
-                    //therefore we need this hack to be able to test the app on google's emulators
-                    //Change this on release build!!!
-                    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_UNMETERED)
                     .setRequiresDeviceIdle(false)
                     .setRequiresCharging(false)
                     .setMinimumLatency(minimumDelay)

@@ -17,4 +17,8 @@
     <string name="tab_title_queued_up">Queued up</string>
     <string name="photo_sent_anonymously_msg">This photo was sent anonymously</string>
     <string name="no_recipient_yet_msg">No one has received this photo yet</string>
+    <string name="uploading_will_begin_shortly">Uploading will begin shortly...</string>
+    <string name="view_full_photo">View full photo</string>
+    <string name="delete_photo">Delete photo</string>
+    <string name="report_photo">Report photo</string>
 </resources>
