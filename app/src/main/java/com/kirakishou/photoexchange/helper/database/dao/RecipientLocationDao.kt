@@ -20,6 +20,7 @@ interface RecipientLocationDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun saveMany(vararg entityArray: RecipientLocationEntity): List<Long>
 
-    @Query("SELECT * FROM ${RecipientLocationEntity.TABLE_NAME} WHERE photo_name in (:arg0)")
+    @Query("SELECT * FROM ${RecipientLocationEntity.TABLE_NAME} " +
+            "WHERE photo_name in (:arg0)")
     fun findMany(photoNameList: List<String>): Single<List<RecipientLocationEntity>>
 }

@@ -196,7 +196,10 @@ class UploadPhotoService : JobService() {
                 .map { LonLat.empty() }
 
         return Observable.merge(gpsEnabledObservable, gpsDisabledObservable)
-                .doOnNext { location -> Timber.tag(tag).d("getLocationObservable() Current location is [lon: ${location.lon}, lat: ${location.lat}]") }
+                .doOnNext { location ->
+                    Timber.tag(tag).d("getLocationObservable() " +
+                        "Current location is [lon: ${location.lon}, lat: ${location.lat}]")
+                }
     }
 
     private fun sendEvent(event: PhotoUploadedEvent) {

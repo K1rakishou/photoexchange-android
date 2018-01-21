@@ -135,7 +135,9 @@ class AllPhotosViewActivityViewModel(
                 }
 
                 val userId = photos.first().userId
-                val alreadyCachedLocations = recipientLocationRepository.findMany(photos.map { it.photoName }).awaitFirst()
+                val photoNames = photos.map { it.photoName }
+                val alreadyCachedLocations = recipientLocationRepository.findMany(photoNames).awaitFirst()
+
                 if (alreadyCachedLocations.isNotEmpty()) {
                     Timber.tag(tag).d("getPhotoListUserNewLocations() cached recipient locations found (${alreadyCachedLocations.size} items)")
                     onRecipientLocationsOutput.onNext(alreadyCachedLocations)
@@ -227,7 +229,9 @@ class AllPhotosViewActivityViewModel(
         compositeDisposable += async {
             try {
                 val uploadedPhotos = takenPhotosRepository.findOnePage(Pageable(page, count)).await()
-                val recipientLocations = recipientLocationRepository.findMany(uploadedPhotos.map { it.photoName }).awaitFirst()
+
+                val photoNamesList = uploadedPhotos.map { it.photoName }
+                val recipientLocations = recipientLocationRepository.findMany(photoNamesList).awaitFirst()
 
                 val result = uploadedPhotos.map { takenPhoto ->
                     val recipientLocation = recipientLocations.firstOrNull { location -> location.photoName == takenPhoto.photoName }

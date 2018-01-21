@@ -8,7 +8,6 @@ import java.util.*
  */
 object TimeUtils {
 
-    @Synchronized
     fun getTimeFast(): Long = System.currentTimeMillis()
 
     fun formatDate(time: Long): String {

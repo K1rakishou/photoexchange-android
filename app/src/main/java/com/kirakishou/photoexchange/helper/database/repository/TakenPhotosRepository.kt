@@ -5,6 +5,7 @@ import com.kirakishou.photoexchange.helper.database.dao.TakenPhotosDao
 import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
 import com.kirakishou.photoexchange.helper.mapper.TakenPhotoMapper
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mwvm.model.other.Pageable
 import com.kirakishou.photoexchange.mwvm.model.state.PhotoState
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
@@ -40,7 +41,7 @@ class TakenPhotosRepository(
     }
 
     fun findOnePage(pageable: Pageable): Single<List<TakenPhoto>> {
-        return takenPhotosDao.findPage(pageable.page, pageable.count)
+        return takenPhotosDao.findPage(pageable.page, pageable.count, TimeUtils.getTimeFast())
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
                 .map(mapper::toTakenPhotos)
