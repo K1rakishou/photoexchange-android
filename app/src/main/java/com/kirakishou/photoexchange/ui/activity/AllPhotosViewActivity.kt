@@ -223,13 +223,7 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
     }
 
     private fun schedulePhotoUploading() {
-        if (NetUtils.isWifiConnected(this)) {
-            Timber.tag(tag).d("schedulePhotoUploading() Wi-Fi is connected. Scheduling upload job with half minute delay")
-            UploadPhotoService.scheduleJob(this, JOB_START_DELAY)
-        } else {
-            Timber.tag(tag).d("schedulePhotoUploading() Wi-Fi is not connected. Scheduling upload job upon Wi-Fi connection available")
-            UploadPhotoService.scheduleJobWhenWiFiAvailable(this, JOB_START_DELAY)
-        }
+        UploadPhotoService.scheduleJobWhenUnmeteredConnectionAvailable(this, JOB_START_DELAY)
     }
 
     fun scheduleLookingForPhotoAnswer() {

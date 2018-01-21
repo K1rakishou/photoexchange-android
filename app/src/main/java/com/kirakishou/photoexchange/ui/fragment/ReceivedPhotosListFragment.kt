@@ -141,58 +141,6 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         getViewModel().inputs.stopReceivingEvents(this::class.java)
     }
 
-    private fun onLookingForPhotoState(state: LookingForPhotoState) {
-        when (state) {
-            is LookingForPhotoState.UploadMorePhotos -> {
-                Timber.tag(ttag).d("onLookingForPhotoState() LookingForPhotoState.UploadMorePhotos")
-
-                adapter.runOnAdapterHandler {
-                    adapter.removeLookingForPhotoIndicator()
-                    adapter.removeMessage()
-
-                    adapter.addMessage(ReceivedPhotosAdapter.MESSAGE_TYPE_UPLOAD_MORE_PHOTOS)
-                }
-            }
-
-            is LookingForPhotoState.LocalRepositoryError -> {
-                Timber.tag(ttag).d("onLookingForPhotoState() LookingForPhotoState.LocalRepositoryError")
-
-                adapter.runOnAdapterHandler {
-                    adapter.removeLookingForPhotoIndicator()
-                    adapter.removeMessage()
-
-                    adapter.addMessage(ReceivedPhotosAdapter.MESSAGE_TYPE_ERROR)
-                }
-            }
-
-            is LookingForPhotoState.ServerHasNoPhotos -> {
-                Timber.tag(ttag).d("onLookingForPhotoState() LookingForPhotoState.ServerHasNoPhotos")
-
-                adapter.runOnAdapterHandler {
-                    adapter.removeLookingForPhotoIndicator()
-                    adapter.removeMessage()
-
-                    adapter.addLookingForPhotoIndicator()
-                }
-            }
-
-            is LookingForPhotoState.PhotoFound -> {
-                Timber.tag(ttag).d("onLookingForPhotoState() LookingForPhotoState.PhotoFound")
-
-                adapter.runOnAdapterHandler {
-                    if (state.allFound) {
-                        adapter.removeLookingForPhotoIndicator()
-                    }
-
-                    adapter.removeMessage()
-                    adapter.addFirst(AdapterItem(state.photoAnswer, AdapterItemType.VIEW_ITEM))
-                }
-            }
-
-            else -> IllegalArgumentException("Bad value")
-        }
-    }
-
     private fun adapterRemoveProgressFooter() {
         adapter.runOnAdapterHandler {
             adapter.removeProgressFooter()
@@ -250,6 +198,33 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         receivedPhotosList.setHasFixedSize(true)
     }
 
+    private fun onPageReceived(photoAnswerList: List<PhotoAnswer>) {
+        adapter.runOnAdapterHandler {
+            endlessScrollListener.pageLoaded()
+
+            if (photoAnswerList.size < PHOTOS_PER_PAGE * columnsCount) {
+                endlessScrollListener.reachedEnd()
+            }
+
+            if (photoAnswerList.isNotEmpty()) {
+                for (photo in photoAnswerList) {
+                    adapter.add(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
+                }
+            } else {
+                if (adapter.itemCount == 0) {
+                    //adapter.addMessageFooter()
+                }
+            }
+        }
+    }
+
+    private fun scrollToTop() {
+        adapter.runOnAdapterHandler {
+            adapter.notifyDataSetChanged()
+            receivedPhotosList.scrollToPosition(0)
+        }
+    }
+
     private fun onPhotoAnswerClick(photoClick: ReceivedPhotosAdapter.PhotoAnswerClick) {
         when (photoClick) {
             is ReceivedPhotosAdapter.PhotoAnswerClick.ShowReceiverLocation -> {
@@ -284,30 +259,55 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
-    private fun onPageReceived(photoAnswerList: List<PhotoAnswer>) {
-        adapter.runOnAdapterHandler {
-            endlessScrollListener.pageLoaded()
+    private fun onLookingForPhotoState(state: LookingForPhotoState) {
+        when (state) {
+            is LookingForPhotoState.UploadMorePhotos -> {
+                Timber.tag(ttag).d("onLookingForPhotoState() LookingForPhotoState.UploadMorePhotos")
 
-            if (photoAnswerList.size < PHOTOS_PER_PAGE * columnsCount) {
-                endlessScrollListener.reachedEnd()
-            }
+                adapter.runOnAdapterHandler {
+                    adapter.removeLookingForPhotoIndicator()
+                    adapter.removeMessage()
 
-            if (photoAnswerList.isNotEmpty()) {
-                for (photo in photoAnswerList) {
-                    adapter.add(AdapterItem(photo, AdapterItemType.VIEW_ITEM))
-                }
-            } else {
-                if (adapter.itemCount == 0) {
-                    //adapter.addMessageFooter()
+                    adapter.addMessage(ReceivedPhotosAdapter.MESSAGE_TYPE_UPLOAD_MORE_PHOTOS)
                 }
             }
-        }
-    }
 
-    private fun scrollToTop() {
-        adapter.runOnAdapterHandler {
-            adapter.notifyDataSetChanged()
-            receivedPhotosList.scrollToPosition(0)
+            is LookingForPhotoState.LocalRepositoryError -> {
+                Timber.tag(ttag).d("onLookingForPhotoState() LookingForPhotoState.LocalRepositoryError")
+
+                adapter.runOnAdapterHandler {
+                    adapter.removeLookingForPhotoIndicator()
+                    adapter.removeMessage()
+
+                    adapter.addMessage(ReceivedPhotosAdapter.MESSAGE_TYPE_ERROR)
+                }
+            }
+
+            is LookingForPhotoState.ServerHasNoPhotos -> {
+                Timber.tag(ttag).d("onLookingForPhotoState() LookingForPhotoState.ServerHasNoPhotos")
+
+                adapter.runOnAdapterHandler {
+                    adapter.removeLookingForPhotoIndicator()
+                    adapter.removeMessage()
+
+                    adapter.addLookingForPhotoIndicator()
+                }
+            }
+
+            is LookingForPhotoState.PhotoFound -> {
+                Timber.tag(ttag).d("onLookingForPhotoState() LookingForPhotoState.PhotoFound")
+
+                adapter.runOnAdapterHandler {
+                    if (state.allFound) {
+                        adapter.removeLookingForPhotoIndicator()
+                    }
+
+                    adapter.removeMessage()
+                    adapter.addFirst(AdapterItem(state.photoAnswer, AdapterItemType.VIEW_ITEM))
+                }
+            }
+
+            else -> IllegalArgumentException("Bad value")
         }
     }
 
