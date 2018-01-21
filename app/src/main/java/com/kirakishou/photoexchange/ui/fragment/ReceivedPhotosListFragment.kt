@@ -58,8 +58,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private val totalItemsOnPageCount = PHOTOS_PER_PAGE * columnsCount
 
     private val loadMoreSubject = PublishSubject.create<Int>()
-    private val photoAnswerClickSubject = PublishSubject.create<PhotoAnswer>()
-    private val photoAnswerLongClickSubject = PublishSubject.create<PhotoAnswer>()
+    private val photoClickSubject = PublishSubject.create<ReceivedPhotosAdapter.PhotoAnswerClick>()
 
     override fun initViewModel(): AllPhotosViewActivityViewModel {
         return ViewModelProviders.of(activity!!, viewModelFactory).get(AllPhotosViewActivityViewModel::class.java)
@@ -82,15 +81,10 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .doOnError(this::onUnknownError)
                 .subscribe()
 
-        compositeDisposable += photoAnswerClickSubject
+        compositeDisposable += photoClickSubject
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .doOnError(this::onUnknownError)
                 .subscribe(this::onPhotoAnswerClick)
-
-        compositeDisposable += photoAnswerLongClickSubject
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .doOnError(this::onUnknownError)
-                .subscribe(this::onPhotoAnswerLongClick)
 
         compositeDisposable += getViewModel().outputs.onScrollToTopObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -241,7 +235,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
     private fun initRecyclerView() {
         columnsCount = AndroidUtils.calculateNoOfColumns(activity!!, PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = ReceivedPhotosAdapter(activity!!, imageLoader, photoAnswerClickSubject, photoAnswerLongClickSubject)
+        adapter = ReceivedPhotosAdapter(activity!!, imageLoader, photoClickSubject)
         adapter.init()
 
         layoutManager = GridLayoutManager(activity, columnsCount)
@@ -256,24 +250,38 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         receivedPhotosList.setHasFixedSize(true)
     }
 
-    private fun onPhotoAnswerClick(photo: PhotoAnswer) {
-        if (photo.isAnonymous()) {
-            Toast.makeText(activity, getString(R.string.photo_sent_anonymously_msg), Toast.LENGTH_LONG).show()
-            return
+    private fun onPhotoAnswerClick(photoClick: ReceivedPhotosAdapter.PhotoAnswerClick) {
+        when (photoClick) {
+            is ReceivedPhotosAdapter.PhotoAnswerClick.ShowReceiverLocation -> {
+                val photo = photoClick.photo
+                if (photo.isAnonymous()) {
+                    Toast.makeText(activity, getString(R.string.photo_sent_anonymously_msg), Toast.LENGTH_LONG).show()
+                    return
+                }
+
+                val intent = Intent(activity, MapActivity::class.java)
+                intent.putExtra("lon", photo.lon)
+                intent.putExtra("lat", photo.lat)
+
+                startActivity(intent)
+            }
+
+            is ReceivedPhotosAdapter.PhotoAnswerClick.ShowFullPhoto -> {
+                val photo = photoClick.photo
+                val intent = Intent(activity, ViewPhotoFullSizeActivity::class.java)
+                intent.putExtra("photo_name", photo.photoName)
+
+                startActivity(intent)
+            }
+
+            is ReceivedPhotosAdapter.PhotoAnswerClick.DeletePhoto -> {
+                TODO()
+            }
+
+            is ReceivedPhotosAdapter.PhotoAnswerClick.ReportPhoto -> {
+                TODO()
+            }
         }
-
-        val intent = Intent(activity, MapActivity::class.java)
-        intent.putExtra("lon", photo.lon)
-        intent.putExtra("lat", photo.lat)
-
-        startActivity(intent)
-    }
-
-    private fun onPhotoAnswerLongClick(photo: PhotoAnswer) {
-        val intent = Intent(activity, ViewPhotoFullSizeActivity::class.java)
-        intent.putExtra("photo_name", photo.photoName)
-
-        startActivity(intent)
     }
 
     private fun onPageReceived(photoAnswerList: List<PhotoAnswer>) {
