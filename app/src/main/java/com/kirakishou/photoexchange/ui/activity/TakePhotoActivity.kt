@@ -5,12 +5,10 @@ import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
-import android.support.v7.widget.CardView
 import android.view.View
 import android.view.animation.AnticipateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.ImageView
-import android.widget.TextView
 import butterknife.BindView
 import com.afollestad.materialdialogs.MaterialDialog
 import com.jakewharton.rxbinding2.view.RxView
@@ -25,8 +23,6 @@ import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerTakePhotoActivityComponent
 import com.kirakishou.photoexchange.helper.CameraProvider
 import com.kirakishou.photoexchange.helper.extension.mySetListener
-import com.kirakishou.photoexchange.helper.location.MyLocationManager
-import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.preference.AppSharedPreference
 import com.kirakishou.photoexchange.helper.preference.UserInfoPreference
 import com.kirakishou.photoexchange.helper.util.Utils
@@ -34,6 +30,9 @@ import com.kirakishou.photoexchange.mwvm.model.other.LonLat
 import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
 import com.kirakishou.photoexchange.mwvm.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.TakePhotoActivityViewModelFactory
+import com.kirakishou.photoexchange.ui.dialog.AppCannotWorkWithoutCameraPermissionDialog
+import com.kirakishou.photoexchange.ui.dialog.CameraIsNotAvailableDialog
+import com.kirakishou.photoexchange.ui.dialog.CameraRationaleDialog
 import io.fotoapparat.view.CameraView
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -41,7 +40,6 @@ import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.BehaviorSubject
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
@@ -134,52 +132,30 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>() {
                     }
 
                     override fun onPermissionRationaleShouldBeShown(permissions: MutableList<PermissionRequest>, token: PermissionToken) {
-                        showCameraRationale(token)
+                        showCameraRationaleDialog(token)
                     }
 
                 }).check()
     }
 
     private fun showAppCannotWorkWithoutCameraPermissionDialog() {
-        //TODO: change this to homemade dialog and get rid of the MaterialDialogs dependency
-        MaterialDialog.Builder(this)
-                .title("Error")
-                .content("This app cannon work without a camera permission")
-                .positiveText("OK")
-                .onPositive { _, _ ->
-                    finish()
-                }
-                .show()
+        AppCannotWorkWithoutCameraPermissionDialog().show(this, {
+            finish()
+        })
     }
 
-    private fun showCameraRationale(token: PermissionToken) {
-        //TODO: change this to homemade dialog and get rid of the MaterialDialogs dependency
-        MaterialDialog.Builder(this)
-                .title("Why do we need permissions?")
-                .content("We need camera permission so you can take a picture that will be sent to someone. " +
-                        "We don't necessarily need gps permission so you can disable it but the person " +
-                        "who receives your photo won't be able to see where it was taken.")
-                .positiveText("Allow")
-                .negativeText("Close app")
-                .onPositive { _, _ ->
-                    token.continuePermissionRequest()
-                }
-                .onNegative { _, _ ->
-                    token.cancelPermissionRequest()
-                }
-                .show()
+    private fun showCameraRationaleDialog(token: PermissionToken) {
+        CameraRationaleDialog().show(this, {
+            token.continuePermissionRequest()
+        }, {
+            token.cancelPermissionRequest()
+        })
     }
 
     private fun showCameraIsNotAvailableDialog() {
-        //TODO: change this to homemade dialog and get rid of the MaterialDialogs dependency
-        MaterialDialog.Builder(this)
-                .title("Camera is not available")
-                .content("It looks like your device does not support camera. This app cannot work without a camera.")
-                .positiveText("OK")
-                .onPositive { _, _ ->
-                    finish()
-                }
-                .show()
+        CameraIsNotAvailableDialog().show(this, {
+            finish()
+        })
     }
 
     private fun initCamera(): Observable<Boolean> {

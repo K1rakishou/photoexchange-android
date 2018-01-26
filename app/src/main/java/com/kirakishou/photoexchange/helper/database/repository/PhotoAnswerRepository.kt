@@ -24,7 +24,7 @@ class PhotoAnswerRepository(
     fun saveOne(photoAnswer: PhotoAnswer): Single<Long> {
         val resultSingle = Single.fromCallable {
             val entity = PhotoAnswerEntity.new(photoAnswer.photoRemoteId, photoAnswer.userId, photoAnswer.photoName, photoAnswer.lon, photoAnswer.lat)
-            photoAnswerDao.saveOne(entity)
+            return@fromCallable photoAnswerDao.saveOne(entity)
         }
 
         return resultSingle
@@ -38,7 +38,7 @@ class PhotoAnswerRepository(
                     .map { PhotoAnswerEntity.new(it.photoRemoteId, it.userId, it.photoName, it.lon, it.lat) }
                     .toTypedArray()
 
-            photoAnswerDao.saveMany(*photoAnswerArray)
+            return@fromCallable photoAnswerDao.saveMany(*photoAnswerArray)
         }
 
         return resultSingle
@@ -69,6 +69,12 @@ class PhotoAnswerRepository(
 
     fun countAll(): Single<Long> {
         return photoAnswerDao.countAll()
+                .subscribeOn(schedulers.provideIo())
+                .observeOn(schedulers.provideIo())
+    }
+
+    fun deleteOne(photoName: String): Single<Int> {
+        return Single.fromCallable { photoAnswerDao.deleteOne(photoName) }
                 .subscribeOn(schedulers.provideIo())
                 .observeOn(schedulers.provideIo())
     }

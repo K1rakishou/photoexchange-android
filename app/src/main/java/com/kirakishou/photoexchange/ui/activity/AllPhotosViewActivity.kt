@@ -9,6 +9,7 @@ import android.support.design.widget.TabLayout
 import android.support.v4.view.ViewPager
 import android.widget.ImageView
 import butterknife.BindView
+import com.afollestad.materialdialogs.MaterialDialog
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
@@ -28,6 +29,7 @@ import com.kirakishou.photoexchange.mwvm.model.state.LookingForPhotoState
 import com.kirakishou.photoexchange.mwvm.model.state.PhotoUploadingState
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
+import com.kirakishou.photoexchange.ui.dialog.DeletePhotoConfirmationDialog
 import com.kirakishou.photoexchange.ui.fragment.QueuedUpPhotosListFragment
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosListFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosListFragment
@@ -167,10 +169,21 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                 .doOnError(this::onUnknownError)
                 .subscribe({ scheduleLookingForPhotoAnswer() })
 
+        compositeDisposable += getViewModel().outputs.onShowDeletePhotoConfirmationDialogObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .doOnError(this::onUnknownError)
+                .subscribe(this::onShowDeletePhotoConfirmationDialog)
+
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .doOnError(this::onUnknownError)
                 .subscribe(this::onUnknownError)
+    }
+
+    private fun onShowDeletePhotoConfirmationDialog(photoName: String) {
+        DeletePhotoConfirmationDialog().show(this, {
+            getViewModel().inputs.onDeletePhotoConfirmed(photoName)
+        })
     }
 
     private fun switchToTakePhotoActivity() {

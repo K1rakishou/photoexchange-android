@@ -112,6 +112,16 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .doOnError(this::onUnknownError)
                 .subscribe({ onUploadMorePhotos() })
 
+        compositeDisposable += getViewModel().outputs.onDeletePhotoAnswerFromDatabaseObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .doOnError(this::onUnknownError)
+                .subscribe(this::onDeletePhotoAnswerFromDatabase)
+
+        compositeDisposable += getViewModel().outputs.onDeletePhotoConfirmedObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .doOnError(this::onUnknownError)
+                .subscribe(this::onDeletePhotoConfirmed)
+
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .doOnError(this::onUnknownError)
@@ -132,7 +142,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         getViewModel().inputs.beginReceivingEvents(this::class.java)
         getViewModel().inputs.startLookingForPhotos()
 
-        addIndicatorIfServiceIsRunning()
+        showIndicatorIfServiceIsRunning()
     }
 
     override fun onPause() {
@@ -153,7 +163,7 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
-    private fun addIndicatorIfServiceIsRunning() {
+    private fun showIndicatorIfServiceIsRunning() {
         if (FindPhotoAnswerService.isAlreadyRunning(context!!)) {
             showLookingForPhotoIndicator()
         }
@@ -250,13 +260,17 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
             }
 
             is ReceivedPhotosAdapter.PhotoAnswerClick.DeletePhoto -> {
-                TODO()
+                getViewModel().inputs.showDeletePhotoConfirmationDialog(photoClick.photo.photoName)
             }
 
             is ReceivedPhotosAdapter.PhotoAnswerClick.ReportPhoto -> {
                 TODO()
             }
         }
+    }
+
+    private fun onDeletePhotoConfirmed(photoName: String) {
+        getViewModel().inputs.deletePhotoAnswerFromDatabase(photoName)
     }
 
     private fun onLookingForPhotoState(state: LookingForPhotoState) {
@@ -313,6 +327,8 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
     private fun startLookingForPhotos() {
         Timber.tag(ttag).d("startLookingForPhotos() Showing scheduleLookingForPhotoAnswer")
+
+        //TODO: rewrite
         (activity as AllPhotosViewActivity).scheduleLookingForPhotoAnswer()
         showLookingForPhotoIndicator()
     }
@@ -325,7 +341,16 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
         }
     }
 
+    private fun onDeletePhotoAnswerFromDatabase(photoName: String) {
+        Timber.tag(ttag).d("onDeletePhotoAnswerFromDatabase()")
+
+        adapter.runOnAdapterHandler {
+            adapter.removePhotoAnswer(photoName)
+        }
+    }
+
     private fun onUnknownError(error: Throwable) {
+        //TODO: rewrite
         (activity as AllPhotosViewActivity).onUnknownError(error)
     }
 

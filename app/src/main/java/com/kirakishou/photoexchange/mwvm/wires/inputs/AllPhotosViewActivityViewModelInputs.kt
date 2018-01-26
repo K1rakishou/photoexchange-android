@@ -8,6 +8,8 @@ import com.kirakishou.photoexchange.mwvm.model.state.PhotoUploadingState
  * Created by kirakishou on 11/8/2017.
  */
 interface AllPhotosViewActivityViewModelInputs {
+    fun onDeletePhotoConfirmed(photoName: String)
+    fun showDeletePhotoConfirmationDialog(photoName: String)
     fun getPhotoListUserNewLocations(photos: List<TakenPhoto>)
     fun beginReceivingEvents(clazz: Class<*>)
     fun stopReceivingEvents(clazz: Class<*>)
@@ -19,6 +21,7 @@ interface AllPhotosViewActivityViewModelInputs {
     fun cancelTakenPhotoUploading(id: Long)
     fun startLookingForPhotos()
     fun startPhotosUploading()
+    fun deletePhotoAnswerFromDatabase(photoName: String)
 
     fun updatePhotoUploadingState(receiver: Class<*>, newState: PhotoUploadingState)
     fun updateLookingForPhotoState(receiver: Class<*>, newState: LookingForPhotoState)

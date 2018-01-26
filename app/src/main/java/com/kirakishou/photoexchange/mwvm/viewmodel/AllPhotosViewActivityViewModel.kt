@@ -67,6 +67,9 @@ class AllPhotosViewActivityViewModel(
     private val onRecipientLocationsOutput = PublishSubject.create<List<RecipientLocation>>()
     private val onPhotoUploadingStateOutput = PublishSubject.create<MulticastEvent<PhotoUploadingState>>()
     private val onLookingForPhotoStateOutput = PublishSubject.create<MulticastEvent<LookingForPhotoState>>()
+    private val onDeletePhotoAnswerFromDatabaseOutput = PublishSubject.create<String>()
+    private val onShowDeletePhotoConfirmationDialogOutput = PublishSubject.create<String>()
+    private val onDeletePhotoConfirmedOutput = PublishSubject.create<String>()
 
     //errors
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
@@ -139,7 +142,8 @@ class AllPhotosViewActivityViewModel(
                 val alreadyCachedLocations = recipientLocationRepository.findMany(photoNames).awaitFirst()
 
                 if (alreadyCachedLocations.isNotEmpty()) {
-                    Timber.tag(tag).d("getPhotoListUserNewLocations() cached recipient locations found (${alreadyCachedLocations.size} items)")
+                    Timber.tag(tag).d("getPhotoListUserNewLocations() cached " +
+                            "recipient locations found (${alreadyCachedLocations.size} items)")
                     onRecipientLocationsOutput.onNext(alreadyCachedLocations)
                 }
 
@@ -156,19 +160,24 @@ class AllPhotosViewActivityViewModel(
                     return@async
                 }
 
-                Timber.tag(tag).d("getPhotoListUserNewLocations() not cached recipient locations count: ${notCachedPhotos.size}")
+                Timber.tag(tag).d("getPhotoListUserNewLocations() not cached " +
+                        "recipient locations count: ${notCachedPhotos.size}")
 
                 val joinedPhotoNames = notCachedPhotos.joinToString(",") { it.photoName }
                 val newRecipientLocations = apiClient.getPhotoRecipientsLocations(userId, joinedPhotoNames).await()
 
                 if (newRecipientLocations.locationList.isEmpty()) {
-                    Timber.tag(tag).d("getPhotoListUserNewLocations() no new recipient locations")
+                    Timber.tag(tag).d("getPhotoListUserNewLocations() no " +
+                            "new recipient locations")
                     return@async
                 }
 
-                Timber.tag(tag).d("getPhotoListUserNewLocations() received ${newRecipientLocations.locationList.size} recipient locations")
+                Timber.tag(tag).d("getPhotoListUserNewLocations() received " +
+                        "${newRecipientLocations.locationList.size} recipient locations")
 
-                val converted = newRecipientLocations.locationList.map { RecipientLocation.fromUserNewLocationJsonObject(it) }
+                val converted = newRecipientLocations.locationList.map {
+                    return@map RecipientLocation.fromUserNewLocationJsonObject(it)
+                }
                 recipientLocationRepository.saveMany(converted).await()
 
                 onRecipientLocationsOutput.onNext(converted)
@@ -176,6 +185,14 @@ class AllPhotosViewActivityViewModel(
                 onRecipientLocationsOutput.onError(error)
             }
         }.asCompletable(CommonPool).subscribe()
+    }
+
+    override fun onDeletePhotoConfirmed(photoName: String) {
+        onDeletePhotoConfirmedOutput.onNext(photoName)
+    }
+
+    override fun showDeletePhotoConfirmationDialog(photoName: String) {
+        onShowDeletePhotoConfirmationDialogOutput.onNext(photoName)
     }
 
     override fun updatePhotoUploadingState(receiver: Class<*>, newState: PhotoUploadingState) {
@@ -320,6 +337,17 @@ class AllPhotosViewActivityViewModel(
         }.asCompletable(CommonPool).subscribe()
     }
 
+    override fun deletePhotoAnswerFromDatabase(photoName: String) {
+        compositeDisposable += async {
+            try {
+                photoAnswerRepository.deleteOne(photoName).await()
+                onDeletePhotoAnswerFromDatabaseOutput.onNext(photoName)
+            } catch (error: Throwable) {
+                onDeletePhotoAnswerFromDatabaseOutput.onError(error)
+            }
+        }.asCompletable(CommonPool).subscribe()
+    }
+
     private fun handleErrors(error: Throwable) {
         Timber.e(error)
         unknownErrorSubject.onNext(error)
@@ -345,6 +373,9 @@ class AllPhotosViewActivityViewModel(
     override fun onPhotoUploadingStateObservable(): Observable<MulticastEvent<PhotoUploadingState>> = onPhotoUploadingStateOutput
     override fun onLookingForPhotoStateObservable(): Observable<MulticastEvent<LookingForPhotoState>> = onLookingForPhotoStateOutput
     override fun onRecipientLocationsObservable(): Observable<List<RecipientLocation>> = onRecipientLocationsOutput
+    override fun onDeletePhotoAnswerFromDatabaseObservable(): Observable<String> = onDeletePhotoAnswerFromDatabaseOutput
+    override fun onShowDeletePhotoConfirmationDialogObservable(): Observable<String> = onShowDeletePhotoConfirmationDialogOutput
+    override fun onDeletePhotoConfirmedObservable(): Observable<String> = onDeletePhotoConfirmedOutput
 
     override fun onUnknownErrorObservable(): Observable<Throwable> = unknownErrorSubject
 }
