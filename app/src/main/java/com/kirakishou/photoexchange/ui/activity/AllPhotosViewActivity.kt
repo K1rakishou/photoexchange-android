@@ -169,10 +169,21 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
                 .doOnError(this::onUnknownError)
                 .subscribe({ scheduleLookingForPhotoAnswer() })
 
+        compositeDisposable += getViewModel().outputs.onShowDeletePhotoConfirmationDialogObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .doOnError(this::onUnknownError)
+                .subscribe(this::onShowDeletePhotoConfirmationDialog)
+
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .doOnError(this::onUnknownError)
                 .subscribe(this::onUnknownError)
+    }
+
+    private fun onShowDeletePhotoConfirmationDialog(photoName: String) {
+        DeletePhotoConfirmationDialog().show(this, {
+            getViewModel().inputs.onDeletePhotoConfirmed(photoName)
+        })
     }
 
     private fun switchToTakePhotoActivity() {
@@ -357,12 +368,6 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
             }
             else -> throw IllegalArgumentException("Unknown event status: ${event.status}")
         }
-    }
-
-    private fun showDeletePhotoConfirmationDialog() {
-        DeletePhotoConfirmationDialog().show(this, {
-            //TODO:
-        })
     }
 
     override fun resolveDaggerDependency() {

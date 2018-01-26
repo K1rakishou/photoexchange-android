@@ -68,6 +68,8 @@ class AllPhotosViewActivityViewModel(
     private val onPhotoUploadingStateOutput = PublishSubject.create<MulticastEvent<PhotoUploadingState>>()
     private val onLookingForPhotoStateOutput = PublishSubject.create<MulticastEvent<LookingForPhotoState>>()
     private val onDeletePhotoAnswerFromDatabaseOutput = PublishSubject.create<String>()
+    private val onShowDeletePhotoConfirmationDialogOutput = PublishSubject.create<String>()
+    private val onDeletePhotoConfirmedOutput = PublishSubject.create<String>()
 
     //errors
     private val unknownErrorSubject = PublishSubject.create<Throwable>()
@@ -183,6 +185,14 @@ class AllPhotosViewActivityViewModel(
                 onRecipientLocationsOutput.onError(error)
             }
         }.asCompletable(CommonPool).subscribe()
+    }
+
+    override fun onDeletePhotoConfirmed(photoName: String) {
+        onDeletePhotoConfirmedOutput.onNext(photoName)
+    }
+
+    override fun showDeletePhotoConfirmationDialog(photoName: String) {
+        onShowDeletePhotoConfirmationDialogOutput.onNext(photoName)
     }
 
     override fun updatePhotoUploadingState(receiver: Class<*>, newState: PhotoUploadingState) {
@@ -364,6 +374,8 @@ class AllPhotosViewActivityViewModel(
     override fun onLookingForPhotoStateObservable(): Observable<MulticastEvent<LookingForPhotoState>> = onLookingForPhotoStateOutput
     override fun onRecipientLocationsObservable(): Observable<List<RecipientLocation>> = onRecipientLocationsOutput
     override fun onDeletePhotoAnswerFromDatabaseObservable(): Observable<String> = onDeletePhotoAnswerFromDatabaseOutput
+    override fun onShowDeletePhotoConfirmationDialogObservable(): Observable<String> = onShowDeletePhotoConfirmationDialogOutput
+    override fun onDeletePhotoConfirmedObservable(): Observable<String> = onDeletePhotoConfirmedOutput
 
     override fun onUnknownErrorObservable(): Observable<Throwable> = unknownErrorSubject
 }
