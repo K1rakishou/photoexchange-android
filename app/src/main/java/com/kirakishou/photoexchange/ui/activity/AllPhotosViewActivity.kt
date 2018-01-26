@@ -29,6 +29,7 @@ import com.kirakishou.photoexchange.mwvm.model.state.LookingForPhotoState
 import com.kirakishou.photoexchange.mwvm.model.state.PhotoUploadingState
 import com.kirakishou.photoexchange.mwvm.viewmodel.AllPhotosViewActivityViewModel
 import com.kirakishou.photoexchange.mwvm.viewmodel.factory.AllPhotosViewActivityViewModelFactory
+import com.kirakishou.photoexchange.ui.dialog.DeletePhotoConfirmationDialog
 import com.kirakishou.photoexchange.ui.fragment.QueuedUpPhotosListFragment
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosListFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosListFragment
@@ -356,6 +357,12 @@ class AllPhotosViewActivity : BaseActivity<AllPhotosViewActivityViewModel>(),
             }
             else -> throw IllegalArgumentException("Unknown event status: ${event.status}")
         }
+    }
+
+    private fun showDeletePhotoConfirmationDialog() {
+        DeletePhotoConfirmationDialog().show(this, {
+            //TODO:
+        })
     }
 
     override fun resolveDaggerDependency() {
