@@ -9,6 +9,7 @@ import android.support.design.widget.TabLayout
 import android.support.v4.view.ViewPager
 import android.widget.ImageView
 import butterknife.BindView
+import com.afollestad.materialdialogs.MaterialDialog
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication

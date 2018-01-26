@@ -22,7 +22,7 @@ class RecipientLocationRepository(
     fun saveOne(recipientLocation: RecipientLocation): Single<Long> {
         val resultSingle = Single.fromCallable {
             val entity = RecipientLocationEntity.new(recipientLocation.photoName, recipientLocation.lon, recipientLocation.lat)
-            recipientLocationDao.saveOne(entity)
+            return@fromCallable recipientLocationDao.saveOne(entity)
         }
 
         return resultSingle
@@ -36,7 +36,7 @@ class RecipientLocationRepository(
                     .map { RecipientLocationEntity.fromRecipientLocation(it) }
                     .toTypedArray()
 
-            recipientLocationDao.saveMany(*recipientLocationArray)
+            return@fromCallable recipientLocationDao.saveMany(*recipientLocationArray)
         }
 
         return resultSingle

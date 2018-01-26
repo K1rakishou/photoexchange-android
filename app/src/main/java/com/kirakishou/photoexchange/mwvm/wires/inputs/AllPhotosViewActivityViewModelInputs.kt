@@ -19,6 +19,7 @@ interface AllPhotosViewActivityViewModelInputs {
     fun cancelTakenPhotoUploading(id: Long)
     fun startLookingForPhotos()
     fun startPhotosUploading()
+    fun deletePhotoAnswerFromDatabase(photoName: String)
 
     fun updatePhotoUploadingState(receiver: Class<*>, newState: PhotoUploadingState)
     fun updateLookingForPhotoState(receiver: Class<*>, newState: LookingForPhotoState)

@@ -32,4 +32,7 @@ interface PhotoAnswerDao {
 
     @Query("SELECT COUNT(photo_id) FROM ${PhotoAnswerEntity.TABLE_NAME}")
     fun countAll(): Single<Long>
+
+    @Query("DELETE FROM ${PhotoAnswerEntity.TABLE_NAME} WHERE photo_name = :arg0")
+    fun deleteOne(photoName: String): Int
 }

@@ -77,6 +77,21 @@ class ReceivedPhotosAdapter(
         super.addAll(items.filter { isDuplicate(it) })
     }
 
+    fun removePhotoAnswer(photoName: String) {
+        checkInited()
+
+        val index = items.asSequence().indexOfFirst { item ->
+            item.getType() == AdapterItemType.VIEW_ITEM.ordinal && item.value.get().photoName == photoName
+        }
+
+        if (index == -1) {
+            return
+        }
+
+        items.removeAt(index)
+        notifyItemRemoved(index)
+    }
+
     fun addMessage(messageType: Int) {
         checkInited()
 

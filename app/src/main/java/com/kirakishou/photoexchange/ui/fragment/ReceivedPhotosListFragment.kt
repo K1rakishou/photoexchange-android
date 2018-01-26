@@ -8,6 +8,7 @@ import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.widget.Toast
 import butterknife.BindView
+import com.afollestad.materialdialogs.MaterialDialog
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseFragment
@@ -111,6 +112,11 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .doOnError(this::onUnknownError)
                 .subscribe({ onUploadMorePhotos() })
+
+        compositeDisposable += getViewModel().outputs.onDeletePhotoAnswerFromDatabaseObservable()
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .doOnError(this::onUnknownError)
+                .subscribe(this::onDeletePhotoAnswerFromDatabase)
 
         compositeDisposable += getViewModel().errors.onUnknownErrorObservable()
                 .subscribeOn(AndroidSchedulers.mainThread())
@@ -250,7 +256,8 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
             }
 
             is ReceivedPhotosAdapter.PhotoAnswerClick.DeletePhoto -> {
-                TODO()
+                //TODO: add confirmation dialog
+                getViewModel().inputs.deletePhotoAnswerFromDatabase(photoClick.photo.photoName)
             }
 
             is ReceivedPhotosAdapter.PhotoAnswerClick.ReportPhoto -> {
@@ -322,6 +329,14 @@ class ReceivedPhotosListFragment : BaseFragment<AllPhotosViewActivityViewModel>(
 
         adapter.runOnAdapterHandler {
             adapter.addMessage(ReceivedPhotosAdapter.MESSAGE_TYPE_UPLOAD_MORE_PHOTOS)
+        }
+    }
+
+    private fun onDeletePhotoAnswerFromDatabase(photoName: String) {
+        Timber.tag(ttag).d("onDeletePhotoAnswerFromDatabase()")
+
+        adapter.runOnAdapterHandler {
+            adapter.removePhotoAnswer(photoName)
         }
     }
 
