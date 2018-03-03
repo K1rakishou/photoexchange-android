@@ -1,6 +1,5 @@
-package com.kirakishou.photoexchange.helper.rx.scheduler
+package com.kirakishou.photoexchange.helper.concurrency.scheduler
 
-import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import io.reactivex.Scheduler
 import io.reactivex.schedulers.Schedulers
 
@@ -9,6 +8,5 @@ import io.reactivex.schedulers.Schedulers
  */
 class TestSchedulers : SchedulerProvider {
     override fun provideIo(): Scheduler = Schedulers.trampoline()
-    override fun provideComputation(): Scheduler = Schedulers.trampoline()
     override fun provideMain(): Scheduler = Schedulers.trampoline()
 }

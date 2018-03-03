@@ -21,7 +21,7 @@ class CameraProvider {
 //                .with(context)
 //                .into(cameraView)
 //                .previewScaleType(ScaleType.CENTER_CROP)
-//                .photoSize(PhotoSizeSelector())
+//                .photoSize(PhotoResolutionSelector())
 //                .lensPosition(LensPositionSelectors.back())
 //                .build()
     }

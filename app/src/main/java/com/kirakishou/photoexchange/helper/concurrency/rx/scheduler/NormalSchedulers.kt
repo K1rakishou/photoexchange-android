@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.helper.rx.scheduler
+package com.kirakishou.photoexchange.helper.concurrency.scheduler
 
 import io.reactivex.Scheduler
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -9,6 +9,5 @@ import io.reactivex.schedulers.Schedulers
  */
 class NormalSchedulers : SchedulerProvider {
     override fun provideIo(): Scheduler = Schedulers.io()
-    override fun provideComputation(): Scheduler = Schedulers.computation()
     override fun provideMain(): Scheduler = AndroidSchedulers.mainThread()
 }

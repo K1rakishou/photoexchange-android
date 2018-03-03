@@ -11,14 +11,17 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.component.DaggerTakePhotoActivityComponent
 import com.kirakishou.photoexchange.di.module.TakePhotoActivityModule
+import com.kirakishou.photoexchange.helper.PhotoResolutionSelector
+import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.TakePhotoActivityViewModelFactory
 import io.fotoapparat.Fotoapparat
+import io.fotoapparat.configuration.CameraConfiguration
+import io.fotoapparat.selector.back
 import io.fotoapparat.view.CameraView
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
-import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.async
 import timber.log.Timber
 import java.io.File
@@ -36,6 +39,9 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
     @Inject
     lateinit var viewModelFactory: TakePhotoActivityViewModelFactory
 
+    @Inject
+    lateinit var coroutinesPool: CoroutineThreadPoolProvider
+
     lateinit var fotoapparat: Fotoapparat
 
     override fun initViewModel(): TakePhotoActivityViewModel? {
@@ -47,9 +53,19 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         takePhotoButton.setOnClickListener { getViewModel().takePhoto() }
 
+        initCamera()
+    }
+
+    private fun initCamera() {
+        val configuration = CameraConfiguration(
+            pictureResolution = { PhotoResolutionSelector(this).select() }
+        )
+
         fotoapparat = Fotoapparat(
             context = this,
-            view = cameraView
+            view = cameraView,
+            lensPosition = back(),
+            cameraConfiguration = configuration
         )
     }
 
@@ -92,13 +108,13 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
     }
 
     override fun showTakePhotoButton() {
-        async(UI) {
+        async(coroutinesPool.provideMain()) {
             takePhotoButton.visibility = View.VISIBLE
         }
     }
 
     override fun hideTakePhotoButton() {
-        async(UI) {
+        async(coroutinesPool.provideMain()) {
             takePhotoButton.visibility = View.GONE
         }
     }

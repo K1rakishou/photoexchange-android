@@ -1,10 +1,10 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.base.BaseViewModel
-import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
+import com.kirakishou.photoexchange.helper.concurrency.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
 import io.reactivex.rxkotlin.plusAssign
-import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.rx2.asCompletable
 import kotlinx.coroutines.experimental.rx2.await
@@ -17,6 +17,7 @@ import java.lang.ref.WeakReference
  */
 class TakePhotoActivityViewModel(
     view: WeakReference<TakePhotoActivityView>,
+    private val coroutinesPool: CoroutineThreadPoolProvider,
     private val schedulers: SchedulerProvider
 ) : BaseViewModel<TakePhotoActivityView>(view) {
 
@@ -35,7 +36,7 @@ class TakePhotoActivityViewModel(
             }
 
             getView()?.showTakePhotoButton()
-        }.asCompletable(CommonPool)
+        }.asCompletable(coroutinesPool.provideIo())
             .subscribe()
     }
 

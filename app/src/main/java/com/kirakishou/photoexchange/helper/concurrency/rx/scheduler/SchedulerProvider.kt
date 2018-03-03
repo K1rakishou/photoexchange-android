@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.helper.rx.scheduler
+package com.kirakishou.photoexchange.helper.concurrency.scheduler
 
 import io.reactivex.Scheduler
 
@@ -7,6 +7,5 @@ import io.reactivex.Scheduler
  */
 interface SchedulerProvider {
     fun provideIo(): Scheduler
-    fun provideComputation(): Scheduler
     fun provideMain(): Scheduler
 }

@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.helper.rx
+package com.kirakishou.photoexchange.helper.concurrency.rx
 
 import kotlinx.coroutines.experimental.async
 import timber.log.Timber

@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.di.module
 
-import com.kirakishou.photoexchange.helper.rx.scheduler.NormalSchedulers
-import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.helper.concurrency.scheduler.NormalSchedulers
+import com.kirakishou.photoexchange.helper.concurrency.scheduler.SchedulerProvider
 import dagger.Module
 import dagger.Provides
 import javax.inject.Singleton
