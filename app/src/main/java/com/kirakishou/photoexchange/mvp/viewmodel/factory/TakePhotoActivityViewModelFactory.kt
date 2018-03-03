@@ -3,7 +3,9 @@ package com.kirakishou.photoexchange.mvp.viewmodel.factory
 import android.arch.lifecycle.ViewModel
 import android.arch.lifecycle.ViewModelProvider
 import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
+import java.lang.ref.WeakReference
 import javax.inject.Inject
 
 /**
@@ -11,11 +13,12 @@ import javax.inject.Inject
  */
 class TakePhotoActivityViewModelFactory
 @Inject constructor(
-        val schedulers: SchedulerProvider
+    val view: WeakReference<TakePhotoActivityView>,
+    val schedulers: SchedulerProvider
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
-        return TakePhotoActivityViewModel(schedulers) as T
+        return TakePhotoActivityViewModel(view, schedulers) as T
     }
 }

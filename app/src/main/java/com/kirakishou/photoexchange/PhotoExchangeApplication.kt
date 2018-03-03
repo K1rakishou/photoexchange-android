@@ -9,6 +9,7 @@ import android.os.StrictMode
 import android.util.Log
 import com.crashlytics.android.Crashlytics
 import com.kirakishou.photoexchange.di.component.ApplicationComponent
+import com.kirakishou.photoexchange.di.module.ApplicationModule
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 
 
@@ -21,8 +22,8 @@ class PhotoExchangeApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        applicationComponent = DaggerApplicationComponent
-            .builder()
+        applicationComponent = DaggerApplicationComponent.builder()
+            .applicationModule(ApplicationModule(this))
             .build()
 
         initTimber()
