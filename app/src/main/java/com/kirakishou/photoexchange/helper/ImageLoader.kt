@@ -3,13 +3,10 @@ package com.kirakishou.photoexchange.helper
 import android.content.Context
 import android.widget.ImageView
 import com.bumptech.glide.Glide
-import com.bumptech.glide.RequestManager
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import io.reactivex.Single
-import kotlinx.coroutines.experimental.android.UI
-import kotlinx.coroutines.experimental.async
 import java.io.File
 import javax.inject.Inject
 

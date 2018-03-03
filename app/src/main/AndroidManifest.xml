@@ -19,14 +19,14 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/PhotoExchangeTheme">
-        <activity
-            android:name="com.kirakishou.photoexchange.ui.activity.TakePhotoActivity">
+        <activity android:name="com.kirakishou.photoexchange.ui.activity.TakePhotoActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity"/>
+        <activity android:name="com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity" />
         <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity" />
         <activity android:name="com.kirakishou.photoexchange.ui.activity.MapActivity" />
         <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewPhotoFullSizeActivity" />
@@ -46,7 +46,6 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyAGVBH_OihoUtvM-VCqQKOvcp5n_3kUs1U" />
-
     </application>
 
 </manifest>

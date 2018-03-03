@@ -7,9 +7,8 @@ import dagger.Provides
 import javax.inject.Singleton
 
 /**
- * Created by kirakishou on 11/3/2017.
+ * Created by kirakishou on 3/3/2018.
  */
-
 @Module
 class SchedulerProviderModule {
 

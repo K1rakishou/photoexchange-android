@@ -11,7 +11,6 @@ import android.view.ViewGroup
 import butterknife.ButterKnife
 import butterknife.Unbinder
 import com.kirakishou.photoexchange.PhotoExchangeApplication
-import com.kirakishou.photoexchange.helper.CompositeJob
 import io.reactivex.disposables.CompositeDisposable
 
 /**
@@ -29,7 +28,6 @@ abstract class BaseFragment<out T : ViewModel> : Fragment() {
     private lateinit var unBinder: Unbinder
     private lateinit var viewModel: T
     protected val compositeDisposable = CompositeDisposable()
-    protected val compositeJob = CompositeJob()
 
     protected fun getViewModel(): T {
         return viewModel
@@ -72,7 +70,6 @@ abstract class BaseFragment<out T : ViewModel> : Fragment() {
         super.onDetach()
 
         compositeDisposable.clear()
-        compositeJob.cancelAll()
 
         PhotoExchangeApplication.watch(this, this::class.simpleName)
     }

@@ -7,8 +7,8 @@ import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.kirakishou.photoexchange.mwvm.model.adapter.AdapterItem
-import com.kirakishou.photoexchange.mwvm.model.adapter.AdapterItemType
+import com.kirakishou.photoexchange.mvp.model.adapter.AdapterItem
+import com.kirakishou.photoexchange.mvp.model.adapter.AdapterItemType
 
 /**
  * Created by kirakishou on 11/7/2017.
@@ -31,7 +31,7 @@ abstract class BaseAdapter<T>(
         isInited = true
     }
 
-    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView?) {
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         super.onDetachedFromRecyclerView(recyclerView)
 
         baseAdapterInfo.clear()

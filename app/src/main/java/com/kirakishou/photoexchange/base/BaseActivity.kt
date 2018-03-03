@@ -11,9 +11,7 @@ import butterknife.ButterKnife
 import butterknife.Unbinder
 import com.crashlytics.android.Crashlytics
 import com.kirakishou.photoexchange.PhotoExchangeApplication
-import com.kirakishou.photoexchange.mwvm.model.other.Constants
-import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
-import com.kirakishou.photoexchange.mwvm.model.other.Fickle
+import com.kirakishou.photoexchange.mvp.model.other.ServerErrorCode
 import io.fabric.sdk.android.Fabric
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -37,7 +35,7 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
     protected val unknownErrorsSubject = PublishSubject.create<Throwable>()!!
 
     private var viewModel: T? = null
-    private var unBinder: Fickle<Unbinder> = Fickle.empty()
+    private var unBinder: Unbinder? = null
 
     protected fun getViewModel(): T {
         if (viewModel == null) {
@@ -53,11 +51,10 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
         //Timber.d("${this::class.java}.onCreate")
 
         setContentView(getContentView())
-        unBinder = Fickle.of(ButterKnife.bind(this))
+        unBinder = ButterKnife.bind(this)
 
         resolveDaggerDependency()
         viewModel = initViewModel()
-        onInitRx()
 
         Fabric.with(this, Crashlytics())
 
@@ -75,9 +72,7 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
         compositeDisposable.clear()
         onActivityDestroy()
 
-        unBinder.ifPresent {
-            it.unbind()
-        }
+        unBinder?.unbind()
 
         PhotoExchangeApplication.watch(this, this::class.simpleName)
         super.onDestroy()
@@ -132,7 +127,6 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
 
     protected abstract fun initViewModel(): T?
     protected abstract fun getContentView(): Int
-    protected abstract fun onInitRx()
     protected abstract fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent)
     protected abstract fun onActivityDestroy()
     protected abstract fun resolveDaggerDependency()

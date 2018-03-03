@@ -1,16 +1,15 @@
 package com.kirakishou.photoexchange
 
 import android.app.Application
-import com.kirakishou.photoexchange.di.component.ApplicationComponent
 import com.kirakishou.photoexchange.di.component.DaggerApplicationComponent
-import com.kirakishou.photoexchange.di.module.*
 import com.squareup.leakcanary.LeakCanary
 import com.squareup.leakcanary.RefWatcher
 import timber.log.Timber
 import android.os.StrictMode
 import android.util.Log
 import com.crashlytics.android.Crashlytics
-import com.kirakishou.photoexchange.mwvm.model.other.Constants
+import com.kirakishou.photoexchange.di.component.ApplicationComponent
+import com.kirakishou.photoexchange.mvp.model.other.Constants
 
 
 /**
@@ -23,19 +22,8 @@ class PhotoExchangeApplication : Application() {
         super.onCreate()
 
         applicationComponent = DaggerApplicationComponent
-                .builder()
-                .applicationModule(ApplicationModule(this))
-                .networkModule(NetworkModule(baseUrl))
-                .gsonModule(GsonModule())
-                .apiClientModule(ApiClientModule())
-                .schedulerProviderModule(SchedulerProviderModule())
-                .appSharedPreferenceModule(AppSharedPreferenceModule())
-                .databaseModule(DatabaseModule(databaseName))
-                .mapperModule(MapperModule())
-                .eventBusModule(EventBusModule())
-                .imageLoaderModule(ImageLoaderModule())
-                .eventAccumulatorModule(EventAccumulatorModule())
-                .build()
+            .builder()
+            .build()
 
         initTimber()
         initLeakCanary()
@@ -55,16 +43,16 @@ class PhotoExchangeApplication : Application() {
     private fun enabledStrictMode() {
         if (Constants.isDebugBuild) {
             StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder()
-                    .detectAll()
-                    .penaltyLog()
-                    //.penaltyDeath()
-                    .build())
+                .detectAll()
+                .penaltyLog()
+                //.penaltyDeath()
+                .build())
 
             StrictMode.setVmPolicy(StrictMode.VmPolicy.Builder()
-                    .detectAll()
-                    .penaltyLog()
-                    //.penaltyDeath()
-                    .build())
+                .detectAll()
+                .penaltyLog()
+                //.penaltyDeath()
+                .build())
         }
     }
 
@@ -118,7 +106,8 @@ class PhotoExchangeApplication : Application() {
     }
 
     companion object {
-        @JvmStatic lateinit var applicationComponent: ApplicationComponent
+        @JvmStatic
+        lateinit var applicationComponent: ApplicationComponent
         var refWatcher: RefWatcher? = null
         val baseUrl = "http://kez1911.asuscomm.com:8080/"
         val databaseName = "photoexchange_db"

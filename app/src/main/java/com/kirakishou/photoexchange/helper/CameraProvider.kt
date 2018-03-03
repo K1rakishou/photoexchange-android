@@ -3,7 +3,6 @@ package com.kirakishou.photoexchange.helper
 import android.content.Context
 import io.fotoapparat.Fotoapparat
 import io.fotoapparat.parameter.ScaleType
-import io.fotoapparat.parameter.selector.LensPositionSelectors
 import io.fotoapparat.view.CameraView
 import io.reactivex.ObservableEmitter
 import java.io.File
@@ -18,13 +17,13 @@ class CameraProvider {
     private lateinit var camera: Fotoapparat
 
     fun provideCamera(context: Context, cameraView: CameraView) {
-        camera = Fotoapparat
-                .with(context)
-                .into(cameraView)
-                .previewScaleType(ScaleType.CENTER_CROP)
-                .photoSize(PhotoSizeSelector())
-                .lensPosition(LensPositionSelectors.back())
-                .build()
+//        camera = Fotoapparat
+//                .with(context)
+//                .into(cameraView)
+//                .previewScaleType(ScaleType.CENTER_CROP)
+//                .photoSize(PhotoSizeSelector())
+//                .lensPosition(LensPositionSelectors.back())
+//                .build()
     }
 
     fun startCamera() {
@@ -42,7 +41,7 @@ class CameraProvider {
     }
 
     fun isStarted(): Boolean = isStarted
-    fun isAvailable(): Boolean = camera.isAvailable
+//    fun isAvailable(): Boolean = camera.isAvailable
 
     fun takePicture(emitter: ObservableEmitter<String>) {
         if (isStarted) {

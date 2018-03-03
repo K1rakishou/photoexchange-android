@@ -1,7 +1,6 @@
 package com.kirakishou.photoexchange.helper.util
 
-import com.kirakishou.photoexchange.mwvm.model.other.Constants
-import com.kirakishou.photoexchange.mwvm.model.other.TakenPhoto
+import com.kirakishou.photoexchange.mvp.model.other.Constants
 import java.io.File
 
 /**
@@ -20,15 +19,5 @@ object FileUtils {
 
     fun deleteFile(filePath: String) {
         deleteFile(File(filePath))
-    }
-
-    fun deletePhotoFile(takenPhoto: TakenPhoto) {
-        deleteFile(File(takenPhoto.photoFilePath))
-    }
-
-    fun deletePhotosFiles(allPhotos: List<TakenPhoto>) {
-        allPhotos.forEach { takenPhoto ->
-            deletePhotoFile(takenPhoto)
-        }
     }
 }

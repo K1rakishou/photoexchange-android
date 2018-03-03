@@ -1,10 +1,10 @@
 package com.kirakishou.photoexchange.helper.rx.operator
 
 import com.google.gson.Gson
-import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
-import com.kirakishou.photoexchange.mwvm.model.exception.ApiException
-import com.kirakishou.photoexchange.mwvm.model.exception.BadServerResponseException
-import com.kirakishou.photoexchange.mwvm.model.net.response.StatusResponse
+import com.kirakishou.photoexchange.mvp.model.other.ServerErrorCode
+import com.kirakishou.photoexchange.mvp.model.exception.ApiException
+import com.kirakishou.photoexchange.mvp.model.exception.BadServerResponseException
+import com.kirakishou.photoexchange.mvp.model.net.response.StatusResponse
 import io.reactivex.ObservableOperator
 import io.reactivex.Observer
 import io.reactivex.disposables.Disposable

@@ -1,9 +1,8 @@
 package com.kirakishou.photoexchange.helper.location
 
-import com.kirakishou.photoexchange.mwvm.model.other.LonLat
+import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
 
 /**
  * Created by kirakishou on 12/24/2017.

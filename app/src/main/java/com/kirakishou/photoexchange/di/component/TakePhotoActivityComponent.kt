@@ -6,9 +6,8 @@ import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
 import dagger.Component
 
 /**
- * Created by kirakishou on 11/3/2017.
+ * Created by kirakishou on 3/3/2018.
  */
-
 @PerActivity
 @Component(modules = [TakePhotoActivityModule::class], dependencies = [ApplicationComponent::class])
 interface TakePhotoActivityComponent {

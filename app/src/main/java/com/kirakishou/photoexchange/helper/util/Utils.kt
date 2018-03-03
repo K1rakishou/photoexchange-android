@@ -1,15 +1,5 @@
 package com.kirakishou.photoexchange.helper.util
 
-import android.graphics.Bitmap
-import android.graphics.Matrix
-import android.os.Looper
-import com.kirakishou.photoexchange.mwvm.model.other.Fickle
-import okio.ByteString
-import timber.log.Timber
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.security.MessageDigest
 import java.security.SecureRandom
 
 /**

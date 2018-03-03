@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.helper.extension
 
-import com.kirakishou.photoexchange.mwvm.model.other.MulticastEvent
+import com.kirakishou.photoexchange.mvp.model.other.MulticastEvent
 import io.reactivex.Observable
 
 /**

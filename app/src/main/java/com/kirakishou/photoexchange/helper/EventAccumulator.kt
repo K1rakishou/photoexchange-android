@@ -1,6 +1,5 @@
 package com.kirakishou.photoexchange.helper
 
-import com.kirakishou.photoexchange.mwvm.model.event.BaseEvent
 import java.util.*
 import kotlin.NoSuchElementException
 
@@ -8,7 +7,7 @@ import kotlin.NoSuchElementException
  * Created by kirakishou on 12/20/2017.
  */
 class EventAccumulator {
-    private val eventMap = hashMapOf<Class<*>, Queue<BaseEvent>>()
+    /*private val eventMap = hashMapOf<Class<*>, Queue<BaseEvent>>()
 
     fun rememberEvent(clazz: Class<*>, event: BaseEvent) {
         synchronized(eventMap) {
@@ -60,5 +59,5 @@ class EventAccumulator {
 
     fun clear() {
         eventMap.clear()
-    }
+    }*/
 }
