@@ -16,6 +16,13 @@ abstract class MyPhotoDao {
     abstract fun insert(myPhotoEntity: MyPhotoEntity): Long
 
     @Query("SELECT * FROM ${MyPhotoEntity.TABLE_NAME} " +
-        "WHERE ${MyPhotoEntity.ID_COLUMN} = :arg0")
+        "WHERE ${MyPhotoEntity.ID_COLUMN} = :id")
     abstract fun findById(id: Long): MyPhotoEntity?
+
+    @Query("SELECT * FROM ${MyPhotoEntity.TABLE_NAME} " +
+        "WHERE ${MyPhotoEntity.ID_COLUMN} = :id")
+    abstract fun deleteById(id: Long): Int
+
+    @Query("SELECT * FROM ${MyPhotoEntity.TABLE_NAME}")
+    abstract fun findAll(): List<MyPhotoEntity>
 }

@@ -23,7 +23,7 @@ import timber.log.Timber
 /**
  * Created by kirakishou on 7/20/2017.
  */
-abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
+abstract class BaseActivity<T: BaseViewModel<*>> : AppCompatActivity() {
 
     private val registry by lazy {
         LifecycleRegistry(this)
@@ -37,7 +37,11 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
     private var viewModel: T? = null
     private var unBinder: Unbinder? = null
 
-    protected fun getViewModel(): T {
+    fun setViewModel(viewModel: T) {
+        this.viewModel = viewModel
+    }
+
+    fun getViewModel(): T {
         if (viewModel == null) {
             throw IllegalStateException("Cannot call get viewModel from the activity that has not viewModel!")
         }
@@ -63,6 +67,7 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
                 .doOnError(this::onUnknownError)
                 .subscribe(this::onUnknownError)
 
+        viewModel?.init()
         onActivityCreate(savedInstanceState, intent)
     }
 

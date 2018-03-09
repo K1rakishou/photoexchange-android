@@ -16,15 +16,16 @@ import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
     TempFileEntity::class], version = 1)
 abstract class MyDatabase : RoomDatabase() {
 
-    abstract fun takenPhotoDao(): MyPhotoDao
+    abstract fun myPhotoDao(): MyPhotoDao
     abstract fun tempFileDao(): TempFileDao
 
-    fun runInTransaction(func: () -> Unit) {
+    fun <T> transactional(func: () -> T?): T? {
         this.beginTransaction()
 
         try {
-            func()
+            val result = func()
             this.setTransactionSuccessful()
+            return result
         } finally {
             this.endTransaction()
         }

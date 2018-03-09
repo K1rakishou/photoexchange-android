@@ -2,58 +2,98 @@ package com.kirakishou.photoexchange.helper
 
 import android.content.Context
 import io.fotoapparat.Fotoapparat
+import io.fotoapparat.characteristic.toCameraId
+import io.fotoapparat.configuration.CameraConfiguration
 import io.fotoapparat.parameter.ScaleType
+import io.fotoapparat.selector.back
+import io.fotoapparat.selector.front
 import io.fotoapparat.view.CameraView
 import io.reactivex.ObservableEmitter
+import io.reactivex.Single
+import io.reactivex.android.schedulers.AndroidSchedulers
+import timber.log.Timber
 import java.io.File
 
 /**
  * Created by kirakishou on 1/4/2018.
  */
-class CameraProvider {
+open class CameraProvider(
+    val context: Context
+) {
 
     @Volatile
     private var isStarted = false
-    private lateinit var camera: Fotoapparat
+    private var camera: Fotoapparat? = null
+    private val tag = "[${this::class.java.simpleName}]: "
+    private val cameraLensPosition = back()
 
-    fun provideCamera(context: Context, cameraView: CameraView) {
-//        camera = Fotoapparat
-//                .with(context)
-//                .into(cameraView)
-//                .previewScaleType(ScaleType.CENTER_CROP)
-//                .photoSize(PhotoResolutionSelector())
-//                .lensPosition(LensPositionSelectors.back())
-//                .build()
+    fun provideCamera(cameraView: CameraView) {
+        val configuration = CameraConfiguration(
+            pictureResolution = { PhotoResolutionSelector(this).select() }
+        )
+
+        camera = Fotoapparat(
+            context = context,
+            view = cameraView,
+            lensPosition = cameraLensPosition,
+            cameraConfiguration = configuration
+        )
     }
 
     fun startCamera() {
-        if (!isStarted) {
-            camera.start()
-            isStarted = true
+        if (!isStarted() && isAvailable()) {
+            camera?.apply {
+                this.start()
+                isStarted = true
+            }
         }
     }
 
     fun stopCamera() {
-        if (isStarted) {
-            camera.stop()
-            isStarted = false
+        if (isStarted() && isAvailable()) {
+            camera?.apply {
+                this.stop()
+                isStarted = false
+            }
         }
     }
 
     fun isStarted(): Boolean = isStarted
-//    fun isAvailable(): Boolean = camera.isAvailable
+    fun isAvailable(): Boolean = camera?.isAvailable(cameraLensPosition) ?: false
 
-    fun takePicture(emitter: ObservableEmitter<String>) {
-        if (isStarted) {
-            val file = File.createTempFile("photo", "tmp")
+    fun takePhoto(file: File): Single<Boolean> {
+        val single = Single.create<Boolean> { emitter ->
+            if (!isAvailable()) {
+                emitter.onError(CameraInNotAvailable("Camera is not supported by this device"))
+                return@create
+            }
 
-            camera.takePicture()
+            if (!isStarted()) {
+                emitter.onError(CameraIsNotStartedException("Camera is not started"))
+                return@create
+            }
+
+            Timber.tag(tag).d("Taking photo...")
+
+            try {
+                camera!!.takePicture()
                     .saveToFile(file)
                     .whenAvailable {
-                        emitter.onNext(file.absolutePath)
+                        emitter.onSuccess(true)
                     }
-        } else {
-            emitter.onError(IllegalStateException("Camera is not started"))
+            } catch (error: Throwable) {
+                Timber.e(error)
+                emitter.onError(error)
+            }
+
+            Timber.tag(tag).d("Photo has been taken")
         }
+
+        return single
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .observeOn(AndroidSchedulers.mainThread())
     }
+
+    class CameraIsNotStartedException(msg: String) : Exception(msg)
+    class CameraInNotAvailable(msg: String) : Exception(msg)
 }

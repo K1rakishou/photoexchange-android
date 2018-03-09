@@ -1,5 +1,6 @@
-package com.kirakishou.photoexchange.helper.concurrency.scheduler
+package com.kirakishou.photoexchange.helper.concurrency.rx.scheduler
 
+import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import io.reactivex.Scheduler
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers

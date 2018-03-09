@@ -2,55 +2,61 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
-import com.kirakishou.photoexchange.helper.concurrency.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.entity.MyPhotoEntity
 import com.kirakishou.photoexchange.helper.database.repository.MyPhotoRepository
-import com.kirakishou.photoexchange.helper.database.repository.TempFileRepository
+import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
-import io.reactivex.rxkotlin.plusAssign
-import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.rx2.asCompletable
+import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.rx2.await
 import timber.log.Timber
-import java.io.File
-import java.lang.ref.WeakReference
 
 /**
  * Created by kirakishou on 11/7/2017.
  */
 class TakePhotoActivityViewModel(
-    view: WeakReference<TakePhotoActivityView>,
+    view: TakePhotoActivityView,
     private val coroutinesPool: CoroutineThreadPoolProvider,
-    private val schedulers: SchedulerProvider,
-    private val myPhotoRepository: MyPhotoRepository,
-    private val tempFileRepository: TempFileRepository
+    private val myPhotoRepository: MyPhotoRepository
 ) : BaseViewModel<TakePhotoActivityView>(view) {
 
-    fun takePhoto() {
-        compositeDisposable += launch {
-            getView()?.hideTakePhotoButton()
+    private val tag = "[${this::class.java.simpleName}] "
 
-            val tempFileEntity = tempFileRepository.createTempFile().await()
-                ?: return@launch
+    override fun init() {
+        async(coroutinesPool.provideCommon()) {
+            myPhotoRepository.init()
+        }
+    }
 
-            val tempFile = File(tempFileEntity.filePath)
+    suspend fun takePhoto() {
+        async(coroutinesPool.provideCommon()) {
+            var myPhoto: MyPhoto? = null
 
             try {
-                val status = getView()?.takePhoto(tempFile)?.await() ?: false
-                if (!status) {
-                    return@launch
+                getView()?.hideTakePhotoButton()
+
+                myPhoto = myPhotoRepository.insert(MyPhotoEntity.create()).await()
+                if (myPhoto == null) {
+                    myPhotoRepository.delete(myPhoto)
+                    getView()?.showToast("Could not take photo (database error)")
+                    return@async
                 }
 
-                if (!myPhotoRepository.insert(MyPhotoEntity.create(tempFileEntity.photoOwnerId)).await()) {
-                    return@launch
+                val takePhotoStatus = getView()?.takePhoto(myPhoto.getFile())?.await() ?: false
+                if (!takePhotoStatus) {
+                    myPhotoRepository.delete(myPhoto)
+                    getView()?.showToast("Could not take photo (database error)")
+                    return@async
                 }
 
+                getView()?.onPhotoTaken(myPhoto)
+            } catch (error: Throwable) {
+                Timber.e(error)
+                myPhotoRepository.delete(myPhoto)
+                getView()?.showToast("Could not take photo (database error)")
             } finally {
                 getView()?.showTakePhotoButton()
             }
-
-        }.asCompletable(coroutinesPool.provideCommon())
-            .subscribe()
+        }
     }
 
     override fun onCleared() {

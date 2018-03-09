@@ -10,6 +10,8 @@ import android.util.Log
 import com.crashlytics.android.Crashlytics
 import com.kirakishou.photoexchange.di.component.ApplicationComponent
 import com.kirakishou.photoexchange.di.module.ApplicationModule
+import com.kirakishou.photoexchange.di.module.CoroutineThreadPoolProviderModule
+import com.kirakishou.photoexchange.di.module.DatabaseModule
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 
 
@@ -17,18 +19,31 @@ import com.kirakishou.photoexchange.mvp.model.other.Constants
  * Created by kirakishou on 11/3/2017.
  */
 
-class PhotoExchangeApplication : Application() {
+open class PhotoExchangeApplication : Application() {
+
+    open lateinit var applicationComponent: ApplicationComponent
 
     override fun onCreate() {
         super.onCreate()
 
-        applicationComponent = DaggerApplicationComponent.builder()
-            .applicationModule(ApplicationModule(this))
-            .build()
+        init()
 
+        applicationComponent = initializeApplicationComponent()
+        applicationComponent.inject(this)
+    }
+
+    open fun initializeApplicationComponent(): ApplicationComponent {
+        return DaggerApplicationComponent.builder()
+            .applicationModule(ApplicationModule(this))
+            .databaseModule(DatabaseModule(databaseName))
+            .coroutineThreadPoolProviderModule(CoroutineThreadPoolProviderModule())
+            .build()
+    }
+
+    open fun init() {
         initTimber()
         initLeakCanary()
-        //enabledStrictMode()
+        enabledStrictMode()
     }
 
     private fun initLeakCanary() {
@@ -107,8 +122,6 @@ class PhotoExchangeApplication : Application() {
     }
 
     companion object {
-        @JvmStatic
-        lateinit var applicationComponent: ApplicationComponent
         var refWatcher: RefWatcher? = null
         val baseUrl = "http://kez1911.asuscomm.com:8080/"
         val databaseName = "photoexchange_db"

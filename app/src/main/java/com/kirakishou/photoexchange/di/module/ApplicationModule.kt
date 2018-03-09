@@ -10,17 +10,19 @@ import javax.inject.Singleton
  * Created by kirakishou on 3/3/2018.
  */
 @Module
-class ApplicationModule(private val application: Application) {
+open class ApplicationModule(
+    private val application: Application
+) {
 
     @Singleton
     @Provides
-    fun provideApplication(): Application {
+    open fun provideApplication(): Application {
         return application
     }
 
     @Singleton
     @Provides
-    fun provideContext(): Context {
+    open fun provideContext(): Context {
         return application.applicationContext
     }
 }

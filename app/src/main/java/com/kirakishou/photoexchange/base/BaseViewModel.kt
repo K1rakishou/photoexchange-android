@@ -8,12 +8,17 @@ import java.lang.ref.WeakReference
 /**
  * Created by kirakishou on 9/8/2017.
  */
-abstract class BaseViewModel<T>(
-    private val view: WeakReference<T>
+abstract class BaseViewModel<out T>(
+    _view: T
 ) : ViewModel() {
     protected val compositeDisposable = CompositeDisposable()
+    private var view: WeakReference<T> = WeakReference(_view)
 
-    protected fun getView(): T? = view.get()
+    protected fun getView(): T? {
+        return view.get()
+    }
+
+    abstract fun init()
 
     @CallSuper
     override fun onCleared() {

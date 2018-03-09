@@ -1,7 +1,9 @@
 package com.kirakishou.photoexchange.ui.activity
 
+import android.Manifest
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.view.View
@@ -9,23 +11,21 @@ import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
-import com.kirakishou.photoexchange.di.component.DaggerTakePhotoActivityComponent
 import com.kirakishou.photoexchange.di.module.TakePhotoActivityModule
-import com.kirakishou.photoexchange.helper.PhotoResolutionSelector
+import com.kirakishou.photoexchange.helper.CameraProvider
 import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
+import com.kirakishou.photoexchange.helper.permission.PermissionManager
+import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.TakePhotoActivityViewModelFactory
-import io.fotoapparat.Fotoapparat
-import io.fotoapparat.configuration.CameraConfiguration
-import io.fotoapparat.selector.back
+import com.kirakishou.photoexchange.ui.dialog.AppCannotWorkWithoutCameraPermissionDialog
+import com.kirakishou.photoexchange.ui.dialog.CameraIsNotAvailableDialog
 import io.fotoapparat.view.CameraView
 import io.reactivex.Single
-import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.coroutines.experimental.async
 import timber.log.Timber
 import java.io.File
-import java.lang.ref.WeakReference
 import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoActivityView {
@@ -42,7 +42,13 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
     @Inject
     lateinit var coroutinesPool: CoroutineThreadPoolProvider
 
-    lateinit var fotoapparat: Fotoapparat
+    @Inject
+    lateinit var permissionManager: PermissionManager
+
+    @Inject
+    lateinit var cameraProvider: CameraProvider
+
+    private val tag = "[${this::class.java.simpleName}]: "
 
     override fun initViewModel(): TakePhotoActivityViewModel? {
         return ViewModelProviders.of(this, viewModelFactory).get(TakePhotoActivityViewModel::class.java)
@@ -51,22 +57,38 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
     override fun getContentView(): Int = R.layout.activity_take_photo
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
-        takePhotoButton.setOnClickListener { getViewModel().takePhoto() }
+        initViews()
+        checkPermissions()
+    }
 
-        initCamera()
+    private fun checkPermissions() {
+        val requestedPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION)
+        permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
+            val index = permissions.indexOf(Manifest.permission.CAMERA)
+            if (index == -1) {
+                throw RuntimeException("Couldn't find Manifest.permission.CAMERA in result permissions")
+            }
+
+            if (grantResults[index] == PackageManager.PERMISSION_DENIED) {
+                Timber.tag(tag).d("getPermissions() Could not obtain camera permission")
+                showAppCannotWorkWithoutCameraPermissionDialog()
+                return@askForPermission
+            }
+
+            initCamera()
+        }
+    }
+
+    private fun initViews() {
+        takePhotoButton.setOnClickListener {
+            async(coroutinesPool.provideCommon()) {
+                getViewModel().takePhoto()
+            }
+        }
     }
 
     private fun initCamera() {
-        val configuration = CameraConfiguration(
-            pictureResolution = { PhotoResolutionSelector(this).select() }
-        )
-
-        fotoapparat = Fotoapparat(
-            context = this,
-            view = cameraView,
-            lensPosition = back(),
-            cameraConfiguration = configuration
-        )
+        cameraProvider.provideCamera(cameraView)
     }
 
     override fun onActivityDestroy() {
@@ -74,37 +96,37 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
 
     override fun onResume() {
         super.onResume()
-
-        fotoapparat.start()
+        cameraProvider.startCamera()
     }
 
     override fun onPause() {
         super.onPause()
-
-        fotoapparat.stop()
+        cameraProvider.stopCamera()
     }
 
-    override fun takePhoto(file: File): Single<Boolean> {
-        val single = Single.create<Boolean> { emitter ->
-            println("Taking photo...")
+    private fun showAppCannotWorkWithoutCameraPermissionDialog() {
+        AppCannotWorkWithoutCameraPermissionDialog().show(this, {
+            finish()
+        })
+    }
 
-            try {
-                fotoapparat.takePicture()
-                    .saveToFile(file)
-                    .whenAvailable {
-                        emitter.onSuccess(true)
-                    }
-            } catch (error: Throwable) {
-                Timber.e(error)
-                emitter.onError(error)
-            }
+//    private fun showCameraRationaleDialog(token: PermissionToken) {
+//        CameraRationaleDialog().show(this, {
+//            token.continuePermissionRequest()
+//        }, {
+//            token.cancelPermissionRequest()
+//        })
+//    }
 
-            println("Photo has been taken")
-        }
+    private fun showCameraIsNotAvailableDialog() {
+        CameraIsNotAvailableDialog().show(this, {
+            finish()
+        })
+    }
 
-        return single
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .observeOn(AndroidSchedulers.mainThread())
+    override fun takePhoto(file: File): Single<Boolean> = cameraProvider.takePhoto(file)
+
+    override fun onPhotoTaken(myPhoto: MyPhoto) {
     }
 
     override fun showTakePhotoButton() {
@@ -119,11 +141,18 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
         }
     }
 
+    override fun showToast(message: String, duration: Int) {
+        onShowToast(message, duration)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        permissionManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
     override fun resolveDaggerDependency() {
-        DaggerTakePhotoActivityComponent.builder()
-            .applicationComponent(PhotoExchangeApplication.applicationComponent)
-            .takePhotoActivityModule(TakePhotoActivityModule(WeakReference(this)))
-            .build()
+        (application as PhotoExchangeApplication).applicationComponent
+            .plus(TakePhotoActivityModule(this))
             .inject(this)
     }
 }

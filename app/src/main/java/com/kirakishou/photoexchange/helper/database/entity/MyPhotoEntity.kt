@@ -3,7 +3,10 @@ package com.kirakishou.photoexchange.helper.database.entity
 import android.arch.persistence.room.ColumnInfo
 import android.arch.persistence.room.Entity
 import android.arch.persistence.room.PrimaryKey
+import android.arch.persistence.room.TypeConverters
+import com.kirakishou.photoexchange.helper.database.converter.PhotoStateConverter
 import com.kirakishou.photoexchange.helper.database.entity.MyPhotoEntity.Companion.TABLE_NAME
+import com.kirakishou.photoexchange.mvp.model.state.PhotoState
 
 /**
  * Created by kirakishou on 3/3/2018.
@@ -14,20 +17,20 @@ class MyPhotoEntity(
 
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = ID_COLUMN)
-    val id: Long = -1L,
+    var id: Long? = null,
 
-    @ColumnInfo(name = PHOTO_FILE_ID_COLUMN)
-    val photoFileId: Long
+    @ColumnInfo(name = PHOTO_STATE_COLUMN)
+    @field:TypeConverters(PhotoStateConverter::class)
+    var photoState: PhotoState? = null
 ) {
-
     companion object {
 
-        fun create(photoFileId: Long): MyPhotoEntity {
-            return MyPhotoEntity(-1L, photoFileId)
+        fun create(): MyPhotoEntity {
+            return MyPhotoEntity(null, PhotoState.PHOTO_TAKEN)
         }
 
         const val ID_COLUMN = "ID"
-        const val PHOTO_FILE_ID_COLUMN = "PHOTO_FILE_ID"
+        const val PHOTO_STATE_COLUMN = "PHOTO_STATE"
 
         const val TABLE_NAME = "MY_PHOTO"
     }

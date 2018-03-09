@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.helper.concurrency.scheduler
+package com.kirakishou.photoexchange.helper.concurrency.rx.scheduler
 
 import io.reactivex.Scheduler
 

@@ -11,11 +11,11 @@ import javax.inject.Singleton
  */
 
 @Module
-class CoroutineThreadPoolProviderModule {
+open class CoroutineThreadPoolProviderModule {
 
     @Singleton
     @Provides
-    fun provideCoroutineThreadPoolProvider(): CoroutineThreadPoolProvider {
+    open fun provideCoroutineThreadPoolProvider(): CoroutineThreadPoolProvider {
         return NormalCoroutineThreadPoolProvider()
     }
 }

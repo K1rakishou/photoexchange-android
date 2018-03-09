@@ -9,18 +9,19 @@ import dagger.Module
 import dagger.Provides
 
 /**
- * Created by kirakishou on 3/3/2018.
+ * Created by kirakishou on 3/8/2018.
  */
 
 @Module
-open class TakePhotoActivityModule(
-    val view: TakePhotoActivityView
+class MockTakePhotoActivityModule(
+    val mockedView: TakePhotoActivityView
 ) {
 
     @PerActivity
     @Provides
-    open fun provideViewModelFactory(coroutinesPool: CoroutineThreadPoolProvider,
+    fun provideViewModelFactory(coroutinesPool: CoroutineThreadPoolProvider,
                                 myPhotoRepository: MyPhotoRepository): TakePhotoActivityViewModelFactory {
-        return TakePhotoActivityViewModelFactory(view, myPhotoRepository, coroutinesPool)
+        return TakePhotoActivityViewModelFactory(mockedView,
+            myPhotoRepository, coroutinesPool)
     }
 }

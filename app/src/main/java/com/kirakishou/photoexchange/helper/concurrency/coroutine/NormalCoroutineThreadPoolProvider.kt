@@ -11,7 +11,6 @@ import kotlinx.coroutines.experimental.newSingleThreadContext
  * Created by kirakishou on 3/3/2018.
  */
 class NormalCoroutineThreadPoolProvider : CoroutineThreadPoolProvider {
-
     override fun provideCommon(): CoroutineDispatcher = newSingleThreadContext("Network")
     override fun provideDb(): CoroutineDispatcher = newSingleThreadContext("Database")
     override fun provideNetwork(): ThreadPoolDispatcher = newSingleThreadContext("Common")
