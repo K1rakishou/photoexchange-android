@@ -3,12 +3,9 @@ package com.kirakishou.photoexchange.mvp.viewmodel.factory
 import android.arch.lifecycle.ViewModel
 import android.arch.lifecycle.ViewModelProvider
 import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
-import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.MyPhotoRepository
-import com.kirakishou.photoexchange.helper.database.repository.TempFileRepository
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
-import java.lang.ref.WeakReference
 import javax.inject.Inject
 
 /**

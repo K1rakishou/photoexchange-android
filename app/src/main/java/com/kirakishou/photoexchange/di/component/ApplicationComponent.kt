@@ -19,4 +19,5 @@ interface ApplicationComponent {
     fun inject(application: PhotoExchangeApplication)
 
     fun plus(takePhotoActivityModule: TakePhotoActivityModule): TakePhotoActivityComponent
+    fun plus(viewTakenPhotoActivityModule: ViewTakenPhotoActivityModule): ViewTakenPhotoActivityComponent
 }

@@ -1,5 +1,7 @@
 package com.kirakishou.photoexchange.mvp.model
 
+import android.os.Bundle
+import com.kirakishou.photoexchange.helper.database.converter.PhotoStateConverter
 import com.kirakishou.photoexchange.mvp.model.state.PhotoState
 import java.io.File
 
@@ -13,5 +15,29 @@ data class MyPhoto(
 ) {
     fun getFile(): File {
         return photoTempFile!!
+    }
+
+    fun toBundle(): Bundle {
+        val outBundle = Bundle()
+        outBundle.putLong("id", id)
+        outBundle.putInt("photo_state", PhotoStateConverter.fromPhotoState(photoState))
+        outBundle.putString("photo_temp_file", photoTempFile?.absolutePath ?: "")
+
+        return outBundle
+    }
+
+    companion object {
+        fun fromBundle(bundle: Bundle): MyPhoto {
+            val id = bundle.getLong("id", -1L)
+            if (id == -1L) {
+                throw RuntimeException("Bad MyPhoto id == -1L")
+            }
+
+            val photoState = PhotoStateConverter.toPhotoState(bundle.getInt("photo_state"))
+            val photoFileString = bundle.getString("photo_temp_file")
+            val photoFile = if (photoFileString.isEmpty()) null else File(photoFileString)
+
+            return MyPhoto(id, photoState, photoFile)
+        }
     }
 }

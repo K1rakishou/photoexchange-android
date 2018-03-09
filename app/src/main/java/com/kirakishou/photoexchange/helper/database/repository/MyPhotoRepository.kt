@@ -12,7 +12,7 @@ import java.io.File
 /**
  * Created by kirakishou on 3/3/2018.
  */
-class MyPhotoRepository(
+open class MyPhotoRepository(
     private val database: MyDatabase,
     private val tempFileRepository: TempFileRepository,
     private val coroutinesPool: CoroutineThreadPoolProvider
@@ -61,17 +61,19 @@ class MyPhotoRepository(
     suspend fun deleteById(id: Long): Deferred<Boolean> {
         return async(coroutinesPool.provideDb()) {
             val tempFileEntity = tempFileRepository.findById(id)
+            var fileDeleteResult = false
+
             if (tempFileEntity != null) {
                 val photoFile = File(tempFileEntity.filePath)
                 if (photoFile.exists()) {
-                    photoFile.delete()
+                    fileDeleteResult = photoFile.delete()
                 }
             }
 
             val myPhotoDeleteResult = myPhotoDao.deleteById(id) > 0
             val tempFileDeleteResult = tempFileRepository.deleteById(id)
 
-            return@async myPhotoDeleteResult && tempFileDeleteResult
+            return@async myPhotoDeleteResult && tempFileDeleteResult && fileDeleteResult
         }
     }
 

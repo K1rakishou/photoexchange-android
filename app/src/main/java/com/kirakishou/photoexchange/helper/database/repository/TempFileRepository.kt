@@ -70,24 +70,20 @@ open class TempFileRepository(
         return result!!
     }
 
-    //TODO
     private fun createTempFilesDirIfNotExists() {
-//        val fullPathFile = File("$filesDir/$tempFileDirName")
-//        Timber.d(fullPathFile.absolutePath)
-//
-//        if (!fullPathFile.exists()) {
-//            if (!fullPathFile.mkdirs()) {
-//                Timber.e("Could not create directory ${fullPathFile.absolutePath}")
-//            }
-//        }
+        val fullPathFile = File(filesDir)
+        Timber.d(fullPathFile.absolutePath)
+
+        if (!fullPathFile.exists()) {
+            if (!fullPathFile.mkdirs()) {
+                Timber.e("Could not create directory ${fullPathFile.absolutePath}")
+            }
+        }
     }
 
-    //TODO
     private fun createFile(): File { filesDir
-//        val fullPathFile = File("$filesDir/$tempFileDirName")
-//        return File.createTempFile("file_", ".tmp", fullPathFile)
-
-        return File.createTempFile("file_", ".tmp")
+        val fullPathFile = File(filesDir)
+        return File.createTempFile("file_", ".tmp", fullPathFile)
     }
 
     private fun deleteFileIfExists(file: File) {

@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
+import android.support.v4.app.ActivityCompat
 import android.view.View
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
@@ -21,6 +22,7 @@ import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.TakePhotoActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.dialog.AppCannotWorkWithoutCameraPermissionDialog
 import com.kirakishou.photoexchange.ui.dialog.CameraIsNotAvailableDialog
+import com.kirakishou.photoexchange.ui.dialog.CameraRationaleDialog
 import io.fotoapparat.view.CameraView
 import io.reactivex.Single
 import kotlinx.coroutines.experimental.async
@@ -62,7 +64,8 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
     }
 
     private fun checkPermissions() {
-        val requestedPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION)
+        //TODO: check shouldShowRequestPermissionRationale in another activity
+        val requestedPermissions = arrayOf(Manifest.permission.CAMERA)
         permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
             val index = permissions.indexOf(Manifest.permission.CAMERA)
             if (index == -1) {
@@ -70,8 +73,13 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
             }
 
             if (grantResults[index] == PackageManager.PERMISSION_DENIED) {
-                Timber.tag(tag).d("getPermissions() Could not obtain camera permission")
-                showAppCannotWorkWithoutCameraPermissionDialog()
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
+                    showCameraRationaleDialog()
+                } else {
+                    Timber.tag(tag).d("getPermissions() Could not obtain camera permission")
+                    showAppCannotWorkWithoutCameraPermissionDialog()
+                }
+
                 return@askForPermission
             }
 
@@ -96,7 +104,10 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
 
     override fun onResume() {
         super.onResume()
-        cameraProvider.startCamera()
+
+        if (!cameraProvider.startCamera()) {
+            showCameraIsNotAvailableDialog()
+        }
     }
 
     override fun onPause() {
@@ -110,13 +121,9 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
         })
     }
 
-//    private fun showCameraRationaleDialog(token: PermissionToken) {
-//        CameraRationaleDialog().show(this, {
-//            token.continuePermissionRequest()
-//        }, {
-//            token.cancelPermissionRequest()
-//        })
-//    }
+    private fun showCameraRationaleDialog() {
+        CameraRationaleDialog().show(this)
+    }
 
     private fun showCameraIsNotAvailableDialog() {
         CameraIsNotAvailableDialog().show(this, {
@@ -127,6 +134,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
     override fun takePhoto(file: File): Single<Boolean> = cameraProvider.takePhoto(file)
 
     override fun onPhotoTaken(myPhoto: MyPhoto) {
+        runActivityWithArgs(ViewTakenPhotoActivity::class.java, myPhoto.toBundle(),true)
     }
 
     override fun showTakePhotoButton() {

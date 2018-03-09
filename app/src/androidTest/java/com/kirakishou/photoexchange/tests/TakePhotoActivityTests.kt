@@ -12,33 +12,30 @@ import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.state.PhotoState
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
-import com.nhaarman.mockito_kotlin.any
-import com.nhaarman.mockito_kotlin.argumentCaptor
-import com.nhaarman.mockito_kotlin.verify
-import com.nhaarman.mockito_kotlin.whenever
+import com.nhaarman.mockito_kotlin.*
 import io.reactivex.Single
 import kotlinx.coroutines.experimental.runBlocking
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito
+import java.io.File
 
 /**
  * Created by kirakishou on 3/8/2018.
  */
 
 @RunWith(AndroidJUnit4::class)
-class TakePhotoActivityTests {
+class TakePhotoActivityTests : AbstractTest() {
 
     lateinit var mockedView: TakePhotoActivityView
     lateinit var appContext: Context
+    lateinit var targetContext: Context
     lateinit var database: MyDatabase
     lateinit var coroutinesPool: MockCoroutineThreadPoolProviderModule.TestCoroutineThreadPoolProvider
     lateinit var tempFilesDir: String
-
-    lateinit var realTempFilesRepository: TempFileRepository
-    lateinit var mockTempFileRepository: TempFileRepository
 
     lateinit var realMyPhotosRepository: MyPhotoRepository
     lateinit var mockMyPhotoRepository: MyPhotoRepository
@@ -46,30 +43,23 @@ class TakePhotoActivityTests {
     @Before
     fun setup() {
         appContext = InstrumentationRegistry.getContext()
-        mockedView = Mockito.mock(TakePhotoActivityView::class.java)
+        targetContext = InstrumentationRegistry.getTargetContext()
 
+        mockedView = Mockito.mock(TakePhotoActivityView::class.java)
         database = Room.inMemoryDatabaseBuilder(appContext, MyDatabase::class.java).build()
         coroutinesPool = MockCoroutineThreadPoolProviderModule.TestCoroutineThreadPoolProvider()
-        tempFilesDir = appContext.getDir("temp_files", Context.MODE_PRIVATE).absolutePath
+        tempFilesDir = targetContext.getDir("test_temp_files", Context.MODE_PRIVATE).absolutePath
 
-        realTempFilesRepository = TempFileRepository(tempFilesDir, database, coroutinesPool)
+        val realTempFilesRepository = TempFileRepository(tempFilesDir, database, coroutinesPool)
         realMyPhotosRepository = MyPhotoRepository(database, realTempFilesRepository, coroutinesPool)
 
-        mockTempFileRepository = Mockito.mock(TempFileRepository::class.java)
         mockMyPhotoRepository = Mockito.mock(MyPhotoRepository::class.java)
     }
 
-//    @Test
-//    fun testCreateFile() {
-//        val tempFilesDir = appContext.getDir("temp_files", Context.MODE_PRIVATE)
-//
-//        if (!tempFilesDir.exists()) {
-//            assertEquals(true, tempFilesDir.mkdirs())
-//        }
-//
-//        val file = File.createTempFile("temp", ".file")
-//        assertEquals(true, file.exists())
-//    }
+    @After
+    fun tearDown() {
+        deleteDir(File(tempFilesDir))
+    }
 
     @Test
     fun should_take_photo_and_store_photo_info_in_the_database() {
@@ -82,14 +72,20 @@ class TakePhotoActivityTests {
             viewModel.takePhoto()
 
             verify(mockedView).hideTakePhotoButton()
-            verify(mockedView).showTakePhotoButton()
+            verify(mockedView, never()).showTakePhotoButton()
 
             argumentCaptor<MyPhoto>().apply {
                 verify(mockedView).onPhotoTaken(capture())
 
+                val myPhoto = realMyPhotosRepository.findAll().await().first()
+
                 assertEquals(1L, firstValue.id)
                 assertEquals(PhotoState.PHOTO_TAKEN, firstValue.photoState)
                 assertEquals(true, firstValue.photoTempFile!!.absolutePath.isNotEmpty())
+
+                assertEquals(firstValue.id, myPhoto.id)
+                assertEquals(firstValue.photoState, myPhoto.photoState)
+                assertEquals(firstValue.photoTempFile!!.absolutePath, myPhoto.photoTempFile!!.absolutePath)
             }
         }
     }

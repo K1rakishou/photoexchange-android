@@ -20,7 +20,7 @@ open class TakePhotoActivityModule(
     @PerActivity
     @Provides
     open fun provideViewModelFactory(coroutinesPool: CoroutineThreadPoolProvider,
-                                myPhotoRepository: MyPhotoRepository): TakePhotoActivityViewModelFactory {
+                                     myPhotoRepository: MyPhotoRepository): TakePhotoActivityViewModelFactory {
         return TakePhotoActivityViewModelFactory(view, myPhotoRepository, coroutinesPool)
     }
 }

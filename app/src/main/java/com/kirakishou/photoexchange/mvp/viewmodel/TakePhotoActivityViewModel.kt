@@ -38,6 +38,7 @@ class TakePhotoActivityViewModel(
                 if (myPhoto == null) {
                     myPhotoRepository.delete(myPhoto)
                     getView()?.showToast("Could not take photo (database error)")
+                    getView()?.showTakePhotoButton()
                     return@async
                 }
 
@@ -45,22 +46,22 @@ class TakePhotoActivityViewModel(
                 if (!takePhotoStatus) {
                     myPhotoRepository.delete(myPhoto)
                     getView()?.showToast("Could not take photo (database error)")
+                    getView()?.showTakePhotoButton()
                     return@async
                 }
 
                 getView()?.onPhotoTaken(myPhoto)
             } catch (error: Throwable) {
-                Timber.e(error)
+                Timber.tag(tag).e(error)
                 myPhotoRepository.delete(myPhoto)
                 getView()?.showToast("Could not take photo (database error)")
-            } finally {
                 getView()?.showTakePhotoButton()
             }
         }
     }
 
     override fun onCleared() {
-        Timber.d("TakePhotoActivityViewModel.onCleared()")
+        Timber.tag(tag).d("TakePhotoActivityViewModel.onCleared()")
 
         super.onCleared()
     }
