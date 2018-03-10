@@ -12,7 +12,11 @@ data class MyPhoto(
     val id: Long,
     val photoState: PhotoState,
     val photoTempFile: File? = null
+
 ) {
+
+    fun isEmpty(): Boolean = this.id == 0L
+
     fun getFile(): File {
         return photoTempFile!!
     }
@@ -27,6 +31,11 @@ data class MyPhoto(
     }
 
     companion object {
+
+        fun empty(): MyPhoto {
+            return MyPhoto(0L, PhotoState.PHOTO_TAKEN, null)
+        }
+
         fun fromBundle(bundle: Bundle): MyPhoto {
             val id = bundle.getLong("id", -1L)
             if (id == -1L) {

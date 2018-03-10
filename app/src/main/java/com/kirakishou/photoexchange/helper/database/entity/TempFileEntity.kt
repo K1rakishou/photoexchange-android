@@ -24,17 +24,26 @@ class TempFileEntity(
     var id: Long? = null,
 
     @ColumnInfo(name = PHOTO_OWNER_ID_COLUMN, index = true)
-    var photoOwnerId: Long? = null,
+    var photoOwnerId: Long,
 
-    @ColumnInfo(name = FILE_PATH_COLUMN, index = true)
-    val filePath: String
+    @ColumnInfo(name = FILE_PATH_COLUMN)
+    var filePath: String
+
 ) {
+
+    constructor() : this(null, 0L, "")
+
+    fun isEmpty(): Boolean = this.id == null
 
     fun asFile(): File {
         return File(filePath)
     }
 
     companion object {
+
+        fun empty(): TempFileEntity {
+            return TempFileEntity()
+        }
 
         fun create(photoOwnerId: Long, tempFilePath: String): TempFileEntity {
             return TempFileEntity(null, photoOwnerId, tempFilePath)

@@ -9,12 +9,17 @@ import com.kirakishou.photoexchange.mvp.model.MyPhoto
  */
 object MyPhotoMapper {
 
-    fun toMyPhoto(myPhotoEntityId: Long, myPhotoEntity: MyPhotoEntity?, tempFileEntity: TempFileEntity?): MyPhoto? {
-        if (myPhotoEntity == null) {
-            return null
+    fun toMyPhoto(myPhotoEntityId: Long, myPhotoEntity: MyPhotoEntity, tempFileEntity: TempFileEntity): MyPhoto {
+        if (myPhotoEntityId <= 0L) {
+            return MyPhoto.empty()
         }
 
-        val file = tempFileEntity?.asFile()
-        return MyPhoto(myPhotoEntityId, myPhotoEntity.photoState!!, file)
+        val file = if (tempFileEntity.isEmpty()) {
+            null
+        } else {
+            tempFileEntity.asFile()
+        }
+
+        return MyPhoto(myPhotoEntityId, myPhotoEntity.photoState, file)
     }
 }

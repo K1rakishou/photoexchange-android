@@ -21,9 +21,21 @@ class MyPhotoEntity(
 
     @ColumnInfo(name = PHOTO_STATE_COLUMN)
     @field:TypeConverters(PhotoStateConverter::class)
-    var photoState: PhotoState? = null
+    var photoState: PhotoState
+
 ) {
+
+    constructor() : this(null, PhotoState.PHOTO_TAKEN)
+
+    fun isEmpty(): Boolean {
+        return id == null
+    }
+
     companion object {
+
+        fun empty(): MyPhotoEntity {
+            return MyPhotoEntity()
+        }
 
         fun create(): MyPhotoEntity {
             return MyPhotoEntity(null, PhotoState.PHOTO_TAKEN)

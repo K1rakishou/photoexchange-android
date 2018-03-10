@@ -22,36 +22,33 @@ open class TempFileRepository(
         createTempFilesDirIfNotExists()
     }
 
-    suspend fun createTempFile(photoOwnerId: Long): TempFileEntity? {
-        return async(coroutinesPool.provideDb()) {
-            return@async database.transactional {
-                val file = createFile()
-                if (!file.exists()) {
-                    return@transactional null
-                }
+    suspend fun createTempFile(photoOwnerId: Long): TempFileEntity {
+        val file = createFile()
+        if (!file.exists()) {
+            return TempFileEntity.empty()
+        }
 
-                try {
-                    val tempFileEntity = TempFileEntity.create(photoOwnerId, file.absolutePath)
-                    val id = tempFileDao.insert(tempFileEntity)
+        try {
+            val tempFileEntity = TempFileEntity.create(photoOwnerId, file.absolutePath)
+            val id = tempFileDao.insert(tempFileEntity)
 
-                    if (id <= 0L) {
-                        deleteFileIfExists(file)
-                        return@transactional null
-                    }
-
-                    return@transactional tempFileEntity
-                        .also { it.photoOwnerId = id }
-                } catch (error: Throwable) {
-                    Timber.e(error)
-                    deleteFileIfExists(file)
-                    return@transactional null
-                }
+            if (id <= 0L) {
+                deleteFileIfExists(file)
+                return TempFileEntity.empty()
             }
-        }.await()
+
+            return tempFileEntity
+                .also { it.id = id }
+                .also { it.photoOwnerId = photoOwnerId }
+        } catch (error: Throwable) {
+            Timber.e(error)
+            deleteFileIfExists(file)
+            return TempFileEntity.empty()
+        }
     }
 
-    suspend fun findById(id: Long): TempFileEntity? {
-        return tempFileDao.findById(id)
+    suspend fun findById(id: Long): TempFileEntity {
+        return tempFileDao.findById(id) ?: TempFileEntity.empty()
     }
 
     suspend fun findAll(): List<TempFileEntity> {
@@ -59,15 +56,11 @@ open class TempFileRepository(
     }
 
     suspend fun deleteById(id: Long): Boolean {
-        val result = database.transactional {
-            val tempFileEntity = tempFileDao.findById(id)
-                ?: return@transactional true
+        val tempFileEntity = tempFileDao.findById(id)
+            ?: return true
 
-            deleteFileIfExists(File(tempFileEntity.filePath))
-            return@transactional tempFileDao.deleteById(id) > 0
-        }
-
-        return result!!
+        deleteFileIfExists(File(tempFileEntity.filePath))
+        return tempFileDao.deleteById(id) > 0
     }
 
     private fun createTempFilesDirIfNotExists() {

@@ -35,7 +35,12 @@ class TakePhotoActivityViewModel(
                 getView()?.hideTakePhotoButton()
 
                 myPhoto = myPhotoRepository.insert(MyPhotoEntity.create()).await()
-                if (myPhoto == null) {
+
+                println()
+                println()
+                println()
+
+                if (myPhoto.isEmpty()) {
                     myPhotoRepository.delete(myPhoto)
                     getView()?.showToast("Could not take photo (database error)")
                     getView()?.showTakePhotoButton()

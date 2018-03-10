@@ -19,13 +19,21 @@ abstract class MyDatabase : RoomDatabase() {
     abstract fun myPhotoDao(): MyPhotoDao
     abstract fun tempFileDao(): TempFileDao
 
-    fun <T> transactional(func: () -> T?): T? {
+    suspend fun <T> transactional(func: suspend () -> TransactionResult<T>): T {
         this.beginTransaction()
 
         try {
-            val result = func()
-            this.setTransactionSuccessful()
-            return result
+            val transactionResult = func()
+            return when (transactionResult) {
+                is TransactionResult.Fail -> {
+                    transactionResult.result
+                }
+
+                is TransactionResult.Success -> {
+                    this.setTransactionSuccessful()
+                    transactionResult.result
+                }
+            }
         } finally {
             this.endTransaction()
         }

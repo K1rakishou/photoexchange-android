@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.tests
+package com.kirakishou.photoexchange.tests.viewmodel
 
 import android.arch.persistence.room.Room
 import android.content.Context
@@ -12,6 +12,7 @@ import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.state.PhotoState
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
+import com.kirakishou.photoexchange.tests.AbstractTest
 import com.nhaarman.mockito_kotlin.*
 import io.reactivex.Single
 import kotlinx.coroutines.experimental.runBlocking
@@ -28,7 +29,7 @@ import java.io.File
  */
 
 @RunWith(AndroidJUnit4::class)
-class TakePhotoActivityTests : AbstractTest() {
+class TakePhotoActivityViewModelTests : AbstractTest() {
 
     lateinit var mockedView: TakePhotoActivityView
     lateinit var appContext: Context
@@ -58,6 +59,7 @@ class TakePhotoActivityTests : AbstractTest() {
 
     @After
     fun tearDown() {
+        database.close()
         deleteDir(File(tempFilesDir))
     }
 

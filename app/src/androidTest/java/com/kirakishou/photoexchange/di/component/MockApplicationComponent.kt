@@ -6,7 +6,7 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThread
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.MyPhotoRepository
 import com.kirakishou.photoexchange.helper.database.repository.TempFileRepository
-import com.kirakishou.photoexchange.tests.TakePhotoActivityTests
+import com.kirakishou.photoexchange.tests.viewmodel.TakePhotoActivityViewModelTests
 import dagger.Component
 import javax.inject.Singleton
 
@@ -20,7 +20,7 @@ import javax.inject.Singleton
     MockCoroutineThreadPoolProviderModule::class,
     InMemoryDatabaseModule::class])
 interface MockApplicationComponent : ApplicationComponent {
-    fun inject(test: TakePhotoActivityTests)
+    fun inject(test: TakePhotoActivityViewModelTests)
 
     fun exposeApplication(): Application
     fun exposeSchedulerProvider(): SchedulerProvider
