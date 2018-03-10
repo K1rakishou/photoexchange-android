@@ -5,6 +5,7 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThread
 import com.kirakishou.photoexchange.helper.database.entity.MyPhotoEntity
 import com.kirakishou.photoexchange.helper.database.repository.MyPhotoRepository
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
+import com.kirakishou.photoexchange.mvp.model.state.PhotoState
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.rx2.await
@@ -33,13 +34,9 @@ class TakePhotoActivityViewModel(
 
             try {
                 getView()?.hideTakePhotoButton()
+                myPhotoRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN).await()
 
                 myPhoto = myPhotoRepository.insert(MyPhotoEntity.create()).await()
-
-                println()
-                println()
-                println()
-
                 if (myPhoto.isEmpty()) {
                     myPhotoRepository.delete(myPhoto)
                     getView()?.showToast("Could not take photo (database error)")

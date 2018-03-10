@@ -38,7 +38,11 @@ class MyPhotoEntity(
         }
 
         fun create(): MyPhotoEntity {
-            return MyPhotoEntity(null, PhotoState.PHOTO_TAKEN)
+            return create(PhotoState.PHOTO_TAKEN)
+        }
+
+        fun create(photoState: PhotoState): MyPhotoEntity {
+            return MyPhotoEntity(null, photoState)
         }
 
         const val ID_COLUMN = "ID"

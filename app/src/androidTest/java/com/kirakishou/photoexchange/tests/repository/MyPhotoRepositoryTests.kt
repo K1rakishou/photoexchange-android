@@ -9,6 +9,7 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.MyPhotoEntity
 import com.kirakishou.photoexchange.helper.database.repository.MyPhotoRepository
 import com.kirakishou.photoexchange.helper.database.repository.TempFileRepository
+import com.kirakishou.photoexchange.mvp.model.state.PhotoState
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -60,6 +61,41 @@ class MyPhotoRepositoryTests {
             assertEquals(true, myPhotosRepository.delete(myPhoto).await())
             assertEquals(true, myPhotosRepository.delete(myPhoto2).await())
             assertEquals(true, myPhotosRepository.findAll().await().isEmpty())
+        }
+    }
+
+    @Test
+    fun should_delete_all_with_photo_state() {
+        runBlocking {
+            myPhotosRepository.init()
+
+            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_TAKEN)).await()
+            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_UPLOADING)).await()
+            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_UPLOADING)).await()
+            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_UPLOADED)).await()
+            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_UPLOADED)).await()
+            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_UPLOADED)).await()
+
+            myPhotosRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN).await()
+            myPhotosRepository.findAll().await().let { allPhotos ->
+                assertEquals(5, allPhotos.size)
+
+                val noPhotoTakenPhotos = allPhotos.none { it.photoState == PhotoState.PHOTO_TAKEN }
+                assertEquals(true, noPhotoTakenPhotos)
+            }
+
+            myPhotosRepository.deleteAllWithState(PhotoState.PHOTO_UPLOADING).await()
+            myPhotosRepository.findAll().await().let { allPhotos ->
+                assertEquals(3, allPhotos.size)
+
+                val noPhotoTakenPhotos = allPhotos.none { it.photoState == PhotoState.PHOTO_UPLOADING }
+                assertEquals(true, noPhotoTakenPhotos)
+            }
+
+            myPhotosRepository.deleteAllWithState(PhotoState.PHOTO_UPLOADED).await()
+            myPhotosRepository.findAll().await().let { allPhotos ->
+                assertEquals(0, allPhotos.size)
+            }
         }
     }
 }

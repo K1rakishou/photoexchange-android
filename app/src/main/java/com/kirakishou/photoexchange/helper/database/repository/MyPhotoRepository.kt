@@ -91,22 +91,21 @@ open class MyPhotoRepository(
         }
     }
 
-    suspend fun deleteAllWithState(photoState: PhotoState): Deferred<Boolean> {
-//        return async(coroutinesPool.provideDb()) {
-//            return@async database.transactional {
-//                val myPhotosList = myPhotoDao.findAllWithState(photoState)
-//
-//                for (myPhoto in myPhotosList) {
-//                    if (!myPhotoDao.deleteById(myPhoto.id)) {
-//
-//                    }
-//                }
-//
-//
-//            }
-//        }
+    //TODO: make faster by deleting entities in batches
+    suspend fun deleteAllWithState(photoState: PhotoState): Deferred<Unit> {
+        return async(coroutinesPool.provideDb()) {
+            return@async database.transactional {
+                val myPhotosList = myPhotoDao.findAllWithState(photoState)
 
-        TODO()
+                for (myPhoto in myPhotosList) {
+                    if (!deleteById(myPhoto.id!!).await()) {
+                        return@transactional TransactionResult.Fail(Unit)
+                    }
+                }
+
+                return@transactional TransactionResult.Success(Unit)
+            }
+        }
     }
 
     suspend fun findAll(): Deferred<List<MyPhoto>> {
