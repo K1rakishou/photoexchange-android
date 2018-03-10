@@ -2,12 +2,15 @@ package com.kirakishou.photoexchange.ui.dialog
 
 import android.content.Context
 import com.afollestad.materialdialogs.MaterialDialog
+import java.lang.ref.WeakReference
 
 /**
  * Created by kirakishou on 1/26/2018.
  */
 class CameraRationaleDialog : AbstractDialog() {
-    override fun show(context: Context, onPositiveCallback: (() -> Unit)?, onNegativeCallback: (() -> Unit)?) {
+    override fun show(context: Context,
+                      onPositiveCallback: WeakReference<() -> Unit>?,
+                      onNegativeCallback: WeakReference<() -> Unit>?) {
         checkNotNull(onPositiveCallback)
         checkNotNull(onNegativeCallback)
 
@@ -18,10 +21,10 @@ class CameraRationaleDialog : AbstractDialog() {
                 .positiveText("Allow")
                 .negativeText("Close app")
                 .onPositive { _, _ ->
-                    onPositiveCallback!!.invoke()
+                    onPositiveCallback?.get()?.invoke()
                 }
                 .onNegative { _, _ ->
-                    onNegativeCallback!!.invoke()
+                    onNegativeCallback?.get()?.invoke()
                 }
                 .show()
     }

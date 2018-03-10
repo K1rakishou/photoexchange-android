@@ -15,6 +15,7 @@ import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.module.TakePhotoActivityModule
 import com.kirakishou.photoexchange.helper.CameraProvider
 import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
+import com.kirakishou.photoexchange.helper.extension.asWeak
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
@@ -118,7 +119,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
     private fun showAppCannotWorkWithoutCameraPermissionDialog() {
         AppCannotWorkWithoutCameraPermissionDialog().show(this, {
             finish()
-        })
+        }.asWeak())
     }
 
     private fun showCameraRationaleDialog() {
@@ -128,7 +129,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
     private fun showCameraIsNotAvailableDialog() {
         CameraIsNotAvailableDialog().show(this, {
             finish()
-        })
+        }.asWeak())
     }
 
     override fun takePhoto(file: File): Single<Boolean> = cameraProvider.takePhoto(file)

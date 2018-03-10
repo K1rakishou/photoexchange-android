@@ -41,16 +41,22 @@ open class CameraProvider(
     }
 
     fun startCamera(): Boolean {
-        if (!isStarted() && isAvailable()) {
-            camera?.apply {
+        if (!isAvailable()) {
+            return false
+        }
+
+        if (!isStarted()) {
+            if (camera == null) {
+                return false
+            }
+
+            camera!!.apply {
                 this.start()
                 isStarted = true
-
-                return true
             }
         }
 
-        return false
+        return true
     }
 
     fun stopCamera() {
