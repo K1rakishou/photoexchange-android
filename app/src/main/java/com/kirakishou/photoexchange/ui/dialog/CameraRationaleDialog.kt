@@ -9,8 +9,8 @@ import java.lang.ref.WeakReference
  */
 class CameraRationaleDialog : AbstractDialog() {
     override fun show(context: Context,
-                      onPositiveCallback: WeakReference<() -> Unit>?,
-                      onNegativeCallback: WeakReference<() -> Unit>?) {
+                      onPositiveCallback: (() -> Unit)?,
+                      onNegativeCallback: (() -> Unit)?) {
         checkNotNull(onPositiveCallback)
         checkNotNull(onNegativeCallback)
 
@@ -21,10 +21,10 @@ class CameraRationaleDialog : AbstractDialog() {
                 .positiveText("Allow")
                 .negativeText("Close app")
                 .onPositive { _, _ ->
-                    onPositiveCallback?.get()?.invoke()
+                    onPositiveCallback?.invoke()
                 }
                 .onNegative { _, _ ->
-                    onNegativeCallback?.get()?.invoke()
+                    onNegativeCallback?.invoke()
                 }
                 .show()
     }

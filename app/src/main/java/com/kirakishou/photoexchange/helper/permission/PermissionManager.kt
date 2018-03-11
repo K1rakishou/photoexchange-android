@@ -21,15 +21,14 @@ open class PermissionManager {
     fun askForPermission(activity: Activity, permissions: Array<String>,
                          callback: (permissions: Array<out String>, grantResults: IntArray) -> Unit) {
 
-        val weakCallback = WeakReference(callback)
         val allGranted = permissions.all { permission -> checkPermission(activity, permission) }
         if (allGranted) {
-            weakCallback.get()?.invoke(permissions, intArrayOf(PackageManager.PERMISSION_GRANTED, PackageManager.PERMISSION_GRANTED))
+            callback.invoke(permissions, intArrayOf(PackageManager.PERMISSION_GRANTED, PackageManager.PERMISSION_GRANTED))
             return
         }
 
         val requestCode = requestCodeSeed.getAndIncrement()
-        val permissionRequest = PermissionRequest(requestCode, permissions, weakCallback)
+        val permissionRequest = PermissionRequest(requestCode, permissions, callback)
         pendingPermissions.add(permissionRequest)
 
         ActivityCompat.requestPermissions(activity, permissions, requestCode)
@@ -39,6 +38,6 @@ open class PermissionManager {
         val permission = pendingPermissions.first { permission -> permission.requestCode == requestCode }
 
         pendingPermissions.removeAll { it.requestCode == requestCode }
-        permission.callback.get()?.invoke(permissions, grantResults)
+        permission.callback.invoke(permissions, grantResults)
     }
 }

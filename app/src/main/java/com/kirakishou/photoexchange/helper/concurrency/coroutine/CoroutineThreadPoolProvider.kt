@@ -9,5 +9,5 @@ interface CoroutineThreadPoolProvider {
     fun provideNetwork(): CoroutineDispatcher
     fun provideDb(): CoroutineDispatcher
     fun provideCommon(): CoroutineDispatcher
-    fun provideMain(): CoroutineDispatcher
+    fun provideUi(): CoroutineDispatcher
 }

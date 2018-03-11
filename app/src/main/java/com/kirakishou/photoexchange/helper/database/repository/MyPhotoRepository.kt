@@ -4,7 +4,6 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThread
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.TransactionResult
 import com.kirakishou.photoexchange.helper.database.entity.MyPhotoEntity
-import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
 import com.kirakishou.photoexchange.helper.database.mapper.MyPhotoMapper
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.state.PhotoState
@@ -124,6 +123,16 @@ open class MyPhotoRepository(
             }
 
             return@async allMyPhotos
+        }
+    }
+
+    fun updatePhotoState(takenPhoto: MyPhoto, newPhotoState: PhotoState): Deferred<MyPhoto> {
+        return async(coroutinesPool.provideDb()) {
+            if (myPhotoDao.updateSetNewPhotoState(takenPhoto.id, newPhotoState) <= 0) {
+                return@async MyPhoto.empty()
+            }
+
+            return@async MyPhoto(takenPhoto.id, newPhotoState, takenPhoto.photoTempFile)
         }
     }
 }

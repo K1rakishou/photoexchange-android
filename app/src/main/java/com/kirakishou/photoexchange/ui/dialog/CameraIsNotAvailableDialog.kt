@@ -9,8 +9,8 @@ import java.lang.ref.WeakReference
  */
 class CameraIsNotAvailableDialog : AbstractDialog() {
     override fun show(context: Context,
-                      onPositiveCallback: WeakReference<() -> Unit>?,
-                      onNegativeCallback: WeakReference<() -> Unit>?) {
+                      onPositiveCallback: (() -> Unit)?,
+                      onNegativeCallback: (() -> Unit)?) {
         checkNotNull(onPositiveCallback)
 
         //TODO: change this to homemade dialog and get rid of the MaterialDialogs dependency
@@ -19,7 +19,7 @@ class CameraIsNotAvailableDialog : AbstractDialog() {
             .content("It looks like your device does not support camera. This app cannot work without a camera.")
             .positiveText("OK")
             .onPositive { _, _ ->
-                onPositiveCallback?.get()?.invoke()
+                onPositiveCallback?.invoke()
             }
             .show()
     }

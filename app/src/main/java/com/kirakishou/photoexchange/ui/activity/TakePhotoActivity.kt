@@ -98,6 +98,13 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
 
     private fun initCamera() {
         cameraProvider.provideCamera(cameraView)
+
+        if (!cameraProvider.isAvailable()) {
+            showCameraIsNotAvailableDialog()
+            return
+        }
+
+        cameraProvider.startCamera()
     }
 
     override fun onActivityDestroy() {
@@ -105,10 +112,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
 
     override fun onResume() {
         super.onResume()
-
-        if (!cameraProvider.startCamera()) {
-            showCameraIsNotAvailableDialog()
-        }
+        cameraProvider.startCamera()
     }
 
     override fun onPause() {
@@ -117,35 +121,39 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
     }
 
     private fun showAppCannotWorkWithoutCameraPermissionDialog() {
-        AppCannotWorkWithoutCameraPermissionDialog().show(this, {
+        AppCannotWorkWithoutCameraPermissionDialog().show(this) {
             finish()
-        }.asWeak())
+        }
     }
 
     private fun showCameraRationaleDialog() {
-        CameraRationaleDialog().show(this)
+        CameraRationaleDialog().show(this, {
+            checkPermissions() //???
+        }, {
+            finish()
+        })
     }
 
     private fun showCameraIsNotAvailableDialog() {
-        CameraIsNotAvailableDialog().show(this, {
+        CameraIsNotAvailableDialog().show(this) {
             finish()
-        }.asWeak())
+        }
     }
 
     override fun takePhoto(file: File): Single<Boolean> = cameraProvider.takePhoto(file)
 
     override fun onPhotoTaken(myPhoto: MyPhoto) {
-        runActivityWithArgs(ViewTakenPhotoActivity::class.java, myPhoto.toBundle(),true)
+        runActivityWithArgs(ViewTakenPhotoActivity::class.java, myPhoto.toBundle(),false)
     }
 
     override fun showTakePhotoButton() {
-        async(coroutinesPool.provideMain()) {
+        async(coroutinesPool.provideUi()) {
             takePhotoButton.visibility = View.VISIBLE
         }
     }
 
     override fun hideTakePhotoButton() {
-        async(coroutinesPool.provideMain()) {
+        async(coroutinesPool.provideUi()) {
             takePhotoButton.visibility = View.GONE
         }
     }

@@ -8,6 +8,6 @@ import java.lang.ref.WeakReference
  */
 abstract class AbstractDialog {
     abstract fun show(context: Context,
-                      onPositiveCallback: WeakReference<() -> Unit>? = null,
-                      onNegativeCallback: WeakReference<() -> Unit>? = null)
+                      onPositiveCallback: (() -> Unit)? = null,
+                      onNegativeCallback: (() -> Unit)? = null)
 }

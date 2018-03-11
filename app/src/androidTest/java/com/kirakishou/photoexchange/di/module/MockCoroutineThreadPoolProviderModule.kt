@@ -25,6 +25,6 @@ class MockCoroutineThreadPoolProviderModule {
         override fun provideCommon(): CoroutineDispatcher = Unconfined
         override fun provideDb(): CoroutineDispatcher = Unconfined
         override fun provideNetwork(): CoroutineDispatcher = Unconfined
-        override fun provideMain(): CoroutineDispatcher = Unconfined
+        override fun provideUi(): CoroutineDispatcher = Unconfined
     }
 }

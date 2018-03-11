@@ -9,8 +9,8 @@ import java.lang.ref.WeakReference
  */
 class DeletePhotoConfirmationDialog : AbstractDialog() {
     override fun show(context: Context,
-                      onPositiveCallback: WeakReference<() -> Unit>?,
-                      onNegativeCallback: WeakReference<() -> Unit>?) {
+                      onPositiveCallback: (() -> Unit)?,
+                      onNegativeCallback: (() -> Unit)?) {
         checkNotNull(onPositiveCallback)
 
         //TODO: change this to homemade dialog and get rid of the MaterialDialogs dependency
@@ -20,7 +20,7 @@ class DeletePhotoConfirmationDialog : AbstractDialog() {
                 .positiveText("Delete")
                 .negativeText("Cancel")
                 .onPositive { _, _ ->
-                    onPositiveCallback?.get()?.invoke()
+                    onPositiveCallback?.invoke()
                 }
                 .onNegative { _, _ ->
                 }

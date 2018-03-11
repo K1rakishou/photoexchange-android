@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
+import android.widget.Toast
 import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
 import com.kirakishou.photoexchange.helper.database.entity.MyPhotoEntity
@@ -39,7 +40,7 @@ class TakePhotoActivityViewModel(
                 myPhoto = myPhotoRepository.insert(MyPhotoEntity.create()).await()
                 if (myPhoto.isEmpty()) {
                     myPhotoRepository.delete(myPhoto)
-                    getView()?.showToast("Could not take photo (database error)")
+                    getView()?.showToast("Could not take photo (database error)", Toast.LENGTH_LONG)
                     getView()?.showTakePhotoButton()
                     return@async
                 }
@@ -47,7 +48,7 @@ class TakePhotoActivityViewModel(
                 val takePhotoStatus = getView()?.takePhoto(myPhoto.getFile())?.await() ?: false
                 if (!takePhotoStatus) {
                     myPhotoRepository.delete(myPhoto)
-                    getView()?.showToast("Could not take photo (database error)")
+                    getView()?.showToast("Could not take photo (database error)", Toast.LENGTH_LONG)
                     getView()?.showTakePhotoButton()
                     return@async
                 }
@@ -56,7 +57,7 @@ class TakePhotoActivityViewModel(
             } catch (error: Throwable) {
                 Timber.tag(tag).e(error)
                 myPhotoRepository.delete(myPhoto)
-                getView()?.showToast("Could not take photo (database error)")
+                getView()?.showToast("Could not take photo (database error)", Toast.LENGTH_LONG)
                 getView()?.showTakePhotoButton()
             }
         }

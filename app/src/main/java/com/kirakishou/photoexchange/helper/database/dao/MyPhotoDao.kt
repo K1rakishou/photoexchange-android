@@ -30,6 +30,12 @@ abstract class MyPhotoDao {
     @Query("SELECT * FROM ${MyPhotoEntity.TABLE_NAME}")
     abstract fun findAll(): List<MyPhotoEntity>
 
+    @Query("UPDATE ${MyPhotoEntity.TABLE_NAME} " +
+        "SET ${MyPhotoEntity.PHOTO_STATE_COLUMN} = :photoState " +
+        "WHERE ${MyPhotoEntity.ID_COLUMN} = :id")
+    @TypeConverters(PhotoStateConverter::class)
+    abstract fun updateSetNewPhotoState(id: Long, photoState: PhotoState): Int
+
     @Query("DELETE FROM ${MyPhotoEntity.TABLE_NAME} " +
         "WHERE ${MyPhotoEntity.ID_COLUMN} = :id")
     abstract fun deleteById(id: Long): Int
