@@ -105,7 +105,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
     }
 
     override fun onActivityDestroy() {
-        getViewModel().tearDown()
+        getViewModel().detach()
     }
 
     override fun onResume() {

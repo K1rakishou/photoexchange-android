@@ -20,4 +20,5 @@ interface ApplicationComponent {
 
     fun plus(takePhotoActivityModule: TakePhotoActivityModule): TakePhotoActivityComponent
     fun plus(viewTakenPhotoActivityModule: ViewTakenPhotoActivityModule): ViewTakenPhotoActivityComponent
+    fun plus(allPhotosActivityModule: AllPhotosActivityModule): AllPhotosActivityComponent
 }

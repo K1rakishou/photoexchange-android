@@ -23,13 +23,13 @@ class TakePhotoActivityViewModel(
 
     private val tag = "[${this::class.java.simpleName}] "
 
-    override fun init() {
+    override fun attach() {
         async(coroutinesPool.BG()) {
             myPhotoRepository.init()
         }
     }
 
-    override fun tearDown() {
+    override fun detach() {
         clearView()
         Timber.tag(tag).d("View cleared")
     }
@@ -73,7 +73,7 @@ class TakePhotoActivityViewModel(
     }
 
     override fun onCleared() {
-        Timber.tag(tag).d("TakePhotoActivityViewModel.onCleared()")
+        Timber.tag(tag).d("onCleared()")
 
         super.onCleared()
     }

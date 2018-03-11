@@ -1,7 +1,6 @@
 package com.kirakishou.photoexchange.base
 
 import android.arch.lifecycle.LifecycleRegistry
-import android.arch.lifecycle.ViewModel
 import android.content.Intent
 import android.os.Bundle
 import android.support.annotation.CallSuper
@@ -67,7 +66,7 @@ abstract class BaseActivity<T: BaseViewModel<*>> : AppCompatActivity() {
                 .doOnError(this::onUnknownError)
                 .subscribe(this::onUnknownError)
 
-        viewModel?.init()
+        viewModel?.attach()
         onActivityCreate(savedInstanceState, intent)
     }
 

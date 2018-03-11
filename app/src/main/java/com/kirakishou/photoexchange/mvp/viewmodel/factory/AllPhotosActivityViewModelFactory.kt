@@ -4,22 +4,22 @@ import android.arch.lifecycle.ViewModel
 import android.arch.lifecycle.ViewModelProvider
 import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
 import com.kirakishou.photoexchange.helper.database.repository.MyPhotoRepository
-import com.kirakishou.photoexchange.mvp.view.ViewTakenPhotoActivityView
-import com.kirakishou.photoexchange.mvp.viewmodel.ViewTakenPhotoActivityViewModel
+import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
+import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import javax.inject.Inject
 
 /**
- * Created by kirakishou on 3/9/2018.
+ * Created by kirakishou on 3/11/2018.
  */
-class ViewTakenPhotoActivityViewModelFactory
+class AllPhotosActivityViewModelFactory
 @Inject constructor(
-    val view: ViewTakenPhotoActivityView,
-    val coroutinePool: CoroutineThreadPoolProvider,
-    val myPhotoRepository: MyPhotoRepository
+    val view: AllPhotosActivityView,
+    val myPhotoRepository: MyPhotoRepository,
+    val coroutinesPool: CoroutineThreadPoolProvider
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
-        return ViewTakenPhotoActivityViewModel(view, coroutinePool, myPhotoRepository) as T
+        return AllPhotosActivityViewModel(view, myPhotoRepository, coroutinesPool) as T
     }
 }

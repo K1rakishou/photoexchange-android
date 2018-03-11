@@ -64,7 +64,7 @@ class TakePhotoActivityViewModelTests : AbstractTest() {
 
             whenever(mockedView.takePhoto(any())).thenReturn(Single.just(true))
 
-            viewModel.init()
+            viewModel.attach()
             viewModel.takePhoto()
 
             verify(mockedView).hideControls()
@@ -97,7 +97,7 @@ class TakePhotoActivityViewModelTests : AbstractTest() {
 //
 //            val viewModel = TakePhotoActivityViewModel(mockedView, coroutinesPool, spyMyPhotosRepository)
 //
-//            viewModel.init()
+//            viewModel.attach()
 //            viewModel.takePhoto()
 //
 //            verify(mockedView).showToast(anyString(), anyInt())

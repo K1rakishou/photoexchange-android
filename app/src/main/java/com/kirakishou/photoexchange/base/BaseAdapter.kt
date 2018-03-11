@@ -40,7 +40,7 @@ abstract class BaseAdapter<T>(
 
     protected fun checkInited() {
         if (!isInited) {
-            throw IllegalStateException("Must call BaseAdapter.init() first!")
+            throw IllegalStateException("Must call BaseAdapter.attach() first!")
         }
     }
 

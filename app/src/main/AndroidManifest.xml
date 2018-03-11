@@ -48,7 +48,8 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyAGVBH_OihoUtvM-VCqQKOvcp5n_3kUs1U" />
 
-        <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity"></activity>
+        <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity" />
+        <activity android:name="com.kirakishou.photoexchange.ui.activity.AllPhotosActivity"></activity>
     </application>
 
 </manifest>

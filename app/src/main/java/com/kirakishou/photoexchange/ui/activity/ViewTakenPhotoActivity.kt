@@ -82,7 +82,7 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>(), 
     }
 
     override fun onActivityDestroy() {
-        getViewModel().tearDown()
+        getViewModel().detach()
     }
 
     override fun hideControls() {

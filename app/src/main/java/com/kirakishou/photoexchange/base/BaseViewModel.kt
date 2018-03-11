@@ -18,8 +18,8 @@ abstract class BaseViewModel<T>(
         view = null
     }
 
-    abstract fun init()
-    abstract fun tearDown()
+    abstract fun attach()
+    abstract fun detach()
 
     @CallSuper
     override fun onCleared() {

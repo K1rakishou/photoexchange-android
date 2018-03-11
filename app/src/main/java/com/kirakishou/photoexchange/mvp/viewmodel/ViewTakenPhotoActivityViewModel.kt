@@ -21,11 +21,11 @@ class ViewTakenPhotoActivityViewModel(
 
     private val tag = "[${this::class.java.simpleName}] "
 
-    override fun init() {
+    override fun attach() {
 
     }
 
-    override fun tearDown() {
+    override fun detach() {
         clearView()
         Timber.tag(tag).d("View cleared")
     }
