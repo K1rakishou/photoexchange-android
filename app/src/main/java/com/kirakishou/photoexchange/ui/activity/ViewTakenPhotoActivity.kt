@@ -102,7 +102,7 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>(), 
     }
 
     override fun onPhotoUpdated(takenPhoto: MyPhoto) {
-        Timber.e("onPhotoUpdated")
+        runActivityWithArgs(AllPhotosActivity::class.java, takenPhoto.toBundle(), true)
     }
 
     override fun showToast(message: String, duration: Int) {

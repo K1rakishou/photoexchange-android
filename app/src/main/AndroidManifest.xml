@@ -26,20 +26,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <!-- <activity android:name="com.kirakishou.photoexchange.ui.activity.AllPhotosViewActivity" /> -->
-        <!-- <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity" /> -->
-        <!-- <activity android:name="com.kirakishou.photoexchange.ui.activity.MapActivity" /> -->
-        <!-- <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewPhotoFullSizeActivity" /> -->
-
-
-        <!-- <service -->
-        <!-- android:name="com.kirakishou.photoexchange.helper.service.FindPhotoAnswerService" -->
-        <!-- android:exported="true" -->
-        <!-- android:permission="android.permission.BIND_JOB_SERVICE" /> -->
-        <!-- <service -->
-        <!-- android:name="com.kirakishou.photoexchange.helper.service.UploadPhotoService" -->
-        <!-- android:exported="true" -->
-        <!-- android:permission="android.permission.BIND_JOB_SERVICE" /> -->
 
         <meta-data
             android:name="io.fabric.ApiKey"
@@ -49,7 +35,11 @@
             android:value="AIzaSyAGVBH_OihoUtvM-VCqQKOvcp5n_3kUs1U" />
 
         <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity" />
-        <activity android:name="com.kirakishou.photoexchange.ui.activity.AllPhotosActivity"></activity>
+        <activity android:name="com.kirakishou.photoexchange.ui.activity.AllPhotosActivity"/>
+
+        <service
+            android:name="com.kirakishou.photoexchange.helper.service.UploadPhotoService"
+            android:exported="false" />
     </application>
 
 </manifest>
