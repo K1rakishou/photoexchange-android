@@ -2,7 +2,6 @@ package com.kirakishou.photoexchange.mvp.model
 
 import android.os.Bundle
 import com.kirakishou.photoexchange.helper.database.converter.PhotoStateConverter
-import com.kirakishou.photoexchange.mvp.model.state.PhotoState
 import java.io.File
 
 /**

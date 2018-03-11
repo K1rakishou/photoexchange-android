@@ -8,15 +8,11 @@ import java.lang.ref.WeakReference
 /**
  * Created by kirakishou on 9/8/2017.
  */
-abstract class BaseViewModel<out T>(
+abstract class BaseViewModel<T>(
     _view: T
 ) : ViewModel() {
     protected val compositeDisposable = CompositeDisposable()
-    private var view: T? = _view
-
-    protected fun getView(): T? {
-        return view
-    }
+    protected var view: T? = _view
 
     protected fun clearView() {
         view = null

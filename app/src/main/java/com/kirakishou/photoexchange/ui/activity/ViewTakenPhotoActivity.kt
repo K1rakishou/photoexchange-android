@@ -18,6 +18,7 @@ import com.kirakishou.photoexchange.mvp.view.ViewTakenPhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.ViewTakenPhotoActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.ViewTakenPhotoActivityViewModelFactory
 import kotlinx.coroutines.experimental.async
+import timber.log.Timber
 import javax.inject.Inject
 
 class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>(), ViewTakenPhotoActivityView {
@@ -85,19 +86,23 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>(), 
     }
 
     override fun hideControls() {
-        ivCloseAcitivity.visibility = View.GONE
-        fabCloseActivity.visibility = View.GONE
-        fabSendPhoto.visibility = View.GONE
+        async(coroutinesPool.UI()) {
+            ivCloseAcitivity.visibility = View.GONE
+            fabCloseActivity.visibility = View.GONE
+            fabSendPhoto.visibility = View.GONE
+        }
     }
 
     override fun showControls() {
-        ivCloseAcitivity.visibility = View.VISIBLE
-        fabCloseActivity.visibility = View.VISIBLE
-        fabSendPhoto.visibility = View.VISIBLE
+        async(coroutinesPool.UI()) {
+            ivCloseAcitivity.visibility = View.VISIBLE
+            fabCloseActivity.visibility = View.VISIBLE
+            fabSendPhoto.visibility = View.VISIBLE
+        }
     }
 
     override fun onPhotoUpdated(takenPhoto: MyPhoto) {
-
+        Timber.e("onPhotoUpdated")
     }
 
     override fun showToast(message: String, duration: Int) {

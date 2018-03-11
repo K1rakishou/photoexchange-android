@@ -6,7 +6,7 @@ import android.arch.persistence.room.Query
 import android.arch.persistence.room.TypeConverters
 import com.kirakishou.photoexchange.helper.database.converter.PhotoStateConverter
 import com.kirakishou.photoexchange.helper.database.entity.MyPhotoEntity
-import com.kirakishou.photoexchange.mvp.model.state.PhotoState
+import com.kirakishou.photoexchange.mvp.model.PhotoState
 
 /**
  * Created by kirakishou on 3/3/2018.

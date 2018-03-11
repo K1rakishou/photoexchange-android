@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.helper.database.converter
 
 import android.arch.persistence.room.TypeConverter
-import com.kirakishou.photoexchange.mvp.model.state.PhotoState
+import com.kirakishou.photoexchange.mvp.model.PhotoState
 
 /**
  * Created by kirakishou on 3/8/2018.

@@ -4,12 +4,11 @@ import android.arch.persistence.room.Room
 import android.content.Context
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
-import com.kirakishou.photoexchange.di.module.MockCoroutineThreadPoolProviderModule
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.MyPhotoEntity
 import com.kirakishou.photoexchange.helper.database.repository.MyPhotoRepository
 import com.kirakishou.photoexchange.helper.database.repository.TempFileRepository
-import com.kirakishou.photoexchange.mvp.model.state.PhotoState
+import com.kirakishou.photoexchange.mvp.model.PhotoState
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -36,11 +35,10 @@ class MyPhotoRepositoryTests {
         appContext = InstrumentationRegistry.getContext()
         targetContext = InstrumentationRegistry.getTargetContext()
         database = Room.inMemoryDatabaseBuilder(appContext, MyDatabase::class.java).build()
-        val coroutinesPool = MockCoroutineThreadPoolProviderModule.TestCoroutineThreadPoolProvider()
         val tempFilesDir = targetContext.getDir("test_temp_files", Context.MODE_PRIVATE).absolutePath
 
-        val tempFilesRepository = TempFileRepository(tempFilesDir, database, coroutinesPool)
-        myPhotosRepository = MyPhotoRepository(database, tempFilesRepository, coroutinesPool)
+        val tempFilesRepository = TempFileRepository(tempFilesDir, database)
+        myPhotosRepository = MyPhotoRepository(database, tempFilesRepository)
     }
 
     @After

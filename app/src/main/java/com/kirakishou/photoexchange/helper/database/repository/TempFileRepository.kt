@@ -1,10 +1,7 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
-import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
-import kotlinx.coroutines.experimental.Deferred
-import kotlinx.coroutines.experimental.async
 import timber.log.Timber
 import java.io.File
 
@@ -13,8 +10,7 @@ import java.io.File
  */
 open class TempFileRepository(
     private val filesDir: String,
-    private val database: MyDatabase,
-    private val coroutinesPool: CoroutineThreadPoolProvider
+    private val database: MyDatabase
 ) {
     private val tempFileDao = database.tempFileDao()
 

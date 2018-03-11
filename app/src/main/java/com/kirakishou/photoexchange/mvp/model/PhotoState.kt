@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.mvp.model.state
+package com.kirakishou.photoexchange.mvp.model
 
 /**
  * Created by kirakishou on 3/8/2018.

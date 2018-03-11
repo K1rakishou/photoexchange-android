@@ -5,7 +5,7 @@ import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
 import com.kirakishou.photoexchange.helper.database.repository.MyPhotoRepository
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
-import com.kirakishou.photoexchange.mvp.model.state.PhotoState
+import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.view.ViewTakenPhotoActivityView
 import kotlinx.coroutines.experimental.async
 import timber.log.Timber
@@ -32,22 +32,22 @@ class ViewTakenPhotoActivityViewModel(
 
     fun updatePhotoState(takenPhoto: MyPhoto) {
         async(coroutinePool.BG()) {
-            getView()?.hideControls()
-
             try {
+                view?.hideControls()
+
                 val updatedPhoto = myPhotoRepository.updatePhotoState(takenPhoto, PhotoState.PHOTO_UPLOADING)
                 if (updatedPhoto.isEmpty()) {
-                    getView()?.showToast("Could not update photo in the database (database error)", Toast.LENGTH_LONG)
-                    getView()?.showControls()
+                    view?.showToast("Could not update photo in the database (database error)", Toast.LENGTH_LONG)
+                    view?.showControls()
                     return@async
                 }
 
-                getView()?.onPhotoUpdated(takenPhoto)
+                view?.onPhotoUpdated(takenPhoto)
 
             } catch (error: Throwable) {
                 Timber.tag(tag).e(error)
-                getView()?.showToast("Could not update photo in the database (database error)", Toast.LENGTH_LONG)
-                getView()?.showControls()
+                view?.showToast("Could not update photo in the database (database error)", Toast.LENGTH_LONG)
+                view?.showControls()
             }
         }
     }

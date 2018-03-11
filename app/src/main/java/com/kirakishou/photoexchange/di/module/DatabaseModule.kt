@@ -27,18 +27,16 @@ open class DatabaseModule(
 
     @Singleton
     @Provides
-    open fun provideTempFileRepository(context: Context, database: MyDatabase,
-                                  corouitnePool: CoroutineThreadPoolProvider): TempFileRepository {
+    open fun provideTempFileRepository(context: Context, database: MyDatabase): TempFileRepository {
 
         val filesDir = context.filesDir.absolutePath
-        return TempFileRepository(filesDir, database, corouitnePool)
+        return TempFileRepository(filesDir, database)
     }
 
     @Singleton
     @Provides
     open fun provideMyPhotoRepository(database: MyDatabase,
-                                      tempFileRepository: TempFileRepository,
-                                      corouitnePool: CoroutineThreadPoolProvider): MyPhotoRepository {
-        return MyPhotoRepository(database, tempFileRepository, corouitnePool)
+                                      tempFileRepository: TempFileRepository): MyPhotoRepository {
+        return MyPhotoRepository(database, tempFileRepository)
     }
 }

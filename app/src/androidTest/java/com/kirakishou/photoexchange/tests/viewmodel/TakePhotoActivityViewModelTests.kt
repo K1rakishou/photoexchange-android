@@ -9,7 +9,7 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.MyPhotoRepository
 import com.kirakishou.photoexchange.helper.database.repository.TempFileRepository
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
-import com.kirakishou.photoexchange.mvp.model.state.PhotoState
+import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.tests.AbstractTest
@@ -58,8 +58,8 @@ class TakePhotoActivityViewModelTests : AbstractTest() {
     @Test
     fun should_take_photo_and_store_photo_info_in_the_database() {
         runBlocking {
-            val realTempFilesRepository = TempFileRepository(tempFilesDir, database, coroutinesPool)
-            val realMyPhotosRepository = MyPhotoRepository(database, realTempFilesRepository, coroutinesPool)
+            val realTempFilesRepository = TempFileRepository(tempFilesDir, database)
+            val realMyPhotosRepository = MyPhotoRepository(database, realTempFilesRepository)
             val viewModel = TakePhotoActivityViewModel(mockedView, coroutinesPool, realMyPhotosRepository)
 
             whenever(mockedView.takePhoto(any())).thenReturn(Single.just(true))

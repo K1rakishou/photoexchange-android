@@ -1,14 +1,11 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
-import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.TransactionResult
 import com.kirakishou.photoexchange.helper.database.entity.MyPhotoEntity
 import com.kirakishou.photoexchange.helper.database.mapper.MyPhotoMapper
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
-import com.kirakishou.photoexchange.mvp.model.state.PhotoState
-import kotlinx.coroutines.experimental.Deferred
-import kotlinx.coroutines.experimental.async
+import com.kirakishou.photoexchange.mvp.model.PhotoState
 import java.io.File
 
 /**
@@ -16,8 +13,7 @@ import java.io.File
  */
 open class MyPhotoRepository(
     private val database: MyDatabase,
-    private val tempFileRepository: TempFileRepository,
-    private val coroutinesPool: CoroutineThreadPoolProvider
+    private val tempFileRepository: TempFileRepository
 ) {
     private val myPhotoDao = database.myPhotoDao()
 

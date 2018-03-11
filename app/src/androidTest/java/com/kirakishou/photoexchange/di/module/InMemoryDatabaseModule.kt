@@ -26,16 +26,14 @@ class InMemoryDatabaseModule {
     @Singleton
     @Provides
     fun provideMyPhotoRepository(database: MyDatabase,
-                                 tempFileRepository: TempFileRepository,
-                                 corouitnePool: CoroutineThreadPoolProvider): MyPhotoRepository {
-        return MyPhotoRepository(database, tempFileRepository, corouitnePool)
+                                 tempFileRepository: TempFileRepository): MyPhotoRepository {
+        return MyPhotoRepository(database, tempFileRepository)
     }
 
     @Singleton
     @Provides
-    fun provideTempFileRepository(context: Context, database: MyDatabase,
-                                  corouitnePool: CoroutineThreadPoolProvider): TempFileRepository {
+    fun provideTempFileRepository(context: Context, database: MyDatabase): TempFileRepository {
         val filesDir = context.filesDir.absolutePath
-        return TempFileRepository(filesDir, database, corouitnePool)
+        return TempFileRepository(filesDir, database)
     }
 }
