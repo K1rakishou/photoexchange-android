@@ -66,9 +66,7 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>(), 
         }
 
         fabSendPhoto.setOnClickListener {
-            async(coroutinesPool.provideUi()) {
-                getViewModel().updatePhotoState(takenPhoto)
-            }
+            getViewModel().updatePhotoState(takenPhoto)
         }
 
         imageLoader.loadImageFromDiskInto(takenPhoto.getFile(), ivPhotoView)
@@ -83,6 +81,7 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>(), 
     }
 
     override fun onActivityDestroy() {
+        getViewModel().tearDown()
     }
 
     override fun hideControls() {

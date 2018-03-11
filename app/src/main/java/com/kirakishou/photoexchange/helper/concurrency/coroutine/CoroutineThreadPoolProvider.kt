@@ -6,8 +6,6 @@ import kotlinx.coroutines.experimental.CoroutineDispatcher
  * Created by kirakishou on 3/3/2018.
  */
 interface CoroutineThreadPoolProvider {
-    fun provideNetwork(): CoroutineDispatcher
-    fun provideDb(): CoroutineDispatcher
-    fun provideCommon(): CoroutineDispatcher
-    fun provideUi(): CoroutineDispatcher
+    fun BG(): CoroutineDispatcher
+    fun UI(): CoroutineDispatcher
 }

@@ -6,7 +6,6 @@ import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
 import com.kirakishou.photoexchange.di.module.MockCoroutineThreadPoolProviderModule
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.entity.MyPhotoEntity
 import com.kirakishou.photoexchange.helper.database.repository.MyPhotoRepository
 import com.kirakishou.photoexchange.helper.database.repository.TempFileRepository
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
@@ -16,19 +15,12 @@ import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.tests.AbstractTest
 import com.nhaarman.mockito_kotlin.*
 import io.reactivex.Single
-import kotlinx.coroutines.experimental.Deferred
-import kotlinx.coroutines.experimental.Unconfined
-import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.runBlocking
-import kotlinx.coroutines.experimental.rx2.asSingle
-import kotlinx.coroutines.experimental.rx2.rxSingle
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.anyInt
-import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito
 import java.io.File
 
@@ -75,13 +67,13 @@ class TakePhotoActivityViewModelTests : AbstractTest() {
             viewModel.init()
             viewModel.takePhoto()
 
-            verify(mockedView).hideTakePhotoButton()
-            verify(mockedView, never()).showTakePhotoButton()
+            verify(mockedView).hideControls()
+            verify(mockedView, never()).showControls()
 
             argumentCaptor<MyPhoto>().apply {
                 verify(mockedView).onPhotoTaken(capture())
 
-                val myPhoto = realMyPhotosRepository.findAll().await().first()
+                val myPhoto = realMyPhotosRepository.findAll().first()
 
                 assertEquals(1L, firstValue.id)
                 assertEquals(PhotoState.PHOTO_TAKEN, firstValue.photoState)
@@ -109,7 +101,7 @@ class TakePhotoActivityViewModelTests : AbstractTest() {
 //            viewModel.takePhoto()
 //
 //            verify(mockedView).showToast(anyString(), anyInt())
-//            verify(mockedView).showTakePhotoButton()
+//            verify(mockedView).showControls()
 //        }
 //    }
 }

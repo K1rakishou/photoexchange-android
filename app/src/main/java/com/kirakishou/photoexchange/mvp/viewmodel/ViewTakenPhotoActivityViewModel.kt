@@ -25,12 +25,17 @@ class ViewTakenPhotoActivityViewModel(
 
     }
 
-    suspend fun updatePhotoState(takenPhoto: MyPhoto) {
-        async(coroutinePool.provideCommon()) {
+    override fun tearDown() {
+        clearView()
+        Timber.tag(tag).d("View cleared")
+    }
+
+    fun updatePhotoState(takenPhoto: MyPhoto) {
+        async(coroutinePool.BG()) {
             getView()?.hideControls()
 
             try {
-                val updatedPhoto = myPhotoRepository.updatePhotoState(takenPhoto, PhotoState.PHOTO_UPLOADING).await()
+                val updatedPhoto = myPhotoRepository.updatePhotoState(takenPhoto, PhotoState.PHOTO_UPLOADING)
                 if (updatedPhoto.isEmpty()) {
                     getView()?.showToast("Could not update photo in the database (database error)", Toast.LENGTH_LONG)
                     getView()?.showControls()
@@ -48,7 +53,7 @@ class ViewTakenPhotoActivityViewModel(
     }
 
     override fun onCleared() {
-        Timber.tag(tag).d("ViewTakenPhotoActivityViewModel.onCleared()")
+        Timber.tag(tag).d("onCleared()")
 
         super.onCleared()
     }

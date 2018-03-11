@@ -12,13 +12,18 @@ abstract class BaseViewModel<out T>(
     _view: T
 ) : ViewModel() {
     protected val compositeDisposable = CompositeDisposable()
-    private var view: WeakReference<T> = WeakReference(_view)
+    private var view: T? = _view
 
     protected fun getView(): T? {
-        return view.get()
+        return view
+    }
+
+    protected fun clearView() {
+        view = null
     }
 
     abstract fun init()
+    abstract fun tearDown()
 
     @CallSuper
     override fun onCleared() {

@@ -15,7 +15,6 @@ import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.module.TakePhotoActivityModule
 import com.kirakishou.photoexchange.helper.CameraProvider
 import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
-import com.kirakishou.photoexchange.helper.extension.asWeak
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
@@ -90,9 +89,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
 
     private fun initViews() {
         takePhotoButton.setOnClickListener {
-            async(coroutinesPool.provideCommon()) {
-                getViewModel().takePhoto()
-            }
+            getViewModel().takePhoto()
         }
     }
 
@@ -108,10 +105,13 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
     }
 
     override fun onActivityDestroy() {
+        getViewModel().tearDown()
     }
 
     override fun onResume() {
         super.onResume()
+
+        showControls()
         cameraProvider.startCamera()
     }
 
@@ -128,7 +128,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
 
     private fun showCameraRationaleDialog() {
         CameraRationaleDialog().show(this, {
-            checkPermissions() //???
+            checkPermissions()
         }, {
             finish()
         })
@@ -143,17 +143,18 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
     override fun takePhoto(file: File): Single<Boolean> = cameraProvider.takePhoto(file)
 
     override fun onPhotoTaken(myPhoto: MyPhoto) {
-        runActivityWithArgs(ViewTakenPhotoActivity::class.java, myPhoto.toBundle(),false)
+        runActivityWithArgs(ViewTakenPhotoActivity::class.java,
+            myPhoto.toBundle(), false)
     }
 
-    override fun showTakePhotoButton() {
-        async(coroutinesPool.provideUi()) {
+    override fun showControls() {
+        async(coroutinesPool.UI()) {
             takePhotoButton.visibility = View.VISIBLE
         }
     }
 
-    override fun hideTakePhotoButton() {
-        async(coroutinesPool.provideUi()) {
+    override fun hideControls() {
+        async(coroutinesPool.UI()) {
             takePhotoButton.visibility = View.GONE
         }
     }

@@ -43,7 +43,7 @@ open class PhotoExchangeApplication : Application() {
     open fun init() {
         initTimber()
         initLeakCanary()
-        enabledStrictMode()
+        //enabledStrictMode()
     }
 
     private fun initLeakCanary() {

@@ -24,32 +24,41 @@ class TakePhotoActivityViewModel(
     private val tag = "[${this::class.java.simpleName}] "
 
     override fun init() {
-        async(coroutinesPool.provideCommon()) {
+        async(coroutinesPool.BG()) {
             myPhotoRepository.init()
         }
     }
 
-    suspend fun takePhoto() {
-        async(coroutinesPool.provideCommon()) {
+    override fun tearDown() {
+        clearView()
+        Timber.tag(tag).d("View cleared")
+    }
+
+    fun takePhoto() {
+        async(coroutinesPool.BG()) {
             var myPhoto: MyPhoto? = null
 
             try {
-                getView()?.hideTakePhotoButton()
-                myPhotoRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN).await()
+                getView()?.hideControls()
+                myPhotoRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN)
 
-                myPhoto = myPhotoRepository.insert(MyPhotoEntity.create()).await()
+                myPhoto = myPhotoRepository.insert(MyPhotoEntity.create())
                 if (myPhoto.isEmpty()) {
+                    Timber.tag(tag).e("myPhotoRepository.insert returned empty photo")
+
                     myPhotoRepository.delete(myPhoto)
                     getView()?.showToast("Could not take photo (database error)", Toast.LENGTH_LONG)
-                    getView()?.showTakePhotoButton()
+                    getView()?.showControls()
                     return@async
                 }
 
                 val takePhotoStatus = getView()?.takePhoto(myPhoto.getFile())?.await() ?: false
                 if (!takePhotoStatus) {
+                    Timber.tag(tag).e("view.takePhoto returned false")
+
                     myPhotoRepository.delete(myPhoto)
                     getView()?.showToast("Could not take photo (database error)", Toast.LENGTH_LONG)
-                    getView()?.showTakePhotoButton()
+                    getView()?.showControls()
                     return@async
                 }
 
@@ -58,7 +67,7 @@ class TakePhotoActivityViewModel(
                 Timber.tag(tag).e(error)
                 myPhotoRepository.delete(myPhoto)
                 getView()?.showToast("Could not take photo (database error)", Toast.LENGTH_LONG)
-                getView()?.showTakePhotoButton()
+                getView()?.showControls()
             }
         }
     }

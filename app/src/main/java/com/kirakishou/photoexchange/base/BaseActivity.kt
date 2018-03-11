@@ -116,10 +116,6 @@ abstract class BaseActivity<T: BaseViewModel<*>> : AppCompatActivity() {
         }
     }
 
-    open fun finishActivity() {
-        finish()
-    }
-
     open fun runActivityWithArgs(clazz: Class<*>, args: Bundle, finishCurrentActivity: Boolean) {
         val intent = Intent(this, clazz)
         intent.putExtras(args)

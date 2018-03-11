@@ -22,9 +22,7 @@ class MockCoroutineThreadPoolProviderModule {
     }
 
     class TestCoroutineThreadPoolProvider : CoroutineThreadPoolProvider {
-        override fun provideCommon(): CoroutineDispatcher = Unconfined
-        override fun provideDb(): CoroutineDispatcher = Unconfined
-        override fun provideNetwork(): CoroutineDispatcher = Unconfined
-        override fun provideUi(): CoroutineDispatcher = Unconfined
+        override fun BG(): CoroutineDispatcher = Unconfined
+        override fun UI(): CoroutineDispatcher = Unconfined
     }
 }

@@ -53,14 +53,14 @@ class MyPhotoRepositoryTests {
         runBlocking {
             myPhotosRepository.init()
 
-            val myPhoto = myPhotosRepository.insert(MyPhotoEntity.create()).await()
-            val myPhoto2 = myPhotosRepository.insert(MyPhotoEntity.create()).await()
+            val myPhoto = myPhotosRepository.insert(MyPhotoEntity.create())
+            val myPhoto2 = myPhotosRepository.insert(MyPhotoEntity.create())
             assertEquals(1, myPhoto.id)
             assertEquals(2, myPhoto2.id)
 
-            assertEquals(true, myPhotosRepository.delete(myPhoto).await())
-            assertEquals(true, myPhotosRepository.delete(myPhoto2).await())
-            assertEquals(true, myPhotosRepository.findAll().await().isEmpty())
+            assertEquals(true, myPhotosRepository.delete(myPhoto))
+            assertEquals(true, myPhotosRepository.delete(myPhoto2))
+            assertEquals(true, myPhotosRepository.findAll().isEmpty())
         }
     }
 
@@ -69,31 +69,31 @@ class MyPhotoRepositoryTests {
         runBlocking {
             myPhotosRepository.init()
 
-            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_TAKEN)).await()
-            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_UPLOADING)).await()
-            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_UPLOADING)).await()
-            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_UPLOADED)).await()
-            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_UPLOADED)).await()
-            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_UPLOADED)).await()
+            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_TAKEN))
+            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_UPLOADING))
+            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_UPLOADING))
+            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_UPLOADED))
+            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_UPLOADED))
+            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_UPLOADED))
 
-            myPhotosRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN).await()
-            myPhotosRepository.findAll().await().let { allPhotos ->
+            myPhotosRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN)
+            myPhotosRepository.findAll().let { allPhotos ->
                 assertEquals(5, allPhotos.size)
 
                 val noPhotoTakenPhotos = allPhotos.none { it.photoState == PhotoState.PHOTO_TAKEN }
                 assertEquals(true, noPhotoTakenPhotos)
             }
 
-            myPhotosRepository.deleteAllWithState(PhotoState.PHOTO_UPLOADING).await()
-            myPhotosRepository.findAll().await().let { allPhotos ->
+            myPhotosRepository.deleteAllWithState(PhotoState.PHOTO_UPLOADING)
+            myPhotosRepository.findAll().let { allPhotos ->
                 assertEquals(3, allPhotos.size)
 
                 val noPhotoTakenPhotos = allPhotos.none { it.photoState == PhotoState.PHOTO_UPLOADING }
                 assertEquals(true, noPhotoTakenPhotos)
             }
 
-            myPhotosRepository.deleteAllWithState(PhotoState.PHOTO_UPLOADED).await()
-            myPhotosRepository.findAll().await().let { allPhotos ->
+            myPhotosRepository.deleteAllWithState(PhotoState.PHOTO_UPLOADED)
+            myPhotosRepository.findAll().let { allPhotos ->
                 assertEquals(0, allPhotos.size)
             }
         }

@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.database.dao.MyPhotoDao
 import com.kirakishou.photoexchange.helper.database.dao.TempFileDao
 import com.kirakishou.photoexchange.helper.database.entity.MyPhotoEntity
 import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
+import timber.log.Timber
 
 /**
  * Created by kirakishou on 9/12/2017.
@@ -20,6 +21,7 @@ abstract class MyDatabase : RoomDatabase() {
     abstract fun tempFileDao(): TempFileDao
 
     suspend fun <T> transactional(func: suspend () -> TransactionResult<T>): T {
+        Timber.e("beginTransaction1")
         this.beginTransaction()
 
         try {
@@ -30,11 +32,13 @@ abstract class MyDatabase : RoomDatabase() {
                 }
 
                 is TransactionResult.Success -> {
+                    Timber.e("setTransactionSuccessful1")
                     this.setTransactionSuccessful()
                     transactionResult.result
                 }
             }
         } finally {
+            Timber.e("endTransaction1")
             this.endTransaction()
         }
     }
