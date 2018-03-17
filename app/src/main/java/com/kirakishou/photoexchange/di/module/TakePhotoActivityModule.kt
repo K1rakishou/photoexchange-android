@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.di.module
 import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.TakePhotoActivityViewModelFactory
 import dagger.Module
@@ -20,7 +21,8 @@ open class TakePhotoActivityModule(
     @PerActivity
     @Provides
     open fun provideViewModelFactory(coroutinesPool: CoroutineThreadPoolProvider,
-                                     photosRepository: PhotosRepository): TakePhotoActivityViewModelFactory {
-        return TakePhotoActivityViewModelFactory(view, photosRepository, coroutinesPool)
+                                     photosRepository: PhotosRepository,
+                                     settingsRepository: SettingsRepository): TakePhotoActivityViewModelFactory {
+        return TakePhotoActivityViewModelFactory(view, photosRepository, settingsRepository, coroutinesPool)
     }
 }

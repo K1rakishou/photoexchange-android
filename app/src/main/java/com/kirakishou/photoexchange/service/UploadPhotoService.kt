@@ -64,8 +64,8 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
         callback = null
     }
 
-    fun startPhotosUploading(userId: String, location: LonLat) {
-        presenter.uploadPhotos(userId, location)
+    fun startPhotosUploading() {
+        presenter.uploadPhotos()
     }
 
     override fun onUploadingEvent(event: PhotoUploadingEvent) {

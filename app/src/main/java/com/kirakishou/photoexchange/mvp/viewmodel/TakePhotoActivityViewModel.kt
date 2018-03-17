@@ -4,6 +4,7 @@ import android.widget.Toast
 import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
 import kotlinx.coroutines.experimental.async
@@ -16,7 +17,8 @@ import timber.log.Timber
 class TakePhotoActivityViewModel(
     view: TakePhotoActivityView,
     private val coroutinesPool: CoroutineThreadPoolProvider,
-    private val photosRepository: PhotosRepository
+    private val photosRepository: PhotosRepository,
+    private val settingsRepository: SettingsRepository
 ) : BaseViewModel<TakePhotoActivityView>(view) {
 
     private val tag = "[${this::class.java.simpleName}] "
@@ -38,6 +40,7 @@ class TakePhotoActivityViewModel(
 
             try {
                 view?.hideControls()
+                settingsRepository.generateUserIdIfNotExist()
 
                 val file = photosRepository.createFile()
                 val takePhotoStatus = view?.takePhoto(file)?.await() ?: false

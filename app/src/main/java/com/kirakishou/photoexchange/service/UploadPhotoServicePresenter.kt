@@ -2,11 +2,14 @@ package com.kirakishou.photoexchange.service
 
 import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.extension.asWeak
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
+import kotlinx.coroutines.experimental.Deferred
 import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.cancelAndJoin
 import kotlinx.coroutines.experimental.rx2.asSingle
 
 /**
@@ -14,10 +17,12 @@ import kotlinx.coroutines.experimental.rx2.asSingle
  */
 class UploadPhotoServicePresenter(
     private val photosRepository: PhotosRepository,
+    private val settingsRepository: SettingsRepository,
     private val coroutinePool: CoroutineThreadPoolProvider
 ) {
     private val tag = "[${this::class.java.simpleName}] "
-    private val compositeDisposable = CompositeDisposable()
+
+    private var uploadingJob: Deferred<Unit>? = null
     private var serviceCallbacks: UploadPhotoServiceCallbacks? = null
 
     fun onAttach(serviceCallbacks: UploadPhotoServiceCallbacks) {
@@ -26,15 +31,20 @@ class UploadPhotoServicePresenter(
 
     fun onDetach() {
         this.serviceCallbacks = null
+        this.uploadingJob?.cancel()
     }
 
-    fun uploadPhotos(userId: String, location: LonLat) {
-        compositeDisposable += async(coroutinePool.BG()) {
-            serviceCallbacks?.asWeak()?.let { callback ->
-                photosRepository.uploadPhotos(userId, location, callback)
+    fun uploadPhotos() {
+        uploadingJob = async(coroutinePool.BG()) {
+            val userId = settingsRepository.findUserId()
+            val location = settingsRepository.findLastLocation()
+
+            if (userId != null && location != null && !location.isEmpty())  {
+                photosRepository.uploadPhotos(userId, location, serviceCallbacks?.asWeak())
             }
 
             serviceCallbacks?.stopService()
-        }.asSingle(coroutinePool.BG()).subscribe()
+            return@async Unit
+        }
     }
 }

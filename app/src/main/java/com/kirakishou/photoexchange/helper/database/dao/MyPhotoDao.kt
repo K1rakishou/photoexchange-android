@@ -30,6 +30,11 @@ abstract class MyPhotoDao {
     @Query("SELECT * FROM ${MyPhotoEntity.TABLE_NAME}")
     abstract fun findAll(): List<MyPhotoEntity>
 
+    @Query("SELECT COUNT(*) FROM ${MyPhotoEntity.TABLE_NAME} " +
+        "WHERE ${MyPhotoEntity.PHOTO_STATE_COLUMN} = :photoState")
+    @TypeConverters(PhotoStateConverter::class)
+    abstract fun countAllByState(photoState: PhotoState): Long
+
     @Query("UPDATE ${MyPhotoEntity.TABLE_NAME} " +
         "SET ${MyPhotoEntity.PHOTO_STATE_COLUMN} = :photoState " +
         "WHERE ${MyPhotoEntity.ID_COLUMN} = :id")

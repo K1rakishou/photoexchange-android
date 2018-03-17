@@ -68,7 +68,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
     }
 
     private fun checkPermissions() {
-        //TODO: check shouldShowRequestPermissionRationale in another activity
         val requestedPermissions = arrayOf(Manifest.permission.CAMERA)
         permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
             val index = permissions.indexOf(Manifest.permission.CAMERA)

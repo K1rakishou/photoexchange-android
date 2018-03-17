@@ -1,23 +1,20 @@
 <resources>
     <string name="app_name">PhotoExchange</string>
-
-    <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="no_photos_uploaded">You have not uploaded any photos yet</string>
     <string name="error_while_looking_for_photo">An error has occurred while looking for your photo</string>
     <string name="upload_more_photos">To receive someone\'s photo you have to upload yours first</string>
     <string name="new_photo_received">A new photo has been received</string>
-    <string name="tab_title_uploaded">Uploaded</string>
-    <string name="tab_title_received">Received</string>
+    <string name="tab_title_my_photos">My Photos</string>
+    <string name="tab_title_received_photos">Received Photos</string>
     <string name="snackbar_button_title_show">SHOW</string>
     <string name="all_photos_activity_title">Photos</string>
-    <string name="looking_for_your_photo_text">Looking for your photo...</string>
-    <string name="photo_is_uploading_text">Photo is uploading...</string>
+    <string name="looking_for_your_photo_text">Looking for your photo…</string>
+    <string name="photo_is_uploading_text">Photo is uploading…</string>
     <string name="could_not_upload_a_photo_text">Could not upload a photo</string>
     <string name="cancel_title">CANCEL</string>
-    <string name="tab_title_queued_up">Queued up</string>
     <string name="photo_sent_anonymously_msg">This photo was sent anonymously</string>
     <string name="no_recipient_yet_msg">No one has received this photo yet</string>
-    <string name="uploading_will_begin_shortly">Uploading will begin shortly...</string>
+    <string name="uploading_will_begin_shortly">Uploading will begin shortly…</string>
     <string name="view_full_photo">View full photo</string>
     <string name="delete_photo">Delete photo</string>
     <string name="report_photo">Report photo</string>

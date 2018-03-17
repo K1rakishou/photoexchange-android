@@ -5,6 +5,7 @@ import android.content.Context
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import dagger.Module
 import dagger.Provides
 import javax.inject.Singleton
@@ -32,5 +33,11 @@ open class DatabaseModule(
                                       apiClient: ApiClient): PhotosRepository {
         val filesDir = context.filesDir.absolutePath
         return PhotosRepository(filesDir, database, apiClient)
+    }
+
+    @Singleton
+    @Provides
+    open fun provideSettingsRepository(database: MyDatabase): SettingsRepository {
+        return SettingsRepository(database)
     }
 }

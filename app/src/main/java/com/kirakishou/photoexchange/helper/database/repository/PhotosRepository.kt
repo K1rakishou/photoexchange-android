@@ -5,6 +5,8 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.MyPhotoEntity
 import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
 import com.kirakishou.photoexchange.helper.database.mapper.MyPhotoMapper
+import com.kirakishou.photoexchange.helper.util.BitmapUtils
+import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
@@ -30,57 +32,62 @@ open class PhotosRepository(
         createTempFilesDirIfNotExists()
     }
 
-    suspend fun uploadPhotos(userId: String, location: LonLat, serviceCallbacks: WeakReference<UploadPhotoServiceCallbacks>) {
+    suspend fun uploadPhotos(userId: String, location: LonLat, callbacks: WeakReference<UploadPhotoServiceCallbacks>?) {
+        if (callbacks == null) {
+            return
+        }
+
         try {
             val photos = findAllByState(PhotoState.PHOTO_TO_BE_UPLOADED)
-            serviceCallbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onPrepare())
-//            Timber.d("PhotoUploadingEvent.onPrepare")
+            callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onPrepare())
 
             for (photo in photos) {
                 try {
                     updatePhotoState(photo.id, PhotoState.PHOTO_UPLOADING)
-                    serviceCallbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onPhotoUploadingStart(photo.id))
-//                    Timber.d("PhotoUploadingEvent.onPhotoUploadingStart(${photo.id})")
+                    callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onPhotoUploadingStart(photo.id))
 
-                    val response = apiClient.uploadPhoto(photo.id, photo.photoTempFile!!.absolutePath, location, userId, serviceCallbacks).await()
-                    val errorCode = ServerErrorCode.from(response.serverErrorCode)
+                    val rotatedPhotoFile = File.createTempFile("rotated_photo", ".tmp")
 
-                    if (errorCode == ServerErrorCode.OK) {
-                        var isAllOk = false
+                    try {
+                        if (BitmapUtils.rotatePhoto(photo.photoTempFile!!.absolutePath, rotatedPhotoFile)) {
+                            val response = apiClient.uploadPhoto(photo.id, rotatedPhotoFile.absolutePath, location, userId, callbacks).await()
+                            val errorCode = ServerErrorCode.from(response.serverErrorCode)
 
-                        database.transactional {
-                            val deleteResult = deleteTempFileById(photo.id)
-                            val updateResult1 = updatePhotoState(photo.id, PhotoState.PHOTO_UPLOADED)
-                            val updateResult2 = updateSetTempFileId(photo.id, null)
+                            if (errorCode == ServerErrorCode.OK) {
+                                var isAllOk = false
 
-                            isAllOk = deleteResult && updateResult1 && updateResult2
-                            return@transactional isAllOk
+                                database.transactional {
+                                    val deleteResult = deleteTempFileById(photo.id)
+                                    val updateResult1 = updatePhotoState(photo.id, PhotoState.PHOTO_UPLOADED)
+                                    val updateResult2 = updateSetTempFileId(photo.id, null)
+
+                                    isAllOk = deleteResult && updateResult1 && updateResult2
+                                    return@transactional isAllOk
+                                }
+
+                                if (isAllOk) {
+                                    callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onUploaded(photo.id))
+                                    continue
+                                }
+                            }
                         }
-
-                        if (isAllOk) {
-                            serviceCallbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onUploaded(photo.id))
-//                            Timber.d("PhotoUploadingEvent.onUploaded(${photo.id})")
-                            continue
-                        }
+                    } finally {
+                        FileUtils.deleteFile(rotatedPhotoFile)
                     }
 
                     updatePhotoState(photo.id, PhotoState.PHOTO_TO_BE_UPLOADED)
-                    serviceCallbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onFailedToUpload(photo.id))
-//                    Timber.d("PhotoUploadingEvent.onFailedToUpload(${photo.id})")
+                    callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onFailedToUpload(photo.id))
                 } catch (error: Throwable) {
                     Timber.e(error)
                     updatePhotoState(photo.id, PhotoState.PHOTO_TO_BE_UPLOADED)
-                    serviceCallbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onFailedToUpload(photo.id))
-//                    Timber.d("PhotoUploadingEvent.onFailedToUpload(${photo.id})")
+                    callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onFailedToUpload(photo.id))
                 }
             }
 
-            serviceCallbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onEnd())
-//            Timber.d("PhotoUploadingEvent.onEnd")
+            callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onEnd())
         } catch (error: Throwable) {
             Timber.e(error)
-            serviceCallbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onUnknownError())
-//            Timber.d("PhotoUploadingEvent.onUnknownError")
+            callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onUnknownError())
         }
     }
 
@@ -146,7 +153,11 @@ open class PhotosRepository(
         return allMyPhotos
     }
 
-    private fun findAllByState(oldState: PhotoState): List<MyPhoto> {
+    fun countAllByState(state: PhotoState): Long {
+        return myPhotoDao.countAllByState(state)
+    }
+
+    fun findAllByState(oldState: PhotoState): List<MyPhoto> {
         val allPhotoReadyToUploading = myPhotoDao.findAllWithState(oldState)
         val resultList = mutableListOf<MyPhoto>()
 

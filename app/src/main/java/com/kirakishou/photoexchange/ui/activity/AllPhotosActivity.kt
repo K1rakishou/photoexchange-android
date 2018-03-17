@@ -1,17 +1,28 @@
 package com.kirakishou.photoexchange.ui.activity
 
+import android.Manifest
 import android.arch.lifecycle.ViewModelProviders
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.IBinder
+import android.support.design.widget.FloatingActionButton
+import android.support.design.widget.TabLayout
+import android.support.v4.app.ActivityCompat
+import android.support.v4.view.ViewPager
+import android.widget.ImageButton
+import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.module.AllPhotosActivityModule
 import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
+import com.kirakishou.photoexchange.helper.location.MyLocationManager
+import com.kirakishou.photoexchange.helper.location.RxLocationManager
+import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.service.UploadPhotoService
@@ -19,14 +30,31 @@ import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.AllPhotosActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.callback.ActivityCallback
+import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
+import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 
-class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosActivityView, ActivityCallback {
+class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosActivityView, ActivityCallback,
+    TabLayout.OnTabSelectedListener, ViewPager.OnPageChangeListener{
+
+    @BindView(R.id.iv_close_button)
+    lateinit var ivCloseActivityButton: ImageButton
+
+    @BindView(R.id.sliding_tab_layout)
+    lateinit var tabLayout: TabLayout
+
+    @BindView(R.id.view_pager)
+    lateinit var viewPager: ViewPager
+
+    @BindView(R.id.take_photo_button)
+    lateinit var takePhotoButton: FloatingActionButton
 
     @Inject
     lateinit var viewModelFactory: AllPhotosActivityViewModelFactory
@@ -34,10 +62,15 @@ class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosA
     @Inject
     lateinit var coroutinesPool: CoroutineThreadPoolProvider
 
+    @Inject
+    lateinit var permissionManager: PermissionManager
+
     private val tag = "[${this::class.java.simpleName}] "
     private var service: UploadPhotoService? = null
 
+    private val adapter = FragmentTabsPager(supportFragmentManager)
     private val onServiceConnectedSubject = PublishSubject.create<Unit>()
+    private val locationManager by lazy { MyLocationManager(applicationContext) }
 
     override fun initViewModel(): AllPhotosActivityViewModel? {
         return ViewModelProviders.of(this, viewModelFactory).get(AllPhotosActivityViewModel::class.java)
@@ -46,22 +79,127 @@ class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosA
     override fun getContentView(): Int = R.layout.activity_all_photos
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
-        val serviceIntent = Intent(this, UploadPhotoService::class.java)
+        initViews()
 
-        startService(serviceIntent)
-        bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
+
 
         compositeDisposable += onServiceConnectedSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { service?.attachCallback(this@AllPhotosActivity) }
             .doOnNext {
-                val testUserId = "123"
-                val testLocation = LonLat(55.411666, 44.225236)
-
-                service?.startPhotosUploading(testUserId, testLocation)
+                service?.startPhotosUploading()
             }
             .subscribe()
+    }
+
+    private fun initViews() {
+        initTabs()
+
+        ivCloseActivityButton.setOnClickListener {
+            finish()
+        }
+
+        takePhotoButton.setOnClickListener {
+            finish()
+        }
+    }
+
+    private fun checkPermissions() {
+        val requestedPermissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
+            val index = permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)
+            if (index == -1) {
+                throw RuntimeException("Couldn't find Manifest.permission.CAMERA in result permissions")
+            }
+
+            if (grantResults[index] == PackageManager.PERMISSION_DENIED) {
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+                    showGpsRationaleDialog()
+                    return@askForPermission
+                }
+            }
+
+            getViewModel().updateLastLocation()
+            getViewModel().startUploadingPhotosService()
+        }
+    }
+
+    private fun showGpsRationaleDialog() {
+        GpsRationaleDialog().show(this, {
+            checkPermissions()
+        }, {
+            //do nothing
+        })
+    }
+
+    override fun getCurrentLocation(): Observable<LonLat> {
+        val gpsStateObservable = Observable.fromCallable { locationManager.isGpsEnabled() }
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .share()
+
+        val gpsEnabledObservable = gpsStateObservable
+            .filter { isEnabled -> isEnabled }
+            .doOnNext { Timber.tag(tag).d("getLocationObservable() Gps is enabled. Trying to obtain current location") }
+            .flatMap {
+                return@flatMap RxLocationManager.start(locationManager)
+                    .timeout(15, TimeUnit.SECONDS)
+                    .onErrorResumeNext(Observable.just(LonLat.empty()))
+            }
+
+        val gpsDisabledObservable = gpsStateObservable
+            .filter { isEnabled -> !isEnabled }
+            .doOnNext { Timber.tag(tag).d("getLocationObservable() Gps is disabled. Returning empty location") }
+            .map { LonLat.empty() }
+
+        return Observable.merge(gpsEnabledObservable, gpsDisabledObservable)
+            .doOnNext { location ->
+                Timber.tag(tag).d("getLocationObservable() " +
+                    "Current location is [lon: ${location.lon}, lat: ${location.lat}]")
+            }
+    }
+
+    private fun initTabs() {
+        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_my_photos)))
+        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_received_photos)))
+        tabLayout.tabGravity = TabLayout.GRAVITY_FILL
+
+        viewPager.adapter = adapter
+        viewPager.offscreenPageLimit = 1
+
+        viewPager.addOnPageChangeListener(this)
+        tabLayout.addOnTabSelectedListener(this)
+    }
+
+    override fun onTabReselected(tab: TabLayout.Tab) {
+        if (viewPager.currentItem != tab.position) {
+            viewPager.currentItem = tab.position
+        }
+    }
+
+    override fun onTabUnselected(tab: TabLayout.Tab) {
+    }
+
+    override fun onTabSelected(tab: TabLayout.Tab) {
+        if (viewPager.currentItem != tab.position) {
+            viewPager.currentItem = tab.position
+        }
+    }
+
+    override fun onPageScrollStateChanged(state: Int) {
+    }
+
+    override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
+        tabLayout.setScrollPosition(position, positionOffset, true)
+    }
+
+    override fun onPageSelected(position: Int) {
+    }
+
+    override fun startUploadingService() {
+        val serviceIntent = Intent(this, UploadPhotoService::class.java)
+        startService(serviceIntent)
+        bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
     }
 
     override fun onUploadingEvent(event: PhotoUploadingEvent) {
