@@ -5,8 +5,9 @@ package com.kirakishou.photoexchange.mvp.model
  */
 enum class PhotoState(val state: Int) {
     PHOTO_TAKEN(0),
-    PHOTO_UPLOADING(1),
-    PHOTO_UPLOADED(2);
+    PHOTO_TO_BE_UPLOADED(1),
+    PHOTO_UPLOADING(2),
+    PHOTO_UPLOADED(3);
 
     companion object {
         fun from(state: Int): PhotoState {

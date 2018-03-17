@@ -1,6 +1,9 @@
 package com.kirakishou.photoexchange.di.component
 
 import com.kirakishou.photoexchange.PhotoExchangeApplication
+import com.kirakishou.photoexchange.di.component.subcomponent.application.AllPhotosActivityComponent
+import com.kirakishou.photoexchange.di.component.subcomponent.application.TakePhotoActivityComponent
+import com.kirakishou.photoexchange.di.component.subcomponent.application.ViewTakenPhotoActivityComponent
 import com.kirakishou.photoexchange.di.module.*
 import dagger.Component
 import javax.inject.Singleton
@@ -14,7 +17,12 @@ import javax.inject.Singleton
     ApplicationModule::class,
     SchedulerProviderModule::class,
     CoroutineThreadPoolProviderModule::class,
-    DatabaseModule::class])
+    DatabaseModule::class,
+    GsonModule::class,
+    NetworkModule::class,
+    DatabaseModule::class,
+    ApiClientModule::class
+])
 interface ApplicationComponent {
     fun inject(application: PhotoExchangeApplication)
 

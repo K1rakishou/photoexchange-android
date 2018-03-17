@@ -36,6 +36,7 @@ abstract class BaseActivity<T: BaseViewModel<*>> : AppCompatActivity() {
     private var viewModel: T? = null
     private var unBinder: Unbinder? = null
 
+    //for tests
     fun setViewModel(viewModel: T) {
         this.viewModel = viewModel
     }

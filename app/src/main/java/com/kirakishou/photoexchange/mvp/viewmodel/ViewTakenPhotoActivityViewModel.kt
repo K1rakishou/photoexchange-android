@@ -3,8 +3,7 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 import android.widget.Toast
 import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
-import com.kirakishou.photoexchange.helper.database.repository.MyPhotoRepository
-import com.kirakishou.photoexchange.mvp.model.MyPhoto
+import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.view.ViewTakenPhotoActivityView
 import kotlinx.coroutines.experimental.async
@@ -16,7 +15,7 @@ import timber.log.Timber
 class ViewTakenPhotoActivityViewModel(
     view: ViewTakenPhotoActivityView,
     private val coroutinePool: CoroutineThreadPoolProvider,
-    private val myPhotoRepository: MyPhotoRepository
+    private val photosRepository: PhotosRepository
 ) : BaseViewModel<ViewTakenPhotoActivityView>(view) {
 
     private val tag = "[${this::class.java.simpleName}] "
@@ -30,19 +29,19 @@ class ViewTakenPhotoActivityViewModel(
         Timber.tag(tag).d("View cleared")
     }
 
-    fun updatePhotoState(takenPhoto: MyPhoto) {
+    fun updatePhotoState(takenPhotoId: Long) {
         async(coroutinePool.BG()) {
             try {
                 view?.hideControls()
 
-                val updatedPhoto = myPhotoRepository.updatePhotoState(takenPhoto, PhotoState.PHOTO_UPLOADING)
-                if (updatedPhoto.isEmpty()) {
+                val updateResult = photosRepository.updatePhotoState(takenPhotoId, PhotoState.PHOTO_TO_BE_UPLOADED)
+                if (!updateResult) {
                     view?.showToast("Could not update photo in the database (database error)", Toast.LENGTH_LONG)
                     view?.showControls()
                     return@async
                 }
 
-                view?.onPhotoUpdated(takenPhoto)
+                view?.onPhotoUpdated()
 
             } catch (error: Throwable) {
                 Timber.tag(tag).e(error)

@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
-import com.kirakishou.photoexchange.helper.database.repository.MyPhotoRepository
+import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import timber.log.Timber
 
@@ -11,7 +11,7 @@ import timber.log.Timber
  */
 class AllPhotosActivityViewModel(
     view: AllPhotosActivityView,
-    val myPhotoRepository: MyPhotoRepository,
+    val photosRepository: PhotosRepository,
     val coroutinesPool: CoroutineThreadPoolProvider
 ): BaseViewModel<AllPhotosActivityView>(view) {
 

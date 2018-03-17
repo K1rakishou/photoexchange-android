@@ -16,7 +16,7 @@ abstract class TempFileDao {
     abstract fun insert(tempFileEntity: TempFileEntity): Long
 
     @Query("SELECT * FROM ${TempFileEntity.TABLE_NAME} " +
-        "WHERE ${TempFileEntity.PHOTO_OWNER_ID_COLUMN} = :id")
+        "WHERE ${TempFileEntity.ID_COLUMN} = :id")
     abstract fun findById(id: Long): TempFileEntity?
 
     @Query("SELECT * FROM ${TempFileEntity.TABLE_NAME}")
@@ -27,6 +27,6 @@ abstract class TempFileDao {
     abstract fun deleteByFilePath(path: String): Int
 
     @Query("DELETE FROM ${TempFileEntity.TABLE_NAME} " +
-        "WHERE ${TempFileEntity.PHOTO_OWNER_ID_COLUMN} = :id")
+        "WHERE ${TempFileEntity.ID_COLUMN} = :id")
     abstract fun deleteById(id: Long): Int
 }

@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.di.module
 
 import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
-import com.kirakishou.photoexchange.helper.database.repository.MyPhotoRepository
+import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.AllPhotosActivityViewModelFactory
 import dagger.Module
@@ -20,7 +20,7 @@ open class AllPhotosActivityModule(
     @PerActivity
     @Provides
     fun provideViewModelFactory(coroutinePool: CoroutineThreadPoolProvider,
-                                myPhotoRepository: MyPhotoRepository): AllPhotosActivityViewModelFactory {
-        return AllPhotosActivityViewModelFactory(view, myPhotoRepository, coroutinePool)
+                                photosRepository: PhotosRepository): AllPhotosActivityViewModelFactory {
+        return AllPhotosActivityViewModelFactory(view, photosRepository, coroutinePool)
     }
 }

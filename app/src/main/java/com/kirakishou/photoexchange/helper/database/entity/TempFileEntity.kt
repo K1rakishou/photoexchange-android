@@ -11,29 +11,21 @@ import java.io.File
  * Created by kirakishou on 3/3/2018.
  */
 
-@Entity(tableName = TABLE_NAME,
-    foreignKeys = [(ForeignKey(
-        entity = MyPhotoEntity::class,
-        parentColumns = [MyPhotoEntity.ID_COLUMN],
-        childColumns = [TempFileEntity.PHOTO_OWNER_ID_COLUMN],
-        onDelete = ForeignKey.CASCADE))])
+@Entity(tableName = TABLE_NAME)
 class TempFileEntity(
 
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = ID_COLUMN)
     var id: Long? = null,
 
-    @ColumnInfo(name = PHOTO_OWNER_ID_COLUMN, index = true)
-    var photoOwnerId: Long,
-
     @ColumnInfo(name = FILE_PATH_COLUMN)
     var filePath: String
 
 ) {
 
-    constructor() : this(null, 0L, "")
+    constructor() : this(null, "")
 
-    fun isEmpty(): Boolean = this.id == null
+    fun isEmpty(): Boolean = this.filePath.isEmpty()
 
     fun asFile(): File {
         return File(filePath)
@@ -45,14 +37,13 @@ class TempFileEntity(
             return TempFileEntity()
         }
 
-        fun create(photoOwnerId: Long, tempFilePath: String): TempFileEntity {
-            return TempFileEntity(null, photoOwnerId, tempFilePath)
+        fun create(tempFilePath: String): TempFileEntity {
+            return TempFileEntity(null, tempFilePath)
         }
 
         const val TABLE_NAME = "TEMP_FILE"
 
         const val ID_COLUMN = "ID"
-        const val PHOTO_OWNER_ID_COLUMN = "PHOTO_OWNER_ID"
         const val FILE_PATH_COLUMN = "FILE_PATH"
     }
 }

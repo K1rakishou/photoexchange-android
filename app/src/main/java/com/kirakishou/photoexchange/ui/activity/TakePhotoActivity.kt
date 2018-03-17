@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.ActivityCompat
 import android.view.View
+import android.widget.ImageView
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
@@ -31,6 +32,9 @@ import java.io.File
 import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoActivityView {
+
+    @BindView(R.id.iv_show_all_photos)
+    lateinit var ivShowAllPhotos: ImageView
 
     @BindView(R.id.camera_view)
     lateinit var cameraView: CameraView
@@ -90,6 +94,10 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
     private fun initViews() {
         takePhotoButton.setOnClickListener {
             getViewModel().takePhoto()
+        }
+
+        ivShowAllPhotos.setOnClickListener {
+            runActivity(AllPhotosActivity::class.java)
         }
     }
 

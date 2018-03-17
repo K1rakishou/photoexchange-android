@@ -9,8 +9,8 @@ import com.kirakishou.photoexchange.mvp.model.MyPhoto
  */
 object MyPhotoMapper {
 
-    fun toMyPhoto(myPhotoEntityId: Long, myPhotoEntity: MyPhotoEntity, tempFileEntity: TempFileEntity): MyPhoto {
-        if (myPhotoEntityId <= 0L) {
+    fun toMyPhoto(myPhotoEntity: MyPhotoEntity, tempFileEntity: TempFileEntity): MyPhoto {
+        if (myPhotoEntity.id == null || myPhotoEntity.id!! <= 0L) {
             return MyPhoto.empty()
         }
 
@@ -20,6 +20,6 @@ object MyPhotoMapper {
             tempFileEntity.asFile()
         }
 
-        return MyPhoto(myPhotoEntityId, myPhotoEntity.photoState, file)
+        return MyPhoto(myPhotoEntity.id!!, myPhotoEntity.photoState, file)
     }
 }

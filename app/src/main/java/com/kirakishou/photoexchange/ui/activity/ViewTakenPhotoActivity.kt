@@ -67,7 +67,7 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>(), 
         }
 
         fabSendPhoto.setOnClickListener {
-            getViewModel().updatePhotoState(takenPhoto)
+            getViewModel().updatePhotoState(takenPhoto.id)
         }
 
         imageLoader.loadImageFromDiskInto(takenPhoto.getFile(), ivPhotoView)
@@ -101,8 +101,8 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>(), 
         }
     }
 
-    override fun onPhotoUpdated(takenPhoto: MyPhoto) {
-        runActivityWithArgs(AllPhotosActivity::class.java, takenPhoto.toBundle(), true)
+    override fun onPhotoUpdated() {
+        runActivity(AllPhotosActivity::class.java, true)
     }
 
     override fun showToast(message: String, duration: Int) {

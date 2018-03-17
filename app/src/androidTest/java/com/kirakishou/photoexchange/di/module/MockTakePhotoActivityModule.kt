@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.di.module
 
 import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
-import com.kirakishou.photoexchange.helper.database.repository.MyPhotoRepository
+import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.TakePhotoActivityViewModelFactory
 import dagger.Module
@@ -20,8 +20,8 @@ class MockTakePhotoActivityModule(
     @PerActivity
     @Provides
     fun provideViewModelFactory(coroutinesPool: CoroutineThreadPoolProvider,
-                                myPhotoRepository: MyPhotoRepository): TakePhotoActivityViewModelFactory {
+                                photosRepository: PhotosRepository): TakePhotoActivityViewModelFactory {
         return TakePhotoActivityViewModelFactory(mockedView,
-            myPhotoRepository, coroutinesPool)
+            photosRepository, coroutinesPool)
     }
 }

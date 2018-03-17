@@ -13,26 +13,19 @@ import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
 
 @Database(entities = [
     MyPhotoEntity::class,
-    TempFileEntity::class], version = 1)
+    TempFileEntity::class
+], version = 1)
 abstract class MyDatabase : RoomDatabase() {
 
     abstract fun myPhotoDao(): MyPhotoDao
     abstract fun tempFileDao(): TempFileDao
 
-    suspend fun <T> transactional(func: suspend () -> TransactionResult<T>): T {
+    inline fun transactional(func: () -> Boolean) {
         this.beginTransaction()
 
         try {
-            val transactionResult = func()
-            return when (transactionResult) {
-                is TransactionResult.Fail -> {
-                    transactionResult.result
-                }
-
-                is TransactionResult.Success -> {
-                    this.setTransactionSuccessful()
-                    transactionResult.result
-                }
+            if (func()) {
+                this.setTransactionSuccessful()
             }
         } finally {
             this.endTransaction()

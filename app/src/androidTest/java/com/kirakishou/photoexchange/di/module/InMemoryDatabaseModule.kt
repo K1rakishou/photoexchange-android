@@ -2,10 +2,9 @@ package com.kirakishou.photoexchange.di.module
 
 import android.arch.persistence.room.Room
 import android.content.Context
-import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
+import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.repository.MyPhotoRepository
-import com.kirakishou.photoexchange.helper.database.repository.TempFileRepository
+import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import dagger.Module
 import dagger.Provides
 import javax.inject.Singleton
@@ -23,17 +22,12 @@ class InMemoryDatabaseModule {
         return Room.inMemoryDatabaseBuilder(context, MyDatabase::class.java).build()
     }
 
-    @Singleton
-    @Provides
-    fun provideMyPhotoRepository(database: MyDatabase,
-                                 tempFileRepository: TempFileRepository): MyPhotoRepository {
-        return MyPhotoRepository(database, tempFileRepository)
-    }
-
-    @Singleton
-    @Provides
-    fun provideTempFileRepository(context: Context, database: MyDatabase): TempFileRepository {
-        val filesDir = context.filesDir.absolutePath
-        return TempFileRepository(filesDir, database)
-    }
+//    @Singleton
+//    @Provides
+//    fun provideMyPhotoRepository(context: Context,
+//                                 database: MyDatabase,
+//                                 apiClient: ApiClient): PhotosRepository {
+//        val filesDir = context.filesDir.absolutePath
+//        return PhotosRepository(filesDir, database, apiClient)
+//    }
 }

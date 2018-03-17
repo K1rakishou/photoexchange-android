@@ -12,6 +12,7 @@ import com.kirakishou.photoexchange.di.component.ApplicationComponent
 import com.kirakishou.photoexchange.di.module.ApplicationModule
 import com.kirakishou.photoexchange.di.module.CoroutineThreadPoolProviderModule
 import com.kirakishou.photoexchange.di.module.DatabaseModule
+import com.kirakishou.photoexchange.di.module.NetworkModule
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 
 
@@ -35,7 +36,8 @@ open class PhotoExchangeApplication : Application() {
     open fun initializeApplicationComponent(): ApplicationComponent {
         return DaggerApplicationComponent.builder()
             .applicationModule(ApplicationModule(this))
-            .databaseModule(DatabaseModule(databaseName))
+            .databaseModule(DatabaseModule(Constants.DATABASE_NAME))
+            .networkModule(NetworkModule(Constants.BASE_URL))
             .coroutineThreadPoolProviderModule(CoroutineThreadPoolProviderModule())
             .build()
     }
@@ -124,7 +126,6 @@ open class PhotoExchangeApplication : Application() {
     companion object {
         var refWatcher: RefWatcher? = null
         val baseUrl = "http://kez1911.asuscomm.com:8080/"
-        val databaseName = "photoexchange_db"
 
         private val CRASHLYTICS_KEY_PRIORITY = "priority"
         private val CRASHLYTICS_KEY_TAG = "tag"

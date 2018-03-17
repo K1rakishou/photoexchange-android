@@ -5,7 +5,10 @@ package com.kirakishou.photoexchange.mvp.model.other
  */
 enum class ServerErrorCode(val value: Int) {
     BAD_ERROR_CODE(-2),
-    UNKNOWN_ERROR(-1);
+    UNKNOWN_ERROR(-1),
+    OK(0),
+    NO_PHOTO_FILE_ON_DISK(1),
+    BAD_SERVER_RESPONSE(2);
 
     companion object {
         fun from(value: Int?): ServerErrorCode {

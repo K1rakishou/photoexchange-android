@@ -35,10 +35,14 @@ data class MyPhoto(
             return MyPhoto(0L, PhotoState.PHOTO_TAKEN, null)
         }
 
-        fun fromBundle(bundle: Bundle): MyPhoto {
+        fun fromBundle(bundle: Bundle?): MyPhoto {
+            if (bundle == null) {
+                return empty()
+            }
+
             val id = bundle.getLong("id", -1L)
             if (id == -1L) {
-                throw RuntimeException("Bad MyPhoto id == -1L")
+                return empty()
             }
 
             val photoState = PhotoStateConverter.toPhotoState(bundle.getInt("photo_state"))

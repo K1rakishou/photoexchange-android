@@ -36,6 +36,11 @@ abstract class MyPhotoDao {
     @TypeConverters(PhotoStateConverter::class)
     abstract fun updateSetNewPhotoState(id: Long, photoState: PhotoState): Int
 
+    @Query("UPDATE ${MyPhotoEntity.TABLE_NAME} " +
+        "SET ${MyPhotoEntity.TEMP_FILE_ID_COLUMN} = :newTempFileId " +
+        "WHERE ${MyPhotoEntity.ID_COLUMN} = :photoId")
+    abstract fun updateSetTempFileId(photoId: Long, newTempFileId: Long?): Int
+
     @Query("DELETE FROM ${MyPhotoEntity.TABLE_NAME} " +
         "WHERE ${MyPhotoEntity.ID_COLUMN} = :id")
     abstract fun deleteById(id: Long): Int
