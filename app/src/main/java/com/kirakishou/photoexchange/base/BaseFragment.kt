@@ -36,10 +36,7 @@ abstract class BaseFragment<out T : ViewModel> : Fragment() {
     override fun onAttach(context: Context?) {
         super.onAttach(context)
 
-        resolveDaggerDependency()
-
         viewModel = initViewModel()
-        initRx()
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -76,8 +73,6 @@ abstract class BaseFragment<out T : ViewModel> : Fragment() {
 
     protected abstract fun initViewModel(): T
     protected abstract fun getContentView(): Int
-    protected abstract fun initRx()
     protected abstract fun onFragmentViewCreated(savedInstanceState: Bundle?)
     protected abstract fun onFragmentViewDestroy()
-    protected abstract fun resolveDaggerDependency()
 }

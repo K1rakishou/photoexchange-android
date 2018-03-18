@@ -173,10 +173,6 @@ open class PhotosRepository(
         database.transactional {
             for (photo in allPhotoReadyToUploading) {
                 val tempFileEntity = findTempFileById(photo.id!!)
-                if (tempFileEntity.isEmpty()) {
-                    return@transactional false
-                }
-
                 resultList += MyPhotoMapper.toMyPhoto(photo, tempFileEntity)
             }
 

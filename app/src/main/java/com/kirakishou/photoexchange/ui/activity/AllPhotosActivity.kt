@@ -9,7 +9,6 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.IBinder
-import android.os.PersistableBundle
 import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.TabLayout
 import android.support.v4.app.ActivityCompat
@@ -24,6 +23,7 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThread
 import com.kirakishou.photoexchange.helper.location.MyLocationManager
 import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
+import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.service.UploadPhotoService
@@ -43,7 +43,7 @@ import javax.inject.Inject
 
 
 class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosActivityView, ActivityCallback,
-    TabLayout.OnTabSelectedListener, ViewPager.OnPageChangeListener{
+    TabLayout.OnTabSelectedListener, ViewPager.OnPageChangeListener {
 
     @BindView(R.id.iv_close_button)
     lateinit var ivCloseActivityButton: ImageButton
@@ -231,6 +231,12 @@ class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosA
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         permissionManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
+    //MyPhotosFragmentCallbacks
+
+    override fun onUploadedPhotosRetrieved(uploadedPhotos: List<MyPhoto>) {
+        adapter.getMyPhotosFragment()?.onUploadedPhotos(uploadedPhotos)
     }
 
     override fun resolveDaggerDependency() {

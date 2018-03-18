@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.mvp.view
 
+import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import io.reactivex.Observable
 
@@ -9,4 +10,5 @@ import io.reactivex.Observable
 interface AllPhotosActivityView : BaseView {
     fun startUploadingService()
     fun getCurrentLocation(): Observable<LonLat>
+    fun onUploadedPhotosRetrieved(uploadedPhotos: List<MyPhoto>)
 }

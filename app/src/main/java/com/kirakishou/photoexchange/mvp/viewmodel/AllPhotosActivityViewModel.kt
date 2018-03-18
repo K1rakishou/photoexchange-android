@@ -5,11 +5,9 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThread
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
-import kotlinx.coroutines.experimental.Deferred
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.rx2.awaitSingle
 import timber.log.Timber
@@ -23,7 +21,7 @@ class AllPhotosActivityViewModel(
     private val photosRepository: PhotosRepository,
     private val settingsRepository: SettingsRepository,
     private val coroutinesPool: CoroutineThreadPoolProvider
-): BaseViewModel<AllPhotosActivityView>(view) {
+) : BaseViewModel<AllPhotosActivityView>(view) {
 
     private val tag = "[${this::class.java.simpleName}] "
     private val LOCATION_CHECK_INTERVAL = TimeUnit.SECONDS.toMillis(5)
@@ -67,6 +65,15 @@ class AllPhotosActivityViewModel(
             }
         } else {
             settingsRepository.saveLastLocation(LonLat.empty())
+        }
+    }
+
+    fun loadUploadedPhotos() {
+        async(coroutinesPool.BG()) {
+            val uploadedPhotos = photosRepository.findAllByState(PhotoState.PHOTO_UPLOADED)
+            if (uploadedPhotos.isNotEmpty()) {
+                view?.onUploadedPhotosRetrieved(uploadedPhotos)
+            }
         }
     }
 

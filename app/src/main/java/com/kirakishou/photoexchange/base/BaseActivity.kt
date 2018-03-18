@@ -43,7 +43,7 @@ abstract class BaseActivity<T: BaseViewModel<*>> : AppCompatActivity() {
 
     fun getViewModel(): T {
         if (viewModel == null) {
-            throw IllegalStateException("Cannot call get viewModel from the activity that has not viewModel!")
+            throw IllegalStateException("Cannot call get viewModel from the activity that has no viewModel!")
         }
 
         return viewModel!!

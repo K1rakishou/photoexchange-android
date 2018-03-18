@@ -2,26 +2,25 @@ package com.kirakishou.photoexchange.ui.fragment
 
 import android.content.Context
 import android.os.Bundle
-import android.support.v4.app.Fragment
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import butterknife.BindView
-import butterknife.ButterKnife
 import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.base.BaseFragment
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
+import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.adapter.AdapterItem
 import com.kirakishou.photoexchange.mvp.model.adapter.AdapterItemType
+import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
+import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.widget.MyPhotosAdapterSpanSizeLookup
 import timber.log.Timber
 
 
-class MyPhotosFragment : Fragment() {
+class MyPhotosFragment : BaseFragment<AllPhotosActivityViewModel>() {
 
     @BindView(R.id.my_photos_list)
     lateinit var myPhotosList: RecyclerView
@@ -31,17 +30,19 @@ class MyPhotosFragment : Fragment() {
 
     lateinit var adapter: MyPhotosAdapter
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-                              savedInstanceState: Bundle?): View? {
-        val view =  inflater.inflate(R.layout.fragment_my_photos, container, false)
-        ButterKnife.bind(this, view)
-        return view
+    override fun initViewModel(): AllPhotosActivityViewModel {
+        return (activity as AllPhotosActivity).getViewModel()
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+    override fun getContentView(): Int = R.layout.fragment_my_photos
 
+    override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRecyclerView()
+
+        getViewModel().loadUploadedPhotos()
+    }
+
+    override fun onFragmentViewDestroy() {
     }
 
     private fun initRecyclerView() {
@@ -70,7 +71,8 @@ class MyPhotosFragment : Fragment() {
                 }
                 is PhotoUploadingEvent.onPhotoUploadingStart -> {
                     Timber.e("onPhotoUploadingStart")
-                    adapter.add(AdapterItem(event.myPhoto, AdapterItemType.VIEW_MY_PHOTO))
+                    myPhotosList.scrollToPosition(0)
+                    adapter.add(0, AdapterItem(event.myPhoto, AdapterItemType.VIEW_MY_PHOTO))
                 }
                 is PhotoUploadingEvent.onProgress -> {
                     Timber.e("onProgress ${event.progress}")
@@ -90,6 +92,17 @@ class MyPhotosFragment : Fragment() {
                     Timber.e("onEnd")
                 }
             }
+        }
+    }
+
+    fun onUploadedPhotos(uploadedPhotos: List<MyPhoto>) {
+        if (!isAdded) {
+            return
+        }
+
+        adapter.runOnAdapterHandler {
+            val mapped = uploadedPhotos.map { AdapterItem(it, AdapterItemType.VIEW_MY_PHOTO) }
+            adapter.addAll(mapped)
         }
     }
 

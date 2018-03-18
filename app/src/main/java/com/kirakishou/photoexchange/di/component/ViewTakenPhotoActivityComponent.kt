@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.di.component.subcomponent.activity
+package com.kirakishou.photoexchange.di.component
 
 import com.kirakishou.photoexchange.di.module.ViewTakenPhotoActivityModule
 import com.kirakishou.photoexchange.di.scope.PerActivity

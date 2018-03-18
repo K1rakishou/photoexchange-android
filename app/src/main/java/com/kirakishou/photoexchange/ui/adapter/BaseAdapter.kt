@@ -50,6 +50,13 @@ abstract class BaseAdapter<T>(
         notifyItemInserted(items.lastIndex)
     }
 
+    open fun add(index: Int, item: AdapterItem<T>) {
+        checkInited()
+
+        items.add(index, item)
+        notifyItemInserted(index)
+    }
+
     open fun addAll(items: List<AdapterItem<T>>) {
         checkInited()
 

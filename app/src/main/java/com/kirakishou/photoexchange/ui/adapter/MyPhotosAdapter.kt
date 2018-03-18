@@ -1,11 +1,10 @@
 package com.kirakishou.photoexchange.ui.adapter
 
 import android.content.Context
-import android.support.constraint.ConstraintLayout
+import android.support.v7.widget.CardView
 import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.ProgressBar
 import butterknife.BindView
 import butterknife.ButterKnife
@@ -98,7 +97,7 @@ class MyPhotosAdapter(
         lateinit var photoView: ImageView
 
         @BindView(R.id.uploading_message_holder)
-        lateinit var uploadingMessageHolderView: LinearLayout
+        lateinit var uploadingMessageHolderView: CardView
 
         @BindView(R.id.loading_progress)
         lateinit var loadingProgress: ProgressBar
