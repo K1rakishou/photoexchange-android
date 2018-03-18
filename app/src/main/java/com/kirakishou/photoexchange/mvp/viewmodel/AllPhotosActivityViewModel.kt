@@ -9,7 +9,7 @@ import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.rx2.awaitSingle
+import kotlinx.coroutines.experimental.rx2.await
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
@@ -54,13 +54,15 @@ class AllPhotosActivityViewModel(
             val now = TimeUtils.getTimeFast()
             val lastTimeCheck = settingsRepository.findLastLocationCheckTime()
             if (lastTimeCheck == null || (now - lastTimeCheck > LOCATION_CHECK_INTERVAL)) {
-                settingsRepository.saveLastLocationCheckTime(now)
+                val currentLocation = view?.getCurrentLocation()?.await()
+                    ?: return
 
-                val currentLocation = view?.getCurrentLocation()?.awaitSingle()
-                if (currentLocation == null || currentLocation.isEmpty()) {
+                val lastLocation = settingsRepository.findLastLocation()
+                if (lastLocation != null && !lastLocation.isEmpty() && currentLocation.isEmpty()) {
                     return
                 }
 
+                settingsRepository.saveLastLocationCheckTime(now)
                 settingsRepository.saveLastLocation(currentLocation)
             }
         } else {

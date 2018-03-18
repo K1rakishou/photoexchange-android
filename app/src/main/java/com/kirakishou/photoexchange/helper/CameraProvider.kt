@@ -2,13 +2,11 @@ package com.kirakishou.photoexchange.helper
 
 import android.content.Context
 import io.fotoapparat.Fotoapparat
-import io.fotoapparat.characteristic.toCameraId
 import io.fotoapparat.configuration.CameraConfiguration
-import io.fotoapparat.parameter.ScaleType
 import io.fotoapparat.selector.back
-import io.fotoapparat.selector.front
+import io.fotoapparat.selector.highestResolution
+import io.fotoapparat.selector.manualJpegQuality
 import io.fotoapparat.view.CameraView
-import io.reactivex.ObservableEmitter
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import timber.log.Timber
@@ -25,17 +23,18 @@ open class CameraProvider(
     private var isStarted = false
     private var camera: Fotoapparat? = null
     private val tag = "[${this::class.java.simpleName}]: "
-    private val cameraLensPosition = back()
 
     fun provideCamera(cameraView: CameraView) {
         val configuration = CameraConfiguration(
-            pictureResolution = { PhotoResolutionSelector(this).select() }
+            pictureResolution = { PhotoResolutionSelector(this).select() },
+            previewResolution = highestResolution(),
+            jpegQuality = manualJpegQuality(100)
         )
 
         camera = Fotoapparat(
             context = context,
             view = cameraView,
-            lensPosition = cameraLensPosition,
+            lensPosition = back(),
             cameraConfiguration = configuration
         )
     }
@@ -59,7 +58,7 @@ open class CameraProvider(
     }
 
     fun isStarted(): Boolean = isStarted
-    fun isAvailable(): Boolean = camera?.isAvailable(cameraLensPosition) ?: false
+    fun isAvailable(): Boolean = camera?.isAvailable(back()) ?: false
 
     fun takePhoto(file: File): Single<Boolean> {
         val single = Single.create<Boolean> { emitter ->

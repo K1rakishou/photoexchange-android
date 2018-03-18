@@ -33,10 +33,14 @@ import com.kirakishou.photoexchange.mvp.viewmodel.factory.AllPhotosActivityViewM
 import com.kirakishou.photoexchange.ui.callback.ActivityCallback
 import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
-import io.reactivex.Observable
+import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.rx2.asSingle
+import kotlinx.coroutines.experimental.rx2.awaitFirstOrNull
+import kotlinx.coroutines.experimental.withTimeoutOrNull
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -140,30 +144,16 @@ class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosA
         })
     }
 
-    override fun getCurrentLocation(): Observable<LonLat> {
-        val gpsStateObservable = Observable.fromCallable { locationManager.isGpsEnabled() }
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .share()
-
-        val gpsEnabledObservable = gpsStateObservable
-            .filter { isEnabled -> isEnabled }
-            .doOnNext { Timber.tag(tag).d("getLocationObservable() Gps is enabled. Trying to obtain current location") }
-            .flatMap {
-                return@flatMap RxLocationManager.start(locationManager)
-                    .timeout(15, TimeUnit.SECONDS)
-                    .onErrorResumeNext(Observable.just(LonLat.empty()))
+    override fun getCurrentLocation(): Single<LonLat> {
+        return async {
+            if (!locationManager.isGpsEnabled()) {
+                return@async LonLat.empty()
             }
 
-        val gpsDisabledObservable = gpsStateObservable
-            .filter { isEnabled -> !isEnabled }
-            .doOnNext { Timber.tag(tag).d("getLocationObservable() Gps is disabled. Returning empty location") }
-            .map { LonLat.empty() }
-
-        return Observable.merge(gpsEnabledObservable, gpsDisabledObservable)
-            .doOnNext { location ->
-                Timber.tag(tag).d("getLocationObservable() " +
-                    "Current location is [lon: ${location.lon}, lat: ${location.lat}]")
-            }
+            return@async withTimeoutOrNull(15, TimeUnit.SECONDS) {
+                RxLocationManager.start(locationManager).awaitFirstOrNull()
+            } ?: LonLat.empty()
+        }.asSingle(coroutinesPool.BG())
     }
 
     private fun initTabs() {

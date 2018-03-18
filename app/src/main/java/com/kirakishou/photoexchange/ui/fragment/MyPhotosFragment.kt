@@ -30,6 +30,7 @@ class MyPhotosFragment : BaseFragment<AllPhotosActivityViewModel>() {
 
     lateinit var adapter: MyPhotosAdapter
 
+    //FIXME:
     override fun initViewModel(): AllPhotosActivityViewModel {
         return (activity as AllPhotosActivity).getViewModel()
     }
