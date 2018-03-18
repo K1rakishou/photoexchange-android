@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.rx2.awaitSingle
@@ -17,9 +18,9 @@ import java.util.concurrent.TimeUnit
  */
 class AllPhotosActivityViewModel(
     view: AllPhotosActivityView,
-    val photosRepository: PhotosRepository,
-    val settingsRepository: SettingsRepository,
-    val coroutinesPool: CoroutineThreadPoolProvider
+    private val photosRepository: PhotosRepository,
+    private val settingsRepository: SettingsRepository,
+    private val coroutinesPool: CoroutineThreadPoolProvider
 ): BaseViewModel<AllPhotosActivityView>(view) {
 
     private val tag = "[${this::class.java.simpleName}] "
@@ -33,17 +34,23 @@ class AllPhotosActivityViewModel(
         Timber.tag(tag).d("View cleared")
     }
 
-    fun startUploadingPhotosService() {
+    fun startUploadingPhotosService(isGranted: Boolean) {
         async(coroutinesPool.BG()) {
             val count = photosRepository.countAllByState(PhotoState.PHOTO_TO_BE_UPLOADED)
             if (count > 0) {
+                updateLastLocation(isGranted)
+
                 view?.startUploadingService()
             }
         }
     }
 
-    fun updateLastLocation() {
-        async(coroutinesPool.BG()) {
+    private suspend fun updateLastLocation(isGranted: Boolean) {
+        // if gps is disabled by user then set the last location as empty (-1.0, -1.0) immediately
+        // so the user doesn't have to wait 15 seconds until getCurrentLocation returns empty
+        // location because of timeout
+
+        if (isGranted) {
             val now = TimeUtils.getTimeFast()
             val lastTimeCheck = settingsRepository.findLastLocationCheckTime()
             if (lastTimeCheck == null || (now - lastTimeCheck > LOCATION_CHECK_INTERVAL)) {
@@ -51,11 +58,13 @@ class AllPhotosActivityViewModel(
 
                 val currentLocation = view?.getCurrentLocation()?.awaitSingle()
                 if (currentLocation == null || currentLocation.isEmpty()) {
-                    return@async
+                    return
                 }
 
                 settingsRepository.saveLastLocation(currentLocation)
             }
+        } else {
+            settingsRepository.saveLastLocation(LonLat.empty())
         }
     }
 

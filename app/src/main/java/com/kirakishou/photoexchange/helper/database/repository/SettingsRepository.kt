@@ -13,7 +13,7 @@ class SettingsRepository(
 ) {
     private val settingsDao = database.settingsDao()
 
-    fun generateUserIdIfNotExist() {
+    fun generateUserIdIfNotExists() {
         if (findUserId() == null) {
             saveUserId(Utils.generateUserId())
         }

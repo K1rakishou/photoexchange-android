@@ -1,9 +1,9 @@
 package com.kirakishou.photoexchange.di.component
 
 import com.kirakishou.photoexchange.PhotoExchangeApplication
-import com.kirakishou.photoexchange.di.component.subcomponent.application.AllPhotosActivityComponent
-import com.kirakishou.photoexchange.di.component.subcomponent.application.TakePhotoActivityComponent
-import com.kirakishou.photoexchange.di.component.subcomponent.application.ViewTakenPhotoActivityComponent
+import com.kirakishou.photoexchange.di.component.subcomponent.activity.AllPhotosActivityComponent
+import com.kirakishou.photoexchange.di.component.subcomponent.activity.TakePhotoActivityComponent
+import com.kirakishou.photoexchange.di.component.subcomponent.activity.ViewTakenPhotoActivityComponent
 import com.kirakishou.photoexchange.di.module.*
 import dagger.Component
 import javax.inject.Singleton

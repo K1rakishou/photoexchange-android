@@ -40,7 +40,7 @@ class TakePhotoActivityViewModel(
 
             try {
                 view?.hideControls()
-                settingsRepository.generateUserIdIfNotExist()
+                settingsRepository.generateUserIdIfNotExists()
 
                 val file = photosRepository.createFile()
                 val takePhotoStatus = view?.takePhoto(file)?.await() ?: false

@@ -39,7 +39,7 @@ class UploadPhotoServicePresenter(
             val userId = settingsRepository.findUserId()
             val location = settingsRepository.findLastLocation()
 
-            if (userId != null && location != null && !location.isEmpty())  {
+            if (userId != null && location != null)  {
                 photosRepository.uploadPhotos(userId, location, serviceCallbacks?.asWeak())
             }
 

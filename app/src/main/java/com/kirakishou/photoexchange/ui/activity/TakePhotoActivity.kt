@@ -86,7 +86,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
                 return@askForPermission
             }
 
-            initCamera()
+            onPermissionsGranted()
         }
     }
 
@@ -100,7 +100,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
         }
     }
 
-    private fun initCamera() {
+    private fun onPermissionsGranted() {
         cameraProvider.provideCamera(cameraView)
 
         if (!cameraProvider.isAvailable()) {

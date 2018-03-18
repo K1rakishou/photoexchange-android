@@ -80,8 +80,7 @@ class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosA
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         initViews()
-
-
+        checkPermissions()
 
         compositeDisposable += onServiceConnectedSubject
             .subscribeOn(AndroidSchedulers.mainThread())
@@ -113,23 +112,30 @@ class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosA
                 throw RuntimeException("Couldn't find Manifest.permission.CAMERA in result permissions")
             }
 
+            var granted = true
+
             if (grantResults[index] == PackageManager.PERMISSION_DENIED) {
+                granted = false
+
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
                     showGpsRationaleDialog()
                     return@askForPermission
                 }
             }
 
-            getViewModel().updateLastLocation()
-            getViewModel().startUploadingPhotosService()
+            onPermissionsCallback(granted)
         }
+    }
+
+    private fun onPermissionsCallback(isGranted: Boolean) {
+        getViewModel().startUploadingPhotosService(isGranted)
     }
 
     private fun showGpsRationaleDialog() {
         GpsRationaleDialog().show(this, {
             checkPermissions()
         }, {
-            //do nothing
+            onPermissionsCallback(false)
         })
     }
 
@@ -160,8 +166,9 @@ class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosA
     }
 
     private fun initTabs() {
-        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_my_photos)))
+        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_taken_photos)))
         tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_received_photos)))
+        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_gallery)))
         tabLayout.tabGravity = TabLayout.GRAVITY_FILL
 
         viewPager.adapter = adapter
@@ -240,6 +247,11 @@ class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosA
 
     override fun showToast(message: String, duration: Int) {
         onShowToast(message, duration)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        permissionManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
     override fun resolveDaggerDependency() {
