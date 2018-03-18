@@ -9,9 +9,9 @@ import java.io.File
  */
 data class MyPhoto(
     val id: Long,
-    val photoState: PhotoState,
-    val photoTempFile: File? = null
-
+    var photoState: PhotoState,
+    var photoName: String? = null,
+    var photoTempFile: File? = null
 ) {
 
     fun isEmpty(): Boolean = this.id == 0L
@@ -49,7 +49,7 @@ data class MyPhoto(
             val photoFileString = bundle.getString("photo_temp_file")
             val photoFile = if (photoFileString.isEmpty()) null else File(photoFileString)
 
-            return MyPhoto(id, photoState, photoFile)
+            return MyPhoto(id, photoState, null, photoFile)
         }
     }
 }

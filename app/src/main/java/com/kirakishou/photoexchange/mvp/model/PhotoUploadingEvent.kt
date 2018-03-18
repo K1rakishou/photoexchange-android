@@ -5,10 +5,10 @@ package com.kirakishou.photoexchange.mvp.model
  */
 sealed class PhotoUploadingEvent {
     class onPrepare() : PhotoUploadingEvent()
-    class onPhotoUploadingStart(val photoId: Long) : PhotoUploadingEvent()
+    class onPhotoUploadingStart(val myPhoto: MyPhoto) : PhotoUploadingEvent()
     class onProgress(val photoId: Long, val progress: Int) : PhotoUploadingEvent()
-    class onUploaded(val photoId: Long) : PhotoUploadingEvent()
-    class onFailedToUpload(val photoId: Long) : PhotoUploadingEvent()
+    class onUploaded(val myPhoto: MyPhoto) : PhotoUploadingEvent()
+    class onFailedToUpload(val myPhoto: MyPhoto) : PhotoUploadingEvent()
     class onUnknownError() : PhotoUploadingEvent()
     class onEnd() : PhotoUploadingEvent()
 }

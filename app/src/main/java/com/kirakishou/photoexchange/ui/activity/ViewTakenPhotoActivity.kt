@@ -3,8 +3,11 @@ package com.kirakishou.photoexchange.ui.activity
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.os.Bundle
+import android.support.constraint.ConstraintLayout
 import android.support.design.widget.FloatingActionButton
 import android.view.View
+import android.view.animation.AccelerateInterpolator
+import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
@@ -13,6 +16,10 @@ import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.module.ViewTakenPhotoActivityModule
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
+import com.kirakishou.photoexchange.helper.extension.MyAnimationListener
+import com.kirakishou.photoexchange.helper.extension.asWeak
+import com.kirakishou.photoexchange.helper.extension.mySetListener
+import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.view.ViewTakenPhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.ViewTakenPhotoActivityViewModel
@@ -25,9 +32,6 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>(), 
 
     @BindView(R.id.iv_photo_view)
     lateinit var ivPhotoView: ImageView
-
-    @BindView(R.id.iv_close_activity)
-    lateinit var ivCloseAcitivity: ImageView
 
     @BindView(R.id.fab_close_activity)
     lateinit var fabCloseActivity: FloatingActionButton
@@ -58,9 +62,7 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>(), 
     }
 
     private fun initViews() {
-        ivCloseAcitivity.setOnClickListener {
-            finish()
-        }
+//        hideView(true)
 
         fabCloseActivity.setOnClickListener {
             finish()
@@ -87,7 +89,6 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>(), 
 
     override fun hideControls() {
         async(coroutinesPool.UI()) {
-            ivCloseAcitivity.visibility = View.GONE
             fabCloseActivity.visibility = View.GONE
             fabSendPhoto.visibility = View.GONE
         }
@@ -95,7 +96,6 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>(), 
 
     override fun showControls() {
         async(coroutinesPool.UI()) {
-            ivCloseAcitivity.visibility = View.VISIBLE
             fabCloseActivity.visibility = View.VISIBLE
             fabSendPhoto.visibility = View.VISIBLE
         }
@@ -103,7 +103,46 @@ class ViewTakenPhotoActivity : BaseActivity<ViewTakenPhotoActivityViewModel>(), 
 
     override fun onPhotoUpdated() {
         runActivity(AllPhotosActivity::class.java, true)
+//        showView()
     }
+
+//    fun hideView(immediately: Boolean) {
+//        async(coroutinesPool.UI()) {
+//            if (immediately) {
+//                makePhotoPublicView.animate()
+//                    .translationYBy(-makePhotoPublicView.height.toFloat())
+//                    .setDuration(2000)
+//                    .start()
+//            } else {
+//                makePhotoPublicView.animate()
+//                    .translationYBy(-makePhotoPublicView.height.toFloat())
+//                    .setDuration(2000)
+//                    .setInterpolator(AccelerateInterpolator())
+//                    .mySetListener {
+//                        onAnimationEnd {
+//                            makePhotoPublicView.visibility = View.GONE
+//                        }
+//                    }
+//                    .start()
+//            }
+//        }
+//    }
+//
+//    fun showView() {
+//        async(coroutinesPool.UI()) {
+//            makePhotoPublicView.animate()
+//                .translationYBy(makePhotoPublicView.height.toFloat())
+//                .setDuration(2000)
+//                .setInterpolator(DecelerateInterpolator())
+//                .mySetListener {
+//                    onAnimationStart {
+//                        makePhotoPublicView.visibility = View.VISIBLE
+//                    }
+//                }
+//                .start()
+//
+//        }
+//    }
 
     override fun showToast(message: String, duration: Int) {
         onShowToast(message, duration)

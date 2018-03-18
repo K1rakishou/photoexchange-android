@@ -22,13 +22,19 @@ class MyPhotoEntity(
     @ColumnInfo(name = TEMP_FILE_ID_COLUMN)
     var tempFileId: Long? = null,
 
+    @ColumnInfo(name = IS_PUBLIC_COLUMN)
+    var isPublic: Boolean = false,
+
+    @ColumnInfo(name = PHOTO_NAME_COLUMN)
+    var photoName: String? = null,
+
     @ColumnInfo(name = PHOTO_STATE_COLUMN)
     @field:TypeConverters(PhotoStateConverter::class)
     var photoState: PhotoState
 
 ) {
 
-    constructor() : this(null, null, PhotoState.PHOTO_TAKEN)
+    constructor() : this(null, null, false, null, PhotoState.PHOTO_TAKEN)
 
     fun isEmpty(): Boolean {
         return id == null
@@ -40,13 +46,15 @@ class MyPhotoEntity(
             return MyPhotoEntity()
         }
 
-        fun create(tempFileId: Long?): MyPhotoEntity {
-            return MyPhotoEntity(null, tempFileId, PhotoState.PHOTO_TAKEN)
+        fun create(tempFileId: Long?, isPublic: Boolean): MyPhotoEntity {
+            return MyPhotoEntity(null, tempFileId, isPublic, null, PhotoState.PHOTO_TAKEN)
         }
 
         const val ID_COLUMN = "ID"
         const val PHOTO_STATE_COLUMN = "PHOTO_STATE"
         const val TEMP_FILE_ID_COLUMN = "TEMP_FILE_ID"
+        const val IS_PUBLIC_COLUMN = "IS_PUBLIC"
+        const val PHOTO_NAME_COLUMN = "PHOTO_NAME"
         const val TABLE_NAME = "MY_PHOTO"
     }
 }

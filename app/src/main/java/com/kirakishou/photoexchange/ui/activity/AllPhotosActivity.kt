@@ -9,6 +9,7 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.IBinder
+import android.os.PersistableBundle
 import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.TabLayout
 import android.support.v4.app.ActivityCompat
@@ -166,7 +167,7 @@ class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosA
     }
 
     private fun initTabs() {
-        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_taken_photos)))
+        tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_uploaded_photos)))
         tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_received_photos)))
         tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_gallery)))
         tabLayout.tabGravity = TabLayout.GRAVITY_FILL
@@ -210,29 +211,7 @@ class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosA
     }
 
     override fun onUploadingEvent(event: PhotoUploadingEvent) {
-        when (event) {
-            is PhotoUploadingEvent.onPrepare -> {
-                Timber.e("onPrepare")
-            }
-            is PhotoUploadingEvent.onPhotoUploadingStart -> {
-                Timber.e("onPhotoUploadingStart")
-            }
-            is PhotoUploadingEvent.onProgress -> {
-                Timber.e("onProgress ${event.progress}")
-            }
-            is PhotoUploadingEvent.onUploaded -> {
-                Timber.e("onUploaded")
-            }
-            is PhotoUploadingEvent.onFailedToUpload -> {
-                Timber.e("onFailedToUpload")
-            }
-            is PhotoUploadingEvent.onUnknownError -> {
-                Timber.e("onUnknownError")
-            }
-            is PhotoUploadingEvent.onEnd -> {
-                Timber.e("onEnd")
-            }
-        }
+        adapter.getMyPhotosFragment()?.onUploadingEvent(event)
     }
 
     override fun onActivityDestroy() {

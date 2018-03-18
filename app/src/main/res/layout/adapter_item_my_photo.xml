@@ -16,45 +16,51 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
+            <ImageView
+                android:id="@+id/photo_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
             <LinearLayout
-                android:id="@+id/error_message_holder"
-                android:layout_width="wrap_content"
+                android:id="@+id/uploading_message_holder"
+                android:layout_width="256dp"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
                 android:layout_marginTop="8dp"
-                android:orientation="horizontal"
+                android:orientation="vertical"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
 
-                <ProgressBar
-                    android:id="@+id/loading_indicator"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:progressTint="@color/white"
-                    android:layout_gravity="center_vertical"
-                    android:indeterminate="true" />
-
                 <TextView
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
                     android:layout_marginBottom="8dp"
                     android:layout_marginEnd="8dp"
                     android:layout_marginStart="8dp"
                     android:layout_marginTop="8dp"
-                    android:layout_weight="1"
                     android:ellipsize="end"
                     android:maxLines="2"
                     android:text="@string/photo_is_uploading_text"
                     android:textColor="@color/black"
                     android:textSize="16sp"
+                    android:gravity="center_horizontal"
                     app:layout_constraintBottom_toBottomOf="@+id/iv_error_image"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toEndOf="@+id/iv_error_image"
                     app:layout_constraintTop_toTopOf="@+id/iv_error_image" />
+
+                <ProgressBar
+                    style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                    android:id="@+id/loading_progress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:layout_marginStart="8dp"
+                    android:progress="0"
+                    android:progressTint="@color/white"/>
 
             </LinearLayout>
 

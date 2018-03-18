@@ -44,7 +44,7 @@ open class PhotosRepository(
             for (photo in photos) {
                 try {
                     updatePhotoState(photo.id, PhotoState.PHOTO_UPLOADING)
-                    callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onPhotoUploadingStart(photo.id))
+                    callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onPhotoUploadingStart(photo))
 
                     val rotatedPhotoFile = File.createTempFile("rotated_photo", ".tmp")
 
@@ -60,13 +60,18 @@ open class PhotosRepository(
                                     val deleteResult = deleteTempFileById(photo.id)
                                     val updateResult1 = updatePhotoState(photo.id, PhotoState.PHOTO_UPLOADED)
                                     val updateResult2 = updateSetTempFileId(photo.id, null)
+                                    val updateResult3 = updateSetPhotoName(photo.id, response.photoName)
 
-                                    isAllOk = deleteResult && updateResult1 && updateResult2
+                                    isAllOk = deleteResult && updateResult1 && updateResult2 && updateResult3
                                     return@transactional isAllOk
                                 }
 
                                 if (isAllOk) {
-                                    callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onUploaded(photo.id))
+                                    photo.photoState = PhotoState.PHOTO_UPLOADED
+                                    photo.photoName = response.photoName
+                                    photo.photoTempFile = null
+
+                                    callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onUploaded(photo))
                                     continue
                                 }
                             }
@@ -76,11 +81,11 @@ open class PhotosRepository(
                     }
 
                     updatePhotoState(photo.id, PhotoState.PHOTO_TO_BE_UPLOADED)
-                    callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onFailedToUpload(photo.id))
+                    callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onFailedToUpload(photo))
                 } catch (error: Throwable) {
                     Timber.e(error)
                     updatePhotoState(photo.id, PhotoState.PHOTO_TO_BE_UPLOADED)
-                    callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onFailedToUpload(photo.id))
+                    callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onFailedToUpload(photo))
                 }
             }
 
@@ -100,11 +105,15 @@ open class PhotosRepository(
             return MyPhoto.empty()
         }
 
-        val myPhotoEntity = MyPhotoEntity.create(tempFileId)
+        val myPhotoEntity = MyPhotoEntity.create(tempFileId, false)
         val myPhotoId = myPhotoDao.insert(myPhotoEntity)
 
         myPhotoEntity.id = myPhotoId
         return MyPhotoMapper.toMyPhoto(myPhotoEntity, tempFileEntity)
+    }
+
+    fun updateSetPhotoName(photoId: Long, photoName: String): Boolean {
+        return myPhotoDao.updateSetPhotoName(photoId, photoName) == 1
     }
 
     fun updateSetTempFileId(photoId: Long, newTempFileId: Long?): Boolean {

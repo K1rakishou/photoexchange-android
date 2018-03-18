@@ -46,6 +46,11 @@ abstract class MyPhotoDao {
         "WHERE ${MyPhotoEntity.ID_COLUMN} = :photoId")
     abstract fun updateSetTempFileId(photoId: Long, newTempFileId: Long?): Int
 
+    @Query("UPDATE ${MyPhotoEntity.TABLE_NAME} " +
+        "SET ${MyPhotoEntity.PHOTO_NAME_COLUMN} = :photoName " +
+        "WHERE ${MyPhotoEntity.ID_COLUMN} = :photoId")
+    abstract fun updateSetPhotoName(photoId: Long, photoName: String): Int
+
     @Query("DELETE FROM ${MyPhotoEntity.TABLE_NAME} " +
         "WHERE ${MyPhotoEntity.ID_COLUMN} = :id")
     abstract fun deleteById(id: Long): Int

@@ -4,7 +4,7 @@
     <string name="error_while_looking_for_photo">An error has occurred while looking for your photo</string>
     <string name="upload_more_photos">To receive someone\'s photo you have to upload yours first</string>
     <string name="new_photo_received">A new photo has been received</string>
-    <string name="tab_title_taken_photos">Taken</string>
+    <string name="tab_title_uploaded_photos">Uploaded</string>
     <string name="tab_title_received_photos">Received</string>
     <string name="tab_title_gallery">Gallery</string>
     <string name="snackbar_button_title_show">SHOW</string>

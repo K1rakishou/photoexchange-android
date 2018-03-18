@@ -4,13 +4,9 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThread
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.extension.asWeak
-import com.kirakishou.photoexchange.mvp.model.other.LonLat
-import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.rxkotlin.plusAssign
 import kotlinx.coroutines.experimental.Deferred
 import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.cancelAndJoin
-import kotlinx.coroutines.experimental.rx2.asSingle
+import timber.log.Timber
 
 /**
  * Created by kirakishou on 3/17/2018.
@@ -41,6 +37,8 @@ class UploadPhotoServicePresenter(
 
             if (userId != null && location != null)  {
                 photosRepository.uploadPhotos(userId, location, serviceCallbacks?.asWeak())
+            } else {
+                Timber.tag(tag).e("Either userId or location is null! userId = $userId, location = $location")
             }
 
             serviceCallbacks?.stopService()

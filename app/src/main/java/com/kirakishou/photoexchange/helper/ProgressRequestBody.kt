@@ -52,6 +52,8 @@ class ProgressRequestBody(
                 uploaded += read.toLong()
                 sink.write(buffer, 0, read)
             }
+
+            serviceCallbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onProgress(photoId, 100))
         } finally {
             fis.close()
         }
