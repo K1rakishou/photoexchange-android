@@ -1,12 +1,15 @@
 package com.kirakishou.photoexchange.ui.fragment
 
+import android.arch.lifecycle.ViewModelProviders
 import android.content.Context
 import android.os.Bundle
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseFragment
+import com.kirakishou.photoexchange.di.module.AllPhotosActivityModule
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
@@ -14,10 +17,12 @@ import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.adapter.AdapterItem
 import com.kirakishou.photoexchange.mvp.model.adapter.AdapterItemType
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
+import com.kirakishou.photoexchange.mvp.viewmodel.factory.AllPhotosActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.widget.MyPhotosAdapterSpanSizeLookup
 import timber.log.Timber
+import javax.inject.Inject
 
 
 class MyPhotosFragment : BaseFragment<AllPhotosActivityViewModel>() {
@@ -25,22 +30,23 @@ class MyPhotosFragment : BaseFragment<AllPhotosActivityViewModel>() {
     @BindView(R.id.my_photos_list)
     lateinit var myPhotosList: RecyclerView
 
-    private val PHOTO_ADAPTER_VIEW_WIDTH = 288
-    private val imageLoader by lazy { ImageLoader(activity as Context) }
+    @Inject
+    lateinit var viewModelFactory: AllPhotosActivityViewModelFactory
 
+    @Inject
+    lateinit var imageLoader: ImageLoader
+
+    private val PHOTO_ADAPTER_VIEW_WIDTH = 288
     lateinit var adapter: MyPhotosAdapter
 
-    //FIXME:
-    override fun initViewModel(): AllPhotosActivityViewModel {
-        return (activity as AllPhotosActivity).getViewModel()
+    override fun initViewModel(): AllPhotosActivityViewModel? {
+        return ViewModelProviders.of(this, viewModelFactory).get(AllPhotosActivityViewModel::class.java)
     }
 
     override fun getContentView(): Int = R.layout.fragment_my_photos
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRecyclerView()
-
-        getViewModel().loadUploadedPhotos()
     }
 
     override fun onFragmentViewDestroy() {
@@ -105,6 +111,12 @@ class MyPhotosFragment : BaseFragment<AllPhotosActivityViewModel>() {
             val mapped = uploadedPhotos.map { AdapterItem(it, AdapterItemType.VIEW_MY_PHOTO) }
             adapter.addAll(mapped)
         }
+    }
+
+    override fun resolveDaggerDependency() {
+        (activity!!.application as PhotoExchangeApplication).applicationComponent
+            .plus(AllPhotosActivityModule(activity as AllPhotosActivity))
+            .inject(this)
     }
 
     companion object {

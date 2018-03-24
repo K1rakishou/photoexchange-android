@@ -4,8 +4,8 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThread
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.extension.asWeak
-import kotlinx.coroutines.experimental.Deferred
-import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.Job
+import kotlinx.coroutines.experimental.launch
 import timber.log.Timber
 
 /**
@@ -18,7 +18,7 @@ class UploadPhotoServicePresenter(
 ) {
     private val tag = "[${this::class.java.simpleName}] "
 
-    private var uploadingJob: Deferred<Unit>? = null
+    private var uploadingJob: Job? = null
     private var serviceCallbacks: UploadPhotoServiceCallbacks? = null
 
     fun onAttach(serviceCallbacks: UploadPhotoServiceCallbacks) {
@@ -31,18 +31,20 @@ class UploadPhotoServicePresenter(
     }
 
     fun uploadPhotos() {
-        uploadingJob = async(coroutinePool.BG()) {
+        val weakenCallback = serviceCallbacks?.asWeak()
+
+        uploadingJob = launch(coroutinePool.BG()) {
             val userId = settingsRepository.findUserId()
             val location = settingsRepository.findLastLocation()
 
             if (userId != null && location != null)  {
-                photosRepository.uploadPhotos(userId, location, serviceCallbacks?.asWeak())
+                photosRepository.uploadPhotos(userId, location, weakenCallback)
             } else {
                 Timber.tag(tag).e("Either userId or location is null! userId = $userId, location = $location")
             }
 
             serviceCallbacks?.stopService()
-            return@async Unit
+            return@launch Unit
         }
     }
 }

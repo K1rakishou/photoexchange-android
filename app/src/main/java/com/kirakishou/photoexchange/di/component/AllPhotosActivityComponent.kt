@@ -17,4 +17,5 @@ import dagger.Subcomponent
     PermissionManagerModule::class])
 interface AllPhotosActivityComponent {
     fun inject(activity: AllPhotosActivity)
+    fun inject(fragment: MyPhotosFragment)
 }

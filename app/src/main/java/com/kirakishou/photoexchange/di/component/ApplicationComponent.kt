@@ -18,7 +18,8 @@ import javax.inject.Singleton
     GsonModule::class,
     NetworkModule::class,
     DatabaseModule::class,
-    ApiClientModule::class
+    ApiClientModule::class,
+    ImageLoaderModule::class
 ])
 interface ApplicationComponent {
     fun inject(application: PhotoExchangeApplication)

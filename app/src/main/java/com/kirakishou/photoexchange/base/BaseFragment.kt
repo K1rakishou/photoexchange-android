@@ -17,7 +17,7 @@ import io.reactivex.disposables.CompositeDisposable
  * Created by kirakishou on 11/7/2017.
  */
 
-abstract class BaseFragment<out T : ViewModel> : Fragment() {
+abstract class BaseFragment<T : BaseViewModel<*>> : Fragment() {
 
     protected val registry by lazy {
         LifecycleRegistry(this)
@@ -25,17 +25,27 @@ abstract class BaseFragment<out T : ViewModel> : Fragment() {
 
     override fun getLifecycle(): LifecycleRegistry = registry
 
+    private var viewModel: T? = null
     private lateinit var unBinder: Unbinder
-    private lateinit var viewModel: T
     protected val compositeDisposable = CompositeDisposable()
 
-    protected fun getViewModel(): T {
-        return viewModel
+    //for tests
+    fun setViewModel(viewModel: T) {
+        this.viewModel = viewModel
+    }
+
+    fun getViewModel(): T {
+        if (viewModel == null) {
+            throw IllegalStateException("Cannot call get viewModel from the activity that has no viewModel!")
+        }
+
+        return viewModel!!
     }
 
     override fun onAttach(context: Context?) {
         super.onAttach(context)
 
+        resolveDaggerDependency()
         viewModel = initViewModel()
     }
 
@@ -71,8 +81,9 @@ abstract class BaseFragment<out T : ViewModel> : Fragment() {
         PhotoExchangeApplication.watch(this, this::class.simpleName)
     }
 
-    protected abstract fun initViewModel(): T
+    protected abstract fun initViewModel(): T?
     protected abstract fun getContentView(): Int
     protected abstract fun onFragmentViewCreated(savedInstanceState: Bundle?)
     protected abstract fun onFragmentViewDestroy()
+    protected abstract fun resolveDaggerDependency()
 }
