@@ -49,7 +49,7 @@ open class PhotosRepository(
                     val rotatedPhotoFile = File.createTempFile("rotated_photo", ".tmp")
 
                     try {
-                        if (BitmapUtils.rotatePhoto(photo.photoTempFile!!.absolutePath, rotatedPhotoFile)) {
+                        if (BitmapUtils.rotatePhoto(photo.photoTempFile, rotatedPhotoFile)) {
                             val response = apiClient.uploadPhoto(photo.id, rotatedPhotoFile.absolutePath, location, userId, callbacks).await()
                             val errorCode = ServerErrorCode.from(response.serverErrorCode)
 

@@ -70,11 +70,11 @@ class AllPhotosActivityViewModel(
         }
     }
 
-    fun loadUploadedPhotos() {
+    fun loadUploadedPhotosFromDatabase() {
         async(coroutinesPool.BG()) {
             val uploadedPhotos = photosRepository.findAllByState(PhotoState.PHOTO_UPLOADED)
             if (uploadedPhotos.isNotEmpty()) {
-                view?.onUploadedPhotosRetrieved(uploadedPhotos)
+                view?.onUploadedPhotosLoadedFromDatabase(uploadedPhotos)
             }
         }
     }

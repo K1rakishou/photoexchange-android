@@ -15,20 +15,30 @@ import java.lang.ref.WeakReference
 class FragmentTabsPager(fm: FragmentManager) : FragmentStatePagerAdapter(fm) {
 
     private var myPhotosFragment = WeakReference<MyPhotosFragment>(null)
+    private var receivedPhotosFragment = WeakReference<ReceivedPhotosFragment>(null)
+    private var galleryFragment = WeakReference<GalleryFragment>(null)
 
     fun getMyPhotosFragment(): MyPhotosFragment? {
         return myPhotosFragment.get()
     }
 
     override fun getItem(position: Int): Fragment {
-        return when (position) {
+        when (position) {
             0 -> {
                 val fragment = MyPhotosFragment.newInstance()
                 myPhotosFragment = WeakReference(fragment)
                 return fragment
             }
-            1 -> ReceivedPhotosFragment.newInstance()
-            2 -> GalleryFragment.newInstance()
+            1 -> {
+                val fragment = ReceivedPhotosFragment.newInstance()
+                receivedPhotosFragment = WeakReference(fragment)
+                return fragment
+            }
+            2 -> {
+                val fragment = GalleryFragment.newInstance()
+                galleryFragment = WeakReference(fragment)
+                return fragment
+            }
             else -> throw IllegalArgumentException("No fragment for the current position $position")
         }
     }

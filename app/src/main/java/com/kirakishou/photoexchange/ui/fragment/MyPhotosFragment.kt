@@ -102,7 +102,7 @@ class MyPhotosFragment : BaseFragment<AllPhotosActivityViewModel>() {
         }
     }
 
-    fun onUploadedPhotos(uploadedPhotos: List<MyPhoto>) {
+    fun onUploadedPhotosLoadedFromDatabase(uploadedPhotos: List<MyPhoto>) {
         if (!isAdded) {
             return
         }

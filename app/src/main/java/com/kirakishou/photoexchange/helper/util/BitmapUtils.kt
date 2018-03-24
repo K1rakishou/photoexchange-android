@@ -14,13 +14,18 @@ import java.io.FileOutputStream
  */
 object BitmapUtils {
 
-    fun rotatePhoto(photoFilePath: String, tempFile: File): Boolean {
+    fun rotatePhoto(photoFile: File?, tempFile: File): Boolean {
         try {
+            if (photoFile == null || !photoFile.exists()) {
+                return false
+            }
+
+            val photoFilePath = photoFile.absolutePath
             val options = BitmapFactory.Options()
             options.inPreferredConfig = Bitmap.Config.ARGB_8888
 
             val photoBitmap = BitmapFactory.decodeFile(photoFilePath, options)
-            checkNotNull(photoBitmap)
+                ?: return false
 
             try {
                 val ei = ExifInterface(photoFilePath)

@@ -18,8 +18,6 @@ import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
-import com.kirakishou.photoexchange.di.component.AllPhotosActivityComponent
-import com.kirakishou.photoexchange.di.component.ApplicationComponent
 import com.kirakishou.photoexchange.di.module.AllPhotosActivityModule
 import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
 import com.kirakishou.photoexchange.helper.location.MyLocationManager
@@ -28,17 +26,14 @@ import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
-import com.kirakishou.photoexchange.service.UploadPhotoService
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.AllPhotosActivityViewModelFactory
+import com.kirakishou.photoexchange.service.UploadPhotoService
 import com.kirakishou.photoexchange.ui.callback.ActivityCallback
 import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
 import io.reactivex.Single
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.rx2.asSingle
 import kotlinx.coroutines.experimental.rx2.awaitFirstOrNull
@@ -76,7 +71,6 @@ class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosA
     private var service: UploadPhotoService? = null
 
     private val adapter = FragmentTabsPager(supportFragmentManager)
-    private val onServiceConnectedSubject = PublishSubject.create<Unit>()
     private val locationManager by lazy { MyLocationManager(applicationContext) }
 
     override fun initViewModel(): AllPhotosActivityViewModel? {
@@ -88,15 +82,6 @@ class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosA
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         initViews()
         checkPermissions()
-
-        compositeDisposable += onServiceConnectedSubject
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { service?.attachCallback(this@AllPhotosActivity) }
-            .doOnNext {
-                service?.startPhotosUploading()
-            }
-            .subscribe()
     }
 
     private fun initViews() {
@@ -226,9 +211,8 @@ class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosA
     }
 
     //MyPhotosFragmentCallbacks
-
-    override fun onUploadedPhotosRetrieved(uploadedPhotos: List<MyPhoto>) {
-        adapter.getMyPhotosFragment()?.onUploadedPhotos(uploadedPhotos)
+    override fun onUploadedPhotosLoadedFromDatabase(uploadedPhotos: List<MyPhoto>) {
+        adapter.getMyPhotosFragment()?.onUploadedPhotosLoadedFromDatabase(uploadedPhotos)
     }
 
     override fun resolveDaggerDependency() {
@@ -240,15 +224,17 @@ class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosA
     private val connection = object : ServiceConnection {
 
         override fun onServiceConnected(className: ComponentName, _service: IBinder) {
-            Timber.e("Service connected")
+            Timber.tag(tag).d("Service connected")
 
             service = (_service as UploadPhotoService.UploadPhotosBinder).getService()
-            onServiceConnectedSubject.onNext(Unit)
+            service?.attachCallback(this@AllPhotosActivity)
+            service?.startPhotosUploading()
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
-            Timber.e("Service disconnected")
+            Timber.tag(tag).d("Service disconnected")
 
+            service?.detachCallback()
             unbindService(this)
             service = null
         }

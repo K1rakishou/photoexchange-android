@@ -10,5 +10,5 @@ import io.reactivex.Single
 interface AllPhotosActivityView : BaseView {
     fun startUploadingService()
     fun getCurrentLocation(): Single<LonLat>
-    fun onUploadedPhotosRetrieved(uploadedPhotos: List<MyPhoto>)
+    fun onUploadedPhotosLoadedFromDatabase(uploadedPhotos: List<MyPhoto>)
 }
