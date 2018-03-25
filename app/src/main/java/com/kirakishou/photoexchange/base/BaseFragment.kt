@@ -12,12 +12,13 @@ import butterknife.ButterKnife
 import butterknife.Unbinder
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import io.reactivex.disposables.CompositeDisposable
+import timber.log.Timber
 
 /**
  * Created by kirakishou on 11/7/2017.
  */
 
-abstract class BaseFragment<T : BaseViewModel<*>> : Fragment() {
+abstract class BaseFragment : Fragment() {
 
     protected val registry by lazy {
         LifecycleRegistry(this)
@@ -25,28 +26,13 @@ abstract class BaseFragment<T : BaseViewModel<*>> : Fragment() {
 
     override fun getLifecycle(): LifecycleRegistry = registry
 
-    private var viewModel: T? = null
     private lateinit var unBinder: Unbinder
     protected val compositeDisposable = CompositeDisposable()
-
-    //for tests
-    fun setViewModel(viewModel: T) {
-        this.viewModel = viewModel
-    }
-
-    fun getViewModel(): T {
-        if (viewModel == null) {
-            throw IllegalStateException("Cannot call get viewModel from the activity that has no viewModel!")
-        }
-
-        return viewModel!!
-    }
 
     override fun onAttach(context: Context?) {
         super.onAttach(context)
 
         resolveDaggerDependency()
-        viewModel = initViewModel()
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -77,11 +63,9 @@ abstract class BaseFragment<T : BaseViewModel<*>> : Fragment() {
         super.onDetach()
 
         compositeDisposable.clear()
-
         PhotoExchangeApplication.watch(this, this::class.simpleName)
     }
 
-    protected abstract fun initViewModel(): T?
     protected abstract fun getContentView(): Int
     protected abstract fun onFragmentViewCreated(savedInstanceState: Bundle?)
     protected abstract fun onFragmentViewDestroy()

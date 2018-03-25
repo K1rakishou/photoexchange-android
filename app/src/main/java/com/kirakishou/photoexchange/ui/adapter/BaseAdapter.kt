@@ -60,8 +60,11 @@ abstract class BaseAdapter<T>(
     open fun addAll(items: List<AdapterItem<T>>) {
         checkInited()
 
+        val from = this.items.lastIndex
+        val count = items.size
+
         this.items.addAll(items)
-        notifyDataSetChanged()
+        notifyItemRangeInserted(from, count)
     }
 
     open fun remove(position: Int) {
@@ -100,12 +103,7 @@ abstract class BaseAdapter<T>(
         throw IllegalStateException("viewType $viewType not found!")
     }
 
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        onViewHolderBound(holder, position)
-    }
-
     abstract fun getBaseAdapterInfo(): MutableList<BaseAdapterInfo>
-    abstract fun onViewHolderBound(holder: RecyclerView.ViewHolder, position: Int)
 
     inner class BaseAdapterInfo(val viewType: AdapterItemType,
                                 val layoutId: Int,

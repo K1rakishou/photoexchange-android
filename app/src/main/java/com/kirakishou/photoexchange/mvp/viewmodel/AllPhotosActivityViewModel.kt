@@ -5,19 +5,22 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThread
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.util.TimeUtils
+import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.channels.Channel
 import kotlinx.coroutines.experimental.rx2.await
 import timber.log.Timber
+import java.lang.ref.WeakReference
 import java.util.concurrent.TimeUnit
 
 /**
  * Created by kirakishou on 3/11/2018.
  */
 class AllPhotosActivityViewModel(
-    view: AllPhotosActivityView,
+    view: WeakReference<AllPhotosActivityView>,
     private val photosRepository: PhotosRepository,
     private val settingsRepository: SettingsRepository,
     private val coroutinesPool: CoroutineThreadPoolProvider
@@ -26,12 +29,24 @@ class AllPhotosActivityViewModel(
     private val tag = "[${this::class.java.simpleName}] "
     private val LOCATION_CHECK_INTERVAL = TimeUnit.SECONDS.toMillis(5)
 
-    override fun attach() {
+    val uploadedPhotosChannel = Channel<List<MyPhoto>>(Channel.UNLIMITED)
+    val startUploadingServiceChannel = Channel<Unit>(Channel.UNLIMITED)
+
+    init {
+        Timber.tag(tag).e("$tag init")
     }
 
-    override fun detach() {
-        clearView()
-        Timber.tag(tag).d("View cleared")
+    override fun onAttached() {
+        Timber.tag(tag).d("onAttached()")
+    }
+
+    override fun onCleared() {
+        Timber.tag(tag).d("onCleared()")
+
+        startUploadingServiceChannel.close()
+        uploadedPhotosChannel.close()
+
+        super.onCleared()
     }
 
     fun startUploadingPhotosService(isGranted: Boolean) {
@@ -40,7 +55,17 @@ class AllPhotosActivityViewModel(
             if (count > 0) {
                 updateLastLocation(isGranted)
 
-                view?.startUploadingService()
+                startUploadingServiceChannel.send(Unit)
+            }
+        }
+    }
+
+    fun loadUploadedPhotosFromDatabase() {
+        async(coroutinesPool.BG()) {
+            val uploadedPhotos = photosRepository.findAllByState(PhotoState.PHOTO_UPLOADED)
+            if (uploadedPhotos.isNotEmpty()) {
+                //TODO: change this to event
+                uploadedPhotosChannel.send(uploadedPhotos)
             }
         }
     }
@@ -54,7 +79,7 @@ class AllPhotosActivityViewModel(
             val now = TimeUtils.getTimeFast()
             val lastTimeCheck = settingsRepository.findLastLocationCheckTime()
             if (lastTimeCheck == null || (now - lastTimeCheck > LOCATION_CHECK_INTERVAL)) {
-                val currentLocation = view?.getCurrentLocation()?.await()
+                val currentLocation = getView()?.getCurrentLocation()?.await()
                     ?: return
 
                 val lastLocation = settingsRepository.findLastLocation()
@@ -68,20 +93,5 @@ class AllPhotosActivityViewModel(
         } else {
             settingsRepository.saveLastLocation(LonLat.empty())
         }
-    }
-
-    fun loadUploadedPhotosFromDatabase() {
-        async(coroutinesPool.BG()) {
-            val uploadedPhotos = photosRepository.findAllByState(PhotoState.PHOTO_UPLOADED)
-            if (uploadedPhotos.isNotEmpty()) {
-                view?.onUploadedPhotosLoadedFromDatabase(uploadedPhotos)
-            }
-        }
-    }
-
-    override fun onCleared() {
-        Timber.tag(tag).d("onCleared()")
-
-        super.onCleared()
     }
 }

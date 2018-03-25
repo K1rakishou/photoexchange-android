@@ -11,6 +11,7 @@ import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import timber.log.Timber
 import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Created by kirakishou on 1/4/2018.
@@ -19,8 +20,7 @@ open class CameraProvider(
     val context: Context
 ) {
 
-    @Volatile
-    private var isStarted = false
+    private val isStarted = AtomicBoolean(false)
     private var camera: Fotoapparat? = null
     private val tag = "[${this::class.java.simpleName}]: "
 
@@ -43,7 +43,7 @@ open class CameraProvider(
         if (!isStarted()) {
             camera?.apply {
                 this.start()
-                isStarted = true
+                isStarted.set(true)
             }
         }
     }
@@ -52,12 +52,12 @@ open class CameraProvider(
         if (isStarted()) {
             camera?.apply {
                 this.stop()
-                isStarted = false
+                isStarted.set(false)
             }
         }
     }
 
-    fun isStarted(): Boolean = isStarted
+    private fun isStarted(): Boolean = isStarted.get()
     fun isAvailable(): Boolean = camera?.isAvailable(back()) ?: false
 
     fun takePhoto(file: File): Single<Boolean> {

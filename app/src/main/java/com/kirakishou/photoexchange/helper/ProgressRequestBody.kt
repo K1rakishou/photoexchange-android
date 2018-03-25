@@ -1,6 +1,5 @@
 package com.kirakishou.photoexchange.helper
 
-import android.os.Looper
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.service.UploadPhotoServiceCallbacks
 import okhttp3.MediaType
@@ -46,14 +45,14 @@ class ProgressRequestBody(
                 val percent = 100L * uploaded / fileLength
                 if (percent - lastPercent >= 3) {
                     lastPercent = percent
-                    serviceCallbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onProgress(photoId, percent.toInt()))
+                    serviceCallbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnProgress(photoId, percent.toInt()))
                 }
 
                 uploaded += read.toLong()
                 sink.write(buffer, 0, read)
             }
 
-            serviceCallbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onProgress(photoId, 100))
+            serviceCallbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnProgress(photoId, 100))
         } finally {
             fis.close()
         }

@@ -1,14 +1,9 @@
 package com.kirakishou.photoexchange.ui.activity
 
 import android.Manifest
-import android.arch.lifecycle.ViewModelProviders
-import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
-import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.IBinder
 import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.TabLayout
 import android.support.v4.app.ActivityCompat
@@ -18,19 +13,15 @@ import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
+import com.kirakishou.photoexchange.di.component.AllPhotosActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotosActivityModule
 import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
 import com.kirakishou.photoexchange.helper.location.MyLocationManager
 import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
-import com.kirakishou.photoexchange.mvp.model.MyPhoto
-import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
-import com.kirakishou.photoexchange.mvp.viewmodel.factory.AllPhotosActivityViewModelFactory
-import com.kirakishou.photoexchange.service.UploadPhotoService
-import com.kirakishou.photoexchange.ui.callback.ActivityCallback
 import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
 import io.reactivex.Single
@@ -38,12 +29,11 @@ import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.rx2.asSingle
 import kotlinx.coroutines.experimental.rx2.awaitFirstOrNull
 import kotlinx.coroutines.experimental.withTimeoutOrNull
-import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 
-class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosActivityView, ActivityCallback,
+class AllPhotosActivity : BaseActivity(), AllPhotosActivityView,
     TabLayout.OnTabSelectedListener, ViewPager.OnPageChangeListener {
 
     @BindView(R.id.iv_close_button)
@@ -59,7 +49,7 @@ class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosA
     lateinit var takePhotoButton: FloatingActionButton
 
     @Inject
-    lateinit var viewModelFactory: AllPhotosActivityViewModelFactory
+    lateinit var viewModel: AllPhotosActivityViewModel
 
     @Inject
     lateinit var coroutinesPool: CoroutineThreadPoolProvider
@@ -68,20 +58,20 @@ class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosA
     lateinit var permissionManager: PermissionManager
 
     private val tag = "[${this::class.java.simpleName}] "
-    private var service: UploadPhotoService? = null
 
+    lateinit var activityComponent: AllPhotosActivityComponent
     private val adapter = FragmentTabsPager(supportFragmentManager)
     private val locationManager by lazy { MyLocationManager(applicationContext) }
-
-    override fun initViewModel(): AllPhotosActivityViewModel? {
-        return ViewModelProviders.of(this, viewModelFactory).get(AllPhotosActivityViewModel::class.java)
-    }
 
     override fun getContentView(): Int = R.layout.activity_all_photos
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         initViews()
         checkPermissions()
+    }
+
+    override fun onActivityDestroy() {
+
     }
 
     private fun initViews() {
@@ -120,7 +110,7 @@ class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosA
     }
 
     private fun onPermissionsCallback(isGranted: Boolean) {
-        getViewModel().startUploadingPhotosService(isGranted)
+        viewModel.startUploadingPhotosService(isGranted)
     }
 
     private fun showGpsRationaleDialog() {
@@ -144,6 +134,7 @@ class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosA
     }
 
     private fun initTabs() {
+        tabLayout.removeAllTabs()
         tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_uploaded_photos)))
         tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_received_photos)))
         tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_gallery)))
@@ -151,6 +142,9 @@ class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosA
 
         viewPager.adapter = adapter
         viewPager.offscreenPageLimit = 1
+
+        viewPager.clearOnPageChangeListeners()
+        tabLayout.clearOnTabSelectedListeners()
 
         viewPager.addOnPageChangeListener(this)
         tabLayout.addOnTabSelectedListener(this)
@@ -179,25 +173,8 @@ class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosA
     }
 
     override fun onPageSelected(position: Int) {
-    }
-
-    override fun startUploadingService() {
-        val serviceIntent = Intent(this, UploadPhotoService::class.java)
-        startService(serviceIntent)
-        bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
-    }
-
-    override fun onUploadingEvent(event: PhotoUploadingEvent) {
-        adapter.getMyPhotosFragment()?.onUploadingEvent(event)
-    }
-
-    override fun onActivityDestroy() {
-        getViewModel().detach()
-
-        service?.let { srvc ->
-            srvc.detachCallback()
-            unbindService(connection)
-            service = null
+        if (viewPager.currentItem != position) {
+            viewPager.currentItem = position
         }
     }
 
@@ -210,33 +187,10 @@ class AllPhotosActivity : BaseActivity<AllPhotosActivityViewModel>(), AllPhotosA
         permissionManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
-    //MyPhotosFragmentCallbacks
-    override fun onUploadedPhotosLoadedFromDatabase(uploadedPhotos: List<MyPhoto>) {
-        adapter.getMyPhotosFragment()?.onUploadedPhotosLoadedFromDatabase(uploadedPhotos)
-    }
-
     override fun resolveDaggerDependency() {
-        (application as PhotoExchangeApplication).applicationComponent
+        activityComponent = (application as PhotoExchangeApplication).applicationComponent
             .plus(AllPhotosActivityModule(this))
-            .inject(this)
-    }
 
-    private val connection = object : ServiceConnection {
-
-        override fun onServiceConnected(className: ComponentName, _service: IBinder) {
-            Timber.tag(tag).d("Service connected")
-
-            service = (_service as UploadPhotoService.UploadPhotosBinder).getService()
-            service?.attachCallback(this@AllPhotosActivity)
-            service?.startPhotosUploading()
-        }
-
-        override fun onServiceDisconnected(arg0: ComponentName) {
-            Timber.tag(tag).d("Service disconnected")
-
-            service?.detachCallback()
-            unbindService(this)
-            service = null
-        }
+        activityComponent.inject(this)
     }
 }

@@ -39,12 +39,12 @@ open class PhotosRepository(
 
         try {
             val photos = findAllByState(PhotoState.PHOTO_TO_BE_UPLOADED)
-            callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onPrepare())
+            callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnPrepare())
 
             for (photo in photos) {
                 try {
                     updatePhotoState(photo.id, PhotoState.PHOTO_UPLOADING)
-                    callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onPhotoUploadingStart(photo))
+                    callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnPhotoUploadingStart(photo))
 
                     val rotatedPhotoFile = File.createTempFile("rotated_photo", ".tmp")
 
@@ -71,7 +71,7 @@ open class PhotosRepository(
                                     photo.photoName = response.photoName
                                     photo.photoTempFile = null
 
-                                    callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onUploaded(photo))
+                                    callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnUploaded(photo))
                                     continue
                                 }
                             }
@@ -81,18 +81,18 @@ open class PhotosRepository(
                     }
 
                     updatePhotoState(photo.id, PhotoState.PHOTO_TO_BE_UPLOADED)
-                    callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onFailedToUpload(photo))
+                    callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnFailedToUpload(photo))
                 } catch (error: Throwable) {
                     Timber.e(error)
                     updatePhotoState(photo.id, PhotoState.PHOTO_TO_BE_UPLOADED)
-                    callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onFailedToUpload(photo))
+                    callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnFailedToUpload(photo))
                 }
             }
 
-            callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onEnd())
+            callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnEnd())
         } catch (error: Throwable) {
             Timber.e(error)
-            callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.onUnknownError())
+            callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnUnknownError())
         }
     }
 

@@ -13,9 +13,8 @@ import com.kirakishou.photoexchange.di.module.*
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.other.Constants
-import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
-import com.kirakishou.photoexchange.ui.callback.ActivityCallback
+import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -32,7 +31,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     private var notificationManager: NotificationManager? = null
     private val binder = UploadPhotosBinder()
 
-    private var callback: ActivityCallback? = null
+    private var callback: PhotoUploadingCallback? = null
     private val NOTIFICATION_ID = 1
     private val CHANNEL_ID = "1"
     private val CHANNED_NAME = "name"
@@ -56,7 +55,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
         Timber.tag(tag).d("Service destroyed")
     }
 
-    fun attachCallback(_callback: ActivityCallback) {
+    fun attachCallback(_callback: PhotoUploadingCallback) {
         callback = _callback
     }
 

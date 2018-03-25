@@ -5,8 +5,10 @@ import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.extension.asWeak
 import kotlinx.coroutines.experimental.Job
+import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 
 /**
  * Created by kirakishou on 3/17/2018.
@@ -36,6 +38,8 @@ class UploadPhotoServicePresenter(
         uploadingJob = launch(coroutinePool.BG()) {
             val userId = settingsRepository.findUserId()
             val location = settingsRepository.findLastLocation()
+
+            delay(5, TimeUnit.SECONDS)
 
             if (userId != null && location != null)  {
                 photosRepository.uploadPhotos(userId, location, weakenCallback)

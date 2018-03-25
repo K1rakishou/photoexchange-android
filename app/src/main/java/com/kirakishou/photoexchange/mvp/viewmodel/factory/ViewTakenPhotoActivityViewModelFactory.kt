@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThread
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.mvp.view.ViewTakenPhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.ViewTakenPhotoActivityViewModel
+import java.lang.ref.WeakReference
 import javax.inject.Inject
 
 /**
@@ -13,7 +14,7 @@ import javax.inject.Inject
  */
 class ViewTakenPhotoActivityViewModelFactory
 @Inject constructor(
-    val view: ViewTakenPhotoActivityView,
+    val view: WeakReference<ViewTakenPhotoActivityView>,
     val coroutinePool: CoroutineThreadPoolProvider,
     val photosRepository: PhotosRepository
 ) : ViewModelProvider.Factory {

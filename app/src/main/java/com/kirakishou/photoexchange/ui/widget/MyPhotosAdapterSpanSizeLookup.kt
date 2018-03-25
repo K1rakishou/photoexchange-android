@@ -15,7 +15,7 @@ class MyPhotosAdapterSpanSizeLookup(
     override fun getSpanSize(position: Int): Int {
         val type = adapter.getItemViewType(position)
         return when (type) {
-            AdapterItemType.VIEW_MY_PHOTO.ordinal -> columnsCount
+            AdapterItemType.VIEW_MY_PHOTO.ordinal -> 1
 
 //            AdapterItemType.VIEW_QUEUED_UP_PHOTO.ordinal,
 //            AdapterItemType.VIEW_FAILED_TO_UPLOAD.ordinal -> 1

@@ -22,7 +22,7 @@ import timber.log.Timber
 /**
  * Created by kirakishou on 7/20/2017.
  */
-abstract class BaseActivity<T: BaseViewModel<*>> : AppCompatActivity() {
+abstract class BaseActivity : AppCompatActivity() {
 
     private val registry by lazy {
         LifecycleRegistry(this)
@@ -33,21 +33,7 @@ abstract class BaseActivity<T: BaseViewModel<*>> : AppCompatActivity() {
     protected val compositeDisposable = CompositeDisposable()
     protected val unknownErrorsSubject = PublishSubject.create<Throwable>()!!
 
-    private var viewModel: T? = null
     private var unBinder: Unbinder? = null
-
-    //for tests
-    fun setViewModel(viewModel: T) {
-        this.viewModel = viewModel
-    }
-
-    fun getViewModel(): T {
-        if (viewModel == null) {
-            throw IllegalStateException("Cannot call get viewModel from the activity that has no viewModel!")
-        }
-
-        return viewModel!!
-    }
 
     @Suppress("UNCHECKED_CAST")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,7 +44,6 @@ abstract class BaseActivity<T: BaseViewModel<*>> : AppCompatActivity() {
         unBinder = ButterKnife.bind(this)
 
         resolveDaggerDependency()
-        viewModel = initViewModel()
 
         Fabric.with(this, Crashlytics())
 
@@ -67,7 +52,6 @@ abstract class BaseActivity<T: BaseViewModel<*>> : AppCompatActivity() {
                 .doOnError(this::onUnknownError)
                 .subscribe(this::onUnknownError)
 
-        viewModel?.attach()
         onActivityCreate(savedInstanceState, intent)
     }
 
@@ -91,7 +75,7 @@ abstract class BaseActivity<T: BaseViewModel<*>> : AppCompatActivity() {
 
     @CallSuper
     open fun onBadResponse(serverErrorCode: ServerErrorCode) {
-        Timber.d("ServerErrorCode: $serverErrorCode")
+        Timber.e("ServerErrorCode: $serverErrorCode")
     }
 
     @CallSuper
@@ -126,7 +110,6 @@ abstract class BaseActivity<T: BaseViewModel<*>> : AppCompatActivity() {
         }
     }
 
-    protected abstract fun initViewModel(): T?
     protected abstract fun getContentView(): Int
     protected abstract fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent)
     protected abstract fun onActivityDestroy()

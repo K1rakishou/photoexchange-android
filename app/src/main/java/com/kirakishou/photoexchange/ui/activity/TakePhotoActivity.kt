@@ -1,7 +1,6 @@
 package com.kirakishou.photoexchange.ui.activity
 
 import android.Manifest
-import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -20,7 +19,6 @@ import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
-import com.kirakishou.photoexchange.mvp.viewmodel.factory.TakePhotoActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.dialog.AppCannotWorkWithoutCameraPermissionDialog
 import com.kirakishou.photoexchange.ui.dialog.CameraIsNotAvailableDialog
 import com.kirakishou.photoexchange.ui.dialog.CameraRationaleDialog
@@ -31,7 +29,7 @@ import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 
-class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoActivityView {
+class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
 
     @BindView(R.id.iv_show_all_photos)
     lateinit var ivShowAllPhotos: ImageView
@@ -43,7 +41,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
     lateinit var takePhotoButton: FloatingActionButton
 
     @Inject
-    lateinit var viewModelFactory: TakePhotoActivityViewModelFactory
+    lateinit var viewModel: TakePhotoActivityViewModel
 
     @Inject
     lateinit var coroutinesPool: CoroutineThreadPoolProvider
@@ -55,10 +53,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
     lateinit var cameraProvider: CameraProvider
 
     private val tag = "[${this::class.java.simpleName}]: "
-
-    override fun initViewModel(): TakePhotoActivityViewModel? {
-        return ViewModelProviders.of(this, viewModelFactory).get(TakePhotoActivityViewModel::class.java)
-    }
 
     override fun getContentView(): Int = R.layout.activity_take_photo
 
@@ -92,7 +86,7 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
 
     private fun initViews() {
         takePhotoButton.setOnClickListener {
-            getViewModel().takePhoto()
+            viewModel.takePhoto()
         }
 
         ivShowAllPhotos.setOnClickListener {
@@ -112,7 +106,6 @@ class TakePhotoActivity : BaseActivity<TakePhotoActivityViewModel>(), TakePhotoA
     }
 
     override fun onActivityDestroy() {
-        getViewModel().detach()
     }
 
     override fun onResume() {

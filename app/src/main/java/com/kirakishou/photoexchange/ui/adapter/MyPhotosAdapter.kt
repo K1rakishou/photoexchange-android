@@ -18,7 +18,7 @@ import com.kirakishou.photoexchange.mvp.model.adapter.AdapterItemType
  * Created by kirakishou on 3/18/2018.
  */
 class MyPhotosAdapter(
-    private val context: Context,
+    context: Context,
     private val imageLoader: ImageLoader
 ) : BaseAdapter<MyPhoto>(context) {
 
@@ -54,7 +54,7 @@ class MyPhotosAdapter(
         )
     }
 
-    override fun onViewHolderBound(holder: RecyclerView.ViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
             is MyPhotoViewHolder -> {
                 val myPhoto = items.getOrNull(position)?.value
@@ -83,8 +83,8 @@ class MyPhotosAdapter(
                         photosProgressMap.remove(myPhoto.id)
                     }
 
-                    else -> {
-                        //do nothing
+                    PhotoState.PHOTO_TAKEN -> {
+                        throw IllegalStateException("photo with state PHOTO_TAKEN should not be here!")
                     }
                 }
             }
