@@ -8,9 +8,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
 
 /**
- * Created by kirakishou on 11/3/2017.
+ * Created by kirakishou on 3/17/2018.
  */
-
 @Module
 class GsonModule {
 
@@ -18,9 +17,9 @@ class GsonModule {
     @Provides
     fun provideGson(): Gson {
         return GsonBuilder()
-                .excludeFieldsWithoutExposeAnnotation()
-                .setPrettyPrinting()
-                .create()
+            .excludeFieldsWithoutExposeAnnotation()
+            .setPrettyPrinting()
+            .create()
     }
 
     @Singleton

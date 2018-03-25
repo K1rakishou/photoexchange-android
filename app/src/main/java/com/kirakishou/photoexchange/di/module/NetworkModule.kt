@@ -1,7 +1,5 @@
 package com.kirakishou.photoexchange.di.module
 
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import com.kirakishou.photoexchange.helper.api.ApiService
 import dagger.Module
 import dagger.Provides
@@ -14,9 +12,8 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 /**
- * Created by kirakishou on 11/3/2017.
+ * Created by kirakishou on 3/17/2018.
  */
-
 @Module
 class NetworkModule(private val baseUrl: String) {
 
@@ -33,29 +30,23 @@ class NetworkModule(private val baseUrl: String) {
     @Provides
     fun provideOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient {
         return OkHttpClient.Builder()
-                //TODO: change this
-                .connectTimeout(5, TimeUnit.SECONDS)
-                .writeTimeout(5, TimeUnit.SECONDS)
-                .readTimeout(5, TimeUnit.SECONDS)
-                //.addInterceptor(loggingInterceptor)
-                .build()
+            //TODO: change this
+            .connectTimeout(50000, TimeUnit.SECONDS)
+            .writeTimeout(50000, TimeUnit.SECONDS)
+            .readTimeout(50000, TimeUnit.SECONDS)
+            //.addInterceptor(loggingInterceptor)
+            .build()
     }
 
     @Singleton
     @Provides
-    fun provideRxJavaCallAdapterFactory(): RxJava2CallAdapterFactory {
-        return RxJava2CallAdapterFactory.create()
-    }
-
-    @Singleton
-    @Provides
-    fun provideRetrofit(client: OkHttpClient, converterFactory: GsonConverterFactory, adapterFactory: RxJava2CallAdapterFactory): Retrofit {
+    fun provideRetrofit(client: OkHttpClient, converterFactory: GsonConverterFactory): Retrofit {
         return Retrofit.Builder()
-                .baseUrl(baseUrl)
-                .addConverterFactory(converterFactory)
-                .addCallAdapterFactory(adapterFactory)
-                .client(client)
-                .build()
+            .baseUrl(baseUrl)
+            .addConverterFactory(converterFactory)
+            .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+            .client(client)
+            .build()
     }
 
     @Singleton

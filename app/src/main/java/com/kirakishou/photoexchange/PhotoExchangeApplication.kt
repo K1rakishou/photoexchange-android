@@ -1,42 +1,48 @@
 package com.kirakishou.photoexchange
 
 import android.app.Application
-import com.kirakishou.photoexchange.di.component.ApplicationComponent
 import com.kirakishou.photoexchange.di.component.DaggerApplicationComponent
-import com.kirakishou.photoexchange.di.module.*
 import com.squareup.leakcanary.LeakCanary
 import com.squareup.leakcanary.RefWatcher
 import timber.log.Timber
 import android.os.StrictMode
 import android.util.Log
 import com.crashlytics.android.Crashlytics
-import com.kirakishou.photoexchange.mwvm.model.other.Constants
+import com.kirakishou.photoexchange.di.component.ApplicationComponent
+import com.kirakishou.photoexchange.di.module.ApplicationModule
+import com.kirakishou.photoexchange.di.module.CoroutineThreadPoolProviderModule
+import com.kirakishou.photoexchange.di.module.DatabaseModule
+import com.kirakishou.photoexchange.di.module.NetworkModule
+import com.kirakishou.photoexchange.mvp.model.other.Constants
 
 
 /**
  * Created by kirakishou on 11/3/2017.
  */
 
-class PhotoExchangeApplication : Application() {
+open class PhotoExchangeApplication : Application() {
+
+    open lateinit var applicationComponent: ApplicationComponent
 
     override fun onCreate() {
         super.onCreate()
 
-        applicationComponent = DaggerApplicationComponent
-                .builder()
-                .applicationModule(ApplicationModule(this))
-                .networkModule(NetworkModule(baseUrl))
-                .gsonModule(GsonModule())
-                .apiClientModule(ApiClientModule())
-                .schedulerProviderModule(SchedulerProviderModule())
-                .appSharedPreferenceModule(AppSharedPreferenceModule())
-                .databaseModule(DatabaseModule(databaseName))
-                .mapperModule(MapperModule())
-                .eventBusModule(EventBusModule())
-                .imageLoaderModule(ImageLoaderModule())
-                .eventAccumulatorModule(EventAccumulatorModule())
-                .build()
+        init()
 
+        applicationComponent = initializeApplicationComponent()
+        applicationComponent.inject(this)
+    }
+
+    open fun initializeApplicationComponent(): ApplicationComponent {
+        return DaggerApplicationComponent.builder()
+            .applicationModule(ApplicationModule(this))
+            .databaseModule(DatabaseModule(Constants.DATABASE_NAME))
+            .networkModule(NetworkModule(Constants.BASE_URL))
+            .coroutineThreadPoolProviderModule(CoroutineThreadPoolProviderModule())
+            .build()
+    }
+
+    open fun init() {
         initTimber()
         initLeakCanary()
         //enabledStrictMode()
@@ -55,16 +61,16 @@ class PhotoExchangeApplication : Application() {
     private fun enabledStrictMode() {
         if (Constants.isDebugBuild) {
             StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder()
-                    .detectAll()
-                    .penaltyLog()
-                    //.penaltyDeath()
-                    .build())
+                .detectAll()
+                .penaltyLog()
+                //.penaltyDeath()
+                .build())
 
             StrictMode.setVmPolicy(StrictMode.VmPolicy.Builder()
-                    .detectAll()
-                    .penaltyLog()
-                    //.penaltyDeath()
-                    .build())
+                .detectAll()
+                .penaltyLog()
+                //.penaltyDeath()
+                .build())
         }
     }
 
@@ -118,10 +124,8 @@ class PhotoExchangeApplication : Application() {
     }
 
     companion object {
-        @JvmStatic lateinit var applicationComponent: ApplicationComponent
         var refWatcher: RefWatcher? = null
         val baseUrl = "http://kez1911.asuscomm.com:8080/"
-        val databaseName = "photoexchange_db"
 
         private val CRASHLYTICS_KEY_PRIORITY = "priority"
         private val CRASHLYTICS_KEY_TAG = "tag"

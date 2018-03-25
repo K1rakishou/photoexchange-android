@@ -1,98 +1,83 @@
 package com.kirakishou.photoexchange.helper.api.request
 
 import com.google.gson.Gson
+import com.kirakishou.photoexchange.helper.ProgressRequestBody
 import com.kirakishou.photoexchange.helper.api.ApiService
-import com.kirakishou.photoexchange.helper.rx.operator.OnApiErrorSingle
-import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.mwvm.model.dto.PhotoToBeUploaded
-import com.kirakishou.photoexchange.mwvm.model.exception.ApiException
-import com.kirakishou.photoexchange.mwvm.model.exception.PhotoDoesNotExistsException
-import com.kirakishou.photoexchange.mwvm.model.net.packet.SendPhotoPacket
-import com.kirakishou.photoexchange.mwvm.model.net.response.StatusResponse
-import com.kirakishou.photoexchange.mwvm.model.net.response.UploadPhotoResponse
-import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
+import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
+import com.kirakishou.photoexchange.mvp.model.net.packet.SendPhotoPacket
+import com.kirakishou.photoexchange.mvp.model.net.response.StatusResponse
+import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
+import com.kirakishou.photoexchange.mvp.model.other.LonLat
+import com.kirakishou.photoexchange.mvp.model.other.ServerErrorCode
+import com.kirakishou.photoexchange.service.UploadPhotoServiceCallbacks
 import io.reactivex.Single
-import okhttp3.MediaType
+import kotlinx.coroutines.experimental.Deferred
+import kotlinx.coroutines.experimental.async
 import okhttp3.MultipartBody
-import okhttp3.RequestBody
+import retrofit2.Response
 import timber.log.Timber
 import java.io.File
-import java.util.concurrent.TimeUnit
+import java.lang.ref.WeakReference
 
 /**
- * Created by kirakishou on 11/3/2017.
+ * Created by kirakishou on 3/17/2018.
  */
-class UploadPhotoRequest(
-        private val info: PhotoToBeUploaded,
-        private val apiService: ApiService,
-        private val schedulers: SchedulerProvider,
-        private val gson: Gson
-) : AbstractRequest<UploadPhotoResponse>() {
-
-    override fun build(): Single<UploadPhotoResponse> {
-        val packet = SendPhotoPacket(info.location.lon, info.location.lat, info.userId)
-
-        return getBodySingle(info.photoFilePath, packet)
-                .subscribeOn(schedulers.provideIo())
-                .observeOn(schedulers.provideIo())
-                .flatMap { multipartBody ->
-                    return@flatMap apiService.sendPhoto(multipartBody.part(0), multipartBody.part(1))
-                            .lift(OnApiErrorSingle(gson))
-                }
-                .delay(3, TimeUnit.SECONDS)
-                .onErrorResumeNext { error -> convertExceptionToErrorCode(error) }
-    }
+class UploadPhotoRequest<T : StatusResponse>(
+    private val photoId: Long,
+    private val photoFilePath: String,
+    private val location: LonLat,
+    private val userId: String,
+    private val callback: WeakReference<UploadPhotoServiceCallbacks>,
+    private val apiService: ApiService,
+    private val coroutinePool: CoroutineThreadPoolProvider,
+    private val gson: Gson
+) : AbstractRequest<T>() {
 
     @Suppress("UNCHECKED_CAST")
-    private fun convertExceptionToErrorCode(error: Throwable): Single<UploadPhotoResponse> {
-        val response = when (error) {
-            is ApiException -> UploadPhotoResponse.error(error.serverErrorCode)
-
-            else -> {
-                Timber.d("Unknown exception")
-                throw error
-            }
-        }
-
-        return Single.just(response)
-    }
-
-    private fun getBodySingle(photoFilePath: String, packet: SendPhotoPacket): Single<MultipartBody> {
+    override fun execute(): Single<T> {
         return Single.fromCallable {
+            val packet = SendPhotoPacket(location.lon, location.lat, userId)
             val photoFile = File(photoFilePath)
 
             if (!photoFile.isFile || !photoFile.exists()) {
-                throw PhotoDoesNotExistsException()
+                return@fromCallable UploadPhotoResponse.error(ServerErrorCode.NO_PHOTO_FILE_ON_DISK) as T
             }
 
-            val photoRequestBody = RequestBody.create(MediaType.parse("image/*"), photoFile)
-            val packetJson = gson.toJson(packet)
-
-            return@fromCallable MultipartBody.Builder()
-                    .addFormDataPart("photo", photoFile.name, photoRequestBody)
-                    .addFormDataPart("packet", packetJson)
-                    .build()
+            val body = getBody(photoId, photoFile, packet, callback)
+            return@fromCallable extractResponse(apiService.uploadPhoto(body.part(0), body.part(1)).blockingGet() as Response<T>)
         }
     }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun extractResponse(response: Response<T>): T {
+        if (!response.isSuccessful) {
+            try {
+                val responseJson = response.errorBody()!!.string()
+                val error = gson.fromJson<StatusResponse>(responseJson, StatusResponse::class.java)
+                Timber.d(responseJson)
+
+                //may happen in some rare cases
+                return if (error?.serverErrorCode == null) {
+                    UploadPhotoResponse.error(ServerErrorCode.BAD_SERVER_RESPONSE) as T
+                } else {
+                    UploadPhotoResponse.error(ServerErrorCode.from(error.serverErrorCode)) as T
+                }
+            } catch (e: Throwable) {
+                Timber.e(e)
+                return UploadPhotoResponse.error(ServerErrorCode.UNKNOWN_ERROR) as T
+            }
+        }
+
+        return response.body()!!
+    }
+
+    private fun getBody(photoId: Long, photoFile: File, packet: SendPhotoPacket, callback: WeakReference<UploadPhotoServiceCallbacks>): MultipartBody {
+        val photoRequestBody = ProgressRequestBody(photoId, photoFile, callback)
+        val packetJson = gson.toJson(packet)
+
+        return MultipartBody.Builder()
+            .addFormDataPart("photo", photoFile.name, photoRequestBody)
+            .addFormDataPart("packet", packetJson)
+            .build()
+    }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

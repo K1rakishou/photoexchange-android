@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    tools:context="com.kirakishou.photoexchange.ui.activity.TakePhotoActivity">
 
     <io.fotoapparat.view.CameraView
         android:id="@+id/camera_view"
@@ -15,9 +16,6 @@
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_marginEnd="24dp"
-        android:scaleX="0"
-        android:scaleY="0"
-        android:visibility="gone"
         android:background="?selectableItemBackgroundBorderless"
         android:src="@drawable/ic_insert_photo"
         app:layout_constraintBottom_toBottomOf="@+id/take_photo_button"
@@ -31,9 +29,6 @@
         android:layout_marginBottom="24dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
-        android:scaleX="0"
-        android:scaleY="0"
-        android:visibility="gone"
         android:clickable="true"
         android:focusable="true"
         android:src="@drawable/ic_photo_camera"

@@ -2,33 +2,35 @@ package com.kirakishou.photoexchange.helper.database
 
 import android.arch.persistence.room.Database
 import android.arch.persistence.room.RoomDatabase
-import com.kirakishou.photoexchange.helper.database.dao.PhotoAnswerDao
-import com.kirakishou.photoexchange.helper.database.dao.RecipientLocationDao
-import com.kirakishou.photoexchange.helper.database.dao.TakenPhotosDao
-import com.kirakishou.photoexchange.helper.database.entity.PhotoAnswerEntity
-import com.kirakishou.photoexchange.helper.database.entity.RecipientLocationEntity
-import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
+import com.kirakishou.photoexchange.helper.database.dao.MyPhotoDao
+import com.kirakishou.photoexchange.helper.database.dao.SettingsDao
+import com.kirakishou.photoexchange.helper.database.dao.TempFileDao
+import com.kirakishou.photoexchange.helper.database.entity.MyPhotoEntity
+import com.kirakishou.photoexchange.helper.database.entity.SettingEntity
+import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
 
 /**
  * Created by kirakishou on 9/12/2017.
  */
 
 @Database(entities = [
-    TakenPhotoEntity::class,
-    PhotoAnswerEntity::class,
-    RecipientLocationEntity::class], version = 1)
+    MyPhotoEntity::class,
+    TempFileEntity::class,
+    SettingEntity::class
+], version = 1)
 abstract class MyDatabase : RoomDatabase() {
 
-    abstract fun takenPhotosDao(): TakenPhotosDao
-    abstract fun photoAnswerDao(): PhotoAnswerDao
-    abstract fun recipientLocationDao(): RecipientLocationDao
+    abstract fun myPhotoDao(): MyPhotoDao
+    abstract fun tempFileDao(): TempFileDao
+    abstract fun settingsDao(): SettingsDao
 
-    fun runInTransaction(func: () -> Unit) {
+    inline fun transactional(func: () -> Boolean) {
         this.beginTransaction()
 
         try {
-            func()
-            this.setTransactionSuccessful()
+            if (func()) {
+                this.setTransactionSuccessful()
+            }
         } finally {
             this.endTransaction()
         }

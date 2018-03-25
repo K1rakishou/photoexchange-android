@@ -1,49 +1,30 @@
 package com.kirakishou.photoexchange.di.component
 
-import android.content.Context
-import android.content.SharedPreferences
+import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.*
-import com.kirakishou.photoexchange.helper.EventAccumulator
-import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.helper.api.ApiClient
-import com.kirakishou.photoexchange.helper.api.ApiService
-import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
-import com.kirakishou.photoexchange.helper.database.repository.RecipientLocationRepository
-import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import com.kirakishou.photoexchange.helper.rx.scheduler.SchedulerProvider
 import dagger.Component
-import org.greenrobot.eventbus.EventBus
 import javax.inject.Singleton
 
 /**
- * Created by kirakishou on 11/3/2017.
+ * Created by kirakishou on 3/3/2018.
  */
 
 @Singleton
-@Component(modules = arrayOf(
-        ApplicationModule::class,
-        NetworkModule::class,
-        GsonModule::class,
-        ApiClientModule::class,
-        SchedulerProviderModule::class,
-        AppSharedPreferenceModule::class,
-        DatabaseModule::class,
-        MapperModule::class,
-        EventBusModule::class,
-        ImageLoaderModule::class,
-        EventAccumulatorModule::class))
+@Component(modules = [
+    ApplicationModule::class,
+    SchedulerProviderModule::class,
+    CoroutineThreadPoolProviderModule::class,
+    DatabaseModule::class,
+    GsonModule::class,
+    NetworkModule::class,
+    DatabaseModule::class,
+    ApiClientModule::class,
+    ImageLoaderModule::class
+])
 interface ApplicationComponent {
-    fun exposeContext(): Context
-    fun exposeApiService(): ApiService
-    fun exposeApiClient(): ApiClient
-    fun exposeSchedulers(): SchedulerProvider
-    fun exposeSharedPreferences(): SharedPreferences
-    fun exposeDatabase(): MyDatabase
-    fun exposeTakenPhotosRepository(): TakenPhotosRepository
-    fun exposePhotoAnswerRepository(): PhotoAnswerRepository
-    fun exposeRecipientLocationRepository(): RecipientLocationRepository
-    fun exposeEventBust(): EventBus
-    fun exposeImageLoaderModule(): ImageLoader
-    fun exposeEventAccumulator(): EventAccumulator
+    fun inject(application: PhotoExchangeApplication)
+
+    fun plus(takePhotoActivityModule: TakePhotoActivityModule): TakePhotoActivityComponent
+    fun plus(viewTakenPhotoActivityModule: ViewTakenPhotoActivityModule): ViewTakenPhotoActivityComponent
+    fun plus(allPhotosActivityModule: AllPhotosActivityModule): AllPhotosActivityComponent
 }

@@ -1,7 +1,6 @@
 package com.kirakishou.photoexchange.base
 
 import android.arch.lifecycle.LifecycleRegistry
-import android.arch.lifecycle.ViewModel
 import android.content.Intent
 import android.os.Bundle
 import android.support.annotation.CallSuper
@@ -11,9 +10,7 @@ import butterknife.ButterKnife
 import butterknife.Unbinder
 import com.crashlytics.android.Crashlytics
 import com.kirakishou.photoexchange.PhotoExchangeApplication
-import com.kirakishou.photoexchange.mwvm.model.other.Constants
-import com.kirakishou.photoexchange.mwvm.model.other.ServerErrorCode
-import com.kirakishou.photoexchange.mwvm.model.other.Fickle
+import com.kirakishou.photoexchange.mvp.model.other.ServerErrorCode
 import io.fabric.sdk.android.Fabric
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -25,7 +22,7 @@ import timber.log.Timber
 /**
  * Created by kirakishou on 7/20/2017.
  */
-abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
+abstract class BaseActivity : AppCompatActivity() {
 
     private val registry by lazy {
         LifecycleRegistry(this)
@@ -33,19 +30,10 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
 
     override fun getLifecycle(): LifecycleRegistry = registry
 
-    protected val compositeDisposable = CompositeDisposable()
     protected val unknownErrorsSubject = PublishSubject.create<Throwable>()!!
 
-    private var viewModel: T? = null
-    private var unBinder: Fickle<Unbinder> = Fickle.empty()
-
-    protected fun getViewModel(): T {
-        if (viewModel == null) {
-            throw IllegalStateException("Cannot call get viewModel from the activity that has not viewModel!")
-        }
-
-        return viewModel!!
-    }
+    protected val compositeDisposable = CompositeDisposable()
+    private var unBinder: Unbinder? = null
 
     @Suppress("UNCHECKED_CAST")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,18 +41,16 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
         //Timber.d("${this::class.java}.onCreate")
 
         setContentView(getContentView())
-        unBinder = Fickle.of(ButterKnife.bind(this))
+        unBinder = ButterKnife.bind(this)
 
         resolveDaggerDependency()
-        viewModel = initViewModel()
-        onInitRx()
 
         Fabric.with(this, Crashlytics())
 
         compositeDisposable += unknownErrorsSubject
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnError(this::onUnknownError)
-                .subscribe(this::onUnknownError)
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnError(this::onUnknownError)
+            .subscribe(this::onUnknownError)
 
         onActivityCreate(savedInstanceState, intent)
     }
@@ -72,12 +58,10 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
     override fun onDestroy() {
         //Timber.d("${this::class.java}.onDestroy")
 
-        compositeDisposable.clear()
         onActivityDestroy()
 
-        unBinder.ifPresent {
-            it.unbind()
-        }
+        unBinder?.unbind()
+        compositeDisposable.clear()
 
         PhotoExchangeApplication.watch(this, this::class.simpleName)
         super.onDestroy()
@@ -91,7 +75,7 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
 
     @CallSuper
     open fun onBadResponse(serverErrorCode: ServerErrorCode) {
-        Timber.d("ServerErrorCode: $serverErrorCode")
+        Timber.e("ServerErrorCode: $serverErrorCode")
     }
 
     @CallSuper
@@ -116,10 +100,6 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
         }
     }
 
-    open fun finishActivity() {
-        finish()
-    }
-
     open fun runActivityWithArgs(clazz: Class<*>, args: Bundle, finishCurrentActivity: Boolean) {
         val intent = Intent(this, clazz)
         intent.putExtras(args)
@@ -130,9 +110,7 @@ abstract class BaseActivity<out T: ViewModel> : AppCompatActivity() {
         }
     }
 
-    protected abstract fun initViewModel(): T?
     protected abstract fun getContentView(): Int
-    protected abstract fun onInitRx()
     protected abstract fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent)
     protected abstract fun onActivityDestroy()
     protected abstract fun resolveDaggerDependency()

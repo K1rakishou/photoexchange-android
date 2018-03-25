@@ -17,7 +17,6 @@ class AppSharedPreference
     @PublishedApi
     internal fun <T : BasePreference> accessPrepare(clazz: Class<*>): T {
         return when (clazz) {
-            UserInfoPreference::class.java -> UserInfoPreference(sharedPreferences) as T
             else -> throw IllegalArgumentException("Unknown type T: ${clazz.simpleName}")
         }
     }

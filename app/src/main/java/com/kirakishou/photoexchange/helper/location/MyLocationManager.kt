@@ -10,7 +10,7 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.os.Looper
 import android.support.v4.app.ActivityCompat
-import com.kirakishou.photoexchange.mwvm.model.other.LonLat
+import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import timber.log.Timber
 
 /**
