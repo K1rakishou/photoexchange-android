@@ -1,7 +1,6 @@
 package com.kirakishou.photoexchange.base
 
 import android.arch.lifecycle.LifecycleRegistry
-import android.arch.lifecycle.ViewModel
 import android.content.Context
 import android.os.Bundle
 import android.support.v4.app.Fragment
@@ -11,7 +10,6 @@ import android.view.ViewGroup
 import butterknife.ButterKnife
 import butterknife.Unbinder
 import com.kirakishou.photoexchange.PhotoExchangeApplication
-import io.reactivex.disposables.CompositeDisposable
 import timber.log.Timber
 
 /**
@@ -27,12 +25,15 @@ abstract class BaseFragment : Fragment() {
     override fun getLifecycle(): LifecycleRegistry = registry
 
     private lateinit var unBinder: Unbinder
-    protected val compositeDisposable = CompositeDisposable()
 
     override fun onAttach(context: Context?) {
         super.onAttach(context)
+        Timber.e("onAttach")
+    }
 
-        resolveDaggerDependency()
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        retainInstance = false
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -49,6 +50,7 @@ abstract class BaseFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        resolveDaggerDependency()
         onFragmentViewCreated(savedInstanceState)
     }
 
@@ -62,7 +64,7 @@ abstract class BaseFragment : Fragment() {
     override fun onDetach() {
         super.onDetach()
 
-        compositeDisposable.clear()
+        Timber.e("onDetach")
         PhotoExchangeApplication.watch(this, this::class.simpleName)
     }
 

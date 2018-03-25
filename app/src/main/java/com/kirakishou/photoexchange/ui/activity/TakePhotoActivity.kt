@@ -24,7 +24,6 @@ import com.kirakishou.photoexchange.ui.dialog.CameraIsNotAvailableDialog
 import com.kirakishou.photoexchange.ui.dialog.CameraRationaleDialog
 import io.fotoapparat.view.CameraView
 import io.reactivex.Single
-import kotlinx.coroutines.experimental.async
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
@@ -148,13 +147,13 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
     }
 
     override fun showControls() {
-        async(coroutinesPool.UI()) {
+        runOnUiThread {
             takePhotoButton.visibility = View.VISIBLE
         }
     }
 
     override fun hideControls() {
-        async(coroutinesPool.UI()) {
+        runOnUiThread {
             takePhotoButton.visibility = View.GONE
         }
     }

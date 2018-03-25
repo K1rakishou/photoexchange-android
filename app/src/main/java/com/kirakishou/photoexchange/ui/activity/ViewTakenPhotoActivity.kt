@@ -15,7 +15,6 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThread
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.view.ViewTakenPhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.ViewTakenPhotoActivityViewModel
-import kotlinx.coroutines.experimental.async
 import javax.inject.Inject
 
 class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
@@ -48,8 +47,6 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
     }
 
     private fun initViews() {
-//        hideView(true)
-
         fabCloseActivity.setOnClickListener {
             finish()
         }
@@ -73,14 +70,14 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
     }
 
     override fun hideControls() {
-        async(coroutinesPool.UI()) {
+        runOnUiThread {
             fabCloseActivity.visibility = View.GONE
             fabSendPhoto.visibility = View.GONE
         }
     }
 
     override fun showControls() {
-        async(coroutinesPool.UI()) {
+        runOnUiThread {
             fabCloseActivity.visibility = View.VISIBLE
             fabSendPhoto.visibility = View.VISIBLE
         }
@@ -88,46 +85,7 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
 
     override fun onPhotoUpdated() {
         runActivity(AllPhotosActivity::class.java, true)
-//        showView()
     }
-
-//    fun hideView(immediately: Boolean) {
-//        async(coroutinesPool.UI()) {
-//            if (immediately) {
-//                makePhotoPublicView.animate()
-//                    .translationYBy(-makePhotoPublicView.height.toFloat())
-//                    .setDuration(2000)
-//                    .start()
-//            } else {
-//                makePhotoPublicView.animate()
-//                    .translationYBy(-makePhotoPublicView.height.toFloat())
-//                    .setDuration(2000)
-//                    .setInterpolator(AccelerateInterpolator())
-//                    .mySetListener {
-//                        onAnimationEnd {
-//                            makePhotoPublicView.visibility = View.GONE
-//                        }
-//                    }
-//                    .start()
-//            }
-//        }
-//    }
-//
-//    fun showView() {
-//        async(coroutinesPool.UI()) {
-//            makePhotoPublicView.animate()
-//                .translationYBy(makePhotoPublicView.height.toFloat())
-//                .setDuration(2000)
-//                .setInterpolator(DecelerateInterpolator())
-//                .mySetListener {
-//                    onAnimationStart {
-//                        makePhotoPublicView.visibility = View.VISIBLE
-//                    }
-//                }
-//                .start()
-//
-//        }
-//    }
 
     override fun showToast(message: String, duration: Int) {
         onShowToast(message, duration)

@@ -6,7 +6,7 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThread
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.service.UploadPhotoServiceCallbacks
-import kotlinx.coroutines.experimental.Deferred
+import io.reactivex.Single
 import java.lang.ref.WeakReference
 import javax.inject.Inject
 
@@ -21,7 +21,7 @@ class ApiClient
 ) {
 
     fun uploadPhoto(photoId: Long, photoFilePath: String, location: LonLat, userId: String,
-                    callback: WeakReference<UploadPhotoServiceCallbacks>): Deferred<UploadPhotoResponse> {
+                    callback: WeakReference<UploadPhotoServiceCallbacks>): Single<UploadPhotoResponse> {
         return UploadPhotoRequest<UploadPhotoResponse>(photoId, photoFilePath, location, userId, callback, apiService, coroutinePool, gson)
             .execute()
     }

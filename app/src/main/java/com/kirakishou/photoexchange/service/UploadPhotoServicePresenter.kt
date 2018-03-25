@@ -4,11 +4,11 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThread
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.extension.asWeak
-import kotlinx.coroutines.experimental.Job
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.launch
+import io.reactivex.Completable
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
 
 /**
  * Created by kirakishou on 3/17/2018.
@@ -20,7 +20,7 @@ class UploadPhotoServicePresenter(
 ) {
     private val tag = "[${this::class.java.simpleName}] "
 
-    private var uploadingJob: Job? = null
+    private var compositeDisposable = CompositeDisposable()
     private var serviceCallbacks: UploadPhotoServiceCallbacks? = null
 
     fun onAttach(serviceCallbacks: UploadPhotoServiceCallbacks) {
@@ -29,17 +29,15 @@ class UploadPhotoServicePresenter(
 
     fun onDetach() {
         this.serviceCallbacks = null
-        this.uploadingJob?.cancel()
+        this.compositeDisposable.clear()
     }
 
     fun uploadPhotos() {
         val weakenCallback = serviceCallbacks?.asWeak()
 
-        uploadingJob = launch(coroutinePool.BG()) {
+        compositeDisposable += Completable.fromAction {
             val userId = settingsRepository.findUserId()
             val location = settingsRepository.findLastLocation()
-
-            delay(5, TimeUnit.SECONDS)
 
             if (userId != null && location != null)  {
                 photosRepository.uploadPhotos(userId, location, weakenCallback)
@@ -48,7 +46,8 @@ class UploadPhotoServicePresenter(
             }
 
             serviceCallbacks?.stopService()
-            return@launch Unit
-        }
+        }.subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.io())
+            .subscribe()
     }
 }

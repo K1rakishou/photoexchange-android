@@ -11,7 +11,7 @@ import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
  * Created by kirakishou on 11/7/2017.
  */
 
-class FragmentTabsPager(fm: FragmentManager) : SmartFragmentStatePagerAdapter(fm) {
+class FragmentTabsPager(fm: FragmentManager) : FragmentStatePagerAdapter(fm) {
 
     override fun getItem(position: Int): Fragment {
         return when (position) {

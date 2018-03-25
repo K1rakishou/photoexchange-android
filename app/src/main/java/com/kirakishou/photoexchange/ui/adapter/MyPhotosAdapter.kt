@@ -92,18 +92,8 @@ class MyPhotosAdapter(
     }
 
     class MyPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-
-        @BindView(R.id.photo_view)
-        lateinit var photoView: ImageView
-
-        @BindView(R.id.uploading_message_holder)
-        lateinit var uploadingMessageHolderView: CardView
-
-        @BindView(R.id.loading_progress)
-        lateinit var loadingProgress: ProgressBar
-
-        init {
-            ButterKnife.bind(this, itemView)
-        }
+        val photoView = itemView.findViewById<ImageView>(R.id.photo_view)
+        val uploadingMessageHolderView = itemView.findViewById<CardView>(R.id.uploading_message_holder)
+        val loadingProgress = itemView.findViewById<ProgressBar>(R.id.loading_progress)
     }
 }

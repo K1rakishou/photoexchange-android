@@ -32,7 +32,7 @@ open class PhotosRepository(
         createTempFilesDirIfNotExists()
     }
 
-    suspend fun uploadPhotos(userId: String, location: LonLat, callbacks: WeakReference<UploadPhotoServiceCallbacks>?) {
+    fun uploadPhotos(userId: String, location: LonLat, callbacks: WeakReference<UploadPhotoServiceCallbacks>?) {
         if (callbacks == null) {
             return
         }
@@ -50,7 +50,7 @@ open class PhotosRepository(
 
                     try {
                         if (BitmapUtils.rotatePhoto(photo.photoTempFile, rotatedPhotoFile)) {
-                            val response = apiClient.uploadPhoto(photo.id, rotatedPhotoFile.absolutePath, location, userId, callbacks).await()
+                            val response = apiClient.uploadPhoto(photo.id, rotatedPhotoFile.absolutePath, location, userId, callbacks).blockingGet()
                             val errorCode = ServerErrorCode.from(response.serverErrorCode)
 
                             if (errorCode == ServerErrorCode.OK) {

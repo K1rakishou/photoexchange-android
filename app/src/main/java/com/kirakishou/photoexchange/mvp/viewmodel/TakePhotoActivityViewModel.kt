@@ -7,8 +7,9 @@ import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.rx2.await
+import io.reactivex.Completable
+import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.lang.ref.WeakReference
 
@@ -31,9 +32,11 @@ class TakePhotoActivityViewModel(
     override fun onAttached() {
         Timber.tag(tag).d("onAttached()")
 
-        async(coroutinesPool.BG()) {
+        compositeDisposable += Completable.fromAction {
             photosRepository.init()
-        }
+        }.subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.io())
+            .subscribe()
     }
 
     override fun onCleared() {
@@ -43,7 +46,7 @@ class TakePhotoActivityViewModel(
     }
 
     fun takePhoto() {
-        async(coroutinesPool.BG()) {
+        compositeDisposable += Completable.fromAction {
             var myPhoto: MyPhoto = MyPhoto.empty()
 
             try {
@@ -51,9 +54,9 @@ class TakePhotoActivityViewModel(
                 settingsRepository.generateUserIdIfNotExists()
 
                 val file = photosRepository.createFile()
-                val takePhotoStatus = getView()?.takePhoto(file)?.await() ?: false
+                val takePhotoStatus = getView()?.takePhoto(file)?.blockingGet() ?: false
                 if (!takePhotoStatus) {
-                    return@async
+                    return@fromAction
                 }
 
                 myPhoto = photosRepository.saveTakenPhoto(file)
@@ -61,7 +64,7 @@ class TakePhotoActivityViewModel(
                     photosRepository.deleteMyPhoto(myPhoto)
                     getView()?.showToast("Could not take photo (database error)", Toast.LENGTH_LONG)
                     getView()?.showControls()
-                    return@async
+                    return@fromAction
                 }
 
                 getView()?.onPhotoTaken(myPhoto)
@@ -71,7 +74,9 @@ class TakePhotoActivityViewModel(
                 getView()?.showToast("Could not take photo (database error)", Toast.LENGTH_LONG)
                 getView()?.showControls()
             }
-        }
+        }.subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.io())
+            .subscribe()
     }
 }
 

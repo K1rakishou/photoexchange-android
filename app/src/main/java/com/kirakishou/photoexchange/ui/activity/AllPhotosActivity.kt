@@ -1,9 +1,13 @@
 package com.kirakishou.photoexchange.ui.activity
 
 import android.Manifest
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.IBinder
 import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.TabLayout
 import android.support.v4.app.ActivityCompat
@@ -13,28 +17,31 @@ import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
-import com.kirakishou.photoexchange.di.component.AllPhotosActivityComponent
 import com.kirakishou.photoexchange.di.module.AllPhotosActivityModule
 import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
 import com.kirakishou.photoexchange.helper.location.MyLocationManager
 import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
+import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
+import com.kirakishou.photoexchange.service.UploadPhotoService
+import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
 import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
+import com.trello.rxlifecycle2.android.lifecycle.kotlin.bindToLifecycle
 import io.reactivex.Single
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.rx2.asSingle
-import kotlinx.coroutines.experimental.rx2.awaitFirstOrNull
-import kotlinx.coroutines.experimental.withTimeoutOrNull
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.rxkotlin.plusAssign
+import timber.log.Timber
+import java.lang.ref.WeakReference
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 
-class AllPhotosActivity : BaseActivity(), AllPhotosActivityView,
-    TabLayout.OnTabSelectedListener, ViewPager.OnPageChangeListener {
+class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSelectedListener,
+    ViewPager.OnPageChangeListener, PhotoUploadingCallback {
 
     @BindView(R.id.iv_close_button)
     lateinit var ivCloseActivityButton: ImageButton
@@ -58,20 +65,42 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView,
     lateinit var permissionManager: PermissionManager
 
     private val tag = "[${this::class.java.simpleName}] "
+    private var service: UploadPhotoService? = null
 
-    lateinit var activityComponent: AllPhotosActivityComponent
+    val activityComponent by lazy {
+        (application as PhotoExchangeApplication).applicationComponent
+            .plus(AllPhotosActivityModule(this))
+    }
+
     private val adapter = FragmentTabsPager(supportFragmentManager)
     private val locationManager by lazy { MyLocationManager(applicationContext) }
 
     override fun getContentView(): Int = R.layout.activity_all_photos
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
+        initRx()
         initViews()
         checkPermissions()
     }
 
-    override fun onActivityDestroy() {
+    private fun initRx() {
+        viewModel.startUploadingServiceSubject
+            .bindToLifecycle(this)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { Timber.e("uploadedPhotosSubject doOnNext") }
+            .doOnNext { startUploadingService() }
+            .doOnSubscribe { Timber.e("startUploadingServiceSubject doOnSubscribe") }
+            .doOnTerminate { Timber.e("startUploadingServiceSubject doAfterTerminate") }
+            .subscribe()
+    }
 
+    override fun onActivityDestroy() {
+        service?.let { srvc ->
+            srvc.detachCallback()
+            unbindService(connection)
+            service = null
+        }
     }
 
     private fun initViews() {
@@ -122,15 +151,16 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView,
     }
 
     override fun getCurrentLocation(): Single<LonLat> {
-        return async {
+        return Single.fromCallable {
             if (!locationManager.isGpsEnabled()) {
-                return@async LonLat.empty()
+                return@fromCallable LonLat.empty()
             }
 
-            return@async withTimeoutOrNull(15, TimeUnit.SECONDS) {
-                RxLocationManager.start(locationManager).awaitFirstOrNull()
-            } ?: LonLat.empty()
-        }.asSingle(coroutinesPool.BG())
+            return@fromCallable RxLocationManager.start(locationManager)
+                .timeout(15, TimeUnit.SECONDS)
+                .onErrorReturnItem(LonLat.empty())
+                .blockingFirst()
+        }
     }
 
     private fun initTabs() {
@@ -178,6 +208,10 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView,
         }
     }
 
+    override fun onUploadingEvent(event: PhotoUploadingEvent) {
+
+    }
+
     override fun showToast(message: String, duration: Int) {
         onShowToast(message, duration)
     }
@@ -187,10 +221,32 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView,
         permissionManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
-    override fun resolveDaggerDependency() {
-        activityComponent = (application as PhotoExchangeApplication).applicationComponent
-            .plus(AllPhotosActivityModule(this))
+    private fun startUploadingService() {
+        val serviceIntent = Intent(this, UploadPhotoService::class.java)
+        startService(serviceIntent)
+        bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
+    }
 
+    override fun resolveDaggerDependency() {
         activityComponent.inject(this)
+    }
+
+    private val connection = object : ServiceConnection {
+
+        override fun onServiceConnected(className: ComponentName, _service: IBinder) {
+            Timber.tag(tag).d("Service connected")
+
+            service = (_service as UploadPhotoService.UploadPhotosBinder).getService()
+            service?.attachCallback(WeakReference(this@AllPhotosActivity))
+            service?.startPhotosUploading()
+        }
+
+        override fun onServiceDisconnected(className: ComponentName) {
+            Timber.tag(tag).d("Service disconnected")
+
+            service?.detachCallback()
+            unbindService(this)
+            service = null
+        }
     }
 }

@@ -11,10 +11,9 @@ import butterknife.Unbinder
 import com.crashlytics.android.Crashlytics
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.mvp.model.other.ServerErrorCode
+import com.trello.rxlifecycle2.android.lifecycle.kotlin.bindToLifecycle
 import io.fabric.sdk.android.Fabric
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 
@@ -30,7 +29,6 @@ abstract class BaseActivity : AppCompatActivity() {
 
     override fun getLifecycle(): LifecycleRegistry = registry
 
-    protected val compositeDisposable = CompositeDisposable()
     protected val unknownErrorsSubject = PublishSubject.create<Throwable>()!!
 
     private var unBinder: Unbinder? = null
@@ -47,10 +45,11 @@ abstract class BaseActivity : AppCompatActivity() {
 
         Fabric.with(this, Crashlytics())
 
-        compositeDisposable += unknownErrorsSubject
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnError(this::onUnknownError)
-                .subscribe(this::onUnknownError)
+        unknownErrorsSubject
+            .bindToLifecycle(this)
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnError(this::onUnknownError)
+            .subscribe(this::onUnknownError)
 
         onActivityCreate(savedInstanceState, intent)
     }
@@ -58,7 +57,6 @@ abstract class BaseActivity : AppCompatActivity() {
     override fun onDestroy() {
         //Timber.d("${this::class.java}.onDestroy")
 
-        compositeDisposable.clear()
         onActivityDestroy()
 
         unBinder?.unbind()

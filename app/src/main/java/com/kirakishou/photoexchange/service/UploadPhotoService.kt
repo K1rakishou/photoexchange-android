@@ -16,6 +16,7 @@ import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
 import timber.log.Timber
+import java.lang.ref.WeakReference
 import javax.inject.Inject
 
 /**
@@ -31,7 +32,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     private var notificationManager: NotificationManager? = null
     private val binder = UploadPhotosBinder()
 
-    private var callback: PhotoUploadingCallback? = null
+    private var callback = WeakReference<PhotoUploadingCallback>(null)
     private val NOTIFICATION_ID = 1
     private val CHANNEL_ID = "1"
     private val CHANNED_NAME = "name"
@@ -55,12 +56,12 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
         Timber.tag(tag).d("Service destroyed")
     }
 
-    fun attachCallback(_callback: PhotoUploadingCallback) {
+    fun attachCallback(_callback: WeakReference<PhotoUploadingCallback>) {
         callback = _callback
     }
 
     fun detachCallback() {
-        callback = null
+        callback = WeakReference<PhotoUploadingCallback>(null)
     }
 
     fun startPhotosUploading() {
@@ -68,7 +69,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     }
 
     override fun onUploadingEvent(event: PhotoUploadingEvent) {
-        callback?.onUploadingEvent(event)
+        callback.get()?.onUploadingEvent(event)
     }
 
     override fun stopService() {

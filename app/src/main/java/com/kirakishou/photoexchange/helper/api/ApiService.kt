@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.helper.api
 
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
+import io.reactivex.Single
 import kotlinx.coroutines.experimental.Deferred
 import okhttp3.MultipartBody
 import retrofit2.Response
@@ -16,7 +17,7 @@ interface ApiService {
     @Multipart
     @POST("/v1/api/upload")
     fun uploadPhoto(@Part packet: MultipartBody.Part,
-                    @Part photo: MultipartBody.Part): Deferred<Response<UploadPhotoResponse>>
+                    @Part photo: MultipartBody.Part): Single<Response<UploadPhotoResponse>>
 }
 
 

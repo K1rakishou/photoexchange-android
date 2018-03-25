@@ -60,11 +60,8 @@ abstract class BaseAdapter<T>(
     open fun addAll(items: List<AdapterItem<T>>) {
         checkInited()
 
-        val from = this.items.lastIndex
-        val count = items.size
-
         this.items.addAll(items)
-        notifyItemRangeInserted(from, count)
+        notifyDataSetChanged()
     }
 
     open fun remove(position: Int) {

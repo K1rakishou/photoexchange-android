@@ -6,7 +6,9 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThread
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.view.ViewTakenPhotoActivityView
-import kotlinx.coroutines.experimental.async
+import io.reactivex.Completable
+import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.lang.ref.WeakReference
 
@@ -15,7 +17,7 @@ import java.lang.ref.WeakReference
  */
 class ViewTakenPhotoActivityViewModel(
     view: WeakReference<ViewTakenPhotoActivityView>,
-    private val coroutinePool: CoroutineThreadPoolProvider,
+    private val coroutinesPool: CoroutineThreadPoolProvider,
     private val photosRepository: PhotosRepository
 ) : BaseViewModel<ViewTakenPhotoActivityView>(view) {
 
@@ -36,7 +38,7 @@ class ViewTakenPhotoActivityViewModel(
     }
 
     fun updatePhotoState(takenPhotoId: Long) {
-        async(coroutinePool.BG()) {
+        compositeDisposable += Completable.fromAction {
             try {
                 getView()?.hideControls()
 
@@ -44,7 +46,7 @@ class ViewTakenPhotoActivityViewModel(
                 if (!updateResult) {
                     getView()?.showToast("Could not update photo in the database (database error)", Toast.LENGTH_LONG)
                     getView()?.showControls()
-                    return@async
+                    return@fromAction
                 }
 
                 getView()?.onPhotoUpdated()
@@ -54,6 +56,8 @@ class ViewTakenPhotoActivityViewModel(
                 getView()?.showToast("Could not update photo in the database (database error)", Toast.LENGTH_LONG)
                 getView()?.showControls()
             }
-        }
+        }.subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.io())
+            .subscribe()
     }
 }
