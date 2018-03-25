@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import butterknife.ButterKnife
 import butterknife.Unbinder
 import com.kirakishou.photoexchange.PhotoExchangeApplication
+import io.reactivex.disposables.CompositeDisposable
 import timber.log.Timber
 
 /**
@@ -24,6 +25,7 @@ abstract class BaseFragment : Fragment() {
 
     override fun getLifecycle(): LifecycleRegistry = registry
 
+    protected val compositeDisposable = CompositeDisposable()
     private lateinit var unBinder: Unbinder
 
     override fun onAttach(context: Context?) {
@@ -65,6 +67,7 @@ abstract class BaseFragment : Fragment() {
         super.onDetach()
 
         Timber.e("onDetach")
+        compositeDisposable.clear()
         PhotoExchangeApplication.watch(this, this::class.simpleName)
     }
 

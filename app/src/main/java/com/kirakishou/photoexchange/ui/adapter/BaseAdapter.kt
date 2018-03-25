@@ -17,14 +17,14 @@ abstract class BaseAdapter<T>(
     context: Context
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    protected lateinit var handler: Handler
+//    protected lateinit var handler: Handler
     protected val items = mutableListOf<AdapterItem<T>>()
     private val layoutInflater = LayoutInflater.from(context)
     private var baseAdapterInfo = mutableListOf<BaseAdapterInfo>()
     private var isInited = false
 
     fun init() {
-        handler = Handler(Looper.getMainLooper())
+//        handler = Handler(Looper.getMainLooper())
         baseAdapterInfo = getBaseAdapterInfo()
 
         isInited = true
@@ -34,7 +34,7 @@ abstract class BaseAdapter<T>(
         super.onDetachedFromRecyclerView(recyclerView)
 
         baseAdapterInfo.clear()
-        handler.removeCallbacksAndMessages(null)
+//        handler.removeCallbacksAndMessages(null)
     }
 
     protected fun checkInited() {
@@ -78,13 +78,13 @@ abstract class BaseAdapter<T>(
         notifyDataSetChanged()
     }
 
-    fun runOnAdapterHandler(func: () -> Unit) {
-        handler.post(func)
-    }
-
-    fun runOnAdapterHandlerWithDelay(delayInMs: Long, func: () -> Unit) {
-        handler.postDelayed({ func() }, delayInMs)
-    }
+//    fun runOnAdapterHandler(func: () -> Unit) {
+//        handler.post(func)
+//    }
+//
+//    fun runOnAdapterHandlerWithDelay(delayInMs: Long, func: () -> Unit) {
+//        handler.postDelayed({ func() }, delayInMs)
+//    }
 
     override fun getItemViewType(position: Int) = items[position].getType()
     override fun getItemCount() = items.size

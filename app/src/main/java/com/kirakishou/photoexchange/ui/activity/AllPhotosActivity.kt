@@ -30,7 +30,6 @@ import com.kirakishou.photoexchange.service.UploadPhotoService
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
 import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
-import com.trello.rxlifecycle2.android.lifecycle.kotlin.bindToLifecycle
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
@@ -84,8 +83,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun initRx() {
-        viewModel.startUploadingServiceSubject
-            .bindToLifecycle(this)
+        compositeDisposable += viewModel.startUploadingServiceSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { Timber.e("uploadedPhotosSubject doOnNext") }
@@ -209,7 +207,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     override fun onUploadingEvent(event: PhotoUploadingEvent) {
-
+        viewModel.forwardUploadPhotoEvent(event)
     }
 
     override fun showToast(message: String, duration: Int) {
@@ -222,7 +220,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun startUploadingService() {
-        val serviceIntent = Intent(this, UploadPhotoService::class.java)
+        val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
         startService(serviceIntent)
         bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
     }

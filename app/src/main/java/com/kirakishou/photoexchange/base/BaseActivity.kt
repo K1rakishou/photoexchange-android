@@ -11,9 +11,10 @@ import butterknife.Unbinder
 import com.crashlytics.android.Crashlytics
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.mvp.model.other.ServerErrorCode
-import com.trello.rxlifecycle2.android.lifecycle.kotlin.bindToLifecycle
 import io.fabric.sdk.android.Fabric
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 
@@ -31,6 +32,7 @@ abstract class BaseActivity : AppCompatActivity() {
 
     protected val unknownErrorsSubject = PublishSubject.create<Throwable>()!!
 
+    protected val compositeDisposable = CompositeDisposable()
     private var unBinder: Unbinder? = null
 
     @Suppress("UNCHECKED_CAST")
@@ -45,8 +47,7 @@ abstract class BaseActivity : AppCompatActivity() {
 
         Fabric.with(this, Crashlytics())
 
-        unknownErrorsSubject
-            .bindToLifecycle(this)
+        compositeDisposable += unknownErrorsSubject
             .observeOn(AndroidSchedulers.mainThread())
             .doOnError(this::onUnknownError)
             .subscribe(this::onUnknownError)
@@ -60,6 +61,7 @@ abstract class BaseActivity : AppCompatActivity() {
         onActivityDestroy()
 
         unBinder?.unbind()
+        compositeDisposable.clear()
 
         PhotoExchangeApplication.watch(this, this::class.simpleName)
         super.onDestroy()

@@ -17,8 +17,8 @@ import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.widget.MyPhotosAdapterSpanSizeLookup
-import com.trello.rxlifecycle2.android.lifecycle.kotlin.bindToLifecycle
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.rxkotlin.plusAssign
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -53,14 +53,16 @@ class MyPhotosFragment : BaseFragment() {
     }
 
     private fun initRx() {
-        viewModel.uploadedPhotosSubject
-            .bindToLifecycle(this)
+        compositeDisposable += viewModel.uploadedPhotosSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { Timber.e("uploadedPhotosSubject doOnNext") }
             .doOnNext { photos -> onUploadedPhotosLoadedFromDatabase(photos) }
-            .doOnSubscribe { Timber.e("uploadedPhotosSubject doOnSubscribe") }
-            .doOnTerminate { Timber.e("uploadedPhotosSubject doAfterTerminate") }
+            .subscribe()
+
+        compositeDisposable += viewModel.onUploadingPhotoEventSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { event -> onUploadingEvent(event) }
             .subscribe()
     }
 
@@ -77,8 +79,8 @@ class MyPhotosFragment : BaseFragment() {
         myPhotosList.adapter = adapter
     }
 
-    fun onUploadingEvent(event: PhotoUploadingEvent) {
-        adapter.runOnAdapterHandler {
+    private fun onUploadingEvent(event: PhotoUploadingEvent) {
+        activity?.runOnUiThread {
             when (event) {
                 is PhotoUploadingEvent.OnPrepare -> {
                     Timber.e("OnPrepare")
@@ -110,7 +112,7 @@ class MyPhotosFragment : BaseFragment() {
     }
 
     private fun onUploadedPhotosLoadedFromDatabase(uploadedPhotos: List<MyPhoto>) {
-        adapter.runOnAdapterHandler {
+        activity?.runOnUiThread {
             val mapped = uploadedPhotos.map { AdapterItem(it, AdapterItemType.VIEW_MY_PHOTO) }
             adapter.addAll(mapped)
         }

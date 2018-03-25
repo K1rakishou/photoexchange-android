@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import io.reactivex.Completable
@@ -32,6 +33,7 @@ class AllPhotosActivityViewModel(
 
     val uploadedPhotosSubject = PublishSubject.create<List<MyPhoto>>()
     val startUploadingServiceSubject = PublishSubject.create<Unit>()
+    val onUploadingPhotoEventSubject = PublishSubject.create<PhotoUploadingEvent>()
 
     override fun onAttached() {
         Timber.tag(tag).d("onAttached()")
@@ -64,7 +66,6 @@ class AllPhotosActivityViewModel(
             }
         }.subscribeOn(Schedulers.io())
             .observeOn(Schedulers.io())
-            .delay(500, TimeUnit.MILLISECONDS)
             .subscribe()
     }
 
@@ -91,5 +92,9 @@ class AllPhotosActivityViewModel(
         } else {
             settingsRepository.saveLastLocation(LonLat.empty())
         }
+    }
+
+    fun forwardUploadPhotoEvent(event: PhotoUploadingEvent) {
+        onUploadingPhotoEventSubject.onNext(event)
     }
 }
