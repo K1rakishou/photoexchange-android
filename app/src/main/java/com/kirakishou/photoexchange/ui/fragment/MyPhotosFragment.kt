@@ -45,20 +45,21 @@ class MyPhotosFragment : BaseFragment() {
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRx()
         initRecyclerView()
-
-        viewModel.loadUploadedPhotosFromDatabase()
+        showUploadedPhotos()
     }
 
     override fun onFragmentViewDestroy() {
     }
 
-    private fun initRx() {
-        compositeDisposable += viewModel.uploadedPhotosSubject
+    private fun showUploadedPhotos() {
+        compositeDisposable += viewModel.loadUploadedPhotosFromDatabase()
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { photos -> onUploadedPhotosLoadedFromDatabase(photos) }
+            .doOnSuccess { photos -> onUploadedPhotosLoadedFromDatabase(photos) }
             .subscribe()
+    }
 
+    private fun initRx() {
         compositeDisposable += viewModel.onUploadingPhotoEventSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())

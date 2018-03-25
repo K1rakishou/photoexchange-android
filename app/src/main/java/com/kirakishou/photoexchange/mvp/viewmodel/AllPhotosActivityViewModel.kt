@@ -11,7 +11,8 @@ import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import io.reactivex.Completable
-import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.Maybe
+import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
@@ -31,8 +32,6 @@ class AllPhotosActivityViewModel(
     private val tag = "[${this::class.java.simpleName}] "
     private val LOCATION_CHECK_INTERVAL = TimeUnit.SECONDS.toMillis(5)
 
-    val uploadedPhotosSubject = PublishSubject.create<List<MyPhoto>>()
-    val startUploadingServiceSubject = PublishSubject.create<Unit>()
     val onUploadingPhotoEventSubject = PublishSubject.create<PhotoUploadingEvent>()
 
     override fun onAttached() {
@@ -45,52 +44,44 @@ class AllPhotosActivityViewModel(
         super.onCleared()
     }
 
-    fun startUploadingPhotosService(isGranted: Boolean) {
-        compositeDisposable += Completable.fromAction {
-            val count = photosRepository.countAllByState(PhotoState.PHOTO_TO_BE_UPLOADED)
-            if (count > 0) {
-                updateLastLocation(isGranted)
-                startUploadingServiceSubject.onNext(Unit)
-            }
-        }.subscribeOn(Schedulers.io())
+    fun startUploadingPhotosService(isGranted: Boolean): Maybe<Long> {
+        return Single.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_TO_BE_UPLOADED) }
+            .filter { count -> count > 0 }
+            .doOnSuccess { _ -> updateLastLocation(isGranted).blockingAwait() }
+            .subscribeOn(Schedulers.io())
             .observeOn(Schedulers.io())
-            .subscribe()
     }
 
-    fun loadUploadedPhotosFromDatabase() {
-        compositeDisposable += Completable.fromAction {
-            val uploadedPhotos = photosRepository.findAllByState(PhotoState.PHOTO_UPLOADED)
-            if (uploadedPhotos.isNotEmpty()) {
-                //TODO: change this to event
-                uploadedPhotosSubject.onNext(uploadedPhotos)
-            }
-        }.subscribeOn(Schedulers.io())
+    fun loadUploadedPhotosFromDatabase(): Single<List<MyPhoto>> {
+        return Single.fromCallable { photosRepository.findAllByState(PhotoState.PHOTO_UPLOADED) }
+            .subscribeOn(Schedulers.io())
             .observeOn(Schedulers.io())
-            .subscribe()
     }
 
-    private fun updateLastLocation(isGranted: Boolean) {
-        // if gps is disabled by user then set the last location as empty (-1.0, -1.0) immediately
-        // so the user doesn't have to wait 15 seconds until getCurrentLocation returns empty
-        // location because of timeout
+    private fun updateLastLocation(isGranted: Boolean): Completable {
+        return Completable.fromAction {
+            // if gps is disabled by user then set the last location as empty (-1.0, -1.0) immediately
+            // so the user doesn't have to wait 15 seconds until getCurrentLocation returns empty
+            // location because of timeout
 
-        if (isGranted) {
-            val now = TimeUtils.getTimeFast()
-            val lastTimeCheck = settingsRepository.findLastLocationCheckTime()
-            if (lastTimeCheck == null || (now - lastTimeCheck > LOCATION_CHECK_INTERVAL)) {
-                val currentLocation = getView()?.getCurrentLocation()?.blockingGet()
-                    ?: return
+            if (isGranted) {
+                val now = TimeUtils.getTimeFast()
+                val lastTimeCheck = settingsRepository.findLastLocationCheckTime()
+                if (lastTimeCheck == null || (now - lastTimeCheck > LOCATION_CHECK_INTERVAL)) {
+                    val currentLocation = getView()?.getCurrentLocation()?.blockingGet()
+                        ?: return@fromAction
 
-                val lastLocation = settingsRepository.findLastLocation()
-                if (lastLocation != null && !lastLocation.isEmpty() && currentLocation.isEmpty()) {
-                    return
+                    val lastLocation = settingsRepository.findLastLocation()
+                    if (lastLocation != null && !lastLocation.isEmpty() && currentLocation.isEmpty()) {
+                        return@fromAction
+                    }
+
+                    settingsRepository.saveLastLocationCheckTime(now)
+                    settingsRepository.saveLastLocation(currentLocation)
                 }
-
-                settingsRepository.saveLastLocationCheckTime(now)
-                settingsRepository.saveLastLocation(currentLocation)
+            } else {
+                settingsRepository.saveLastLocation(LonLat.empty())
             }
-        } else {
-            settingsRepository.saveLastLocation(LonLat.empty())
         }
     }
 

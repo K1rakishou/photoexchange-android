@@ -6,6 +6,7 @@ import android.arch.persistence.room.PrimaryKey
 import android.arch.persistence.room.TypeConverters
 import com.kirakishou.photoexchange.helper.database.converter.PhotoStateConverter
 import com.kirakishou.photoexchange.helper.database.entity.MyPhotoEntity.Companion.TABLE_NAME
+import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 
 /**
@@ -30,11 +31,14 @@ class MyPhotoEntity(
 
     @ColumnInfo(name = PHOTO_STATE_COLUMN)
     @field:TypeConverters(PhotoStateConverter::class)
-    var photoState: PhotoState
+    var photoState: PhotoState,
+
+    @ColumnInfo(name = TAKEN_ON_COLUMN, index = true)
+    var takenOn: Long? = null
 
 ) {
 
-    constructor() : this(null, null, false, null, PhotoState.PHOTO_TAKEN)
+    constructor() : this(null, null, false, null, PhotoState.PHOTO_TAKEN, null)
 
     fun isEmpty(): Boolean {
         return id == null
@@ -47,7 +51,7 @@ class MyPhotoEntity(
         }
 
         fun create(tempFileId: Long?, isPublic: Boolean): MyPhotoEntity {
-            return MyPhotoEntity(null, tempFileId, isPublic, null, PhotoState.PHOTO_TAKEN)
+            return MyPhotoEntity(null, tempFileId, isPublic, null, PhotoState.PHOTO_TAKEN, TimeUtils.getTimeFast())
         }
 
         const val ID_COLUMN = "ID"
@@ -56,5 +60,6 @@ class MyPhotoEntity(
         const val IS_PUBLIC_COLUMN = "IS_PUBLIC"
         const val PHOTO_NAME_COLUMN = "PHOTO_NAME"
         const val TABLE_NAME = "MY_PHOTO"
+        const val TAKEN_ON_COLUMN = "TAKEN_ON"
     }
 }

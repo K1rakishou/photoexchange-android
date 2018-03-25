@@ -83,14 +83,6 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun initRx() {
-        compositeDisposable += viewModel.startUploadingServiceSubject
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { Timber.e("uploadedPhotosSubject doOnNext") }
-            .doOnNext { startUploadingService() }
-            .doOnSubscribe { Timber.e("startUploadingServiceSubject doOnSubscribe") }
-            .doOnTerminate { Timber.e("startUploadingServiceSubject doAfterTerminate") }
-            .subscribe()
     }
 
     override fun onActivityDestroy() {
@@ -137,7 +129,11 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun onPermissionsCallback(isGranted: Boolean) {
-        viewModel.startUploadingPhotosService(isGranted)
+        compositeDisposable += viewModel.startUploadingPhotosService(isGranted)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnSuccess { startUploadingService() }
+            .subscribe()
     }
 
     private fun showGpsRationaleDialog() {

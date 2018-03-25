@@ -23,7 +23,8 @@ abstract class MyPhotoDao {
     abstract fun findById(id: Long): MyPhotoEntity?
 
     @Query("SELECT * FROM ${MyPhotoEntity.TABLE_NAME} " +
-        "WHERE ${MyPhotoEntity.PHOTO_STATE_COLUMN} = :photoState")
+        "WHERE ${MyPhotoEntity.PHOTO_STATE_COLUMN} = :photoState " +
+        "ORDER BY ${MyPhotoEntity.TAKEN_ON_COLUMN} DESC")
     @TypeConverters(PhotoStateConverter::class)
     abstract fun findAllWithState(photoState: PhotoState): List<MyPhotoEntity>
 
