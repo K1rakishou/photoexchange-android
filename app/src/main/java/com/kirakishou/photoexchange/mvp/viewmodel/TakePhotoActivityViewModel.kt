@@ -1,7 +1,6 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
 import android.widget.Toast
-import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository

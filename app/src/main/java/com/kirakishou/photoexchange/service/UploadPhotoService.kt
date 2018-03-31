@@ -10,6 +10,7 @@ import android.support.annotation.RequiresApi
 import android.support.v4.app.NotificationCompat
 import com.kirakishou.photoexchange.di.component.DaggerUploadPhotoServiceComponent
 import com.kirakishou.photoexchange.di.module.*
+import com.kirakishou.photoexchange.helper.extension.asWeak
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.other.Constants
@@ -43,8 +44,6 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
 
         resolveDaggerDependency()
         startForeground(NOTIFICATION_ID, createNotificationUploading())
-
-        presenter.onAttach(this)
     }
 
     override fun onDestroy() {
@@ -66,6 +65,14 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
 
     fun startPhotosUploading() {
         presenter.uploadPhotos()
+    }
+
+    fun cancelPhotoUploading(photoId: Long) {
+        presenter.cancelPhotoUploading(photoId)
+    }
+
+    fun cancelUploadingCompletele() {
+        presenter.cancelAllPhotosUploading()
     }
 
     override fun onUploadingEvent(event: PhotoUploadingEvent) {
@@ -206,7 +213,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     private fun resolveDaggerDependency() {
         DaggerUploadPhotoServiceComponent.builder()
             .uploadPhotoServiceModule(UploadPhotoServiceModule(this))
-            .uploadPhotoServicePresenterModule(UploadPhotoServicePresenterModule())
+            .uploadPhotoServicePresenterModule(UploadPhotoServicePresenterModule(this.asWeak()))
             .gsonModule(GsonModule())
             .databaseModule(DatabaseModule(Constants.DATABASE_NAME))
             .networkModule(NetworkModule(Constants.BASE_URL))

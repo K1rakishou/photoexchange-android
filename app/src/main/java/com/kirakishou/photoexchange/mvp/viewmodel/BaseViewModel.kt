@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.base
+package com.kirakishou.photoexchange.mvp.viewmodel
 
 import android.arch.lifecycle.ViewModel
 import android.support.annotation.CallSuper

@@ -21,7 +21,7 @@ class ApiClient
 ) {
 
     fun uploadPhoto(photoId: Long, photoFilePath: String, location: LonLat, userId: String,
-                    callback: WeakReference<UploadPhotoServiceCallbacks>): Single<UploadPhotoResponse> {
+                    callback: WeakReference<UploadPhotoServiceCallbacks>?): Single<UploadPhotoResponse> {
         return UploadPhotoRequest<UploadPhotoResponse>(photoId, photoFilePath, location, userId, callback, apiService, schedulerProvider, gson)
             .execute()
     }

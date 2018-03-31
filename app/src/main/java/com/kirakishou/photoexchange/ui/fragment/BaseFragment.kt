@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.base
+package com.kirakishou.photoexchange.ui.fragment
 
 import android.arch.lifecycle.LifecycleRegistry
 import android.content.Context

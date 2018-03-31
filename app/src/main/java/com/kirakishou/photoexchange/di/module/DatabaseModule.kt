@@ -29,10 +29,9 @@ open class DatabaseModule(
     @Singleton
     @Provides
     open fun provideMyPhotoRepository(context: Context,
-                                      database: MyDatabase,
-                                      apiClient: ApiClient): PhotosRepository {
+                                      database: MyDatabase): PhotosRepository {
         val filesDir = context.filesDir.absolutePath
-        return PhotosRepository(filesDir, database, apiClient)
+        return PhotosRepository(filesDir, database)
     }
 
     @Singleton

@@ -17,7 +17,8 @@ import javax.inject.Singleton
     GsonModule::class,
     NetworkModule::class,
     DatabaseModule::class,
-    ApiClientModule::class
+    ApiClientModule::class,
+    UseCaseProviderModule::class
 ])
 interface UploadPhotoServiceComponent {
     fun inject(service: UploadPhotoService)

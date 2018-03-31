@@ -25,7 +25,7 @@ class UploadPhotoRequest<T : StatusResponse>(
     private val photoFilePath: String,
     private val location: LonLat,
     private val userId: String,
-    private val callback: WeakReference<UploadPhotoServiceCallbacks>,
+    private val callback: WeakReference<UploadPhotoServiceCallbacks>?,
     private val apiService: ApiService,
     private val schedulerProvider: SchedulerProvider,
     private val gson: Gson
@@ -70,7 +70,7 @@ class UploadPhotoRequest<T : StatusResponse>(
         return response.body()!!
     }
 
-    private fun getBody(photoId: Long, photoFile: File, packet: SendPhotoPacket, callback: WeakReference<UploadPhotoServiceCallbacks>): MultipartBody {
+    private fun getBody(photoId: Long, photoFile: File, packet: SendPhotoPacket, callback: WeakReference<UploadPhotoServiceCallbacks>?): MultipartBody {
         val photoRequestBody = ProgressRequestBody(photoId, photoFile, callback)
         val packetJson = gson.toJson(packet)
 

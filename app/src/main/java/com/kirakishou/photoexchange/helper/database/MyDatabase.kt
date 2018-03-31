@@ -24,13 +24,16 @@ abstract class MyDatabase : RoomDatabase() {
     abstract fun tempFileDao(): TempFileDao
     abstract fun settingsDao(): SettingsDao
 
-    inline fun transactional(func: () -> Boolean) {
+    inline fun transactional(func: () -> Boolean): Boolean {
         this.beginTransaction()
 
         try {
             if (func()) {
                 this.setTransactionSuccessful()
+                return true
             }
+
+            return false
         } finally {
             this.endTransaction()
         }

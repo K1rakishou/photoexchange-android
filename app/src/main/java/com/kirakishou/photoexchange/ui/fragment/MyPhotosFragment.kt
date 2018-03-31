@@ -5,20 +5,18 @@ import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
-import com.kirakishou.photoexchange.base.BaseFragment
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
-import com.kirakishou.photoexchange.mvp.model.adapter.AdapterItem
-import com.kirakishou.photoexchange.mvp.model.adapter.AdapterItemType
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
-import com.kirakishou.photoexchange.ui.widget.MyPhotosAdapterSpanSizeLookup
+import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapterItem
+import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewState
+import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapterSpanSizeLookup
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
-import timber.log.Timber
 import javax.inject.Inject
 
 
@@ -61,7 +59,14 @@ class MyPhotosFragment : BaseFragment() {
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { event -> onUploadingEvent(event) }
             .subscribe()
+
+        compositeDisposable += viewModel.myPhotosFragmentViewStateSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { viewState -> onViewStateChanged(viewState) }
+            .subscribe()
     }
+
 
     private fun initRecyclerView() {
         val columnsCount = AndroidUtils.calculateNoOfColumns(activity!!, PHOTO_ADAPTER_VIEW_WIDTH)
@@ -76,33 +81,54 @@ class MyPhotosFragment : BaseFragment() {
         myPhotosList.adapter = adapter
     }
 
+    private fun onViewStateChanged(viewState: MyPhotosFragmentViewState) {
+        if (!isAdded) {
+            return
+        }
+
+        activity?.runOnUiThread {
+            when (viewState) {
+                is MyPhotosFragmentViewState.Default -> {
+
+                }
+                is MyPhotosFragmentViewState.ShowObtainCurrentLocationNotification -> {
+                    if (viewState.show) {
+                        adapter.showObtainCurrentLocationNotification()
+                    } else {
+                        adapter.hideObtainCurrentLocationNotification()
+                    }
+                }
+            }
+        }
+    }
+
     private fun onUploadingEvent(event: PhotoUploadingEvent) {
+        if (!isAdded) {
+            return
+        }
+
         activity?.runOnUiThread {
             when (event) {
                 is PhotoUploadingEvent.OnPrepare -> {
-                    Timber.e("OnPrepare")
+                    myPhotosList.scrollToPosition(0)
+                    adapter.showQueuedUpPhotosCountNotification(event.queuedUpPhotosCount)
                 }
                 is PhotoUploadingEvent.OnPhotoUploadingStart -> {
-                    Timber.e("OnPhotoUploadingStart")
-                    myPhotosList.scrollToPosition(0)
-                    adapter.add(0, AdapterItem(event.myPhoto, AdapterItemType.VIEW_MY_PHOTO))
+                    adapter.updateQueuedUpPhotosCountNotification(event.queuedUpPhotosCount)
+                    adapter.add(0, MyPhotosAdapterItem.MyPhotoItem(event.myPhoto))
                 }
                 is PhotoUploadingEvent.OnProgress -> {
-                    Timber.e("OnProgress ${event.progress}")
                     adapter.updatePhotoProgress(event.photoId, event.progress)
                 }
                 is PhotoUploadingEvent.OnUploaded -> {
-                    Timber.e("OnUploaded")
                     adapter.updatePhotoState(event.myPhoto.id, event.myPhoto.photoState)
                 }
                 is PhotoUploadingEvent.OnEnd -> {
-                    Timber.e("OnEnd")
+                    adapter.hideQueuedUpPhotosCountNotification()
                 }
                 is PhotoUploadingEvent.OnFailedToUpload -> {
-                    Timber.e("OnFailedToUpload")
                 }
                 is PhotoUploadingEvent.OnUnknownError -> {
-                    Timber.e("OnUnknownError")
                 }
             }
         }
@@ -110,7 +136,7 @@ class MyPhotosFragment : BaseFragment() {
 
     private fun onUploadedPhotosLoadedFromDatabase(uploadedPhotos: List<MyPhoto>) {
         activity?.runOnUiThread {
-            val mapped = uploadedPhotos.map { AdapterItem(it, AdapterItemType.VIEW_MY_PHOTO) }
+            val mapped = uploadedPhotos.map { MyPhotosAdapterItem.MyPhotoItem(it) }
             adapter.addAll(mapped)
         }
     }

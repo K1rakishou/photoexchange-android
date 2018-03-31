@@ -1,7 +1,6 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
 import android.widget.Toast
-import com.kirakishou.photoexchange.base.BaseViewModel
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.mvp.model.PhotoState
@@ -41,7 +40,7 @@ class ViewTakenPhotoActivityViewModel(
             try {
                 getView()?.hideControls()
 
-                val updateResult = photosRepository.updatePhotoState(takenPhotoId, PhotoState.PHOTO_TO_BE_UPLOADED)
+                val updateResult = photosRepository.updatePhotoState(takenPhotoId, PhotoState.PHOTO_QUEUED_UP)
                 if (!updateResult) {
                     getView()?.showToast("Could not update photo in the database (database error)", Toast.LENGTH_LONG)
                     getView()?.showControls()
