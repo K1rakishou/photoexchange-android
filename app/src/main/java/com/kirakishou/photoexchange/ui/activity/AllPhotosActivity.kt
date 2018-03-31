@@ -18,7 +18,6 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.module.AllPhotosActivityModule
-import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
 import com.kirakishou.photoexchange.helper.location.MyLocationManager
 import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
@@ -56,9 +55,6 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
     @Inject
     lateinit var viewModel: AllPhotosActivityViewModel
-
-    @Inject
-    lateinit var coroutinesPool: CoroutineThreadPoolProvider
 
     @Inject
     lateinit var permissionManager: PermissionManager

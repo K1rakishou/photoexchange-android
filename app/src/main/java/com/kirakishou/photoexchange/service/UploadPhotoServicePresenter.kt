@@ -1,13 +1,12 @@
 package com.kirakishou.photoexchange.service
 
-import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
+import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.extension.asWeak
 import io.reactivex.Completable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 
 /**
@@ -16,7 +15,7 @@ import timber.log.Timber
 class UploadPhotoServicePresenter(
     private val photosRepository: PhotosRepository,
     private val settingsRepository: SettingsRepository,
-    private val coroutinePool: CoroutineThreadPoolProvider
+    private val schedulerProvider: SchedulerProvider
 ) {
     private val tag = "[${this::class.java.simpleName}] "
 
@@ -46,8 +45,8 @@ class UploadPhotoServicePresenter(
             }
 
             serviceCallbacks?.stopService()
-        }.subscribeOn(Schedulers.io())
-            .observeOn(Schedulers.io())
+        }.subscribeOn(schedulerProvider.BG())
+            .observeOn(schedulerProvider.BG())
             .subscribe()
     }
 }

@@ -11,7 +11,6 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.module.ViewTakenPhotoActivityModule
 import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.view.ViewTakenPhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.ViewTakenPhotoActivityViewModel
@@ -30,9 +29,6 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
 
     @Inject
     lateinit var viewModel: ViewTakenPhotoActivityViewModel
-
-    @Inject
-    lateinit var coroutinesPool: CoroutineThreadPoolProvider
 
     @Inject
     lateinit var imageLoader: ImageLoader

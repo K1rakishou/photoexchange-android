@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.helper.api
 
 import com.google.gson.Gson
 import com.kirakishou.photoexchange.helper.api.request.UploadPhotoRequest
-import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
+import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.service.UploadPhotoServiceCallbacks
@@ -17,12 +17,12 @@ class ApiClient
 @Inject constructor(
     private val apiService: ApiService,
     private val gson: Gson,
-    private val coroutinePool: CoroutineThreadPoolProvider
+    private val schedulerProvider: SchedulerProvider
 ) {
 
     fun uploadPhoto(photoId: Long, photoFilePath: String, location: LonLat, userId: String,
                     callback: WeakReference<UploadPhotoServiceCallbacks>): Single<UploadPhotoResponse> {
-        return UploadPhotoRequest<UploadPhotoResponse>(photoId, photoFilePath, location, userId, callback, apiService, coroutinePool, gson)
+        return UploadPhotoRequest<UploadPhotoResponse>(photoId, photoFilePath, location, userId, callback, apiService, schedulerProvider, gson)
             .execute()
     }
 

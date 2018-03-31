@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.base.BaseViewModel
-import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
+import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.util.TimeUtils
@@ -26,13 +26,13 @@ class AllPhotosActivityViewModel(
     view: WeakReference<AllPhotosActivityView>,
     private val photosRepository: PhotosRepository,
     private val settingsRepository: SettingsRepository,
-    private val coroutinesPool: CoroutineThreadPoolProvider
+    private val schedulerProvider: SchedulerProvider
 ) : BaseViewModel<AllPhotosActivityView>(view) {
 
     private val tag = "[${this::class.java.simpleName}] "
     private val LOCATION_CHECK_INTERVAL = TimeUnit.SECONDS.toMillis(5)
 
-    val onUploadingPhotoEventSubject = PublishSubject.create<PhotoUploadingEvent>()
+    val onUploadingPhotoEventSubject = PublishSubject.create<PhotoUploadingEvent>().toSerialized()
 
     override fun onAttached() {
         Timber.tag(tag).d("onAttached()")
@@ -48,14 +48,14 @@ class AllPhotosActivityViewModel(
         return Single.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_TO_BE_UPLOADED) }
             .filter { count -> count > 0 }
             .doOnSuccess { _ -> updateLastLocation(isGranted).blockingAwait() }
-            .subscribeOn(Schedulers.io())
-            .observeOn(Schedulers.io())
+            .subscribeOn(schedulerProvider.BG())
+            .observeOn(schedulerProvider.BG())
     }
 
     fun loadUploadedPhotosFromDatabase(): Single<List<MyPhoto>> {
         return Single.fromCallable { photosRepository.findAllByState(PhotoState.PHOTO_UPLOADED) }
-            .subscribeOn(Schedulers.io())
-            .observeOn(Schedulers.io())
+            .subscribeOn(schedulerProvider.BG())
+            .observeOn(schedulerProvider.BG())
     }
 
     private fun updateLastLocation(isGranted: Boolean): Completable {

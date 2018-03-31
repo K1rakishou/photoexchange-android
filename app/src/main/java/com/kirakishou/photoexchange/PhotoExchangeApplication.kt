@@ -10,9 +10,9 @@ import android.util.Log
 import com.crashlytics.android.Crashlytics
 import com.kirakishou.photoexchange.di.component.ApplicationComponent
 import com.kirakishou.photoexchange.di.module.ApplicationModule
-import com.kirakishou.photoexchange.di.module.CoroutineThreadPoolProviderModule
 import com.kirakishou.photoexchange.di.module.DatabaseModule
 import com.kirakishou.photoexchange.di.module.NetworkModule
+import com.kirakishou.photoexchange.di.module.SchedulerProviderModule
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 
 
@@ -38,7 +38,7 @@ open class PhotoExchangeApplication : Application() {
             .applicationModule(ApplicationModule(this))
             .databaseModule(DatabaseModule(Constants.DATABASE_NAME))
             .networkModule(NetworkModule(Constants.BASE_URL))
-            .coroutineThreadPoolProviderModule(CoroutineThreadPoolProviderModule())
+            .schedulerProviderModule(SchedulerProviderModule())
             .build()
     }
 

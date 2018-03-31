@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.helper.concurrency.operator
+package com.kirakishou.photoexchange.helper.concurrency.rx.operator
 
 import com.google.gson.Gson
 import com.kirakishou.photoexchange.mvp.model.other.ServerErrorCode

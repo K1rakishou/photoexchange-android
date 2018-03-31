@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.di.module
 
 import android.arch.lifecycle.ViewModelProviders
 import com.kirakishou.photoexchange.di.scope.PerActivity
-import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
+import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
@@ -23,10 +23,10 @@ open class AllPhotosActivityModule(
 
     @PerActivity
     @Provides
-    fun provideViewModelFactory(coroutinePool: CoroutineThreadPoolProvider,
+    fun provideViewModelFactory(schedulerProvider: SchedulerProvider,
                                 photosRepository: PhotosRepository,
                                 settingsRepository: SettingsRepository): AllPhotosActivityViewModelFactory {
-        return AllPhotosActivityViewModelFactory(WeakReference(activity), photosRepository, settingsRepository, coroutinePool)
+        return AllPhotosActivityViewModelFactory(WeakReference(activity), photosRepository, settingsRepository, schedulerProvider)
     }
 
     @PerActivity

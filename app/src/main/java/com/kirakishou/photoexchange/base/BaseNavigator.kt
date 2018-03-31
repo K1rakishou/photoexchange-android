@@ -5,7 +5,6 @@ import android.os.Handler
 import android.os.Looper
 import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
-import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.extension.newInstance
 import kotlin.reflect.KClass
 

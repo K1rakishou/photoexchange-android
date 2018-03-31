@@ -7,7 +7,6 @@ import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.base.BaseFragment
 import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
@@ -30,9 +29,6 @@ class MyPhotosFragment : BaseFragment() {
 
     @Inject
     lateinit var imageLoader: ImageLoader
-
-    @Inject
-    lateinit var coroutinesPool: CoroutineThreadPoolProvider
 
     @Inject
     lateinit var viewModel: AllPhotosActivityViewModel

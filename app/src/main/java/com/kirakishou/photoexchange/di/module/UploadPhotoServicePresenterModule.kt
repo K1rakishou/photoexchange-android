@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.di.module
 
-import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
+import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.service.UploadPhotoServicePresenter
@@ -19,7 +19,7 @@ class UploadPhotoServicePresenterModule {
     @Provides
     fun provideUploadPhotoServicePresenter(photosRepository: PhotosRepository,
                                            settingsRepository: SettingsRepository,
-                                           coroutinePool: CoroutineThreadPoolProvider): UploadPhotoServicePresenter {
-        return UploadPhotoServicePresenter(photosRepository, settingsRepository, coroutinePool)
+                                           schedulerProvider: SchedulerProvider): UploadPhotoServicePresenter {
+        return UploadPhotoServicePresenter(photosRepository, settingsRepository, schedulerProvider)
     }
 }
