@@ -6,9 +6,11 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
+import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
+import timber.log.Timber
 import java.lang.ref.WeakReference
 import java.util.concurrent.TimeUnit
 
@@ -34,8 +36,9 @@ class UploadPhotoServicePresenter(
             .subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
             .throttleLast(DELAY_BEFORE_UPLOADING_SECONDS, TimeUnit.SECONDS)
+            .filter { !it.isEmpty() }
             .doOnNext { data -> updatePhotosUseCase.uploadPhotos(data.userId, data.location, callbacks) }
-            .doOnNext { callbacks.get()?.stopService() }
+            .doOnEach { callbacks.get()?.stopService() }
             .subscribe()
     }
 
@@ -44,10 +47,18 @@ class UploadPhotoServicePresenter(
     }
 
     fun uploadPhotos() {
-        val userId = settingsRepository.findUserId() ?: return
-        val location = settingsRepository.findLastLocation() ?: return
+        compositeDisposable += Single.fromCallable {
+            val userId = settingsRepository.findUserId()
+                ?: return@fromCallable UploadPhotoData.empty()
+            val location = settingsRepository.findLastLocation()
+                ?: return@fromCallable UploadPhotoData.empty()
 
-        uploadPhotosSubject.onNext(UploadPhotoData(userId, location))
+            return@fromCallable UploadPhotoData(false, userId, location)
+
+        }
+        .subscribeOn(schedulerProvider.BG())
+        .observeOn(schedulerProvider.BG())
+        .subscribe(uploadPhotosSubject::onNext, uploadPhotosSubject::onError)
     }
 
     fun cancelPhotoUploading(photoId: Long) {
@@ -59,7 +70,18 @@ class UploadPhotoServicePresenter(
     }
 
     class UploadPhotoData(
+        val empty: Boolean,
         val userId: String,
         val location: LonLat
-    )
+    ) {
+        fun isEmpty(): Boolean {
+            return empty
+        }
+
+        companion object {
+            fun empty(): UploadPhotoData {
+                return UploadPhotoData(true, "", LonLat.empty())
+            }
+        }
+    }
 }

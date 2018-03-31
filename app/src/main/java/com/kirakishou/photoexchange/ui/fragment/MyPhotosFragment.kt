@@ -111,7 +111,6 @@ class MyPhotosFragment : BaseFragment() {
             when (event) {
                 is PhotoUploadingEvent.OnPrepare -> {
                     myPhotosList.scrollToPosition(0)
-                    adapter.showQueuedUpPhotosCountNotification(event.queuedUpPhotosCount)
                 }
                 is PhotoUploadingEvent.OnPhotoUploadingStart -> {
                     adapter.updateQueuedUpPhotosCountNotification(event.queuedUpPhotosCount)

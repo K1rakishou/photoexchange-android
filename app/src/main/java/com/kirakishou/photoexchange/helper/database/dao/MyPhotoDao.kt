@@ -32,7 +32,7 @@ abstract class MyPhotoDao {
         "WHERE ${MyPhotoEntity.PHOTO_STATE_COLUMN} = :photoState " +
         "ORDER BY ${MyPhotoEntity.TAKEN_ON_COLUMN} DESC LIMIT 1")
     @TypeConverters(PhotoStateConverter::class)
-    abstract fun findOnePhotoWithState(state: PhotoState): MyPhotoEntity?
+    abstract fun findOnePhotoWithState(photoState: PhotoState): MyPhotoEntity?
 
     @Query("SELECT * FROM ${MyPhotoEntity.TABLE_NAME} " +
             "WHERE " +
