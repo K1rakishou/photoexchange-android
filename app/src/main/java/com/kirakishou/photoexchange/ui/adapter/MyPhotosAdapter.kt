@@ -80,13 +80,16 @@ class MyPhotosAdapter(
     }
 
     fun showFailedToUploadPhotosNotification(failedToUploadPhotosCount: Int) {
-        if (items[FAILED_TO_UPLOAD_PHOTOS_NOTIFICATION_INDEX] is MyPhotosAdapterItem.FailedToUploadItem) {
-            return
-        }
-
         if (failedToUploadPhotosCount > 0) {
-            items[FAILED_TO_UPLOAD_PHOTOS_NOTIFICATION_INDEX] = MyPhotosAdapterItem.FailedToUploadItem(failedToUploadPhotosCount)
-            notifyItemChanged(FAILED_TO_UPLOAD_PHOTOS_NOTIFICATION_INDEX)
+            if (items[FAILED_TO_UPLOAD_PHOTOS_NOTIFICATION_INDEX] is MyPhotosAdapterItem.FailedToUploadItem) {
+                if ((items[FAILED_TO_UPLOAD_PHOTOS_NOTIFICATION_INDEX] as MyPhotosAdapterItem.FailedToUploadItem).count != failedToUploadPhotosCount) {
+                    (items[FAILED_TO_UPLOAD_PHOTOS_NOTIFICATION_INDEX] as MyPhotosAdapterItem.FailedToUploadItem).count = failedToUploadPhotosCount
+                    notifyItemChanged(FAILED_TO_UPLOAD_PHOTOS_NOTIFICATION_INDEX)
+                }
+            } else {
+                items[FAILED_TO_UPLOAD_PHOTOS_NOTIFICATION_INDEX] = MyPhotosAdapterItem.FailedToUploadItem(failedToUploadPhotosCount)
+                notifyItemChanged(FAILED_TO_UPLOAD_PHOTOS_NOTIFICATION_INDEX)
+            }
         } else {
             hideFailedToUploadPhotosNotification()
         }
@@ -149,13 +152,14 @@ class MyPhotosAdapter(
 
     fun updateQueuedUpPhotosCountNotification(queuedUpPhotosCount: Int) {
         if (queuedUpPhotosCount > 0) {
-            if (items[QUEUED_UP_ITEMS_COUNT_NOTIFICATION_INDEX] !is MyPhotosAdapterItem.QueuedUpPhotosItem) {
-                showQueuedUpPhotosCountNotification(queuedUpPhotosCount)
-            } else {
+            if (items[QUEUED_UP_ITEMS_COUNT_NOTIFICATION_INDEX] is MyPhotosAdapterItem.QueuedUpPhotosItem) {
                 if ((items[QUEUED_UP_ITEMS_COUNT_NOTIFICATION_INDEX] as MyPhotosAdapterItem.QueuedUpPhotosItem).count != queuedUpPhotosCount) {
                     (items[QUEUED_UP_ITEMS_COUNT_NOTIFICATION_INDEX] as MyPhotosAdapterItem.QueuedUpPhotosItem).count = queuedUpPhotosCount
                     notifyItemChanged(QUEUED_UP_ITEMS_COUNT_NOTIFICATION_INDEX)
                 }
+            } else {
+                items[QUEUED_UP_ITEMS_COUNT_NOTIFICATION_INDEX] = MyPhotosAdapterItem.QueuedUpPhotosItem(queuedUpPhotosCount)
+                notifyItemChanged(QUEUED_UP_ITEMS_COUNT_NOTIFICATION_INDEX)
             }
         } else {
             hideQueuedUpPhotosCountNotification()
