@@ -89,12 +89,12 @@ class MyPhotosFragment : BaseFragment() {
     }
 
     private fun initRecyclerView() {
-        val columnsCount = AndroidUtils.calculateNoOfColumns(activity!!, PHOTO_ADAPTER_VIEW_WIDTH)
+        val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = MyPhotosAdapter(activity!!, imageLoader, adapterButtonClickSubject)
+        adapter = MyPhotosAdapter(requireContext(), imageLoader, adapterButtonClickSubject)
         adapter.init()
 
-        val layoutManager = GridLayoutManager(activity!!, columnsCount)
+        val layoutManager = GridLayoutManager(requireContext(), columnsCount)
         layoutManager.spanSizeLookup = MyPhotosAdapterSpanSizeLookup(adapter, columnsCount)
 
         myPhotosList.layoutManager = layoutManager
@@ -130,11 +130,11 @@ class MyPhotosFragment : BaseFragment() {
         when (buttonClickEvent) {
             is MyPhotosAdapter.AdapterButtonClickEvent.CancelAllFailedToUploadPhotosButtonClick -> {
                 return CancelAllFailedToUploadPhotosDialog()
-                    .show(activity!!)
+                    .show(requireContext())
                     .doOnNext { positive ->
                         if (positive) {
                             viewModel.deleteAllWithState(PhotoState.FAILED_TO_UPLOAD).blockingAwait()
-                            activity?.runOnUiThread {
+                            requireActivity().runOnUiThread {
                                 adapter.hideFailedToUploadPhotosNotification()
                             }
                         }
@@ -145,18 +145,18 @@ class MyPhotosFragment : BaseFragment() {
                 return Observable.just(Pair(true, buttonClickEvent))
                     .doOnNext { _ ->
                         viewModel.changePhotosStates(PhotoState.FAILED_TO_UPLOAD, PhotoState.PHOTO_QUEUED_UP).blockingAwait()
-                        activity?.runOnUiThread {
+                        requireActivity().runOnUiThread {
                             adapter.hideFailedToUploadPhotosNotification()
                         }
                     }
             }
             is MyPhotosAdapter.AdapterButtonClickEvent.CancelAllQueuedUpPhotosButtonClick -> {
                 return CancelAllQueuedUpPhotosDialog()
-                    .show(activity!!)
+                    .show(requireContext())
                     .doOnNext { positive ->
                         if (positive) {
                             viewModel.deleteAllWithState(PhotoState.PHOTO_QUEUED_UP).blockingAwait()
-                            activity?.runOnUiThread {
+                            requireActivity().runOnUiThread {
                                 adapter.hideQueuedUpPhotosCountNotification()
                             }
                         }
@@ -165,11 +165,11 @@ class MyPhotosFragment : BaseFragment() {
             }
             is MyPhotosAdapter.AdapterButtonClickEvent.CancelPhotoUploading -> {
                 return CancelPhotoUploadingDialog()
-                    .show(activity!!)
+                    .show(requireContext())
                     .doOnNext { positive ->
                         if (positive) {
                             viewModel.deleteByIdAndState(buttonClickEvent.photoId, buttonClickEvent.photoState).blockingAwait()
-                            activity?.runOnUiThread {
+                            requireActivity().runOnUiThread {
                                 adapter.removePhotoById(buttonClickEvent.photoId)
                             }
                         }
@@ -187,7 +187,7 @@ class MyPhotosFragment : BaseFragment() {
             return
         }
 
-        activity?.runOnUiThread {
+        requireActivity().runOnUiThread {
             when (viewState) {
                 is MyPhotosFragmentViewState.Default -> {
 
@@ -215,7 +215,7 @@ class MyPhotosFragment : BaseFragment() {
             return
         }
 
-        activity?.runOnUiThread {
+        requireActivity().runOnUiThread {
             when (event) {
                 is PhotoUploadingEvent.OnPrepare -> {
                     scrollRecyclerViewToTop()
@@ -248,7 +248,11 @@ class MyPhotosFragment : BaseFragment() {
     }
 
     private fun onUploadedPhotosLoadedFromDatabase(uploadedPhotos: List<MyPhoto>) {
-        activity?.runOnUiThread {
+        if (!isAdded) {
+            return
+        }
+
+        requireActivity().runOnUiThread {
             if (uploadedPhotos.isNotEmpty()) {
                 val mapped = uploadedPhotos.map { MyPhotosAdapterItem.MyPhotoItem(it) }
                 adapter.addAll(mapped)
@@ -259,7 +263,7 @@ class MyPhotosFragment : BaseFragment() {
     }
 
     override fun resolveDaggerDependency() {
-        (activity as AllPhotosActivity).activityComponent
+        (requireActivity() as AllPhotosActivity).activityComponent
             .inject(this)
     }
 
