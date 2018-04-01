@@ -42,7 +42,10 @@ class UploadPhotoRequest<T : StatusResponse>(
             }
 
             val body = getBody(photoId, photoFile, packet, callback)
-            return@fromCallable extractResponse(apiService.uploadPhoto(body.part(0), body.part(1)).blockingGet() as Response<T>)
+            val response = apiService.uploadPhoto(body.part(0), body.part(1))
+                .blockingGet() as Response<T>
+
+            return@fromCallable extractResponse(response)
         }.subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
     }

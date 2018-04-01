@@ -10,10 +10,13 @@ import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
+import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewState
 import io.reactivex.Completable
 import io.reactivex.Maybe
 import io.reactivex.Single
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
@@ -34,6 +37,15 @@ class AllPhotosActivityViewModel(
 
     val onUploadingPhotoEventSubject = PublishSubject.create<PhotoUploadingEvent>().toSerialized()
     val myPhotosFragmentViewStateSubject = BehaviorSubject.createDefault<MyPhotosFragmentViewState>(MyPhotosFragmentViewState.Default()).toSerialized()
+    val adapterButtonClickSubject = PublishSubject.create<MyPhotosAdapter.AdapterButtonClickEvent>().toSerialized()
+
+    init {
+        compositeDisposable += adapterButtonClickSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { event -> onAdapterButtonClickEvent(event) }
+            .subscribe()
+    }
 
     override fun onAttached() {
         Timber.tag(tag).d("onAttached()")
@@ -57,6 +69,12 @@ class AllPhotosActivityViewModel(
 
     fun loadUploadedPhotosFromDatabase(): Single<List<MyPhoto>> {
         return Single.fromCallable { photosRepository.findAllByState(PhotoState.PHOTO_UPLOADED) }
+            .subscribeOn(schedulerProvider.BG())
+            .observeOn(schedulerProvider.BG())
+    }
+
+    fun countFailedToUploadPhotos(): Single<Int> {
+        return Single.fromCallable { photosRepository.countAllByState(PhotoState.FAILED_TO_UPLOAD).toInt() }
             .subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
     }
@@ -92,5 +110,22 @@ class AllPhotosActivityViewModel(
 
     fun forwardUploadPhotoEvent(event: PhotoUploadingEvent) {
         onUploadingPhotoEventSubject.onNext(event)
+    }
+
+    private fun onAdapterButtonClickEvent(event: MyPhotosAdapter.AdapterButtonClickEvent) {
+        when (event) {
+            is MyPhotosAdapter.AdapterButtonClickEvent.CancelAllFailedToUploadPhotosButtonClick -> {
+                Timber.e("CancelAllFailedToUploadPhotosButtonClick")
+            }
+            is MyPhotosAdapter.AdapterButtonClickEvent.RetryToUploadPhotosButtonClick -> {
+                Timber.e("RetryToUploadPhotosButtonClick")
+            }
+            is MyPhotosAdapter.AdapterButtonClickEvent.CancelAllQueuedUpPhotosButtonClick -> {
+                Timber.e("CancelAllQueuedUpPhotosButtonClick")
+            }
+            is MyPhotosAdapter.AdapterButtonClickEvent.CancelPhotoUploading -> {
+                Timber.e("CancelPhotoUploading")
+            }
+        }
     }
 }

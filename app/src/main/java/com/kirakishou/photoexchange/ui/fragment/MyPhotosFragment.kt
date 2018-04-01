@@ -17,6 +17,7 @@ import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewState
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapterSpanSizeLookup
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.subjects.PublishSubject
 import javax.inject.Inject
 
 
@@ -32,6 +33,8 @@ class MyPhotosFragment : BaseFragment() {
     lateinit var viewModel: AllPhotosActivityViewModel
 
     private val PHOTO_ADAPTER_VIEW_WIDTH = 288
+    private val adapterButtonClickSubject = PublishSubject.create<MyPhotosAdapter.AdapterButtonClickEvent>().toSerialized()
+
     lateinit var adapter: MyPhotosAdapter
 
     override fun getContentView(): Int = R.layout.fragment_my_photos
@@ -40,9 +43,19 @@ class MyPhotosFragment : BaseFragment() {
         initRx()
         initRecyclerView()
         showUploadedPhotos()
+        showFailedToUploadPhotos()
     }
 
     override fun onFragmentViewDestroy() {
+    }
+
+    private fun showFailedToUploadPhotos() {
+        compositeDisposable += viewModel.countFailedToUploadPhotos()
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .observeOn(AndroidSchedulers.mainThread())
+            .filter { count -> count > 0 }
+            .doOnSuccess { count -> adapter.showFailedToUploadPhotosNotification(count) }
+            .subscribe()
     }
 
     private fun showUploadedPhotos() {
@@ -54,6 +67,11 @@ class MyPhotosFragment : BaseFragment() {
     }
 
     private fun initRx() {
+        compositeDisposable += adapterButtonClickSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(viewModel.adapterButtonClickSubject::onNext, viewModel.adapterButtonClickSubject::onError)
+
         compositeDisposable += viewModel.onUploadingPhotoEventSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
@@ -67,11 +85,10 @@ class MyPhotosFragment : BaseFragment() {
             .subscribe()
     }
 
-
     private fun initRecyclerView() {
         val columnsCount = AndroidUtils.calculateNoOfColumns(activity!!, PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = MyPhotosAdapter(activity!!, imageLoader)
+        adapter = MyPhotosAdapter(activity!!, imageLoader, adapterButtonClickSubject)
         adapter.init()
 
         val layoutManager = GridLayoutManager(activity!!, columnsCount)
@@ -102,6 +119,13 @@ class MyPhotosFragment : BaseFragment() {
         }
     }
 
+    private fun scrollRecyclerViewToTop() {
+        val layoutManager = (myPhotosList.layoutManager as GridLayoutManager)
+        if (layoutManager.findFirstCompletelyVisibleItemPosition() == 0) {
+            myPhotosList.scrollToPosition(0)
+        }
+    }
+
     private fun onUploadingEvent(event: PhotoUploadingEvent) {
         if (!isAdded) {
             return
@@ -110,7 +134,8 @@ class MyPhotosFragment : BaseFragment() {
         activity?.runOnUiThread {
             when (event) {
                 is PhotoUploadingEvent.OnPrepare -> {
-                    myPhotosList.scrollToPosition(0)
+                    scrollRecyclerViewToTop()
+                    adapter.updateQueuedUpPhotosCountNotification(event.queuedUpPhotosCount)
                 }
                 is PhotoUploadingEvent.OnPhotoUploadingStart -> {
                     adapter.updateQueuedUpPhotosCountNotification(event.queuedUpPhotosCount)
@@ -126,8 +151,12 @@ class MyPhotosFragment : BaseFragment() {
                     adapter.hideQueuedUpPhotosCountNotification()
                 }
                 is PhotoUploadingEvent.OnFailedToUpload -> {
+                    adapter.removePhotoById(event.myPhoto.id)
+                    adapter.showFailedToUploadPhotosNotification(event.failedToUploadPhotosCount)
                 }
                 is PhotoUploadingEvent.OnUnknownError -> {
+                    adapter.clear()
+                    showUploadedPhotos()
                 }
             }
         }

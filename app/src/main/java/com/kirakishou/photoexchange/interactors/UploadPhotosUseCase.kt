@@ -21,59 +21,58 @@ class UploadPhotosUseCase(
 ) {
 
     fun uploadPhotos(userId: String, location: LonLat, callbacks: WeakReference<UploadPhotoServiceCallbacks>?) {
-        try {
-            callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnPrepare())
+        while (true) {
+            val photo = myPhotosRepository.findPhotoByStateAndUpdateState(PhotoState.PHOTO_QUEUED_UP, PhotoState.PHOTO_UPLOADING)
+                ?: break
 
-            while (true) {
-                val photo = myPhotosRepository.findPhotoByStateAndUpdateState(PhotoState.PHOTO_QUEUED_UP, PhotoState.PHOTO_UPLOADING)
-                    ?: break
+            try {
+                val queuedUpPhotosCount = myPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP).toInt()
+                callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnPhotoUploadingStart(photo, queuedUpPhotosCount))
+
+                val rotatedPhotoFile = File.createTempFile("rotated_photo", ".tmp")
 
                 try {
-                    val queuedUpPhotosCount = myPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP).toInt()
-                    callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnPhotoUploadingStart(photo, queuedUpPhotosCount))
+                    if (BitmapUtils.rotatePhoto(photo.photoTempFile, rotatedPhotoFile)) {
+                        val response = apiClient.uploadPhoto(photo.id, rotatedPhotoFile.absolutePath, location, userId, callbacks).blockingGet()
+                        val errorCode = ServerErrorCode.from(response.serverErrorCode)
 
-                    val rotatedPhotoFile = File.createTempFile("rotated_photo", ".tmp")
+                        if (errorCode == ServerErrorCode.OK) {
+                            photo.photoState = PhotoState.PHOTO_UPLOADED
+                            photo.photoName = response.photoName
+                            photo.photoTempFile = null
+                            callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnUploaded(photo))
 
-                    try {
-                        if (BitmapUtils.rotatePhoto(photo.photoTempFile, rotatedPhotoFile)) {
-                            val response = apiClient.uploadPhoto(photo.id, rotatedPhotoFile.absolutePath, location, userId, callbacks).blockingGet()
-                            val errorCode = ServerErrorCode.from(response.serverErrorCode)
+                            val isAllOk =  database.transactional {
+                                val deleteResult = myPhotosRepository.deleteTempFileById(photo.id)
+                                val updateResult1 = myPhotosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_UPLOADED)
+                                val updateResult2 = myPhotosRepository.updateSetTempFileId(photo.id, null)
+                                val updateResult3 = myPhotosRepository.updateSetPhotoName(photo.id, response.photoName)
 
-                            if (errorCode == ServerErrorCode.OK) {
-                                photo.photoState = PhotoState.PHOTO_UPLOADED
-                                photo.photoName = response.photoName
-                                photo.photoTempFile = null
-                                callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnUploaded(photo))
+                                return@transactional deleteResult && updateResult1 && updateResult2 && updateResult3
+                            }
 
-                                val isAllOk =  database.transactional {
-                                    val deleteResult = myPhotosRepository.deleteTempFileById(photo.id)
-                                    val updateResult1 = myPhotosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_UPLOADED)
-                                    val updateResult2 = myPhotosRepository.updateSetTempFileId(photo.id, null)
-                                    val updateResult3 = myPhotosRepository.updateSetPhotoName(photo.id, response.photoName)
-
-                                    return@transactional deleteResult && updateResult1 && updateResult2 && updateResult3
-                                }
-
-                                if (isAllOk) {
-                                    continue
-                                }
+                            if (isAllOk) {
+                                continue
                             }
                         }
-                    } finally {
-                        FileUtils.deleteFile(rotatedPhotoFile)
                     }
-
-                    myPhotosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_QUEUED_UP)
-                    callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnFailedToUpload(photo))
-                } catch (error: Throwable) {
-                    Timber.e(error)
-                    myPhotosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_QUEUED_UP)
-                    callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnFailedToUpload(photo))
+                } finally {
+                    FileUtils.deleteFile(rotatedPhotoFile)
                 }
-            }
 
-        } finally {
-            callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnEnd())
+                myPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
+                val failedToUploadPhotosCount = myPhotosRepository.countAllByState(PhotoState.FAILED_TO_UPLOAD).toInt()
+
+                callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnFailedToUpload(photo, failedToUploadPhotosCount))
+            } catch (error: Throwable) {
+                Timber.e(error)
+
+                myPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
+                val failedToUploadPhotosCount = myPhotosRepository.countAllByState(PhotoState.FAILED_TO_UPLOAD).toInt()
+
+                callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnFailedToUpload(photo, failedToUploadPhotosCount))
+            }
         }
+
     }
 }

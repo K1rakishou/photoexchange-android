@@ -66,6 +66,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             .plus(AllPhotosActivityModule(this))
     }
 
+    private val GPS_LOCATION_OBTAINING_MAX_TIMEOUT_SECONDS = 15L
     private val adapter = FragmentTabsPager(supportFragmentManager)
     private val locationManager by lazy { MyLocationManager(applicationContext) }
 
@@ -146,7 +147,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             }
 
             return@fromCallable RxLocationManager.start(locationManager)
-                .timeout(15, TimeUnit.SECONDS)
+                .timeout(GPS_LOCATION_OBTAINING_MAX_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .onErrorReturnItem(LonLat.empty())
                 .blockingFirst()
         }
