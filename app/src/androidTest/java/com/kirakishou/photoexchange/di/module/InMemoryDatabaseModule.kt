@@ -22,12 +22,12 @@ class InMemoryDatabaseModule {
         return Room.inMemoryDatabaseBuilder(context, MyDatabase::class.java).build()
     }
 
-//    @Singleton
-//    @Provides
-//    fun provideMyPhotoRepository(context: Context,
-//                                 database: MyDatabase,
-//                                 apiClient: ApiClient): PhotosRepository {
-//        val filesDir = context.filesDir.absolutePath
-//        return PhotosRepository(filesDir, database, apiClient)
-//    }
+    @Singleton
+    @Provides
+    fun provideMyPhotoRepository(context: Context,
+                                 database: MyDatabase,
+                                 apiClient: ApiClient): PhotosRepository {
+        val filesDir = context.filesDir.absolutePath
+        return PhotosRepository(filesDir, database, apiClient)
+    }
 }

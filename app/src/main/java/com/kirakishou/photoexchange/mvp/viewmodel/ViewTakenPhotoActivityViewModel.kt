@@ -1,14 +1,12 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
 import android.widget.Toast
-import com.kirakishou.photoexchange.base.BaseViewModel
-import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
+import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.view.ViewTakenPhotoActivityView
 import io.reactivex.Completable
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.lang.ref.WeakReference
 
@@ -17,7 +15,7 @@ import java.lang.ref.WeakReference
  */
 class ViewTakenPhotoActivityViewModel(
     view: WeakReference<ViewTakenPhotoActivityView>,
-    private val coroutinesPool: CoroutineThreadPoolProvider,
+    private val schedulerProvider: SchedulerProvider,
     private val photosRepository: PhotosRepository
 ) : BaseViewModel<ViewTakenPhotoActivityView>(view) {
 
@@ -42,7 +40,7 @@ class ViewTakenPhotoActivityViewModel(
             try {
                 getView()?.hideControls()
 
-                val updateResult = photosRepository.updatePhotoState(takenPhotoId, PhotoState.PHOTO_TO_BE_UPLOADED)
+                val updateResult = photosRepository.updatePhotoState(takenPhotoId, PhotoState.PHOTO_QUEUED_UP)
                 if (!updateResult) {
                     getView()?.showToast("Could not update photo in the database (database error)", Toast.LENGTH_LONG)
                     getView()?.showControls()
@@ -56,8 +54,8 @@ class ViewTakenPhotoActivityViewModel(
                 getView()?.showToast("Could not update photo in the database (database error)", Toast.LENGTH_LONG)
                 getView()?.showControls()
             }
-        }.subscribeOn(Schedulers.io())
-            .observeOn(Schedulers.io())
+        }.subscribeOn(schedulerProvider.BG())
+            .observeOn(schedulerProvider.BG())
             .subscribe()
     }
 }

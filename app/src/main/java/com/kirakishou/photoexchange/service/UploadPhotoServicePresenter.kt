@@ -1,53 +1,92 @@
 package com.kirakishou.photoexchange.service
 
-import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
+import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.helper.extension.asWeak
-import io.reactivex.Completable
+import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
+import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
+import com.kirakishou.photoexchange.mvp.model.UploadPhotoData
+import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.schedulers.Schedulers
+import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
+import java.lang.ref.WeakReference
+import java.util.concurrent.TimeUnit
 
 /**
  * Created by kirakishou on 3/17/2018.
  */
 class UploadPhotoServicePresenter(
-    private val photosRepository: PhotosRepository,
+    private val callbacks: WeakReference<UploadPhotoServiceCallbacks>,
+    private val myPhotosRepository: PhotosRepository,
     private val settingsRepository: SettingsRepository,
-    private val coroutinePool: CoroutineThreadPoolProvider
+    private val schedulerProvider: SchedulerProvider,
+    private val updatePhotosUseCase: UploadPhotosUseCase
 ) {
     private val tag = "[${this::class.java.simpleName}] "
 
-    private var compositeDisposable = CompositeDisposable()
-    private var serviceCallbacks: UploadPhotoServiceCallbacks? = null
+    private val DELAY_BEFORE_UPLOADING_SECONDS = 10L
+    private val uploadPhotosSubject = PublishSubject.create<UploadPhotoData>().toSerialized()
 
-    fun onAttach(serviceCallbacks: UploadPhotoServiceCallbacks) {
-        this.serviceCallbacks = serviceCallbacks
+    private var compositeDisposable = CompositeDisposable()
+
+    init {
+        compositeDisposable += uploadPhotosSubject
+            .subscribeOn(schedulerProvider.BG())
+            .observeOn(schedulerProvider.BG())
+            .filter { !it.isEmpty() }
+            .doOnEach {
+                val queuedUpPhotosCount = myPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP).toInt()
+                callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnPrepare(queuedUpPhotosCount))
+            }
+            .throttleLast(DELAY_BEFORE_UPLOADING_SECONDS, TimeUnit.SECONDS)
+            .doOnNext { data -> updatePhotosUseCase.uploadPhotos(data.userId, data.location, callbacks) }
+            .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnEnd()) }
+            .doOnError { callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnUnknownError()) }
+            .doOnEach { callbacks.get()?.stopService() }
+            .subscribe()
     }
 
     fun onDetach() {
-        this.serviceCallbacks = null
         this.compositeDisposable.clear()
     }
 
     fun uploadPhotos() {
-        val weakenCallback = serviceCallbacks?.asWeak()
+        Timber.e("uploadPhotos")
 
-        compositeDisposable += Completable.fromAction {
+        compositeDisposable += Single.fromCallable {
             val userId = settingsRepository.findUserId()
+                ?: return@fromCallable UploadPhotoData.empty()
             val location = settingsRepository.findLastLocation()
+                ?: return@fromCallable UploadPhotoData.empty()
 
-            if (userId != null && location != null)  {
-                photosRepository.uploadPhotos(userId, location, weakenCallback)
-            } else {
-                Timber.tag(tag).e("Either userId or location is null! userId = $userId, location = $location")
-            }
+            return@fromCallable UploadPhotoData(false, userId, location)
 
-            serviceCallbacks?.stopService()
-        }.subscribeOn(Schedulers.io())
-            .observeOn(Schedulers.io())
-            .subscribe()
+        }
+        .subscribeOn(schedulerProvider.BG())
+        .observeOn(schedulerProvider.BG())
+        .subscribe(uploadPhotosSubject::onNext, uploadPhotosSubject::onError)
+    }
+
+    fun cancelPhotoUploading(photoId: Long) {
+        Timber.e("cancelPhotoUploading $photoId")
+        myPhotosRepository.deleteByIdAndState(photoId, PhotoState.PHOTO_QUEUED_UP)
+    }
+
+    fun cancelAllPhotosUploading() {
+        Timber.e("cancelAllPhotosUploading")
+        myPhotosRepository.deleteAllWithState(PhotoState.PHOTO_QUEUED_UP)
+    }
+
+    fun stopUploadingProcess() {
+        Timber.e("stopUploadingProcess")
+        updatePhotosUseCase.stopUploadingProcess()
+    }
+
+    fun resumeUploadingProcess() {
+        Timber.e("resumeUploadingProcess")
+        updatePhotosUseCase.resumeUploadingProcess()
     }
 }

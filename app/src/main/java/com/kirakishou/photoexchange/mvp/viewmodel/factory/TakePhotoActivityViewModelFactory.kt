@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.mvp.viewmodel.factory
 
 import android.arch.lifecycle.ViewModel
 import android.arch.lifecycle.ViewModelProvider
-import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
+import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
@@ -18,11 +18,11 @@ class TakePhotoActivityViewModelFactory
     val view: WeakReference<TakePhotoActivityView>,
     val photosRepository: PhotosRepository,
     val settingsRepository: SettingsRepository,
-    val coroutinesPool: CoroutineThreadPoolProvider
+    val schedulerProvider: SchedulerProvider
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
-        return TakePhotoActivityViewModel(view, coroutinesPool, photosRepository, settingsRepository) as T
+        return TakePhotoActivityViewModel(view, schedulerProvider, photosRepository, settingsRepository) as T
     }
 }

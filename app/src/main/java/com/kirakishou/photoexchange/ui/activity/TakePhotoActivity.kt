@@ -11,10 +11,8 @@ import android.widget.ImageView
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
-import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.module.TakePhotoActivityModule
 import com.kirakishou.photoexchange.helper.CameraProvider
-import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
@@ -41,9 +39,6 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
 
     @Inject
     lateinit var viewModel: TakePhotoActivityViewModel
-
-    @Inject
-    lateinit var coroutinesPool: CoroutineThreadPoolProvider
 
     @Inject
     lateinit var permissionManager: PermissionManager

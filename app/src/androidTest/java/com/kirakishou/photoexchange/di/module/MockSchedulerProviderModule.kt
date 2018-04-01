@@ -21,7 +21,7 @@ class MockSchedulerProviderModule {
     }
 
     class TestSchedulers : SchedulerProvider {
-        override fun provideIo(): Scheduler = Schedulers.trampoline()
-        override fun provideMain(): Scheduler = Schedulers.trampoline()
+        override fun BG(): Scheduler = Schedulers.trampoline()
+        override fun UI(): Scheduler = Schedulers.trampoline()
     }
 }

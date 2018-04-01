@@ -5,7 +5,6 @@ import com.kirakishou.photoexchange.di.component.DaggerMockApplicationComponent
 import com.kirakishou.photoexchange.di.component.MockApplicationComponent
 import com.kirakishou.photoexchange.di.module.ApplicationModule
 import com.kirakishou.photoexchange.di.module.InMemoryDatabaseModule
-import com.kirakishou.photoexchange.di.module.MockCoroutineThreadPoolProviderModule
 import timber.log.Timber
 
 /**
@@ -27,10 +26,9 @@ class MockApplication : PhotoExchangeApplication() {
     }
 
     override fun initializeApplicationComponent(): MockApplicationComponent {
-        return DaggerMockApplicationComponent.builder()
-            .applicationModule(ApplicationModule(this))
-            .mockCoroutineThreadPoolProviderModule(MockCoroutineThreadPoolProviderModule())
-            .inMemoryDatabaseModule(InMemoryDatabaseModule())
-            .build()
+//        return DaggerMockApplicationComponent.builder()
+//            .applicationModule(ApplicationModule(this))
+//            .inMemoryDatabaseModule(InMemoryDatabaseModule())
+//            .build()
     }
 }

@@ -3,7 +3,6 @@ package com.kirakishou.photoexchange.helper.permission
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.support.v4.app.ActivityCompat
-import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicInteger
 
 /**

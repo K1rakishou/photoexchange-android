@@ -13,12 +13,12 @@ import javax.inject.Singleton
 @Component(modules = [
     UploadPhotoServiceModule::class,
     SchedulerProviderModule::class,
-    CoroutineThreadPoolProviderModule::class,
     UploadPhotoServicePresenterModule::class,
     GsonModule::class,
     NetworkModule::class,
     DatabaseModule::class,
-    ApiClientModule::class
+    ApiClientModule::class,
+    UseCaseProviderModule::class
 ])
 interface UploadPhotoServiceComponent {
     fun inject(service: UploadPhotoService)

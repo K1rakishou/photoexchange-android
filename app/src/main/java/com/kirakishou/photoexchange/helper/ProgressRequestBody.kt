@@ -16,7 +16,7 @@ import java.lang.ref.WeakReference
 class ProgressRequestBody(
     private val photoId: Long,
     private val photoFile: File,
-    private val serviceCallbacks: WeakReference<UploadPhotoServiceCallbacks>
+    private val serviceCallbacks: WeakReference<UploadPhotoServiceCallbacks>?
 ) : RequestBody() {
     private val DEFAULT_BUFFER_SIZE = 4096
 
@@ -45,14 +45,14 @@ class ProgressRequestBody(
                 val percent = 100L * uploaded / fileLength
                 if (percent - lastPercent >= 3) {
                     lastPercent = percent
-                    serviceCallbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnProgress(photoId, percent.toInt()))
+                    serviceCallbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnProgress(photoId, percent.toInt()))
                 }
 
                 uploaded += read.toLong()
                 sink.write(buffer, 0, read)
             }
 
-            serviceCallbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnProgress(photoId, 100))
+            serviceCallbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnProgress(photoId, 100))
         } finally {
             fis.close()
         }

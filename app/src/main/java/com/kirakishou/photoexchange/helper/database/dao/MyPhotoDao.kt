@@ -28,6 +28,20 @@ abstract class MyPhotoDao {
     @TypeConverters(PhotoStateConverter::class)
     abstract fun findAllWithState(photoState: PhotoState): List<MyPhotoEntity>
 
+    @Query("SELECT * FROM ${MyPhotoEntity.TABLE_NAME} " +
+        "WHERE ${MyPhotoEntity.PHOTO_STATE_COLUMN} = :photoState " +
+        "ORDER BY ${MyPhotoEntity.TAKEN_ON_COLUMN} DESC LIMIT 1")
+    @TypeConverters(PhotoStateConverter::class)
+    abstract fun findOnePhotoWithState(photoState: PhotoState): MyPhotoEntity?
+
+    @Query("SELECT * FROM ${MyPhotoEntity.TABLE_NAME} " +
+            "WHERE " +
+        "${MyPhotoEntity.ID_COLUMN} = :photoId " +
+            " AND " +
+        "${MyPhotoEntity.PHOTO_STATE_COLUMN} = :photoState")
+    @TypeConverters(PhotoStateConverter::class)
+    abstract fun findByIdAndState(photoId: Long, photoState: PhotoState): MyPhotoEntity?
+
     @Query("SELECT * FROM ${MyPhotoEntity.TABLE_NAME}")
     abstract fun findAll(): List<MyPhotoEntity>
 

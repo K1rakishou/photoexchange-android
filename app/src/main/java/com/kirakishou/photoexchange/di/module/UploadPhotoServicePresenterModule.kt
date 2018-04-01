@@ -1,11 +1,14 @@
 package com.kirakishou.photoexchange.di.module
 
-import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
+import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
+import com.kirakishou.photoexchange.service.UploadPhotoServiceCallbacks
 import com.kirakishou.photoexchange.service.UploadPhotoServicePresenter
 import dagger.Module
 import dagger.Provides
+import java.lang.ref.WeakReference
 import javax.inject.Singleton
 
 /**
@@ -13,13 +16,16 @@ import javax.inject.Singleton
  */
 
 @Module
-class UploadPhotoServicePresenterModule {
+class UploadPhotoServicePresenterModule(
+    private val callbacks: WeakReference<UploadPhotoServiceCallbacks>
+) {
 
     @Singleton
     @Provides
-    fun provideUploadPhotoServicePresenter(photosRepository: PhotosRepository,
+    fun provideUploadPhotoServicePresenter(myPhotosRepository: PhotosRepository,
                                            settingsRepository: SettingsRepository,
-                                           coroutinePool: CoroutineThreadPoolProvider): UploadPhotoServicePresenter {
-        return UploadPhotoServicePresenter(photosRepository, settingsRepository, coroutinePool)
+                                           schedulerProvider: SchedulerProvider,
+                                           uploadPhotosUseCase: UploadPhotosUseCase): UploadPhotoServicePresenter {
+        return UploadPhotoServicePresenter(callbacks, myPhotosRepository, settingsRepository, schedulerProvider, uploadPhotosUseCase)
     }
 }

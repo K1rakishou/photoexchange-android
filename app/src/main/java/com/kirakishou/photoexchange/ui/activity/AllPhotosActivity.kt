@@ -16,17 +16,17 @@ import android.widget.ImageButton
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
-import com.kirakishou.photoexchange.base.BaseActivity
 import com.kirakishou.photoexchange.di.module.AllPhotosActivityModule
-import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
 import com.kirakishou.photoexchange.helper.location.MyLocationManager
 import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
+import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.service.UploadPhotoService
+import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
 import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
@@ -58,9 +58,6 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     lateinit var viewModel: AllPhotosActivityViewModel
 
     @Inject
-    lateinit var coroutinesPool: CoroutineThreadPoolProvider
-
-    @Inject
     lateinit var permissionManager: PermissionManager
 
     private val tag = "[${this::class.java.simpleName}] "
@@ -71,6 +68,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             .plus(AllPhotosActivityModule(this))
     }
 
+    private val GPS_LOCATION_OBTAINING_MAX_TIMEOUT_SECONDS = 15L
     private val adapter = FragmentTabsPager(supportFragmentManager)
     private val locationManager by lazy { MyLocationManager(applicationContext) }
 
@@ -83,6 +81,17 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun initRx() {
+        compositeDisposable += viewModel.stopUploadingProcessSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { stop -> if (stop) service?.stopUploadingProcess() else service?.resumeUploadingProcess() }
+            .subscribe()
+
+        compositeDisposable += viewModel.adapterButtonClickSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { _ -> startUploadingService() }
+            .subscribe()
     }
 
     override fun onActivityDestroy() {
@@ -151,7 +160,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             }
 
             return@fromCallable RxLocationManager.start(locationManager)
-                .timeout(15, TimeUnit.SECONDS)
+                .timeout(GPS_LOCATION_OBTAINING_MAX_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .onErrorReturnItem(LonLat.empty())
                 .blockingFirst()
         }
@@ -216,9 +225,14 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun startUploadingService() {
-        val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
-        startService(serviceIntent)
-        bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
+        if (service == null) {
+            val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
+            startService(serviceIntent)
+            bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
+        } else {
+            service?.resumeUploadingProcess()
+            service?.startPhotosUploading()
+        }
     }
 
     override fun resolveDaggerDependency() {

@@ -1,10 +1,9 @@
-package com.kirakishou.photoexchange.ui.widget
+package com.kirakishou.photoexchange.ui.adapter
 
 import android.os.Bundle
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import io.reactivex.subjects.PublishSubject
-import timber.log.Timber
 
 /**
  * Created by kirakishou on 11/10/2017.

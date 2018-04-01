@@ -3,7 +3,7 @@ package com.kirakishou.photoexchange.helper.api.request
 import com.google.gson.Gson
 import com.kirakishou.photoexchange.helper.ProgressRequestBody
 import com.kirakishou.photoexchange.helper.api.ApiService
-import com.kirakishou.photoexchange.helper.concurrency.coroutine.CoroutineThreadPoolProvider
+import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvp.model.net.packet.SendPhotoPacket
 import com.kirakishou.photoexchange.mvp.model.net.response.StatusResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
@@ -11,8 +11,6 @@ import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.model.other.ServerErrorCode
 import com.kirakishou.photoexchange.service.UploadPhotoServiceCallbacks
 import io.reactivex.Single
-import kotlinx.coroutines.experimental.Deferred
-import kotlinx.coroutines.experimental.async
 import okhttp3.MultipartBody
 import retrofit2.Response
 import timber.log.Timber
@@ -27,9 +25,9 @@ class UploadPhotoRequest<T : StatusResponse>(
     private val photoFilePath: String,
     private val location: LonLat,
     private val userId: String,
-    private val callback: WeakReference<UploadPhotoServiceCallbacks>,
+    private val callback: WeakReference<UploadPhotoServiceCallbacks>?,
     private val apiService: ApiService,
-    private val coroutinePool: CoroutineThreadPoolProvider,
+    private val schedulerProvider: SchedulerProvider,
     private val gson: Gson
 ) : AbstractRequest<T>() {
 
@@ -44,8 +42,12 @@ class UploadPhotoRequest<T : StatusResponse>(
             }
 
             val body = getBody(photoId, photoFile, packet, callback)
-            return@fromCallable extractResponse(apiService.uploadPhoto(body.part(0), body.part(1)).blockingGet() as Response<T>)
-        }
+            val response = apiService.uploadPhoto(body.part(0), body.part(1))
+                .blockingGet() as Response<T>
+
+            return@fromCallable extractResponse(response)
+        }.subscribeOn(schedulerProvider.BG())
+            .observeOn(schedulerProvider.BG())
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -71,7 +73,7 @@ class UploadPhotoRequest<T : StatusResponse>(
         return response.body()!!
     }
 
-    private fun getBody(photoId: Long, photoFile: File, packet: SendPhotoPacket, callback: WeakReference<UploadPhotoServiceCallbacks>): MultipartBody {
+    private fun getBody(photoId: Long, photoFile: File, packet: SendPhotoPacket, callback: WeakReference<UploadPhotoServiceCallbacks>?): MultipartBody {
         val photoRequestBody = ProgressRequestBody(photoId, photoFile, callback)
         val packetJson = gson.toJson(packet)
 
