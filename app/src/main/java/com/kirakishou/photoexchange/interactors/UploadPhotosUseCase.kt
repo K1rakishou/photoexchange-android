@@ -13,15 +13,22 @@ import com.kirakishou.photoexchange.service.UploadPhotoServiceCallbacks
 import timber.log.Timber
 import java.io.File
 import java.lang.ref.WeakReference
+import java.util.concurrent.atomic.AtomicBoolean
 
 class UploadPhotosUseCase(
     private val database: MyDatabase,
     private val myPhotosRepository: PhotosRepository,
     private val apiClient: ApiClient
 ) {
+    private val isStopped = AtomicBoolean(false)
 
     fun uploadPhotos(userId: String, location: LonLat, callbacks: WeakReference<UploadPhotoServiceCallbacks>?) {
         while (true) {
+            if (isStopped.get()) {
+                Timber.e("Uploading has been canceled")
+                break
+            }
+
             val photo = myPhotosRepository.findPhotoByStateAndUpdateState(PhotoState.PHOTO_QUEUED_UP, PhotoState.PHOTO_UPLOADING)
                 ?: break
 
@@ -73,6 +80,13 @@ class UploadPhotosUseCase(
                 callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnFailedToUpload(photo, failedToUploadPhotosCount))
             }
         }
+    }
 
+    fun stopUploadingProcess() {
+        isStopped.set(true)
+    }
+
+    fun resumeUploadingProcess() {
+        isStopped.set(false)
     }
 }

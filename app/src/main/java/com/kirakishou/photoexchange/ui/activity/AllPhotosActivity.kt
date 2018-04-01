@@ -20,11 +20,13 @@ import com.kirakishou.photoexchange.di.module.AllPhotosActivityModule
 import com.kirakishou.photoexchange.helper.location.MyLocationManager
 import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
+import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.service.UploadPhotoService
+import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
 import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
@@ -79,10 +81,22 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun initRx() {
+        compositeDisposable += viewModel.stopUploadingProcessSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { service?.stopUploadingProcess() }
+            .subscribe()
+
+        compositeDisposable += viewModel.adapterButtonClickSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { event -> onAdapterButtonClickEvent(event) }
+            .subscribe()
     }
 
     override fun onActivityDestroy() {
         service?.let { srvc ->
+            srvc.resumeUploadingProcess()
             srvc.detachCallback()
             unbindService(connection)
             service = null
@@ -215,6 +229,43 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
         startService(serviceIntent)
         bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
+    }
+
+    private fun onAdapterButtonClickEvent(event: MyPhotosAdapter.AdapterButtonClickEvent) {
+        compositeDisposable += when (event) {
+            is MyPhotosAdapter.AdapterButtonClickEvent.CancelAllFailedToUploadPhotosButtonClick -> {
+                viewModel.deleteAllWithState(PhotoState.FAILED_TO_UPLOAD)
+                    .doOnComplete {
+                        service?.resumeUploadingProcess()
+                        service?.startPhotosUploading()
+                    }
+                    .subscribe()
+            }
+            is MyPhotosAdapter.AdapterButtonClickEvent.RetryToUploadPhotosButtonClick -> {
+                viewModel.changePhotosStates(PhotoState.FAILED_TO_UPLOAD, PhotoState.PHOTO_QUEUED_UP)
+                    .doOnComplete {
+                        service?.resumeUploadingProcess()
+                        service?.startPhotosUploading()
+                    }
+                    .subscribe()
+            }
+            is MyPhotosAdapter.AdapterButtonClickEvent.CancelAllQueuedUpPhotosButtonClick -> {
+                viewModel.deleteAllWithState(PhotoState.PHOTO_QUEUED_UP)
+                    .doOnComplete {
+                        service?.resumeUploadingProcess()
+                        service?.startPhotosUploading()
+                    }
+                    .subscribe()
+            }
+            is MyPhotosAdapter.AdapterButtonClickEvent.CancelPhotoUploading -> {
+                viewModel.deleteByIdAndState(event.photoId, event.photoState)
+                    .doOnComplete {
+                        service?.resumeUploadingProcess()
+                        service?.startPhotosUploading()
+                    }
+                    .subscribe()
+            }
+        }
     }
 
     override fun resolveDaggerDependency() {

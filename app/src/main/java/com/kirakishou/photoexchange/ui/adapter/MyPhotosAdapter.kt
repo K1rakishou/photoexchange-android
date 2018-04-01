@@ -225,7 +225,7 @@ class MyPhotosAdapter(
                     ?: return
 
                 holder.cancelPhotoUploading.setOnClickListener {
-                    adapterButtonClickSubject.onNext(AdapterButtonClickEvent.CancelPhotoUploading(myPhoto.id))
+                    adapterButtonClickSubject.onNext(AdapterButtonClickEvent.CancelPhotoUploading(myPhoto.id, myPhoto.photoState))
                 }
 
                 when (myPhoto.photoState) {
@@ -330,6 +330,6 @@ class MyPhotosAdapter(
         class CancelAllFailedToUploadPhotosButtonClick : AdapterButtonClickEvent()
         class RetryToUploadPhotosButtonClick : AdapterButtonClickEvent()
         class CancelAllQueuedUpPhotosButtonClick : AdapterButtonClickEvent()
-        class CancelPhotoUploading(val photoId: Long) : AdapterButtonClickEvent()
+        class CancelPhotoUploading(val photoId: Long, val photoState: PhotoState) : AdapterButtonClickEvent()
     }
 }

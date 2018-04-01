@@ -51,6 +51,23 @@ open class PhotosRepository(
         return myPhotoDao.updateSetNewPhotoState(photoId, newPhotoState) == 1
     }
 
+    fun updatePhotosStates(oldPhotoState: PhotoState, newPhotoState: PhotoState) {
+        database.transactional {
+            try {
+                val foundPhotos = findAllByState(oldPhotoState)
+
+                for (photo in foundPhotos) {
+                    updatePhotoState(photo.id, newPhotoState)
+                }
+
+                return@transactional true
+            } catch (error: Throwable) {
+                Timber.e(error)
+                return@transactional false
+            }
+        }
+    }
+
     fun deleteMyPhoto(myPhoto: MyPhoto): Boolean {
         if (myPhoto.isEmpty()) {
             return true
@@ -65,7 +82,7 @@ open class PhotosRepository(
         return File.createTempFile("file_", ".tmp", fullPathFile)
     }
 
-    private fun findById(id: Long): MyPhoto {
+    fun findById(id: Long): MyPhoto {
         val myPhotoEntity = myPhotoDao.findById(id) ?: MyPhotoEntity.empty()
         val tempFileEntity = findTempFileById(id)
 

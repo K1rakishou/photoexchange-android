@@ -8,6 +8,7 @@ import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
+import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
@@ -15,8 +16,6 @@ import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewState
 import io.reactivex.Completable
 import io.reactivex.Maybe
 import io.reactivex.Single
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
@@ -38,14 +37,7 @@ class AllPhotosActivityViewModel(
     val onUploadingPhotoEventSubject = PublishSubject.create<PhotoUploadingEvent>().toSerialized()
     val myPhotosFragmentViewStateSubject = BehaviorSubject.createDefault<MyPhotosFragmentViewState>(MyPhotosFragmentViewState.Default()).toSerialized()
     val adapterButtonClickSubject = PublishSubject.create<MyPhotosAdapter.AdapterButtonClickEvent>().toSerialized()
-
-    init {
-        compositeDisposable += adapterButtonClickSubject
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { event -> onAdapterButtonClickEvent(event) }
-            .subscribe()
-    }
+    val stopUploadingProcessSubject = PublishSubject.create<Boolean>().toSerialized()
 
     override fun onAttached() {
         Timber.tag(tag).d("onAttached()")
@@ -112,20 +104,38 @@ class AllPhotosActivityViewModel(
         onUploadingPhotoEventSubject.onNext(event)
     }
 
-    private fun onAdapterButtonClickEvent(event: MyPhotosAdapter.AdapterButtonClickEvent) {
-        when (event) {
-            is MyPhotosAdapter.AdapterButtonClickEvent.CancelAllFailedToUploadPhotosButtonClick -> {
-                Timber.e("CancelAllFailedToUploadPhotosButtonClick")
+    fun stopUploadingProcess() {
+        stopUploadingProcessSubject.onNext(true)
+    }
+
+    fun resumeUploadingProcess() {
+        stopUploadingProcessSubject.onNext(false)
+    }
+
+    fun deleteAllWithState(photoState: PhotoState): Completable {
+        return Completable.fromAction {
+            photosRepository.deleteAllWithState(photoState)
+            if (Constants.isDebugBuild) {
+                check(photosRepository.countAllByState(photoState) == 0L)
             }
-            is MyPhotosAdapter.AdapterButtonClickEvent.RetryToUploadPhotosButtonClick -> {
-                Timber.e("RetryToUploadPhotosButtonClick")
+        }.subscribeOn(schedulerProvider.BG())
+            .observeOn(schedulerProvider.BG())
+    }
+
+    fun deleteByIdAndState(photoId: Long, photoState: PhotoState): Completable {
+        return Completable.fromAction {
+            photosRepository.deleteByIdAndState(photoId, photoState)
+            if (Constants.isDebugBuild) {
+                check(photosRepository.findById(photoId).isEmpty())
             }
-            is MyPhotosAdapter.AdapterButtonClickEvent.CancelAllQueuedUpPhotosButtonClick -> {
-                Timber.e("CancelAllQueuedUpPhotosButtonClick")
-            }
-            is MyPhotosAdapter.AdapterButtonClickEvent.CancelPhotoUploading -> {
-                Timber.e("CancelPhotoUploading")
-            }
-        }
+        }.subscribeOn(schedulerProvider.BG())
+            .observeOn(schedulerProvider.BG())
+    }
+
+    fun changePhotosStates(oldPhotoState: PhotoState, newPhotoState: PhotoState): Completable {
+        return Completable.fromAction {
+            photosRepository.updatePhotosStates(oldPhotoState, newPhotoState)
+        }.subscribeOn(schedulerProvider.BG())
+            .observeOn(schedulerProvider.BG())
     }
 }

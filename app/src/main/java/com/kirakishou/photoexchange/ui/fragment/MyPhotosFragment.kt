@@ -15,8 +15,13 @@ import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapterItem
 import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewState
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapterSpanSizeLookup
+import com.kirakishou.photoexchange.ui.dialog.CancelAllFailedToUploadPhotosDialog
+import com.kirakishou.photoexchange.ui.dialog.CancelAllQueuedUpPhotosDialog
+import com.kirakishou.photoexchange.ui.dialog.CancelPhotoUploadingDialog
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.rxkotlin.zipWith
 import io.reactivex.subjects.PublishSubject
 import javax.inject.Inject
 
@@ -43,13 +48,27 @@ class MyPhotosFragment : BaseFragment() {
         initRx()
         initRecyclerView()
         showUploadedPhotos()
-        showFailedToUploadPhotos()
+        showFailedToUploadPhotosNotification()
     }
 
     override fun onFragmentViewDestroy() {
+        viewModel.resumeUploadingProcess()
     }
 
-    private fun showFailedToUploadPhotos() {
+    private fun initRecyclerView() {
+        val columnsCount = AndroidUtils.calculateNoOfColumns(activity!!, PHOTO_ADAPTER_VIEW_WIDTH)
+
+        adapter = MyPhotosAdapter(activity!!, imageLoader, adapterButtonClickSubject)
+        adapter.init()
+
+        val layoutManager = GridLayoutManager(activity!!, columnsCount)
+        layoutManager.spanSizeLookup = MyPhotosAdapterSpanSizeLookup(adapter, columnsCount)
+
+        myPhotosList.layoutManager = layoutManager
+        myPhotosList.adapter = adapter
+    }
+
+    private fun showFailedToUploadPhotosNotification() {
         compositeDisposable += viewModel.countFailedToUploadPhotos()
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
@@ -70,7 +89,13 @@ class MyPhotosFragment : BaseFragment() {
         compositeDisposable += adapterButtonClickSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(viewModel.adapterButtonClickSubject::onNext, viewModel.adapterButtonClickSubject::onError)
+            .doOnNext { viewModel.stopUploadingProcess() }
+            .flatMap { buttonClickEvent -> askUserConfirmation(buttonClickEvent) }
+            .filter { (continueOperation, _) -> continueOperation }
+            .map { (_, buttonClickEvent) -> buttonClickEvent }
+            .doOnNext(viewModel.adapterButtonClickSubject::onNext)
+            .doOnError(viewModel.adapterButtonClickSubject::onError)
+            .subscribe()
 
         compositeDisposable += viewModel.onUploadingPhotoEventSubject
             .subscribeOn(AndroidSchedulers.mainThread())
@@ -85,17 +110,60 @@ class MyPhotosFragment : BaseFragment() {
             .subscribe()
     }
 
-    private fun initRecyclerView() {
-        val columnsCount = AndroidUtils.calculateNoOfColumns(activity!!, PHOTO_ADAPTER_VIEW_WIDTH)
-
-        adapter = MyPhotosAdapter(activity!!, imageLoader, adapterButtonClickSubject)
-        adapter.init()
-
-        val layoutManager = GridLayoutManager(activity!!, columnsCount)
-        layoutManager.spanSizeLookup = MyPhotosAdapterSpanSizeLookup(adapter, columnsCount)
-
-        myPhotosList.layoutManager = layoutManager
-        myPhotosList.adapter = adapter
+    private fun askUserConfirmation(buttonClickEvent: MyPhotosAdapter.AdapterButtonClickEvent): Observable<out Pair<Boolean, MyPhotosAdapter.AdapterButtonClickEvent>> {
+        when (buttonClickEvent) {
+            is MyPhotosAdapter.AdapterButtonClickEvent.CancelAllFailedToUploadPhotosButtonClick -> {
+                return CancelAllFailedToUploadPhotosDialog()
+                    .show(activity!!)
+                    .doOnNext { positive ->
+                        if (positive) {
+                            //TODO: refactoring
+                            activity?.runOnUiThread {
+                                adapter.hideFailedToUploadPhotosNotification()
+                            }
+                        }
+                    }
+                    .zipWith(Observable.just(buttonClickEvent))
+            }
+            is MyPhotosAdapter.AdapterButtonClickEvent.RetryToUploadPhotosButtonClick -> {
+                return Observable.just(Pair(true, buttonClickEvent))
+                    .doOnNext {
+                        //TODO: refactoring
+                        activity?.runOnUiThread {
+                            adapter.hideFailedToUploadPhotosNotification()
+                        }
+                    }
+            }
+            is MyPhotosAdapter.AdapterButtonClickEvent.CancelAllQueuedUpPhotosButtonClick -> {
+                return CancelAllQueuedUpPhotosDialog()
+                    .show(activity!!)
+                    .doOnNext { positive ->
+                        if (positive) {
+                            //TODO: refactoring
+                            activity?.runOnUiThread {
+                                adapter.hideQueuedUpPhotosCountNotification()
+                            }
+                        }
+                    }
+                    .zipWith(Observable.just(buttonClickEvent))
+            }
+            is MyPhotosAdapter.AdapterButtonClickEvent.CancelPhotoUploading -> {
+                return CancelPhotoUploadingDialog()
+                    .show(activity!!)
+                    .doOnNext { positive ->
+                        if (positive) {
+                            //TODO: refactoring
+                            activity?.runOnUiThread {
+                                adapter.removePhotoById(buttonClickEvent.photoId)
+                            }
+                        }
+                    }
+                    .zipWith(Observable.just(buttonClickEvent))
+            }
+            else -> {
+                throw IllegalArgumentException("Unknown buttonClickEvent ${buttonClickEvent::class.java}")
+            }
+        }
     }
 
     private fun onViewStateChanged(viewState: MyPhotosFragmentViewState) {
@@ -156,6 +224,7 @@ class MyPhotosFragment : BaseFragment() {
                 }
                 is PhotoUploadingEvent.OnUnknownError -> {
                     adapter.clear()
+                    showFailedToUploadPhotosNotification()
                     showUploadedPhotos()
                 }
             }
@@ -164,8 +233,12 @@ class MyPhotosFragment : BaseFragment() {
 
     private fun onUploadedPhotosLoadedFromDatabase(uploadedPhotos: List<MyPhoto>) {
         activity?.runOnUiThread {
-            val mapped = uploadedPhotos.map { MyPhotosAdapterItem.MyPhotoItem(it) }
-            adapter.addAll(mapped)
+            if (uploadedPhotos.isNotEmpty()) {
+                val mapped = uploadedPhotos.map { MyPhotosAdapterItem.MyPhotoItem(it) }
+                adapter.addAll(mapped)
+            } else {
+                //TODO: show notification that no photos has been uploaded yet
+            }
         }
     }
 

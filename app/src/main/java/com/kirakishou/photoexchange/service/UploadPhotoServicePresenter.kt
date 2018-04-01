@@ -6,7 +6,7 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
-import com.kirakishou.photoexchange.mvp.model.other.LonLat
+import com.kirakishou.photoexchange.mvp.model.UploadPhotoData
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
@@ -54,6 +54,8 @@ class UploadPhotoServicePresenter(
     }
 
     fun uploadPhotos() {
+        Timber.e("uploadPhotos")
+
         compositeDisposable += Single.fromCallable {
             val userId = settingsRepository.findUserId()
                 ?: return@fromCallable UploadPhotoData.empty()
@@ -69,26 +71,22 @@ class UploadPhotoServicePresenter(
     }
 
     fun cancelPhotoUploading(photoId: Long) {
+        Timber.e("cancelPhotoUploading $photoId")
         myPhotosRepository.deleteByIdAndState(photoId, PhotoState.PHOTO_QUEUED_UP)
     }
 
     fun cancelAllPhotosUploading() {
+        Timber.e("cancelAllPhotosUploading")
         myPhotosRepository.deleteAllWithState(PhotoState.PHOTO_QUEUED_UP)
     }
 
-    class UploadPhotoData(
-        val empty: Boolean,
-        val userId: String,
-        val location: LonLat
-    ) {
-        fun isEmpty(): Boolean {
-            return empty
-        }
+    fun stopUploadingProcess() {
+        Timber.e("stopUploadingProcess")
+        updatePhotosUseCase.stopUploadingProcess()
+    }
 
-        companion object {
-            fun empty(): UploadPhotoData {
-                return UploadPhotoData(true, "", LonLat.empty())
-            }
-        }
+    fun resumeUploadingProcess() {
+        Timber.e("resumeUploadingProcess")
+        updatePhotosUseCase.resumeUploadingProcess()
     }
 }
