@@ -68,16 +68,12 @@ class UploadPhotosUseCase(
                 }
 
                 myPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
-                val failedToUploadPhotosCount = myPhotosRepository.countAllByState(PhotoState.FAILED_TO_UPLOAD).toInt()
-
-                callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnFailedToUpload(photo, failedToUploadPhotosCount))
+                callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnFailedToUpload(photo))
             } catch (error: Throwable) {
                 Timber.e(error)
 
                 myPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
-                val failedToUploadPhotosCount = myPhotosRepository.countAllByState(PhotoState.FAILED_TO_UPLOAD).toInt()
-
-                callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnFailedToUpload(photo, failedToUploadPhotosCount))
+                callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnFailedToUpload(photo))
             }
         }
     }

@@ -13,7 +13,7 @@ class CancelAllFailedToUploadPhotosDialog : AbstractDialog<Observable<Boolean>>(
             //TODO: change this to homemade dialog and get rid of the MaterialDialogs dependency
             MaterialDialog.Builder(context)
                 .title("Are you sure?")
-                .content("Do you really want to CANCEL and DELETE all failed to upload photos? This operation cannot be undone.")
+                .content("Do you really want to DELETE all failed to upload photos? This operation cannot be undone.")
                 .cancelable(false)
                 .negativeColor(ContextCompat.getColor(context, R.color.colorPrimary))
                 .negativeText("NO")

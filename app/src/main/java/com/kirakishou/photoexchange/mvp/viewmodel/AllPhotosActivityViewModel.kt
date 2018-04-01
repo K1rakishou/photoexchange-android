@@ -71,6 +71,12 @@ class AllPhotosActivityViewModel(
             .observeOn(schedulerProvider.BG())
     }
 
+    fun countQueuedUpPhotos(): Single<Int> {
+        return Single.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP).toInt() }
+            .subscribeOn(schedulerProvider.BG())
+            .observeOn(schedulerProvider.BG())
+    }
+
     private fun updateLastLocation(isGranted: Boolean): Completable {
         return Completable.fromAction {
             // if gps is disabled by user then set the last location as empty (-1.0, -1.0) immediately

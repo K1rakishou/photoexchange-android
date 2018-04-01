@@ -194,6 +194,10 @@ class MyPhotosAdapter(
             return@indexOfFirst it.myPhoto.id == photoId
         }
 
+        if (photoIndex == -1) {
+            return
+        }
+
         items.removeAt(photoIndex)
         notifyItemRemoved(photoIndex)
     }

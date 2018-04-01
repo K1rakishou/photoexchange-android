@@ -65,6 +65,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     }
 
     fun startPhotosUploading() {
+        updateUploadingNotificationShowUploading()
         presenter.uploadPhotos()
     }
 
@@ -92,6 +93,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
         Timber.e("Stopping service")
 
         updateUploadingNotificationShowSuccess()
+        stopForeground(true)
         stopSelf()
     }
 

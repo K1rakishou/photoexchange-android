@@ -84,19 +84,18 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         compositeDisposable += viewModel.stopUploadingProcessSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { service?.stopUploadingProcess() }
+            .doOnNext { stop -> if (stop) service?.stopUploadingProcess() else service?.resumeUploadingProcess() }
             .subscribe()
 
         compositeDisposable += viewModel.adapterButtonClickSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { event -> onAdapterButtonClickEvent(event) }
+            .doOnNext { _ -> startUploadingService() }
             .subscribe()
     }
 
     override fun onActivityDestroy() {
         service?.let { srvc ->
-            srvc.resumeUploadingProcess()
             srvc.detachCallback()
             unbindService(connection)
             service = null
@@ -226,45 +225,13 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun startUploadingService() {
-        val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
-        startService(serviceIntent)
-        bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
-    }
-
-    private fun onAdapterButtonClickEvent(event: MyPhotosAdapter.AdapterButtonClickEvent) {
-        compositeDisposable += when (event) {
-            is MyPhotosAdapter.AdapterButtonClickEvent.CancelAllFailedToUploadPhotosButtonClick -> {
-                viewModel.deleteAllWithState(PhotoState.FAILED_TO_UPLOAD)
-                    .doOnComplete {
-                        service?.resumeUploadingProcess()
-                        service?.startPhotosUploading()
-                    }
-                    .subscribe()
-            }
-            is MyPhotosAdapter.AdapterButtonClickEvent.RetryToUploadPhotosButtonClick -> {
-                viewModel.changePhotosStates(PhotoState.FAILED_TO_UPLOAD, PhotoState.PHOTO_QUEUED_UP)
-                    .doOnComplete {
-                        service?.resumeUploadingProcess()
-                        service?.startPhotosUploading()
-                    }
-                    .subscribe()
-            }
-            is MyPhotosAdapter.AdapterButtonClickEvent.CancelAllQueuedUpPhotosButtonClick -> {
-                viewModel.deleteAllWithState(PhotoState.PHOTO_QUEUED_UP)
-                    .doOnComplete {
-                        service?.resumeUploadingProcess()
-                        service?.startPhotosUploading()
-                    }
-                    .subscribe()
-            }
-            is MyPhotosAdapter.AdapterButtonClickEvent.CancelPhotoUploading -> {
-                viewModel.deleteByIdAndState(event.photoId, event.photoState)
-                    .doOnComplete {
-                        service?.resumeUploadingProcess()
-                        service?.startPhotosUploading()
-                    }
-                    .subscribe()
-            }
+        if (service == null) {
+            val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
+            startService(serviceIntent)
+            bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
+        } else {
+            service?.resumeUploadingProcess()
+            service?.startPhotosUploading()
         }
     }
 

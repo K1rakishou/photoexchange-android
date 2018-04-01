@@ -8,6 +8,7 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
+import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
@@ -47,8 +48,40 @@ class MyPhotosFragment : BaseFragment() {
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRx()
         initRecyclerView()
-        showUploadedPhotos()
-        showFailedToUploadPhotosNotification()
+
+        loadUploadedPhotos()
+
+        if (savedInstanceState == null) {
+            showFailedToUploadPhotosNotification()
+        } else {
+            showQueuedUpPhotosNotification()
+        }
+    }
+
+    private fun loadUploadedPhotos() {
+        compositeDisposable += viewModel.loadUploadedPhotosFromDatabase()
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnSuccess { photos -> onUploadedPhotosLoadedFromDatabase(photos) }
+            .subscribe()
+    }
+
+    private fun showQueuedUpPhotosNotification() {
+        compositeDisposable += viewModel.countQueuedUpPhotos()
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .observeOn(AndroidSchedulers.mainThread())
+            .filter { count -> count > 0 }
+            .doOnSuccess { count -> adapter.showQueuedUpPhotosCountNotification(count) }
+            .subscribe()
+    }
+
+    private fun showFailedToUploadPhotosNotification() {
+        compositeDisposable += viewModel.countFailedToUploadPhotos()
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .observeOn(AndroidSchedulers.mainThread())
+            .filter { count -> count > 0 }
+            .doOnSuccess { count -> adapter.showFailedToUploadPhotosNotification(count) }
+            .subscribe()
     }
 
     override fun onFragmentViewDestroy() {
@@ -68,30 +101,13 @@ class MyPhotosFragment : BaseFragment() {
         myPhotosList.adapter = adapter
     }
 
-    private fun showFailedToUploadPhotosNotification() {
-        compositeDisposable += viewModel.countFailedToUploadPhotos()
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .observeOn(AndroidSchedulers.mainThread())
-            .filter { count -> count > 0 }
-            .doOnSuccess { count -> adapter.showFailedToUploadPhotosNotification(count) }
-            .subscribe()
-    }
-
-    private fun showUploadedPhotos() {
-        compositeDisposable += viewModel.loadUploadedPhotosFromDatabase()
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .observeOn(AndroidSchedulers.mainThread())
-            .doOnSuccess { photos -> onUploadedPhotosLoadedFromDatabase(photos) }
-            .subscribe()
-    }
-
     private fun initRx() {
         compositeDisposable += adapterButtonClickSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { viewModel.stopUploadingProcess() }
             .flatMap { buttonClickEvent -> askUserConfirmation(buttonClickEvent) }
-            .filter { (continueOperation, _) -> continueOperation }
+            .filter { (cancelOperation, _) -> !cancelOperation }
             .map { (_, buttonClickEvent) -> buttonClickEvent }
             .doOnNext(viewModel.adapterButtonClickSubject::onNext)
             .doOnError(viewModel.adapterButtonClickSubject::onError)
@@ -117,7 +133,7 @@ class MyPhotosFragment : BaseFragment() {
                     .show(activity!!)
                     .doOnNext { positive ->
                         if (positive) {
-                            //TODO: refactoring
+                            viewModel.deleteAllWithState(PhotoState.FAILED_TO_UPLOAD).blockingAwait()
                             activity?.runOnUiThread {
                                 adapter.hideFailedToUploadPhotosNotification()
                             }
@@ -127,8 +143,8 @@ class MyPhotosFragment : BaseFragment() {
             }
             is MyPhotosAdapter.AdapterButtonClickEvent.RetryToUploadPhotosButtonClick -> {
                 return Observable.just(Pair(true, buttonClickEvent))
-                    .doOnNext {
-                        //TODO: refactoring
+                    .doOnNext { _ ->
+                        viewModel.changePhotosStates(PhotoState.FAILED_TO_UPLOAD, PhotoState.PHOTO_QUEUED_UP).blockingAwait()
                         activity?.runOnUiThread {
                             adapter.hideFailedToUploadPhotosNotification()
                         }
@@ -139,7 +155,7 @@ class MyPhotosFragment : BaseFragment() {
                     .show(activity!!)
                     .doOnNext { positive ->
                         if (positive) {
-                            //TODO: refactoring
+                            viewModel.deleteAllWithState(PhotoState.PHOTO_QUEUED_UP).blockingAwait()
                             activity?.runOnUiThread {
                                 adapter.hideQueuedUpPhotosCountNotification()
                             }
@@ -152,7 +168,7 @@ class MyPhotosFragment : BaseFragment() {
                     .show(activity!!)
                     .doOnNext { positive ->
                         if (positive) {
-                            //TODO: refactoring
+                            viewModel.deleteByIdAndState(buttonClickEvent.photoId, buttonClickEvent.photoState).blockingAwait()
                             activity?.runOnUiThread {
                                 adapter.removePhotoById(buttonClickEvent.photoId)
                             }
@@ -217,15 +233,15 @@ class MyPhotosFragment : BaseFragment() {
                 }
                 is PhotoUploadingEvent.OnEnd -> {
                     adapter.hideQueuedUpPhotosCountNotification()
+                    showFailedToUploadPhotosNotification()
                 }
                 is PhotoUploadingEvent.OnFailedToUpload -> {
                     adapter.removePhotoById(event.myPhoto.id)
-                    adapter.showFailedToUploadPhotosNotification(event.failedToUploadPhotosCount)
                 }
                 is PhotoUploadingEvent.OnUnknownError -> {
                     adapter.clear()
+                    loadUploadedPhotos()
                     showFailedToUploadPhotosNotification()
-                    showUploadedPhotos()
                 }
             }
         }
