@@ -42,10 +42,16 @@ class UploadPhotoRequest<T : StatusResponse>(
             }
 
             val body = getBody(photoId, photoFile, packet, callback)
-            val response = apiService.uploadPhoto(body.part(0), body.part(1))
-                .blockingGet() as Response<T>
 
-            return@fromCallable extractResponse(response)
+            try {
+                val response = apiService.uploadPhoto(body.part(0), body.part(1))
+                    .blockingGet() as Response<T>
+
+                return@fromCallable extractResponse(response)
+            } catch (error: Throwable) {
+                return@fromCallable UploadPhotoResponse.error(ServerErrorCode.UNKNOWN_ERROR) as T
+            }
+
         }.subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
     }

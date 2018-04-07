@@ -14,16 +14,11 @@ import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapterItem
-import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewState
+import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapterSpanSizeLookup
-import com.kirakishou.photoexchange.ui.dialog.CancelAllFailedToUploadPhotosDialog
-import com.kirakishou.photoexchange.ui.dialog.CancelAllQueuedUpPhotosDialog
-import com.kirakishou.photoexchange.ui.dialog.CancelPhotoUploadingDialog
-import io.reactivex.Observable
+import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewState
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.rxkotlin.zipWith
-import io.reactivex.subjects.PublishSubject
 import javax.inject.Inject
 
 
@@ -38,10 +33,10 @@ class MyPhotosFragment : BaseFragment() {
     @Inject
     lateinit var viewModel: AllPhotosActivityViewModel
 
-    private val PHOTO_ADAPTER_VIEW_WIDTH = 288
-    private val adapterButtonClickSubject = PublishSubject.create<MyPhotosAdapter.AdapterButtonClickEvent>().toSerialized()
-
     lateinit var adapter: MyPhotosAdapter
+
+    private val PHOTO_ADAPTER_VIEW_WIDTH = 288
+    private var viewState = MyPhotosFragmentViewState()
 
     override fun getContentView(): Int = R.layout.fragment_my_photos
 
@@ -49,39 +44,23 @@ class MyPhotosFragment : BaseFragment() {
         initRx()
         initRecyclerView()
 
-        loadUploadedPhotos()
+        restoreMyPhotosFragmentFromViewState(savedInstanceState)
+    }
 
-        if (savedInstanceState == null) {
-            showFailedToUploadPhotosNotification()
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        viewState.saveToBundle(outState)
+    }
+
+    private fun restoreMyPhotosFragmentFromViewState(savedInstanceState: Bundle?) {
+        viewState = MyPhotosFragmentViewState()
+            .also { it.loadFromBundle(savedInstanceState) }
+
+        if (viewState.showObtainCurrentLocationNotification) {
+            adapter.showObtainCurrentLocationNotification()
         } else {
-            showQueuedUpPhotosNotification()
+            adapter.hideObtainCurrentLocationNotification()
         }
-    }
-
-    private fun loadUploadedPhotos() {
-        compositeDisposable += viewModel.loadUploadedPhotosFromDatabase()
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .observeOn(AndroidSchedulers.mainThread())
-            .doOnSuccess { photos -> onUploadedPhotosLoadedFromDatabase(photos) }
-            .subscribe()
-    }
-
-    private fun showQueuedUpPhotosNotification() {
-        compositeDisposable += viewModel.countQueuedUpPhotos()
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .observeOn(AndroidSchedulers.mainThread())
-            .filter { count -> count > 0 }
-            .doOnSuccess { count -> adapter.showQueuedUpPhotosCountNotification(count) }
-            .subscribe()
-    }
-
-    private fun showFailedToUploadPhotosNotification() {
-        compositeDisposable += viewModel.countFailedToUploadPhotos()
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .observeOn(AndroidSchedulers.mainThread())
-            .filter { count -> count > 0 }
-            .doOnSuccess { count -> adapter.showFailedToUploadPhotosNotification(count) }
-            .subscribe()
     }
 
     override fun onFragmentViewDestroy() {
@@ -91,7 +70,7 @@ class MyPhotosFragment : BaseFragment() {
     private fun initRecyclerView() {
         val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = MyPhotosAdapter(requireContext(), imageLoader, adapterButtonClickSubject)
+        adapter = MyPhotosAdapter(requireContext(), imageLoader)
         adapter.init()
 
         val layoutManager = GridLayoutManager(requireContext(), columnsCount)
@@ -102,15 +81,11 @@ class MyPhotosFragment : BaseFragment() {
     }
 
     private fun initRx() {
-        compositeDisposable += adapterButtonClickSubject
+        compositeDisposable += viewModel.fragmentsLoadPhotosSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { viewModel.stopUploadingProcess() }
-            .flatMap { buttonClickEvent -> askUserConfirmation(buttonClickEvent) }
-            .filter { (cancelOperation, _) -> !cancelOperation }
-            .map { (_, buttonClickEvent) -> buttonClickEvent }
-            .doOnNext(viewModel.adapterButtonClickSubject::onNext)
-            .doOnError(viewModel.adapterButtonClickSubject::onError)
+            .switchMap { viewModel.loadPhotos().toObservable() }
+            .doOnNext { photos -> onPhotosLoadedFromDatabase(photos) }
             .subscribe()
 
         compositeDisposable += viewModel.onUploadingPhotoEventSubject
@@ -126,79 +101,28 @@ class MyPhotosFragment : BaseFragment() {
             .subscribe()
     }
 
-    private fun askUserConfirmation(buttonClickEvent: MyPhotosAdapter.AdapterButtonClickEvent): Observable<out Pair<Boolean, MyPhotosAdapter.AdapterButtonClickEvent>> {
-        when (buttonClickEvent) {
-            is MyPhotosAdapter.AdapterButtonClickEvent.CancelAllFailedToUploadPhotosButtonClick -> {
-                return CancelAllFailedToUploadPhotosDialog()
-                    .show(requireContext())
-                    .doOnNext { positive ->
-                        if (positive) {
-                            viewModel.deleteAllWithState(PhotoState.FAILED_TO_UPLOAD).blockingAwait()
-                            requireActivity().runOnUiThread {
-                                adapter.hideFailedToUploadPhotosNotification()
-                            }
-                        }
-                    }
-                    .zipWith(Observable.just(buttonClickEvent))
-            }
-            is MyPhotosAdapter.AdapterButtonClickEvent.RetryToUploadPhotosButtonClick -> {
-                return Observable.just(Pair(true, buttonClickEvent))
-                    .doOnNext { _ ->
-                        viewModel.changePhotosStates(PhotoState.FAILED_TO_UPLOAD, PhotoState.PHOTO_QUEUED_UP).blockingAwait()
-                        requireActivity().runOnUiThread {
-                            adapter.hideFailedToUploadPhotosNotification()
-                        }
-                    }
-            }
-            is MyPhotosAdapter.AdapterButtonClickEvent.CancelAllQueuedUpPhotosButtonClick -> {
-                return CancelAllQueuedUpPhotosDialog()
-                    .show(requireContext())
-                    .doOnNext { positive ->
-                        if (positive) {
-                            viewModel.deleteAllWithState(PhotoState.PHOTO_QUEUED_UP).blockingAwait()
-                            requireActivity().runOnUiThread {
-                                adapter.hideQueuedUpPhotosCountNotification()
-                            }
-                        }
-                    }
-                    .zipWith(Observable.just(buttonClickEvent))
-            }
-            is MyPhotosAdapter.AdapterButtonClickEvent.CancelPhotoUploading -> {
-                return CancelPhotoUploadingDialog()
-                    .show(requireContext())
-                    .doOnNext { positive ->
-                        if (positive) {
-                            viewModel.deleteByIdAndState(buttonClickEvent.photoId, buttonClickEvent.photoState).blockingAwait()
-                            requireActivity().runOnUiThread {
-                                adapter.removePhotoById(buttonClickEvent.photoId)
-                            }
-                        }
-                    }
-                    .zipWith(Observable.just(buttonClickEvent))
-            }
-            else -> {
-                throw IllegalArgumentException("Unknown buttonClickEvent ${buttonClickEvent::class.java}")
-            }
-        }
-    }
-
-    private fun onViewStateChanged(viewState: MyPhotosFragmentViewState) {
+    private fun onViewStateChanged(viewStateEvent: MyPhotosFragmentViewStateEvent) {
         if (!isAdded) {
             return
         }
 
         requireActivity().runOnUiThread {
-            when (viewState) {
-                is MyPhotosFragmentViewState.Default -> {
+            viewState.updateFromViewStateEvent(viewStateEvent)
+
+            when (viewStateEvent) {
+                is MyPhotosFragmentViewStateEvent.Default -> {
 
                 }
-                is MyPhotosFragmentViewState.ShowObtainCurrentLocationNotification -> {
-                    if (viewState.show) {
-                        adapter.showObtainCurrentLocationNotification()
-                    } else {
-                        adapter.hideObtainCurrentLocationNotification()
-                    }
+                is MyPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification -> {
+                    adapter.showObtainCurrentLocationNotification()
                 }
+                is MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification -> {
+                    adapter.hideObtainCurrentLocationNotification()
+                }
+                is MyPhotosFragmentViewStateEvent.RemovePhotoById -> {
+                    adapter.removePhotoById(viewStateEvent.photoId)
+                }
+                else -> throw IllegalArgumentException("Unknown MyPhotosFragmentViewStateEvent $viewStateEvent")
             }
         }
     }
@@ -219,35 +143,30 @@ class MyPhotosFragment : BaseFragment() {
             when (event) {
                 is PhotoUploadingEvent.OnPrepare -> {
                     scrollRecyclerViewToTop()
-                    adapter.updateQueuedUpPhotosCountNotification(event.queuedUpPhotosCount)
                 }
                 is PhotoUploadingEvent.OnPhotoUploadingStart -> {
-                    adapter.updateQueuedUpPhotosCountNotification(event.queuedUpPhotosCount)
-                    adapter.add(0, MyPhotosAdapterItem.MyPhotoItem(event.myPhoto))
+                    adapter.updatePhotoState(event.myPhoto.id, PhotoState.PHOTO_UPLOADING)
                 }
                 is PhotoUploadingEvent.OnProgress -> {
                     adapter.updatePhotoProgress(event.photoId, event.progress)
                 }
                 is PhotoUploadingEvent.OnUploaded -> {
-                    adapter.updatePhotoState(event.myPhoto.id, event.myPhoto.photoState)
+                    adapter.updatePhotoState(event.myPhoto.id, PhotoState.PHOTO_UPLOADED)
                 }
                 is PhotoUploadingEvent.OnEnd -> {
-                    adapter.hideQueuedUpPhotosCountNotification()
-                    showFailedToUploadPhotosNotification()
                 }
                 is PhotoUploadingEvent.OnFailedToUpload -> {
-                    adapter.removePhotoById(event.myPhoto.id)
+                    adapter.updatePhotoState(event.myPhoto.id, PhotoState.FAILED_TO_UPLOAD)
                 }
                 is PhotoUploadingEvent.OnUnknownError -> {
                     adapter.clear()
-                    loadUploadedPhotos()
-                    showFailedToUploadPhotosNotification()
                 }
+                else -> throw IllegalArgumentException("Unknown PhotoUploadingEvent $event")
             }
         }
     }
 
-    private fun onUploadedPhotosLoadedFromDatabase(uploadedPhotos: List<MyPhoto>) {
+    private fun onPhotosLoadedFromDatabase(uploadedPhotos: List<MyPhoto>) {
         if (!isAdded) {
             return
         }

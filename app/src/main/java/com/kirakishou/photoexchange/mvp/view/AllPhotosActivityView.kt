@@ -1,6 +1,8 @@
 package com.kirakishou.photoexchange.mvp.view
 
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
+import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
+import io.reactivex.Observable
 import io.reactivex.Single
 
 /**

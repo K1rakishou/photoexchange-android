@@ -12,11 +12,12 @@ import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
-import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewState
+import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
 import io.reactivex.Completable
 import io.reactivex.Maybe
+import io.reactivex.Observable
 import io.reactivex.Single
-import io.reactivex.subjects.BehaviorSubject
+import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.lang.ref.WeakReference
@@ -35,9 +36,9 @@ class AllPhotosActivityViewModel(
     private val LOCATION_CHECK_INTERVAL = 10.minutes()
 
     val onUploadingPhotoEventSubject = PublishSubject.create<PhotoUploadingEvent>().toSerialized()
-    val myPhotosFragmentViewStateSubject = BehaviorSubject.createDefault<MyPhotosFragmentViewState>(MyPhotosFragmentViewState.Default()).toSerialized()
-    val adapterButtonClickSubject = PublishSubject.create<MyPhotosAdapter.AdapterButtonClickEvent>().toSerialized()
+    val myPhotosFragmentViewStateSubject = PublishSubject.create<MyPhotosFragmentViewStateEvent>().toSerialized()
     val stopUploadingProcessSubject = PublishSubject.create<Boolean>().toSerialized()
+    val fragmentsLoadPhotosSubject = PublishSubject.create<Unit>().toSerialized()
 
     override fun onAttached() {
         Timber.tag(tag).d("onAttached()")
@@ -49,30 +50,30 @@ class AllPhotosActivityViewModel(
         super.onCleared()
     }
 
+    fun updateMyPhotosFragmentViewState(stateEvent: MyPhotosFragmentViewStateEvent) {
+        myPhotosFragmentViewStateSubject.onNext(stateEvent)
+    }
+
     fun startUploadingPhotosService(isGranted: Boolean): Maybe<Long> {
         return Single.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
             .subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
             .filter { count -> count > 0 }
-            .doOnSuccess { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewState.ShowObtainCurrentLocationNotification(true)) }
+            .doOnSuccess { updateMyPhotosFragmentViewState(MyPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification()) }
             .doOnSuccess { updateLastLocation(isGranted).blockingAwait() }
-            .doOnSuccess { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewState.ShowObtainCurrentLocationNotification(false)) }
+            .doOnSuccess { updateMyPhotosFragmentViewState(MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification()) }
     }
 
-    fun loadUploadedPhotosFromDatabase(): Single<List<MyPhoto>> {
-        return Single.fromCallable { photosRepository.findAllByState(PhotoState.PHOTO_UPLOADED) }
-            .subscribeOn(schedulerProvider.BG())
-            .observeOn(schedulerProvider.BG())
-    }
+    fun loadPhotos(): Single<MutableList<MyPhoto>> {
+        return Single.fromCallable {
+            val photos = mutableListOf<MyPhoto>()
 
-    fun countFailedToUploadPhotos(): Single<Int> {
-        return Single.fromCallable { photosRepository.countAllByState(PhotoState.FAILED_TO_UPLOAD).toInt() }
-            .subscribeOn(schedulerProvider.BG())
-            .observeOn(schedulerProvider.BG())
-    }
+            photos += photosRepository.findAllByState(PhotoState.FAILED_TO_UPLOAD)
+            photos += photosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP)
+            photos += photosRepository.findAllByState(PhotoState.PHOTO_UPLOADED)
 
-    fun countQueuedUpPhotos(): Single<Int> {
-        return Single.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP).toInt() }
+            return@fromCallable photos
+        }
             .subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
     }
@@ -143,5 +144,9 @@ class AllPhotosActivityViewModel(
             photosRepository.updatePhotosStates(oldPhotoState, newPhotoState)
         }.subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
+    }
+
+    fun fragmentsLoadPhotos() {
+        fragmentsLoadPhotosSubject.onNext(Unit)
     }
 }

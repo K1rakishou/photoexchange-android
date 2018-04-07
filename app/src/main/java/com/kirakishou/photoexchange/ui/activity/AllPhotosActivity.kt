@@ -8,6 +8,7 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.IBinder
+import android.os.PersistableBundle
 import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.TabLayout
 import android.support.v4.app.ActivityCompat
@@ -28,11 +29,17 @@ import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.service.UploadPhotoService
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
+import com.kirakishou.photoexchange.ui.dialog.CancelPhotoUploadingDialog
 import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
+import com.kirakishou.photoexchange.ui.viewstate.AllPhotosActivityViewState
+import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
+import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.rxkotlin.zipWith
+import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.lang.ref.WeakReference
 import java.util.concurrent.TimeUnit
@@ -60,24 +67,40 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     @Inject
     lateinit var permissionManager: PermissionManager
 
-    private val tag = "[${this::class.java.simpleName}] "
-    private var service: UploadPhotoService? = null
-
     val activityComponent by lazy {
         (application as PhotoExchangeApplication).applicationComponent
             .plus(AllPhotosActivityModule(this))
     }
 
+    private val tag = "[${this::class.java.simpleName}] "
+    private var service: UploadPhotoService? = null
     private val GPS_LOCATION_OBTAINING_MAX_TIMEOUT_SECONDS = 15L
     private val adapter = FragmentTabsPager(supportFragmentManager)
     private val locationManager by lazy { MyLocationManager(applicationContext) }
+    private var viewState = AllPhotosActivityViewState()
 
     override fun getContentView(): Int = R.layout.activity_all_photos
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         initRx()
         initViews()
+        restoreMyPhotosFragmentFromViewState(savedInstanceState)
         checkPermissions()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
+        super.onSaveInstanceState(outState, outPersistentState)
+        viewState.saveToBundle(outState)
+    }
+
+    private fun restoreMyPhotosFragmentFromViewState(savedInstanceState: Bundle?) {
+        viewState = AllPhotosActivityViewState().also {
+            it.loadFromBundle(savedInstanceState)
+        }
+
+        if (viewState.lastOpenedTab != 0) {
+            viewPager.currentItem = viewState.lastOpenedTab
+        }
     }
 
     private fun initRx() {
@@ -85,12 +108,6 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { stop -> if (stop) service?.stopUploadingProcess() else service?.resumeUploadingProcess() }
-            .subscribe()
-
-        compositeDisposable += viewModel.adapterButtonClickSubject
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { _ -> startUploadingService() }
             .subscribe()
     }
 
@@ -138,10 +155,12 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun onPermissionsCallback(isGranted: Boolean) {
-        compositeDisposable += viewModel.startUploadingPhotosService(isGranted)
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .observeOn(AndroidSchedulers.mainThread())
-            .doOnSuccess { startUploadingService() }
+        compositeDisposable += Observable.timer(500, TimeUnit.MILLISECONDS)
+            .subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.io())
+            .doOnNext { viewModel.fragmentsLoadPhotos() }
+            .flatMap { viewModel.startUploadingPhotosService(isGranted).toObservable() }
+            .doOnNext { startUploadingService() }
             .subscribe()
     }
 
