@@ -6,4 +6,7 @@
     <color name="black">#000000</color>
     <color name="white">#FFFFFF</color>
     <color name="gray">#cecfd0 </color>
+    <color name="photo_state_failed_to_upload_color">#ffc83625</color>
+    <color name="photo_state_uploading_color">#fff2e72b</color>
+    <color name="photo_state_uploaded_color">#ff25c828</color>
 </resources>

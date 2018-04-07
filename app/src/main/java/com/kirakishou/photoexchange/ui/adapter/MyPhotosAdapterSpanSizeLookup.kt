@@ -19,9 +19,7 @@ class MyPhotosAdapterSpanSizeLookup(
 
             AdapterItemType.EMPTY.type,
             AdapterItemType.VIEW_PROGRESS.type,
-            AdapterItemType.VIEW_OBTAIN_CURRENT_LOCATION_NOTIFICATION.type,
-            AdapterItemType.VIEW_FAILED_TO_UPLOAD_PHOTOS_NOTIFICATION.type,
-            AdapterItemType.VIEW_QUEUED_UP_PHOTOS_NOTIFICATION.type -> columnsCount
+            AdapterItemType.VIEW_OBTAIN_CURRENT_LOCATION_NOTIFICATION.type -> columnsCount
 
             else -> throw RuntimeException("Unknown item view type: $type")
         }
