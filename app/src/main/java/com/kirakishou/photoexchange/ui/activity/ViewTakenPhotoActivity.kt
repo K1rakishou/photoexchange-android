@@ -6,13 +6,17 @@ import android.support.design.widget.FloatingActionButton
 import android.view.View
 import android.widget.ImageView
 import butterknife.BindView
+import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.ViewTakenPhotoActivityModule
 import com.kirakishou.photoexchange.helper.ImageLoader
+import com.kirakishou.photoexchange.helper.extension.debounceClicks
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.view.ViewTakenPhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.ViewTakenPhotoActivityViewModel
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.rxkotlin.plusAssign
 import javax.inject.Inject
 
 class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
@@ -42,21 +46,23 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
     }
 
     private fun initViews() {
-        fabCloseActivity.setOnClickListener {
-            finish()
-        }
+        compositeDisposable += RxView.clicks(fabCloseActivity)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .debounceClicks()
+            .doOnNext { finish() }
+            .subscribe()
 
-        fabSendPhoto.setOnClickListener {
-            viewModel.updatePhotoState(takenPhoto.id)
-        }
+        compositeDisposable += RxView.clicks(fabSendPhoto)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .debounceClicks()
+            .doOnNext { viewModel.updatePhotoState(takenPhoto.id) }
+            .subscribe()
 
         imageLoader.loadImageFromDiskInto(takenPhoto.getFile(), ivPhotoView)
     }
 
     private fun getTakenPhotoFromIntent(intent: Intent) {
-        if (intent.extras == null) {
-            throw RuntimeException("Intent does not have photos bundle")
-        }
+        require(intent.extras != null) { "Intent does not contain photos bundle" }
 
         takenPhoto = MyPhoto.fromBundle(intent.extras!!)
     }

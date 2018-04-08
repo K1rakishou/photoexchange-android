@@ -44,7 +44,6 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
 
         resolveDaggerDependency()
         startForeground(NOTIFICATION_ID, createNotificationUploading())
-        presenter.resumeUploadingProcess()
     }
 
     override fun onDestroy() {
@@ -67,22 +66,6 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     fun startPhotosUploading() {
         updateUploadingNotificationShowUploading()
         presenter.uploadPhotos()
-    }
-
-    fun cancelPhotoUploading(photoId: Long) {
-        presenter.cancelPhotoUploading(photoId)
-    }
-
-    fun cancelUploadingCompletele() {
-        presenter.cancelAllPhotosUploading()
-    }
-
-    fun stopUploadingProcess() {
-        presenter.stopUploadingProcess()
-    }
-
-    fun resumeUploadingProcess() {
-        presenter.resumeUploadingProcess()
     }
 
     override fun onUploadingEvent(event: PhotoUploadingEvent) {

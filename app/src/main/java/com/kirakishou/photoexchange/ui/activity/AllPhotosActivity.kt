@@ -15,30 +15,26 @@ import android.support.v4.app.ActivityCompat
 import android.support.v4.view.ViewPager
 import android.widget.ImageButton
 import butterknife.BindView
+import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.AllPhotosActivityModule
+import com.kirakishou.photoexchange.helper.extension.debounceClicks
 import com.kirakishou.photoexchange.helper.location.MyLocationManager
 import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
-import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.service.UploadPhotoService
-import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
-import com.kirakishou.photoexchange.ui.dialog.CancelPhotoUploadingDialog
 import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
 import com.kirakishou.photoexchange.ui.viewstate.AllPhotosActivityViewState
-import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
-import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.lang.ref.WeakReference
@@ -83,14 +79,52 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         initRx()
-        initViews()
-        restoreMyPhotosFragmentFromViewState(savedInstanceState)
-        checkPermissions()
+        checkPermissions(savedInstanceState)
     }
 
     override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
         super.onSaveInstanceState(outState, outPersistentState)
+
+        viewState.lastOpenedTab = viewPager.currentItem
         viewState.saveToBundle(outState)
+    }
+
+    private fun checkPermissions(savedInstanceState: Bundle?) {
+        val requestedPermissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
+            val index = permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)
+            if (index == -1) {
+                throw RuntimeException("Couldn't find Manifest.permission.CAMERA in result permissions")
+            }
+
+            var granted = true
+
+            if (grantResults[index] == PackageManager.PERMISSION_DENIED) {
+                granted = false
+
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+                    showGpsRationaleDialog(savedInstanceState)
+                    return@askForPermission
+                }
+            }
+
+            onPermissionsCallback(savedInstanceState, granted)
+        }
+    }
+
+    private fun showGpsRationaleDialog(savedInstanceState: Bundle?) {
+        GpsRationaleDialog().show(this, {
+            checkPermissions(savedInstanceState)
+        }, {
+            onPermissionsCallback(savedInstanceState, false)
+        })
+    }
+
+    private fun onPermissionsCallback(savedInstanceState: Bundle?, isGranted: Boolean) {
+        initViews()
+        restoreMyPhotosFragmentFromViewState(savedInstanceState)
+
+        viewModel.checkShouldStartPhotoUploadingService(isGranted)
     }
 
     private fun restoreMyPhotosFragmentFromViewState(savedInstanceState: Bundle?) {
@@ -104,10 +138,11 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun initRx() {
-        compositeDisposable += viewModel.stopUploadingProcessSubject
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { stop -> if (stop) service?.stopUploadingProcess() else service?.resumeUploadingProcess() }
+        compositeDisposable += viewModel.startPhotoUploadingServiceSubject
+            .subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.io())
+            .doOnNext { startUploadingService() }
+            .doOnError { Timber.e(it) }
             .subscribe()
     }
 
@@ -122,54 +157,17 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     private fun initViews() {
         initTabs()
 
-        ivCloseActivityButton.setOnClickListener {
-            finish()
-        }
-
-        takePhotoButton.setOnClickListener {
-            finish()
-        }
-    }
-
-    private fun checkPermissions() {
-        val requestedPermissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
-        permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
-            val index = permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)
-            if (index == -1) {
-                throw RuntimeException("Couldn't find Manifest.permission.CAMERA in result permissions")
-            }
-
-            var granted = true
-
-            if (grantResults[index] == PackageManager.PERMISSION_DENIED) {
-                granted = false
-
-                if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-                    showGpsRationaleDialog()
-                    return@askForPermission
-                }
-            }
-
-            onPermissionsCallback(granted)
-        }
-    }
-
-    private fun onPermissionsCallback(isGranted: Boolean) {
-        compositeDisposable += Observable.timer(500, TimeUnit.MILLISECONDS)
-            .subscribeOn(Schedulers.io())
-            .observeOn(Schedulers.io())
-            .doOnNext { viewModel.fragmentsLoadPhotos() }
-            .flatMap { viewModel.startUploadingPhotosService(isGranted).toObservable() }
-            .doOnNext { startUploadingService() }
+        compositeDisposable += RxView.clicks(ivCloseActivityButton)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .debounceClicks()
+            .doOnNext { finish() }
             .subscribe()
-    }
 
-    private fun showGpsRationaleDialog() {
-        GpsRationaleDialog().show(this, {
-            checkPermissions()
-        }, {
-            onPermissionsCallback(false)
-        })
+        compositeDisposable += RxView.clicks(takePhotoButton)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .debounceClicks()
+            .doOnNext { finish() }
+            .subscribe()
     }
 
     override fun getCurrentLocation(): Single<LonLat> {
@@ -179,6 +177,8 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             }
 
             return@fromCallable RxLocationManager.start(locationManager)
+                .observeOn(Schedulers.io())
+                .delay(2, TimeUnit.SECONDS)
                 .timeout(GPS_LOCATION_OBTAINING_MAX_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .onErrorReturnItem(LonLat.empty())
                 .blockingFirst()
@@ -249,7 +249,6 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             startService(serviceIntent)
             bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
         } else {
-            service?.resumeUploadingProcess()
             service?.startPhotosUploading()
         }
     }
