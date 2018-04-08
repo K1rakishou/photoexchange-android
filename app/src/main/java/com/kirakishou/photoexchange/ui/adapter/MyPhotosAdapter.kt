@@ -13,14 +13,15 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import timber.log.Timber
+import io.reactivex.subjects.Subject
 
 /**
  * Created by kirakishou on 3/18/2018.
  */
 class MyPhotosAdapter(
     private val context: Context,
-    private val imageLoader: ImageLoader
+    private val imageLoader: ImageLoader,
+    private val adapterButtonsClickSubject: Subject<MyPhotosAdapterButtonClickEvent>
 ) : BaseAdapter<MyPhotosAdapterItem>(context) {
 
     private val HEADER_OBTAIN_CURRENT_LOCATION_NOTIFICATION_INDEX = 0
@@ -364,11 +365,11 @@ class MyPhotosAdapter(
                 }
 
                 holder.deleteFailedToUploadPhotoButton.setOnClickListener {
-                    Timber.e("deleteFailedToUploadPhotoButton")
+                    adapterButtonsClickSubject.onNext(MyPhotosAdapterButtonClickEvent.DeleteButtonClick(failedPhoto))
                 }
 
                 holder.retryToUploadFailedPhoto.setOnClickListener {
-                    Timber.e("retryToUploadFailedPhoto")
+                    adapterButtonsClickSubject.onNext(MyPhotosAdapterButtonClickEvent.RetryButtonClick(failedPhoto))
                 }
             }
 
@@ -406,5 +407,10 @@ class MyPhotosAdapter(
         val uploadingMessageHolderView = itemView.findViewById<CardView>(R.id.uploading_message_holder)
         val loadingProgress = itemView.findViewById<ProgressBar>(R.id.loading_progress)
         val photoUploadingStateIndicator = itemView.findViewById<View>(R.id.photo_uploading_state_indicator)
+    }
+
+    sealed class MyPhotosAdapterButtonClickEvent {
+        class DeleteButtonClick(val photo: MyPhoto) : MyPhotosAdapterButtonClickEvent()
+        class RetryButtonClick(val photo: MyPhoto) : MyPhotosAdapterButtonClickEvent()
     }
 }

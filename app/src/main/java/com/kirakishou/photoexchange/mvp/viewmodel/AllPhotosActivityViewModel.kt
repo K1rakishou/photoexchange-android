@@ -21,6 +21,7 @@ import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.lang.ref.WeakReference
+import java.util.concurrent.TimeUnit
 
 /**
  * Created by kirakishou on 3/11/2018.
@@ -33,10 +34,12 @@ class AllPhotosActivityViewModel(
 ) : BaseViewModel<AllPhotosActivityView>(view) {
 
     private val tag = "[${this::class.java.simpleName}] "
-    private val LOCATION_CHECK_INTERVAL = 10.minutes()
+    private val LOCATION_CHECK_INTERVAL = 5.minutes()
+    private val SERVICE_START_DELAY_SECONDS = 10L
 
     val onUploadingPhotoEventSubject = PublishSubject.create<PhotoUploadingEvent>().toSerialized()
     val myPhotosFragmentViewStateSubject = PublishSubject.create<MyPhotosFragmentViewStateEvent>().toSerialized()
+    val startPhotoUploadingServiceSubject = PublishSubject.create<Unit>().toSerialized()
 
     override fun onAttached() {
         Timber.tag(tag).d("onAttached()")
@@ -48,18 +51,24 @@ class AllPhotosActivityViewModel(
         super.onCleared()
     }
 
-    fun updateMyPhotosFragmentViewState(stateEvent: MyPhotosFragmentViewStateEvent) {
+    private fun updateMyPhotosFragmentViewState(stateEvent: MyPhotosFragmentViewStateEvent) {
         myPhotosFragmentViewStateSubject.onNext(stateEvent)
     }
 
-    fun startUploadingPhotosService(isGranted: Boolean): Maybe<Long> {
-        return Single.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
+    fun checkShouldStartPhotoUploadingService(updateLastLocation: Boolean) {
+        compositeDisposable += Observable.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
             .subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
             .filter { count -> count > 0 }
-            .doOnSuccess { updateMyPhotosFragmentViewState(MyPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification()) }
-            .doOnSuccess { updateLastLocation(isGranted).blockingAwait() }
-            .doOnSuccess { updateMyPhotosFragmentViewState(MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification()) }
+            .doOnNext { Timber.e("Before throttleLast") }
+            .debounce(SERVICE_START_DELAY_SECONDS, TimeUnit.SECONDS)
+            .doOnNext { Timber.e("After throttleLast") }
+            .doOnNext { updateMyPhotosFragmentViewState(MyPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification()) }
+            .doOnNext { updateLastLocation(updateLastLocation).blockingAwait() }
+            .doOnNext { Timber.e("After updateLastLocation") }
+            .doOnNext { updateMyPhotosFragmentViewState(MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification()) }
+            .map { Unit }
+            .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)
     }
 
     fun loadPhotos(): Single<MutableList<MyPhoto>> {
@@ -67,27 +76,26 @@ class AllPhotosActivityViewModel(
             val photos = mutableListOf<MyPhoto>()
 
             val queuedUpPhotos = photosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP)
-            photos += queuedUpPhotos.sortedByDescending { it.id }
+            photos += queuedUpPhotos.sortedBy { it.id }
 
             val failedPhotos = photosRepository.findAllByState(PhotoState.FAILED_TO_UPLOAD)
-            photos += failedPhotos.sortedByDescending { it.id }
+            photos += failedPhotos.sortedBy { it.id }
 
             val uploadedPhotos = photosRepository.findAllByState(PhotoState.PHOTO_UPLOADED)
-            photos += uploadedPhotos.sortedByDescending { it.id }
+            photos += uploadedPhotos.sortedBy { it.id }
 
             return@fromCallable photos
-        }
-            .subscribeOn(schedulerProvider.BG())
+        }.subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
     }
 
-    private fun updateLastLocation(isGranted: Boolean): Completable {
+    private fun updateLastLocation(updateLastLocation: Boolean): Completable {
         return Completable.fromAction {
             // if gps is disabled by user then set the last location as empty (-1.0, -1.0) immediately
             // so the user doesn't have to wait 15 seconds until getCurrentLocation returns empty
             // location because of timeout
 
-            if (isGranted) {
+            if (updateLastLocation) {
                 val now = TimeUtils.getTimeFast()
                 val lastTimeCheck = settingsRepository.findLastLocationCheckTime()
 
@@ -114,19 +122,9 @@ class AllPhotosActivityViewModel(
         onUploadingPhotoEventSubject.onNext(event)
     }
 
-    fun deleteAllWithState(photoState: PhotoState): Completable {
+    fun deletePhotoById(photoId: Long): Completable {
         return Completable.fromAction {
-            photosRepository.deleteAllWithState(photoState)
-            if (Constants.isDebugBuild) {
-                check(photosRepository.countAllByState(photoState) == 0L)
-            }
-        }.subscribeOn(schedulerProvider.BG())
-            .observeOn(schedulerProvider.BG())
-    }
-
-    fun deleteByIdAndState(photoId: Long, photoState: PhotoState): Completable {
-        return Completable.fromAction {
-            photosRepository.deleteByIdAndState(photoId, photoState)
+            photosRepository.deletePhotoById(photoId)
             if (Constants.isDebugBuild) {
                 check(photosRepository.findById(photoId).isEmpty())
             }
@@ -134,9 +132,9 @@ class AllPhotosActivityViewModel(
             .observeOn(schedulerProvider.BG())
     }
 
-    fun changePhotosStates(oldPhotoState: PhotoState, newPhotoState: PhotoState): Completable {
+    fun changePhotoState(photoId: Long, newPhotoState: PhotoState): Completable {
         return Completable.fromAction {
-            photosRepository.updatePhotosStates(oldPhotoState, newPhotoState)
+            photosRepository.updatePhotoState(photoId, newPhotoState)
         }.subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
     }

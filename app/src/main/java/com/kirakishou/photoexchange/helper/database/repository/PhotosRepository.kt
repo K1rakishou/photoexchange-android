@@ -89,7 +89,7 @@ open class PhotosRepository(
         return MyPhotoMapper.toMyPhoto(myPhotoEntity, tempFileEntity)
     }
 
-    private fun findAll(): List<MyPhoto> {
+    fun findAll(): List<MyPhoto> {
         val allMyPhotos = arrayListOf<MyPhoto>()
         val allMyPhotoEntities = myPhotoDao.findAll()
 
@@ -169,12 +169,8 @@ open class PhotosRepository(
         return myPhotoDeleteResult && tempFileDeleteResult && fileDeleteResult
     }
 
-    fun deleteByIdAndState(photoId: Long, photoState: PhotoState): Boolean {
-        return database.transactional {
-            return@transactional myPhotoDao.findByIdAndState(photoId, photoState)?.let {
-                deleteById(photoId)
-            } ?: true
-        }
+    fun deletePhotoById(photoId: Long) {
+        myPhotoDao.deleteById(photoId)
     }
 
     fun deleteAllWithState(photoState: PhotoState): Boolean {

@@ -15,12 +15,12 @@ class MyPhotosAdapterSpanSizeLookup(
     override fun getSpanSize(position: Int): Int {
         val type = adapter.getItemViewType(position)
         return when (type) {
-            AdapterItemType.VIEW_MY_PHOTO.type -> 1
+            AdapterItemType.VIEW_MY_PHOTO.type,
+            AdapterItemType.VIEW_FAILED_TO_UPLOAD.type -> 1
 
             AdapterItemType.EMPTY.type,
             AdapterItemType.VIEW_PROGRESS.type,
-            AdapterItemType.VIEW_OBTAIN_CURRENT_LOCATION_NOTIFICATION.type,
-            AdapterItemType.VIEW_FAILED_TO_UPLOAD.type -> columnsCount
+            AdapterItemType.VIEW_OBTAIN_CURRENT_LOCATION_NOTIFICATION.type -> columnsCount
 
             else -> throw RuntimeException("Unknown item view type: $type")
         }

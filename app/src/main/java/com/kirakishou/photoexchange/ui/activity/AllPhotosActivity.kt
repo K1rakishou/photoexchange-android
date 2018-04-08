@@ -21,24 +21,17 @@ import com.kirakishou.photoexchange.di.module.AllPhotosActivityModule
 import com.kirakishou.photoexchange.helper.location.MyLocationManager
 import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
-import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.service.UploadPhotoService
-import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
-import com.kirakishou.photoexchange.ui.dialog.CancelPhotoUploadingDialog
 import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
 import com.kirakishou.photoexchange.ui.viewstate.AllPhotosActivityViewState
-import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
-import io.reactivex.Observable
 import io.reactivex.Single
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.lang.ref.WeakReference
@@ -83,14 +76,50 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         initRx()
-        initViews()
-        restoreMyPhotosFragmentFromViewState(savedInstanceState)
-        checkPermissions()
+        checkPermissions(savedInstanceState)
     }
 
     override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
         super.onSaveInstanceState(outState, outPersistentState)
         viewState.saveToBundle(outState)
+    }
+
+    private fun checkPermissions(savedInstanceState: Bundle?) {
+        val requestedPermissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
+            val index = permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)
+            if (index == -1) {
+                throw RuntimeException("Couldn't find Manifest.permission.CAMERA in result permissions")
+            }
+
+            var granted = true
+
+            if (grantResults[index] == PackageManager.PERMISSION_DENIED) {
+                granted = false
+
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+                    showGpsRationaleDialog(savedInstanceState)
+                    return@askForPermission
+                }
+            }
+
+            onPermissionsCallback(savedInstanceState, granted)
+        }
+    }
+
+    private fun showGpsRationaleDialog(savedInstanceState: Bundle?) {
+        GpsRationaleDialog().show(this, {
+            checkPermissions(savedInstanceState)
+        }, {
+            onPermissionsCallback(savedInstanceState, false)
+        })
+    }
+
+    private fun onPermissionsCallback(savedInstanceState: Bundle?, isGranted: Boolean) {
+        initViews()
+        restoreMyPhotosFragmentFromViewState(savedInstanceState)
+
+        viewModel.checkShouldStartPhotoUploadingService(isGranted)
     }
 
     private fun restoreMyPhotosFragmentFromViewState(savedInstanceState: Bundle?) {
@@ -104,7 +133,12 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun initRx() {
-
+        compositeDisposable += viewModel.startPhotoUploadingServiceSubject
+            .subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.io())
+            .doOnNext { startUploadingService() }
+            .doOnError { Timber.e(it) }
+            .subscribe()
     }
 
     override fun onActivityDestroy() {
@@ -127,45 +161,6 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         }
     }
 
-    private fun checkPermissions() {
-        val requestedPermissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
-        permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
-            val index = permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)
-            if (index == -1) {
-                throw RuntimeException("Couldn't find Manifest.permission.CAMERA in result permissions")
-            }
-
-            var granted = true
-
-            if (grantResults[index] == PackageManager.PERMISSION_DENIED) {
-                granted = false
-
-                if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-                    showGpsRationaleDialog()
-                    return@askForPermission
-                }
-            }
-
-            onPermissionsCallback(granted)
-        }
-    }
-
-    private fun onPermissionsCallback(isGranted: Boolean) {
-        compositeDisposable += viewModel.startUploadingPhotosService(isGranted).toObservable()
-            .subscribeOn(Schedulers.io())
-            .observeOn(Schedulers.io())
-            .doOnNext { startUploadingService() }
-            .subscribe()
-    }
-
-    private fun showGpsRationaleDialog() {
-        GpsRationaleDialog().show(this, {
-            checkPermissions()
-        }, {
-            onPermissionsCallback(false)
-        })
-    }
-
     override fun getCurrentLocation(): Single<LonLat> {
         return Single.fromCallable {
             if (!locationManager.isGpsEnabled()) {
@@ -173,6 +168,8 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             }
 
             return@fromCallable RxLocationManager.start(locationManager)
+                .observeOn(Schedulers.io())
+                .delay(2, TimeUnit.SECONDS)
                 .timeout(GPS_LOCATION_OBTAINING_MAX_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .onErrorReturnItem(LonLat.empty())
                 .blockingFirst()
