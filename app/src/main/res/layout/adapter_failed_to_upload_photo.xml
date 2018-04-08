@@ -89,7 +89,6 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_gravity="center_vertical"
-                            android:layout_marginEnd="8dp"
                             android:layout_weight="0.5"
                             android:text="@string/retry_string"
                             android:textColor="@color/colorPrimary"

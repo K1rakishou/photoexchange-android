@@ -126,6 +126,8 @@ class MyPhotosAdapter(
         var globalIndex = headerItems.size
         var localIndex = -1
 
+        duplicatesCheckerSet.remove(photoId)
+
         for ((index, adapterItem) in queuedUpItems.withIndex()) {
             adapterItem as MyPhotosAdapterItem.MyPhotoItem
             if (adapterItem.myPhoto.id == photoId) {
