@@ -38,7 +38,6 @@ class AllPhotosActivityViewModel(
     val onUploadingPhotoEventSubject = PublishSubject.create<PhotoUploadingEvent>().toSerialized()
     val myPhotosFragmentViewStateSubject = PublishSubject.create<MyPhotosFragmentViewStateEvent>().toSerialized()
     val stopUploadingProcessSubject = PublishSubject.create<Boolean>().toSerialized()
-    val fragmentsLoadPhotosSubject = PublishSubject.create<Unit>().toSerialized()
 
     override fun onAttached() {
         Timber.tag(tag).d("onAttached()")
@@ -68,9 +67,14 @@ class AllPhotosActivityViewModel(
         return Single.fromCallable {
             val photos = mutableListOf<MyPhoto>()
 
-            photos += photosRepository.findAllByState(PhotoState.FAILED_TO_UPLOAD)
-            photos += photosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP)
-            photos += photosRepository.findAllByState(PhotoState.PHOTO_UPLOADED)
+            val queuedUpPhotos = photosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP)
+            photos += queuedUpPhotos.sortedByDescending { it.id }
+
+            val failedPhotos = photosRepository.findAllByState(PhotoState.FAILED_TO_UPLOAD)
+            photos += failedPhotos.sortedByDescending { it.id }
+
+            val uploadedPhotos = photosRepository.findAllByState(PhotoState.PHOTO_UPLOADED)
+            photos += uploadedPhotos.sortedByDescending { it.id }
 
             return@fromCallable photos
         }
@@ -144,9 +148,5 @@ class AllPhotosActivityViewModel(
             photosRepository.updatePhotosStates(oldPhotoState, newPhotoState)
         }.subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
-    }
-
-    fun fragmentsLoadPhotos() {
-        fragmentsLoadPhotosSubject.onNext(Unit)
     }
 }

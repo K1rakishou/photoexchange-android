@@ -26,10 +26,7 @@ class UploadPhotoServicePresenter(
     private val updatePhotosUseCase: UploadPhotosUseCase
 ) {
     private val tag = "[${this::class.java.simpleName}] "
-
-    private val DELAY_BEFORE_UPLOADING_SECONDS = 10L
     private val uploadPhotosSubject = PublishSubject.create<UploadPhotoData>().toSerialized()
-
     private var compositeDisposable = CompositeDisposable()
 
     init {
@@ -41,7 +38,6 @@ class UploadPhotoServicePresenter(
                 val queuedUpPhotosCount = myPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP).toInt()
                 callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnPrepare(queuedUpPhotosCount))
             }
-            .throttleLast(DELAY_BEFORE_UPLOADING_SECONDS, TimeUnit.SECONDS)
             .doOnNext { data -> updatePhotosUseCase.uploadPhotos(data.userId, data.location, callbacks) }
             .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnEnd()) }
             .doOnError { callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnUnknownError()) }
@@ -54,8 +50,6 @@ class UploadPhotoServicePresenter(
     }
 
     fun uploadPhotos() {
-        Timber.e("uploadPhotos")
-
         compositeDisposable += Single.fromCallable {
             val userId = settingsRepository.findUserId()
                 ?: return@fromCallable UploadPhotoData.empty()
@@ -68,25 +62,5 @@ class UploadPhotoServicePresenter(
         .subscribeOn(schedulerProvider.BG())
         .observeOn(schedulerProvider.BG())
         .subscribe(uploadPhotosSubject::onNext, uploadPhotosSubject::onError)
-    }
-
-    fun cancelPhotoUploading(photoId: Long) {
-        Timber.e("cancelPhotoUploading $photoId")
-        myPhotosRepository.deleteByIdAndState(photoId, PhotoState.PHOTO_QUEUED_UP)
-    }
-
-    fun cancelAllPhotosUploading() {
-        Timber.e("cancelAllPhotosUploading")
-        myPhotosRepository.deleteAllWithState(PhotoState.PHOTO_QUEUED_UP)
-    }
-
-    fun stopUploadingProcess() {
-        Timber.e("stopUploadingProcess")
-        updatePhotosUseCase.stopUploadingProcess()
-    }
-
-    fun resumeUploadingProcess() {
-        Timber.e("resumeUploadingProcess")
-        updatePhotosUseCase.resumeUploadingProcess()
     }
 }

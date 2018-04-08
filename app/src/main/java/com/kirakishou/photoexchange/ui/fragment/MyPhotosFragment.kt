@@ -43,6 +43,7 @@ class MyPhotosFragment : BaseFragment() {
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRx()
         initRecyclerView()
+        loadPhotos()
 
         restoreMyPhotosFragmentFromViewState(savedInstanceState)
     }
@@ -80,14 +81,15 @@ class MyPhotosFragment : BaseFragment() {
         myPhotosList.adapter = adapter
     }
 
-    private fun initRx() {
-        compositeDisposable += viewModel.fragmentsLoadPhotosSubject
+    private fun loadPhotos() {
+        compositeDisposable += viewModel.loadPhotos()
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
-            .switchMap { viewModel.loadPhotos().toObservable() }
-            .doOnNext { photos -> onPhotosLoadedFromDatabase(photos) }
+            .doOnSuccess { photos -> onPhotosLoadedFromDatabase(photos) }
             .subscribe()
+    }
 
+    private fun initRx() {
         compositeDisposable += viewModel.onUploadingPhotoEventSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())

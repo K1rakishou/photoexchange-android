@@ -155,11 +155,9 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun onPermissionsCallback(isGranted: Boolean) {
-        compositeDisposable += Observable.timer(500, TimeUnit.MILLISECONDS)
+        compositeDisposable += viewModel.startUploadingPhotosService(isGranted).toObservable()
             .subscribeOn(Schedulers.io())
             .observeOn(Schedulers.io())
-            .doOnNext { viewModel.fragmentsLoadPhotos() }
-            .flatMap { viewModel.startUploadingPhotosService(isGranted).toObservable() }
             .doOnNext { startUploadingService() }
             .subscribe()
     }

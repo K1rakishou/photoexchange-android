@@ -31,6 +31,18 @@
                 android:layout_width="8dp"
                 android:layout_height="match_parent"/>
 
+            <TextView
+                android:id="@+id/photo_id_text_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:text="1"
+                android:textSize="20sp"
+                android:textColor="@color/black"
+                app:layout_constraintStart_toEndOf="@+id/photo_uploading_state_indicator"
+                app:layout_constraintTop_toTopOf="parent" />
+
             <android.support.v7.widget.CardView
                 android:id="@+id/uploading_message_holder"
                 android:layout_width="wrap_content"

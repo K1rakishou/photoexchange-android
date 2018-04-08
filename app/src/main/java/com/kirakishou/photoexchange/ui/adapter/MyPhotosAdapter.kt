@@ -8,6 +8,7 @@ import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.widget.ImageView
 import android.widget.ProgressBar
+import android.widget.TextView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
@@ -178,6 +179,8 @@ class MyPhotosAdapter(
                 val myPhoto = (items.getOrNull(position) as? MyPhotosAdapterItem.MyPhotoItem)?.myPhoto
                     ?: return
 
+                holder.photoidTextView.text = myPhoto.id.toString()
+
                 when (myPhoto.photoState) {
                     PhotoState.PHOTO_QUEUED_UP,
                     PhotoState.PHOTO_UPLOADING,
@@ -237,6 +240,7 @@ class MyPhotosAdapter(
     }
 
     class MyPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val photoidTextView = itemView.findViewById<TextView>(R.id.photo_id_text_view)
         val photoView = itemView.findViewById<ImageView>(R.id.photo_view)
         val uploadingMessageHolderView = itemView.findViewById<CardView>(R.id.uploading_message_holder)
         val loadingProgress = itemView.findViewById<ProgressBar>(R.id.loading_progress)
