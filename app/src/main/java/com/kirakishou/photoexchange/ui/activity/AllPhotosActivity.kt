@@ -84,6 +84,8 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
     override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
         super.onSaveInstanceState(outState, outPersistentState)
+
+        viewState.lastOpenedTab = viewPager.currentItem
         viewState.saveToBundle(outState)
     }
 

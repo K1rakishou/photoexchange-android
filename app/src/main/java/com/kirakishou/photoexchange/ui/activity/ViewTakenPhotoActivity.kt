@@ -62,9 +62,7 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
     }
 
     private fun getTakenPhotoFromIntent(intent: Intent) {
-        if (intent.extras == null) {
-            throw RuntimeException("Intent does not have photos bundle")
-        }
+        require(intent.extras != null) { "Intent does not contain photos bundle" }
 
         takenPhoto = MyPhoto.fromBundle(intent.extras!!)
     }
