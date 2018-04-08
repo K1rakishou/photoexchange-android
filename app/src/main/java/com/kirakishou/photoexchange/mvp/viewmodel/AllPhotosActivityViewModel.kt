@@ -11,10 +11,8 @@ import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
-import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
 import io.reactivex.Completable
-import io.reactivex.Maybe
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.rxkotlin.plusAssign
@@ -60,12 +58,9 @@ class AllPhotosActivityViewModel(
             .subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
             .filter { count -> count > 0 }
-            .doOnNext { Timber.e("Before throttleLast") }
             .debounce(SERVICE_START_DELAY_SECONDS, TimeUnit.SECONDS)
-            .doOnNext { Timber.e("After throttleLast") }
             .doOnNext { updateMyPhotosFragmentViewState(MyPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification()) }
             .doOnNext { updateLastLocation(updateLastLocation).blockingAwait() }
-            .doOnNext { Timber.e("After updateLastLocation") }
             .doOnNext { updateMyPhotosFragmentViewState(MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification()) }
             .map { Unit }
             .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)

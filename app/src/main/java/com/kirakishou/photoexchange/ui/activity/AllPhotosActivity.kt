@@ -15,9 +15,11 @@ import android.support.v4.app.ActivityCompat
 import android.support.v4.view.ViewPager
 import android.widget.ImageButton
 import butterknife.BindView
+import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.AllPhotosActivityModule
+import com.kirakishou.photoexchange.helper.extension.debounceClicks
 import com.kirakishou.photoexchange.helper.location.MyLocationManager
 import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
@@ -31,6 +33,7 @@ import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
 import com.kirakishou.photoexchange.ui.viewstate.AllPhotosActivityViewState
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
 import io.reactivex.Single
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
@@ -152,13 +155,17 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     private fun initViews() {
         initTabs()
 
-        ivCloseActivityButton.setOnClickListener {
-            finish()
-        }
+        compositeDisposable += RxView.clicks(ivCloseActivityButton)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .debounceClicks()
+            .doOnNext { finish() }
+            .subscribe()
 
-        takePhotoButton.setOnClickListener {
-            finish()
-        }
+        compositeDisposable += RxView.clicks(takePhotoButton)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .debounceClicks()
+            .doOnNext { finish() }
+            .subscribe()
     }
 
     override fun getCurrentLocation(): Single<LonLat> {

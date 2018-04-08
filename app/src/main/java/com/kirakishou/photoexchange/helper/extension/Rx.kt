@@ -1,14 +1,16 @@
 package com.kirakishou.photoexchange.helper.extension
 
-import com.kirakishou.photoexchange.mvp.model.other.MulticastEvent
 import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
+import java.util.concurrent.TimeUnit
 
 /**
  * Created by kirakishou on 1/3/2018.
  */
 
-fun <T> Observable<MulticastEvent<T>>.filterMulticastEvent(receiver: Class<*>): Observable<T> {
-    return this
-            .filter { it.receiver == receiver }
-            .map { it.obj!! }
+fun <T> Observable<T>.debounceClicks(): Observable<T> {
+    return this.observeOn(Schedulers.io())
+        .debounce(200, TimeUnit.MILLISECONDS)
+        .observeOn(AndroidSchedulers.mainThread())
 }

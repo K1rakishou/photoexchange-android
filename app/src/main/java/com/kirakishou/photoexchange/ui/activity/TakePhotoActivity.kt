@@ -9,10 +9,12 @@ import android.support.v4.app.ActivityCompat
 import android.view.View
 import android.widget.ImageView
 import butterknife.BindView
+import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.TakePhotoActivityModule
 import com.kirakishou.photoexchange.helper.CameraProvider
+import com.kirakishou.photoexchange.helper.extension.debounceClicks
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
@@ -22,8 +24,12 @@ import com.kirakishou.photoexchange.ui.dialog.CameraIsNotAvailableDialog
 import com.kirakishou.photoexchange.ui.dialog.CameraRationaleDialog
 import io.fotoapparat.view.CameraView
 import io.reactivex.Single
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.io.File
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
@@ -79,13 +85,17 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
     }
 
     private fun initViews() {
-        takePhotoButton.setOnClickListener {
-            viewModel.takePhoto()
-        }
+        compositeDisposable += RxView.clicks(takePhotoButton)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .debounceClicks()
+            .doOnNext { viewModel.takePhoto() }
+            .subscribe()
 
-        ivShowAllPhotos.setOnClickListener {
-            runActivity(AllPhotosActivity::class.java)
-        }
+        compositeDisposable += RxView.clicks(ivShowAllPhotos)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .debounceClicks()
+            .doOnNext { runActivity(AllPhotosActivity::class.java) }
+            .subscribe()
     }
 
     private fun onPermissionsGranted() {
