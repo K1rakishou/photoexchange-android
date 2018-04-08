@@ -7,7 +7,8 @@ enum class AdapterItemType(val type: Int) {
     EMPTY(0),
     VIEW_MY_PHOTO(1),
     VIEW_PROGRESS(2),
-    VIEW_OBTAIN_CURRENT_LOCATION_NOTIFICATION(3);
+    VIEW_OBTAIN_CURRENT_LOCATION_NOTIFICATION(3),
+    VIEW_FAILED_TO_UPLOAD(4);
 
     companion object {
         fun fromInt(type: Int): AdapterItemType {

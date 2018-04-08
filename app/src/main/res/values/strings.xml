@@ -25,4 +25,6 @@
     <string name="cancel_all_string">Cancel all</string>
     <string name="cancel_string">Cancel</string>
     <string name="retry_string">Retry</string>
+    <string name="failed_to_upload_photo">Failed to upload photo</string>
+    <string name="delete">Delete</string>
 </resources>

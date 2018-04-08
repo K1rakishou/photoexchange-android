@@ -38,8 +38,10 @@ class UploadPhotoServicePresenter(
                 val queuedUpPhotosCount = myPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP).toInt()
                 callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnPrepare(queuedUpPhotosCount))
             }
-            .doOnNext { data -> updatePhotosUseCase.uploadPhotos(data.userId, data.location, callbacks) }
-            .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnEnd()) }
+            .doOnNext { data ->
+                updatePhotosUseCase.uploadPhotos(data.userId, data.location, callbacks)
+                callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnEnd())
+            }
             .doOnError { callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnUnknownError()) }
             .doOnEach { callbacks.get()?.stopService() }
             .subscribe()

@@ -84,7 +84,7 @@ class MyPhotosFragment : BaseFragment() {
         compositeDisposable += viewModel.loadPhotos()
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
-            .doOnSuccess { photos -> onPhotosLoadedFromDatabase(photos) }
+            .doOnSuccess { photos -> addPhotoToAdapter(photos) }
             .subscribe()
     }
 
@@ -157,7 +157,8 @@ class MyPhotosFragment : BaseFragment() {
                 is PhotoUploadingEvent.OnEnd -> {
                 }
                 is PhotoUploadingEvent.OnFailedToUpload -> {
-                    adapter.updatePhotoState(event.myPhoto.id, PhotoState.FAILED_TO_UPLOAD)
+                    adapter.removePhotoById(event.myPhoto.id)
+                    adapter.addMyPhoto(event.myPhoto)
                 }
                 is PhotoUploadingEvent.OnUnknownError -> {
                     adapter.clear()
@@ -167,15 +168,14 @@ class MyPhotosFragment : BaseFragment() {
         }
     }
 
-    private fun onPhotosLoadedFromDatabase(uploadedPhotos: List<MyPhoto>) {
+    private fun addPhotoToAdapter(uploadedPhotos: List<MyPhoto>) {
         if (!isAdded) {
             return
         }
 
         requireActivity().runOnUiThread {
             if (uploadedPhotos.isNotEmpty()) {
-                val mapped = uploadedPhotos.map { MyPhotosAdapterItem.MyPhotoItem(it) }
-                adapter.addAll(mapped)
+                adapter.addMyPhotos(uploadedPhotos)
             } else {
                 //TODO: show notification that no photos has been uploaded yet
             }

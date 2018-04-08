@@ -61,11 +61,15 @@ class UploadPhotosUseCase(
                 }
 
                 myPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
+                photo.photoState = PhotoState.FAILED_TO_UPLOAD
+
                 callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnFailedToUpload(photo))
             } catch (error: Throwable) {
                 Timber.e(error)
 
                 myPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
+                photo.photoState = PhotoState.FAILED_TO_UPLOAD
+
                 callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnFailedToUpload(photo))
             }
         }
