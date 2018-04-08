@@ -37,7 +37,6 @@ class AllPhotosActivityViewModel(
 
     val onUploadingPhotoEventSubject = PublishSubject.create<PhotoUploadingEvent>().toSerialized()
     val myPhotosFragmentViewStateSubject = PublishSubject.create<MyPhotosFragmentViewStateEvent>().toSerialized()
-    val stopUploadingProcessSubject = PublishSubject.create<Boolean>().toSerialized()
 
     override fun onAttached() {
         Timber.tag(tag).d("onAttached()")
@@ -113,14 +112,6 @@ class AllPhotosActivityViewModel(
 
     fun forwardUploadPhotoEvent(event: PhotoUploadingEvent) {
         onUploadingPhotoEventSubject.onNext(event)
-    }
-
-    fun stopUploadingProcess() {
-        stopUploadingProcessSubject.onNext(true)
-    }
-
-    fun resumeUploadingProcess() {
-        stopUploadingProcessSubject.onNext(false)
     }
 
     fun deleteAllWithState(photoState: PhotoState): Completable {

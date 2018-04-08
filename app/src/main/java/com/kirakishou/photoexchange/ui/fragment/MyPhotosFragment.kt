@@ -65,7 +65,6 @@ class MyPhotosFragment : BaseFragment() {
     }
 
     override fun onFragmentViewDestroy() {
-        viewModel.resumeUploadingProcess()
     }
 
     private fun initRecyclerView() {

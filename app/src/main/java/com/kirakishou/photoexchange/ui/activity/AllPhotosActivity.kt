@@ -104,11 +104,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun initRx() {
-        compositeDisposable += viewModel.stopUploadingProcessSubject
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { stop -> if (stop) service?.stopUploadingProcess() else service?.resumeUploadingProcess() }
-            .subscribe()
+
     }
 
     override fun onActivityDestroy() {
@@ -247,7 +243,6 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             startService(serviceIntent)
             bindService(serviceIntent, connection, Context.BIND_AUTO_CREATE)
         } else {
-            service?.resumeUploadingProcess()
             service?.startPhotosUploading()
         }
     }
