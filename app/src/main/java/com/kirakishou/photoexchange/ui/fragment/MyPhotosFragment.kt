@@ -178,17 +178,19 @@ class MyPhotosFragment : BaseFragment() {
                     scrollRecyclerViewToTop()
                 }
                 is PhotoUploadingEvent.OnPhotoUploadingStart -> {
-                    adapter.updateMyPhoto(event.myPhoto.also { it.photoState = PhotoState.PHOTO_UPLOADING })
+                    adapter.addMyPhoto(event.myPhoto.also { it.photoState = PhotoState.PHOTO_UPLOADING })
                 }
                 is PhotoUploadingEvent.OnProgress -> {
                     adapter.addMyPhoto(event.photo)
                     adapter.updatePhotoProgress(event.photo.id, event.progress)
                 }
                 is PhotoUploadingEvent.OnUploaded -> {
-                    adapter.updateMyPhoto(event.myPhoto.also { it.photoState = PhotoState.PHOTO_UPLOADED })
+                    adapter.removePhotoById(event.myPhoto.id)
+                    adapter.addMyPhoto(event.myPhoto.also { it.photoState = PhotoState.PHOTO_UPLOADED })
                 }
                 is PhotoUploadingEvent.OnFailedToUpload -> {
-                    adapter.updateMyPhoto(event.myPhoto.also { it.photoState = PhotoState.FAILED_TO_UPLOAD })
+                    adapter.removePhotoById(event.myPhoto.id)
+                    adapter.addMyPhoto(event.myPhoto.also { it.photoState = PhotoState.FAILED_TO_UPLOAD })
                 }
                 is PhotoUploadingEvent.OnEnd -> {
                 }

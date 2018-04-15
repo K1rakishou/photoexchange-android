@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.extension.minutes
 import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
@@ -32,9 +33,9 @@ class AllPhotosActivityViewModel(
 ) : BaseViewModel<AllPhotosActivityView>(view) {
 
     private val tag = "[${this::class.java.simpleName}] "
-    //TODO: changes LOCATION_CHECK_INTERVAL_MS from seconds to minutes
-    private val LOCATION_CHECK_INTERVAL_MS = 2.seconds()
-    private val SERVICE_START_DELAY_MS = 10.seconds()
+    private val LOCATION_CHECK_INTERVAL_MS = 2.minutes()
+    private val SERVICE_START_DEBOUNCE_TIME_MS = 10.seconds()
+    private val CHECK_SHOULD_START_SERVICE_DELAY_MS = 1500L
 
     val onUploadingPhotoEventSubject = PublishSubject.create<PhotoUploadingEvent>().toSerialized()
     val myPhotosFragmentViewStateSubject = PublishSubject.create<MyPhotosFragmentViewStateEvent>().toSerialized()
@@ -59,8 +60,8 @@ class AllPhotosActivityViewModel(
             .subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
             .filter { count -> count > 0 }
-            .delay(1500, TimeUnit.MILLISECONDS)
-            .debounce(SERVICE_START_DELAY_MS, TimeUnit.MILLISECONDS)
+            .delay(CHECK_SHOULD_START_SERVICE_DELAY_MS, TimeUnit.MILLISECONDS)
+            .debounce(SERVICE_START_DEBOUNCE_TIME_MS, TimeUnit.MILLISECONDS)
             .doOnNext { updateMyPhotosFragmentViewState(MyPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification()) }
             .doOnNext { updateLastLocation(updateLastLocation).blockingAwait() }
             .doOnNext { updateMyPhotosFragmentViewState(MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification()) }
