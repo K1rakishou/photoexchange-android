@@ -8,12 +8,10 @@ import android.os.Build
 import android.os.IBinder
 import android.support.annotation.RequiresApi
 import android.support.v4.app.NotificationCompat
-import com.kirakishou.photoexchange.di.component.DaggerUploadPhotoServiceComponent
+import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.*
-import com.kirakishou.photoexchange.helper.extension.asWeak
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
-import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
 import timber.log.Timber
@@ -205,14 +203,8 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     }
 
     private fun resolveDaggerDependency() {
-        DaggerUploadPhotoServiceComponent.builder()
-            .uploadPhotoServiceModule(UploadPhotoServiceModule(this))
-            .uploadPhotoServicePresenterModule(UploadPhotoServicePresenterModule(this.asWeak()))
-            .gsonModule(GsonModule())
-            .databaseModule(DatabaseModule(Constants.DATABASE_NAME))
-            .networkModule(NetworkModule(Constants.BASE_URL))
-            .apiClientModule(ApiClientModule())
-            .build()
+        (application as PhotoExchangeApplication).applicationComponent
+            .plus(UploadPhotoServiceModule(this))
             .inject(this)
     }
 

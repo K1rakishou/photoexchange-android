@@ -26,7 +26,6 @@ open class CameraProvider(
 
     fun provideCamera(cameraView: CameraView) {
         val configuration = CameraConfiguration(
-            pictureResolution = { PhotoResolutionSelector(this).select() },
             previewResolution = highestResolution(),
             jpegQuality = manualJpegQuality(100)
         )

@@ -42,6 +42,10 @@ abstract class MyPhotoDao {
     @TypeConverters(PhotoStateConverter::class)
     abstract fun findByIdAndState(photoId: Long, photoState: PhotoState): MyPhotoEntity?
 
+    @Query("SELECT * FROM ${MyPhotoEntity.TABLE_NAME} " +
+        "WHERE ${MyPhotoEntity.PHOTO_NAME_COLUMN} = :photoName")
+    abstract fun findByName(photoName: String): MyPhotoEntity?
+
     @Query("SELECT * FROM ${MyPhotoEntity.TABLE_NAME}")
     abstract fun findAll(): List<MyPhotoEntity>
 

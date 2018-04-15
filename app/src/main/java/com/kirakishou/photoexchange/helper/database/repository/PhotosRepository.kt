@@ -51,6 +51,11 @@ open class PhotosRepository(
         return myPhotoDao.updateSetNewPhotoState(photoId, newPhotoState) == 1
     }
 
+    fun updatePhotoState(photoName: String, newPhotoState: PhotoState): Boolean {
+        val photoId = myPhotoDao.findByName(photoName)?.id ?: return false
+        return myPhotoDao.updateSetNewPhotoState(photoId, newPhotoState) == 1
+    }
+
     fun updatePhotosStates(oldPhotoState: PhotoState, newPhotoState: PhotoState) {
         database.transactional {
             try {

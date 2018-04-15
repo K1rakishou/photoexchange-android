@@ -4,6 +4,7 @@ import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerPro
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.extension.minutes
+import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
@@ -32,12 +33,14 @@ class AllPhotosActivityViewModel(
 ) : BaseViewModel<AllPhotosActivityView>(view) {
 
     private val tag = "[${this::class.java.simpleName}] "
-    private val LOCATION_CHECK_INTERVAL = 5.minutes()
-    private val SERVICE_START_DELAY_SECONDS = 10L
+    private val LOCATION_CHECK_INTERVAL_MS = 2.minutes()
+    private val SERVICE_START_DEBOUNCE_TIME_MS = 10.seconds()
+    private val CHECK_SHOULD_START_SERVICE_DELAY_MS = 1500L
 
     val onUploadingPhotoEventSubject = PublishSubject.create<PhotoUploadingEvent>().toSerialized()
     val myPhotosFragmentViewStateSubject = PublishSubject.create<MyPhotosFragmentViewStateEvent>().toSerialized()
     val startPhotoUploadingServiceSubject = PublishSubject.create<Unit>().toSerialized()
+    val startFindPhotoAnswerServiceSubject = PublishSubject.create<Unit>().toSerialized()
 
     override fun onAttached() {
         Timber.tag(tag).d("onAttached()")
@@ -49,19 +52,27 @@ class AllPhotosActivityViewModel(
         super.onCleared()
     }
 
-    private fun updateMyPhotosFragmentViewState(stateEvent: MyPhotosFragmentViewStateEvent) {
-        myPhotosFragmentViewStateSubject.onNext(stateEvent)
-    }
-
     fun checkShouldStartPhotoUploadingService(updateLastLocation: Boolean) {
-        compositeDisposable += Observable.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
+        val queuedUpPhotosCountObservable = Observable.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
             .subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
-            .filter { count -> count > 0 }
-            .debounce(SERVICE_START_DELAY_SECONDS, TimeUnit.SECONDS)
-            .doOnNext { updateMyPhotosFragmentViewState(MyPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification()) }
+            .publish()
+            .autoConnect(2)
+
+        compositeDisposable += queuedUpPhotosCountObservable
+            .filter { count -> count == 0L }
+            .delay(CHECK_SHOULD_START_SERVICE_DELAY_MS, TimeUnit.MILLISECONDS)
+            .debounce(SERVICE_START_DEBOUNCE_TIME_MS, TimeUnit.MILLISECONDS)
+            .map { Unit }
+            .subscribe(startFindPhotoAnswerServiceSubject::onNext, startFindPhotoAnswerServiceSubject::onError)
+
+        compositeDisposable += queuedUpPhotosCountObservable
+            .filter { count -> count > 0L }
+            .delay(CHECK_SHOULD_START_SERVICE_DELAY_MS, TimeUnit.MILLISECONDS)
+            .debounce(SERVICE_START_DEBOUNCE_TIME_MS, TimeUnit.MILLISECONDS)
+            .doOnNext { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification()) }
             .doOnNext { updateLastLocation(updateLastLocation).blockingAwait() }
-            .doOnNext { updateMyPhotosFragmentViewState(MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification()) }
+            .doOnNext { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification()) }
             .map { Unit }
             .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)
     }
@@ -95,7 +106,7 @@ class AllPhotosActivityViewModel(
                 val lastTimeCheck = settingsRepository.findLastLocationCheckTime()
 
                 //request new location every 10 minutes
-                if (lastTimeCheck == null || (now - lastTimeCheck > LOCATION_CHECK_INTERVAL)) {
+                if (lastTimeCheck == null || (now - lastTimeCheck > LOCATION_CHECK_INTERVAL_MS)) {
                     val currentLocation = getView()?.getCurrentLocation()?.blockingGet()
                         ?: return@fromAction
 

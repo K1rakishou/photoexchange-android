@@ -1,13 +1,14 @@
 package com.kirakishou.photoexchange.helper.api
 
 import com.google.gson.Gson
+import com.kirakishou.photoexchange.helper.api.request.GetPhotoAnswersRequest
 import com.kirakishou.photoexchange.helper.api.request.UploadPhotoRequest
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
+import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
-import com.kirakishou.photoexchange.service.UploadPhotoServiceCallbacks
 import io.reactivex.Single
-import java.lang.ref.WeakReference
 import javax.inject.Inject
 
 /**
@@ -20,25 +21,15 @@ class ApiClient
     private val schedulerProvider: SchedulerProvider
 ) {
 
-    fun uploadPhoto(photoId: Long, photoFilePath: String, location: LonLat, userId: String,
-                    callback: WeakReference<UploadPhotoServiceCallbacks>?): Single<UploadPhotoResponse> {
-        return UploadPhotoRequest<UploadPhotoResponse>(photoId, photoFilePath, location, userId, callback, apiService, schedulerProvider, gson)
+    fun uploadPhoto(photoFilePath: String, location: LonLat, userId: String,
+                    callback: UploadPhotosUseCase.PhotoUploadProgressCallback): Single<UploadPhotoResponse> {
+        return UploadPhotoRequest<UploadPhotoResponse>(photoFilePath, location, userId, callback, apiService, schedulerProvider, gson)
             .execute()
     }
 
-//    fun findPhotoAnswer(userId: String): Single<PhotoAnswerResponse> {
-//        return FindPhotoAnswerRequest(userId, apiService, schedulers, gson)
-//            .execute()
-//    }
-//
-//    fun markPhotoAsReceived(photoId: Long, userId: String): Single<StatusResponse> {
-//        return MarkPhotoAsReceivedRequest(photoId, userId, apiService, schedulers, gson)
-//            .execute()
-//    }
-//
-//    fun getPhotoRecipientsLocations(userId: String, photoIds: String): Single<GetUserLocationResponse> {
-//        return GetPhotoNewLocationRequest(userId, photoIds, apiService, schedulers, gson)
-//            .execute()
-//    }
+    fun getPhotoAnswers(photoNames: String, userId: String): Single<PhotoAnswerResponse> {
+        return GetPhotoAnswersRequest<PhotoAnswerResponse>(photoNames, userId, apiService, schedulerProvider, gson)
+            .execute()
+    }
 
 }

@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.helper
 
+import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.service.UploadPhotoServiceCallbacks
 import okhttp3.MediaType
@@ -14,9 +15,8 @@ import java.lang.ref.WeakReference
  * Created by kirakishou on 3/17/2018.
  */
 class ProgressRequestBody(
-    private val photoId: Long,
     private val photoFile: File,
-    private val serviceCallbacks: WeakReference<UploadPhotoServiceCallbacks>?
+    private val callback: UploadPhotosUseCase.PhotoUploadProgressCallback
 ) : RequestBody() {
     private val DEFAULT_BUFFER_SIZE = 4096
 
@@ -45,14 +45,14 @@ class ProgressRequestBody(
                 val percent = 100L * uploaded / fileLength
                 if (percent - lastPercent >= 3) {
                     lastPercent = percent
-                    serviceCallbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnProgress(photoId, percent.toInt()))
+                    callback.onProgress(percent.toInt())
                 }
 
                 uploaded += read.toLong()
                 sink.write(buffer, 0, read)
             }
 
-            serviceCallbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnProgress(photoId, 100))
+            callback.onProgress(100)
         } finally {
             fis.close()
         }

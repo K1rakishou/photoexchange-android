@@ -47,7 +47,7 @@ class ImageLoader
     }
 
     enum class PhotoSize(val value: String) {
-        Original("o"),
+        Big("b"),
         Small("s")
     }
 }

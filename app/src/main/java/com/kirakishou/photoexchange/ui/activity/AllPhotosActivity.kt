@@ -20,6 +20,7 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.AllPhotosActivityModule
 import com.kirakishou.photoexchange.helper.extension.debounceClicks
+import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.helper.location.MyLocationManager
 import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
@@ -27,6 +28,7 @@ import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
+import com.kirakishou.photoexchange.service.FindPhotoAnswerService
 import com.kirakishou.photoexchange.service.UploadPhotoService
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
 import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
@@ -70,7 +72,8 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
     private val tag = "[${this::class.java.simpleName}] "
     private var service: UploadPhotoService? = null
-    private val GPS_LOCATION_OBTAINING_MAX_TIMEOUT_SECONDS = 15L
+    private val GPS_DELAY_MS = 1.seconds()
+    private val GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS = 15.seconds()
     private val adapter = FragmentTabsPager(supportFragmentManager)
     private val locationManager by lazy { MyLocationManager(applicationContext) }
     private var viewState = AllPhotosActivityViewState()
@@ -144,6 +147,14 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             .doOnNext { startUploadingService() }
             .doOnError { Timber.e(it) }
             .subscribe()
+
+        compositeDisposable += viewModel.startFindPhotoAnswerServiceSubject
+            .subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.io())
+            .doOnNext { startFindingService() }
+            .doOnError { Timber.e(it) }
+            .subscribe()
+
     }
 
     override fun onActivityDestroy() {
@@ -178,8 +189,8 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
             return@fromCallable RxLocationManager.start(locationManager)
                 .observeOn(Schedulers.io())
-                .delay(2, TimeUnit.SECONDS)
-                .timeout(GPS_LOCATION_OBTAINING_MAX_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .delay(GPS_DELAY_MS, TimeUnit.MILLISECONDS)
+                .timeout(GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS, TimeUnit.MILLISECONDS)
                 .onErrorReturnItem(LonLat.empty())
                 .blockingFirst()
         }
@@ -241,6 +252,14 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         permissionManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
+    private fun startFindingService() {
+        if (FindPhotoAnswerService.isAlreadyRunning(this)) {
+            return
+        }
+
+        FindPhotoAnswerService.scheduleJob(this)
     }
 
     private fun startUploadingService() {

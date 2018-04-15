@@ -18,7 +18,8 @@ import javax.inject.Singleton
     NetworkModule::class,
     DatabaseModule::class,
     ApiClientModule::class,
-    ImageLoaderModule::class
+    ImageLoaderModule::class,
+    UseCaseProviderModule::class
 ])
 interface ApplicationComponent {
     fun inject(application: PhotoExchangeApplication)
@@ -26,4 +27,6 @@ interface ApplicationComponent {
     fun plus(takePhotoActivityModule: TakePhotoActivityModule): TakePhotoActivityComponent
     fun plus(viewTakenPhotoActivityModule: ViewTakenPhotoActivityModule): ViewTakenPhotoActivityComponent
     fun plus(allPhotosActivityModule: AllPhotosActivityModule): AllPhotosActivityComponent
+    fun plus(uploadPhotoServiceModule: UploadPhotoServiceModule): UploadPhotoServiceComponent
+    fun plus(findPhotoAnswerServiceModule: FindPhotoAnswerServiceModule): FindPhotoAnswerServiceComponent
 }
