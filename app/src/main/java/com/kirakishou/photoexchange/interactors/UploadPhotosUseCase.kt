@@ -5,15 +5,17 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.util.BitmapUtils
 import com.kirakishou.photoexchange.helper.util.FileUtils
+import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
+import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.model.other.ServerErrorCode
 import com.kirakishou.photoexchange.service.UploadPhotoServiceCallbacks
+import io.reactivex.Single
 import timber.log.Timber
 import java.io.File
 import java.lang.ref.WeakReference
-import java.util.concurrent.atomic.AtomicBoolean
 
 class UploadPhotosUseCase(
     private val database: MyDatabase,
@@ -26,36 +28,15 @@ class UploadPhotosUseCase(
                 ?: break
 
             try {
-                val rotatedPhotoFile = File.createTempFile("rotated_photo", ".tmp")
-                callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnPhotoUploadingStart(photo))
+                val rotatedPhotoFile = handlePhotoUploadingStart(callbacks, photo)
 
                 try {
                     if (BitmapUtils.rotatePhoto(photo.photoTempFile, rotatedPhotoFile)) {
-                        val responseSingle = apiClient.uploadPhoto(rotatedPhotoFile.absolutePath, location, userId, object : PhotoUploadProgressCallback {
-                            override fun onProgress(progress: Int) {
-                                callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnProgress(photo, progress))
-                            }
-                        })
+                        val response = uploadPhoto(rotatedPhotoFile, location, userId, callbacks, photo).blockingGet()
 
-                        val response = responseSingle.blockingGet()
                         val errorCode = ServerErrorCode.from(response.serverErrorCode)
-
                         if (errorCode == ServerErrorCode.OK) {
-                            photo.photoState = PhotoState.PHOTO_UPLOADED
-                            photo.photoName = response.photoName
-                            photo.photoTempFile = null
-                            callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnUploaded(photo))
-
-                            val isAllOk =  database.transactional {
-                                val deleteResult = myPhotosRepository.deleteTempFileById(photo.id)
-                                val updateResult1 = myPhotosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_UPLOADED)
-                                val updateResult2 = myPhotosRepository.updateSetTempFileId(photo.id, null)
-                                val updateResult3 = myPhotosRepository.updateSetPhotoName(photo.id, response.photoName)
-
-                                return@transactional deleteResult && updateResult1 && updateResult2 && updateResult3
-                            }
-
-                            if (isAllOk) {
+                            if (handlePhotoUploaded(photo, response, callbacks)) {
                                 continue
                             }
                         }
@@ -64,19 +45,49 @@ class UploadPhotosUseCase(
                     FileUtils.deleteFile(rotatedPhotoFile)
                 }
 
-                myPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
-                photo.photoState = PhotoState.FAILED_TO_UPLOAD
-
-                callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnFailedToUpload(photo))
+                handleFailedPhoto(photo, callbacks)
             } catch (error: Throwable) {
                 Timber.e(error)
-
-                myPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
-                photo.photoState = PhotoState.FAILED_TO_UPLOAD
-
-                callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnFailedToUpload(photo))
+                handleFailedPhoto(photo, callbacks)
             }
         }
+    }
+
+    private fun handlePhotoUploadingStart(callbacks: WeakReference<UploadPhotoServiceCallbacks>?, photo: MyPhoto): File {
+        val rotatedPhotoFile = File.createTempFile("rotated_photo", ".tmp")
+        callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnPhotoUploadingStart(photo))
+        return rotatedPhotoFile
+    }
+
+    private fun uploadPhoto(rotatedPhotoFile: File, location: LonLat, userId: String, callbacks: WeakReference<UploadPhotoServiceCallbacks>?, photo: MyPhoto): Single<UploadPhotoResponse> {
+        return apiClient.uploadPhoto(rotatedPhotoFile.absolutePath, location, userId, object : PhotoUploadProgressCallback {
+            override fun onProgress(progress: Int) {
+                callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnProgress(photo, progress))
+            }
+        })
+    }
+
+    private fun handlePhotoUploaded(photo: MyPhoto, response: UploadPhotoResponse, callbacks: WeakReference<UploadPhotoServiceCallbacks>?): Boolean {
+        photo.photoState = PhotoState.PHOTO_UPLOADED
+        photo.photoName = response.photoName
+        photo.photoTempFile = null
+        callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnUploaded(photo))
+
+        return database.transactional {
+            val deleteResult = myPhotosRepository.deleteTempFileById(photo.id)
+            val updateResult1 = myPhotosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_UPLOADED)
+            val updateResult2 = myPhotosRepository.updateSetTempFileId(photo.id, null)
+            val updateResult3 = myPhotosRepository.updateSetPhotoName(photo.id, response.photoName)
+
+            return@transactional deleteResult && updateResult1 && updateResult2 && updateResult3
+        }
+    }
+
+    private fun handleFailedPhoto(photo: MyPhoto, callbacks: WeakReference<UploadPhotoServiceCallbacks>?) {
+        myPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
+        photo.photoState = PhotoState.FAILED_TO_UPLOAD
+
+        callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnFailedToUpload(photo))
     }
 
     interface PhotoUploadProgressCallback {
