@@ -6,23 +6,55 @@ import android.app.job.JobScheduler
 import android.app.job.JobService
 import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
 import android.os.PersistableBundle
+import com.kirakishou.photoexchange.PhotoExchangeApplication
+import com.kirakishou.photoexchange.di.module.FindPhotoAnswerServiceModule
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.schedulers.Schedulers
+import timber.log.Timber
+import javax.inject.Inject
 
 class FindPhotoAnswerService : JobService() {
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return START_NOT_STICKY
+    @Inject
+    lateinit var presenter: FindPhotoAnswerServicePresenter
+
+    private val tag = "[${this::class.java.simpleName}] "
+    private val compositeDisposable = CompositeDisposable()
+
+    override fun onCreate() {
+        super.onCreate()
+        Timber.tag(tag).d("Service started")
+
+        resolveDaggerDependency()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Timber.tag(tag).d("Service destroyed")
+
+        compositeDisposable.clear()
     }
 
     override fun onStartJob(params: JobParameters): Boolean {
         val userId = params.extras.getString("user_id")
+        compositeDisposable += presenter.startFindPhotoAnswers(userId)
+            .subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.io())
+            .subscribe()
 
         return true
     }
 
     override fun onStopJob(params: JobParameters): Boolean {
         return true
+    }
+
+    private fun resolveDaggerDependency() {
+        (application as PhotoExchangeApplication).applicationComponent
+            .plus(FindPhotoAnswerServiceModule(this))
+            .inject(this)
     }
 
     companion object {
@@ -36,8 +68,8 @@ class FindPhotoAnswerService : JobService() {
                 .setRequiredNetworkType(JobInfo.NETWORK_TYPE_UNMETERED)
                 .setRequiresDeviceIdle(false)
                 .setRequiresCharging(false)
-                .setMinimumLatency(5_000)
-                .setOverrideDeadline(30_000)
+                .setMinimumLatency(1_000)
+                .setOverrideDeadline(5_000)
                 .setExtras(extras)
                 .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_EXPONENTIAL)
                 .build()

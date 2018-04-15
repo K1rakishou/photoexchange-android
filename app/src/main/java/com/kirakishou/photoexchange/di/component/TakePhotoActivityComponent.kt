@@ -14,7 +14,8 @@ import dagger.Subcomponent
 @Subcomponent(modules = [
     TakePhotoActivityModule::class,
     PermissionManagerModule::class,
-    CameraProviderModule::class])
+    CameraProviderModule::class
+])
 interface TakePhotoActivityComponent {
     fun inject(activity: TakePhotoActivity)
 }

@@ -14,6 +14,12 @@ import timber.log.Timber
 /**
  * Created by kirakishou on 8/27/2017.
  */
+
+/**
+ *
+ * Whenever HttpException occurs this class returns converted errorBody as an ApiException with ServerErrorCode and HttpStatus
+ *
+ * */
 class OnApiErrorObservable<T : StatusResponse>(val gson: Gson) : ObservableOperator<T, Response<T>> {
 
     override fun apply(observer: Observer<in T>): Observer<in Response<T>> {

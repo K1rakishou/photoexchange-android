@@ -1,24 +1,17 @@
 package com.kirakishou.photoexchange.di.component
 
 import com.kirakishou.photoexchange.di.module.*
+import com.kirakishou.photoexchange.di.scope.PerService
 import com.kirakishou.photoexchange.service.UploadPhotoService
-import dagger.Component
-import javax.inject.Singleton
+import dagger.Subcomponent
 
 /**
  * Created by kirakishou on 3/17/2018.
  */
 
-@Singleton
-@Component(modules = [
-    UploadPhotoServiceModule::class,
-    SchedulerProviderModule::class,
-    UploadPhotoServicePresenterModule::class,
-    GsonModule::class,
-    NetworkModule::class,
-    DatabaseModule::class,
-    ApiClientModule::class,
-    UseCaseProviderModule::class
+@PerService
+@Subcomponent(modules = [
+    UploadPhotoServiceModule::class
 ])
 interface UploadPhotoServiceComponent {
     fun inject(service: UploadPhotoService)

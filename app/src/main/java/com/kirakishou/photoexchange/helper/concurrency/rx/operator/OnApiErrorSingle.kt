@@ -17,7 +17,7 @@ import timber.log.Timber
 
 /**
  *
- * Whenever HttpException occurs returns converted errorBody as an ApiException with ServerErrorCode.Remote and HttpStatus
+ * Whenever HttpException occurs this class returns converted errorBody as an ApiException with ServerErrorCode and HttpStatus
  *
  * */
 class OnApiErrorSingle<T>(val gson: Gson) : SingleOperator<T, Response<T>> {

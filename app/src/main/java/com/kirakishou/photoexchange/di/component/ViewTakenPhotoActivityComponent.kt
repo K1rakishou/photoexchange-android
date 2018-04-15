@@ -10,7 +10,9 @@ import dagger.Subcomponent
  */
 
 @PerActivity
-@Subcomponent(modules = [ViewTakenPhotoActivityModule::class])
+@Subcomponent(modules = [
+    ViewTakenPhotoActivityModule::class
+])
 interface ViewTakenPhotoActivityComponent {
     fun inject(activity: ViewTakenPhotoActivity)
 }
