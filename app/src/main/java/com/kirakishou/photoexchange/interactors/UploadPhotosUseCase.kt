@@ -10,7 +10,7 @@ import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
-import com.kirakishou.photoexchange.mvp.model.other.ServerErrorCode
+import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.service.UploadPhotoServiceCallbacks
 import io.reactivex.Single
 import timber.log.Timber
@@ -34,8 +34,8 @@ class UploadPhotosUseCase(
                     if (BitmapUtils.rotatePhoto(photo.photoTempFile, rotatedPhotoFile)) {
                         val response = uploadPhoto(rotatedPhotoFile, location, userId, callbacks, photo).blockingGet()
 
-                        val errorCode = ServerErrorCode.from(response.serverErrorCode)
-                        if (errorCode == ServerErrorCode.OK) {
+                        val errorCode = ErrorCode.from(response.serverErrorCode)
+                        if (errorCode == ErrorCode.OK) {
                             if (handlePhotoUploaded(photo, response, callbacks)) {
                                 continue
                             }

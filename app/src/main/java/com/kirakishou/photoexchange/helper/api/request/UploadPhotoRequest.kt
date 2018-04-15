@@ -9,14 +9,12 @@ import com.kirakishou.photoexchange.mvp.model.net.packet.SendPhotoPacket
 import com.kirakishou.photoexchange.mvp.model.net.response.StatusResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
-import com.kirakishou.photoexchange.mvp.model.other.ServerErrorCode
-import com.kirakishou.photoexchange.service.UploadPhotoServiceCallbacks
+import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
 import okhttp3.MultipartBody
 import retrofit2.Response
 import timber.log.Timber
 import java.io.File
-import java.lang.ref.WeakReference
 
 /**
  * Created by kirakishou on 3/17/2018.
@@ -38,7 +36,7 @@ class UploadPhotoRequest<T : StatusResponse>(
             val photoFile = File(photoFilePath)
 
             if (!photoFile.isFile || !photoFile.exists()) {
-                return@fromCallable UploadPhotoResponse.error(ServerErrorCode.NO_PHOTO_FILE_ON_DISK) as T
+                return@fromCallable UploadPhotoResponse.error(ErrorCode.NO_PHOTO_FILE_ON_DISK) as T
             }
 
             val body = getBody(photoFile, packet, callback)
@@ -49,7 +47,7 @@ class UploadPhotoRequest<T : StatusResponse>(
 
                 return@fromCallable extractResponse(response)
             } catch (error: Throwable) {
-                return@fromCallable UploadPhotoResponse.error(ServerErrorCode.UNKNOWN_ERROR) as T
+                return@fromCallable UploadPhotoResponse.error(ErrorCode.UNKNOWN_ERROR) as T
             }
 
         }.subscribeOn(schedulerProvider.BG())
@@ -62,17 +60,16 @@ class UploadPhotoRequest<T : StatusResponse>(
             try {
                 val responseJson = response.errorBody()!!.string()
                 val error = gson.fromJson<StatusResponse>(responseJson, StatusResponse::class.java)
-                Timber.d(responseJson)
 
                 //may happen in some rare cases
                 return if (error?.serverErrorCode == null) {
-                    UploadPhotoResponse.error(ServerErrorCode.BAD_SERVER_RESPONSE) as T
+                    UploadPhotoResponse.error(ErrorCode.BAD_SERVER_RESPONSE) as T
                 } else {
-                    UploadPhotoResponse.error(ServerErrorCode.from(error.serverErrorCode)) as T
+                    UploadPhotoResponse.error(ErrorCode.from(error.serverErrorCode)) as T
                 }
             } catch (e: Throwable) {
                 Timber.e(e)
-                return UploadPhotoResponse.error(ServerErrorCode.UNKNOWN_ERROR) as T
+                return UploadPhotoResponse.error(ErrorCode.UNKNOWN_ERROR) as T
             }
         }
 

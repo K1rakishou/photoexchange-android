@@ -38,13 +38,21 @@ class FindPhotoAnswerService : JobService() {
     }
 
     override fun onStartJob(params: JobParameters): Boolean {
-        val userId = params.extras.getString("user_id")
-        compositeDisposable += presenter.startFindPhotoAnswers(userId)
+        compositeDisposable += presenter.startFindPhotoAnswers()
             .subscribeOn(Schedulers.io())
             .observeOn(Schedulers.io())
+            .doOnSuccess { done(params, it) }
+            .doOnError {
+                Timber.e(it)
+                done(params, false)
+            }
             .subscribe()
 
         return true
+    }
+
+    private fun done(params: JobParameters, restartService: Boolean) {
+        jobFinished(params, restartService)
     }
 
     override fun onStopJob(params: JobParameters): Boolean {
@@ -60,9 +68,7 @@ class FindPhotoAnswerService : JobService() {
     companion object {
         private val JOB_ID = 1
 
-        fun scheduleJob(userId: String, context: Context) {
-            val extras = PersistableBundle()
-            extras.putString("user_id", userId)
+        fun scheduleJob(context: Context) {
 
             val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, FindPhotoAnswerService::class.java))
                 .setRequiredNetworkType(JobInfo.NETWORK_TYPE_UNMETERED)
@@ -70,7 +76,6 @@ class FindPhotoAnswerService : JobService() {
                 .setRequiresCharging(false)
                 .setMinimumLatency(1_000)
                 .setOverrideDeadline(5_000)
-                .setExtras(extras)
                 .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_EXPONENTIAL)
                 .build()
 

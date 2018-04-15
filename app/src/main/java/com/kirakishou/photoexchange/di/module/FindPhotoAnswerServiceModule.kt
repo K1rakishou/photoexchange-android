@@ -5,6 +5,7 @@ import com.kirakishou.photoexchange.di.scope.PerService
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.interactors.FindPhotoAnswersUseCase
 import com.kirakishou.photoexchange.service.FindPhotoAnswerService
 import com.kirakishou.photoexchange.service.FindPhotoAnswerServicePresenter
 import dagger.Module
@@ -24,7 +25,8 @@ class FindPhotoAnswerServiceModule(
     @Provides
     fun provideFindPhotoAnswerServicePresenter(myPhotosRepository: PhotosRepository,
                                                settingsRepository: SettingsRepository,
-                                               schedulerProvider: SchedulerProvider): FindPhotoAnswerServicePresenter {
-        return FindPhotoAnswerServicePresenter(myPhotosRepository, settingsRepository, schedulerProvider)
+                                               schedulerProvider: SchedulerProvider,
+                                               findPhotoAnswersUseCase: FindPhotoAnswersUseCase): FindPhotoAnswerServicePresenter {
+        return FindPhotoAnswerServicePresenter(myPhotosRepository, settingsRepository, schedulerProvider, findPhotoAnswersUseCase)
     }
 }

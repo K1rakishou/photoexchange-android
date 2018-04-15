@@ -8,7 +8,8 @@ enum class PhotoState(val state: Int) {
     PHOTO_QUEUED_UP(1),
     PHOTO_UPLOADING(2),
     PHOTO_UPLOADED(3),
-    FAILED_TO_UPLOAD(4);
+    PHOTO_UPLOADED_ANSWER_RECEIVED(4),
+    FAILED_TO_UPLOAD(5);
 
     companion object {
         fun from(state: Int): PhotoState {

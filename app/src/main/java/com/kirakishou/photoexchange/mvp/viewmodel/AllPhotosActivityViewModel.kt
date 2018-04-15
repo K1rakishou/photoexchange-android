@@ -40,7 +40,7 @@ class AllPhotosActivityViewModel(
     val onUploadingPhotoEventSubject = PublishSubject.create<PhotoUploadingEvent>().toSerialized()
     val myPhotosFragmentViewStateSubject = PublishSubject.create<MyPhotosFragmentViewStateEvent>().toSerialized()
     val startPhotoUploadingServiceSubject = PublishSubject.create<Unit>().toSerialized()
-    val startFindPhotoAnswerServiceSubject = PublishSubject.create<String>().toSerialized()
+    val startFindPhotoAnswerServiceSubject = PublishSubject.create<Unit>().toSerialized()
 
     override fun onAttached() {
         Timber.tag(tag).d("onAttached()")
@@ -63,7 +63,7 @@ class AllPhotosActivityViewModel(
             .filter { count -> count == 0L }
             .delay(CHECK_SHOULD_START_SERVICE_DELAY_MS, TimeUnit.MILLISECONDS)
             .debounce(SERVICE_START_DEBOUNCE_TIME_MS, TimeUnit.MILLISECONDS)
-            .map { settingsRepository.getUserId()!! }
+            .map { Unit }
             .subscribe(startFindPhotoAnswerServiceSubject::onNext, startFindPhotoAnswerServiceSubject::onError)
 
         compositeDisposable += queuedUpPhotosCountObservable

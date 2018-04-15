@@ -10,7 +10,7 @@ import butterknife.ButterKnife
 import butterknife.Unbinder
 import com.crashlytics.android.Crashlytics
 import com.kirakishou.photoexchange.PhotoExchangeApplication
-import com.kirakishou.photoexchange.mvp.model.other.ServerErrorCode
+import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.fabric.sdk.android.Fabric
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -74,8 +74,8 @@ abstract class BaseActivity : AppCompatActivity() {
     }
 
     @CallSuper
-    open fun onBadResponse(serverErrorCode: ServerErrorCode) {
-        Timber.e("ServerErrorCode: $serverErrorCode")
+    open fun onBadResponse(errorCode: ErrorCode) {
+        Timber.e("ErrorCode: $errorCode")
     }
 
     @CallSuper

@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.mvp.model.net.response
 
 import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
-import com.kirakishou.photoexchange.mvp.model.other.ServerErrorCode
+import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 
 /**
  * Created by kirakishou on 3/17/2018.
@@ -13,12 +13,12 @@ class UploadPhotoResponse(
     @SerializedName("photo_name")
     val photoName: String,
 
-    serverErrorCode: ServerErrorCode
+    errorCode: ErrorCode
 
-) : StatusResponse(serverErrorCode.value) {
+) : StatusResponse(errorCode.value) {
 
     companion object {
-        fun error(errorCode: ServerErrorCode): UploadPhotoResponse {
+        fun error(errorCode: ErrorCode): UploadPhotoResponse {
             return UploadPhotoResponse("", errorCode)
         }
     }

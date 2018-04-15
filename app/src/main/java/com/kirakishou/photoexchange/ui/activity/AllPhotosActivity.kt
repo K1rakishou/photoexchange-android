@@ -151,7 +151,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         compositeDisposable += viewModel.startFindPhotoAnswerServiceSubject
             .subscribeOn(Schedulers.io())
             .observeOn(Schedulers.io())
-            .doOnNext { startFindingService(it) }
+            .doOnNext { startFindingService() }
             .doOnError { Timber.e(it) }
             .subscribe()
 
@@ -254,12 +254,12 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         permissionManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
-    private fun startFindingService(userId: String) {
+    private fun startFindingService() {
         if (FindPhotoAnswerService.isAlreadyRunning(this)) {
             return
         }
 
-        FindPhotoAnswerService.scheduleJob(userId, this)
+        FindPhotoAnswerService.scheduleJob(this)
     }
 
     private fun startUploadingService() {
