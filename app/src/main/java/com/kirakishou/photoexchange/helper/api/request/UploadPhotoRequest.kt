@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.kirakishou.photoexchange.helper.ProgressRequestBody
 import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.net.packet.SendPhotoPacket
 import com.kirakishou.photoexchange.mvp.model.net.response.StatusResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
@@ -21,11 +22,10 @@ import java.lang.ref.WeakReference
  * Created by kirakishou on 3/17/2018.
  */
 class UploadPhotoRequest<T : StatusResponse>(
-    private val photoId: Long,
     private val photoFilePath: String,
     private val location: LonLat,
     private val userId: String,
-    private val callback: WeakReference<UploadPhotoServiceCallbacks>?,
+    private val callback: UploadPhotosUseCase.PhotoUploadProgressCallback,
     private val apiService: ApiService,
     private val schedulerProvider: SchedulerProvider,
     private val gson: Gson
@@ -41,7 +41,7 @@ class UploadPhotoRequest<T : StatusResponse>(
                 return@fromCallable UploadPhotoResponse.error(ServerErrorCode.NO_PHOTO_FILE_ON_DISK) as T
             }
 
-            val body = getBody(photoId, photoFile, packet, callback)
+            val body = getBody(photoFile, packet, callback)
 
             try {
                 val response = apiService.uploadPhoto(body.part(0), body.part(1))
@@ -79,8 +79,8 @@ class UploadPhotoRequest<T : StatusResponse>(
         return response.body()!!
     }
 
-    private fun getBody(photoId: Long, photoFile: File, packet: SendPhotoPacket, callback: WeakReference<UploadPhotoServiceCallbacks>?): MultipartBody {
-        val photoRequestBody = ProgressRequestBody(photoId, photoFile, callback)
+    private fun getBody(photoFile: File, packet: SendPhotoPacket, callback: UploadPhotosUseCase.PhotoUploadProgressCallback): MultipartBody {
+        val photoRequestBody = ProgressRequestBody(photoFile, callback)
         val packetJson = gson.toJson(packet)
 
         return MultipartBody.Builder()

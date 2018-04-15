@@ -26,14 +26,18 @@ class UploadPhotosUseCase(
                 ?: break
 
             try {
-                val queuedUpPhotosCount = myPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP).toInt()
-                callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnPhotoUploadingStart(photo, queuedUpPhotosCount))
-
                 val rotatedPhotoFile = File.createTempFile("rotated_photo", ".tmp")
+                callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnPhotoUploadingStart(photo))
 
                 try {
                     if (BitmapUtils.rotatePhoto(photo.photoTempFile, rotatedPhotoFile)) {
-                        val response = apiClient.uploadPhoto(photo.id, rotatedPhotoFile.absolutePath, location, userId, callbacks).blockingGet()
+                        val responseSingle = apiClient.uploadPhoto(rotatedPhotoFile.absolutePath, location, userId, object : PhotoUploadProgressCallback {
+                            override fun onProgress(progress: Int) {
+                                callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnProgress(photo, progress))
+                            }
+                        })
+
+                        val response = responseSingle.blockingGet()
                         val errorCode = ServerErrorCode.from(response.serverErrorCode)
 
                         if (errorCode == ServerErrorCode.OK) {
@@ -73,5 +77,9 @@ class UploadPhotosUseCase(
                 callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnFailedToUpload(photo))
             }
         }
+    }
+
+    interface PhotoUploadProgressCallback {
+        fun onProgress(progress: Int)
     }
 }

@@ -34,10 +34,7 @@ class UploadPhotoServicePresenter(
             .subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
             .filter { !it.isEmpty() }
-            .doOnEach {
-                val queuedUpPhotosCount = myPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP).toInt()
-                callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnPrepare(queuedUpPhotosCount))
-            }
+            .doOnEach { callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnPrepare()) }
             .doOnNext { data ->
                 updatePhotosUseCase.uploadPhotos(data.userId, data.location, callbacks)
                 callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnEnd())

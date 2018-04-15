@@ -25,7 +25,6 @@ class MyPhotosAdapter(
 ) : BaseAdapter<MyPhotosAdapterItem>(context) {
 
     private val HEADER_OBTAIN_CURRENT_LOCATION_NOTIFICATION_INDEX = 0
-    private val HEADER_PROGRESS_INDEX = 1
 
     private val headerItems = arrayListOf<MyPhotosAdapterItem>()
     private val queuedUpItems = arrayListOf<MyPhotosAdapterItem>()
@@ -37,7 +36,6 @@ class MyPhotosAdapter(
 
     init {
         headerItems.add(HEADER_OBTAIN_CURRENT_LOCATION_NOTIFICATION_INDEX, MyPhotosAdapterItem.EmptyItem())
-        headerItems.add(HEADER_PROGRESS_INDEX, MyPhotosAdapterItem.EmptyItem())
     }
 
     fun updatePhotoState(photoId: Long, photoState: PhotoState) {
@@ -62,9 +60,21 @@ class MyPhotosAdapter(
     }
 
     fun showObtainCurrentLocationNotification() {
+        if (headerItems[HEADER_OBTAIN_CURRENT_LOCATION_NOTIFICATION_INDEX] is MyPhotosAdapterItem.ObtainCurrentLocationItem) {
+            return
+        }
+
+        headerItems[HEADER_OBTAIN_CURRENT_LOCATION_NOTIFICATION_INDEX] = MyPhotosAdapterItem.ObtainCurrentLocationItem()
+        notifyItemChanged(HEADER_OBTAIN_CURRENT_LOCATION_NOTIFICATION_INDEX)
     }
 
     fun hideObtainCurrentLocationNotification() {
+        if (headerItems[HEADER_OBTAIN_CURRENT_LOCATION_NOTIFICATION_INDEX] is MyPhotosAdapterItem.EmptyItem) {
+            return
+        }
+
+        headerItems[HEADER_OBTAIN_CURRENT_LOCATION_NOTIFICATION_INDEX] = MyPhotosAdapterItem.EmptyItem()
+        notifyItemChanged(HEADER_OBTAIN_CURRENT_LOCATION_NOTIFICATION_INDEX)
     }
 
     fun addMyPhotos(photos: List<MyPhoto>) {
@@ -73,21 +83,21 @@ class MyPhotosAdapter(
         }
     }
 
-    fun addMyPhoto(photo: MyPhoto) {
-        if (!duplicatesCheckerSet.add(photo.id)) {
+    fun updateMyPhoto(photo: MyPhoto) {
+        if (!duplicatesCheckerSet.contains(photo.id)) {
             return
         }
+
+        val photoIndex = getPhotoGlobalIndexById(photo.id)
 
         when (photo.photoState) {
             PhotoState.PHOTO_QUEUED_UP,
             PhotoState.PHOTO_UPLOADING -> {
-                addQueuedUpAdapterItem(headerItems.size, photo)
+                queuedUpItems[photoIndex]
             }
             PhotoState.FAILED_TO_UPLOAD -> {
-                addFailedToUploadAdapterItem(headerItems.size + queuedUpItems.size, photo)
             }
             PhotoState.PHOTO_UPLOADED -> {
-                addUploadedAdapterItem(headerItems.size + queuedUpItems.size + failedToUploadItems.size, photo)
             }
 
             PhotoState.PHOTO_TAKEN -> {
@@ -96,19 +106,12 @@ class MyPhotosAdapter(
         }
     }
 
-    private fun addQueuedUpAdapterItem(index: Int, photo: MyPhoto) {
-        queuedUpItems.add(0, MyPhotosAdapterItem.MyPhotoItem(photo))
-        notifyItemInserted(index)
-    }
+    fun addMyPhoto(photo: MyPhoto) {
+        if (!duplicatesCheckerSet.add(photo.id)) {
+            return
+        }
 
-    private fun addFailedToUploadAdapterItem(index: Int, photo: MyPhoto) {
-        failedToUploadItems.add(0, MyPhotosAdapterItem.FailedToUploadItem(photo))
-        notifyItemInserted(index)
-    }
-
-    private fun addUploadedAdapterItem(index: Int, photo: MyPhoto) {
-        uploadedItems.add(0, MyPhotosAdapterItem.MyPhotoItem(photo))
-        notifyItemInserted(index)
+        updateAdapterItemById(photo.id, { _ -> photo })
     }
 
     private fun isPhotoAlreadyAdded(photoId: Long): Boolean {

@@ -107,29 +107,31 @@ class MyPhotosFragment : BaseFragment() {
         compositeDisposable += adapterButtonsClickSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
-            .flatMap { adapterButtonsClickEvent ->
-                val startUploadingService = when (adapterButtonsClickEvent) {
-                    is MyPhotosAdapter.MyPhotosAdapterButtonClickEvent.DeleteButtonClick -> {
-                        viewModel.deletePhotoById(adapterButtonsClickEvent.photo.id).blockingAwait()
-                        adapter.removePhotoById(adapterButtonsClickEvent.photo.id)
-                        false
-                    }
-
-                    is MyPhotosAdapter.MyPhotosAdapterButtonClickEvent.RetryButtonClick -> {
-                        viewModel.changePhotoState(adapterButtonsClickEvent.photo.id, PhotoState.PHOTO_QUEUED_UP).blockingAwait()
-                        adapter.removePhotoById(adapterButtonsClickEvent.photo.id)
-                        adapter.addMyPhoto(adapterButtonsClickEvent.photo.also { it.photoState = PhotoState.PHOTO_QUEUED_UP })
-                        true
-                    }
-                }
-
-                return@flatMap Observable.just(startUploadingService)
-            }
+            .flatMap(this::handleAdapterButtonClickEvents)
             .filter { startUploadingService -> startUploadingService }
             .map { Unit }
             .doOnNext { viewModel.checkShouldStartPhotoUploadingService(true) }
             .doOnError { Timber.e(it) }
             .subscribe()
+    }
+
+    private fun handleAdapterButtonClickEvents(adapterButtonsClickEvent: MyPhotosAdapter.MyPhotosAdapterButtonClickEvent): Observable<Boolean>? {
+        val startUploadingService = when (adapterButtonsClickEvent) {
+            is MyPhotosAdapter.MyPhotosAdapterButtonClickEvent.DeleteButtonClick -> {
+                viewModel.deletePhotoById(adapterButtonsClickEvent.photo.id).blockingAwait()
+                adapter.removePhotoById(adapterButtonsClickEvent.photo.id)
+                false
+            }
+
+            is MyPhotosAdapter.MyPhotosAdapterButtonClickEvent.RetryButtonClick -> {
+                viewModel.changePhotoState(adapterButtonsClickEvent.photo.id, PhotoState.PHOTO_QUEUED_UP).blockingAwait()
+                adapter.removePhotoById(adapterButtonsClickEvent.photo.id)
+                adapter.addMyPhoto(adapterButtonsClickEvent.photo.also { it.photoState = PhotoState.PHOTO_QUEUED_UP })
+                true
+            }
+        }
+
+        return Observable.just(startUploadingService)
     }
 
     private fun onViewStateChanged(viewStateEvent: MyPhotosFragmentViewStateEvent) {
@@ -176,22 +178,19 @@ class MyPhotosFragment : BaseFragment() {
                     scrollRecyclerViewToTop()
                 }
                 is PhotoUploadingEvent.OnPhotoUploadingStart -> {
-                    //TODO: make new adapter method "update photo"
-                    adapter.removePhotoById(event.myPhoto.id)
-                    adapter.addMyPhoto(event.myPhoto.also { it.photoState = PhotoState.PHOTO_UPLOADING })
+                    adapter.updateMyPhoto(event.myPhoto.also { it.photoState = PhotoState.PHOTO_UPLOADING })
                 }
                 is PhotoUploadingEvent.OnProgress -> {
-                    adapter.updatePhotoProgress(event.photoId, event.progress)
+                    adapter.addMyPhoto(event.photo)
+                    adapter.updatePhotoProgress(event.photo.id, event.progress)
                 }
                 is PhotoUploadingEvent.OnUploaded -> {
-                    adapter.removePhotoById(event.myPhoto.id)
-                    adapter.addMyPhoto(event.myPhoto.also { it.photoState = PhotoState.PHOTO_UPLOADED })
-                }
-                is PhotoUploadingEvent.OnEnd -> {
+                    adapter.updateMyPhoto(event.myPhoto.also { it.photoState = PhotoState.PHOTO_UPLOADED })
                 }
                 is PhotoUploadingEvent.OnFailedToUpload -> {
-                    adapter.removePhotoById(event.myPhoto.id)
-                    adapter.addMyPhoto(event.myPhoto)
+                    adapter.updateMyPhoto(event.myPhoto.also { it.photoState = PhotoState.FAILED_TO_UPLOAD })
+                }
+                is PhotoUploadingEvent.OnEnd -> {
                 }
                 is PhotoUploadingEvent.OnUnknownError -> {
                     adapter.clear()
