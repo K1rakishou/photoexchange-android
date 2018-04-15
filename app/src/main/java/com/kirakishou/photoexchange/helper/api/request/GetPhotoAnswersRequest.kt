@@ -20,6 +20,7 @@ class GetPhotoAnswersRequest<T : PhotoAnswerResponse>(
 
     @Suppress("UNCHECKED_CAST")
     override fun execute(): Single<T> {
+        //TODO: add OnApiErrorSingle
         return Single.fromCallable {
             try {
                 val response = apiService.getPhotoAnswers(photoNames, userId).blockingGet() as Response<T>

@@ -31,6 +31,7 @@ class UploadPhotoRequest<T : StatusResponse>(
 
     @Suppress("UNCHECKED_CAST")
     override fun execute(): Single<T> {
+        //TODO: add OnApiErrorSingle
         return Single.fromCallable {
             val packet = SendPhotoPacket(location.lon, location.lat, userId)
             val photoFile = File(photoFilePath)
