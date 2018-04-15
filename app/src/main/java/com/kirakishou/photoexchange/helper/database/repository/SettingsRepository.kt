@@ -14,7 +14,7 @@ class SettingsRepository(
     private val settingsDao = database.settingsDao()
 
     fun generateUserIdIfNotExists() {
-        if (findUserId() == null) {
+        if (getUserId() == null) {
             saveUserId(Utils.generateUserId())
         }
     }
@@ -23,7 +23,7 @@ class SettingsRepository(
         return settingsDao.insert(SettingEntity(USER_ID_SETTING, userId)) > 0
     }
 
-    fun findUserId(): String? {
+    fun getUserId(): String? {
         return settingsDao.findByName(USER_ID_SETTING)?.settingValue
     }
 

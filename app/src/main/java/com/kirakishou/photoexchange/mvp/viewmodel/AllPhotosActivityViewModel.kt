@@ -40,6 +40,7 @@ class AllPhotosActivityViewModel(
     val onUploadingPhotoEventSubject = PublishSubject.create<PhotoUploadingEvent>().toSerialized()
     val myPhotosFragmentViewStateSubject = PublishSubject.create<MyPhotosFragmentViewStateEvent>().toSerialized()
     val startPhotoUploadingServiceSubject = PublishSubject.create<Unit>().toSerialized()
+    val startFindPhotoAnswerServiceSubject = PublishSubject.create<String>().toSerialized()
 
     override fun onAttached() {
         Timber.tag(tag).d("onAttached()")
@@ -51,20 +52,27 @@ class AllPhotosActivityViewModel(
         super.onCleared()
     }
 
-    private fun updateMyPhotosFragmentViewState(stateEvent: MyPhotosFragmentViewStateEvent) {
-        myPhotosFragmentViewStateSubject.onNext(stateEvent)
-    }
-
     fun checkShouldStartPhotoUploadingService(updateLastLocation: Boolean) {
-        compositeDisposable += Observable.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
+        val queuedUpPhotosCountObservable = Observable.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
             .subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
-            .filter { count -> count > 0 }
+            .publish()
+            .autoConnect(2)
+
+        compositeDisposable += queuedUpPhotosCountObservable
+            .filter { count -> count == 0L }
             .delay(CHECK_SHOULD_START_SERVICE_DELAY_MS, TimeUnit.MILLISECONDS)
             .debounce(SERVICE_START_DEBOUNCE_TIME_MS, TimeUnit.MILLISECONDS)
-            .doOnNext { updateMyPhotosFragmentViewState(MyPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification()) }
+            .map { settingsRepository.getUserId()!! }
+            .subscribe(startFindPhotoAnswerServiceSubject::onNext, startFindPhotoAnswerServiceSubject::onError)
+
+        compositeDisposable += queuedUpPhotosCountObservable
+            .filter { count -> count > 0L }
+            .delay(CHECK_SHOULD_START_SERVICE_DELAY_MS, TimeUnit.MILLISECONDS)
+            .debounce(SERVICE_START_DEBOUNCE_TIME_MS, TimeUnit.MILLISECONDS)
+            .doOnNext { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification()) }
             .doOnNext { updateLastLocation(updateLastLocation).blockingAwait() }
-            .doOnNext { updateMyPhotosFragmentViewState(MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification()) }
+            .doOnNext { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification()) }
             .map { Unit }
             .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)
     }

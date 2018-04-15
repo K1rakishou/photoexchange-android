@@ -28,6 +28,7 @@ import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
+import com.kirakishou.photoexchange.service.FindPhotoAnswerService
 import com.kirakishou.photoexchange.service.UploadPhotoService
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
 import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
@@ -146,6 +147,14 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             .doOnNext { startUploadingService() }
             .doOnError { Timber.e(it) }
             .subscribe()
+
+        compositeDisposable += viewModel.startFindPhotoAnswerServiceSubject
+            .subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.io())
+            .doOnNext { startFindingService(it) }
+            .doOnError { Timber.e(it) }
+            .subscribe()
+
     }
 
     override fun onActivityDestroy() {
@@ -243,6 +252,14 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         permissionManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
+    private fun startFindingService(userId: String) {
+        if (FindPhotoAnswerService.isAlreadyRunning(this)) {
+            return
+        }
+
+        FindPhotoAnswerService.scheduleJob(userId, this)
     }
 
     private fun startUploadingService() {

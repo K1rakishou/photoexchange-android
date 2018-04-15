@@ -27,6 +27,9 @@
             </intent-filter>
         </activity>
 
+        <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity" />
+        <activity android:name="com.kirakishou.photoexchange.ui.activity.AllPhotosActivity" />
+
         <meta-data
             android:name="io.fabric.ApiKey"
             android:value="25e246425284f02064665b2dc30323200c19a724" />
@@ -34,12 +37,14 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyAGVBH_OihoUtvM-VCqQKOvcp5n_3kUs1U" />
 
-        <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity" />
-        <activity android:name="com.kirakishou.photoexchange.ui.activity.AllPhotosActivity"/>
-
         <service
             android:name="com.kirakishou.photoexchange.service.UploadPhotoService"
             android:exported="false" />
+
+        <service
+            android:name="com.kirakishou.photoexchange.service.FindPhotoAnswerService"
+            android:exported="true"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
     </application>
 
 </manifest>
