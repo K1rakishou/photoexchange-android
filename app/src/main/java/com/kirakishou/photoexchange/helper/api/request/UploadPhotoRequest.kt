@@ -3,23 +3,24 @@ package com.kirakishou.photoexchange.helper.api.request
 import com.google.gson.Gson
 import com.kirakishou.photoexchange.helper.ProgressRequestBody
 import com.kirakishou.photoexchange.helper.api.ApiService
+import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
+import com.kirakishou.photoexchange.mvp.model.exception.ApiException
 import com.kirakishou.photoexchange.mvp.model.net.packet.SendPhotoPacket
-import com.kirakishou.photoexchange.mvp.model.net.response.StatusResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
 import okhttp3.MultipartBody
-import retrofit2.Response
-import timber.log.Timber
 import java.io.File
+import java.net.SocketTimeoutException
+import java.util.concurrent.TimeoutException
 
 /**
  * Created by kirakishou on 3/17/2018.
  */
-class UploadPhotoRequest<T : StatusResponse>(
+class UploadPhotoRequest<T>(
     private val photoFilePath: String,
     private val location: LonLat,
     private val userId: String,
@@ -31,50 +32,35 @@ class UploadPhotoRequest<T : StatusResponse>(
 
     @Suppress("UNCHECKED_CAST")
     override fun execute(): Single<T> {
-        //TODO: add OnApiErrorSingle
-        return Single.fromCallable {
+        val single = Single.fromCallable {
             val packet = SendPhotoPacket(location.lon, location.lat, userId)
             val photoFile = File(photoFilePath)
 
             if (!photoFile.isFile || !photoFile.exists()) {
-                return@fromCallable UploadPhotoResponse.error(ErrorCode.NO_PHOTO_FILE_ON_DISK) as T
+                throw NoPhotoFileOnDiskException()
             }
 
-            val body = getBody(photoFile, packet, callback)
-
-            try {
-                val response = apiService.uploadPhoto(body.part(0), body.part(1))
-                    .blockingGet() as Response<T>
-
-                return@fromCallable extractResponse(response)
-            } catch (error: Throwable) {
-                return@fromCallable UploadPhotoResponse.error(ErrorCode.UNKNOWN_ERROR) as T
-            }
-
-        }.subscribeOn(schedulerProvider.BG())
-            .observeOn(schedulerProvider.BG())
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun extractResponse(response: Response<T>): T {
-        if (!response.isSuccessful) {
-            try {
-                val responseJson = response.errorBody()!!.string()
-                val error = gson.fromJson<StatusResponse>(responseJson, StatusResponse::class.java)
-
-                //may happen in some rare cases
-                return if (error?.serverErrorCode == null) {
-                    UploadPhotoResponse.error(ErrorCode.BAD_SERVER_RESPONSE) as T
-                } else {
-                    UploadPhotoResponse.error(ErrorCode.from(error.serverErrorCode)) as T
-                }
-            } catch (e: Throwable) {
-                Timber.e(e)
-                return UploadPhotoResponse.error(ErrorCode.UNKNOWN_ERROR) as T
-            }
+            return@fromCallable getBody(photoFile, packet, callback)
         }
 
-        return response.body()!!
+        return single
+            .subscribeOn(schedulerProvider.BG())
+            .observeOn(schedulerProvider.BG())
+            .flatMap { body ->
+                return@flatMap apiService.uploadPhoto(body.part(0), body.part(1))
+                    .lift(OnApiErrorSingle<UploadPhotoResponse>(gson, UploadPhotoResponse::class.java))
+                    .onErrorReturn(this::extractError) as Single<T>
+            }
+    }
+
+    private fun extractError(error: Throwable): UploadPhotoResponse {
+        return when (error) {
+            is ApiException -> UploadPhotoResponse.error(error.errorCode)
+            is SocketTimeoutException,
+            is TimeoutException -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.Local.Timeout())
+            is NoPhotoFileOnDiskException -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.Local.NoPhotoFileOnDisk())
+            else -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.Remote.UnknownError())
+        }
     }
 
     private fun getBody(photoFile: File, packet: SendPhotoPacket, callback: UploadPhotosUseCase.PhotoUploadProgressCallback): MultipartBody {
@@ -86,4 +72,6 @@ class UploadPhotoRequest<T : StatusResponse>(
             .addFormDataPart("packet", packetJson)
             .build()
     }
+
+    class NoPhotoFileOnDiskException : Exception()
 }

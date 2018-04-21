@@ -26,10 +26,8 @@ import io.fotoapparat.view.CameraView
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.io.File
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
@@ -57,8 +55,37 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
     override fun getContentView(): Int = R.layout.activity_take_photo
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
-        initViews()
+    }
+
+    override fun onInitRx() {
+        compositeDisposable += RxView.clicks(takePhotoButton)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .debounceClicks()
+            .doOnNext { viewModel.takePhoto() }
+            .subscribe()
+
+        compositeDisposable += RxView.clicks(ivShowAllPhotos)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .debounceClicks()
+            .doOnNext { runActivity(AllPhotosActivity::class.java) }
+            .subscribe()
+    }
+
+    override fun onActivityStart() {
+    }
+
+    override fun onResume() {
+        super.onResume()
+
         checkPermissions()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        cameraProvider.stopCamera()
+    }
+
+    override fun onActivityStop() {
     }
 
     private fun checkPermissions() {
@@ -80,25 +107,16 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
                 return@askForPermission
             }
 
-            onPermissionsGranted()
+            showControls()
+            startCamera()
         }
     }
 
-    private fun initViews() {
-        compositeDisposable += RxView.clicks(takePhotoButton)
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .debounceClicks()
-            .doOnNext { viewModel.takePhoto() }
-            .subscribe()
+    private fun startCamera() {
+        if (cameraProvider.isStarted()) {
+            return
+        }
 
-        compositeDisposable += RxView.clicks(ivShowAllPhotos)
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .debounceClicks()
-            .doOnNext { runActivity(AllPhotosActivity::class.java) }
-            .subscribe()
-    }
-
-    private fun onPermissionsGranted() {
         cameraProvider.provideCamera(cameraView)
 
         if (!cameraProvider.isAvailable()) {
@@ -107,21 +125,6 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
         }
 
         cameraProvider.startCamera()
-    }
-
-    override fun onActivityDestroy() {
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        showControls()
-        cameraProvider.startCamera()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        cameraProvider.stopCamera()
     }
 
     private fun showAppCannotWorkWithoutCameraPermissionDialog() {

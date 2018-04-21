@@ -18,4 +18,8 @@ open class PhotoAnswerRepository(
         val photoAnswerEntity = PhotoAnswerMapper.toPhotoAnswerEntity(photoAnswerJsonObject)
         return insert(photoAnswerEntity)
     }
+
+    fun countAll(): Int {
+        return photoAnswerDao.countAll().toInt()
+    }
 }

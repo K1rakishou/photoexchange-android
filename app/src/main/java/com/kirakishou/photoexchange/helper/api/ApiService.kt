@@ -17,7 +17,7 @@ interface ApiService {
     fun uploadPhoto(@Part packet: MultipartBody.Part,
                     @Part photo: MultipartBody.Part): Single<Response<UploadPhotoResponse>>
 
-    @GET("/get_answer/{photo_names}/{user_id}")
+    @GET("/v1/api/get_answer/{photo_names}/{user_id}")
     fun getPhotoAnswers(@Path("photo_names") photoNames: String,
                         @Path("user_id") userId: String): Single<Response<PhotoAnswerResponse>>
 }

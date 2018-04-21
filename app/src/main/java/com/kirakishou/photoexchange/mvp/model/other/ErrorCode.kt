@@ -4,65 +4,123 @@ package com.kirakishou.photoexchange.mvp.model.other
  * Created by kirakishou on 7/26/2017.
  */
 
-//sealed class ErrorCode(val value: Int) {
-//
-//    fun toInt(): Int {
-//        return this.value
-//    }
-//
-//    sealed class UploadPhotoErrors(value: Int) : ErrorCode(value) {
-//        class UnknownError : UploadPhotoErrors(-1)
-//        class Ok : UploadPhotoErrors(0)
-//        class BadRequest : UploadPhotoErrors(1)
-//        class DatabaseError : UploadPhotoErrors(2)
-//    }
-//
-//    sealed class GetPhotoAnswerErrors(value: Int) : ErrorCode(value) {
-//        class UnknownError : GetPhotoAnswerErrors(-1)
-//        class Ok : GetPhotoAnswerErrors(0)
-//        class BadRequest : GetPhotoAnswerErrors(1)
-//        class DatabaseError : GetPhotoAnswerErrors(2)
-//        class NoPhotosInRequest : GetPhotoAnswerErrors(3)
-//        class TooManyPhotosRequested : GetPhotoAnswerErrors(4)
-//        class NoPhotosToSendBack : GetPhotoAnswerErrors(5)
-//        class NotEnoughPhotosUploaded : GetPhotoAnswerErrors(6)
-//    }
-//
-//    sealed class MarkPhotoAsReceivedErrors(value: Int) : ErrorCode(value) {
-//        class UnknownError : MarkPhotoAsReceivedErrors(-1)
-//        class Ok : MarkPhotoAsReceivedErrors(0)
-//        class BadRequest : MarkPhotoAsReceivedErrors(1)
-//        class BadPhotoId : MarkPhotoAsReceivedErrors(2)
-//    }
-//}
+sealed class ErrorCode(val value: Int) {
 
-enum class ErrorCode(val value: Int) {
-    NO_PHOTO_FILE_ON_DISK(-4),
-    BAD_SERVER_RESPONSE(-3),
-    BAD_ERROR_CODE(-2),
-    UNKNOWN_ERROR(-1),
-    OK(0),
-    BAD_REQUEST(1),
-    REPOSITORY_ERROR(2),
-    DISK_ERROR(3),
-    NO_PHOTOS_TO_SEND_BACK(4),
-    BAD_PHOTO_ID(5),
-    UPLOAD_MORE_PHOTOS(6),
-    NOT_FOUND(7);
+    fun toInt(): Int {
+        return this.value
+    }
+
+    sealed class UploadPhotoErrors(value: Int) : ErrorCode(value) {
+        sealed class Remote(value: Int) : UploadPhotoErrors(value) {
+            class UnknownError : Remote(-1)
+            class Ok : Remote(0)
+            class BadRequest : Remote(1)
+            class DatabaseError : Remote(2)
+        }
+
+        sealed class Local(value: Int) : UploadPhotoErrors(value) {
+            class BadServerResponse(val message: String? = null) : Local(-1000)
+            class NoPhotoFileOnDisk : Local(-1001)
+            class Timeout : Local(-1002)
+        }
+    }
+
+    sealed class GetPhotoAnswerErrors(value: Int) : ErrorCode(value) {
+        sealed class Remote(value: Int) : GetPhotoAnswerErrors(value) {
+            class UnknownError : Remote(-1)
+            class Ok : Remote(0)
+            class BadRequest : Remote(1)
+            class DatabaseError : Remote(2)
+            class NoPhotosInRequest : Remote(3)
+            class TooManyPhotosRequested : Remote(4)
+            class NoPhotosToSendBack : Remote(5)
+            class NotEnoughPhotosUploaded : Remote(6)
+        }
+
+        sealed class Local(value: Int) : GetPhotoAnswerErrors(value) {
+            class BadServerResponse(val message: String? = null) : Local(-1000)
+            class Timeout : Local(-1001)
+        }
+    }
+
+    sealed class MarkPhotoAsReceivedErrors(value: Int) : ErrorCode(value) {
+        sealed class Remote(value: Int) : MarkPhotoAsReceivedErrors(value) {
+            class UnknownError : Remote(-1)
+            class Ok : Remote(0)
+            class BadRequest : Remote(1)
+            class BadPhotoId : Remote(2)
+        }
+
+        sealed class Local(value: Int) : MarkPhotoAsReceivedErrors(value) {
+            class BadServerResponse(val message: String? = null) : Local(-1000)
+            class Timeout : Local(-1001)
+        }
+    }
 
     companion object {
-        fun from(value: Int?): ErrorCode {
-            if (value == null) {
-                return BAD_ERROR_CODE
-            }
+        inline fun <reified T> fromInt(errorCodeInt: Int?): T {
+            when (T::class.java) {
+                UploadPhotoErrors::class.java -> {
+                    val errorCode = when (errorCodeInt) {
+                        //local errors
+                        null,
+                        -1000 -> UploadPhotoErrors.Local.BadServerResponse()
+                        -1001 -> UploadPhotoErrors.Local.NoPhotoFileOnDisk()
+                        -1002 -> UploadPhotoErrors.Local.Timeout()
 
-            for (code in ErrorCode.values()) {
-                if (code.value == value) {
-                    return code
+                        //remote errors
+                        -1 -> UploadPhotoErrors.Remote.UnknownError()
+                        0 -> UploadPhotoErrors.Remote.Ok()
+                        1 -> UploadPhotoErrors.Remote.BadRequest()
+                        2 -> UploadPhotoErrors.Remote.DatabaseError()
+                        else -> throw IllegalArgumentException("Unknown errorCodeInt $errorCodeInt")
+                    }
+
+                    return errorCode as T
                 }
-            }
 
-            throw IllegalArgumentException("Unknown value: $value")
+                GetPhotoAnswerErrors::class.java -> {
+                    val errorCode = when (errorCodeInt) {
+                        //local errors
+                        null,
+                        -1000 -> GetPhotoAnswerErrors.Local.BadServerResponse()
+                        -1001 -> GetPhotoAnswerErrors.Local.Timeout()
+
+                        //remote errors
+                        -1 -> GetPhotoAnswerErrors.Remote.UnknownError()
+                        0 -> GetPhotoAnswerErrors.Remote.Ok()
+                        1 -> GetPhotoAnswerErrors.Remote.BadRequest()
+                        2 -> GetPhotoAnswerErrors.Remote.DatabaseError()
+                        3 -> GetPhotoAnswerErrors.Remote.NoPhotosInRequest()
+                        4 -> GetPhotoAnswerErrors.Remote.TooManyPhotosRequested()
+                        5 -> GetPhotoAnswerErrors.Remote.NoPhotosToSendBack()
+                        6 -> GetPhotoAnswerErrors.Remote.NotEnoughPhotosUploaded()
+                        else -> throw IllegalArgumentException("Unknown errorCodeInt $errorCodeInt")
+                    }
+
+                    return errorCode as T
+                }
+
+                MarkPhotoAsReceivedErrors::class.java -> {
+                    val errorCode = when (errorCodeInt) {
+                        //local errors
+                        null,
+                        -1000 -> MarkPhotoAsReceivedErrors.Local.BadServerResponse()
+                        -1001 -> MarkPhotoAsReceivedErrors.Local.Timeout()
+
+                        //remote errors
+                        -1 -> MarkPhotoAsReceivedErrors.Remote.UnknownError()
+                        0 -> MarkPhotoAsReceivedErrors.Remote.Ok()
+                        1 -> MarkPhotoAsReceivedErrors.Remote.BadRequest()
+                        2 -> MarkPhotoAsReceivedErrors.Remote.BadPhotoId()
+                        else -> throw IllegalArgumentException("Unknown errorCodeInt $errorCodeInt")
+                    }
+
+                    return errorCode as T
+                }
+
+                else -> throw IllegalArgumentException("Unknown response class ${T::class.java}")
+            }
         }
     }
 }

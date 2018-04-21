@@ -33,20 +33,30 @@ class UploadPhotosUseCase(
                 try {
                     if (BitmapUtils.rotatePhoto(photo.photoTempFile, rotatedPhotoFile)) {
                         val response = uploadPhoto(rotatedPhotoFile, location, userId, callbacks, photo).blockingGet()
+                        val errorCode = ErrorCode.fromInt<ErrorCode.UploadPhotoErrors>(response.serverErrorCode)
+                        when (errorCode) {
+                            is ErrorCode.UploadPhotoErrors.Remote.Ok -> {
+                                if (!handlePhotoUploaded(photo, response, callbacks)) {
+                                    handleFailedPhoto(photo, callbacks)
+                                }
+                            }
 
-                        val errorCode = ErrorCode.from(response.serverErrorCode)
-                        if (errorCode == ErrorCode.OK) {
-                            if (handlePhotoUploaded(photo, response, callbacks)) {
-                                continue
+                            else -> {
+                                val message = when (errorCode) {
+                                    is ErrorCode.UploadPhotoErrors.Local.BadServerResponse -> "BadServerResponse: ${errorCode.message}"
+                                    is ErrorCode.UploadPhotoErrors.Local.Timeout -> "Timeout"
+                                    is ErrorCode.UploadPhotoErrors.Local.NoPhotoFileOnDisk -> "Photo does not exist on disk!"
+                                    else -> null
+                                }
+
+                                handleFailedPhoto(photo, callbacks, message)
                             }
                         }
                     }
                 } finally {
                     FileUtils.deleteFile(rotatedPhotoFile)
                 }
-
-                handleFailedPhoto(photo, callbacks)
-            } catch (error: Throwable) {
+            } catch (error: Exception) {
                 Timber.e(error)
                 handleFailedPhoto(photo, callbacks)
             }
@@ -71,9 +81,8 @@ class UploadPhotosUseCase(
         photo.photoState = PhotoState.PHOTO_UPLOADED
         photo.photoName = response.photoName
         photo.photoTempFile = null
-        callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnUploaded(photo))
 
-        return database.transactional {
+        val dbResult = database.transactional {
             val deleteResult = myPhotosRepository.deleteTempFileById(photo.id)
             val updateResult1 = myPhotosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_UPLOADED)
             val updateResult2 = myPhotosRepository.updateSetTempFileId(photo.id, null)
@@ -81,13 +90,19 @@ class UploadPhotosUseCase(
 
             return@transactional deleteResult && updateResult1 && updateResult2 && updateResult3
         }
+
+        if (dbResult) {
+            callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnUploaded(photo))
+        }
+
+        return dbResult
     }
 
-    private fun handleFailedPhoto(photo: MyPhoto, callbacks: WeakReference<UploadPhotoServiceCallbacks>?) {
+    private fun handleFailedPhoto(photo: MyPhoto, callbacks: WeakReference<UploadPhotoServiceCallbacks>?, errorMessage: String? = null) {
         myPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
         photo.photoState = PhotoState.FAILED_TO_UPLOAD
 
-        callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnFailedToUpload(photo))
+        callbacks?.get()?.onUploadingEvent(PhotoUploadingEvent.OnFailedToUpload(photo, errorMessage))
     }
 
     interface PhotoUploadProgressCallback {

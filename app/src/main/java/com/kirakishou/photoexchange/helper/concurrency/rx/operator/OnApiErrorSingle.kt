@@ -1,10 +1,11 @@
 package com.kirakishou.photoexchange.helper.concurrency.rx.operator
 
 import com.google.gson.Gson
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.model.exception.ApiException
-import com.kirakishou.photoexchange.mvp.model.exception.BadServerResponseException
+import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.StatusResponse
+import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
+import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.SingleObserver
 import io.reactivex.SingleOperator
 import io.reactivex.disposables.Disposable
@@ -16,14 +17,15 @@ import timber.log.Timber
  */
 
 /**
- *
- * Whenever HttpException occurs this class returns converted errorBody as an ApiException with ErrorCode and HttpStatus
- *
+ * Whenever HttpException occurs this class returns converted errorBody as an ApiException with ErrorCode
+ * Or ApiException with BadServerResponse and HttpStatus when server didn't return any errorCode in JSON
  * */
-class OnApiErrorSingle<T>(val gson: Gson) : SingleOperator<T, Response<T>> {
+class OnApiErrorSingle<T : StatusResponse>(
+    val gson: Gson,
+    val clazz: Class<*>
+) : SingleOperator<T, Response<T>> {
 
     override fun apply(observer: SingleObserver<in T>): SingleObserver<in Response<T>> {
-
         return object : SingleObserver<Response<T>> {
             override fun onError(e: Throwable) {
                 observer.onError(e)
@@ -37,14 +39,14 @@ class OnApiErrorSingle<T>(val gson: Gson) : SingleOperator<T, Response<T>> {
                 if (!response.isSuccessful) {
                     try {
                         val responseJson = response.errorBody()!!.string()
-                        val error = gson.fromJson<StatusResponse>(responseJson, StatusResponse::class.java)
-                        Timber.d(responseJson)
+                        val error = gson.fromJson<T>(responseJson, StatusResponse::class.java)
 
-                        //may happen in some rare cases
+                        //may happen in some rare cases (like when client and server have endpoints with different parameters)
                         if (error?.serverErrorCode == null) {
-                            observer.onError(BadServerResponseException())
+                            val message = "Unknown server error: HttpStatus = ${response.code()}"
+                            observer.onError(ApiException(getBadErrorCodeByClass(clazz, message)))
                         } else {
-                            observer.onError(ApiException(ErrorCode.from(error.serverErrorCode)))
+                            observer.onError(ApiException(getErrorCode(error.serverErrorCode!!)))
                         }
                     } catch (e: Exception) {
                         observer.onError(e)
@@ -53,6 +55,19 @@ class OnApiErrorSingle<T>(val gson: Gson) : SingleOperator<T, Response<T>> {
                     observer.onSuccess(response.body()!!)
                 }
             }
+        }
+    }
+
+    private fun getErrorCode(errorCodeInt: Int): ErrorCode {
+        return ErrorCode.fromInt(errorCodeInt)
+    }
+
+    private fun getBadErrorCodeByClass(clazz: Class<*>, message: String): ErrorCode {
+        return when (clazz) {
+            UploadPhotoResponse::class.java -> ErrorCode.UploadPhotoErrors.Local.BadServerResponse(message)
+            PhotoAnswerResponse::class.java -> ErrorCode.GetPhotoAnswerErrors.Local.BadServerResponse(message)
+//            MarkPhotoAsReceivedResponse -> ErrorCode.MarkPhotoAsReceivedErrors.Local.BadServerResponse()
+            else -> throw IllegalArgumentException("Bad class: $clazz")
         }
     }
 }

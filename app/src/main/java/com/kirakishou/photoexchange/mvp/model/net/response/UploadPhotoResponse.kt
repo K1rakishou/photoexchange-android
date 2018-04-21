@@ -15,7 +15,7 @@ class UploadPhotoResponse(
 
     errorCode: ErrorCode
 
-) : StatusResponse(errorCode.value) {
+) : StatusResponse(errorCode.value, errorCode) {
 
     companion object {
         fun error(errorCode: ErrorCode): UploadPhotoResponse {

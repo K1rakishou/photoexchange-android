@@ -24,16 +24,20 @@ import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.helper.location.MyLocationManager
 import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
+import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.service.FindPhotoAnswerService
 import com.kirakishou.photoexchange.service.UploadPhotoService
+import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
 import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
 import com.kirakishou.photoexchange.ui.viewstate.AllPhotosActivityViewState
+import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
+import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
@@ -46,6 +50,7 @@ import javax.inject.Inject
 
 class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSelectedListener,
     ViewPager.OnPageChangeListener, PhotoUploadingCallback {
+
 
     @BindView(R.id.iv_close_button)
     lateinit var ivCloseActivityButton: ImageButton
@@ -81,8 +86,47 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     override fun getContentView(): Int = R.layout.activity_all_photos
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
-        initRx()
         checkPermissions(savedInstanceState)
+    }
+
+    override fun onInitRx() {
+        compositeDisposable += viewModel.startPhotoUploadingServiceSubject
+            .subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.io())
+            .doOnNext { startUploadingService() }
+            .doOnError { Timber.e(it) }
+            .subscribe()
+
+        compositeDisposable += viewModel.startFindPhotoAnswerServiceSubject
+            .subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.io())
+            .filter { !FindPhotoAnswerService.isAlreadyRunning(this) }
+            .doOnNext { startFindingService() }
+            .doOnError { Timber.e(it) }
+            .subscribe()
+
+        compositeDisposable += RxView.clicks(ivCloseActivityButton)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .debounceClicks()
+            .doOnNext { finish() }
+            .subscribe()
+
+        compositeDisposable += RxView.clicks(takePhotoButton)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .debounceClicks()
+            .doOnNext { finish() }
+            .subscribe()
+    }
+
+    override fun onActivityStart() {
+    }
+
+    override fun onActivityStop() {
+        service?.let { srvc ->
+            srvc.detachCallback()
+            unbindService(connection)
+            service = null
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
@@ -140,60 +184,25 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         }
     }
 
-    private fun initRx() {
-        compositeDisposable += viewModel.startPhotoUploadingServiceSubject
-            .subscribeOn(Schedulers.io())
-            .observeOn(Schedulers.io())
-            .doOnNext { startUploadingService() }
-            .doOnError { Timber.e(it) }
-            .subscribe()
-
-        compositeDisposable += viewModel.startFindPhotoAnswerServiceSubject
-            .subscribeOn(Schedulers.io())
-            .observeOn(Schedulers.io())
-            .doOnNext { startFindingService() }
-            .doOnError { Timber.e(it) }
-            .subscribe()
-
-    }
-
-    override fun onActivityDestroy() {
-        service?.let { srvc ->
-            srvc.detachCallback()
-            unbindService(connection)
-            service = null
-        }
-    }
-
     private fun initViews() {
         initTabs()
-
-        compositeDisposable += RxView.clicks(ivCloseActivityButton)
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .debounceClicks()
-            .doOnNext { finish() }
-            .subscribe()
-
-        compositeDisposable += RxView.clicks(takePhotoButton)
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .debounceClicks()
-            .doOnNext { finish() }
-            .subscribe()
     }
 
     override fun getCurrentLocation(): Single<LonLat> {
-        return Single.fromCallable {
+        val resultSingle = Single.fromCallable {
             if (!locationManager.isGpsEnabled()) {
                 return@fromCallable LonLat.empty()
             }
 
             return@fromCallable RxLocationManager.start(locationManager)
                 .observeOn(Schedulers.io())
-                .delay(GPS_DELAY_MS, TimeUnit.MILLISECONDS)
                 .timeout(GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS, TimeUnit.MILLISECONDS)
                 .onErrorReturnItem(LonLat.empty())
                 .blockingFirst()
         }
+
+        return resultSingle
+            .delay(GPS_DELAY_MS, TimeUnit.MILLISECONDS)
     }
 
     private fun initTabs() {
@@ -243,6 +252,37 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
     override fun onUploadingEvent(event: PhotoUploadingEvent) {
         viewModel.forwardUploadPhotoEvent(event)
+
+        if (event is PhotoUploadingEvent.OnEnd) {
+            viewModel.checkShouldStartFindPhotoAnswersService()
+        }
+    }
+
+    override fun handleMyPhotoFragmentAdapterButtonClicks(adapterButtonsClickEvent: MyPhotosAdapter.MyPhotosAdapterButtonClickEvent): Observable<Boolean> {
+        return when (adapterButtonsClickEvent) {
+            is MyPhotosAdapter.MyPhotosAdapterButtonClickEvent.DeleteButtonClick -> {
+                Observable.fromCallable { viewModel.deletePhotoById(adapterButtonsClickEvent.photo.id).blockingAwait() }
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnNext {
+                        viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.RemovePhotoById(adapterButtonsClickEvent.photo.id))
+                    }
+                    .map { false }
+            }
+
+            is MyPhotosAdapter.MyPhotosAdapterButtonClickEvent.RetryButtonClick -> {
+                Observable.fromCallable { viewModel.changePhotoState(adapterButtonsClickEvent.photo.id, PhotoState.PHOTO_QUEUED_UP).blockingAwait() }
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnNext {
+                        val photo = adapterButtonsClickEvent.photo
+                        photo.photoState = PhotoState.PHOTO_QUEUED_UP
+
+                        viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.RemovePhotoById(photo.id))
+                        viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.AddPhoto(photo))
+                    }.map { true }
+            }
+        }
     }
 
     override fun showToast(message: String, duration: Int) {
@@ -255,14 +295,14 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun startFindingService() {
-        if (FindPhotoAnswerService.isAlreadyRunning(this)) {
-            return
-        }
+        Timber.e("startFindingService")
 
         FindPhotoAnswerService.scheduleJob(this)
     }
 
     private fun startUploadingService() {
+        Timber.e("startUploadingService")
+
         if (service == null) {
             val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
             startService(serviceIntent)

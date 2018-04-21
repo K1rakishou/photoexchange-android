@@ -38,31 +38,48 @@ abstract class BaseActivity : AppCompatActivity() {
     @Suppress("UNCHECKED_CAST")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        //Timber.d("${this::class.java}.onCreate")
+        Timber.e("${this::class.java}.onCreate")
 
         setContentView(getContentView())
-        unBinder = ButterKnife.bind(this)
-
         resolveDaggerDependency()
 
+        unBinder = ButterKnife.bind(this)
+
         Fabric.with(this, Crashlytics())
+        onActivityCreate(savedInstanceState, intent)
+    }
+
+    override fun onStart() {
+        super.onStart()
 
         compositeDisposable += unknownErrorsSubject
             .observeOn(AndroidSchedulers.mainThread())
             .doOnError(this::onUnknownError)
             .subscribe(this::onUnknownError)
 
-        onActivityCreate(savedInstanceState, intent)
+        onInitRx()
+        onActivityStart()
+    }
+
+    override fun onResume() {
+        super.onResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+    }
+
+    override fun onStop() {
+        onActivityStop()
+
+        compositeDisposable.clear()
+        super.onStop()
     }
 
     override fun onDestroy() {
         //Timber.d("${this::class.java}.onDestroy")
 
-        onActivityDestroy()
-
         unBinder?.unbind()
-        compositeDisposable.clear()
-
         PhotoExchangeApplication.watch(this, this::class.simpleName)
         super.onDestroy()
     }
@@ -112,6 +129,8 @@ abstract class BaseActivity : AppCompatActivity() {
 
     protected abstract fun getContentView(): Int
     protected abstract fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent)
-    protected abstract fun onActivityDestroy()
+    protected abstract fun onInitRx()
+    protected abstract fun onActivityStart()
+    protected abstract fun onActivityStop()
     protected abstract fun resolveDaggerDependency()
 }

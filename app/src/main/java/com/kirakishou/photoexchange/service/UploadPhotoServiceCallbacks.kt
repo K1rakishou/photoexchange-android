@@ -7,5 +7,6 @@ import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
  */
 interface UploadPhotoServiceCallbacks {
     fun onUploadingEvent(event: PhotoUploadingEvent)
+    fun onError(error: Throwable)
     fun stopService()
 }

@@ -26,25 +26,30 @@ class FindPhotoAnswersUseCase(
         }
 
         val photoNames = uploadedPhotos
-            .map { it.photoName!! }
-            .joinToString(",")
+            .joinToString(",") { it.photoName!! }
 
         try {
             val response = apiClient.getPhotoAnswers(photoNames, userId).blockingGet()
-            when (ErrorCode.from(response.serverErrorCode)) {
+            val errorCode = response.errorCode
 
-                ErrorCode.OK -> TODO()
-                ErrorCode.BAD_REQUEST -> TODO()
-                ErrorCode.REPOSITORY_ERROR -> TODO()
-                ErrorCode.DISK_ERROR -> TODO()
-                ErrorCode.NO_PHOTOS_TO_SEND_BACK -> TODO()
-                ErrorCode.BAD_PHOTO_ID -> TODO()
-                ErrorCode.UPLOAD_MORE_PHOTOS -> TODO()
-                ErrorCode.NOT_FOUND -> TODO()
+            when (errorCode) {
+                is ErrorCode.GetPhotoAnswerErrors.Remote.Ok -> {
+                    //TODO
+                }
 
-                ErrorCode.BAD_SERVER_RESPONSE -> TODO()
-                ErrorCode.BAD_ERROR_CODE -> TODO()
-                ErrorCode.UNKNOWN_ERROR -> TODO()
+                is ErrorCode.GetPhotoAnswerErrors.Local.BadServerResponse -> {
+                    errorCode.message?.let { message ->
+                        Timber.e("BadServerResponse: $message")
+                    }
+                }
+
+                is ErrorCode.GetPhotoAnswerErrors.Local.Timeout -> {
+                    Timber.e("Timeout")
+                }
+
+                else -> {
+                    //TODO
+                }
             }
 
             val repoResults = arrayListOf<Boolean>()
@@ -67,8 +72,9 @@ class FindPhotoAnswersUseCase(
                 repoResults += result
             }
 
-            return repoResults.none { !it }
-        } catch (error: Throwable) {
+//            return repoResults.none { !it }
+            return false
+        } catch (error: Exception) {
             Timber.e(error)
             return false
         }

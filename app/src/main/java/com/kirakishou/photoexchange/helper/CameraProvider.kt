@@ -25,6 +25,10 @@ open class CameraProvider(
     private val tag = "[${this::class.java.simpleName}]: "
 
     fun provideCamera(cameraView: CameraView) {
+        if (camera != null) {
+            return
+        }
+
         val configuration = CameraConfiguration(
             previewResolution = highestResolution(),
             jpegQuality = manualJpegQuality(100)
@@ -40,8 +44,8 @@ open class CameraProvider(
 
     fun startCamera() {
         if (!isStarted()) {
-            camera?.apply {
-                this.start()
+            if (camera != null) {
+                camera!!.start()
                 isStarted.set(true)
             }
         }
@@ -49,20 +53,20 @@ open class CameraProvider(
 
     fun stopCamera() {
         if (isStarted()) {
-            camera?.apply {
-                this.stop()
-                isStarted.set(false)
+            isStarted.set(false)
+            if (camera != null) {
+                camera!!.stop()
             }
         }
     }
 
-    private fun isStarted(): Boolean = isStarted.get()
+    fun isStarted(): Boolean = isStarted.get()
     fun isAvailable(): Boolean = camera?.isAvailable(back()) ?: false
 
     fun takePhoto(file: File): Single<Boolean> {
         val single = Single.create<Boolean> { emitter ->
             if (!isAvailable()) {
-                emitter.onError(CameraInNotAvailable("Camera is not supported by this device"))
+                emitter.onError(CameraIsNotAvailable("Camera is not supported by this device"))
                 return@create
             }
 
@@ -77,14 +81,13 @@ open class CameraProvider(
                 camera!!.takePicture()
                     .saveToFile(file)
                     .whenAvailable {
+                        Timber.tag(tag).d("Photo has been taken")
                         emitter.onSuccess(true)
                     }
             } catch (error: Throwable) {
                 Timber.e(error)
                 emitter.onError(error)
             }
-
-            Timber.tag(tag).d("Photo has been taken")
         }
 
         return single
@@ -93,5 +96,5 @@ open class CameraProvider(
     }
 
     class CameraIsNotStartedException(msg: String) : Exception(msg)
-    class CameraInNotAvailable(msg: String) : Exception(msg)
+    class CameraIsNotAvailable(msg: String) : Exception(msg)
 }

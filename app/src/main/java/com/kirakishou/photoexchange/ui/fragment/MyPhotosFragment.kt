@@ -19,6 +19,7 @@ import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import javax.inject.Inject
@@ -107,31 +108,7 @@ class MyPhotosFragment : BaseFragment() {
         compositeDisposable += adapterButtonsClickSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
-            .flatMap(this::handleAdapterButtonClickEvents)
-            .filter { startUploadingService -> startUploadingService }
-            .map { Unit }
-            .doOnNext { viewModel.checkShouldStartPhotoUploadingService(true) }
-            .doOnError { Timber.e(it) }
-            .subscribe()
-    }
-
-    private fun handleAdapterButtonClickEvents(adapterButtonsClickEvent: MyPhotosAdapter.MyPhotosAdapterButtonClickEvent): Observable<Boolean>? {
-        val startUploadingService = when (adapterButtonsClickEvent) {
-            is MyPhotosAdapter.MyPhotosAdapterButtonClickEvent.DeleteButtonClick -> {
-                viewModel.deletePhotoById(adapterButtonsClickEvent.photo.id).blockingAwait()
-                adapter.removePhotoById(adapterButtonsClickEvent.photo.id)
-                false
-            }
-
-            is MyPhotosAdapter.MyPhotosAdapterButtonClickEvent.RetryButtonClick -> {
-                viewModel.changePhotoState(adapterButtonsClickEvent.photo.id, PhotoState.PHOTO_QUEUED_UP).blockingAwait()
-                adapter.removePhotoById(adapterButtonsClickEvent.photo.id)
-                adapter.addMyPhoto(adapterButtonsClickEvent.photo.also { it.photoState = PhotoState.PHOTO_QUEUED_UP })
-                true
-            }
-        }
-
-        return Observable.just(startUploadingService)
+            .subscribe(viewModel.myPhotosAdapterButtonClickSubject::onNext, viewModel.myPhotosAdapterButtonClickSubject::onError)
     }
 
     private fun onViewStateChanged(viewStateEvent: MyPhotosFragmentViewStateEvent) {
@@ -154,6 +131,9 @@ class MyPhotosFragment : BaseFragment() {
                 }
                 is MyPhotosFragmentViewStateEvent.RemovePhotoById -> {
                     adapter.removePhotoById(viewStateEvent.photoId)
+                }
+                is MyPhotosFragmentViewStateEvent.AddPhoto -> {
+                    adapter.addMyPhoto(viewStateEvent.photo)
                 }
                 else -> throw IllegalArgumentException("Unknown MyPhotosFragmentViewStateEvent $viewStateEvent")
             }
@@ -191,6 +171,10 @@ class MyPhotosFragment : BaseFragment() {
                 is PhotoUploadingEvent.OnFailedToUpload -> {
                     adapter.removePhotoById(event.myPhoto.id)
                     adapter.addMyPhoto(event.myPhoto.also { it.photoState = PhotoState.FAILED_TO_UPLOAD })
+
+                    event.errorMessage?.let { errorMessage ->
+                        Timber.e("Error: $errorMessage")
+                    }
                 }
                 is PhotoUploadingEvent.OnEnd -> {
                 }

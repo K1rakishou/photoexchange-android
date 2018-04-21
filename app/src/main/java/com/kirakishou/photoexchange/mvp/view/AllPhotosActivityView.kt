@@ -10,4 +10,5 @@ import io.reactivex.Single
  */
 interface AllPhotosActivityView : BaseView {
     fun getCurrentLocation(): Single<LonLat>
+    fun handleMyPhotoFragmentAdapterButtonClicks(adapterButtonsClickEvent: MyPhotosAdapter.MyPhotosAdapterButtonClickEvent): Observable<Boolean>
 }
