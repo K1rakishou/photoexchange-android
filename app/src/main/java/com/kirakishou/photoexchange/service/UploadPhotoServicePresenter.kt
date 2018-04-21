@@ -36,7 +36,10 @@ class UploadPhotoServicePresenter(
                 updatePhotosUseCase.uploadPhotos(data.userId, data.location, callbacks)
                 callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnEnd())
             }
-            .doOnError { callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnUnknownError()) }
+            .doOnError { error ->
+                callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnUnknownError())
+                callbacks.get()?.onError(error)
+            }
             .doOnEach { callbacks.get()?.stopService() }
             .subscribe()
     }

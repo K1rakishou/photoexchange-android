@@ -16,7 +16,7 @@ private constructor(
     val allFound: Boolean,
 
     errorCode: ErrorCode
-) : StatusResponse(errorCode.value) {
+) : StatusResponse(errorCode.value, errorCode) {
 
     companion object {
         fun error(errorCode: ErrorCode): PhotoAnswerResponse {

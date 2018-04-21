@@ -70,6 +70,11 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
         callback.get()?.onUploadingEvent(event)
     }
 
+    override fun onError(error: Throwable) {
+        Timber.e(error)
+        updateUploadingNotificationShowError()
+    }
+
     override fun stopService() {
         Timber.e("Stopping service")
 

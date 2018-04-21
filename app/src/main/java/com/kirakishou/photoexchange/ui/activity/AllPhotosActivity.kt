@@ -162,14 +162,10 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         compositeDisposable += viewModel.startFindPhotoAnswerServiceSubject
             .subscribeOn(Schedulers.io())
             .observeOn(Schedulers.io())
+            .filter { !FindPhotoAnswerService.isAlreadyRunning(this) }
             .doOnNext { startFindingService() }
             .doOnError { Timber.e(it) }
             .subscribe()
-
-    }
-
-    private fun initViews() {
-        initTabs()
 
         compositeDisposable += RxView.clicks(ivCloseActivityButton)
             .subscribeOn(AndroidSchedulers.mainThread())
@@ -182,6 +178,10 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             .debounceClicks()
             .doOnNext { finish() }
             .subscribe()
+    }
+
+    private fun initViews() {
+        initTabs()
     }
 
     override fun getCurrentLocation(): Single<LonLat> {
@@ -248,6 +248,10 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
     override fun onUploadingEvent(event: PhotoUploadingEvent) {
         viewModel.forwardUploadPhotoEvent(event)
+
+        if (event is PhotoUploadingEvent.OnEnd) {
+            viewModel.checkShouldStartFindPhotoAnswersService()
+        }
     }
 
     override fun showToast(message: String, duration: Int) {
@@ -260,14 +264,14 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun startFindingService() {
-        if (FindPhotoAnswerService.isAlreadyRunning(this)) {
-            return
-        }
+        Timber.e("startFindingService")
 
         FindPhotoAnswerService.scheduleJob(this)
     }
 
     private fun startUploadingService() {
+        Timber.e("startUploadingService")
+
         if (service == null) {
             val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
             startService(serviceIntent)

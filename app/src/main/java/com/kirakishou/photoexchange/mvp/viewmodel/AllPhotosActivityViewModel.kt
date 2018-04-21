@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.extension.minutes
@@ -29,6 +30,7 @@ class AllPhotosActivityViewModel(
     view: WeakReference<AllPhotosActivityView>,
     private val photosRepository: PhotosRepository,
     private val settingsRepository: SettingsRepository,
+    private val photoAnswerRepository: PhotoAnswerRepository,
     private val schedulerProvider: SchedulerProvider
 ) : BaseViewModel<AllPhotosActivityView>(view) {
 
@@ -52,22 +54,39 @@ class AllPhotosActivityViewModel(
         super.onCleared()
     }
 
+    fun checkShouldStartFindPhotoAnswersService() {
+        compositeDisposable += Observable.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
+            .subscribeOn(schedulerProvider.BG())
+            .observeOn(schedulerProvider.BG())
+            //do not start the service if there are photos to be uploaded
+            .filter { count -> count == 0 }
+            .map {
+                val uploadedPhotosCount = photosRepository.countAllByState(PhotoState.PHOTO_UPLOADED)
+                val receivedPhotosCount = photoAnswerRepository.countAll()
+
+                Timber.e("uploadedPhotosCount: $uploadedPhotosCount, receivedPhotosCount: $receivedPhotosCount")
+                return@map uploadedPhotosCount > receivedPhotosCount
+            }
+            .filter { uploadedPhotosMoreThanReceived -> uploadedPhotosMoreThanReceived }
+            .delay(CHECK_SHOULD_START_SERVICE_DELAY_MS, TimeUnit.MILLISECONDS)
+            .map { Unit }
+            .subscribe(startFindPhotoAnswerServiceSubject::onNext, startFindPhotoAnswerServiceSubject::onError)
+    }
+
     fun checkShouldStartPhotoUploadingService(updateLastLocation: Boolean) {
-        val queuedUpPhotosCountObservable = Observable.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
+        val observable = Observable.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
             .subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
             .publish()
             .autoConnect(2)
 
-        compositeDisposable += queuedUpPhotosCountObservable
-            .filter { count -> count == 0L }
-            .delay(CHECK_SHOULD_START_SERVICE_DELAY_MS, TimeUnit.MILLISECONDS)
-            .debounce(SERVICE_START_DEBOUNCE_TIME_MS, TimeUnit.MILLISECONDS)
-            .map { Unit }
-            .subscribe(startFindPhotoAnswerServiceSubject::onNext, startFindPhotoAnswerServiceSubject::onError)
+        compositeDisposable += observable
+            .filter { count -> count == 0 }
+            .doOnNext { checkShouldStartFindPhotoAnswersService() }
+            .subscribe()
 
-        compositeDisposable += queuedUpPhotosCountObservable
-            .filter { count -> count > 0L }
+        compositeDisposable += observable
+            .filter { count -> count > 0 }
             .delay(CHECK_SHOULD_START_SERVICE_DELAY_MS, TimeUnit.MILLISECONDS)
             .debounce(SERVICE_START_DEBOUNCE_TIME_MS, TimeUnit.MILLISECONDS)
             .doOnNext { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification()) }

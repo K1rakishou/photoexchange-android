@@ -30,11 +30,17 @@ class FindPhotoAnswersUseCase(
 
         try {
             val response = apiClient.getPhotoAnswers(photoNames, userId).blockingGet()
-            val errorCode = ErrorCode.fromInt<ErrorCode.GetPhotoAnswerErrors>(response.serverErrorCode)
+            val errorCode = response.errorCode
 
             when (errorCode) {
                 is ErrorCode.GetPhotoAnswerErrors.Remote.Ok -> {
                     //TODO
+                }
+
+                is ErrorCode.GetPhotoAnswerErrors.Local.BadServerResponse -> {
+                    errorCode.message?.let { message ->
+                        Timber.e(message)
+                    }
                 }
 
                 else -> {

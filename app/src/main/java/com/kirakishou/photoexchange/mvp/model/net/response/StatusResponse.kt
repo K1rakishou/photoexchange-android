@@ -10,11 +10,13 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 open class StatusResponse(
     @Expose
     @SerializedName("server_error_code")
-    var serverErrorCode: Int?
+    var serverErrorCode: Int?,
+
+    var errorCode: ErrorCode
 ) {
     companion object {
         fun fromErrorCode(errorCode: ErrorCode): StatusResponse {
-            return StatusResponse(errorCode.value)
+            return StatusResponse(errorCode.value, errorCode)
         }
     }
 }

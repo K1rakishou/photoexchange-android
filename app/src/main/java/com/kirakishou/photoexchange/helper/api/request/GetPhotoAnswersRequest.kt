@@ -4,12 +4,12 @@ import com.google.gson.Gson
 import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.mvp.model.exception.ApiException
 import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
-import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
 
-class GetPhotoAnswersRequest<T : PhotoAnswerResponse>(
+class GetPhotoAnswersRequest<T>(
     private val photoNames: String,
     private val userId: String,
     private val apiService: ApiService,
@@ -20,11 +20,16 @@ class GetPhotoAnswersRequest<T : PhotoAnswerResponse>(
     @Suppress("UNCHECKED_CAST")
     override fun execute(): Single<T> {
         return apiService.getPhotoAnswers(photoNames, userId)
-            .lift(OnApiErrorSingle<PhotoAnswerResponse>(gson, PhotoAnswerResponse::class.java))
             .subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
-            .onErrorReturn { _ ->
-                return@onErrorReturn UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.Remote.UnknownError()) as T
-            } as Single<T>
+            .lift(OnApiErrorSingle<PhotoAnswerResponse>(gson, PhotoAnswerResponse::class.java))
+            .onErrorReturn(this::extractError) as Single<T>
+    }
+
+    private fun extractError(error: Throwable): PhotoAnswerResponse {
+        return when (error) {
+            is ApiException -> PhotoAnswerResponse.error(error.errorCode)
+            else -> PhotoAnswerResponse.error(ErrorCode.UploadPhotoErrors.Remote.UnknownError())
+        }
     }
 }

@@ -19,7 +19,7 @@ sealed class ErrorCode(val value: Int) {
         }
 
         sealed class Local(value: Int) : UploadPhotoErrors(value) {
-            class BadServerResponse : Local(-1000)
+            class BadServerResponse(val message: String? = null) : Local(-1000)
             class NoPhotoFileOnDisk : Local(-1001)
         }
     }
@@ -37,7 +37,7 @@ sealed class ErrorCode(val value: Int) {
         }
 
         sealed class Local(value: Int) : GetPhotoAnswerErrors(value) {
-            class BadServerResponse : Local(-1000)
+            class BadServerResponse(val message: String? = null) : Local(-1000)
         }
     }
 
@@ -50,7 +50,7 @@ sealed class ErrorCode(val value: Int) {
         }
 
         sealed class Local(value: Int) : MarkPhotoAsReceivedErrors(value) {
-            class BadServerResponse : Local(-1000)
+            class BadServerResponse(val message: String? = null) : Local(-1000)
         }
     }
 
