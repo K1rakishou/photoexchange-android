@@ -55,11 +55,23 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
     override fun getContentView(): Int = R.layout.activity_take_photo
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
-        initViews()
+    }
+
+    override fun onInitRx() {
+        compositeDisposable += RxView.clicks(takePhotoButton)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .debounceClicks()
+            .doOnNext { viewModel.takePhoto() }
+            .subscribe()
+
+        compositeDisposable += RxView.clicks(ivShowAllPhotos)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .debounceClicks()
+            .doOnNext { runActivity(AllPhotosActivity::class.java) }
+            .subscribe()
     }
 
     override fun onActivityStart() {
-
     }
 
     override fun onResume() {
@@ -98,20 +110,6 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
             showControls()
             startCamera()
         }
-    }
-
-    private fun initViews() {
-        compositeDisposable += RxView.clicks(takePhotoButton)
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .debounceClicks()
-            .doOnNext { viewModel.takePhoto() }
-            .subscribe()
-
-        compositeDisposable += RxView.clicks(ivShowAllPhotos)
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .debounceClicks()
-            .doOnNext { runActivity(AllPhotosActivity::class.java) }
-            .subscribe()
     }
 
     private fun startCamera() {

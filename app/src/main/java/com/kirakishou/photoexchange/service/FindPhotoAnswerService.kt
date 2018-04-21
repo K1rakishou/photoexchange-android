@@ -72,6 +72,7 @@ class FindPhotoAnswerService : JobService() {
     }
 
     private fun done(params: JobParameters, restartService: Boolean) {
+        Timber.e("done, restartService: $restartService")
         jobFinished(params, restartService)
     }
 

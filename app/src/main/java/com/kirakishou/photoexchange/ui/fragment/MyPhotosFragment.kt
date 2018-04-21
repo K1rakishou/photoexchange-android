@@ -19,6 +19,7 @@ import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import javax.inject.Inject
@@ -115,23 +116,26 @@ class MyPhotosFragment : BaseFragment() {
             .subscribe()
     }
 
-    private fun handleAdapterButtonClickEvents(adapterButtonsClickEvent: MyPhotosAdapter.MyPhotosAdapterButtonClickEvent): Observable<Boolean>? {
-        val startUploadingService = when (adapterButtonsClickEvent) {
+    private fun handleAdapterButtonClickEvents(adapterButtonsClickEvent: MyPhotosAdapter.MyPhotosAdapterButtonClickEvent): Observable<Boolean> {
+        return when (adapterButtonsClickEvent) {
             is MyPhotosAdapter.MyPhotosAdapterButtonClickEvent.DeleteButtonClick -> {
-                viewModel.deletePhotoById(adapterButtonsClickEvent.photo.id).blockingAwait()
-                adapter.removePhotoById(adapterButtonsClickEvent.photo.id)
-                false
+                Observable.fromCallable { viewModel.deletePhotoById(adapterButtonsClickEvent.photo.id).blockingAwait() }
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnNext { adapter.removePhotoById(adapterButtonsClickEvent.photo.id) }
+                    .map { false }
             }
 
             is MyPhotosAdapter.MyPhotosAdapterButtonClickEvent.RetryButtonClick -> {
-                viewModel.changePhotoState(adapterButtonsClickEvent.photo.id, PhotoState.PHOTO_QUEUED_UP).blockingAwait()
-                adapter.removePhotoById(adapterButtonsClickEvent.photo.id)
-                adapter.addMyPhoto(adapterButtonsClickEvent.photo.also { it.photoState = PhotoState.PHOTO_QUEUED_UP })
-                true
+                Observable.fromCallable { viewModel.changePhotoState(adapterButtonsClickEvent.photo.id, PhotoState.PHOTO_QUEUED_UP).blockingAwait() }
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnNext {
+                        adapter.removePhotoById(adapterButtonsClickEvent.photo.id)
+                        adapter.addMyPhoto(adapterButtonsClickEvent.photo.also { it.photoState = PhotoState.PHOTO_QUEUED_UP })
+                    }.map { true }
             }
         }
-
-        return Observable.just(startUploadingService)
     }
 
     private fun onViewStateChanged(viewStateEvent: MyPhotosFragmentViewStateEvent) {
@@ -191,6 +195,10 @@ class MyPhotosFragment : BaseFragment() {
                 is PhotoUploadingEvent.OnFailedToUpload -> {
                     adapter.removePhotoById(event.myPhoto.id)
                     adapter.addMyPhoto(event.myPhoto.also { it.photoState = PhotoState.FAILED_TO_UPLOAD })
+
+                    event.errorMessage?.let { errorMessage ->
+                        Timber.e("Error: $errorMessage")
+                    }
                 }
                 is PhotoUploadingEvent.OnEnd -> {
                 }

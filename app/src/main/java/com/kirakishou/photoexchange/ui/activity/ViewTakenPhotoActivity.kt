@@ -45,14 +45,7 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
         initViews()
     }
 
-    override fun onActivityStart() {
-
-    }
-
-    override fun onActivityStop() {
-    }
-
-    private fun initViews() {
+    override fun onInitRx() {
         compositeDisposable += RxView.clicks(fabCloseActivity)
             .subscribeOn(AndroidSchedulers.mainThread())
             .debounceClicks()
@@ -64,7 +57,16 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
             .debounceClicks()
             .doOnNext { viewModel.updatePhotoState(takenPhoto.id) }
             .subscribe()
+    }
 
+    override fun onActivityStart() {
+
+    }
+
+    override fun onActivityStop() {
+    }
+
+    private fun initViews() {
         imageLoader.loadImageFromDiskInto(takenPhoto.getFile(), ivPhotoView)
     }
 

@@ -47,6 +47,7 @@ import javax.inject.Inject
 class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSelectedListener,
     ViewPager.OnPageChangeListener, PhotoUploadingCallback {
 
+
     @BindView(R.id.iv_close_button)
     lateinit var ivCloseActivityButton: ImageButton
 
@@ -84,8 +85,36 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         checkPermissions(savedInstanceState)
     }
 
+    override fun onInitRx() {
+        compositeDisposable += viewModel.startPhotoUploadingServiceSubject
+            .subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.io())
+            .doOnNext { startUploadingService() }
+            .doOnError { Timber.e(it) }
+            .subscribe()
+
+        compositeDisposable += viewModel.startFindPhotoAnswerServiceSubject
+            .subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.io())
+            .filter { !FindPhotoAnswerService.isAlreadyRunning(this) }
+            .doOnNext { startFindingService() }
+            .doOnError { Timber.e(it) }
+            .subscribe()
+
+        compositeDisposable += RxView.clicks(ivCloseActivityButton)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .debounceClicks()
+            .doOnNext { finish() }
+            .subscribe()
+
+        compositeDisposable += RxView.clicks(takePhotoButton)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .debounceClicks()
+            .doOnNext { finish() }
+            .subscribe()
+    }
+
     override fun onActivityStart() {
-        initRx()
     }
 
     override fun onActivityStop() {
@@ -149,35 +178,6 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         if (viewState.lastOpenedTab != 0) {
             viewPager.currentItem = viewState.lastOpenedTab
         }
-    }
-
-    private fun initRx() {
-        compositeDisposable += viewModel.startPhotoUploadingServiceSubject
-            .subscribeOn(Schedulers.io())
-            .observeOn(Schedulers.io())
-            .doOnNext { startUploadingService() }
-            .doOnError { Timber.e(it) }
-            .subscribe()
-
-        compositeDisposable += viewModel.startFindPhotoAnswerServiceSubject
-            .subscribeOn(Schedulers.io())
-            .observeOn(Schedulers.io())
-            .filter { !FindPhotoAnswerService.isAlreadyRunning(this) }
-            .doOnNext { startFindingService() }
-            .doOnError { Timber.e(it) }
-            .subscribe()
-
-        compositeDisposable += RxView.clicks(ivCloseActivityButton)
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .debounceClicks()
-            .doOnNext { finish() }
-            .subscribe()
-
-        compositeDisposable += RxView.clicks(takePhotoButton)
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .debounceClicks()
-            .doOnNext { finish() }
-            .subscribe()
     }
 
     private fun initViews() {

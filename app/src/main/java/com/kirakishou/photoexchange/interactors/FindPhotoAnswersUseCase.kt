@@ -72,7 +72,8 @@ class FindPhotoAnswersUseCase(
                 repoResults += result
             }
 
-            return repoResults.none { !it }
+//            return repoResults.none { !it }
+            return false
         } catch (error: Exception) {
             Timber.e(error)
             return false

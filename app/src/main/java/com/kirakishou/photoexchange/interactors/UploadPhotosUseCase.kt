@@ -40,18 +40,17 @@ class UploadPhotosUseCase(
                                     handleFailedPhoto(photo, callbacks)
                                 }
                             }
-                            is ErrorCode.UploadPhotoErrors.Local.BadServerResponse -> {
-                                errorCode.message?.let { message ->
-                                    Timber.e("BadServerResponse: $message")
+
+                            else -> {
+                                val message = when (errorCode) {
+                                    is ErrorCode.UploadPhotoErrors.Local.BadServerResponse -> "BadServerResponse: ${errorCode.message}"
+                                    is ErrorCode.UploadPhotoErrors.Local.Timeout -> "Timeout"
+                                    is ErrorCode.UploadPhotoErrors.Local.NoPhotoFileOnDisk -> "Photo does not exist on disk!"
+                                    else -> null
                                 }
+
+                                handleFailedPhoto(photo, callbacks, message)
                             }
-                            is ErrorCode.UploadPhotoErrors.Local.Timeout -> {
-                                Timber.e("Timeout")
-                            }
-                            is ErrorCode.UploadPhotoErrors.Local.NoPhotoFileOnDisk -> {
-                                handleFailedPhoto(photo, callbacks, "Photo does not exist on disk!")
-                            }
-                            else -> handleFailedPhoto(photo, callbacks)
                         }
                     }
                 } finally {
