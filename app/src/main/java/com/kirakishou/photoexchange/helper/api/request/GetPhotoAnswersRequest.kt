@@ -8,6 +8,8 @@ import com.kirakishou.photoexchange.mvp.model.exception.ApiException
 import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
+import java.net.SocketTimeoutException
+import java.util.concurrent.TimeoutException
 
 class GetPhotoAnswersRequest<T>(
     private val photoNames: String,
@@ -29,7 +31,9 @@ class GetPhotoAnswersRequest<T>(
     private fun extractError(error: Throwable): PhotoAnswerResponse {
         return when (error) {
             is ApiException -> PhotoAnswerResponse.error(error.errorCode)
-            else -> PhotoAnswerResponse.error(ErrorCode.UploadPhotoErrors.Remote.UnknownError())
+            is SocketTimeoutException,
+            is TimeoutException -> PhotoAnswerResponse.error(ErrorCode.GetPhotoAnswerErrors.Local.Timeout())
+            else -> PhotoAnswerResponse.error(ErrorCode.GetPhotoAnswerErrors.Remote.UnknownError())
         }
     }
 }

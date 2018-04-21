@@ -21,6 +21,7 @@ sealed class ErrorCode(val value: Int) {
         sealed class Local(value: Int) : UploadPhotoErrors(value) {
             class BadServerResponse(val message: String? = null) : Local(-1000)
             class NoPhotoFileOnDisk : Local(-1001)
+            class Timeout : Local(-1002)
         }
     }
 
@@ -38,6 +39,7 @@ sealed class ErrorCode(val value: Int) {
 
         sealed class Local(value: Int) : GetPhotoAnswerErrors(value) {
             class BadServerResponse(val message: String? = null) : Local(-1000)
+            class Timeout : Local(-1001)
         }
     }
 
@@ -51,6 +53,7 @@ sealed class ErrorCode(val value: Int) {
 
         sealed class Local(value: Int) : MarkPhotoAsReceivedErrors(value) {
             class BadServerResponse(val message: String? = null) : Local(-1000)
+            class Timeout : Local(-1001)
         }
     }
 
@@ -63,6 +66,7 @@ sealed class ErrorCode(val value: Int) {
                         null,
                         -1000 -> UploadPhotoErrors.Local.BadServerResponse()
                         -1001 -> UploadPhotoErrors.Local.NoPhotoFileOnDisk()
+                        -1002 -> UploadPhotoErrors.Local.Timeout()
 
                         //remote errors
                         -1 -> UploadPhotoErrors.Remote.UnknownError()
@@ -80,6 +84,7 @@ sealed class ErrorCode(val value: Int) {
                         //local errors
                         null,
                         -1000 -> GetPhotoAnswerErrors.Local.BadServerResponse()
+                        -1001 -> GetPhotoAnswerErrors.Local.Timeout()
 
                         //remote errors
                         -1 -> GetPhotoAnswerErrors.Remote.UnknownError()
@@ -101,6 +106,7 @@ sealed class ErrorCode(val value: Int) {
                         //local errors
                         null,
                         -1000 -> MarkPhotoAsReceivedErrors.Local.BadServerResponse()
+                        -1001 -> MarkPhotoAsReceivedErrors.Local.Timeout()
 
                         //remote errors
                         -1 -> MarkPhotoAsReceivedErrors.Remote.UnknownError()

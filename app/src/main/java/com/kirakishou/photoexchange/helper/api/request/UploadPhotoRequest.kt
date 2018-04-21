@@ -14,6 +14,8 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
 import okhttp3.MultipartBody
 import java.io.File
+import java.net.SocketTimeoutException
+import java.util.concurrent.TimeoutException
 
 /**
  * Created by kirakishou on 3/17/2018.
@@ -54,6 +56,8 @@ class UploadPhotoRequest<T>(
     private fun extractError(error: Throwable): UploadPhotoResponse {
         return when (error) {
             is ApiException -> UploadPhotoResponse.error(error.errorCode)
+            is SocketTimeoutException,
+            is TimeoutException -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.Local.Timeout())
             is NoPhotoFileOnDiskException -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.Local.NoPhotoFileOnDisk())
             else -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.Remote.UnknownError())
         }

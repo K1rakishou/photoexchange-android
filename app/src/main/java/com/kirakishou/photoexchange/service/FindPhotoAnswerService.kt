@@ -228,7 +228,9 @@ class FindPhotoAnswerService : JobService() {
 
         fun isAlreadyRunning(context: Context): Boolean {
             val scheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
-            return scheduler.allPendingJobs.any { it.id == JOB_ID }
+            val found = scheduler.allPendingJobs.any { it.id == JOB_ID }
+
+            return found
         }
     }
 }

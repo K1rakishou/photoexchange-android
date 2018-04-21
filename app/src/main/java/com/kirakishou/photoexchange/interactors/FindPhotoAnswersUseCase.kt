@@ -39,8 +39,12 @@ class FindPhotoAnswersUseCase(
 
                 is ErrorCode.GetPhotoAnswerErrors.Local.BadServerResponse -> {
                     errorCode.message?.let { message ->
-                        Timber.e(message)
+                        Timber.e("BadServerResponse: $message")
                     }
+                }
+
+                is ErrorCode.GetPhotoAnswerErrors.Local.Timeout -> {
+                    Timber.e("Timeout")
                 }
 
                 else -> {

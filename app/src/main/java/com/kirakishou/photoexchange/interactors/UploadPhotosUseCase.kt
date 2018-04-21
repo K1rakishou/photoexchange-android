@@ -40,6 +40,14 @@ class UploadPhotosUseCase(
                                     handleFailedPhoto(photo, callbacks)
                                 }
                             }
+                            is ErrorCode.UploadPhotoErrors.Local.BadServerResponse -> {
+                                errorCode.message?.let { message ->
+                                    Timber.e("BadServerResponse: $message")
+                                }
+                            }
+                            is ErrorCode.UploadPhotoErrors.Local.Timeout -> {
+                                Timber.e("Timeout")
+                            }
                             is ErrorCode.UploadPhotoErrors.Local.NoPhotoFileOnDisk -> {
                                 handleFailedPhoto(photo, callbacks, "Photo does not exist on disk!")
                             }

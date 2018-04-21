@@ -104,10 +104,27 @@ class MyPhotosAdapter(
                 uploadedItems.add(0, MyPhotosAdapterItem.MyPhotoItem(photo))
                 notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size)
             }
+            PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED -> {
+                if (uploadedItems.isEmpty()) {
+                    uploadedItems.add(0, MyPhotosAdapterItem.MyPhotoItem(photo))
+                    notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size)
+                } else {
+                    var index = uploadedItems.indexOfFirst {
+                        (it as MyPhotosAdapterItem.MyPhotoItem).myPhoto.photoState == PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED
+                    }
 
+                    if (index == -1) {
+                        index = uploadedItems.lastIndex
+                    }
+
+                    uploadedItems.add(index, MyPhotosAdapterItem.MyPhotoItem(photo))
+                    notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size + index)
+                }
+            }
             PhotoState.PHOTO_TAKEN -> {
                 //Do nothing
             }
+            else -> throw IllegalArgumentException("Unknown photoState: ${photo.photoState}")
         }
     }
 
@@ -338,9 +355,16 @@ class MyPhotosAdapter(
                             holder.loadingProgress.progress = photosProgressMap[myPhoto.id]!!
                         }
                     }
+                    PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED,
                     PhotoState.PHOTO_UPLOADED -> {
                         holder.photoUploadingStateIndicator.background = ColorDrawable(context.resources.getColor(R.color.photo_state_uploaded_color))
                         holder.uploadingMessageHolderView.visibility = View.GONE
+
+                        if (myPhoto.photoState == PhotoState.PHOTO_UPLOADED) {
+                            holder.receivedIconImageView.setImageDrawable(context.getDrawable(R.drawable.ic_done))
+                        } else if (myPhoto.photoState == PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED) {
+                            holder.receivedIconImageView.setImageDrawable(context.getDrawable(R.drawable.ic_done_all))
+                        }
 
                         myPhoto.photoName?.let { photoName ->
                             imageLoader.loadImageFromNetInto(photoName, ImageLoader.PhotoSize.Small, holder.photoView)
@@ -407,6 +431,7 @@ class MyPhotosAdapter(
         val uploadingMessageHolderView = itemView.findViewById<CardView>(R.id.uploading_message_holder)
         val loadingProgress = itemView.findViewById<ProgressBar>(R.id.loading_progress)
         val photoUploadingStateIndicator = itemView.findViewById<View>(R.id.photo_uploading_state_indicator)
+        val receivedIconImageView = itemView.findViewById<ImageView>(R.id.received_icon_image_view)
     }
 
     sealed class MyPhotosAdapterButtonClickEvent {

@@ -109,6 +109,9 @@ class AllPhotosActivityViewModel(
             val uploadedPhotos = photosRepository.findAllByState(PhotoState.PHOTO_UPLOADED)
             photos += uploadedPhotos.sortedBy { it.id }
 
+            val uploadedAndReceivedAnswerPhotos = photosRepository.findAllByState(PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED)
+            photos += uploadedAndReceivedAnswerPhotos.sortedBy { it.id }
+
             return@fromCallable photos
         }.subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
