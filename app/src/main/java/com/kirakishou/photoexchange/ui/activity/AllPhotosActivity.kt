@@ -24,16 +24,20 @@ import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.helper.location.MyLocationManager
 import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
+import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.service.FindPhotoAnswerService
 import com.kirakishou.photoexchange.service.UploadPhotoService
+import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
 import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
 import com.kirakishou.photoexchange.ui.viewstate.AllPhotosActivityViewState
+import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
+import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
@@ -251,6 +255,33 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
         if (event is PhotoUploadingEvent.OnEnd) {
             viewModel.checkShouldStartFindPhotoAnswersService()
+        }
+    }
+
+    override fun handleMyPhotoFragmentAdapterButtonClicks(adapterButtonsClickEvent: MyPhotosAdapter.MyPhotosAdapterButtonClickEvent): Observable<Boolean> {
+        return when (adapterButtonsClickEvent) {
+            is MyPhotosAdapter.MyPhotosAdapterButtonClickEvent.DeleteButtonClick -> {
+                Observable.fromCallable { viewModel.deletePhotoById(adapterButtonsClickEvent.photo.id).blockingAwait() }
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnNext {
+                        viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.RemovePhotoById(adapterButtonsClickEvent.photo.id))
+                    }
+                    .map { false }
+            }
+
+            is MyPhotosAdapter.MyPhotosAdapterButtonClickEvent.RetryButtonClick -> {
+                Observable.fromCallable { viewModel.changePhotoState(adapterButtonsClickEvent.photo.id, PhotoState.PHOTO_QUEUED_UP).blockingAwait() }
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnNext {
+                        val photo = adapterButtonsClickEvent.photo
+                        photo.photoState = PhotoState.PHOTO_QUEUED_UP
+
+                        viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.RemovePhotoById(photo.id))
+                        viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.AddPhoto(photo))
+                    }.map { true }
+            }
         }
     }
 

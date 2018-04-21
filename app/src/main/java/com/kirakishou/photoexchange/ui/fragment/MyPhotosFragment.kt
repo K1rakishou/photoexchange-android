@@ -108,34 +108,7 @@ class MyPhotosFragment : BaseFragment() {
         compositeDisposable += adapterButtonsClickSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
-            .flatMap(this::handleAdapterButtonClickEvents)
-            .filter { startUploadingService -> startUploadingService }
-            .map { Unit }
-            .doOnNext { viewModel.checkShouldStartPhotoUploadingService(true) }
-            .doOnError { Timber.e(it) }
-            .subscribe()
-    }
-
-    private fun handleAdapterButtonClickEvents(adapterButtonsClickEvent: MyPhotosAdapter.MyPhotosAdapterButtonClickEvent): Observable<Boolean> {
-        return when (adapterButtonsClickEvent) {
-            is MyPhotosAdapter.MyPhotosAdapterButtonClickEvent.DeleteButtonClick -> {
-                Observable.fromCallable { viewModel.deletePhotoById(adapterButtonsClickEvent.photo.id).blockingAwait() }
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .doOnNext { adapter.removePhotoById(adapterButtonsClickEvent.photo.id) }
-                    .map { false }
-            }
-
-            is MyPhotosAdapter.MyPhotosAdapterButtonClickEvent.RetryButtonClick -> {
-                Observable.fromCallable { viewModel.changePhotoState(adapterButtonsClickEvent.photo.id, PhotoState.PHOTO_QUEUED_UP).blockingAwait() }
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .doOnNext {
-                        adapter.removePhotoById(adapterButtonsClickEvent.photo.id)
-                        adapter.addMyPhoto(adapterButtonsClickEvent.photo.also { it.photoState = PhotoState.PHOTO_QUEUED_UP })
-                    }.map { true }
-            }
-        }
+            .subscribe(viewModel.myPhotosAdapterButtonClickSubject::onNext, viewModel.myPhotosAdapterButtonClickSubject::onError)
     }
 
     private fun onViewStateChanged(viewStateEvent: MyPhotosFragmentViewStateEvent) {
@@ -158,6 +131,9 @@ class MyPhotosFragment : BaseFragment() {
                 }
                 is MyPhotosFragmentViewStateEvent.RemovePhotoById -> {
                     adapter.removePhotoById(viewStateEvent.photoId)
+                }
+                is MyPhotosFragmentViewStateEvent.AddPhoto -> {
+                    adapter.addMyPhoto(viewStateEvent.photo)
                 }
                 else -> throw IllegalArgumentException("Unknown MyPhotosFragmentViewStateEvent $viewStateEvent")
             }

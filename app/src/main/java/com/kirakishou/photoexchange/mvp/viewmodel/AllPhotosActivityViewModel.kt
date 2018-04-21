@@ -13,6 +13,7 @@ import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
+import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
 import io.reactivex.Completable
 import io.reactivex.Observable
@@ -43,6 +44,17 @@ class AllPhotosActivityViewModel(
     val myPhotosFragmentViewStateSubject = PublishSubject.create<MyPhotosFragmentViewStateEvent>().toSerialized()
     val startPhotoUploadingServiceSubject = PublishSubject.create<Unit>().toSerialized()
     val startFindPhotoAnswerServiceSubject = PublishSubject.create<Unit>().toSerialized()
+    val myPhotosAdapterButtonClickSubject = PublishSubject.create<MyPhotosAdapter.MyPhotosAdapterButtonClickEvent>().toSerialized()
+
+    init {
+        compositeDisposable += myPhotosAdapterButtonClickSubject
+            .flatMap { getView()?.handleMyPhotoFragmentAdapterButtonClicks(it) ?: Observable.just(false) }
+            .filter { startUploadingService -> startUploadingService }
+            .map { Unit }
+            .doOnNext { checkShouldStartPhotoUploadingService(true) }
+            .doOnError { Timber.e(it) }
+            .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)
+    }
 
     override fun onAttached() {
         Timber.tag(tag).d("onAttached()")
