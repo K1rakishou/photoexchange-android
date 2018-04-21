@@ -59,14 +59,13 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
     }
 
     override fun onActivityStart() {
-        checkPermissions()
+
     }
 
     override fun onResume() {
         super.onResume()
 
-        showControls()
-        startCamera()
+        checkPermissions()
     }
 
     override fun onPause() {
@@ -96,6 +95,7 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
                 return@askForPermission
             }
 
+            showControls()
             startCamera()
         }
     }

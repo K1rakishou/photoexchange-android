@@ -30,6 +30,7 @@ class MyPhotosAdapter(
     private val queuedUpItems = arrayListOf<MyPhotosAdapterItem>()
     private val failedToUploadItems = arrayListOf<MyPhotosAdapterItem>()
     private val uploadedItems = arrayListOf<MyPhotosAdapterItem>()
+    private val uploadedWithAnswerItems = arrayListOf<MyPhotosAdapterItem>()
 
     private val duplicatesCheckerSet = hashSetOf<Long>()
     private val photosProgressMap = hashMapOf<Long, Int>()
@@ -105,21 +106,8 @@ class MyPhotosAdapter(
                 notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size)
             }
             PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED -> {
-                if (uploadedItems.isEmpty()) {
-                    uploadedItems.add(0, MyPhotosAdapterItem.MyPhotoItem(photo))
-                    notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size)
-                } else {
-                    var index = uploadedItems.indexOfFirst {
-                        (it as MyPhotosAdapterItem.MyPhotoItem).myPhoto.photoState == PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED
-                    }
-
-                    if (index == -1) {
-                        index = uploadedItems.lastIndex
-                    }
-
-                    uploadedItems.add(index, MyPhotosAdapterItem.MyPhotoItem(photo))
-                    notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size + index)
-                }
+                uploadedWithAnswerItems.add(0, MyPhotosAdapterItem.MyPhotoItem(photo))
+                notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size)
             }
             PhotoState.PHOTO_TAKEN -> {
                 //Do nothing
@@ -184,6 +172,21 @@ class MyPhotosAdapter(
             uploadedItems.removeAt(localIndex)
             notifyItemRemoved(globalIndex)
         }
+
+        for ((index, adapterItem) in uploadedWithAnswerItems.withIndex()) {
+            adapterItem as MyPhotosAdapterItem.MyPhotoItem
+            if (adapterItem.myPhoto.id == photoId) {
+                localIndex = index
+                break
+            }
+
+            ++globalIndex
+        }
+
+        if (localIndex != -1) {
+            uploadedWithAnswerItems.removeAt(localIndex)
+            notifyItemRemoved(globalIndex)
+        }
     }
 
     private fun getPhotoGlobalIndexById(photoId: Long): Int {
@@ -220,6 +223,15 @@ class MyPhotosAdapter(
             ++index
         }
 
+        for (adapterItem in uploadedWithAnswerItems) {
+            adapterItem as MyPhotosAdapterItem.MyPhotoItem
+            if (adapterItem.myPhoto.id == photoId) {
+                return index
+            }
+
+            ++index
+        }
+
         return -1
     }
 
@@ -228,6 +240,7 @@ class MyPhotosAdapter(
         val queuedUpItemsRange = IntRange(headerItemsRange.endInclusive, headerItemsRange.endInclusive + queuedUpItems.size)
         val failedToUploadItemsRange = IntRange(queuedUpItemsRange.endInclusive, queuedUpItemsRange.endInclusive + failedToUploadItems.size)
         val uploadedItemsRange = IntRange(failedToUploadItemsRange.endInclusive, failedToUploadItemsRange.endInclusive + uploadedItems.size)
+        val uploadedWithAnswerItemsRange = IntRange(uploadedItemsRange.endInclusive, uploadedItemsRange.endInclusive + uploadedWithAnswerItems.size)
 
         return when (index) {
             in headerItemsRange -> {
@@ -241,6 +254,9 @@ class MyPhotosAdapter(
             }
             in uploadedItemsRange -> {
                 uploadedItems[index - (headerItems.size + queuedUpItems.size + failedToUploadItems.size)]
+            }
+            in uploadedWithAnswerItemsRange -> {
+                uploadedWithAnswerItems[index - (headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size)]
             }
             else -> null
         }
@@ -288,6 +304,18 @@ class MyPhotosAdapter(
 
             ++currentIndex
         }
+
+        for ((localIndex, adapterItem) in uploadedWithAnswerItems.withIndex()) {
+            adapterItem as MyPhotosAdapterItem.MyPhotoItem
+            if (adapterItem.myPhoto.id == photoId) {
+                val updatedAdapterItem = updateFunction(adapterItem.myPhoto)
+                uploadedWithAnswerItems[localIndex] = MyPhotosAdapterItem.MyPhotoItem(updatedAdapterItem)
+                notifyItemChanged(currentIndex)
+                return
+            }
+
+            ++currentIndex
+        }
     }
 
     private fun isPhotoAlreadyAdded(photoId: Long): Boolean {
@@ -304,6 +332,7 @@ class MyPhotosAdapter(
         queuedUpItems.removeAll { it.getType() == AdapterItemType.VIEW_MY_PHOTO }
         failedToUploadItems.removeAll { it.getType() == AdapterItemType.VIEW_MY_PHOTO }
         uploadedItems.removeAll { it.getType() == AdapterItemType.VIEW_MY_PHOTO }
+        uploadedWithAnswerItems.removeAll { it.getType() == AdapterItemType.VIEW_MY_PHOTO }
         notifyDataSetChanged()
     }
 
@@ -312,7 +341,7 @@ class MyPhotosAdapter(
     }
 
     override fun getItemCount(): Int {
-        return headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size
+        return headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size + uploadedWithAnswerItems.size
     }
 
     override fun getBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
@@ -360,11 +389,14 @@ class MyPhotosAdapter(
                         holder.photoUploadingStateIndicator.background = ColorDrawable(context.resources.getColor(R.color.photo_state_uploaded_color))
                         holder.uploadingMessageHolderView.visibility = View.GONE
 
-                        if (myPhoto.photoState == PhotoState.PHOTO_UPLOADED) {
-                            holder.receivedIconImageView.setImageDrawable(context.getDrawable(R.drawable.ic_done))
-                        } else if (myPhoto.photoState == PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED) {
-                            holder.receivedIconImageView.setImageDrawable(context.getDrawable(R.drawable.ic_done_all))
+                        val drawable = if (myPhoto.photoState == PhotoState.PHOTO_UPLOADED) {
+                            context.getDrawable(R.drawable.ic_done)
+                        } else {
+                            context.getDrawable(R.drawable.ic_done_all)
                         }
+
+                        holder.receivedIconImageView.visibility = View.VISIBLE
+                        holder.receivedIconImageView.setImageDrawable(drawable)
 
                         myPhoto.photoName?.let { photoName ->
                             imageLoader.loadImageFromNetInto(photoName, ImageLoader.PhotoSize.Small, holder.photoView)

@@ -115,6 +115,10 @@ open class PhotosRepository(
         return myPhotoDao.countAllByState(state).toInt()
     }
 
+    fun countAllByStates(states: Array<PhotoState>): Int {
+        return myPhotoDao.countAllByStates(states)
+    }
+
     fun findPhotoByStateAndUpdateState(oldState: PhotoState, newState: PhotoState): MyPhoto? {
         var photo: MyPhotoEntity? = null
 

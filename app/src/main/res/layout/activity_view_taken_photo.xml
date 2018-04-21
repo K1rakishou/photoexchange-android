@@ -13,69 +13,69 @@
         android:layout_height="match_parent" />
 
     <!--<android.support.constraint.ConstraintLayout-->
-        <!--android:id="@+id/make_photo_public_view"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="128dp"-->
-        <!--android:background="?android:colorBackground"-->
-        <!--android:layout_alignParentBottom="true">-->
+    <!--android:id="@+id/make_photo_public_view"-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="128dp"-->
+    <!--android:background="?android:colorBackground"-->
+    <!--android:layout_alignParentBottom="true">-->
 
-        <!--<LinearLayout-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_marginEnd="8dp"-->
-            <!--android:layout_marginStart="8dp"-->
-            <!--android:layout_marginTop="8dp"-->
-            <!--android:orientation="vertical"-->
-            <!--app:layout_constraintEnd_toEndOf="parent"-->
-            <!--app:layout_constraintStart_toStartOf="parent"-->
-            <!--app:layout_constraintTop_toTopOf="parent">-->
+    <!--<LinearLayout-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:layout_marginEnd="8dp"-->
+    <!--android:layout_marginStart="8dp"-->
+    <!--android:layout_marginTop="8dp"-->
+    <!--android:orientation="vertical"-->
+    <!--app:layout_constraintEnd_toEndOf="parent"-->
+    <!--app:layout_constraintStart_toStartOf="parent"-->
+    <!--app:layout_constraintTop_toTopOf="parent">-->
 
-            <!--<TextView-->
-                <!--android:layout_width="wrap_content"-->
-                <!--android:layout_height="wrap_content"-->
-                <!--android:text="Make this photo public?"-->
-                <!--android:textSize="20sp" />-->
+    <!--<TextView-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:text="Make this photo public?"-->
+    <!--android:textSize="20sp" />-->
 
-            <!--<TextView-->
-                <!--android:layout_width="wrap_content"-->
-                <!--android:layout_height="wrap_content"-->
-                <!--android:text="This photo will be added to the gallery so all people will be able to see it"-->
-                <!--android:textSize="14sp" />-->
+    <!--<TextView-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:text="This photo will be added to the gallery so all people will be able to see it"-->
+    <!--android:textSize="14sp" />-->
 
-        <!--</LinearLayout>-->
+    <!--</LinearLayout>-->
 
-        <!--<android.support.v7.widget.AppCompatButton-->
-            <!--android:id="@+id/make_public_button"-->
-            <!--style="?android:attr/borderlessButtonStyle"-->
-            <!--android:layout_width="128dp"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_marginBottom="8dp"-->
-            <!--android:layout_marginEnd="8dp"-->
-            <!--android:text="Make public"-->
-            <!--android:textColor="@color/colorAccent"-->
-            <!--app:layout_constraintBottom_toBottomOf="parent"-->
-            <!--app:layout_constraintEnd_toEndOf="parent" />-->
+    <!--<android.support.v7.widget.AppCompatButton-->
+    <!--android:id="@+id/make_public_button"-->
+    <!--style="?android:attr/borderlessButtonStyle"-->
+    <!--android:layout_width="128dp"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:layout_marginBottom="8dp"-->
+    <!--android:layout_marginEnd="8dp"-->
+    <!--android:text="Make public"-->
+    <!--android:textColor="@color/colorAccent"-->
+    <!--app:layout_constraintBottom_toBottomOf="parent"-->
+    <!--app:layout_constraintEnd_toEndOf="parent" />-->
 
-        <!--<android.support.v7.widget.AppCompatButton-->
-            <!--android:id="@+id/do_not_make_public_button"-->
-            <!--style="?android:attr/borderlessButtonStyle"-->
-            <!--android:layout_width="128dp"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_marginBottom="8dp"-->
-            <!--android:layout_marginEnd="16dp"-->
-            <!--android:text="Do not"-->
-            <!--android:textColor="@color/colorPrimary"-->
-            <!--app:layout_constraintBottom_toBottomOf="parent"-->
-            <!--app:layout_constraintEnd_toStartOf="@+id/make_public_button" />-->
+    <!--<android.support.v7.widget.AppCompatButton-->
+    <!--android:id="@+id/do_not_make_public_button"-->
+    <!--style="?android:attr/borderlessButtonStyle"-->
+    <!--android:layout_width="128dp"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:layout_marginBottom="8dp"-->
+    <!--android:layout_marginEnd="16dp"-->
+    <!--android:text="Do not"-->
+    <!--android:textColor="@color/colorPrimary"-->
+    <!--app:layout_constraintBottom_toBottomOf="parent"-->
+    <!--app:layout_constraintEnd_toStartOf="@+id/make_public_button" />-->
 
     <!--</android.support.constraint.ConstraintLayout>-->
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:layout_alignParentBottom="true"
-        android:gravity="center_horizontal">
+        android:gravity="center_horizontal"
+        android:orientation="horizontal">
 
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/fab_close_activity"
@@ -86,8 +86,10 @@
             android:clickable="true"
             android:focusable="true"
             android:src="@drawable/ic_close"
+            android:tint="@color/white"
+            android:tintMode="src_in"
             app:backgroundTint="@color/colorAccent"
-            app:elevation="0dp"/>
+            app:elevation="0dp" />
 
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/fab_send_photo"
@@ -98,8 +100,10 @@
             android:clickable="true"
             android:focusable="true"
             android:src="@drawable/ic_done"
+            android:tint="@color/white"
+            android:tintMode="src_in"
             app:backgroundTint="@color/colorPrimary"
-            app:elevation="0dp"/>
+            app:elevation="0dp" />
 
     </LinearLayout>
 

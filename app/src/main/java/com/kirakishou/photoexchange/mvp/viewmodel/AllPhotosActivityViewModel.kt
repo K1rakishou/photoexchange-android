@@ -58,10 +58,10 @@ class AllPhotosActivityViewModel(
         compositeDisposable += Observable.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
             .subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
-            //do not start the service if there are photos to be uploaded
+            //do not start the service if there are queued up photos
             .filter { count -> count == 0 }
             .map {
-                val uploadedPhotosCount = photosRepository.countAllByState(PhotoState.PHOTO_UPLOADED)
+                val uploadedPhotosCount = photosRepository.countAllByStates(arrayOf(PhotoState.PHOTO_UPLOADED, PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED))
                 val receivedPhotosCount = photoAnswerRepository.countAll()
 
                 Timber.e("uploadedPhotosCount: $uploadedPhotosCount, receivedPhotosCount: $receivedPhotosCount")

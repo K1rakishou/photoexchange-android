@@ -47,6 +47,10 @@
                     android:id="@+id/received_icon_image_view"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:src="@drawable/ic_done_all"
+                    android:tint="@color/white"
+                    android:tintMode="src_in"
+                    android:visibility="gone"
                     android:layout_gravity="center_vertical" />
 
                 <TextView
