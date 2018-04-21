@@ -33,19 +33,20 @@ class UploadPhotosUseCase(
                 try {
                     if (BitmapUtils.rotatePhoto(photo.photoTempFile, rotatedPhotoFile)) {
                         val response = uploadPhoto(rotatedPhotoFile, location, userId, callbacks, photo).blockingGet()
-
-                        val errorCode = ErrorCode.from(response.serverErrorCode)
-                        if (errorCode == ErrorCode.OK) {
-                            if (handlePhotoUploaded(photo, response, callbacks)) {
-                                continue
+                        val errorCode = ErrorCode.fromInt<ErrorCode.UploadPhotoErrors>(response.serverErrorCode)
+                        when (errorCode) {
+                            is ErrorCode.UploadPhotoErrors.Ok -> {
+                                if (!handlePhotoUploaded(photo, response, callbacks)) {
+                                    handleFailedPhoto(photo, callbacks)
+                                }
                             }
+
+                            else -> handleFailedPhoto(photo, callbacks)
                         }
                     }
                 } finally {
                     FileUtils.deleteFile(rotatedPhotoFile)
                 }
-
-                handleFailedPhoto(photo, callbacks)
             } catch (error: Throwable) {
                 Timber.e(error)
                 handleFailedPhoto(photo, callbacks)

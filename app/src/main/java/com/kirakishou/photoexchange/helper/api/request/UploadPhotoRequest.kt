@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.helper.api.request
 import com.google.gson.Gson
 import com.kirakishou.photoexchange.helper.ProgressRequestBody
 import com.kirakishou.photoexchange.helper.api.ApiService
+import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.net.packet.SendPhotoPacket
@@ -31,50 +32,30 @@ class UploadPhotoRequest<T : StatusResponse>(
 
     @Suppress("UNCHECKED_CAST")
     override fun execute(): Single<T> {
-        //TODO: add OnApiErrorSingle
-        return Single.fromCallable {
+        val single = Single.fromCallable {
             val packet = SendPhotoPacket(location.lon, location.lat, userId)
             val photoFile = File(photoFilePath)
 
             if (!photoFile.isFile || !photoFile.exists()) {
-                return@fromCallable UploadPhotoResponse.error(ErrorCode.NO_PHOTO_FILE_ON_DISK) as T
+                throw NoPhotoFileOnDiskException()
             }
 
-            val body = getBody(photoFile, packet, callback)
-
-            try {
-                val response = apiService.uploadPhoto(body.part(0), body.part(1))
-                    .blockingGet() as Response<T>
-
-                return@fromCallable extractResponse(response)
-            } catch (error: Throwable) {
-                return@fromCallable UploadPhotoResponse.error(ErrorCode.UNKNOWN_ERROR) as T
-            }
-
-        }.subscribeOn(schedulerProvider.BG())
-            .observeOn(schedulerProvider.BG())
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun extractResponse(response: Response<T>): T {
-        if (!response.isSuccessful) {
-            try {
-                val responseJson = response.errorBody()!!.string()
-                val error = gson.fromJson<StatusResponse>(responseJson, StatusResponse::class.java)
-
-                //may happen in some rare cases
-                return if (error?.serverErrorCode == null) {
-                    UploadPhotoResponse.error(ErrorCode.BAD_SERVER_RESPONSE) as T
-                } else {
-                    UploadPhotoResponse.error(ErrorCode.from(error.serverErrorCode)) as T
-                }
-            } catch (e: Throwable) {
-                Timber.e(e)
-                return UploadPhotoResponse.error(ErrorCode.UNKNOWN_ERROR) as T
-            }
+            return@fromCallable getBody(photoFile, packet, callback)
         }
 
-        return response.body()!!
+        return single
+            .subscribeOn(schedulerProvider.BG())
+            .observeOn(schedulerProvider.BG())
+            .flatMap { body ->
+                return@flatMap apiService.uploadPhoto(body.part(0), body.part(1))
+                    .lift(OnApiErrorSingle<UploadPhotoResponse>(gson, UploadPhotoResponse::class.java)) as Single<T>
+            }
+            .onErrorReturn { throwable ->
+                return@onErrorReturn when (throwable) {
+                    is NoPhotoFileOnDiskException -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.NoPhotoFileOnDisk()) as T
+                    else -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.UnknownError()) as T
+                }
+            }
     }
 
     private fun getBody(photoFile: File, packet: SendPhotoPacket, callback: UploadPhotosUseCase.PhotoUploadProgressCallback): MultipartBody {
@@ -86,4 +67,6 @@ class UploadPhotoRequest<T : StatusResponse>(
             .addFormDataPart("packet", packetJson)
             .build()
     }
+
+    class NoPhotoFileOnDiskException : Exception()
 }

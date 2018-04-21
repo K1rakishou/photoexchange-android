@@ -31,20 +31,16 @@ class FindPhotoAnswersUseCase(
 
         try {
             val response = apiClient.getPhotoAnswers(photoNames, userId).blockingGet()
-            when (ErrorCode.from(response.serverErrorCode)) {
+            val errorCode = ErrorCode.fromInt<ErrorCode.GetPhotoAnswerErrors>(response.serverErrorCode)
 
-                ErrorCode.OK -> TODO()
-                ErrorCode.BAD_REQUEST -> TODO()
-                ErrorCode.REPOSITORY_ERROR -> TODO()
-                ErrorCode.DISK_ERROR -> TODO()
-                ErrorCode.NO_PHOTOS_TO_SEND_BACK -> TODO()
-                ErrorCode.BAD_PHOTO_ID -> TODO()
-                ErrorCode.UPLOAD_MORE_PHOTOS -> TODO()
-                ErrorCode.NOT_FOUND -> TODO()
+            when (errorCode) {
+                is ErrorCode.GetPhotoAnswerErrors.Ok -> {
+                    //TODO
+                }
 
-                ErrorCode.BAD_SERVER_RESPONSE -> TODO()
-                ErrorCode.BAD_ERROR_CODE -> TODO()
-                ErrorCode.UNKNOWN_ERROR -> TODO()
+                else -> {
+                    //TODO
+                }
             }
 
             val repoResults = arrayListOf<Boolean>()
