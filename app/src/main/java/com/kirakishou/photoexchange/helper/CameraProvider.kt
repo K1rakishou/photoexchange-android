@@ -40,8 +40,8 @@ open class CameraProvider(
 
     fun startCamera() {
         if (!isStarted()) {
-            camera?.apply {
-                this.start()
+            if (camera != null) {
+                camera!!.start()
                 isStarted.set(true)
             }
         }
@@ -49,14 +49,14 @@ open class CameraProvider(
 
     fun stopCamera() {
         if (isStarted()) {
-            camera?.apply {
-                this.stop()
-                isStarted.set(false)
+            isStarted.set(false)
+            if (camera != null) {
+                camera!!.stop()
             }
         }
     }
 
-    private fun isStarted(): Boolean = isStarted.get()
+    fun isStarted(): Boolean = isStarted.get()
     fun isAvailable(): Boolean = camera?.isAvailable(back()) ?: false
 
     fun takePhoto(file: File): Single<Boolean> {

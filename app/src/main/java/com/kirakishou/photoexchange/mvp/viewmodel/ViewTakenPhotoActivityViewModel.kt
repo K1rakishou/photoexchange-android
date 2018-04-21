@@ -49,7 +49,7 @@ class ViewTakenPhotoActivityViewModel(
 
                 getView()?.onPhotoUpdated()
 
-            } catch (error: Throwable) {
+            } catch (error: Exception) {
                 Timber.tag(tag).e(error)
                 getView()?.showToast("Could not update photo in the database (database error)", Toast.LENGTH_LONG)
                 getView()?.showControls()

@@ -58,7 +58,28 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         initViews()
+    }
+
+    override fun onActivityStart() {
         checkPermissions()
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        showControls()
+
+        if (!cameraProvider.isStarted()) {
+            cameraProvider.startCamera()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        cameraProvider.stopCamera()
+    }
+
+    override fun onActivityStop() {
     }
 
     private fun checkPermissions() {
@@ -106,22 +127,9 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
             return
         }
 
-        cameraProvider.startCamera()
-    }
-
-    override fun onActivityDestroy() {
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        showControls()
-        cameraProvider.startCamera()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        cameraProvider.stopCamera()
+        if (!cameraProvider.isStarted()) {
+            cameraProvider.startCamera()
+        }
     }
 
     private fun showAppCannotWorkWithoutCameraPermissionDialog() {

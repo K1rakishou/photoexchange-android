@@ -24,7 +24,7 @@ class GetPhotoAnswersRequest<T : PhotoAnswerResponse>(
             .subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
             .onErrorReturn { _ ->
-                return@onErrorReturn UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.UnknownError()) as T
+                return@onErrorReturn UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.Remote.UnknownError()) as T
             } as Single<T>
     }
 }

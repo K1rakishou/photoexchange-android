@@ -66,7 +66,7 @@ class TakePhotoActivityViewModel(
                 }
 
                 getView()?.onPhotoTaken(myPhoto)
-            } catch (error: Throwable) {
+            } catch (error: Exception) {
                 Timber.tag(tag).e(error)
                 photosRepository.deleteMyPhoto(myPhoto)
                 getView()?.showToast("Could not take photo (database error)", Toast.LENGTH_LONG)

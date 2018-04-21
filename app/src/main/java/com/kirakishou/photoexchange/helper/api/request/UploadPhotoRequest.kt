@@ -52,8 +52,8 @@ class UploadPhotoRequest<T : StatusResponse>(
             }
             .onErrorReturn { throwable ->
                 return@onErrorReturn when (throwable) {
-                    is NoPhotoFileOnDiskException -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.NoPhotoFileOnDisk()) as T
-                    else -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.UnknownError()) as T
+                    is NoPhotoFileOnDiskException -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.Local.NoPhotoFileOnDisk()) as T
+                    else -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.Remote.UnknownError()) as T
                 }
             }
     }

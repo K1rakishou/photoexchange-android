@@ -62,9 +62,9 @@ class OnApiErrorSingle<T : StatusResponse>(
 
     private fun getBadErrorCodeByClass(clazz: Class<*>): ErrorCode {
         return when (clazz) {
-            is ErrorCode.UploadPhotoErrors -> ErrorCode.UploadPhotoErrors.BadServerResponse()
-            is ErrorCode.GetPhotoAnswerErrors -> ErrorCode.GetPhotoAnswerErrors.BadServerResponse()
-            is ErrorCode.MarkPhotoAsReceivedErrors -> ErrorCode.MarkPhotoAsReceivedErrors.BadServerResponse()
+            is ErrorCode.UploadPhotoErrors -> ErrorCode.UploadPhotoErrors.Local.BadServerResponse()
+            is ErrorCode.GetPhotoAnswerErrors -> ErrorCode.GetPhotoAnswerErrors.Local.BadServerResponse()
+            is ErrorCode.MarkPhotoAsReceivedErrors -> ErrorCode.MarkPhotoAsReceivedErrors.Local.BadServerResponse()
             else -> throw IllegalArgumentException("Bad class: $clazz")
         }
     }

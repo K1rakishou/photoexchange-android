@@ -81,8 +81,19 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     override fun getContentView(): Int = R.layout.activity_all_photos
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
-        initRx()
         checkPermissions(savedInstanceState)
+    }
+
+    override fun onActivityStart() {
+        initRx()
+    }
+
+    override fun onActivityStop() {
+        service?.let { srvc ->
+            srvc.detachCallback()
+            unbindService(connection)
+            service = null
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
@@ -155,14 +166,6 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             .doOnError { Timber.e(it) }
             .subscribe()
 
-    }
-
-    override fun onActivityDestroy() {
-        service?.let { srvc ->
-            srvc.detachCallback()
-            unbindService(connection)
-            service = null
-        }
     }
 
     private fun initViews() {

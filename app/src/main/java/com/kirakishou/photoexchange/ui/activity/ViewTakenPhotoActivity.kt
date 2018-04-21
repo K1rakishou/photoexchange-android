@@ -45,6 +45,13 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
         initViews()
     }
 
+    override fun onActivityStart() {
+
+    }
+
+    override fun onActivityStop() {
+    }
+
     private fun initViews() {
         compositeDisposable += RxView.clicks(fabCloseActivity)
             .subscribeOn(AndroidSchedulers.mainThread())
@@ -65,9 +72,6 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
         require(intent.extras != null) { "Intent does not contain photos bundle" }
 
         takenPhoto = MyPhoto.fromBundle(intent.extras!!)
-    }
-
-    override fun onActivityDestroy() {
     }
 
     override fun hideControls() {

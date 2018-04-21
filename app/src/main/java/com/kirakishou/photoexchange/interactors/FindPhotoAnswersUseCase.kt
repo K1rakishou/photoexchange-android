@@ -26,15 +26,14 @@ class FindPhotoAnswersUseCase(
         }
 
         val photoNames = uploadedPhotos
-            .map { it.photoName!! }
-            .joinToString(",")
+            .joinToString(",") { it.photoName!! }
 
         try {
             val response = apiClient.getPhotoAnswers(photoNames, userId).blockingGet()
             val errorCode = ErrorCode.fromInt<ErrorCode.GetPhotoAnswerErrors>(response.serverErrorCode)
 
             when (errorCode) {
-                is ErrorCode.GetPhotoAnswerErrors.Ok -> {
+                is ErrorCode.GetPhotoAnswerErrors.Remote.Ok -> {
                     //TODO
                 }
 
@@ -64,7 +63,7 @@ class FindPhotoAnswersUseCase(
             }
 
             return repoResults.none { !it }
-        } catch (error: Throwable) {
+        } catch (error: Exception) {
             Timber.e(error)
             return false
         }
