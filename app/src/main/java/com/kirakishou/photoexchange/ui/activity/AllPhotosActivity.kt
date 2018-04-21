@@ -185,18 +185,20 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     override fun getCurrentLocation(): Single<LonLat> {
-        return Single.fromCallable {
+        val resultSingle = Single.fromCallable {
             if (!locationManager.isGpsEnabled()) {
                 return@fromCallable LonLat.empty()
             }
 
             return@fromCallable RxLocationManager.start(locationManager)
                 .observeOn(Schedulers.io())
-                .delay(GPS_DELAY_MS, TimeUnit.MILLISECONDS)
                 .timeout(GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS, TimeUnit.MILLISECONDS)
                 .onErrorReturnItem(LonLat.empty())
                 .blockingFirst()
         }
+
+        return resultSingle
+            .delay(GPS_DELAY_MS, TimeUnit.MILLISECONDS)
     }
 
     private fun initTabs() {

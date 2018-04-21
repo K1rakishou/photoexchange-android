@@ -26,10 +26,8 @@ import io.fotoapparat.view.CameraView
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.io.File
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
@@ -68,10 +66,7 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
         super.onResume()
 
         showControls()
-
-        if (!cameraProvider.isStarted()) {
-            cameraProvider.startCamera()
-        }
+        startCamera()
     }
 
     override fun onPause() {
@@ -101,7 +96,7 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
                 return@askForPermission
             }
 
-            onPermissionsGranted()
+            startCamera()
         }
     }
 
@@ -119,7 +114,11 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
             .subscribe()
     }
 
-    private fun onPermissionsGranted() {
+    private fun startCamera() {
+        if (cameraProvider.isStarted()) {
+            return
+        }
+
         cameraProvider.provideCamera(cameraView)
 
         if (!cameraProvider.isAvailable()) {
@@ -127,9 +126,7 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
             return
         }
 
-        if (!cameraProvider.isStarted()) {
-            cameraProvider.startCamera()
-        }
+        cameraProvider.startCamera()
     }
 
     private fun showAppCannotWorkWithoutCameraPermissionDialog() {

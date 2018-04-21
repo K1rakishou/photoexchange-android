@@ -1,7 +1,9 @@
 package com.kirakishou.photoexchange.di.module
 
 import android.arch.lifecycle.ViewModelProviders
+import android.content.Context
 import com.kirakishou.photoexchange.di.scope.PerActivity
+import com.kirakishou.photoexchange.helper.CameraProvider
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
@@ -31,7 +33,13 @@ open class TakePhotoActivityModule(
 
     @PerActivity
     @Provides
-    fun provideViewModel(viewModelFactory: TakePhotoActivityViewModelFactory): TakePhotoActivityViewModel {
+    open fun provideViewModel(viewModelFactory: TakePhotoActivityViewModelFactory): TakePhotoActivityViewModel {
         return ViewModelProviders.of(activity, viewModelFactory).get(TakePhotoActivityViewModel::class.java)
+    }
+
+    @PerActivity
+    @Provides
+    open fun provideCameraProvider(context: Context): CameraProvider {
+        return CameraProvider(context)
     }
 }

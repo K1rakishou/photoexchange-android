@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
 import android.widget.Toast
+import com.kirakishou.photoexchange.helper.CameraProvider
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
@@ -10,6 +11,8 @@ import io.reactivex.Completable
 import io.reactivex.rxkotlin.plusAssign
 import timber.log.Timber
 import java.lang.ref.WeakReference
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 /**
  * Created by kirakishou on 11/7/2017.
@@ -52,7 +55,10 @@ class TakePhotoActivityViewModel(
                 settingsRepository.generateUserIdIfNotExists()
 
                 val file = photosRepository.createFile()
-                val takePhotoStatus = getView()?.takePhoto(file)?.blockingGet() ?: false
+                val takePhotoStatus = getView()?.takePhoto(file)
+                    ?.observeOn(schedulerProvider.BG())
+                    ?.timeout(3, TimeUnit.SECONDS)
+                    ?.blockingGet() ?: false
                 if (!takePhotoStatus) {
                     return@fromAction
                 }
@@ -68,13 +74,33 @@ class TakePhotoActivityViewModel(
                 getView()?.onPhotoTaken(myPhoto)
             } catch (error: Exception) {
                 Timber.tag(tag).e(error)
+
                 photosRepository.deleteMyPhoto(myPhoto)
-                getView()?.showToast("Could not take photo (database error)", Toast.LENGTH_LONG)
+                handleException(error)
                 getView()?.showControls()
             }
         }.subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
             .subscribe()
+    }
+
+    private fun handleException(error: Exception) {
+        when (error.cause) {
+            null -> getView()?.showToast("Could not take photo (database error)", Toast.LENGTH_LONG)
+
+            else -> when (error.cause!!) {
+                is CameraProvider.CameraIsNotAvailable -> {
+                    getView()?.showToast("Could not take photo (camera is not available)", Toast.LENGTH_LONG)
+                }
+                is CameraProvider.CameraIsNotStartedException -> {
+                    getView()?.showToast("Could not take photo (camera is not started)", Toast.LENGTH_LONG)
+                }
+                is TimeoutException -> {
+                    getView()?.showToast("Could not take photo (exceeded maximum camera wait time)", Toast.LENGTH_LONG)
+                }
+                else -> getView()?.showToast("Could not take photo (unknown error)", Toast.LENGTH_LONG)
+            }
+        }
     }
 }
 

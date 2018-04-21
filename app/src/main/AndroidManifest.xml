@@ -19,16 +19,18 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/PhotoExchangeTheme">
-        <activity android:name="com.kirakishou.photoexchange.ui.activity.TakePhotoActivity">
+        <activity android:name="com.kirakishou.photoexchange.ui.activity.TakePhotoActivity"
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity" />
-        <activity android:name="com.kirakishou.photoexchange.ui.activity.AllPhotosActivity" />
+        <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity"
+            android:launchMode="singleTask"/>
+        <activity android:name="com.kirakishou.photoexchange.ui.activity.AllPhotosActivity"
+            android:launchMode="singleTask"/>
 
         <meta-data
             android:name="io.fabric.ApiKey"
