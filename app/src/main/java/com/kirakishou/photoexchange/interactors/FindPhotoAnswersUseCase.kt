@@ -31,10 +31,10 @@ class FindPhotoAnswersUseCase(
                 val photoNames = data.photoNames
 
                 val response = apiClient.getPhotoAnswers(photoNames, userId).blockingGet()
-                val errorCode = response.errorCode as ErrorCode.GetPhotoAnswerErrors
+                val errorCode = response.errorCode as ErrorCode.FindPhotoAnswerErrors
 
                 when (errorCode) {
-                    is ErrorCode.GetPhotoAnswerErrors.Remote.Ok -> handleSuccessResult(response, callbacks)
+                    is ErrorCode.FindPhotoAnswerErrors.Remote.Ok -> handleSuccessResult(response, callbacks)
                     else -> callbacks.get()?.onFailed(errorCode)
                 }
 

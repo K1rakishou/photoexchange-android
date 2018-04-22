@@ -69,7 +69,7 @@ class FindPhotoAnswerService : Service(), FindPhotoAnswerServiceCallbacks {
         callback.get()?.onPhotoFindEvent(PhotoFindEvent.OnPhotoAnswerFound(photoAnswer))
     }
 
-    override fun onFailed(errorCode: ErrorCode) {
+    override fun onFailed(errorCode: ErrorCode.FindPhotoAnswerErrors) {
         updateUploadingNotificationShowError()
         callback.get()?.onPhotoFindEvent(PhotoFindEvent.OnFailed(errorCode))
     }

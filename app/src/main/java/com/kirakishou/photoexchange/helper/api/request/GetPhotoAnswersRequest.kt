@@ -33,8 +33,8 @@ class GetPhotoAnswersRequest<T>(
         return when (error) {
             is ApiException -> PhotoAnswerResponse.error(error.errorCode)
             is SocketTimeoutException,
-            is TimeoutException -> PhotoAnswerResponse.error(ErrorCode.GetPhotoAnswerErrors.Local.Timeout())
-            else -> PhotoAnswerResponse.error(ErrorCode.GetPhotoAnswerErrors.Remote.UnknownError())
+            is TimeoutException -> PhotoAnswerResponse.error(ErrorCode.FindPhotoAnswerErrors.Local.Timeout())
+            else -> PhotoAnswerResponse.error(ErrorCode.FindPhotoAnswerErrors.Remote.UnknownError())
         }
     }
 }

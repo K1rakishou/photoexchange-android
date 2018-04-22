@@ -20,7 +20,7 @@ private constructor(
 
     companion object {
         fun success(photoAnswers: List<PhotoAnswer>, allFound: Boolean): PhotoAnswerResponse {
-            return PhotoAnswerResponse(photoAnswers, allFound, ErrorCode.GetPhotoAnswerErrors.Remote.Ok())
+            return PhotoAnswerResponse(photoAnswers, allFound, ErrorCode.FindPhotoAnswerErrors.Remote.Ok())
         }
 
         fun error(errorCode: ErrorCode): PhotoAnswerResponse {
