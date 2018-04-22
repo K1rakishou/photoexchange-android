@@ -183,7 +183,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
 
             notificationChannel.enableLights(false)
             notificationChannel.enableVibration(false)
-            notificationChannel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
+            notificationChannel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
 
             getNotificationManager().createNotificationChannel(notificationChannel)
         }

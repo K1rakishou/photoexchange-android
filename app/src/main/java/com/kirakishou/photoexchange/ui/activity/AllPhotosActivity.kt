@@ -86,12 +86,13 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     private val GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS = 15.seconds()
     private val adapter = FragmentTabsPager(supportFragmentManager)
     private val locationManager by lazy { MyLocationManager(applicationContext) }
+    private var savedInstanceState: Bundle? = null
     private var viewState = AllPhotosActivityViewState()
 
     override fun getContentView(): Int = R.layout.activity_all_photos
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
-        checkPermissions(savedInstanceState)
+        this.savedInstanceState = savedInstanceState
     }
 
     override fun onInitRx() {
@@ -123,6 +124,11 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     override fun onActivityStart() {
+    }
+
+    override fun onResume() {
+        super.onResume()
+        checkPermissions(this.savedInstanceState)
     }
 
     override fun onActivityStop() {
@@ -326,7 +332,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             startService(serviceIntent)
             bindService(serviceIntent, findServiceConnection, Context.BIND_AUTO_CREATE)
         } else {
-            findPhotoAnswerService?.startSearchingForPhotoAnswers()
+            Timber.e("FindingService is already running")
         }
     }
 
@@ -338,7 +344,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             startService(serviceIntent)
             bindService(serviceIntent, uploadServiceConnection, Context.BIND_AUTO_CREATE)
         } else {
-            uploadPhotoService?.startPhotosUploading()
+            Timber.e("UploadingService is already running")
         }
     }
 

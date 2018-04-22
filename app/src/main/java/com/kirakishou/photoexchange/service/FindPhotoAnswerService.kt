@@ -21,6 +21,7 @@ import timber.log.Timber
 import java.lang.ref.WeakReference
 import javax.inject.Inject
 
+
 class FindPhotoAnswerService : Service(), FindPhotoAnswerServiceCallbacks {
 
     @Inject
@@ -183,7 +184,7 @@ class FindPhotoAnswerService : Service(), FindPhotoAnswerServiceCallbacks {
 
             notificationChannel.enableLights(false)
             notificationChannel.enableVibration(false)
-            notificationChannel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
+            notificationChannel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
 
             getNotificationManager().createNotificationChannel(notificationChannel)
         }
@@ -208,7 +209,6 @@ class FindPhotoAnswerService : Service(), FindPhotoAnswerServiceCallbacks {
         }
         return notificationManager!!
     }
-
 
     private fun resolveDaggerDependency() {
         (application as PhotoExchangeApplication).applicationComponent
