@@ -1,14 +1,11 @@
 package com.kirakishou.photoexchange.helper
 
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
-import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
-import com.kirakishou.photoexchange.service.UploadPhotoServiceCallbacks
 import okhttp3.MediaType
 import okio.BufferedSink
 import okhttp3.RequestBody
 import java.io.File
 import java.io.FileInputStream
-import java.lang.ref.WeakReference
 
 
 /**

@@ -9,19 +9,17 @@ import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
+import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
+import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapterSpanSizeLookup
 import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewState
 import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
-import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
-import timber.log.Timber
 import javax.inject.Inject
 
 
@@ -93,7 +91,7 @@ class MyPhotosFragment : BaseFragment() {
     }
 
     private fun initRx() {
-        compositeDisposable += viewModel.onUploadingPhotoEventSubject
+        compositeDisposable += viewModel.onPhotoUploadEventSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { event -> onUploadingEvent(event) }
@@ -147,41 +145,37 @@ class MyPhotosFragment : BaseFragment() {
         }
     }
 
-    private fun onUploadingEvent(event: PhotoUploadingEvent) {
+    private fun onUploadingEvent(event: PhotoUploadEvent) {
         if (!isAdded) {
             return
         }
 
         requireActivity().runOnUiThread {
             when (event) {
-                is PhotoUploadingEvent.OnPrepare -> {
+                is PhotoUploadEvent.OnPrepare -> {
                     scrollRecyclerViewToTop()
                 }
-                is PhotoUploadingEvent.OnPhotoUploadingStart -> {
+                is PhotoUploadEvent.OnPhotoUploadStart -> {
                     adapter.addMyPhoto(event.myPhoto.also { it.photoState = PhotoState.PHOTO_UPLOADING })
                 }
-                is PhotoUploadingEvent.OnProgress -> {
+                is PhotoUploadEvent.OnProgress -> {
                     adapter.addMyPhoto(event.photo)
                     adapter.updatePhotoProgress(event.photo.id, event.progress)
                 }
-                is PhotoUploadingEvent.OnUploaded -> {
+                is PhotoUploadEvent.OnUploaded -> {
                     adapter.removePhotoById(event.myPhoto.id)
                     adapter.addMyPhoto(event.myPhoto.also { it.photoState = PhotoState.PHOTO_UPLOADED })
                 }
-                is PhotoUploadingEvent.OnFailedToUpload -> {
+                is PhotoUploadEvent.OnFailedToUpload -> {
                     adapter.removePhotoById(event.myPhoto.id)
                     adapter.addMyPhoto(event.myPhoto.also { it.photoState = PhotoState.FAILED_TO_UPLOAD })
-
-                    event.errorMessage?.let { errorMessage ->
-                        Timber.e("Error: $errorMessage")
-                    }
                 }
-                is PhotoUploadingEvent.OnEnd -> {
+                is PhotoUploadEvent.OnEnd -> {
                 }
-                is PhotoUploadingEvent.OnUnknownError -> {
+                is PhotoUploadEvent.OnUnknownError -> {
                     adapter.clear()
                 }
-                else -> throw IllegalArgumentException("Unknown PhotoUploadingEvent $event")
+                else -> throw IllegalArgumentException("Unknown PhotoUploadEvent $event")
             }
         }
     }

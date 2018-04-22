@@ -8,8 +8,9 @@ import com.kirakishou.photoexchange.helper.extension.minutes
 import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
+import com.kirakishou.photoexchange.mvp.model.PhotoFindEvent
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
+import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
@@ -40,7 +41,8 @@ class AllPhotosActivityViewModel(
     private val SERVICE_START_DEBOUNCE_TIME_MS = 10.seconds()
     private val CHECK_SHOULD_START_SERVICE_DELAY_MS = 1500L
 
-    val onUploadingPhotoEventSubject = PublishSubject.create<PhotoUploadingEvent>().toSerialized()
+    val onPhotoUploadEventSubject = PublishSubject.create<PhotoUploadEvent>().toSerialized()
+    val onPhotoFindEventSubject = PublishSubject.create<PhotoFindEvent>().toSerialized()
     val myPhotosFragmentViewStateSubject = PublishSubject.create<MyPhotosFragmentViewStateEvent>().toSerialized()
     val startPhotoUploadingServiceSubject = PublishSubject.create<Unit>().toSerialized()
     val startFindPhotoAnswerServiceSubject = PublishSubject.create<Unit>().toSerialized()
@@ -158,8 +160,12 @@ class AllPhotosActivityViewModel(
         }
     }
 
-    fun forwardUploadPhotoEvent(event: PhotoUploadingEvent) {
-        onUploadingPhotoEventSubject.onNext(event)
+    fun forwardUploadPhotoEvent(event: PhotoUploadEvent) {
+        onPhotoUploadEventSubject.onNext(event)
+    }
+
+    fun forwardPhotoFindEvent(event: PhotoFindEvent) {
+        onPhotoFindEventSubject.onNext(event)
     }
 
     fun deletePhotoById(photoId: Long): Completable {

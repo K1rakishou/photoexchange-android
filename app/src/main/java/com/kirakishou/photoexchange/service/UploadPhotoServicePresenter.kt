@@ -4,7 +4,7 @@ import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerPro
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
-import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
+import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
 import com.kirakishou.photoexchange.mvp.model.UploadPhotoData
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
@@ -30,14 +30,11 @@ class UploadPhotoServicePresenter(
         compositeDisposable += uploadPhotosSubject
             .subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
-            .filter { !it.isEmpty() }
-            .doOnEach { callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnPrepare()) }
-            .doOnNext { data ->
-                updatePhotosUseCase.uploadPhotos(data.userId, data.location, callbacks)
-                callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnEnd())
-            }
+            .doOnEach { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnPrepare()) }
+            .flatMap { data -> updatePhotosUseCase.uploadPhotos(data.userId, data.location, callbacks) }
+            .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnEnd()) }
             .doOnError { error ->
-                callbacks.get()?.onUploadingEvent(PhotoUploadingEvent.OnUnknownError())
+                callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnUnknownError(error))
                 callbacks.get()?.onError(error)
             }
             .doOnEach { callbacks.get()?.stopService() }
@@ -60,6 +57,17 @@ class UploadPhotoServicePresenter(
         }
         .subscribeOn(schedulerProvider.BG())
         .observeOn(schedulerProvider.BG())
-        .subscribe(uploadPhotosSubject::onNext, uploadPhotosSubject::onError)
+        .doOnError { error ->
+            callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnUnknownError(error))
+            callbacks.get()?.onError(error)
+            callbacks.get()?.stopService()
+        }
+        .doOnSuccess { data ->
+            if (data.isEmpty()) {
+                callbacks.get()?.stopService()
+            }
+        }
+        .filter { data -> !data.isEmpty() }
+        .subscribe(uploadPhotosSubject::onNext)
     }
 }

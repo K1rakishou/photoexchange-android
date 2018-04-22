@@ -9,7 +9,7 @@ private constructor(
 
     @Expose
     @SerializedName("photo_answers")
-    val photoAnswers: List<PhotoAnswerJsonObject>,
+    val photoAnswers: List<PhotoAnswer>,
 
     @Expose
     @SerializedName("all_found")
@@ -24,11 +24,7 @@ private constructor(
         }
     }
 
-    inner class PhotoAnswerJsonObject(
-        @Expose
-        @SerializedName("user_id")
-        val userId: String,
-
+    inner class PhotoAnswer(
         @Expose
         @SerializedName("uploaded_photo_name")
         val uploadedPhotoName: String,
