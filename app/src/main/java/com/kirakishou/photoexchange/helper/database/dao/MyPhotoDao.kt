@@ -46,6 +46,10 @@ abstract class MyPhotoDao {
         "WHERE ${MyPhotoEntity.PHOTO_NAME_COLUMN} = :photoName")
     abstract fun findByName(photoName: String): MyPhotoEntity?
 
+    @Query("SELECT ${MyPhotoEntity.ID_COLUMN} FROM ${MyPhotoEntity.TABLE_NAME} " +
+        "WHERE ${MyPhotoEntity.PHOTO_NAME_COLUMN} = :photoName")
+    abstract fun findPhotoIdByName(photoName: String): Long?
+
     @Query("SELECT * FROM ${MyPhotoEntity.TABLE_NAME}")
     abstract fun findAll(): List<MyPhotoEntity>
 

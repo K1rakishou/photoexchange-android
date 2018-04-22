@@ -13,4 +13,7 @@ abstract class PhotoAnswerDao {
 
     @Query("SELECT COUNT(*) FROM ${PhotoAnswerEntity.TABLE_NAME}")
     abstract fun countAll(): Long
+
+    @Query("SELECT * FROM ${PhotoAnswerEntity.TABLE_NAME}")
+    abstract fun findAll(): List<PhotoAnswerEntity>
 }

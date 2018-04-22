@@ -11,7 +11,7 @@ import android.support.v4.app.NotificationCompat
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.*
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
+import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
 import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
 import timber.log.Timber
@@ -62,12 +62,14 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     }
 
     fun startPhotosUploading() {
+        requireNotNull(callback.get())
+
         updateUploadingNotificationShowUploading()
         presenter.uploadPhotos()
     }
 
-    override fun onUploadingEvent(event: PhotoUploadingEvent) {
-        callback.get()?.onUploadingEvent(event)
+    override fun onUploadingEvent(event: PhotoUploadEvent) {
+        callback.get()?.onUploadPhotosEvent(event)
     }
 
     override fun onError(error: Throwable) {
@@ -181,7 +183,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
 
             notificationChannel.enableLights(false)
             notificationChannel.enableVibration(false)
-            notificationChannel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
+            notificationChannel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
 
             getNotificationManager().createNotificationChannel(notificationChannel)
         }
@@ -222,7 +224,6 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     }
 
     inner class UploadPhotosBinder : Binder() {
-
         fun getService(): UploadPhotoService {
             return this@UploadPhotoService
         }

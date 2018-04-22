@@ -25,8 +25,8 @@ sealed class ErrorCode(val value: Int) {
         }
     }
 
-    sealed class GetPhotoAnswerErrors(value: Int) : ErrorCode(value) {
-        sealed class Remote(value: Int) : GetPhotoAnswerErrors(value) {
+    sealed class FindPhotoAnswerErrors(value: Int) : ErrorCode(value) {
+        sealed class Remote(value: Int) : FindPhotoAnswerErrors(value) {
             class UnknownError : Remote(-1)
             class Ok : Remote(0)
             class BadRequest : Remote(1)
@@ -37,7 +37,7 @@ sealed class ErrorCode(val value: Int) {
             class NotEnoughPhotosUploaded : Remote(6)
         }
 
-        sealed class Local(value: Int) : GetPhotoAnswerErrors(value) {
+        sealed class Local(value: Int) : FindPhotoAnswerErrors(value) {
             class BadServerResponse(val message: String? = null) : Local(-1000)
             class Timeout : Local(-1001)
         }
@@ -79,22 +79,22 @@ sealed class ErrorCode(val value: Int) {
                     return errorCode as T
                 }
 
-                GetPhotoAnswerErrors::class.java -> {
+                FindPhotoAnswerErrors::class.java -> {
                     val errorCode = when (errorCodeInt) {
                         //local errors
                         null,
-                        -1000 -> GetPhotoAnswerErrors.Local.BadServerResponse()
-                        -1001 -> GetPhotoAnswerErrors.Local.Timeout()
+                        -1000 -> FindPhotoAnswerErrors.Local.BadServerResponse()
+                        -1001 -> FindPhotoAnswerErrors.Local.Timeout()
 
                         //remote errors
-                        -1 -> GetPhotoAnswerErrors.Remote.UnknownError()
-                        0 -> GetPhotoAnswerErrors.Remote.Ok()
-                        1 -> GetPhotoAnswerErrors.Remote.BadRequest()
-                        2 -> GetPhotoAnswerErrors.Remote.DatabaseError()
-                        3 -> GetPhotoAnswerErrors.Remote.NoPhotosInRequest()
-                        4 -> GetPhotoAnswerErrors.Remote.TooManyPhotosRequested()
-                        5 -> GetPhotoAnswerErrors.Remote.NoPhotosToSendBack()
-                        6 -> GetPhotoAnswerErrors.Remote.NotEnoughPhotosUploaded()
+                        -1 -> FindPhotoAnswerErrors.Remote.UnknownError()
+                        0 -> FindPhotoAnswerErrors.Remote.Ok()
+                        1 -> FindPhotoAnswerErrors.Remote.BadRequest()
+                        2 -> FindPhotoAnswerErrors.Remote.DatabaseError()
+                        3 -> FindPhotoAnswerErrors.Remote.NoPhotosInRequest()
+                        4 -> FindPhotoAnswerErrors.Remote.TooManyPhotosRequested()
+                        5 -> FindPhotoAnswerErrors.Remote.NoPhotosToSendBack()
+                        6 -> FindPhotoAnswerErrors.Remote.NotEnoughPhotosUploaded()
                         else -> throw IllegalArgumentException("Unknown errorCodeInt $errorCodeInt")
                     }
 

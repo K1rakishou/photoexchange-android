@@ -3,7 +3,7 @@ package com.kirakishou.photoexchange.helper.database.repository
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.MyPhotoEntity
 import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
-import com.kirakishou.photoexchange.helper.database.mapper.MyPhotoMapper
+import com.kirakishou.photoexchange.helper.database.mapper.MyPhotoEntityMapper
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import timber.log.Timber
@@ -36,7 +36,7 @@ open class PhotosRepository(
         val myPhotoId = myPhotoDao.insert(myPhotoEntity)
 
         myPhotoEntity.id = myPhotoId
-        return MyPhotoMapper.toMyPhoto(myPhotoEntity, tempFileEntity)
+        return MyPhotoEntityMapper.toMyPhoto(myPhotoEntity, tempFileEntity)
     }
 
     fun updateSetPhotoName(photoId: Long, photoName: String): Boolean {
@@ -91,7 +91,7 @@ open class PhotosRepository(
         val myPhotoEntity = myPhotoDao.findById(id) ?: MyPhotoEntity.empty()
         val tempFileEntity = findTempFileById(id)
 
-        return MyPhotoMapper.toMyPhoto(myPhotoEntity, tempFileEntity)
+        return MyPhotoEntityMapper.toMyPhoto(myPhotoEntity, tempFileEntity)
     }
 
     fun findAll(): List<MyPhoto> {
@@ -102,7 +102,7 @@ open class PhotosRepository(
             myPhotoEntity.id?.let { myPhotoId ->
                 val tempFile = findTempFileById(myPhotoId)
 
-                MyPhotoMapper.toMyPhoto(myPhotoEntity, tempFile).let { myPhoto ->
+                MyPhotoEntityMapper.toMyPhoto(myPhotoEntity, tempFile).let { myPhoto ->
                     allMyPhotos += myPhoto
                 }
             }
@@ -134,15 +134,9 @@ open class PhotosRepository(
         return photo?.let { myPhoto ->
             myPhoto.id?.let { photoId ->
                 val tempFileEntity = findTempFileById(photoId)
-                return@let MyPhotoMapper.toMyPhoto(myPhoto, tempFileEntity)
+                return@let MyPhotoEntityMapper.toMyPhoto(myPhoto, tempFileEntity)
             }
         }
-    }
-
-    fun findOnePhotoByState(state: PhotoState): MyPhoto? {
-        val photo = myPhotoDao.findOnePhotoWithState(state) ?: return null
-        val tempFileEntity = findTempFileById(photo.id!!)
-        return MyPhotoMapper.toMyPhoto(photo, tempFileEntity)
     }
 
     fun findAllByState(state: PhotoState): List<MyPhoto> {
@@ -152,13 +146,17 @@ open class PhotosRepository(
         database.transactional {
             for (photo in allPhotoReadyToUploading) {
                 val tempFileEntity = findTempFileById(photo.id!!)
-                resultList += MyPhotoMapper.toMyPhoto(photo, tempFileEntity)
+                resultList += MyPhotoEntityMapper.toMyPhoto(photo, tempFileEntity)
             }
 
             return@transactional true
         }
 
         return resultList
+    }
+
+    fun findByPhotoIdByName(photoName: String): Long {
+        return myPhotoDao.findPhotoIdByName(photoName) ?: -1L
     }
 
     private fun deleteById(id: Long): Boolean {

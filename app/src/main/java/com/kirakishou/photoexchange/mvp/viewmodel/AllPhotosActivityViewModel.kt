@@ -7,14 +7,13 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import com.kirakishou.photoexchange.helper.extension.minutes
 import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.mvp.model.MyPhoto
-import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
+import com.kirakishou.photoexchange.mvp.model.*
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
+import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewStateEvent
 import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -40,8 +39,10 @@ class AllPhotosActivityViewModel(
     private val SERVICE_START_DEBOUNCE_TIME_MS = 10.seconds()
     private val CHECK_SHOULD_START_SERVICE_DELAY_MS = 1500L
 
-    val onUploadingPhotoEventSubject = PublishSubject.create<PhotoUploadingEvent>().toSerialized()
+    val onPhotoUploadEventSubject = PublishSubject.create<PhotoUploadEvent>().toSerialized()
+    val onPhotoFindEventSubject = PublishSubject.create<PhotoFindEvent>().toSerialized()
     val myPhotosFragmentViewStateSubject = PublishSubject.create<MyPhotosFragmentViewStateEvent>().toSerialized()
+    val receivedPhotosFragmentViewStateSubject = PublishSubject.create<ReceivedPhotosFragmentViewStateEvent>().toSerialized()
     val startPhotoUploadingServiceSubject = PublishSubject.create<Unit>().toSerialized()
     val startFindPhotoAnswerServiceSubject = PublishSubject.create<Unit>().toSerialized()
     val myPhotosAdapterButtonClickSubject = PublishSubject.create<MyPhotosAdapter.MyPhotosAdapterButtonClickEvent>().toSerialized()
@@ -108,7 +109,14 @@ class AllPhotosActivityViewModel(
             .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)
     }
 
-    fun loadPhotos(): Single<MutableList<MyPhoto>> {
+    fun loadPhotoAnswers(): Single<List<PhotoAnswer>> {
+        return Single.fromCallable {
+            photoAnswerRepository.findAll()
+        }.subscribeOn(schedulerProvider.BG())
+            .observeOn(schedulerProvider.BG())
+    }
+
+    fun loadMyPhotos(): Single<MutableList<MyPhoto>> {
         return Single.fromCallable {
             val photos = mutableListOf<MyPhoto>()
 
@@ -158,8 +166,12 @@ class AllPhotosActivityViewModel(
         }
     }
 
-    fun forwardUploadPhotoEvent(event: PhotoUploadingEvent) {
-        onUploadingPhotoEventSubject.onNext(event)
+    fun forwardUploadPhotoEvent(event: PhotoUploadEvent) {
+        onPhotoUploadEventSubject.onNext(event)
+    }
+
+    fun forwardPhotoFindEvent(event: PhotoFindEvent) {
+        onPhotoFindEventSubject.onNext(event)
     }
 
     fun deletePhotoById(photoId: Long): Completable {

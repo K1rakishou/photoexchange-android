@@ -6,11 +6,11 @@ sealed class MyPhotosAdapterItem : BaseAdapterItem() {
 
     override fun getType(): AdapterItemType {
         return when (this) {
-            is MyPhotosAdapterItem.EmptyItem -> AdapterItemType.EMPTY
-            is MyPhotosAdapterItem.MyPhotoItem -> AdapterItemType.VIEW_MY_PHOTO
-            is MyPhotosAdapterItem.ProgressItem -> AdapterItemType.VIEW_PROGRESS
-            is MyPhotosAdapterItem.ObtainCurrentLocationItem -> AdapterItemType.VIEW_OBTAIN_CURRENT_LOCATION_NOTIFICATION
-            is MyPhotosAdapterItem.FailedToUploadItem -> AdapterItemType.VIEW_FAILED_TO_UPLOAD
+            is EmptyItem -> AdapterItemType.EMPTY
+            is MyPhotoItem -> AdapterItemType.VIEW_MY_PHOTO
+            is ProgressItem -> AdapterItemType.VIEW_PROGRESS
+            is ObtainCurrentLocationItem -> AdapterItemType.VIEW_OBTAIN_CURRENT_LOCATION_NOTIFICATION
+            is FailedToUploadItem -> AdapterItemType.VIEW_FAILED_TO_UPLOAD
         }
     }
 

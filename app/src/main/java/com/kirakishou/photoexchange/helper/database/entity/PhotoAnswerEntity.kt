@@ -12,6 +12,9 @@ class PhotoAnswerEntity(
     @ColumnInfo(name = ID_COLUMN)
     var id: Long? = null,
 
+    @ColumnInfo(name = UPLOADED_PHOTO_NAME_COLUMN)
+    var uploadedPhotoName: String? = null,
+
     @ColumnInfo(name = PHOTO_ANSWER_NAME_COLUMN)
     var photoAnswerName: String? = null,
 
@@ -35,6 +38,7 @@ class PhotoAnswerEntity(
         const val TABLE_NAME = "PHOTO_ANSWER"
 
         const val ID_COLUMN = "ID"
+        const val UPLOADED_PHOTO_NAME_COLUMN = "UPLOADED_PHOTO_NAME"
         const val PHOTO_ANSWER_NAME_COLUMN = "PHOTO_ANSWER_NAME"
         const val LON_COLUMN = "LON"
         const val LAT_COLUMN = "LAT"

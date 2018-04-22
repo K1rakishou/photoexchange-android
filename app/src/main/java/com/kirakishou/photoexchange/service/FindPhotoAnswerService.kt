@@ -1,32 +1,28 @@
 package com.kirakishou.photoexchange.service
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
-import android.app.job.JobInfo
-import android.app.job.JobParameters
-import android.app.job.JobScheduler
-import android.app.job.JobService
-import android.content.ComponentName
+import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.os.Binder
 import android.os.Build
-import android.os.PersistableBundle
+import android.os.IBinder
 import android.support.annotation.RequiresApi
 import android.support.v4.app.NotificationCompat
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.FindPhotoAnswerServiceModule
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
+import com.kirakishou.photoexchange.mvp.model.PhotoAnswer
+import com.kirakishou.photoexchange.mvp.model.PhotoFindEvent
+import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
-import io.reactivex.android.schedulers.AndroidSchedulers
+import com.kirakishou.photoexchange.ui.callback.FindPhotoAnswerCallback
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
+import java.lang.ref.WeakReference
 import javax.inject.Inject
 
-class FindPhotoAnswerService : JobService() {
+
+class FindPhotoAnswerService : Service(), FindPhotoAnswerServiceCallbacks {
 
     @Inject
     lateinit var presenter: FindPhotoAnswerServicePresenter
@@ -34,6 +30,8 @@ class FindPhotoAnswerService : JobService() {
     private val tag = "[${this::class.java.simpleName}] "
     private val compositeDisposable = CompositeDisposable()
     private var notificationManager: NotificationManager? = null
+    private val binder = FindPhotoAnswerBinder()
+    private var callback = WeakReference<FindPhotoAnswerCallback>(null)
     private val NOTIFICATION_ID = 2
     private val CHANNEL_ID = "1"
     private val CHANNED_NAME = "name"
@@ -43,41 +41,50 @@ class FindPhotoAnswerService : JobService() {
         Timber.tag(tag).d("Service started")
 
         resolveDaggerDependency()
+        startForeground(NOTIFICATION_ID, createNotificationDownloading())
     }
 
     override fun onDestroy() {
         super.onDestroy()
         Timber.tag(tag).d("Service destroyed")
 
+        presenter.onDetach()
         compositeDisposable.clear()
     }
 
-    override fun onStartJob(params: JobParameters): Boolean {
-        compositeDisposable += presenter.startFindPhotoAnswers()
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .doOnSubscribe { updateUploadingNotificationShowDownloading() }
-            .observeOn(Schedulers.io())
-            .doOnSuccess {
-                updateUploadingNotificationShowSuccess()
-                done(params, it)
-            }
-            .doOnError {
-                Timber.e(it)
-                done(params, false)
-            }
-            .subscribe()
-
-        return true
+    fun attachCallback(_callback: WeakReference<FindPhotoAnswerCallback>) {
+        callback = _callback
     }
 
-    private fun done(params: JobParameters, restartService: Boolean) {
-        Timber.e("done, restartService: $restartService")
-        jobFinished(params, restartService)
+    fun detachCallback() {
+        callback = WeakReference<FindPhotoAnswerCallback>(null)
     }
 
-    override fun onStopJob(params: JobParameters): Boolean {
-        return true
+    fun startSearchingForPhotoAnswers() {
+        updateUploadingNotificationShowDownloading()
+        presenter.startFindPhotoAnswers()
+    }
+
+    override fun onPhotoReceived(photoAnswer: PhotoAnswer, photoId: Long) {
+        updateDownloadingNotificationShowSuccess()
+        callback.get()?.onPhotoFindEvent(PhotoFindEvent.OnPhotoAnswerFound(photoAnswer, photoId))
+    }
+
+    override fun onFailed(errorCode: ErrorCode.FindPhotoAnswerErrors) {
+        updateUploadingNotificationShowError()
+        callback.get()?.onPhotoFindEvent(PhotoFindEvent.OnFailed(errorCode))
+    }
+
+    override fun onError(error: Throwable) {
+        updateUploadingNotificationShowError()
+        callback.get()?.onPhotoFindEvent(PhotoFindEvent.OnUnknownError(error))
+    }
+
+    override fun stopService() {
+        Timber.e("Stopping service")
+
+        stopForeground(true)
+        stopSelf()
     }
 
     private fun updateUploadingNotificationShowDownloading() {
@@ -85,7 +92,7 @@ class FindPhotoAnswerService : JobService() {
         getNotificationManager().notify(NOTIFICATION_ID, newNotification)
     }
 
-    private fun updateUploadingNotificationShowSuccess() {
+    private fun updateDownloadingNotificationShowSuccess() {
         val newNotification = createNotificationSuccess()
         getNotificationManager().notify(NOTIFICATION_ID, newNotification)
     }
@@ -177,7 +184,7 @@ class FindPhotoAnswerService : JobService() {
 
             notificationChannel.enableLights(false)
             notificationChannel.enableVibration(false)
-            notificationChannel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
+            notificationChannel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
 
             getNotificationManager().createNotificationChannel(notificationChannel)
         }
@@ -203,35 +210,23 @@ class FindPhotoAnswerService : JobService() {
         return notificationManager!!
     }
 
-
     private fun resolveDaggerDependency() {
         (application as PhotoExchangeApplication).applicationComponent
             .plus(FindPhotoAnswerServiceModule(this))
             .inject(this)
     }
 
-    companion object {
-        private val JOB_ID = 1
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        return START_NOT_STICKY
+    }
 
-        fun scheduleJob(context: Context) {
-            val jobInfo = JobInfo.Builder(JOB_ID, ComponentName(context, FindPhotoAnswerService::class.java))
-                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_UNMETERED)
-                .setRequiresDeviceIdle(false)
-                .setRequiresCharging(false)
-                .setMinimumLatency(1_000)
-                .setOverrideDeadline(5_000)
-                .setBackoffCriteria(5_000, JobInfo.BACKOFF_POLICY_EXPONENTIAL)
-                .build()
+    override fun onBind(intent: Intent?): IBinder {
+        return binder
+    }
 
-            val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
-            jobScheduler.schedule(jobInfo)
-        }
-
-        fun isAlreadyRunning(context: Context): Boolean {
-            val scheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
-            val found = scheduler.allPendingJobs.any { it.id == JOB_ID }
-
-            return found
+    inner class FindPhotoAnswerBinder : Binder() {
+        fun getService(): FindPhotoAnswerService {
+            return this@FindPhotoAnswerService
         }
     }
 }

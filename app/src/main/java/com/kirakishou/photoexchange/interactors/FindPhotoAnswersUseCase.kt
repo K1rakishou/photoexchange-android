@@ -1,13 +1,20 @@
 package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.api.mapper.PhotoAnswerResponseMapper
 import com.kirakishou.photoexchange.helper.database.MyDatabase
+import com.kirakishou.photoexchange.helper.database.isFail
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.mvp.model.FindPhotosData
 import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
+import com.kirakishou.photoexchange.service.FindPhotoAnswerServiceCallbacks
+import io.reactivex.Observable
 import timber.log.Timber
+import java.lang.ref.WeakReference
 
 class FindPhotoAnswersUseCase(
     private val database: MyDatabase,
@@ -17,66 +24,49 @@ class FindPhotoAnswersUseCase(
     private val apiClient: ApiClient
 ) {
 
-    fun getPhotoAnswers(): Boolean {
-        val userId = settingsRepository.getUserId()!!
-        val uploadedPhotos = myPhotosRepository.findAllByState(PhotoState.PHOTO_UPLOADED)
-        if (uploadedPhotos.isEmpty()) {
-            Timber.d("No uploaded photos found")
-            return false
+    fun getPhotoAnswers(data: FindPhotosData, callbacks: WeakReference<FindPhotoAnswerServiceCallbacks>): Observable<Unit> {
+        return Observable.fromCallable {
+            try {
+                val userId = data.userId!!
+                val photoNames = data.photoNames
+
+                val response = apiClient.getPhotoAnswers(photoNames, userId).blockingGet()
+                val errorCode = response.errorCode as ErrorCode.FindPhotoAnswerErrors
+
+                when (errorCode) {
+                    is ErrorCode.FindPhotoAnswerErrors.Remote.Ok -> handleSuccessResult(response, callbacks)
+                    else -> callbacks.get()?.onFailed(errorCode)
+                }
+
+            } catch (error: Exception) {
+                Timber.e(error)
+                callbacks.get()?.onError(error)
+            }
         }
+    }
 
-        val photoNames = uploadedPhotos
-            .joinToString(",") { it.photoName!! }
+    private fun handleSuccessResult(response: PhotoAnswerResponse, callbacks: WeakReference<FindPhotoAnswerServiceCallbacks>) {
+        for (photoAnswerResponse in response.photoAnswers) {
+            var insertedPhotoAnswerId: Long? = null
 
-        try {
-            val response = apiClient.getPhotoAnswers(photoNames, userId).blockingGet()
-            val errorCode = response.errorCode
-
-            when (errorCode) {
-                is ErrorCode.GetPhotoAnswerErrors.Remote.Ok -> {
-                    //TODO
+            val result = database.transactional {
+                insertedPhotoAnswerId = photoAnswerRepository.insert(photoAnswerResponse)
+                if (insertedPhotoAnswerId!!.isFail()) {
+                    Timber.w("Could not save photo with name ${photoAnswerResponse.photoAnswerName}")
+                    return@transactional false
                 }
 
-                is ErrorCode.GetPhotoAnswerErrors.Local.BadServerResponse -> {
-                    errorCode.message?.let { message ->
-                        Timber.e("BadServerResponse: $message")
-                    }
-                }
-
-                is ErrorCode.GetPhotoAnswerErrors.Local.Timeout -> {
-                    Timber.e("Timeout")
-                }
-
-                else -> {
-                    //TODO
-                }
+                return@transactional myPhotosRepository.updatePhotoState(photoAnswerResponse.uploadedPhotoName,
+                    PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED)
             }
 
-            val repoResults = arrayListOf<Boolean>()
+            val photoAnswer = PhotoAnswerResponseMapper.toPhotoAnswer(insertedPhotoAnswerId, photoAnswerResponse)
 
-            for (photoAnswer in response.photoAnswers) {
-                val result = database.transactional {
-                    if (!photoAnswerRepository.insert(photoAnswer)) {
-                        Timber.w("Could not insert photo with name ${photoAnswer.photoAnswerName}")
-                        return@transactional false
-                    }
+            if (result) {
+                val photoId = myPhotosRepository.findByPhotoIdByName(photoAnswer.uploadedPhotoName)
 
-                    return@transactional myPhotosRepository.updatePhotoState(photoAnswer.photoAnswerName,
-                        PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED)
-                }
-
-                if (result) {
-                    //TODO: send to the server that photo was received successfully
-                }
-
-                repoResults += result
+                callbacks.get()?.onPhotoReceived(photoAnswer, photoId)
             }
-
-//            return repoResults.none { !it }
-            return false
-        } catch (error: Exception) {
-            Timber.e(error)
-            return false
         }
     }
 }

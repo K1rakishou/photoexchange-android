@@ -26,7 +26,7 @@ class MyPhotoEntity(
     @ColumnInfo(name = IS_PUBLIC_COLUMN)
     var isPublic: Boolean = false,
 
-    @ColumnInfo(name = PHOTO_NAME_COLUMN)
+    @ColumnInfo(name = PHOTO_NAME_COLUMN, index = true)
     var photoName: String? = null,
 
     @ColumnInfo(name = PHOTO_STATE_COLUMN)

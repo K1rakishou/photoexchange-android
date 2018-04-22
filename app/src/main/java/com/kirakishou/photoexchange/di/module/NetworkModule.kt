@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.di.module
 
 import com.kirakishou.photoexchange.helper.api.ApiService
+import com.kirakishou.photoexchange.mvp.model.other.Constants
 import dagger.Module
 import dagger.Provides
 import okhttp3.OkHttpClient
@@ -29,13 +30,21 @@ class NetworkModule(private val baseUrl: String) {
     @Singleton
     @Provides
     fun provideOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient {
-        return OkHttpClient.Builder()
-            //TODO: change this
-            .connectTimeout(5, TimeUnit.SECONDS)
-            .writeTimeout(5, TimeUnit.SECONDS)
-            .readTimeout(5, TimeUnit.SECONDS)
-            //.addInterceptor(loggingInterceptor)
-            .build()
+        return if (Constants.isDebugBuild) {
+            OkHttpClient.Builder()
+                .connectTimeout(50000, TimeUnit.SECONDS)
+                .writeTimeout(50000, TimeUnit.SECONDS)
+                .readTimeout(50000, TimeUnit.SECONDS)
+                //.addInterceptor(loggingInterceptor)
+                .build()
+        } else {
+            OkHttpClient.Builder()
+                .connectTimeout(5, TimeUnit.SECONDS)
+                .writeTimeout(5, TimeUnit.SECONDS)
+                .readTimeout(5, TimeUnit.SECONDS)
+                //.addInterceptor(loggingInterceptor)
+                .build()
+        }
     }
 
     @Singleton

@@ -48,3 +48,11 @@ abstract class MyDatabase : RoomDatabase() {
         const val SQLITE_FALSE = 0
     }
 }
+
+internal fun Long.isFail(): Boolean {
+    return this <= 0L
+}
+
+internal fun Long.isSuccess(): Boolean {
+    return this > 0L
+}

@@ -5,6 +5,7 @@ import com.kirakishou.photoexchange.di.scope.PerService
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.extension.asWeak
 import com.kirakishou.photoexchange.interactors.FindPhotoAnswersUseCase
 import com.kirakishou.photoexchange.service.FindPhotoAnswerService
 import com.kirakishou.photoexchange.service.FindPhotoAnswerServicePresenter
@@ -27,6 +28,7 @@ class FindPhotoAnswerServiceModule(
                                                settingsRepository: SettingsRepository,
                                                schedulerProvider: SchedulerProvider,
                                                findPhotoAnswersUseCase: FindPhotoAnswersUseCase): FindPhotoAnswerServicePresenter {
-        return FindPhotoAnswerServicePresenter(myPhotosRepository, settingsRepository, schedulerProvider, findPhotoAnswersUseCase)
+        return FindPhotoAnswerServicePresenter(service.asWeak(), myPhotosRepository, settingsRepository,
+            schedulerProvider, findPhotoAnswersUseCase)
     }
 }

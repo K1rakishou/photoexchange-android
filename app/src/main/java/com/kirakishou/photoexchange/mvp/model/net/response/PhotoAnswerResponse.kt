@@ -9,26 +9,22 @@ private constructor(
 
     @Expose
     @SerializedName("photo_answers")
-    val photoAnswers: List<PhotoAnswerJsonObject>,
-
-    @Expose
-    @SerializedName("all_found")
-    val allFound: Boolean,
+    val photoAnswers: List<PhotoAnswer>,
 
     errorCode: ErrorCode
 ) : StatusResponse(errorCode.value, errorCode) {
 
     companion object {
+        fun success(photoAnswers: List<PhotoAnswer>): PhotoAnswerResponse {
+            return PhotoAnswerResponse(photoAnswers, ErrorCode.FindPhotoAnswerErrors.Remote.Ok())
+        }
+
         fun error(errorCode: ErrorCode): PhotoAnswerResponse {
-            return PhotoAnswerResponse(emptyList(), false, errorCode)
+            return PhotoAnswerResponse(emptyList(), errorCode)
         }
     }
 
-    inner class PhotoAnswerJsonObject(
-        @Expose
-        @SerializedName("user_id")
-        val userId: String,
-
+    inner class PhotoAnswer(
         @Expose
         @SerializedName("uploaded_photo_name")
         val uploadedPhotoName: String,

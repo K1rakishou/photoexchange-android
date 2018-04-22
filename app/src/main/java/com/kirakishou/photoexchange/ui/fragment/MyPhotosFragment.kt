@@ -9,19 +9,17 @@ import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.PhotoUploadingEvent
+import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapterSpanSizeLookup
 import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewState
 import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
-import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
-import timber.log.Timber
 import javax.inject.Inject
 
 
@@ -85,28 +83,25 @@ class MyPhotosFragment : BaseFragment() {
     }
 
     private fun loadPhotos() {
-        compositeDisposable += viewModel.loadPhotos()
-            .subscribeOn(AndroidSchedulers.mainThread())
+        compositeDisposable += viewModel.loadMyPhotos()
             .observeOn(AndroidSchedulers.mainThread())
-            .doOnSuccess { photos -> addPhotoToAdapter(photos) }
+            .doOnSuccess { photos -> addPhotosToAdapter(photos) }
             .subscribe()
     }
 
     private fun initRx() {
-        compositeDisposable += viewModel.onUploadingPhotoEventSubject
-            .subscribeOn(AndroidSchedulers.mainThread())
+        compositeDisposable += viewModel.onPhotoUploadEventSubject
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { event -> onUploadingEvent(event) }
             .subscribe()
 
         compositeDisposable += viewModel.myPhotosFragmentViewStateSubject
-            .subscribeOn(AndroidSchedulers.mainThread())
+            .observeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { viewState -> onViewStateChanged(viewState) }
             .subscribe()
 
         compositeDisposable += adapterButtonsClickSubject
-            .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(viewModel.myPhotosAdapterButtonClickSubject::onNext, viewModel.myPhotosAdapterButtonClickSubject::onError)
     }
@@ -120,6 +115,9 @@ class MyPhotosFragment : BaseFragment() {
             viewState.updateFromViewStateEvent(viewStateEvent)
 
             when (viewStateEvent) {
+                is MyPhotosFragmentViewStateEvent.ScrollToTop -> {
+                    myPhotosList.scrollToPosition(0)
+                }
                 is MyPhotosFragmentViewStateEvent.Default -> {
 
                 }
@@ -140,53 +138,44 @@ class MyPhotosFragment : BaseFragment() {
         }
     }
 
-    private fun scrollRecyclerViewToTop() {
-        val layoutManager = (myPhotosList.layoutManager as GridLayoutManager)
-        if (layoutManager.findFirstCompletelyVisibleItemPosition() == 0) {
-            myPhotosList.scrollToPosition(0)
-        }
-    }
-
-    private fun onUploadingEvent(event: PhotoUploadingEvent) {
+    private fun onUploadingEvent(event: PhotoUploadEvent) {
         if (!isAdded) {
             return
         }
 
         requireActivity().runOnUiThread {
             when (event) {
-                is PhotoUploadingEvent.OnPrepare -> {
-                    scrollRecyclerViewToTop()
+                is PhotoUploadEvent.OnPrepare -> {
                 }
-                is PhotoUploadingEvent.OnPhotoUploadingStart -> {
+                is PhotoUploadEvent.OnPhotoUploadStart -> {
                     adapter.addMyPhoto(event.myPhoto.also { it.photoState = PhotoState.PHOTO_UPLOADING })
                 }
-                is PhotoUploadingEvent.OnProgress -> {
+                is PhotoUploadEvent.OnProgress -> {
                     adapter.addMyPhoto(event.photo)
                     adapter.updatePhotoProgress(event.photo.id, event.progress)
                 }
-                is PhotoUploadingEvent.OnUploaded -> {
+                is PhotoUploadEvent.OnUploaded -> {
                     adapter.removePhotoById(event.myPhoto.id)
                     adapter.addMyPhoto(event.myPhoto.also { it.photoState = PhotoState.PHOTO_UPLOADED })
                 }
-                is PhotoUploadingEvent.OnFailedToUpload -> {
+                is PhotoUploadEvent.OnFailedToUpload -> {
                     adapter.removePhotoById(event.myPhoto.id)
                     adapter.addMyPhoto(event.myPhoto.also { it.photoState = PhotoState.FAILED_TO_UPLOAD })
-
-                    event.errorMessage?.let { errorMessage ->
-                        Timber.e("Error: $errorMessage")
-                    }
                 }
-                is PhotoUploadingEvent.OnEnd -> {
+                is PhotoUploadEvent.OnFoundPhotoAnswer -> {
+                    adapter.updatePhotoState(event.photoId, PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED)
                 }
-                is PhotoUploadingEvent.OnUnknownError -> {
+                is PhotoUploadEvent.OnEnd -> {
+                }
+                is PhotoUploadEvent.OnUnknownError -> {
                     adapter.clear()
                 }
-                else -> throw IllegalArgumentException("Unknown PhotoUploadingEvent $event")
+                else -> throw IllegalArgumentException("Unknown PhotoUploadEvent $event")
             }
         }
     }
 
-    private fun addPhotoToAdapter(uploadedPhotos: List<MyPhoto>) {
+    private fun addPhotosToAdapter(uploadedPhotos: List<MyPhoto>) {
         if (!isAdded) {
             return
         }

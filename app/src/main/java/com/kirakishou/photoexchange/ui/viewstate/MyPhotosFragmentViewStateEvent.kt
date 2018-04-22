@@ -8,4 +8,5 @@ sealed class MyPhotosFragmentViewStateEvent {
     class HideObtainCurrentLocationNotification : MyPhotosFragmentViewStateEvent()
     class RemovePhotoById(val photoId: Long) : MyPhotosFragmentViewStateEvent()
     class AddPhoto(val photo: MyPhoto) : MyPhotosFragmentViewStateEvent()
+    class ScrollToTop : MyPhotosFragmentViewStateEvent()
 }
