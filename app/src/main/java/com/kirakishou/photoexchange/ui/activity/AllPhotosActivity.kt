@@ -6,10 +6,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.os.Bundle
-import android.os.IBinder
-import android.os.PersistableBundle
+import android.os.*
+import android.support.design.widget.CoordinatorLayout
 import android.support.design.widget.FloatingActionButton
+import android.support.design.widget.Snackbar
 import android.support.design.widget.TabLayout
 import android.support.v4.app.ActivityCompat
 import android.support.v4.view.ViewPager
@@ -40,6 +40,7 @@ import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
 import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
 import com.kirakishou.photoexchange.ui.viewstate.AllPhotosActivityViewState
 import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
+import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewStateEvent
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -55,6 +56,9 @@ import javax.inject.Inject
 
 class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSelectedListener,
     ViewPager.OnPageChangeListener, PhotoUploadingCallback, FindPhotoAnswerCallback {
+
+    @BindView(R.id.root_layout)
+    lateinit var rootLayout: CoordinatorLayout
 
     @BindView(R.id.iv_close_button)
     lateinit var ivCloseActivityButton: ImageButton
@@ -80,10 +84,15 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private val tag = "[${this::class.java.simpleName}] "
-    private var uploadPhotoService: UploadPhotoService? = null
-    private var findPhotoAnswerService: FindPhotoAnswerService? = null
     private val GPS_DELAY_MS = 1.seconds()
     private val GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS = 15.seconds()
+    private val FRAGMENT_SCROLL_DELAY_MS = 250L
+    private val MY_PHOTOS_TAB_INDEX = 0
+    private val RECEIVED_PHOTO_TAB_INDEX = 1
+    private var handler: Handler? = null
+
+    private var uploadPhotoService: UploadPhotoService? = null
+    private var findPhotoAnswerService: FindPhotoAnswerService? = null
     private val adapter = FragmentTabsPager(supportFragmentManager)
     private val locationManager by lazy { MyLocationManager(applicationContext) }
     private var savedInstanceState: Bundle? = null
@@ -124,6 +133,9 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     override fun onActivityStart() {
+        if (handler == null) {
+            handler = Handler(Looper.getMainLooper())
+        }
     }
 
     override fun onResume() {
@@ -132,6 +144,11 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     override fun onActivityStop() {
+        if (handler != null) {
+            handler!!.removeCallbacksAndMessages(null)
+            handler = null
+        }
+
         uploadPhotoService?.let { srvc ->
             srvc.detachCallback()
             unbindService(uploadServiceConnection)
@@ -270,6 +287,10 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         viewModel.forwardUploadPhotoEvent(event)
 
         when (event) {
+            is PhotoUploadEvent.OnUploaded -> {
+                showPhotoUploadedSnackbar()
+            }
+
             is PhotoUploadEvent.OnFailedToUpload -> {
                 showUploadPhotoErrorMessage(event.errorCode)
             }
@@ -286,6 +307,12 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
     override fun onPhotoFindEvent(event: PhotoFindEvent) {
         viewModel.forwardPhotoFindEvent(event)
+
+        when (event) {
+            is PhotoFindEvent.OnPhotoAnswerFound -> {
+                showPhotoAnswerFoundSnackbar()
+            }
+        }
     }
 
     override fun handleMyPhotoFragmentAdapterButtonClicks(adapterButtonsClickEvent: MyPhotosAdapter.MyPhotosAdapterButtonClickEvent): Observable<Boolean> {
@@ -313,6 +340,32 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
                     }.map { true }
             }
         }
+    }
+
+    private fun showPhotoUploadedSnackbar() {
+        Snackbar.make(rootLayout, "A photo has been uploaded", Snackbar.LENGTH_LONG)
+            .setAction("VIEW", {
+                if (viewPager.currentItem != MY_PHOTOS_TAB_INDEX) {
+                    viewPager.currentItem = MY_PHOTOS_TAB_INDEX
+                }
+
+                handler?.postDelayed({
+                    viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.ScrollToTop())
+                }, FRAGMENT_SCROLL_DELAY_MS)
+            }).show()
+    }
+
+    private fun showPhotoAnswerFoundSnackbar() {
+        Snackbar.make(rootLayout, "A photo has been received", Snackbar.LENGTH_LONG)
+            .setAction("VIEW", {
+                if (viewPager.currentItem != RECEIVED_PHOTO_TAB_INDEX) {
+                    viewPager.currentItem = RECEIVED_PHOTO_TAB_INDEX
+                }
+
+                handler?.postDelayed({
+                    viewModel.receivedPhotosFragmentViewStateSubject.onNext(ReceivedPhotosFragmentViewStateEvent.ScrollToTop())
+                }, FRAGMENT_SCROLL_DELAY_MS)
+            }).show()
     }
 
     override fun showToast(message: String, duration: Int) {

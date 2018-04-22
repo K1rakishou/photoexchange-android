@@ -46,7 +46,6 @@ class FindPhotoAnswersUseCase(
     }
 
     private fun handleSuccessResult(response: PhotoAnswerResponse, callbacks: WeakReference<FindPhotoAnswerServiceCallbacks>) {
-        val repoResults = arrayListOf<Boolean>()
         for (photoAnswerResponse in response.photoAnswers) {
             var insertedPhotoAnswerId: Long? = null
 
@@ -65,11 +64,7 @@ class FindPhotoAnswersUseCase(
 
             if (result) {
                 callbacks.get()?.onPhotoReceived(photoAnswer)
-
-                //TODO: send a packet to server to notify it that client has successfully received and saved the photo
             }
-
-            repoResults += result
         }
     }
 }

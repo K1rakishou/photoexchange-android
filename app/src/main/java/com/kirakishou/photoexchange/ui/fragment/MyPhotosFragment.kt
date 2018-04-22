@@ -18,6 +18,7 @@ import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewState
 import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import javax.inject.Inject
 
@@ -90,19 +91,17 @@ class MyPhotosFragment : BaseFragment() {
 
     private fun initRx() {
         compositeDisposable += viewModel.onPhotoUploadEventSubject
-            .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { event -> onUploadingEvent(event) }
             .subscribe()
 
         compositeDisposable += viewModel.myPhotosFragmentViewStateSubject
-            .subscribeOn(AndroidSchedulers.mainThread())
+            .observeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { viewState -> onViewStateChanged(viewState) }
             .subscribe()
 
         compositeDisposable += adapterButtonsClickSubject
-            .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(viewModel.myPhotosAdapterButtonClickSubject::onNext, viewModel.myPhotosAdapterButtonClickSubject::onError)
     }
@@ -116,6 +115,9 @@ class MyPhotosFragment : BaseFragment() {
             viewState.updateFromViewStateEvent(viewStateEvent)
 
             when (viewStateEvent) {
+                is MyPhotosFragmentViewStateEvent.ScrollToTop -> {
+                    myPhotosList.scrollToPosition(0)
+                }
                 is MyPhotosFragmentViewStateEvent.Default -> {
 
                 }
@@ -136,13 +138,6 @@ class MyPhotosFragment : BaseFragment() {
         }
     }
 
-    private fun scrollRecyclerViewToTop() {
-        val layoutManager = (myPhotosList.layoutManager as GridLayoutManager)
-        if (layoutManager.findFirstCompletelyVisibleItemPosition() == 0) {
-            myPhotosList.scrollToPosition(0)
-        }
-    }
-
     private fun onUploadingEvent(event: PhotoUploadEvent) {
         if (!isAdded) {
             return
@@ -151,7 +146,7 @@ class MyPhotosFragment : BaseFragment() {
         requireActivity().runOnUiThread {
             when (event) {
                 is PhotoUploadEvent.OnPrepare -> {
-                    scrollRecyclerViewToTop()
+//                    scrollRecyclerViewToTop()
                 }
                 is PhotoUploadEvent.OnPhotoUploadStart -> {
                     adapter.addMyPhoto(event.myPhoto.also { it.photoState = PhotoState.PHOTO_UPLOADING })

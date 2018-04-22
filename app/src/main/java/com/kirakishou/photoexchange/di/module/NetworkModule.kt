@@ -30,17 +30,15 @@ class NetworkModule(private val baseUrl: String) {
     @Singleton
     @Provides
     fun provideOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient {
-        if (Constants.isDebugBuild) {
-            return OkHttpClient.Builder()
-                //TODO: change this
+        return if (Constants.isDebugBuild) {
+            OkHttpClient.Builder()
                 .connectTimeout(50000, TimeUnit.SECONDS)
                 .writeTimeout(50000, TimeUnit.SECONDS)
                 .readTimeout(50000, TimeUnit.SECONDS)
                 //.addInterceptor(loggingInterceptor)
                 .build()
         } else {
-            return OkHttpClient.Builder()
-                //TODO: change this
+            OkHttpClient.Builder()
                 .connectTimeout(5, TimeUnit.SECONDS)
                 .writeTimeout(5, TimeUnit.SECONDS)
                 .readTimeout(5, TimeUnit.SECONDS)

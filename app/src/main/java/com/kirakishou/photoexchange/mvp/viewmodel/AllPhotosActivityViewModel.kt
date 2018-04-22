@@ -13,6 +13,7 @@ import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
+import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewStateEvent
 import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -41,6 +42,7 @@ class AllPhotosActivityViewModel(
     val onPhotoUploadEventSubject = PublishSubject.create<PhotoUploadEvent>().toSerialized()
     val onPhotoFindEventSubject = PublishSubject.create<PhotoFindEvent>().toSerialized()
     val myPhotosFragmentViewStateSubject = PublishSubject.create<MyPhotosFragmentViewStateEvent>().toSerialized()
+    val receivedPhotosFragmentViewStateSubject = PublishSubject.create<ReceivedPhotosFragmentViewStateEvent>().toSerialized()
     val startPhotoUploadingServiceSubject = PublishSubject.create<Unit>().toSerialized()
     val startFindPhotoAnswerServiceSubject = PublishSubject.create<Unit>().toSerialized()
     val myPhotosAdapterButtonClickSubject = PublishSubject.create<MyPhotosAdapter.MyPhotosAdapterButtonClickEvent>().toSerialized()

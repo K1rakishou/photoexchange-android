@@ -9,11 +9,15 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoAnswer
+import com.kirakishou.photoexchange.mvp.model.PhotoFindEvent
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapterSpanSizeLookup
+import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewStateEvent
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
 
 class ReceivedPhotosFragment : BaseFragment() {
@@ -40,7 +44,17 @@ class ReceivedPhotosFragment : BaseFragment() {
     }
 
     private fun initRx() {
+        compositeDisposable += viewModel.onPhotoFindEventSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { event -> onPhotoFindEvent(event) }
+            .subscribe()
 
+        compositeDisposable += viewModel.receivedPhotosFragmentViewStateSubject
+            .observeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { viewState -> onViewStateChanged(viewState) }
+            .subscribe()
     }
 
     private fun initRecyclerView() {
@@ -61,6 +75,39 @@ class ReceivedPhotosFragment : BaseFragment() {
             .observeOn(AndroidSchedulers.mainThread())
             .doOnSuccess { photos -> addPhotosToAdapter(photos) }
             .subscribe()
+    }
+
+    private fun onViewStateChanged(viewStateEvent: ReceivedPhotosFragmentViewStateEvent) {
+        if (!isAdded) {
+            return
+        }
+
+        requireActivity().runOnUiThread {
+            when (viewStateEvent) {
+                is ReceivedPhotosFragmentViewStateEvent.ScrollToTop -> {
+                    receivedPhotosList.scrollToPosition(0)
+                }
+                else -> throw IllegalArgumentException("Unknown MyPhotosFragmentViewStateEvent $viewStateEvent")
+            }
+        }
+    }
+
+    private fun onPhotoFindEvent(event: PhotoFindEvent) {
+        if (!isAdded) {
+            return
+        }
+
+        requireActivity().runOnUiThread {
+            when (event) {
+                is PhotoFindEvent.OnPhotoAnswerFound -> {
+                    adapter.addPhotoAnswer(event.photoAnswer)
+                }
+                is PhotoFindEvent.OnFailed,
+                is PhotoFindEvent.OnUnknownError -> {
+                    //do nothing here
+                }
+            }
+        }
     }
 
     private fun addPhotosToAdapter(photoAnswers: List<PhotoAnswer>) {
