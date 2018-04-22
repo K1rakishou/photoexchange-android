@@ -310,6 +310,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
         when (event) {
             is PhotoFindEvent.OnPhotoAnswerFound -> {
+                viewModel.forwardUploadPhotoEvent(PhotoUploadEvent.OnFoundPhotoAnswer(event.photoId))
                 showPhotoAnswerFoundSnackbar()
             }
         }

@@ -139,12 +139,6 @@ open class PhotosRepository(
         }
     }
 
-    fun findOnePhotoByState(state: PhotoState): MyPhoto? {
-        val photo = myPhotoDao.findOnePhotoWithState(state) ?: return null
-        val tempFileEntity = findTempFileById(photo.id!!)
-        return MyPhotoEntityMapper.toMyPhoto(photo, tempFileEntity)
-    }
-
     fun findAllByState(state: PhotoState): List<MyPhoto> {
         val allPhotoReadyToUploading = myPhotoDao.findAllWithState(state)
         val resultList = mutableListOf<MyPhoto>()
@@ -159,6 +153,10 @@ open class PhotosRepository(
         }
 
         return resultList
+    }
+
+    fun findByPhotoIdByName(photoName: String): Long {
+        return myPhotoDao.findPhotoIdByName(photoName) ?: -1L
     }
 
     private fun deleteById(id: Long): Boolean {

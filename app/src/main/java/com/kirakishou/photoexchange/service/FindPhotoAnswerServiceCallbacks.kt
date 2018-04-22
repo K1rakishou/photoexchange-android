@@ -4,7 +4,7 @@ import com.kirakishou.photoexchange.mvp.model.PhotoAnswer
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 
 interface FindPhotoAnswerServiceCallbacks {
-    fun onPhotoReceived(photoAnswer: PhotoAnswer)
+    fun onPhotoReceived(photoAnswer: PhotoAnswer, photoId: Long)
     fun onFailed(errorCode: ErrorCode.FindPhotoAnswerErrors)
     fun onError(error: Throwable)
     fun stopService()

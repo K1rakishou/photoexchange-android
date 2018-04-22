@@ -12,5 +12,6 @@ sealed class PhotoUploadEvent {
     class OnPhotoUploadStart(val myPhoto: MyPhoto) : PhotoUploadEvent()
     class OnProgress(val photo: MyPhoto, val progress: Int) : PhotoUploadEvent()
     class OnUploaded(val myPhoto: MyPhoto) : PhotoUploadEvent()
+    class OnFoundPhotoAnswer(val photoId: Long) : PhotoUploadEvent()
     class OnEnd : PhotoUploadEvent()
 }

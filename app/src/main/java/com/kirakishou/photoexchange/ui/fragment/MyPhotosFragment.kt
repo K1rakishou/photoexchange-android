@@ -146,7 +146,6 @@ class MyPhotosFragment : BaseFragment() {
         requireActivity().runOnUiThread {
             when (event) {
                 is PhotoUploadEvent.OnPrepare -> {
-//                    scrollRecyclerViewToTop()
                 }
                 is PhotoUploadEvent.OnPhotoUploadStart -> {
                     adapter.addMyPhoto(event.myPhoto.also { it.photoState = PhotoState.PHOTO_UPLOADING })
@@ -162,6 +161,9 @@ class MyPhotosFragment : BaseFragment() {
                 is PhotoUploadEvent.OnFailedToUpload -> {
                     adapter.removePhotoById(event.myPhoto.id)
                     adapter.addMyPhoto(event.myPhoto.also { it.photoState = PhotoState.FAILED_TO_UPLOAD })
+                }
+                is PhotoUploadEvent.OnFoundPhotoAnswer -> {
+                    adapter.updatePhotoState(event.photoId, PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED)
                 }
                 is PhotoUploadEvent.OnEnd -> {
                 }

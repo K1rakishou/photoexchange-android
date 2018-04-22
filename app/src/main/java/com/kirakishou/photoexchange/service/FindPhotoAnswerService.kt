@@ -65,9 +65,9 @@ class FindPhotoAnswerService : Service(), FindPhotoAnswerServiceCallbacks {
         presenter.startFindPhotoAnswers()
     }
 
-    override fun onPhotoReceived(photoAnswer: PhotoAnswer) {
+    override fun onPhotoReceived(photoAnswer: PhotoAnswer, photoId: Long) {
         updateDownloadingNotificationShowSuccess()
-        callback.get()?.onPhotoFindEvent(PhotoFindEvent.OnPhotoAnswerFound(photoAnswer))
+        callback.get()?.onPhotoFindEvent(PhotoFindEvent.OnPhotoAnswerFound(photoAnswer, photoId))
     }
 
     override fun onFailed(errorCode: ErrorCode.FindPhotoAnswerErrors) {

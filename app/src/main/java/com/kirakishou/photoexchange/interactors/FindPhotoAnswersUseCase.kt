@@ -63,7 +63,9 @@ class FindPhotoAnswersUseCase(
             val photoAnswer = PhotoAnswerResponseMapper.toPhotoAnswer(insertedPhotoAnswerId, photoAnswerResponse)
 
             if (result) {
-                callbacks.get()?.onPhotoReceived(photoAnswer)
+                val photoId = myPhotosRepository.findByPhotoIdByName(photoAnswer.uploadedPhotoName)
+
+                callbacks.get()?.onPhotoReceived(photoAnswer, photoId)
             }
         }
     }
