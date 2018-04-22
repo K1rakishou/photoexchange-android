@@ -57,7 +57,7 @@ class FindPhotoAnswersUseCase(
                     return@transactional false
                 }
 
-                return@transactional myPhotosRepository.updatePhotoState(photoAnswerResponse.photoAnswerName,
+                return@transactional myPhotosRepository.updatePhotoState(photoAnswerResponse.uploadedPhotoName,
                     PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED)
             }
 

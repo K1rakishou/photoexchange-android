@@ -7,10 +7,7 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import com.kirakishou.photoexchange.helper.extension.minutes
 import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.mvp.model.MyPhoto
-import com.kirakishou.photoexchange.mvp.model.PhotoFindEvent
-import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
+import com.kirakishou.photoexchange.mvp.model.*
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
@@ -110,7 +107,14 @@ class AllPhotosActivityViewModel(
             .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)
     }
 
-    fun loadPhotos(): Single<MutableList<MyPhoto>> {
+    fun loadPhotoAnswers(): Single<List<PhotoAnswer>> {
+        return Single.fromCallable {
+            photoAnswerRepository.findAll()
+        }.subscribeOn(schedulerProvider.BG())
+            .observeOn(schedulerProvider.BG())
+    }
+
+    fun loadMyPhotos(): Single<MutableList<MyPhoto>> {
         return Single.fromCallable {
             val photos = mutableListOf<MyPhoto>()
 

@@ -409,7 +409,6 @@ class MyPhotosAdapter(
                     }
                 }
             }
-
             is FailedToUploadPhotoViewHolder -> {
                 val failedPhoto = (getAdapterItemByIndex(position) as? MyPhotosAdapterItem.FailedToUploadItem)?.failedToUploadPhoto
                     ?: return
@@ -428,18 +427,16 @@ class MyPhotosAdapter(
                     adapterButtonsClickSubject.onNext(MyPhotosAdapterButtonClickEvent.RetryButtonClick(failedPhoto))
                 }
             }
-
             is ProgressViewHolder -> {
                 //Do nothing
             }
-
             is EmptyViewHolder -> {
                 //Do nothing
             }
-
             is ObtainCurrentLocationViewHolder -> {
                 //Do nothing
             }
+            else -> IllegalArgumentException("Unknown viewHolder: ${holder::class.java.simpleName}")
         }
     }
 

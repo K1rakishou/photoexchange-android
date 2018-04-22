@@ -10,7 +10,6 @@ import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
@@ -83,10 +82,9 @@ class MyPhotosFragment : BaseFragment() {
     }
 
     private fun loadPhotos() {
-        compositeDisposable += viewModel.loadPhotos()
-            .subscribeOn(AndroidSchedulers.mainThread())
+        compositeDisposable += viewModel.loadMyPhotos()
             .observeOn(AndroidSchedulers.mainThread())
-            .doOnSuccess { photos -> addPhotoToAdapter(photos) }
+            .doOnSuccess { photos -> addPhotosToAdapter(photos) }
             .subscribe()
     }
 
@@ -180,7 +178,7 @@ class MyPhotosFragment : BaseFragment() {
         }
     }
 
-    private fun addPhotoToAdapter(uploadedPhotos: List<MyPhoto>) {
+    private fun addPhotosToAdapter(uploadedPhotos: List<MyPhoto>) {
         if (!isAdded) {
             return
         }
