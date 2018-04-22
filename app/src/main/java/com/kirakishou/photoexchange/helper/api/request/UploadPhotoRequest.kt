@@ -49,6 +49,7 @@ class UploadPhotoRequest<T>(
             .flatMap { body ->
                 return@flatMap apiService.uploadPhoto(body.part(0), body.part(1))
                     .lift(OnApiErrorSingle<UploadPhotoResponse>(gson, UploadPhotoResponse::class.java))
+                    .map { UploadPhotoResponse.success(it.photoName) }
                     .onErrorReturn(this::extractError) as Single<T>
             }
     }

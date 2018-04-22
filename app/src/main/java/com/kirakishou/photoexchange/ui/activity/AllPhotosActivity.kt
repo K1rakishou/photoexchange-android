@@ -319,9 +319,9 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun startFindingService() {
-        Timber.e("startFindingService")
-
         if (findPhotoAnswerService == null) {
+            Timber.e("startFindingService")
+
             val serviceIntent = Intent(applicationContext, FindPhotoAnswerService::class.java)
             startService(serviceIntent)
             bindService(serviceIntent, findServiceConnection, Context.BIND_AUTO_CREATE)
@@ -331,9 +331,9 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun startUploadingService() {
-        Timber.e("startUploadingService")
-
         if (uploadPhotoService == null) {
+            Timber.e("startUploadingService")
+
             val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
             startService(serviceIntent)
             bindService(serviceIntent, uploadServiceConnection, Context.BIND_AUTO_CREATE)
@@ -344,8 +344,8 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
     private fun showUploadPhotoErrorMessage(errorCode: ErrorCode.UploadPhotoErrors) {
         val errorMessage = when (errorCode) {
-            is ErrorCode.UploadPhotoErrors.Remote.UnknownError -> "Unknown error"
             is ErrorCode.UploadPhotoErrors.Remote.Ok -> null
+            is ErrorCode.UploadPhotoErrors.Remote.UnknownError -> "Unknown error"
             is ErrorCode.UploadPhotoErrors.Remote.BadRequest -> "Bad request error"
             is ErrorCode.UploadPhotoErrors.Remote.DatabaseError -> "Server database error"
             is ErrorCode.UploadPhotoErrors.Local.BadServerResponse -> "Bad server response error"

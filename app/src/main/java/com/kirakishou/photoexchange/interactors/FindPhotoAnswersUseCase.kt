@@ -31,25 +31,21 @@ class FindPhotoAnswersUseCase(
                 val photoNames = data.photoNames
 
                 val response = apiClient.getPhotoAnswers(photoNames, userId).blockingGet()
-                val errorCode = response.errorCode
+                val errorCode = response.errorCode as ErrorCode.GetPhotoAnswerErrors
 
                 when (errorCode) {
-                    is ErrorCode.GetPhotoAnswerErrors.Remote.Ok -> {
-                        handleSuccessResult(response, callbacks)
-                    }
-
-                    else -> {
-                        callbacks.get()?.onFailed(errorCode)
-                    }
+                    is ErrorCode.GetPhotoAnswerErrors.Remote.Ok -> handleSuccessResult(response, callbacks)
+                    else -> callbacks.get()?.onFailed(errorCode)
                 }
 
             } catch (error: Exception) {
                 Timber.e(error)
+                callbacks.get()?.onError(error)
             }
         }
     }
 
-    private fun handleSuccessResult(response: PhotoAnswerResponse, callbacks: WeakReference<FindPhotoAnswerServiceCallbacks> ) {
+    private fun handleSuccessResult(response: PhotoAnswerResponse, callbacks: WeakReference<FindPhotoAnswerServiceCallbacks>) {
         val repoResults = arrayListOf<Boolean>()
         for (photoAnswerResponse in response.photoAnswers) {
             var insertedPhotoAnswerId: Long? = null

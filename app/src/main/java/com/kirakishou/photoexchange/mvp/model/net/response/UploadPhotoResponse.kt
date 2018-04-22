@@ -18,6 +18,10 @@ class UploadPhotoResponse(
 ) : StatusResponse(errorCode.value, errorCode) {
 
     companion object {
+        fun success(photoName: String): UploadPhotoResponse {
+            return UploadPhotoResponse(photoName, ErrorCode.UploadPhotoErrors.Remote.Ok())
+        }
+
         fun error(errorCode: ErrorCode): UploadPhotoResponse {
             return UploadPhotoResponse("", errorCode)
         }

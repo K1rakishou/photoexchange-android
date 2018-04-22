@@ -35,7 +35,7 @@ class UploadPhotosUseCase(
                     try {
                         if (BitmapUtils.rotatePhoto(photo.photoTempFile, rotatedPhotoFile)) {
                             val response = uploadPhoto(rotatedPhotoFile, location, userId, callbacks, photo).blockingGet()
-                            val errorCode = ErrorCode.fromInt<ErrorCode.UploadPhotoErrors>(response.serverErrorCode)
+                            val errorCode = response.errorCode as ErrorCode.UploadPhotoErrors
                             when (errorCode) {
                                 is ErrorCode.UploadPhotoErrors.Remote.Ok -> {
                                     if (!handlePhotoUploaded(photo, response, callbacks)) {

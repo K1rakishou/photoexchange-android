@@ -19,6 +19,10 @@ private constructor(
 ) : StatusResponse(errorCode.value, errorCode) {
 
     companion object {
+        fun success(photoAnswers: List<PhotoAnswer>, allFound: Boolean): PhotoAnswerResponse {
+            return PhotoAnswerResponse(photoAnswers, allFound, ErrorCode.GetPhotoAnswerErrors.Remote.Ok())
+        }
+
         fun error(errorCode: ErrorCode): PhotoAnswerResponse {
             return PhotoAnswerResponse(emptyList(), false, errorCode)
         }
