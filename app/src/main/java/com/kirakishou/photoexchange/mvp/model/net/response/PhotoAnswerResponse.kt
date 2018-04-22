@@ -11,20 +11,16 @@ private constructor(
     @SerializedName("photo_answers")
     val photoAnswers: List<PhotoAnswer>,
 
-    @Expose
-    @SerializedName("all_found")
-    val allFound: Boolean,
-
     errorCode: ErrorCode
 ) : StatusResponse(errorCode.value, errorCode) {
 
     companion object {
-        fun success(photoAnswers: List<PhotoAnswer>, allFound: Boolean): PhotoAnswerResponse {
-            return PhotoAnswerResponse(photoAnswers, allFound, ErrorCode.FindPhotoAnswerErrors.Remote.Ok())
+        fun success(photoAnswers: List<PhotoAnswer>): PhotoAnswerResponse {
+            return PhotoAnswerResponse(photoAnswers, ErrorCode.FindPhotoAnswerErrors.Remote.Ok())
         }
 
         fun error(errorCode: ErrorCode): PhotoAnswerResponse {
-            return PhotoAnswerResponse(emptyList(), false, errorCode)
+            return PhotoAnswerResponse(emptyList(), errorCode)
         }
     }
 

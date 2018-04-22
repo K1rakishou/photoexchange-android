@@ -25,7 +25,7 @@ class GetPhotoAnswersRequest<T>(
             .subscribeOn(schedulerProvider.BG())
             .observeOn(schedulerProvider.BG())
             .lift(OnApiErrorSingle<PhotoAnswerResponse>(gson, PhotoAnswerResponse::class.java))
-            .map { PhotoAnswerResponse.success(it.photoAnswers, it.allFound) }
+            .map { PhotoAnswerResponse.success(it.photoAnswers) }
             .onErrorReturn(this::extractError) as Single<T>
     }
 
