@@ -4,6 +4,7 @@
     <color name="colorPrimaryDark">#FF4F9694</color>
     <color name="colorAccent">#FFC84127</color>
     <color name="black">#000000</color>
+    <color name="dialog_background_transparent">#55000000</color>
     <color name="white">#FFFFFF</color>
     <color name="gray">#cecfd0 </color>
     <color name="photo_state_failed_to_upload_color">#ffc83625</color>
