@@ -8,6 +8,7 @@ import io.reactivex.schedulers.Schedulers
  * Created by kirakishou on 9/17/2017.
  */
 class NormalSchedulers : SchedulerProvider {
-    override fun BG(): Scheduler = Schedulers.io()
+    override fun IO(): Scheduler = Schedulers.io()
+    override fun CALC(): Scheduler = Schedulers.computation()
     override fun UI(): Scheduler = AndroidSchedulers.mainThread()
 }

@@ -20,6 +20,9 @@ import io.reactivex.disposables.CompositeDisposable
 import timber.log.Timber
 import java.lang.ref.WeakReference
 import javax.inject.Inject
+import android.app.ActivityManager
+
+
 
 
 class FindPhotoAnswerService : Service(), FindPhotoAnswerServiceCallbacks {
@@ -38,7 +41,7 @@ class FindPhotoAnswerService : Service(), FindPhotoAnswerServiceCallbacks {
 
     override fun onCreate() {
         super.onCreate()
-        Timber.tag(tag).d("Service started")
+        Timber.tag(tag).e("FindPhotoAnswerService started")
 
         resolveDaggerDependency()
         startForeground(NOTIFICATION_ID, createNotificationDownloading())
@@ -46,7 +49,7 @@ class FindPhotoAnswerService : Service(), FindPhotoAnswerServiceCallbacks {
 
     override fun onDestroy() {
         super.onDestroy()
-        Timber.tag(tag).d("Service destroyed")
+        Timber.tag(tag).e("FindPhotoAnswerService destroyed")
 
         presenter.onDetach()
         compositeDisposable.clear()
@@ -227,6 +230,18 @@ class FindPhotoAnswerService : Service(), FindPhotoAnswerServiceCallbacks {
     inner class FindPhotoAnswerBinder : Binder() {
         fun getService(): FindPhotoAnswerService {
             return this@FindPhotoAnswerService
+        }
+    }
+
+    companion object {
+        fun isRunning(context: Context): Boolean {
+            val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
+            for (service in manager!!.getRunningServices(Integer.MAX_VALUE)) {
+                if (FindPhotoAnswerService::class.java.name == service.service.className) {
+                    return true
+                }
+            }
+            return false
         }
     }
 }

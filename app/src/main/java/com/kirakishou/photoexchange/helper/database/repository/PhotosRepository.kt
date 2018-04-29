@@ -19,7 +19,7 @@ open class PhotosRepository(
     private val myPhotoDao = database.myPhotoDao()
     private val tempFileDao = database.tempFileDao()
 
-    fun init() {
+    init {
         createTempFilesDirIfNotExists()
     }
 

@@ -11,13 +11,16 @@ import com.kirakishou.photoexchange.mvp.model.*
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
+import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
+import com.kirakishou.photoexchange.ui.viewstate.AllPhotosActivityViewStateEvent
 import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
 import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewStateEvent
 import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.lang.ref.WeakReference
@@ -27,12 +30,11 @@ import java.util.concurrent.TimeUnit
  * Created by kirakishou on 3/11/2018.
  */
 class AllPhotosActivityViewModel(
-    view: WeakReference<AllPhotosActivityView>,
     private val photosRepository: PhotosRepository,
     private val settingsRepository: SettingsRepository,
     private val photoAnswerRepository: PhotoAnswerRepository,
     private val schedulerProvider: SchedulerProvider
-) : BaseViewModel<AllPhotosActivityView>(view) {
+) : BaseViewModel<AllPhotosActivityView>() {
 
     private val tag = "[${this::class.java.simpleName}] "
     private val LOCATION_CHECK_INTERVAL_MS = 2.minutes()
@@ -41,6 +43,7 @@ class AllPhotosActivityViewModel(
 
     val onPhotoUploadEventSubject = PublishSubject.create<PhotoUploadEvent>().toSerialized()
     val onPhotoFindEventSubject = PublishSubject.create<PhotoFindEvent>().toSerialized()
+    val allPhotosActivityViewStateSubject = PublishSubject.create<AllPhotosActivityViewStateEvent>().toSerialized()
     val myPhotosFragmentViewStateSubject = PublishSubject.create<MyPhotosFragmentViewStateEvent>().toSerialized()
     val receivedPhotosFragmentViewStateSubject = PublishSubject.create<ReceivedPhotosFragmentViewStateEvent>().toSerialized()
     val startPhotoUploadingServiceSubject = PublishSubject.create<Unit>().toSerialized()
@@ -57,10 +60,6 @@ class AllPhotosActivityViewModel(
             .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)
     }
 
-    override fun onAttached() {
-        Timber.tag(tag).d("onAttached()")
-    }
-
     override fun onCleared() {
         Timber.tag(tag).d("onCleared()")
 
@@ -69,8 +68,8 @@ class AllPhotosActivityViewModel(
 
     fun checkShouldStartFindPhotoAnswersService() {
         compositeDisposable += Observable.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
-            .subscribeOn(schedulerProvider.BG())
-            .observeOn(schedulerProvider.BG())
+            .subscribeOn(schedulerProvider.IO())
+            .observeOn(schedulerProvider.IO())
             //do not start the service if there are queued up photos
             .filter { count -> count == 0 }
             .map {
@@ -88,8 +87,8 @@ class AllPhotosActivityViewModel(
 
     fun checkShouldStartPhotoUploadingService(updateLastLocation: Boolean) {
         val observable = Observable.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
-            .subscribeOn(schedulerProvider.BG())
-            .observeOn(schedulerProvider.BG())
+            .subscribeOn(schedulerProvider.IO())
+            .observeOn(schedulerProvider.IO())
             .publish()
             .autoConnect(2)
 
@@ -110,15 +109,17 @@ class AllPhotosActivityViewModel(
     }
 
     fun loadPhotoAnswers(): Single<List<PhotoAnswer>> {
-        return Single.fromCallable {
-            photoAnswerRepository.findAll()
-        }.subscribeOn(schedulerProvider.BG())
-            .observeOn(schedulerProvider.BG())
+        return Single.fromCallable { photoAnswerRepository.findAll() }
+            .subscribeOn(schedulerProvider.IO())
+            .observeOn(schedulerProvider.IO())
     }
 
     fun loadMyPhotos(): Single<MutableList<MyPhoto>> {
         return Single.fromCallable {
             val photos = mutableListOf<MyPhoto>()
+
+            val uploadingPhotos = photosRepository.findAllByState(PhotoState.PHOTO_UPLOADING)
+            photos += uploadingPhotos.sortedBy { it.id }
 
             val queuedUpPhotos = photosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP)
             photos += queuedUpPhotos.sortedBy { it.id }
@@ -133,8 +134,8 @@ class AllPhotosActivityViewModel(
             photos += uploadedAndReceivedAnswerPhotos.sortedBy { it.id }
 
             return@fromCallable photos
-        }.subscribeOn(schedulerProvider.BG())
-            .observeOn(schedulerProvider.BG())
+        }.subscribeOn(schedulerProvider.IO())
+            .observeOn(schedulerProvider.IO())
     }
 
     private fun updateLastLocation(updateLastLocation: Boolean): Completable {
@@ -180,14 +181,13 @@ class AllPhotosActivityViewModel(
             if (Constants.isDebugBuild) {
                 check(photosRepository.findById(photoId).isEmpty())
             }
-        }.subscribeOn(schedulerProvider.BG())
-            .observeOn(schedulerProvider.BG())
+        }.subscribeOn(schedulerProvider.IO())
+            .observeOn(schedulerProvider.IO())
     }
 
     fun changePhotoState(photoId: Long, newPhotoState: PhotoState): Completable {
-        return Completable.fromAction {
-            photosRepository.updatePhotoState(photoId, newPhotoState)
-        }.subscribeOn(schedulerProvider.BG())
-            .observeOn(schedulerProvider.BG())
+        return Completable.fromAction { photosRepository.updatePhotoState(photoId, newPhotoState) }
+            .subscribeOn(schedulerProvider.IO())
+            .observeOn(schedulerProvider.IO())
     }
 }

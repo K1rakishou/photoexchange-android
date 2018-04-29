@@ -12,7 +12,9 @@ import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.service.FindPhotoAnswerServiceCallbacks
+import io.reactivex.Maybe
 import io.reactivex.Observable
+import io.reactivex.Single
 import timber.log.Timber
 import java.lang.ref.WeakReference
 
@@ -24,13 +26,18 @@ class FindPhotoAnswersUseCase(
     private val apiClient: ApiClient
 ) {
 
-    fun getPhotoAnswers(data: FindPhotosData, callbacks: WeakReference<FindPhotoAnswerServiceCallbacks>): Observable<Unit> {
-        return Observable.fromCallable {
+    fun getPhotoAnswers(data: FindPhotosData, callbacks: WeakReference<FindPhotoAnswerServiceCallbacks>): Maybe<Unit> {
+        return Maybe.fromCallable {
             try {
                 val userId = data.userId!!
                 val photoNames = data.photoNames
 
+                Timber.d("Before getPhotoAnswers")
+
                 val response = apiClient.getPhotoAnswers(photoNames, userId).blockingGet()
+
+                Timber.d("After getPhotoAnswers")
+
                 val errorCode = response.errorCode as ErrorCode.FindPhotoAnswerErrors
 
                 when (errorCode) {

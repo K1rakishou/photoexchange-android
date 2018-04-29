@@ -28,7 +28,7 @@ open class TakePhotoActivityModule(
     open fun provideViewModelFactory(schedulerProvider: SchedulerProvider,
                                      photosRepository: PhotosRepository,
                                      settingsRepository: SettingsRepository): TakePhotoActivityViewModelFactory {
-        return TakePhotoActivityViewModelFactory(WeakReference(activity), photosRepository, settingsRepository, schedulerProvider)
+        return TakePhotoActivityViewModelFactory(photosRepository, settingsRepository, schedulerProvider)
     }
 
     @PerActivity

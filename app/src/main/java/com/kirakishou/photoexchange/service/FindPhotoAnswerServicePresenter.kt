@@ -10,6 +10,7 @@ import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
+import timber.log.Timber
 import java.lang.ref.WeakReference
 
 class FindPhotoAnswerServicePresenter(
@@ -20,27 +21,16 @@ class FindPhotoAnswerServicePresenter(
     private val findPhotoAnswersUseCase: FindPhotoAnswersUseCase
 ) {
 
-    private val findPhotosSubject = PublishSubject.create<FindPhotosData>().toSerialized()
+    private val findPhotosSubject = PublishSubject.create<Unit>().toSerialized()
     private var compositeDisposable = CompositeDisposable()
 
     init {
         compositeDisposable += findPhotosSubject
-            .subscribeOn(schedulerProvider.BG())
-            .observeOn(schedulerProvider.BG())
-            .flatMap { data -> findPhotoAnswersUseCase.getPhotoAnswers(data, callbacks) }
-            .doOnError { error -> callbacks.get()?.onError(error) }
-            .doOnEach { callbacks.get()?.stopService() }
-            .subscribe()
-    }
-
-    fun onDetach() {
-        this.compositeDisposable.clear()
-    }
-
-    fun startFindPhotoAnswers() {
-        compositeDisposable += Single.fromCallable { myPhotosRepository.findAllByState(PhotoState.PHOTO_UPLOADED) }
-            .subscribeOn(schedulerProvider.BG())
-            .observeOn(schedulerProvider.BG())
+            .subscribeOn(schedulerProvider.IO())
+            .observeOn(schedulerProvider.IO())
+            .firstOrError()
+            .doOnSuccess { Timber.e("FindPhotoAnswerServicePresenter After firstOrError") }
+            .map { myPhotosRepository.findAllByState(PhotoState.PHOTO_UPLOADED) }
             .filter { uploadedPhotos -> uploadedPhotos.isNotEmpty() }
             .map { uploadedPhotos ->
                 val photoNames = uploadedPhotos
@@ -59,6 +49,17 @@ class FindPhotoAnswerServicePresenter(
                 callbacks.get()?.onError(error )
                 callbacks.get()?.stopService()
             }
-            .subscribe(findPhotosSubject::onNext)
+            .flatMap { data -> findPhotoAnswersUseCase.getPhotoAnswers(data, callbacks) }
+            .doOnError { error -> callbacks.get()?.onError(error) }
+            .doOnEvent { _, _ -> callbacks.get()?.stopService() }
+            .subscribe()
+    }
+
+    fun onDetach() {
+        this.compositeDisposable.clear()
+    }
+
+    fun startFindPhotoAnswers() {
+        findPhotosSubject.onNext(Unit)
     }
 }

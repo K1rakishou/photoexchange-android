@@ -72,6 +72,7 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
     }
 
     override fun onActivityStart() {
+        viewModel.setView(this)
     }
 
     override fun onResume() {
@@ -86,6 +87,7 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
     }
 
     override fun onActivityStop() {
+        viewModel.clearView()
     }
 
     private fun checkPermissions() {

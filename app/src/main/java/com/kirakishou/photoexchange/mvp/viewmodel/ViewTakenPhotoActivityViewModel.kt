@@ -14,20 +14,11 @@ import java.lang.ref.WeakReference
  * Created by kirakishou on 3/9/2018.
  */
 class ViewTakenPhotoActivityViewModel(
-    view: WeakReference<ViewTakenPhotoActivityView>,
     private val schedulerProvider: SchedulerProvider,
     private val photosRepository: PhotosRepository
-) : BaseViewModel<ViewTakenPhotoActivityView>(view) {
+) : BaseViewModel<ViewTakenPhotoActivityView>() {
 
     private val tag = "[${this::class.java.simpleName}] "
-
-    init {
-        Timber.tag(tag).e("$tag init")
-    }
-
-    override fun onAttached() {
-        Timber.tag(tag).d("onAttached()")
-    }
 
     override fun onCleared() {
         Timber.tag(tag).d("onCleared()")
@@ -54,8 +45,8 @@ class ViewTakenPhotoActivityViewModel(
                 getView()?.showToast("Could not update photo in the database (database error)", Toast.LENGTH_LONG)
                 getView()?.showControls()
             }
-        }.subscribeOn(schedulerProvider.BG())
-            .observeOn(schedulerProvider.BG())
+        }.subscribeOn(schedulerProvider.IO())
+            .observeOn(schedulerProvider.IO())
             .subscribe()
     }
 }

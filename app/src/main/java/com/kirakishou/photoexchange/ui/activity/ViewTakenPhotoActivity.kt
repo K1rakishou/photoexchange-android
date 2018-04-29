@@ -60,10 +60,11 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
     }
 
     override fun onActivityStart() {
-
+        viewModel.setView(this)
     }
 
     override fun onActivityStop() {
+        viewModel.clearView()
     }
 
     private fun initViews() {

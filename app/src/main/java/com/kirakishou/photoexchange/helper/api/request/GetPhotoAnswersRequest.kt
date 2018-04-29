@@ -22,8 +22,8 @@ class GetPhotoAnswersRequest<T>(
     @Suppress("UNCHECKED_CAST")
     override fun execute(): Single<T> {
         return apiService.getPhotoAnswers(photoNames, userId)
-            .subscribeOn(schedulerProvider.BG())
-            .observeOn(schedulerProvider.BG())
+            .subscribeOn(schedulerProvider.IO())
+            .observeOn(schedulerProvider.IO())
             .lift(OnApiErrorSingle<PhotoAnswerResponse>(gson, PhotoAnswerResponse::class.java))
             .map { PhotoAnswerResponse.success(it.photoAnswers) }
             .onErrorReturn(this::extractError) as Single<T>
