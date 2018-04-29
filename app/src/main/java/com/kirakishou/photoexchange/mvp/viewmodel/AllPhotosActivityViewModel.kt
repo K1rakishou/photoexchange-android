@@ -87,25 +87,28 @@ class AllPhotosActivityViewModel(
             .subscribe(startFindPhotoAnswerServiceSubject::onNext, startFindPhotoAnswerServiceSubject::onError)
     }
 
+    private fun tryRestoreBadPhotos() {
+        //check if we have any photos that was stuck in uploading state forever
+        val stuckInUploadingStatePhotos = photosRepository.findAllByState(PhotoState.PHOTO_UPLOADING)
+
+        //if we have any try to roll their state back to queuedUp
+        if (stuckInUploadingStatePhotos.isNotEmpty()) {
+            stuckInUploadingStatePhotos.forEach { photo ->
+                //if photo's file was already deleted - we can't do anything so just delete it from database
+                if (photosRepository.hasTempFile(photo.id) || photo.photoTempFile == null) {
+                    photosRepository.deletePhotoById(photo.id)
+                    return@forEach
+                }
+
+                //otherwise rollback the state
+                photosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_QUEUED_UP)
+            }
+        }
+    }
+
     fun checkShouldStartPhotoUploadingService(updateLastLocation: Boolean) {
         val observable = Observable.fromCallable {
-            //check if we have any photos that was stuck in uploading state forever
-            val stuckInUploadingStatePhotos = photosRepository.findAllByState(PhotoState.PHOTO_UPLOADING)
-
-            //if we have any try to roll their state back to queuedUp
-            if (stuckInUploadingStatePhotos.isNotEmpty()) {
-                stuckInUploadingStatePhotos.forEach { photo ->
-                    //if photo's file was already deleted - we can't do anything so just delete it from database
-                    if (photosRepository.hasTempFile(photo.id) || photo.photoTempFile == null) {
-                        photosRepository.deletePhotoById(photo.id)
-                        return@forEach
-                    }
-
-                    //otherwise rollback the state
-                    photosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_QUEUED_UP)
-                }
-            }
-
+            tryRestoreBadPhotos()
             return@fromCallable photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP)
         }.subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
@@ -121,10 +124,13 @@ class AllPhotosActivityViewModel(
             .filter { count -> count > 0 }
             .delay(CHECK_SHOULD_START_SERVICE_DELAY_MS, TimeUnit.MILLISECONDS)
             .debounce(SERVICE_START_DEBOUNCE_TIME_MS, TimeUnit.MILLISECONDS)
-            .doOnNext { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification()) }
-            .doOnNext { updateLastLocation(updateLastLocation).blockingAwait() }
-            .doOnNext { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification()) }
             .map { Unit }
+            .concatWith(
+                updateLastLocation(updateLastLocation)
+                    .doOnEach { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification()) }
+                    .delay(1, TimeUnit.SECONDS)
+                    .doOnEach { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification()) }
+            )
             .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)
     }
 
@@ -158,8 +164,8 @@ class AllPhotosActivityViewModel(
             .observeOn(schedulerProvider.IO())
     }
 
-    private fun updateLastLocation(updateLastLocation: Boolean): Completable {
-        return Completable.fromAction {
+    private fun updateLastLocation(updateLastLocation: Boolean): Observable<Unit> {
+        return Observable.fromCallable {
             // if gps is disabled by user then set the last location as empty (-1.0, -1.0) immediately
             // so the user doesn't have to wait 15 seconds until getCurrentLocation returns empty
             // location because of timeout
@@ -171,11 +177,11 @@ class AllPhotosActivityViewModel(
                 //request new location every 10 minutes
                 if (lastTimeCheck == null || (now - lastTimeCheck > LOCATION_CHECK_INTERVAL_MS)) {
                     val currentLocation = getView()?.getCurrentLocation()?.blockingGet()
-                        ?: return@fromAction
+                        ?: return@fromCallable
 
                     val lastLocation = settingsRepository.findLastLocation()
                     if (lastLocation != null && !lastLocation.isEmpty() && currentLocation.isEmpty()) {
-                        return@fromAction
+                        return@fromCallable
                     }
 
                     settingsRepository.saveLastLocationCheckTime(now)
@@ -184,6 +190,8 @@ class AllPhotosActivityViewModel(
             } else {
                 settingsRepository.saveLastLocation(LonLat.empty())
             }
+
+            return@fromCallable
         }
     }
 
