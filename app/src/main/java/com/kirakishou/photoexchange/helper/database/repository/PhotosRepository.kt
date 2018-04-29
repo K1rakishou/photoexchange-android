@@ -24,8 +24,6 @@ open class PhotosRepository(
     }
 
     fun saveTakenPhoto(file: File): MyPhoto {
-        deleteAllWithState(PhotoState.PHOTO_TAKEN)
-
         val tempFileEntity = TempFileEntity.create(file.absolutePath)
         val tempFileId = tempFileDao.insert(tempFileEntity)
         if (tempFileId <= 0L) {
@@ -54,23 +52,6 @@ open class PhotosRepository(
     fun updatePhotoState(photoName: String, newPhotoState: PhotoState): Boolean {
         val photoId = myPhotoDao.findByName(photoName)?.id ?: return false
         return myPhotoDao.updateSetNewPhotoState(photoId, newPhotoState) == 1
-    }
-
-    fun updatePhotosStates(oldPhotoState: PhotoState, newPhotoState: PhotoState) {
-        database.transactional {
-            try {
-                val foundPhotos = findAllByState(oldPhotoState)
-
-                for (photo in foundPhotos) {
-                    updatePhotoState(photo.id, newPhotoState)
-                }
-
-                return@transactional true
-            } catch (error: Throwable) {
-                Timber.e(error)
-                return@transactional false
-            }
-        }
     }
 
     fun deleteMyPhoto(myPhoto: MyPhoto): Boolean {
@@ -194,36 +175,8 @@ open class PhotosRepository(
         }
     }
 
-    private fun createTempFile(): TempFileEntity {
-        val file = createFile()
-        if (!file.exists()) {
-            return TempFileEntity.empty()
-        }
-
-        try {
-            val tempFileEntity = TempFileEntity.create(file.absolutePath)
-            val id = tempFileDao.insert(tempFileEntity)
-
-            if (id <= 0L) {
-                deleteFileIfExists(file)
-                return TempFileEntity.empty()
-            }
-
-            return tempFileEntity
-                .also { it.id = id }
-        } catch (error: Throwable) {
-            Timber.e(error)
-            deleteFileIfExists(file)
-            return TempFileEntity.empty()
-        }
-    }
-
     private fun findTempFileById(id: Long): TempFileEntity {
         return tempFileDao.findById(id) ?: TempFileEntity.empty()
-    }
-
-    private fun findAllTempFiles(): List<TempFileEntity> {
-        return tempFileDao.findAll()
     }
 
     fun deleteTempFileById(id: Long): Boolean {
@@ -240,14 +193,34 @@ open class PhotosRepository(
 
         if (!fullPathFile.exists()) {
             if (!fullPathFile.mkdirs()) {
-                Timber.e("Could not create directory ${fullPathFile.absolutePath}")
+                Timber.w("Could not create directory ${fullPathFile.absolutePath}")
             }
         }
     }
 
     private fun deleteFileIfExists(file: File) {
         if (file.exists()) {
-            file.delete()
+            if (!file.delete()) {
+                Timber.w("Could not delete file path: ${file.absoluteFile}")
+            }
+        }
+
+        return
+    }
+
+    fun cleanFilesDirectory() {
+        val directory = File(filesDir)
+        val filePaths = directory.listFiles()
+
+        for (filePath in filePaths) {
+            if (filePath.name.startsWith(".")) {
+                continue
+            }
+
+            val found = tempFileDao.findByFilePath(filePath.absolutePath) != null
+            if (!found) {
+                deleteFileIfExists(filePath)
+            }
         }
     }
 }

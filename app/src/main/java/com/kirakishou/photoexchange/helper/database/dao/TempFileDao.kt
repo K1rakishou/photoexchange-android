@@ -22,6 +22,10 @@ abstract class TempFileDao {
     @Query("SELECT * FROM ${TempFileEntity.TABLE_NAME}")
     abstract fun findAll(): List<TempFileEntity>
 
+    @Query("SELECT * FROM ${TempFileEntity.TABLE_NAME} " +
+        "WHERE ${TempFileEntity.FILE_PATH_COLUMN} = :filePath")
+    abstract fun findByFilePath(filePath: String): TempFileEntity?
+
     @Query("DELETE FROM ${TempFileEntity.TABLE_NAME} " +
         "WHERE ${TempFileEntity.FILE_PATH_COLUMN} = :path")
     abstract fun deleteByFilePath(path: String): Int

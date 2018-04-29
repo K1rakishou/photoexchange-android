@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerPro
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
+import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
 import io.reactivex.Completable
 import io.reactivex.rxkotlin.plusAssign
@@ -37,7 +38,10 @@ class TakePhotoActivityViewModel(
 
             try {
                 getView()?.hideControls()
+
                 settingsRepository.generateUserIdIfNotExists()
+                photosRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN)
+                photosRepository.cleanFilesDirectory()
 
                 val file = photosRepository.createFile()
                 val takePhotoStatus = getView()?.takePhoto(file)
@@ -49,6 +53,7 @@ class TakePhotoActivityViewModel(
                 }
 
                 myPhoto = photosRepository.saveTakenPhoto(file)
+
                 if (myPhoto.isEmpty()) {
                     photosRepository.deleteMyPhoto(myPhoto)
                     getView()?.showToast("Could not take photo (database error)", Toast.LENGTH_LONG)

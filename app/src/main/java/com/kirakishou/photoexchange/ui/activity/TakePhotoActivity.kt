@@ -159,12 +159,14 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
     override fun showControls() {
         runOnUiThread {
             takePhotoButton.visibility = View.VISIBLE
+            ivShowAllPhotos.visibility = View.VISIBLE
         }
     }
 
     override fun hideControls() {
         runOnUiThread {
             takePhotoButton.visibility = View.GONE
+            ivShowAllPhotos.visibility = View.GONE
         }
     }
 
