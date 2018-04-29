@@ -1,10 +1,8 @@
 package com.kirakishou.photoexchange.ui.activity
 
 import android.Manifest
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.*
 import android.support.design.widget.CoordinatorLayout
@@ -13,6 +11,7 @@ import android.support.design.widget.Snackbar
 import android.support.design.widget.TabLayout
 import android.support.v4.app.ActivityCompat
 import android.support.v4.view.ViewPager
+import android.support.v4.widget.SwipeRefreshLayout
 import android.widget.ImageButton
 import android.widget.Toast
 import butterknife.BindView
@@ -32,13 +31,16 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
+import com.kirakishou.photoexchange.service.FindPhotoAnswerServiceConnection
 import com.kirakishou.photoexchange.service.FindPhotoAnswerService
 import com.kirakishou.photoexchange.service.UploadPhotoService
+import com.kirakishou.photoexchange.service.UploadPhotoServiceConnection
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.callback.FindPhotoAnswerCallback
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
 import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
 import com.kirakishou.photoexchange.ui.viewstate.AllPhotosActivityViewState
+import com.kirakishou.photoexchange.ui.viewstate.AllPhotosActivityViewStateEvent
 import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
 import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewStateEvent
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
@@ -49,7 +51,6 @@ import io.reactivex.exceptions.CompositeException
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
-import java.lang.ref.WeakReference
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -89,10 +90,10 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     private val FRAGMENT_SCROLL_DELAY_MS = 250L
     private val MY_PHOTOS_TAB_INDEX = 0
     private val RECEIVED_PHOTO_TAB_INDEX = 1
-    private var handler: Handler? = null
 
-    private var uploadPhotoService: UploadPhotoService? = null
-    private var findPhotoAnswerService: FindPhotoAnswerService? = null
+    private var findServiceConnection = FindPhotoAnswerServiceConnection(this)
+    private var uploadServiceConnection = UploadPhotoServiceConnection(this)
+
     private val adapter = FragmentTabsPager(supportFragmentManager)
     private val locationManager by lazy { MyLocationManager(applicationContext) }
     private var savedInstanceState: Bundle? = null
@@ -108,6 +109,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         compositeDisposable += viewModel.startPhotoUploadingServiceSubject
             .subscribeOn(Schedulers.io())
             .observeOn(Schedulers.io())
+            .filter { !uploadServiceConnection.isConnected() }
             .doOnNext { startUploadingService() }
             .doOnError { Timber.e(it) }
             .subscribe()
@@ -115,6 +117,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         compositeDisposable += viewModel.startFindPhotoAnswerServiceSubject
             .subscribeOn(Schedulers.io())
             .observeOn(Schedulers.io())
+            .filter { !findServiceConnection.isConnected() }
             .doOnNext { startFindingService() }
             .doOnError { Timber.e(it) }
             .subscribe()
@@ -130,12 +133,15 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             .debounceClicks()
             .doOnNext { finish() }
             .subscribe()
+
+        compositeDisposable += viewModel.allPhotosActivityViewStateSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .doOnNext { onViewStateChanged(it) }
+            .subscribe()
     }
 
     override fun onActivityStart() {
-        if (handler == null) {
-            handler = Handler(Looper.getMainLooper())
-        }
+        viewModel.setView(this)
     }
 
     override fun onResume() {
@@ -144,22 +150,10 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     override fun onActivityStop() {
-        if (handler != null) {
-            handler!!.removeCallbacksAndMessages(null)
-            handler = null
-        }
+        findServiceConnection.onFindingServiceDisconnected()
+        uploadServiceConnection.onUploadingServiceDisconnected()
 
-        uploadPhotoService?.let { srvc ->
-            srvc.detachCallback()
-            unbindService(uploadServiceConnection)
-            uploadPhotoService = null
-        }
-
-        findPhotoAnswerService?.let { srvc ->
-            srvc.detachCallback()
-            unbindService(findServiceConnection)
-            findPhotoAnswerService = null
-        }
+        viewModel.clearView()
     }
 
     override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
@@ -283,6 +277,12 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         }
     }
 
+    private fun onViewStateChanged(viewStateEvent: AllPhotosActivityViewStateEvent) {
+        when (viewStateEvent) {
+            else -> throw IllegalArgumentException("Unknown MyPhotosFragmentViewStateEvent $viewStateEvent")
+        }
+    }
+
     override fun onUploadPhotosEvent(event: PhotoUploadEvent) {
         viewModel.forwardUploadPhotoEvent(event)
 
@@ -350,9 +350,11 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
                     viewPager.currentItem = MY_PHOTOS_TAB_INDEX
                 }
 
-                handler?.postDelayed({
-                    viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.ScrollToTop())
-                }, FRAGMENT_SCROLL_DELAY_MS)
+                compositeDisposable += Single.timer(FRAGMENT_SCROLL_DELAY_MS, TimeUnit.MILLISECONDS)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnSuccess { viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.ScrollToTop()) }
+                    .subscribe()
             }).show()
     }
 
@@ -363,9 +365,11 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
                     viewPager.currentItem = RECEIVED_PHOTO_TAB_INDEX
                 }
 
-                handler?.postDelayed({
-                    viewModel.receivedPhotosFragmentViewStateSubject.onNext(ReceivedPhotosFragmentViewStateEvent.ScrollToTop())
-                }, FRAGMENT_SCROLL_DELAY_MS)
+                compositeDisposable += Single.timer(FRAGMENT_SCROLL_DELAY_MS, TimeUnit.MILLISECONDS)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .doOnSuccess { viewModel.receivedPhotosFragmentViewStateSubject.onNext(ReceivedPhotosFragmentViewStateEvent.ScrollToTop()) }
+                    .subscribe()
             }).show()
     }
 
@@ -379,38 +383,52 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun startFindingService() {
-        if (findPhotoAnswerService == null) {
-            Timber.e("startFindingService")
+        Timber.e("startFindingService")
 
-            val serviceIntent = Intent(applicationContext, FindPhotoAnswerService::class.java)
-            startService(serviceIntent)
-            bindService(serviceIntent, findServiceConnection, Context.BIND_AUTO_CREATE)
-        } else {
-            Timber.e("FindingService is already running")
-        }
+        val serviceIntent = Intent(applicationContext, FindPhotoAnswerService::class.java)
+        startService(serviceIntent)
+        bindService(serviceIntent, findServiceConnection, Context.BIND_AUTO_CREATE)
     }
 
     private fun startUploadingService() {
-        if (uploadPhotoService == null) {
-            Timber.e("startUploadingService")
+        Timber.e("startUploadingService")
 
-            val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
-            startService(serviceIntent)
-            bindService(serviceIntent, uploadServiceConnection, Context.BIND_AUTO_CREATE)
-        } else {
-            Timber.e("UploadingService is already running")
-        }
+        val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
+        startService(serviceIntent)
+        bindService(serviceIntent, uploadServiceConnection, Context.BIND_AUTO_CREATE)
     }
 
-    private fun showUploadPhotoErrorMessage(errorCode: ErrorCode.UploadPhotoErrors) {
+    private fun showUploadPhotoErrorMessage(errorCode: ErrorCode) {
         val errorMessage = when (errorCode) {
-            is ErrorCode.UploadPhotoErrors.Remote.Ok -> null
-            is ErrorCode.UploadPhotoErrors.Remote.UnknownError -> "Unknown error"
-            is ErrorCode.UploadPhotoErrors.Remote.BadRequest -> "Bad request error"
-            is ErrorCode.UploadPhotoErrors.Remote.DatabaseError -> "Server database error"
-            is ErrorCode.UploadPhotoErrors.Local.BadServerResponse -> "Bad server response error"
+            is ErrorCode.UploadPhotoErrors.Remote.Ok,
+            is ErrorCode.FindPhotoAnswerErrors.Remote.Ok,
+            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.Ok -> null
+
+            is ErrorCode.UploadPhotoErrors.Remote.UnknownError,
+            is ErrorCode.FindPhotoAnswerErrors.Remote.UnknownError,
+            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.UnknownError -> "Unknown error"
+
+            is ErrorCode.UploadPhotoErrors.Remote.BadRequest,
+            is ErrorCode.FindPhotoAnswerErrors.Remote.BadRequest,
+            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.BadRequest -> "Bad request error"
+
+            is ErrorCode.UploadPhotoErrors.Local.Timeout,
+            is ErrorCode.FindPhotoAnswerErrors.Local.Timeout,
+            is ErrorCode.MarkPhotoAsReceivedErrors.Local.Timeout -> "Operation timeout error"
+
+            is ErrorCode.UploadPhotoErrors.Remote.DatabaseError,
+            is ErrorCode.FindPhotoAnswerErrors.Remote.DatabaseError -> "Server database error"
+
+            is ErrorCode.UploadPhotoErrors.Local.BadServerResponse,
+            is ErrorCode.FindPhotoAnswerErrors.Local.BadServerResponse,
+            is ErrorCode.MarkPhotoAsReceivedErrors.Local.BadServerResponse -> "Bad server response error"
+
             is ErrorCode.UploadPhotoErrors.Local.NoPhotoFileOnDisk -> "No photo file on disk error"
-            is ErrorCode.UploadPhotoErrors.Local.Timeout -> "Timeout error"
+            is ErrorCode.FindPhotoAnswerErrors.Remote.NoPhotosInRequest -> "No photos were selected error"
+            is ErrorCode.FindPhotoAnswerErrors.Remote.TooManyPhotosRequested -> "Too many photos requested error"
+            is ErrorCode.FindPhotoAnswerErrors.Remote.NoPhotosToSendBack -> "No photos to send back"
+            is ErrorCode.FindPhotoAnswerErrors.Remote.NotEnoughPhotosUploaded -> "Upload more photos first"
+            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.BadPhotoId -> "Bad photo id error"
         }
 
         errorMessage?.let { msg ->
@@ -436,41 +454,5 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
     override fun resolveDaggerDependency() {
         activityComponent.inject(this)
-    }
-
-    private val uploadServiceConnection = object : ServiceConnection {
-        override fun onServiceConnected(className: ComponentName, _service: IBinder) {
-            Timber.tag(tag).d("UploadPhotosService Service connected")
-
-            uploadPhotoService = (_service as UploadPhotoService.UploadPhotosBinder).getService()
-            uploadPhotoService?.attachCallback(WeakReference(this@AllPhotosActivity))
-            uploadPhotoService?.startPhotosUploading()
-        }
-
-        override fun onServiceDisconnected(className: ComponentName) {
-            Timber.tag(tag).d("UploadPhotosService Service disconnected")
-
-            uploadPhotoService?.detachCallback()
-            unbindService(this)
-            uploadPhotoService = null
-        }
-    }
-
-    private val findServiceConnection = object : ServiceConnection {
-        override fun onServiceConnected(className: ComponentName, _service: IBinder) {
-            Timber.tag(tag).d("FindPhotoAnswerService Service connected")
-
-            findPhotoAnswerService = (_service as FindPhotoAnswerService.FindPhotoAnswerBinder).getService()
-            findPhotoAnswerService?.attachCallback(WeakReference(this@AllPhotosActivity))
-            findPhotoAnswerService?.startSearchingForPhotoAnswers()
-        }
-
-        override fun onServiceDisconnected(className: ComponentName) {
-            Timber.tag(tag).d("FindPhotoAnswerService Service disconnected")
-
-            findPhotoAnswerService?.detachCallback()
-            unbindService(this)
-            findPhotoAnswerService = null
-        }
     }
 }

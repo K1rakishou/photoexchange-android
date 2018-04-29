@@ -329,10 +329,12 @@ class MyPhotosAdapter(
     fun clear() {
         hideObtainCurrentLocationNotification()
 
-        queuedUpItems.removeAll { it.getType() == AdapterItemType.VIEW_MY_PHOTO }
-        failedToUploadItems.removeAll { it.getType() == AdapterItemType.VIEW_MY_PHOTO }
-        uploadedItems.removeAll { it.getType() == AdapterItemType.VIEW_MY_PHOTO }
-        uploadedWithAnswerItems.removeAll { it.getType() == AdapterItemType.VIEW_MY_PHOTO }
+        queuedUpItems.clear()
+        failedToUploadItems.clear()
+        uploadedItems.clear()
+        uploadedWithAnswerItems.clear()
+        duplicatesCheckerSet.clear()
+
         notifyDataSetChanged()
     }
 

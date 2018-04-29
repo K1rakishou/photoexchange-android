@@ -44,8 +44,8 @@ class UploadPhotoRequest<T>(
         }
 
         return single
-            .subscribeOn(schedulerProvider.BG())
-            .observeOn(schedulerProvider.BG())
+            .subscribeOn(schedulerProvider.IO())
+            .observeOn(schedulerProvider.IO())
             .flatMap { body ->
                 return@flatMap apiService.uploadPhoto(body.part(0), body.part(1))
                     .lift(OnApiErrorSingle<UploadPhotoResponse>(gson, UploadPhotoResponse::class.java))

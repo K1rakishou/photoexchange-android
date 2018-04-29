@@ -38,7 +38,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
 
     override fun onCreate() {
         super.onCreate()
-        Timber.tag(tag).d("Service started")
+        Timber.tag(tag).e("UploadPhotoService started")
 
         resolveDaggerDependency()
         startForeground(NOTIFICATION_ID, createNotificationUploading())
@@ -50,7 +50,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
         presenter.onDetach()
         detachCallback()
 
-        Timber.tag(tag).d("Service destroyed")
+        Timber.tag(tag).e("UploadPhotoService destroyed")
     }
 
     fun attachCallback(_callback: WeakReference<PhotoUploadingCallback>) {
@@ -226,6 +226,18 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     inner class UploadPhotosBinder : Binder() {
         fun getService(): UploadPhotoService {
             return this@UploadPhotoService
+        }
+    }
+
+    companion object {
+        fun isRunning(context: Context): Boolean {
+            val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
+            for (service in manager!!.getRunningServices(Integer.MAX_VALUE)) {
+                if (UploadPhotoService::class.java.name == service.service.className) {
+                    return true
+                }
+            }
+            return false
         }
     }
 }

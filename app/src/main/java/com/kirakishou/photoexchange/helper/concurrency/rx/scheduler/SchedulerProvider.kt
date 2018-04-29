@@ -6,6 +6,7 @@ import io.reactivex.Scheduler
  * Created by kirakishou on 9/17/2017.
  */
 interface SchedulerProvider {
-    fun BG(): Scheduler
+    fun IO(): Scheduler
+    fun CALC(): Scheduler
     fun UI(): Scheduler
 }

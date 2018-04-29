@@ -12,6 +12,7 @@ import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.service.UploadPhotoServiceCallbacks
+import io.reactivex.Maybe
 import io.reactivex.Observable
 import io.reactivex.Single
 import timber.log.Timber
@@ -23,34 +24,53 @@ class UploadPhotosUseCase(
     private val myPhotosRepository: PhotosRepository,
     private val apiClient: ApiClient
 ) {
-    fun uploadPhotos(userId: String, location: LonLat, callbacks: WeakReference<UploadPhotoServiceCallbacks>?): Observable<Unit> {
-        return Observable.fromCallable {
+    private val tag = "UploadPhotosUseCase"
+
+    fun uploadPhotos(userId: String, location: LonLat, callbacks: WeakReference<UploadPhotoServiceCallbacks>?): Maybe<Unit> {
+        return Maybe.fromCallable {
+            Timber.tag(tag).d("Start photo uploading")
+
             while (true) {
                 val photo = myPhotosRepository.findPhotoByStateAndUpdateState(PhotoState.PHOTO_QUEUED_UP, PhotoState.PHOTO_UPLOADING)
-                    ?: break
+                if (photo == null) {
+                    Timber.tag(tag).d("Could not find photo with state PHOTO_QUEUED_UP. Exiting.")
+                    break
+                }
+
+                Timber.tag(tag).d("Photo found. photoId = ${photo.id} ")
 
                 try {
                     val rotatedPhotoFile = handlePhotoUploadingStart(callbacks, photo)
 
                     try {
                         if (BitmapUtils.rotatePhoto(photo.photoTempFile, rotatedPhotoFile)) {
+                            Timber.tag(tag).d("Photo rotated. Starting the uploading routine...")
+
                             val response = uploadPhoto(rotatedPhotoFile, location, userId, callbacks, photo).blockingGet()
                             val errorCode = response.errorCode as ErrorCode.UploadPhotoErrors
                             when (errorCode) {
                                 is ErrorCode.UploadPhotoErrors.Remote.Ok -> {
+                                    Timber.tag(tag).d("Photo uploaded. Saving the result")
+
                                     if (!handlePhotoUploaded(photo, response, callbacks)) {
+                                        Timber.tag(tag).d("Could not save photo uploading result")
                                         handleFailedPhoto(photo, callbacks, errorCode)
                                     }
                                 }
 
-                                else -> handleFailedPhoto(photo, callbacks, errorCode)
+                                else -> {
+                                    Timber.tag(tag).d("Could not upload photo with id ${photo.id}")
+                                    handleFailedPhoto(photo, callbacks, errorCode)
+                                }
                             }
+                        } else {
+                            Timber.tag(tag).d("Could not rotate photo with id ${photo.id}")
                         }
                     } finally {
                         FileUtils.deleteFile(rotatedPhotoFile)
                     }
                 } catch (error: Exception) {
-                    Timber.e(error)
+                    Timber.tag(tag).e(error)
                     handleUnknownError(photo, callbacks, error)
                 }
             }
@@ -82,6 +102,7 @@ class UploadPhotosUseCase(
             val updateResult2 = myPhotosRepository.updateSetTempFileId(photo.id, null)
             val updateResult3 = myPhotosRepository.updateSetPhotoName(photo.id, response.photoName)
 
+            Timber.tag(tag).d("deleteResult = $deleteResult, updateResult1 = $updateResult1, updateResult2 = $updateResult2, updateResult3 = $updateResult3")
             return@transactional deleteResult && updateResult1 && updateResult2 && updateResult3
         }
 

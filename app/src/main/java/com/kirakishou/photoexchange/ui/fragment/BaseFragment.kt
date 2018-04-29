@@ -30,7 +30,6 @@ abstract class BaseFragment : Fragment() {
 
     override fun onAttach(context: Context?) {
         super.onAttach(context)
-        Timber.e("onAttach")
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,7 +65,6 @@ abstract class BaseFragment : Fragment() {
     override fun onDetach() {
         super.onDetach()
 
-        Timber.e("onDetach")
         compositeDisposable.clear()
         PhotoExchangeApplication.watch(this, this::class.simpleName)
     }

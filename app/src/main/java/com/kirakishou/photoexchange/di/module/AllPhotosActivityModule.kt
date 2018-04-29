@@ -28,7 +28,7 @@ open class AllPhotosActivityModule(
                                 photosRepository: PhotosRepository,
                                 photoAnswerRepository: PhotoAnswerRepository,
                                 settingsRepository: SettingsRepository): AllPhotosActivityViewModelFactory {
-        return AllPhotosActivityViewModelFactory(WeakReference(activity), photosRepository, settingsRepository, photoAnswerRepository, schedulerProvider)
+        return AllPhotosActivityViewModelFactory(photosRepository, settingsRepository, photoAnswerRepository, schedulerProvider)
     }
 
     @PerActivity

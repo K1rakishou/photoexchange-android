@@ -8,17 +8,21 @@ import java.lang.ref.WeakReference
 /**
  * Created by kirakishou on 9/8/2017.
  */
-abstract class BaseViewModel<T>(
-    _view: WeakReference<T>
-) : ViewModel() {
+abstract class BaseViewModel<T> : ViewModel() {
     protected val compositeDisposable = CompositeDisposable()
-    private var viewCallbacks = _view
+    private var viewCallbacks: T? = null
 
-    protected fun getView(): T? {
-        return viewCallbacks.get()
+    fun setView(view: T) {
+        this.viewCallbacks = view
     }
 
-    abstract fun onAttached()
+    fun clearView() {
+        this.viewCallbacks = null
+    }
+
+    protected fun getView(): T? {
+        return viewCallbacks
+    }
 
     @CallSuper
     override fun onCleared() {

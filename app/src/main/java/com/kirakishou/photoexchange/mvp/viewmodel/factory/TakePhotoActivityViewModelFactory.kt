@@ -15,7 +15,6 @@ import javax.inject.Inject
  */
 class TakePhotoActivityViewModelFactory
 @Inject constructor(
-    val view: WeakReference<TakePhotoActivityView>,
     val photosRepository: PhotosRepository,
     val settingsRepository: SettingsRepository,
     val schedulerProvider: SchedulerProvider
@@ -23,6 +22,6 @@ class TakePhotoActivityViewModelFactory
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
-        return TakePhotoActivityViewModel(view, schedulerProvider, photosRepository, settingsRepository) as T
+        return TakePhotoActivityViewModel(schedulerProvider, photosRepository, settingsRepository) as T
     }
 }

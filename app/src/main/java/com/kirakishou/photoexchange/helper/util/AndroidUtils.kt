@@ -31,21 +31,9 @@ object AndroidUtils {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
     }
 
-    fun pixelsToSp(context: Context, px: Float): Float {
+    fun pxToSp(context: Context, px: Float): Float {
         val scaledDensity = context.resources.displayMetrics.scaledDensity
         return px / scaledDensity
-    }
-
-    fun convertDpToPixel(dp: Float, context: Context): Float {
-        val resources = context.resources
-        val metrics = resources.displayMetrics
-        return dp * (metrics.densityDpi.toFloat() / DisplayMetrics.DENSITY_DEFAULT)
-    }
-
-    fun convertPixelsToDp(px: Float, context: Context): Float {
-        val resources = context.resources
-        val metrics = resources.displayMetrics
-        return px / (metrics.densityDpi.toFloat() / DisplayMetrics.DENSITY_DEFAULT)
     }
 
     fun dpToPx(dp: Float, context: Context): Float {
@@ -90,7 +78,7 @@ object AndroidUtils {
 
     fun calculateNoOfColumns(context: Context, viewWidth: Int): Int {
         val screenSize = getScreenSize(context)
-        val dp = convertDpToPixel(viewWidth.toFloat(), context).toInt()
+        val dp = dpToPx(viewWidth.toFloat(), context).toInt()
 
         return when {
             screenSize / 8 >= dp -> 8

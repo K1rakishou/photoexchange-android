@@ -10,6 +10,7 @@ import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
+import timber.log.Timber
 import java.lang.ref.WeakReference
 
 /**
@@ -23,21 +24,42 @@ class UploadPhotoServicePresenter(
     private val updatePhotosUseCase: UploadPhotosUseCase
 ) {
     private val tag = "[${this::class.java.simpleName}] "
-    private val uploadPhotosSubject = PublishSubject.create<UploadPhotoData>().toSerialized()
+    private val uploadPhotosSubject = PublishSubject.create<Unit>().toSerialized()
     private var compositeDisposable = CompositeDisposable()
 
     init {
         compositeDisposable += uploadPhotosSubject
-            .subscribeOn(schedulerProvider.BG())
-            .observeOn(schedulerProvider.BG())
-            .doOnEach { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnPrepare()) }
-            .flatMap { data -> updatePhotosUseCase.uploadPhotos(data.userId, data.location, callbacks) }
-            .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnEnd()) }
+            .subscribeOn(schedulerProvider.IO())
+            .observeOn(schedulerProvider.IO())
+            .firstOrError()
+            .doOnSuccess { Timber.e("UploadPhotoServicePresenter After firstOrError") }
+            .map {
+                val userId = settingsRepository.getUserId()
+                    ?: return@map UploadPhotoData.empty()
+                val location = settingsRepository.findLastLocation()
+                    ?: return@map UploadPhotoData.empty()
+
+                return@map UploadPhotoData(false, userId, location)
+            }
+            .doOnError { error ->
+                callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnUnknownError(error))
+                callbacks.get()?.onError(error)
+                callbacks.get()?.stopService()
+            }
+            .doOnSuccess { data ->
+                if (data.isEmpty()) {
+                    callbacks.get()?.stopService()
+                }
+            }
+            .filter { data -> !data.isEmpty() }
+            .doOnEvent { _, _ -> callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnPrepare()) }
+            .concatMap { data -> updatePhotosUseCase.uploadPhotos(data.userId, data.location, callbacks) }
+            .doOnSuccess { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnEnd()) }
             .doOnError { error ->
                 callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnUnknownError(error))
                 callbacks.get()?.onError(error)
             }
-            .doOnEach { callbacks.get()?.stopService() }
+            .doOnEvent { _, _ -> callbacks.get()?.stopService() }
             .subscribe()
     }
 
@@ -46,28 +68,6 @@ class UploadPhotoServicePresenter(
     }
 
     fun uploadPhotos() {
-        compositeDisposable += Single.fromCallable {
-            val userId = settingsRepository.getUserId()
-                ?: return@fromCallable UploadPhotoData.empty()
-            val location = settingsRepository.findLastLocation()
-                ?: return@fromCallable UploadPhotoData.empty()
-
-            return@fromCallable UploadPhotoData(false, userId, location)
-
-        }
-        .subscribeOn(schedulerProvider.BG())
-        .observeOn(schedulerProvider.BG())
-        .doOnError { error ->
-            callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnUnknownError(error))
-            callbacks.get()?.onError(error)
-            callbacks.get()?.stopService()
-        }
-        .doOnSuccess { data ->
-            if (data.isEmpty()) {
-                callbacks.get()?.stopService()
-            }
-        }
-        .filter { data -> !data.isEmpty() }
-        .subscribe(uploadPhotosSubject::onNext)
+        uploadPhotosSubject.onNext(Unit)
     }
 }
