@@ -53,7 +53,7 @@ class UploadPhotoServicePresenter(
             }
             .filter { data -> !data.isEmpty() }
             .doOnEvent { _, _ -> callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnPrepare()) }
-            .flatMap { data -> updatePhotosUseCase.uploadPhotos(data.userId, data.location, callbacks) }
+            .concatMap { data -> updatePhotosUseCase.uploadPhotos(data.userId, data.location, callbacks) }
             .doOnSuccess { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnEnd()) }
             .doOnError { error ->
                 callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnUnknownError(error))

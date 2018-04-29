@@ -52,7 +52,9 @@ class AllPhotosActivityViewModel(
 
     init {
         compositeDisposable += myPhotosAdapterButtonClickSubject
-            .flatMap { getView()?.handleMyPhotoFragmentAdapterButtonClicks(it) ?: Observable.just(false) }
+            .flatMap {
+                getView()?.handleMyPhotoFragmentAdapterButtonClicks(it) ?: Observable.just(false)
+            }
             .filter { startUploadingService -> startUploadingService }
             .map { Unit }
             .doOnNext { checkShouldStartPhotoUploadingService(true) }
@@ -86,8 +88,26 @@ class AllPhotosActivityViewModel(
     }
 
     fun checkShouldStartPhotoUploadingService(updateLastLocation: Boolean) {
-        val observable = Observable.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
-            .subscribeOn(schedulerProvider.IO())
+        val observable = Observable.fromCallable {
+            //check if we have any photos that was stuck in uploading state forever
+            val stuckInUploadingStatePhotos = photosRepository.findAllByState(PhotoState.PHOTO_UPLOADING)
+
+            //if we have any try to roll their state back to queuedUp
+            if (stuckInUploadingStatePhotos.isNotEmpty()) {
+                stuckInUploadingStatePhotos.forEach { photo ->
+                    //if photo's file was already deleted - we can't do anything so just delete it from database
+                    if (photosRepository.hasTempFile(photo.id) || photo.photoTempFile == null) {
+                        photosRepository.deletePhotoById(photo.id)
+                        return@forEach
+                    }
+
+                    //otherwise rollback the state
+                    photosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_QUEUED_UP)
+                }
+            }
+
+            return@fromCallable photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP)
+        }.subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
             .publish()
             .autoConnect(2)

@@ -76,9 +76,32 @@ open class PhotoExchangeApplication : Application() {
 
     private fun initTimber() {
         if (Constants.isDebugBuild) {
-            Timber.plant(Timber.DebugTree())
+            Timber.plant(DebugTree())
         } else {
             Timber.plant(CrashlyticsTree())
+        }
+    }
+
+    class DebugTree : Timber.Tree() {
+        override fun log(priority: Int, tag: String?, message: String?, t: Throwable?) {
+            when (priority) {
+                Log.DEBUG -> {
+                    System.out.println("DEBUG: ($tag) $message")
+                }
+
+                Log.WARN -> {
+                    System.out.println("WARNING: ($tag) $message")
+                }
+
+                Log.ERROR -> {
+                    System.err.println("ERROR: ($tag) $message")
+                    t?.printStackTrace()
+                }
+
+                else -> {
+                    System.out.println("OTHER: ($tag) $message")
+                }
+            }
         }
     }
 

@@ -49,7 +49,7 @@ class FindPhotoAnswerServicePresenter(
                 callbacks.get()?.onError(error )
                 callbacks.get()?.stopService()
             }
-            .flatMap { data -> findPhotoAnswersUseCase.getPhotoAnswers(data, callbacks) }
+            .concatMap { data -> findPhotoAnswersUseCase.getPhotoAnswers(data, callbacks) }
             .doOnError { error -> callbacks.get()?.onError(error) }
             .doOnEvent { _, _ -> callbacks.get()?.stopService() }
             .subscribe()
