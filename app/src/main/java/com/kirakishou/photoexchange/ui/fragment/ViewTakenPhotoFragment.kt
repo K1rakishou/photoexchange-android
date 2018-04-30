@@ -7,8 +7,11 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.view.View
+import android.view.ViewAnimationUtils
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.AnticipateInterpolator
 import android.view.animation.LinearInterpolator
+import android.view.animation.OvershootInterpolator
 import android.widget.ImageView
 import androidx.core.animation.addListener
 import butterknife.BindView
@@ -81,7 +84,7 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
         fabCloseActivity.scaleX = 0f
         fabCloseActivity.scaleY = 0f
 
-        fabSendPhoto.scaleY = 0f
+        fabSendPhoto.scaleX = 0f
         fabSendPhoto.scaleY = 0f
     }
 
@@ -90,19 +93,20 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
             val set = AnimatorSet()
 
             val animation1 = ObjectAnimator.ofFloat(fabCloseActivity, View.SCALE_X, 0f, 1f)
-            animation1.setInterpolator(AccelerateDecelerateInterpolator())
+            animation1.setInterpolator(OvershootInterpolator())
 
             val animation2 = ObjectAnimator.ofFloat(fabCloseActivity, View.SCALE_Y, 0f, 1f)
-            animation1.setInterpolator(AccelerateDecelerateInterpolator())
+            animation2.setInterpolator(OvershootInterpolator())
 
             val animation3 = ObjectAnimator.ofFloat(fabSendPhoto, View.SCALE_X, 0f, 1f)
-            animation1.setInterpolator(AccelerateDecelerateInterpolator())
+            animation3.setInterpolator(OvershootInterpolator())
 
             val animation4 = ObjectAnimator.ofFloat(fabSendPhoto, View.SCALE_Y, 0f, 1f)
-            animation1.setInterpolator(AccelerateDecelerateInterpolator())
+            animation4.setInterpolator(OvershootInterpolator())
 
             set.playTogether(animation1, animation2, animation3, animation4)
-            set.setDuration(150)
+            set.setStartDelay(100)
+            set.setDuration(250)
             set.start()
         }
     }
@@ -112,19 +116,19 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
             val set = AnimatorSet()
 
             val animation1 = ObjectAnimator.ofFloat(fabCloseActivity, View.SCALE_X, 1f, 0f)
-            animation1.setInterpolator(AccelerateDecelerateInterpolator())
+            animation1.setInterpolator(AnticipateInterpolator())
 
             val animation2 = ObjectAnimator.ofFloat(fabCloseActivity, View.SCALE_Y, 1f, 0f)
-            animation1.setInterpolator(AccelerateDecelerateInterpolator())
+            animation2.setInterpolator(AnticipateInterpolator())
 
             val animation3 = ObjectAnimator.ofFloat(fabSendPhoto, View.SCALE_X, 1f, 0f)
-            animation1.setInterpolator(AccelerateDecelerateInterpolator())
+            animation3.setInterpolator(AnticipateInterpolator())
 
             val animation4 = ObjectAnimator.ofFloat(fabSendPhoto, View.SCALE_Y, 1f, 0f)
-            animation1.setInterpolator(AccelerateDecelerateInterpolator())
+            animation4.setInterpolator(AnticipateInterpolator())
 
             set.playTogether(animation1, animation2, animation3, animation4)
-            set.setDuration(150)
+            set.setDuration(250)
             set.addListener(onEnd = {
                 emitter.onComplete()
             })

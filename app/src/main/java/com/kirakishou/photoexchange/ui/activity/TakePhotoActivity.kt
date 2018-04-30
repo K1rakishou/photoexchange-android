@@ -1,13 +1,19 @@
 package com.kirakishou.photoexchange.ui.activity
 
 import android.Manifest
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.ActivityCompat
 import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.AccelerateInterpolator
+import android.view.animation.OvershootInterpolator
 import android.widget.ImageView
+import androidx.core.animation.addListener
 import butterknife.BindView
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
@@ -16,6 +22,7 @@ import com.kirakishou.photoexchange.di.module.TakePhotoActivityModule
 import com.kirakishou.photoexchange.helper.CameraProvider
 import com.kirakishou.photoexchange.helper.extension.debounceClicks
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
+import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
@@ -23,6 +30,7 @@ import com.kirakishou.photoexchange.ui.dialog.AppCannotWorkWithoutCameraPermissi
 import com.kirakishou.photoexchange.ui.dialog.CameraIsNotAvailableDialog
 import com.kirakishou.photoexchange.ui.dialog.CameraRationaleDialog
 import io.fotoapparat.view.CameraView
+import io.reactivex.Completable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
@@ -51,10 +59,19 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
     lateinit var cameraProvider: CameraProvider
 
     private val tag = "[${this::class.java.simpleName}]: "
+    private var translationDelta: Float = 0f
 
     override fun getContentView(): Int = R.layout.activity_take_photo
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
+        initViews()
+    }
+
+    private fun initViews() {
+        translationDelta = AndroidUtils.dpToPx(96f, this)
+
+        takePhotoButton.translationY = takePhotoButton.translationY + translationDelta
+        ivShowAllPhotos.translationY = ivShowAllPhotos.translationY + translationDelta
     }
 
     override fun onInitRx() {
@@ -109,7 +126,7 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
                 return@askForPermission
             }
 
-            showControls()
+            animateAppear()
             startCamera()
         }
     }
@@ -156,17 +173,39 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
             myPhoto.toBundle(), false)
     }
 
-    override fun showControls() {
+    private fun animateAppear() {
         runOnUiThread {
-            takePhotoButton.visibility = View.VISIBLE
-            ivShowAllPhotos.visibility = View.VISIBLE
+            val set = AnimatorSet()
+
+            val animation1 = ObjectAnimator.ofFloat(takePhotoButton, View.TRANSLATION_Y, translationDelta, 0f)
+            animation1.setInterpolator(AccelerateDecelerateInterpolator())
+
+            val animation2 = ObjectAnimator.ofFloat(ivShowAllPhotos, View.TRANSLATION_Y, translationDelta, 0f)
+            animation2.setInterpolator(AccelerateDecelerateInterpolator())
+
+            set.playTogether(animation1, animation2)
+            set.setStartDelay(50)
+            set.setDuration(200)
+            set.start()
         }
     }
 
-    override fun hideControls() {
-        runOnUiThread {
-            takePhotoButton.visibility = View.GONE
-            ivShowAllPhotos.visibility = View.GONE
+    private fun animateDisappear(): Completable {
+        return Completable.create { emitter ->
+            val set = AnimatorSet()
+
+            val animation1 = ObjectAnimator.ofFloat(takePhotoButton, View.TRANSLATION_Y, 0f, translationDelta)
+            animation1.setInterpolator(AccelerateInterpolator())
+
+            val animation2 = ObjectAnimator.ofFloat(ivShowAllPhotos, View.TRANSLATION_Y, 0f, translationDelta)
+            animation2.setInterpolator(AccelerateInterpolator())
+
+            set.playTogether(animation1, animation2)
+            set.setDuration(250)
+            set.addListener(onEnd = {
+                emitter.onComplete()
+            })
+            set.start()
         }
     }
 
@@ -177,6 +216,13 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         permissionManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
+    override fun onBackPressed() {
+        compositeDisposable += animateDisappear()
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnComplete { super.onBackPressed() }
+            .subscribe()
     }
 
     override fun resolveDaggerDependency() {

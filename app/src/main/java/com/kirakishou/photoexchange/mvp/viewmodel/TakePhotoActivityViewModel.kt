@@ -37,8 +37,6 @@ class TakePhotoActivityViewModel(
             var myPhoto: MyPhoto = MyPhoto.empty()
 
             try {
-                getView()?.hideControls()
-
                 settingsRepository.generateUserIdIfNotExists()
                 photosRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN)
                 photosRepository.cleanFilesDirectory()
@@ -57,7 +55,6 @@ class TakePhotoActivityViewModel(
                 if (myPhoto.isEmpty()) {
                     photosRepository.deleteMyPhoto(myPhoto)
                     getView()?.showToast("Could not take photo (database error)", Toast.LENGTH_LONG)
-                    getView()?.showControls()
                     return@fromAction
                 }
 
@@ -67,7 +64,6 @@ class TakePhotoActivityViewModel(
 
                 photosRepository.deleteMyPhoto(myPhoto)
                 handleException(error)
-                getView()?.showControls()
             }
         }.subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
