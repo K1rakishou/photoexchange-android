@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.di.component
 import com.kirakishou.photoexchange.di.module.ViewTakenPhotoActivityModule
 import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity
+import com.kirakishou.photoexchange.ui.fragment.AddToGalleryDialogFragment
 import com.kirakishou.photoexchange.ui.fragment.ViewTakenPhotoFragment
 import dagger.Subcomponent
 
@@ -17,4 +18,5 @@ import dagger.Subcomponent
 interface ViewTakenPhotoActivityComponent {
     fun inject(activity: ViewTakenPhotoActivity)
     fun inject(fragment: ViewTakenPhotoFragment)
+    fun inject(fragment: AddToGalleryDialogFragment)
 }

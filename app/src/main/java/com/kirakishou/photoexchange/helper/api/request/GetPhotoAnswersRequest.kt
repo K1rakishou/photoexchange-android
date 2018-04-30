@@ -17,7 +17,7 @@ class GetPhotoAnswersRequest<T>(
     private val apiService: ApiService,
     private val schedulerProvider: SchedulerProvider,
     private val gson: Gson
-): AbstractRequest<T>() {
+) : AbstractRequest<T>() {
 
     @Suppress("UNCHECKED_CAST")
     override fun execute(): Single<T> {

@@ -46,7 +46,7 @@ class UploadPhotosUseCase(
                         if (BitmapUtils.rotatePhoto(photo.photoTempFile, rotatedPhotoFile)) {
                             Timber.tag(tag).d("Photo rotated. Starting the uploading routine...")
 
-                            val response = uploadPhoto(rotatedPhotoFile, location, userId, callbacks, photo).blockingGet()
+                            val response = uploadPhoto(rotatedPhotoFile, location, userId, photo.isPublic, callbacks, photo).blockingGet()
                             val errorCode = response.errorCode as ErrorCode.UploadPhotoErrors
                             when (errorCode) {
                                 is ErrorCode.UploadPhotoErrors.Remote.Ok -> {
@@ -83,8 +83,8 @@ class UploadPhotosUseCase(
         return rotatedPhotoFile
     }
 
-    private fun uploadPhoto(rotatedPhotoFile: File, location: LonLat, userId: String, callbacks: WeakReference<UploadPhotoServiceCallbacks>?, photo: MyPhoto): Single<UploadPhotoResponse> {
-        return apiClient.uploadPhoto(rotatedPhotoFile.absolutePath, location, userId, object : PhotoUploadProgressCallback {
+    private fun uploadPhoto(rotatedPhotoFile: File, location: LonLat, userId: String, isPublic: Boolean, callbacks: WeakReference<UploadPhotoServiceCallbacks>?, photo: MyPhoto): Single<UploadPhotoResponse> {
+        return apiClient.uploadPhoto(rotatedPhotoFile.absolutePath, location, userId, isPublic, object : PhotoUploadProgressCallback {
             override fun onProgress(progress: Int) {
                 callbacks?.get()?.onUploadingEvent(PhotoUploadEvent.OnProgress(photo, progress))
             }

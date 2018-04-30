@@ -17,5 +17,9 @@ class SendPhotoPacket(
 
     @Expose
     @SerializedName("user_id")
-    val userId: String
+    val userId: String,
+
+    @Expose
+    @SerializedName("is_public")
+    val isPublic: Boolean
 )

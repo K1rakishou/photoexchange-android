@@ -6,11 +6,9 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
 import com.kirakishou.photoexchange.mvp.model.UploadPhotoData
-import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
-import timber.log.Timber
 import java.lang.ref.WeakReference
 
 /**
@@ -23,7 +21,7 @@ class UploadPhotoServicePresenter(
     private val schedulerProvider: SchedulerProvider,
     private val updatePhotosUseCase: UploadPhotosUseCase
 ) {
-    private val tag = "[${this::class.java.simpleName}] "
+    private val tag = "UploadPhotoServicePresenter"
     private val uploadPhotosSubject = PublishSubject.create<Unit>().toSerialized()
     private var compositeDisposable = CompositeDisposable()
 
@@ -32,11 +30,10 @@ class UploadPhotoServicePresenter(
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
             .firstOrError()
-            .doOnSuccess { Timber.e("UploadPhotoServicePresenter After firstOrError") }
             .map {
                 val userId = settingsRepository.getUserId()
                     ?: return@map UploadPhotoData.empty()
-                val location = settingsRepository.findLastLocation()
+                val location = settingsRepository.getLastLocation()
                     ?: return@map UploadPhotoData.empty()
 
                 return@map UploadPhotoData(false, userId, location)

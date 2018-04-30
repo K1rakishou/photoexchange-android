@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerReposi
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.interactors.FindPhotoAnswersUseCase
+import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import dagger.Module
 import dagger.Provides
@@ -30,5 +31,11 @@ class UseCaseProviderModule {
                                        photoAnswerRepository: PhotoAnswerRepository,
                                        apiClient: ApiClient): FindPhotoAnswersUseCase {
         return FindPhotoAnswersUseCase(database, myPhotosRepository, settingsRepository, photoAnswerRepository, apiClient)
+    }
+
+    @Singleton
+    @Provides
+    fun provideGetGalleryPhotosUseCase(apiClient: ApiClient): GetGalleryPhotosUseCase {
+        return GetGalleryPhotosUseCase(apiClient)
     }
 }

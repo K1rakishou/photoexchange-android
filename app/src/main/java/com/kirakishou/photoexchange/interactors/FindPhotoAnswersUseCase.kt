@@ -26,18 +26,15 @@ class FindPhotoAnswersUseCase(
     private val apiClient: ApiClient
 ) {
 
+    private val tag = "FindPhotoAnswersUseCase"
+
     fun getPhotoAnswers(data: FindPhotosData, callbacks: WeakReference<FindPhotoAnswerServiceCallbacks>): Maybe<Unit> {
         return Maybe.fromCallable {
             try {
                 val userId = data.userId!!
                 val photoNames = data.photoNames
 
-                Timber.d("Before getPhotoAnswers")
-
                 val response = apiClient.getPhotoAnswers(photoNames, userId).blockingGet()
-
-                Timber.d("After getPhotoAnswers")
-
                 val errorCode = response.errorCode as ErrorCode.FindPhotoAnswerErrors
 
                 when (errorCode) {
@@ -59,7 +56,7 @@ class FindPhotoAnswersUseCase(
             val result = database.transactional {
                 insertedPhotoAnswerId = photoAnswerRepository.insert(photoAnswerResponse)
                 if (insertedPhotoAnswerId!!.isFail()) {
-                    Timber.w("Could not save photo with name ${photoAnswerResponse.photoAnswerName}")
+                    Timber.tag(tag).w("Could not save photo with name ${photoAnswerResponse.photoAnswerName}")
                     return@transactional false
                 }
 
@@ -71,7 +68,6 @@ class FindPhotoAnswersUseCase(
 
             if (result) {
                 val photoId = myPhotosRepository.findByPhotoIdByName(photoAnswer.uploadedPhotoName)
-
                 callbacks.get()?.onPhotoReceived(photoAnswer, photoId)
             }
         }

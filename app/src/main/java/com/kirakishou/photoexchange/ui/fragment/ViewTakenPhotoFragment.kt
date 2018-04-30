@@ -7,14 +7,15 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.view.View
-import android.view.animation.AccelerateDecelerateInterpolator
-import android.view.animation.LinearInterpolator
+import android.view.animation.AnticipateInterpolator
+import android.view.animation.OvershootInterpolator
 import android.widget.ImageView
 import androidx.core.animation.addListener
 import butterknife.BindView
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
+import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.extension.debounceClicks
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.ViewTakenPhotoActivityViewModel
@@ -63,15 +64,31 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
         compositeDisposable += RxView.clicks(fabCloseActivity)
             .subscribeOn(AndroidSchedulers.mainThread())
             .debounceClicks()
-            .doOnNext { requireActivity().finish() }
+            .doOnNext { (requireActivity() as ViewTakenPhotoActivity).onBackPressed() }
             .subscribe()
 
         compositeDisposable += RxView.clicks(fabSendPhoto)
             .subscribeOn(AndroidSchedulers.mainThread())
             .debounceClicks()
-            .concatWith(animateDisappear().toObservable())
-            .concatWith(Observable.defer { viewModel.updatePhotoState(takenPhoto.id) })
-            .doOnNext { (requireActivity() as ViewTakenPhotoActivity).showDialogFragment() }
+            .flatMap {
+                Observable.just(1)
+                    .flatMap { viewModel.queueUpTakenPhoto(takenPhoto.id) }
+                    .flatMap { viewModel.getMakePublicFlag() }
+                    .doOnNext { makePublicFlag ->
+                        when (makePublicFlag) {
+                            SettingsRepository.MakePhotosPublicState.AlwaysPublic,
+                            SettingsRepository.MakePhotosPublicState.AlwaysPrivate -> {
+                                val makePublic = makePublicFlag == SettingsRepository.MakePhotosPublicState.AlwaysPublic
+                                viewModel.addToGalleryFragmentResult.onNext(AddToGalleryDialogFragment.FragmentResult(false, makePublic))
+                            }
+
+                            null,
+                            SettingsRepository.MakePhotosPublicState.Neither -> {
+                                (requireActivity() as ViewTakenPhotoActivity).showDialogFragment()
+                            }
+                        }
+                    }
+            }
             .subscribe()
     }
 
@@ -81,7 +98,7 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
         fabCloseActivity.scaleX = 0f
         fabCloseActivity.scaleY = 0f
 
-        fabSendPhoto.scaleY = 0f
+        fabSendPhoto.scaleX = 0f
         fabSendPhoto.scaleY = 0f
     }
 
@@ -90,19 +107,20 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
             val set = AnimatorSet()
 
             val animation1 = ObjectAnimator.ofFloat(fabCloseActivity, View.SCALE_X, 0f, 1f)
-            animation1.setInterpolator(AccelerateDecelerateInterpolator())
+            animation1.setInterpolator(OvershootInterpolator())
 
             val animation2 = ObjectAnimator.ofFloat(fabCloseActivity, View.SCALE_Y, 0f, 1f)
-            animation1.setInterpolator(AccelerateDecelerateInterpolator())
+            animation2.setInterpolator(OvershootInterpolator())
 
             val animation3 = ObjectAnimator.ofFloat(fabSendPhoto, View.SCALE_X, 0f, 1f)
-            animation1.setInterpolator(AccelerateDecelerateInterpolator())
+            animation3.setInterpolator(OvershootInterpolator())
 
             val animation4 = ObjectAnimator.ofFloat(fabSendPhoto, View.SCALE_Y, 0f, 1f)
-            animation1.setInterpolator(AccelerateDecelerateInterpolator())
+            animation4.setInterpolator(OvershootInterpolator())
 
             set.playTogether(animation1, animation2, animation3, animation4)
-            set.setDuration(150)
+            set.setStartDelay(100)
+            set.setDuration(250)
             set.start()
         }
     }
@@ -112,24 +130,24 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
             val set = AnimatorSet()
 
             val animation1 = ObjectAnimator.ofFloat(fabCloseActivity, View.SCALE_X, 1f, 0f)
-            animation1.setInterpolator(AccelerateDecelerateInterpolator())
+            animation1.setInterpolator(AnticipateInterpolator())
 
             val animation2 = ObjectAnimator.ofFloat(fabCloseActivity, View.SCALE_Y, 1f, 0f)
-            animation1.setInterpolator(AccelerateDecelerateInterpolator())
+            animation2.setInterpolator(AnticipateInterpolator())
 
             val animation3 = ObjectAnimator.ofFloat(fabSendPhoto, View.SCALE_X, 1f, 0f)
-            animation1.setInterpolator(AccelerateDecelerateInterpolator())
+            animation3.setInterpolator(AnticipateInterpolator())
 
             val animation4 = ObjectAnimator.ofFloat(fabSendPhoto, View.SCALE_Y, 1f, 0f)
-            animation1.setInterpolator(AccelerateDecelerateInterpolator())
+            animation4.setInterpolator(AnticipateInterpolator())
 
             set.playTogether(animation1, animation2, animation3, animation4)
-            set.setDuration(150)
+            set.setDuration(250)
             set.addListener(onEnd = {
                 emitter.onComplete()
             })
             set.start()
-        }
+        }.subscribeOn(AndroidSchedulers.mainThread())
     }
 
     override fun onBackPressed(): Completable {

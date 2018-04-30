@@ -24,6 +24,7 @@ class UploadPhotoRequest<T>(
     private val photoFilePath: String,
     private val location: LonLat,
     private val userId: String,
+    private val isPublic: Boolean,
     private val callback: UploadPhotosUseCase.PhotoUploadProgressCallback,
     private val apiService: ApiService,
     private val schedulerProvider: SchedulerProvider,
@@ -33,7 +34,7 @@ class UploadPhotoRequest<T>(
     @Suppress("UNCHECKED_CAST")
     override fun execute(): Single<T> {
         val single = Single.fromCallable {
-            val packet = SendPhotoPacket(location.lon, location.lat, userId)
+            val packet = SendPhotoPacket(location.lon, location.lat, userId, isPublic)
             val photoFile = File(photoFilePath)
 
             if (!photoFile.isFile || !photoFile.exists()) {

@@ -26,7 +26,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     @Inject
     lateinit var presenter: UploadPhotoServicePresenter
 
-    private val tag = "[${this::class.java.simpleName}] "
+    private val tag = "UploadPhotoService"
 
     private var notificationManager: NotificationManager? = null
     private val binder = UploadPhotosBinder()
@@ -78,7 +78,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     }
 
     override fun stopService() {
-        Timber.e("Stopping service")
+        Timber.tag(tag).e("Stopping service")
 
         updateUploadingNotificationShowSuccess()
         stopForeground(true)

@@ -10,40 +10,50 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <LinearLayout
+    <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:gravity="center_horizontal"
-        android:orientation="horizontal"
+        android:layout_height="96dp"
         app:layout_constraintBottom_toBottomOf="parent">
 
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/fab_close_activity"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="32dp"
+            android:layout_marginBottom="8dp"
             android:layout_marginEnd="24dp"
+            android:layout_marginTop="8dp"
             android:clickable="true"
             android:focusable="true"
             android:src="@drawable/ic_close"
             android:tint="@color/white"
+            app:backgroundTint="@color/colorAccent"
             app:fabSize="normal"
-            app:backgroundTint="@color/colorAccent"/>
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/fab_send_photo"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintHorizontal_chainStyle="packed"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/fab_send_photo"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="32dp"
+            android:layout_marginBottom="8dp"
             android:layout_marginStart="24dp"
+            android:layout_marginTop="8dp"
             android:clickable="true"
             android:focusable="true"
             android:src="@drawable/ic_done"
             android:tint="@color/white"
+            app:backgroundTint="@color/colorPrimary"
             app:fabSize="normal"
-            app:backgroundTint="@color/colorPrimary"/>
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toEndOf="@+id/fab_close_activity"
+            app:layout_constraintTop_toTopOf="parent" />
 
-    </LinearLayout>
+    </android.support.constraint.ConstraintLayout>
 
 </android.support.constraint.ConstraintLayout>

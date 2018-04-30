@@ -1,10 +1,12 @@
 package com.kirakishou.photoexchange.helper.api
 
 import com.google.gson.Gson
+import com.kirakishou.photoexchange.helper.api.request.GetGalleryPhotosRequest
 import com.kirakishou.photoexchange.helper.api.request.GetPhotoAnswersRequest
 import com.kirakishou.photoexchange.helper.api.request.UploadPhotoRequest
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
+import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
@@ -21,9 +23,9 @@ class ApiClient
     private val schedulerProvider: SchedulerProvider
 ) {
 
-    fun uploadPhoto(photoFilePath: String, location: LonLat, userId: String,
+    fun uploadPhoto(photoFilePath: String, location: LonLat, userId: String, isPublic: Boolean,
                     callback: UploadPhotosUseCase.PhotoUploadProgressCallback): Single<UploadPhotoResponse> {
-        return UploadPhotoRequest<UploadPhotoResponse>(photoFilePath, location, userId, callback, apiService, schedulerProvider, gson)
+        return UploadPhotoRequest<UploadPhotoResponse>(photoFilePath, location, userId, isPublic, callback, apiService, schedulerProvider, gson)
             .execute()
     }
 
@@ -32,4 +34,8 @@ class ApiClient
             .execute()
     }
 
+    fun getGalleryPhotos(lastId: Long): Single<GalleryPhotosResponse> {
+        return GetGalleryPhotosRequest<GalleryPhotosResponse>(lastId, apiService, schedulerProvider, gson)
+            .execute()
+    }
 }

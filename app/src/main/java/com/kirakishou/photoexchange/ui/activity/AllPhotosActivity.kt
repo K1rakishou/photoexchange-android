@@ -12,7 +12,10 @@ import android.support.design.widget.TabLayout
 import android.support.v4.app.ActivityCompat
 import android.support.v4.view.ViewPager
 import android.support.v4.widget.SwipeRefreshLayout
+import android.view.MenuItem
 import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.PopupMenu
 import android.widget.Toast
 import butterknife.BindView
 import com.jakewharton.rxbinding2.view.RxView
@@ -56,7 +59,7 @@ import javax.inject.Inject
 
 
 class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSelectedListener,
-    ViewPager.OnPageChangeListener, PhotoUploadingCallback, FindPhotoAnswerCallback {
+    ViewPager.OnPageChangeListener, PhotoUploadingCallback, FindPhotoAnswerCallback, PopupMenu.OnMenuItemClickListener {
 
     @BindView(R.id.root_layout)
     lateinit var rootLayout: CoordinatorLayout
@@ -73,6 +76,9 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     @BindView(R.id.take_photo_button)
     lateinit var takePhotoButton: FloatingActionButton
 
+    @BindView(R.id.menu_button)
+    lateinit var menuButton: ImageView
+
     @Inject
     lateinit var viewModel: AllPhotosActivityViewModel
 
@@ -84,7 +90,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             .plus(AllPhotosActivityModule(this))
     }
 
-    private val tag = "[${this::class.java.simpleName}] "
+    private val tag = "AllPhotosActivity"
     private val GPS_DELAY_MS = 1.seconds()
     private val GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS = 15.seconds()
     private val FRAGMENT_SCROLL_DELAY_MS = 250L
@@ -132,6 +138,12 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             .subscribeOn(AndroidSchedulers.mainThread())
             .debounceClicks()
             .doOnNext { finish() }
+            .subscribe()
+
+        compositeDisposable += RxView.clicks(menuButton)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .debounceClicks()
+            .doOnNext { createMenu() }
             .subscribe()
 
         compositeDisposable += viewModel.allPhotosActivityViewStateSubject
@@ -249,6 +261,13 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         tabLayout.addOnTabSelectedListener(this)
     }
 
+    private fun createMenu() {
+        val popupMenu = PopupMenu(this, menuButton)
+        popupMenu.setOnMenuItemClickListener(this)
+        popupMenu.menu.add(1, R.id.settings_item, 1, resources.getString(R.string.settings_menu_item_text))
+        popupMenu.show()
+    }
+
     override fun onTabReselected(tab: TabLayout.Tab) {
         if (viewPager.currentItem != tab.position) {
             viewPager.currentItem = tab.position
@@ -275,6 +294,18 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         if (viewPager.currentItem != position) {
             viewPager.currentItem = position
         }
+    }
+
+    override fun onMenuItemClick(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.settings_item -> {
+                runActivity(SettingsActivity::class.java)
+            }
+
+            else -> throw IllegalArgumentException("Unknown menu item id ${item.itemId}")
+        }
+
+        return true
     }
 
     private fun onViewStateChanged(viewStateEvent: AllPhotosActivityViewStateEvent) {
@@ -383,7 +414,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun startFindingService() {
-        Timber.e("startFindingService")
+        Timber.tag(tag).d("startFindingService")
 
         val serviceIntent = Intent(applicationContext, FindPhotoAnswerService::class.java)
         startService(serviceIntent)
@@ -391,7 +422,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun startUploadingService() {
-        Timber.e("startUploadingService")
+        Timber.tag(tag).d("startUploadingService")
 
         val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
         startService(serviceIntent)
@@ -402,19 +433,23 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         val errorMessage = when (errorCode) {
             is ErrorCode.UploadPhotoErrors.Remote.Ok,
             is ErrorCode.FindPhotoAnswerErrors.Remote.Ok,
-            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.Ok -> null
+            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.Ok,
+            is ErrorCode.GalleryPhotosErrors.Remote.Ok -> null
 
             is ErrorCode.UploadPhotoErrors.Remote.UnknownError,
             is ErrorCode.FindPhotoAnswerErrors.Remote.UnknownError,
-            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.UnknownError -> "Unknown error"
+            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.UnknownError,
+            is ErrorCode.GalleryPhotosErrors.Remote.UnknownError -> "Unknown error"
 
             is ErrorCode.UploadPhotoErrors.Remote.BadRequest,
             is ErrorCode.FindPhotoAnswerErrors.Remote.BadRequest,
-            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.BadRequest -> "Bad request error"
+            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.BadRequest,
+            is ErrorCode.GalleryPhotosErrors.Remote.BadRequest -> "Bad request error"
 
             is ErrorCode.UploadPhotoErrors.Local.Timeout,
             is ErrorCode.FindPhotoAnswerErrors.Local.Timeout,
-            is ErrorCode.MarkPhotoAsReceivedErrors.Local.Timeout -> "Operation timeout error"
+            is ErrorCode.MarkPhotoAsReceivedErrors.Local.Timeout,
+            is ErrorCode.GalleryPhotosErrors.Local.Timeout -> "Operation timeout error"
 
             is ErrorCode.UploadPhotoErrors.Remote.DatabaseError,
             is ErrorCode.FindPhotoAnswerErrors.Remote.DatabaseError -> "Server database error"
@@ -424,11 +459,19 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             is ErrorCode.MarkPhotoAsReceivedErrors.Local.BadServerResponse -> "Bad server response error"
 
             is ErrorCode.UploadPhotoErrors.Local.NoPhotoFileOnDisk -> "No photo file on disk error"
+            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.BadPhotoId -> "Bad photo id error"
             is ErrorCode.FindPhotoAnswerErrors.Remote.NoPhotosInRequest -> "No photos were selected error"
             is ErrorCode.FindPhotoAnswerErrors.Remote.TooManyPhotosRequested -> "Too many photos requested error"
             is ErrorCode.FindPhotoAnswerErrors.Remote.NoPhotosToSendBack -> "No photos to send back"
             is ErrorCode.FindPhotoAnswerErrors.Remote.NotEnoughPhotosUploaded -> "Upload more photos first"
-            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.BadPhotoId -> "Bad photo id error"
+
+            is ErrorCode.TakePhotoErrors.UnknownError,
+            is ErrorCode.TakePhotoErrors.Ok,
+            is ErrorCode.TakePhotoErrors.CameraIsNotAvailable,
+            is ErrorCode.TakePhotoErrors.CameraIsNotStartedException,
+            is ErrorCode.TakePhotoErrors.TimeoutException,
+            is ErrorCode.TakePhotoErrors.DatabaseError,
+            is ErrorCode.TakePhotoErrors.CouldNotTakePhoto -> null
         }
 
         errorMessage?.let { msg ->

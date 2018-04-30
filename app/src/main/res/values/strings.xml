@@ -26,4 +26,10 @@
     <string name="retry_string">Retry</string>
     <string name="failed_to_upload_photo">Failed to upload photo</string>
     <string name="delete">Delete</string>
+    <string name="make_photo_public_text">Make this photo public?</string>
+    <string name="make_photo_public_explanation_text">This photo will be added to the gallery so all people will be able to see it. Otherwise only you and the person who receives this photo would be able to see it.</string>
+    <string name="remember_my_choice_text">Remember my choice</string>
+    <string name="make_public_btn_text">Make public</string>
+    <string name="do_not_make_public_btn_text">Do not</string>
+    <string name="settings_menu_item_text">Settings</string>
 </resources>
