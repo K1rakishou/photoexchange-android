@@ -9,7 +9,6 @@ import com.kirakishou.photoexchange.mvp.model.UploadPhotoData
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
-import timber.log.Timber
 import java.lang.ref.WeakReference
 
 /**

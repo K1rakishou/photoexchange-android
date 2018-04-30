@@ -21,9 +21,9 @@ class ApiClient
     private val schedulerProvider: SchedulerProvider
 ) {
 
-    fun uploadPhoto(photoFilePath: String, location: LonLat, userId: String,
+    fun uploadPhoto(photoFilePath: String, location: LonLat, userId: String, isPublic: Boolean,
                     callback: UploadPhotosUseCase.PhotoUploadProgressCallback): Single<UploadPhotoResponse> {
-        return UploadPhotoRequest<UploadPhotoResponse>(photoFilePath, location, userId, callback, apiService, schedulerProvider, gson)
+        return UploadPhotoRequest<UploadPhotoResponse>(photoFilePath, location, userId, isPublic, callback, apiService, schedulerProvider, gson)
             .execute()
     }
 

@@ -10,6 +10,7 @@ import java.io.File
 data class MyPhoto(
     val id: Long,
     var photoState: PhotoState,
+    val isPublic: Boolean = false,
     var photoName: String? = null,
     var photoTempFile: File? = null
 ) {
@@ -32,7 +33,7 @@ data class MyPhoto(
     companion object {
 
         fun empty(): MyPhoto {
-            return MyPhoto(0L, PhotoState.PHOTO_TAKEN, null)
+            return MyPhoto(0L, PhotoState.PHOTO_TAKEN, false, null)
         }
 
         fun fromBundle(bundle: Bundle?): MyPhoto {
@@ -49,7 +50,7 @@ data class MyPhoto(
             val photoFileString = bundle.getString("photo_temp_file")
             val photoFile = if (photoFileString.isEmpty()) null else File(photoFileString)
 
-            return MyPhoto(id, photoState, null, photoFile)
+            return MyPhoto(id, photoState, false, null, photoFile)
         }
     }
 }

@@ -20,6 +20,6 @@ object MyPhotoEntityMapper {
             tempFileEntity.asFile()
         }
 
-        return MyPhoto(myPhotoEntity.id!!, myPhotoEntity.photoState, myPhotoEntity.photoName, file)
+        return MyPhoto(myPhotoEntity.id!!, myPhotoEntity.photoState, myPhotoEntity.isPublic, myPhotoEntity.photoName, file)
     }
 }
