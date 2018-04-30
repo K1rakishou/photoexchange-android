@@ -35,7 +35,7 @@ class ViewTakenPhotoActivityViewModel(
             .subscribeOn(schedulerProvider.IO())
     }
 
-    fun makePhotoPublic(takenPhotoId: Long): Observable<Boolean> {
+    fun updateSetIsPhotoPublic(takenPhotoId: Long): Observable<Boolean> {
         return Observable
             .fromCallable { photosRepository.updateMakePhotoPublic(takenPhotoId) }
             .subscribeOn(schedulerProvider.IO())
@@ -45,7 +45,8 @@ class ViewTakenPhotoActivityViewModel(
         settingsRepository.saveMakePublicFlag(makePublic)
     }
 
-    fun getMakePublicFlag(): SettingsRepository.MakePhotosPublicState {
-        return settingsRepository.getMakePublicFlag()
+    fun getMakePublicFlag(): Observable<SettingsRepository.MakePhotosPublicState> {
+        return Observable.fromCallable { settingsRepository.getMakePublicFlag() }
+            .subscribeOn(schedulerProvider.IO())
     }
 }

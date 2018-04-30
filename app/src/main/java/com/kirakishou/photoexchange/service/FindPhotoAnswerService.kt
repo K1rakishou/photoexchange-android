@@ -30,7 +30,7 @@ class FindPhotoAnswerService : Service(), FindPhotoAnswerServiceCallbacks {
     @Inject
     lateinit var presenter: FindPhotoAnswerServicePresenter
 
-    private val tag = "[${this::class.java.simpleName}] "
+    private val tag = "FindPhotoAnswerService"
     private val compositeDisposable = CompositeDisposable()
     private var notificationManager: NotificationManager? = null
     private val binder = FindPhotoAnswerBinder()
@@ -41,7 +41,7 @@ class FindPhotoAnswerService : Service(), FindPhotoAnswerServiceCallbacks {
 
     override fun onCreate() {
         super.onCreate()
-        Timber.tag(tag).e("FindPhotoAnswerService started")
+        Timber.tag(tag).d("FindPhotoAnswerService started")
 
         resolveDaggerDependency()
         startForeground(NOTIFICATION_ID, createNotificationDownloading())
@@ -49,7 +49,7 @@ class FindPhotoAnswerService : Service(), FindPhotoAnswerServiceCallbacks {
 
     override fun onDestroy() {
         super.onDestroy()
-        Timber.tag(tag).e("FindPhotoAnswerService destroyed")
+        Timber.tag(tag).d("FindPhotoAnswerService destroyed")
 
         presenter.onDetach()
         compositeDisposable.clear()
@@ -84,7 +84,7 @@ class FindPhotoAnswerService : Service(), FindPhotoAnswerServiceCallbacks {
     }
 
     override fun stopService() {
-        Timber.e("Stopping service")
+        Timber.tag(tag).d("Stopping service")
 
         stopForeground(true)
         stopSelf()

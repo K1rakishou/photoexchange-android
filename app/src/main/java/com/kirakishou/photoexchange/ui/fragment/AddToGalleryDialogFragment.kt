@@ -113,7 +113,7 @@ class AddToGalleryDialogFragment : BaseFragment(), ViewTakenPhotoActivity.BackPr
                 emitter.onComplete()
             })
             set.start()
-        }
+        }.subscribeOn(AndroidSchedulers.mainThread())
     }
 
     override fun onFragmentViewDestroy() {

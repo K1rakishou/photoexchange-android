@@ -15,6 +15,7 @@ import butterknife.BindView
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
+import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.extension.debounceClicks
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.ViewTakenPhotoActivityViewModel
@@ -63,15 +64,31 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
         compositeDisposable += RxView.clicks(fabCloseActivity)
             .subscribeOn(AndroidSchedulers.mainThread())
             .debounceClicks()
-            .doOnNext { requireActivity().finish() }
+            .doOnNext { (requireActivity() as ViewTakenPhotoActivity).onBackPressed() }
             .subscribe()
 
         compositeDisposable += RxView.clicks(fabSendPhoto)
             .subscribeOn(AndroidSchedulers.mainThread())
             .debounceClicks()
-            .concatMap { animateDisappear().toObservable<Unit>() }
-            .concatMap { viewModel.queueUpTakenPhoto(takenPhoto.id) }
-            .doOnNext { (requireActivity() as ViewTakenPhotoActivity).showDialogFragment() }
+            .flatMap {
+                Observable.just(1)
+                    .flatMap { viewModel.queueUpTakenPhoto(takenPhoto.id) }
+                    .flatMap { viewModel.getMakePublicFlag() }
+                    .doOnNext { makePublicFlag ->
+                        when (makePublicFlag) {
+                            SettingsRepository.MakePhotosPublicState.AlwaysPublic,
+                            SettingsRepository.MakePhotosPublicState.AlwaysPrivate -> {
+                                val makePublic = makePublicFlag == SettingsRepository.MakePhotosPublicState.AlwaysPublic
+                                viewModel.addToGalleryFragmentResult.onNext(AddToGalleryDialogFragment.FragmentResult(false, makePublic))
+                            }
+
+                            null,
+                            SettingsRepository.MakePhotosPublicState.Neither -> {
+                                (requireActivity() as ViewTakenPhotoActivity).showDialogFragment()
+                            }
+                        }
+                    }
+            }
             .subscribe()
     }
 
@@ -130,7 +147,7 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
                 emitter.onComplete()
             })
             set.start()
-        }
+        }.subscribeOn(AndroidSchedulers.mainThread())
     }
 
     override fun onBackPressed(): Completable {

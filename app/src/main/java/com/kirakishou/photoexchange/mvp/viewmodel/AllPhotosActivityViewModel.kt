@@ -121,6 +121,7 @@ class AllPhotosActivityViewModel(
 
         compositeDisposable += observable
             .filter { count -> count == 0 }
+            .doOnNext { Timber.tag(tag).d("checkShouldStartPhotoUploadingService count == 0") }
             .doOnNext { checkShouldStartFindPhotoAnswersService() }
             .subscribe()
 
@@ -128,12 +129,15 @@ class AllPhotosActivityViewModel(
             .filter { count -> count > 0 }
             .delay(CHECK_SHOULD_START_SERVICE_DELAY_MS, TimeUnit.MILLISECONDS)
             .debounce(SERVICE_START_DEBOUNCE_TIME_MS, TimeUnit.MILLISECONDS)
+            .doOnNext { Timber.tag(tag).d("checkShouldStartPhotoUploadingService count > 0") }
             .map { Unit }
             .concatMap {
-                updateLastLocation(updateLastLocation)
-                    .doOnEach { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification()) }
+                Observable.just(1)
+                    .observeOn(schedulerProvider.IO())
+                    .doOnNext { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification()) }
+                    .concatMap { updateLastLocation(updateLastLocation) }
                     .delay(1, TimeUnit.SECONDS)
-                    .doOnEach { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification()) }
+                    .doOnNext { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification()) }
             }
             .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)
     }

@@ -84,7 +84,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             .plus(AllPhotosActivityModule(this))
     }
 
-    private val tag = "[${this::class.java.simpleName}] "
+    private val tag = "AllPhotosActivity"
     private val GPS_DELAY_MS = 1.seconds()
     private val GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS = 15.seconds()
     private val FRAGMENT_SCROLL_DELAY_MS = 250L
@@ -383,7 +383,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun startFindingService() {
-        Timber.e("startFindingService")
+        Timber.tag(tag).d("startFindingService")
 
         val serviceIntent = Intent(applicationContext, FindPhotoAnswerService::class.java)
         startService(serviceIntent)
@@ -391,7 +391,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun startUploadingService() {
-        Timber.e("startUploadingService")
+        Timber.tag(tag).d("startUploadingService")
 
         val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
         startService(serviceIntent)

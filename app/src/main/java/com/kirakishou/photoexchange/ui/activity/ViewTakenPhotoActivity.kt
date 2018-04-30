@@ -14,6 +14,7 @@ import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
 
 class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
@@ -38,7 +39,10 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
     override fun onInitRx() {
         compositeDisposable += viewModel.addToGalleryFragmentResult
             .subscribeOn(AndroidSchedulers.mainThread())
-            .doOnNext { onBackPressed() }
+            .flatMap { fragmentResult ->
+                onBackPressedInternal()
+                    .andThen(Observable.just(fragmentResult))
+            }
             .concatMap { fragmentResult -> onAddToGalleryFragmentResult(fragmentResult) }
             .doOnNext { onPhotoUpdated() }
             .subscribe()
@@ -82,13 +86,20 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
 
             return@fromCallable fragmentResult.makePublic
         }
+            .subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.io())
+            .flatMap { isPublic ->
+                if (isPublic) {
+                    return@flatMap viewModel.updateSetIsPhotoPublic(takenPhoto.id)
+                }
+
+                return@flatMap Observable.just(isPublic)
+            }
     }
 
     override fun onBackPressed() {
-        val fragment = (supportFragmentManager.fragments.last() as BackPressAwareFragment)
-
-        compositeDisposable += fragment.onBackPressed()
-            .observeOn(AndroidSchedulers.mainThread())
+        compositeDisposable += onBackPressedInternal()
+            .subscribeOn(AndroidSchedulers.mainThread())
             .doOnComplete {
                 supportFragmentManager.popBackStackImmediate()
 
@@ -97,6 +108,11 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
                 }
             }
             .subscribe()
+    }
+
+    private fun onBackPressedInternal(): Completable {
+        val fragment = (supportFragmentManager.fragments.last() as BackPressAwareFragment)
+        return fragment.onBackPressed()
     }
 
     interface BackPressAwareFragment {
