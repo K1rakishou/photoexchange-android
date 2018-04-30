@@ -31,4 +31,5 @@
     <string name="remember_my_choice_text">Remember my choice</string>
     <string name="make_public_btn_text">Make public</string>
     <string name="do_not_make_public_btn_text">Do not</string>
+    <string name="settings_menu_item_text">Settings</string>
 </resources>

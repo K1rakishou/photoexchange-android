@@ -12,7 +12,10 @@ import android.support.design.widget.TabLayout
 import android.support.v4.app.ActivityCompat
 import android.support.v4.view.ViewPager
 import android.support.v4.widget.SwipeRefreshLayout
+import android.view.MenuItem
 import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.PopupMenu
 import android.widget.Toast
 import butterknife.BindView
 import com.jakewharton.rxbinding2.view.RxView
@@ -56,7 +59,7 @@ import javax.inject.Inject
 
 
 class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSelectedListener,
-    ViewPager.OnPageChangeListener, PhotoUploadingCallback, FindPhotoAnswerCallback {
+    ViewPager.OnPageChangeListener, PhotoUploadingCallback, FindPhotoAnswerCallback, PopupMenu.OnMenuItemClickListener {
 
     @BindView(R.id.root_layout)
     lateinit var rootLayout: CoordinatorLayout
@@ -72,6 +75,9 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
     @BindView(R.id.take_photo_button)
     lateinit var takePhotoButton: FloatingActionButton
+
+    @BindView(R.id.menu_button)
+    lateinit var menuButton: ImageView
 
     @Inject
     lateinit var viewModel: AllPhotosActivityViewModel
@@ -132,6 +138,12 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             .subscribeOn(AndroidSchedulers.mainThread())
             .debounceClicks()
             .doOnNext { finish() }
+            .subscribe()
+
+        compositeDisposable += RxView.clicks(menuButton)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .debounceClicks()
+            .doOnNext { createMenu() }
             .subscribe()
 
         compositeDisposable += viewModel.allPhotosActivityViewStateSubject
@@ -249,6 +261,13 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         tabLayout.addOnTabSelectedListener(this)
     }
 
+    private fun createMenu() {
+        val popupMenu = PopupMenu(this, menuButton)
+        popupMenu.setOnMenuItemClickListener(this)
+        popupMenu.menu.add(1, R.id.settings_item, 1, resources.getString(R.string.settings_menu_item_text))
+        popupMenu.show()
+    }
+
     override fun onTabReselected(tab: TabLayout.Tab) {
         if (viewPager.currentItem != tab.position) {
             viewPager.currentItem = tab.position
@@ -275,6 +294,18 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         if (viewPager.currentItem != position) {
             viewPager.currentItem = position
         }
+    }
+
+    override fun onMenuItemClick(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.settings_item -> {
+                runActivity(SettingsActivity::class.java)
+            }
+
+            else -> throw IllegalArgumentException("Unknown menu item id ${item.itemId}")
+        }
+
+        return true
     }
 
     private fun onViewStateChanged(viewStateEvent: AllPhotosActivityViewStateEvent) {
