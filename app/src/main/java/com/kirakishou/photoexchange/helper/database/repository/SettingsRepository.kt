@@ -32,7 +32,7 @@ class SettingsRepository(
         return settingsDao.insert(SettingEntity(LAST_LOCATION_SETTING, locationString)) > 0
     }
 
-    fun findLastLocation(): LonLat? {
+    fun getLastLocation(): LonLat? {
         val locationString = settingsDao.findByName(LAST_LOCATION_SETTING)
         if (locationString?.settingValue == null) {
             return null
@@ -59,7 +59,7 @@ class SettingsRepository(
         return settingsDao.insert(SettingEntity(LAST_LOCATION_CHECK_TIME_SETTING, time.toString())) > 0
     }
 
-    fun findLastLocationCheckTime(): Long? {
+    fun getLastLocationCheckTime(): Long? {
         val lastLocationCheckTimeString = settingsDao.findByName(LAST_LOCATION_CHECK_TIME_SETTING)
         if (lastLocationCheckTimeString?.settingValue == null) {
             return null
@@ -72,9 +72,46 @@ class SettingsRepository(
         }
     }
 
+    fun saveMakePublicFlag(makePublic: Boolean?) {
+        val value = MakePhotosPublicState.fromBoolean(makePublic).value.toString()
+        settingsDao.insert(SettingEntity(MAKE_PHOTOS_PUBLIC_SETTING, value))
+    }
+
+    fun getMakePublicFlag(): MakePhotosPublicState {
+        val result = settingsDao.findByName(MAKE_PHOTOS_PUBLIC_SETTING)
+            ?: return MakePhotosPublicState.Neither
+
+        return MakePhotosPublicState.fromInt(result.settingValue?.toInt())
+    }
+
+    enum class MakePhotosPublicState(val value: Int) {
+        AlwaysPublic(0),
+        AlwaysPrivate(1),
+        Neither(2);
+
+        companion object {
+            fun fromBoolean(makePublic: Boolean?): MakePhotosPublicState {
+                return when (makePublic) {
+                    null -> Neither
+                    true -> AlwaysPublic
+                    false -> AlwaysPrivate
+                }
+            }
+
+            fun fromInt(value: Int?): MakePhotosPublicState {
+                return when (value) {
+                    0 -> AlwaysPublic
+                    1 -> AlwaysPrivate
+                    else -> Neither
+                }
+            }
+        }
+    }
+
     companion object {
         const val USER_ID_SETTING = "USER_ID"
         const val LAST_LOCATION_SETTING = "LAST_LOCATION"
         const val LAST_LOCATION_CHECK_TIME_SETTING = "LAST_LOCATION_CHECK_TIME"
+        const val MAKE_PHOTOS_PUBLIC_SETTING = "MAKE_PHOTOS_PUBLIC"
     }
 }

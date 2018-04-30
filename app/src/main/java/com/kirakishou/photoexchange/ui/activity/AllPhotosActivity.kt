@@ -429,6 +429,14 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             is ErrorCode.FindPhotoAnswerErrors.Remote.NoPhotosToSendBack -> "No photos to send back"
             is ErrorCode.FindPhotoAnswerErrors.Remote.NotEnoughPhotosUploaded -> "Upload more photos first"
             is ErrorCode.MarkPhotoAsReceivedErrors.Remote.BadPhotoId -> "Bad photo id error"
+
+            is ErrorCode.TakePhotoErrors.UnknownError,
+            is ErrorCode.TakePhotoErrors.Ok,
+            is ErrorCode.TakePhotoErrors.CameraIsNotAvailable,
+            is ErrorCode.TakePhotoErrors.CameraIsNotStartedException,
+            is ErrorCode.TakePhotoErrors.TimeoutException,
+            is ErrorCode.TakePhotoErrors.DatabaseError,
+            is ErrorCode.TakePhotoErrors.CouldNotTakePhoto -> null
         }
 
         errorMessage?.let { msg ->

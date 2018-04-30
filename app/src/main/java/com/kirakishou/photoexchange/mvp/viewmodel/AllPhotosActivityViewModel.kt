@@ -11,7 +11,6 @@ import com.kirakishou.photoexchange.mvp.model.*
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
-import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.viewstate.AllPhotosActivityViewStateEvent
 import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
@@ -20,10 +19,8 @@ import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
-import java.lang.ref.WeakReference
 import java.util.concurrent.TimeUnit
 
 /**
@@ -36,7 +33,7 @@ class AllPhotosActivityViewModel(
     private val schedulerProvider: SchedulerProvider
 ) : BaseViewModel<AllPhotosActivityView>() {
 
-    private val tag = "[${this::class.java.simpleName}] "
+    private val tag = "AllPhotosActivityViewModel"
     private val LOCATION_CHECK_INTERVAL_MS = 2.minutes()
     private val SERVICE_START_DEBOUNCE_TIME_MS = 10.seconds()
     private val CHECK_SHOULD_START_SERVICE_DELAY_MS = 1500L
@@ -78,7 +75,10 @@ class AllPhotosActivityViewModel(
                 val uploadedPhotosCount = photosRepository.countAllByStates(arrayOf(PhotoState.PHOTO_UPLOADED, PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED))
                 val receivedPhotosCount = photoAnswerRepository.countAll()
 
-                Timber.e("uploadedPhotosCount: $uploadedPhotosCount, receivedPhotosCount: $receivedPhotosCount")
+                if (Constants.isDebugBuild) {
+                    Timber.tag(tag).e("uploadedPhotosCount: $uploadedPhotosCount, receivedPhotosCount: $receivedPhotosCount")
+                }
+
                 return@map uploadedPhotosCount > receivedPhotosCount
             }
             .filter { uploadedPhotosMoreThanReceived -> uploadedPhotosMoreThanReceived }
@@ -90,6 +90,10 @@ class AllPhotosActivityViewModel(
     private fun tryRestoreBadPhotos() {
         //check if we have any photos that was stuck in uploading state forever
         val stuckInUploadingStatePhotos = photosRepository.findAllByState(PhotoState.PHOTO_UPLOADING)
+
+        if (Constants.isDebugBuild) {
+            Timber.tag(tag).e("stuckInUploadingStatePhotosCount = ${stuckInUploadingStatePhotos.size}")
+        }
 
         //if we have any try to roll their state back to queuedUp
         if (stuckInUploadingStatePhotos.isNotEmpty()) {
@@ -125,13 +129,44 @@ class AllPhotosActivityViewModel(
             .delay(CHECK_SHOULD_START_SERVICE_DELAY_MS, TimeUnit.MILLISECONDS)
             .debounce(SERVICE_START_DEBOUNCE_TIME_MS, TimeUnit.MILLISECONDS)
             .map { Unit }
-            .concatWith(
+            .concatMap {
                 updateLastLocation(updateLastLocation)
                     .doOnEach { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification()) }
                     .delay(1, TimeUnit.SECONDS)
                     .doOnEach { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification()) }
-            )
+            }
             .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)
+    }
+
+    private fun updateLastLocation(updateLastLocation: Boolean): Observable<Unit> {
+        return Observable.fromCallable {
+            // if gps is disabled by user then set the last location as empty (-1.0, -1.0) immediately
+            // so the user doesn't have to wait 15 seconds until getCurrentLocation returns empty
+            // location because of timeout
+
+            if (updateLastLocation) {
+                val now = TimeUtils.getTimeFast()
+                val lastTimeCheck = settingsRepository.getLastLocationCheckTime()
+
+                //request new location every 10 minutes
+                if (lastTimeCheck == null || (now - lastTimeCheck > LOCATION_CHECK_INTERVAL_MS)) {
+                    val currentLocation = getView()?.getCurrentLocation()?.blockingGet()
+                        ?: return@fromCallable
+
+                    val lastLocation = settingsRepository.getLastLocation()
+                    if (lastLocation != null && !lastLocation.isEmpty() && currentLocation.isEmpty()) {
+                        return@fromCallable
+                    }
+
+                    settingsRepository.saveLastLocationCheckTime(now)
+                    settingsRepository.saveLastLocation(currentLocation)
+                }
+            } else {
+                settingsRepository.saveLastLocation(LonLat.empty())
+            }
+
+            return@fromCallable
+        }
     }
 
     fun loadPhotoAnswers(): Single<List<PhotoAnswer>> {
@@ -162,37 +197,6 @@ class AllPhotosActivityViewModel(
             return@fromCallable photos
         }.subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
-    }
-
-    private fun updateLastLocation(updateLastLocation: Boolean): Observable<Unit> {
-        return Observable.fromCallable {
-            // if gps is disabled by user then set the last location as empty (-1.0, -1.0) immediately
-            // so the user doesn't have to wait 15 seconds until getCurrentLocation returns empty
-            // location because of timeout
-
-            if (updateLastLocation) {
-                val now = TimeUtils.getTimeFast()
-                val lastTimeCheck = settingsRepository.findLastLocationCheckTime()
-
-                //request new location every 10 minutes
-                if (lastTimeCheck == null || (now - lastTimeCheck > LOCATION_CHECK_INTERVAL_MS)) {
-                    val currentLocation = getView()?.getCurrentLocation()?.blockingGet()
-                        ?: return@fromCallable
-
-                    val lastLocation = settingsRepository.findLastLocation()
-                    if (lastLocation != null && !lastLocation.isEmpty() && currentLocation.isEmpty()) {
-                        return@fromCallable
-                    }
-
-                    settingsRepository.saveLastLocationCheckTime(now)
-                    settingsRepository.saveLastLocation(currentLocation)
-                }
-            } else {
-                settingsRepository.saveLastLocation(LonLat.empty())
-            }
-
-            return@fromCallable
-        }
     }
 
     fun forwardUploadPhotoEvent(event: PhotoUploadEvent) {

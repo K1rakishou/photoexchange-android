@@ -1,5 +1,7 @@
 package com.kirakishou.photoexchange.mvp.model.other
 
+import com.kirakishou.photoexchange.mvp.model.MyPhoto
+
 /**
  * Created by kirakishou on 7/26/2017.
  */
@@ -55,6 +57,16 @@ sealed class ErrorCode(val value: Int) {
             class BadServerResponse(val message: String? = null) : Local(-1000)
             class Timeout : Local(-1001)
         }
+    }
+
+    sealed class TakePhotoErrors(value: Int) : ErrorCode(value) {
+        class UnknownError : TakePhotoErrors(-1)
+        class Ok(val photo: MyPhoto) : TakePhotoErrors(0)
+        class CameraIsNotAvailable : TakePhotoErrors(1)
+        class CameraIsNotStartedException : TakePhotoErrors(2)
+        class TimeoutException : TakePhotoErrors(3)
+        class DatabaseError : TakePhotoErrors(4)
+        class CouldNotTakePhoto : TakePhotoErrors(5)
     }
 
     companion object {

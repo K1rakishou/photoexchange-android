@@ -4,6 +4,7 @@ import android.arch.persistence.room.Dao
 import android.arch.persistence.room.Insert
 import android.arch.persistence.room.Query
 import android.arch.persistence.room.TypeConverters
+import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.converter.PhotoStateConverter
 import com.kirakishou.photoexchange.helper.database.entity.MyPhotoEntity
 import com.kirakishou.photoexchange.mvp.model.PhotoState
@@ -78,6 +79,11 @@ abstract class MyPhotoDao {
         "SET ${MyPhotoEntity.PHOTO_NAME_COLUMN} = :photoName " +
         "WHERE ${MyPhotoEntity.ID_COLUMN} = :photoId")
     abstract fun updateSetPhotoName(photoId: Long, photoName: String): Int
+
+    @Query("UPDATE ${MyPhotoEntity.TABLE_NAME} " +
+        "SET ${MyPhotoEntity.IS_PUBLIC_COLUMN} = ${MyDatabase.SQLITE_TRUE} " +
+        "WHERE ${MyPhotoEntity.ID_COLUMN} = :photoId")
+    abstract fun updateSetPhotoPublic(photoId: Long): Int
 
     @Query("DELETE FROM ${MyPhotoEntity.TABLE_NAME} " +
         "WHERE ${MyPhotoEntity.ID_COLUMN} = :id")

@@ -1,17 +1,16 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
-import android.widget.Toast
 import com.kirakishou.photoexchange.helper.CameraProvider
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
-import io.reactivex.Completable
-import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.Observable
 import timber.log.Timber
-import java.lang.ref.WeakReference
+import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
@@ -24,7 +23,7 @@ class TakePhotoActivityViewModel(
     private val settingsRepository: SettingsRepository
 ) : BaseViewModel<TakePhotoActivityView>() {
 
-    private val tag = "[${this::class.java.simpleName}] "
+    private val tag = "TakePhotoActivityViewModel"
 
     override fun onCleared() {
         Timber.tag(tag).d("onCleared()")
@@ -32,59 +31,58 @@ class TakePhotoActivityViewModel(
         super.onCleared()
     }
 
-    fun takePhoto() {
-        compositeDisposable += Completable.fromAction {
+    fun takePhoto(): Observable<ErrorCode.TakePhotoErrors> {
+        return Observable.fromCallable {
             var myPhoto: MyPhoto = MyPhoto.empty()
+            var file: File? = null
 
             try {
                 settingsRepository.generateUserIdIfNotExists()
                 photosRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN)
                 photosRepository.cleanFilesDirectory()
 
-                val file = photosRepository.createFile()
+                file = photosRepository.createFile()
+
                 val takePhotoStatus = getView()?.takePhoto(file)
                     ?.observeOn(schedulerProvider.IO())
                     ?.timeout(3, TimeUnit.SECONDS)
                     ?.blockingGet() ?: false
+
                 if (!takePhotoStatus) {
-                    return@fromAction
+                    cleanUp(file, null)
+                    return@fromCallable ErrorCode.TakePhotoErrors.CouldNotTakePhoto()
                 }
 
                 myPhoto = photosRepository.saveTakenPhoto(file)
-
                 if (myPhoto.isEmpty()) {
-                    photosRepository.deleteMyPhoto(myPhoto)
-                    getView()?.showToast("Could not take photo (database error)", Toast.LENGTH_LONG)
-                    return@fromAction
+                    cleanUp(file, myPhoto)
+                    return@fromCallable ErrorCode.TakePhotoErrors.DatabaseError()
                 }
 
-                getView()?.onPhotoTaken(myPhoto)
+                return@fromCallable ErrorCode.TakePhotoErrors.Ok(myPhoto)
             } catch (error: Exception) {
                 Timber.tag(tag).e(error)
 
-                photosRepository.deleteMyPhoto(myPhoto)
-                handleException(error)
+                cleanUp(file, myPhoto)
+                return@fromCallable handleException(error)
             }
-        }.subscribeOn(schedulerProvider.IO())
-            .observeOn(schedulerProvider.IO())
-            .subscribe()
+        }
     }
 
-    private fun handleException(error: Exception) {
-        when (error.cause) {
-            null -> getView()?.showToast("Could not take photo (database error)", Toast.LENGTH_LONG)
+    private fun cleanUp(file: File?, photo: MyPhoto?) {
+        photosRepository.deleteFileIfExists(file)
+        photosRepository.deleteMyPhoto(photo)
+    }
+
+    private fun handleException(error: Exception): ErrorCode.TakePhotoErrors {
+        return when (error.cause) {
+            null -> ErrorCode.TakePhotoErrors.DatabaseError()
 
             else -> when (error.cause!!) {
-                is CameraProvider.CameraIsNotAvailable -> {
-                    getView()?.showToast("Could not take photo (camera is not available)", Toast.LENGTH_LONG)
-                }
-                is CameraProvider.CameraIsNotStartedException -> {
-                    getView()?.showToast("Could not take photo (camera is not started)", Toast.LENGTH_LONG)
-                }
-                is TimeoutException -> {
-                    getView()?.showToast("Could not take photo (exceeded maximum camera wait time)", Toast.LENGTH_LONG)
-                }
-                else -> getView()?.showToast("Could not take photo (unknown error)", Toast.LENGTH_LONG)
+                is CameraProvider.CameraIsNotAvailable -> ErrorCode.TakePhotoErrors.CameraIsNotAvailable()
+                is CameraProvider.CameraIsNotStartedException -> ErrorCode.TakePhotoErrors.CameraIsNotStartedException()
+                is TimeoutException -> ErrorCode.TakePhotoErrors.TimeoutException()
+                else -> ErrorCode.TakePhotoErrors.UnknownError()
             }
         }
     }

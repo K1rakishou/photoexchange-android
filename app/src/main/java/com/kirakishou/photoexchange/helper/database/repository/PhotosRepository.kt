@@ -16,6 +16,7 @@ open class PhotosRepository(
     private val filesDir: String,
     private val database: MyDatabase
 ) {
+    private val tag = "PhotosRepository"
     private val myPhotoDao = database.myPhotoDao()
     private val tempFileDao = database.tempFileDao()
 
@@ -54,7 +55,15 @@ open class PhotosRepository(
         return myPhotoDao.updateSetNewPhotoState(photoId, newPhotoState) == 1
     }
 
-    fun deleteMyPhoto(myPhoto: MyPhoto): Boolean {
+    fun updateMakePhotoPublic(takenPhotoId: Long): Boolean {
+        return myPhotoDao.updateSetPhotoPublic(takenPhotoId) == 1
+    }
+
+    fun deleteMyPhoto(myPhoto: MyPhoto?): Boolean {
+        if (myPhoto == null) {
+            return true
+        }
+
         if (myPhoto.isEmpty()) {
             return true
         }
@@ -193,23 +202,23 @@ open class PhotosRepository(
 
     private fun createTempFilesDirIfNotExists() {
         val fullPathFile = File(filesDir)
-        Timber.d(fullPathFile.absolutePath)
-
         if (!fullPathFile.exists()) {
             if (!fullPathFile.mkdirs()) {
-                Timber.w("Could not create directory ${fullPathFile.absolutePath}")
+                Timber.tag(tag).w("Could not create directory ${fullPathFile.absolutePath}")
             }
         }
     }
 
-    private fun deleteFileIfExists(file: File) {
-        if (file.exists()) {
-            if (!file.delete()) {
-                Timber.w("Could not delete file path: ${file.absoluteFile}")
-            }
+    fun deleteFileIfExists(file: File?) {
+        if (file == null) {
+            return
         }
 
-        return
+        if (file.exists()) {
+            if (!file.delete()) {
+                Timber.tag(tag).w("Could not delete file path: ${file.absoluteFile}")
+            }
+        }
     }
 
     fun cleanFilesDirectory() {

@@ -29,7 +29,6 @@ class FindPhotoAnswerServicePresenter(
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
             .firstOrError()
-            .doOnSuccess { Timber.e("FindPhotoAnswerServicePresenter After firstOrError") }
             .map { myPhotosRepository.findAllByState(PhotoState.PHOTO_UPLOADED) }
             .filter { uploadedPhotos -> uploadedPhotos.isNotEmpty() }
             .map { uploadedPhotos ->

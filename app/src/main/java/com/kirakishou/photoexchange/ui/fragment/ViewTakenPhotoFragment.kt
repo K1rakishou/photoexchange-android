@@ -7,10 +7,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.view.View
-import android.view.ViewAnimationUtils
-import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AnticipateInterpolator
-import android.view.animation.LinearInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.ImageView
 import androidx.core.animation.addListener
@@ -72,8 +69,8 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
         compositeDisposable += RxView.clicks(fabSendPhoto)
             .subscribeOn(AndroidSchedulers.mainThread())
             .debounceClicks()
-            .concatWith(animateDisappear().toObservable())
-            .concatWith(Observable.defer { viewModel.updatePhotoState(takenPhoto.id) })
+            .concatMap { animateDisappear().toObservable<Unit>() }
+            .concatMap { viewModel.queueUpTakenPhoto(takenPhoto.id) }
             .doOnNext { (requireActivity() as ViewTakenPhotoActivity).showDialogFragment() }
             .subscribe()
     }
