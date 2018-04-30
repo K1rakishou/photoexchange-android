@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import com.kirakishou.photoexchange.helper.extension.minutes
 import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.helper.util.TimeUtils
+import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.*
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
@@ -30,6 +31,7 @@ class AllPhotosActivityViewModel(
     private val photosRepository: PhotosRepository,
     private val settingsRepository: SettingsRepository,
     private val photoAnswerRepository: PhotoAnswerRepository,
+    private val getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
     private val schedulerProvider: SchedulerProvider
 ) : BaseViewModel<AllPhotosActivityView>() {
 
@@ -63,6 +65,11 @@ class AllPhotosActivityViewModel(
         Timber.tag(tag).d("onCleared()")
 
         super.onCleared()
+    }
+
+    fun loadNextPageOfGalleryPhotos(lastId: Long): Observable<List<GalleryPhoto>> {
+        return getGalleryPhotosUseCase.loadNextPageOfGalleryPhotos(lastId)
+            .subscribeOn(schedulerProvider.IO())
     }
 
     fun checkShouldStartFindPhotoAnswersService() {

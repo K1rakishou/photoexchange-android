@@ -1,17 +1,14 @@
-package com.kirakishou.photoexchange.ui.adapter
+package com.kirakishou.photoexchange.ui.widget
 
 import android.os.Bundle
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import io.reactivex.subjects.PublishSubject
-
-/**
- * Created by kirakishou on 11/10/2017.
- */
+import timber.log.Timber
 
 class EndlessRecyclerOnScrollListener(
-        private val gridLayoutManager: GridLayoutManager,
-        private val loadMoreSubject: PublishSubject<Int>
+    private val gridLayoutManager: GridLayoutManager,
+    private val loadMoreSubject: PublishSubject<Int>
 ) : RecyclerView.OnScrollListener() {
 
     private var loading = false
@@ -32,6 +29,7 @@ class EndlessRecyclerOnScrollListener(
         lastVisibleItem = gridLayoutManager.findLastVisibleItemPosition()
 
         if (!loading && (totalItemCount <= (lastVisibleItem + visibleThreshold))) {
+            Timber.d("Loading new page")
             loading = true
 
             loadMoreSubject.onNext(currentPage)
@@ -71,17 +69,3 @@ class EndlessRecyclerOnScrollListener(
         isEndReached = savedInstanceState.getBoolean("isEndReached", false)
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

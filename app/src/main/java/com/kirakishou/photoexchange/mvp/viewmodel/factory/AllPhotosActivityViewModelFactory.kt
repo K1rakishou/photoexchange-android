@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerPro
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import java.lang.ref.WeakReference
@@ -19,11 +20,18 @@ class AllPhotosActivityViewModelFactory
     val photosRepository: PhotosRepository,
     val settingsRepository: SettingsRepository,
     val photoAnswerRepository: PhotoAnswerRepository,
+    val galleryPhotosUseCase: GetGalleryPhotosUseCase,
     val schedulerProvider: SchedulerProvider
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
-        return AllPhotosActivityViewModel(photosRepository, settingsRepository, photoAnswerRepository, schedulerProvider) as T
+        return AllPhotosActivityViewModel(
+            photosRepository,
+            settingsRepository,
+            photoAnswerRepository,
+            galleryPhotosUseCase,
+            schedulerProvider
+        ) as T
     }
 }

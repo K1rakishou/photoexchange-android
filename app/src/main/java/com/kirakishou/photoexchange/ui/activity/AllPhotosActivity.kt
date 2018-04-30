@@ -433,19 +433,23 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         val errorMessage = when (errorCode) {
             is ErrorCode.UploadPhotoErrors.Remote.Ok,
             is ErrorCode.FindPhotoAnswerErrors.Remote.Ok,
-            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.Ok -> null
+            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.Ok,
+            is ErrorCode.GalleryPhotosErrors.Remote.Ok -> null
 
             is ErrorCode.UploadPhotoErrors.Remote.UnknownError,
             is ErrorCode.FindPhotoAnswerErrors.Remote.UnknownError,
-            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.UnknownError -> "Unknown error"
+            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.UnknownError,
+            is ErrorCode.GalleryPhotosErrors.Remote.UnknownError -> "Unknown error"
 
             is ErrorCode.UploadPhotoErrors.Remote.BadRequest,
             is ErrorCode.FindPhotoAnswerErrors.Remote.BadRequest,
-            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.BadRequest -> "Bad request error"
+            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.BadRequest,
+            is ErrorCode.GalleryPhotosErrors.Remote.BadRequest -> "Bad request error"
 
             is ErrorCode.UploadPhotoErrors.Local.Timeout,
             is ErrorCode.FindPhotoAnswerErrors.Local.Timeout,
-            is ErrorCode.MarkPhotoAsReceivedErrors.Local.Timeout -> "Operation timeout error"
+            is ErrorCode.MarkPhotoAsReceivedErrors.Local.Timeout,
+            is ErrorCode.GalleryPhotosErrors.Local.Timeout -> "Operation timeout error"
 
             is ErrorCode.UploadPhotoErrors.Remote.DatabaseError,
             is ErrorCode.FindPhotoAnswerErrors.Remote.DatabaseError -> "Server database error"
@@ -455,11 +459,11 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             is ErrorCode.MarkPhotoAsReceivedErrors.Local.BadServerResponse -> "Bad server response error"
 
             is ErrorCode.UploadPhotoErrors.Local.NoPhotoFileOnDisk -> "No photo file on disk error"
+            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.BadPhotoId -> "Bad photo id error"
             is ErrorCode.FindPhotoAnswerErrors.Remote.NoPhotosInRequest -> "No photos were selected error"
             is ErrorCode.FindPhotoAnswerErrors.Remote.TooManyPhotosRequested -> "Too many photos requested error"
             is ErrorCode.FindPhotoAnswerErrors.Remote.NoPhotosToSendBack -> "No photos to send back"
             is ErrorCode.FindPhotoAnswerErrors.Remote.NotEnoughPhotosUploaded -> "Upload more photos first"
-            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.BadPhotoId -> "Bad photo id error"
 
             is ErrorCode.TakePhotoErrors.UnknownError,
             is ErrorCode.TakePhotoErrors.Ok,
