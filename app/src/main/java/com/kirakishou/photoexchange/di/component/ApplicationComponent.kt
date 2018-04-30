@@ -29,4 +29,5 @@ interface ApplicationComponent {
     fun plus(allPhotosActivityModule: AllPhotosActivityModule): AllPhotosActivityComponent
     fun plus(uploadPhotoServiceModule: UploadPhotoServiceModule): UploadPhotoServiceComponent
     fun plus(findPhotoAnswerServiceModule: FindPhotoAnswerServiceModule): FindPhotoAnswerServiceComponent
+    fun plus(settingsActivityModule: SettingsActivityModule): SettingsActivityComponent
 }
