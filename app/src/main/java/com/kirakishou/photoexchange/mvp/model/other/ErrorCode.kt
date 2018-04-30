@@ -59,6 +59,19 @@ sealed class ErrorCode(val value: Int) {
         }
     }
 
+    sealed class GalleryPhotosErrors(value: Int) : ErrorCode(value) {
+        sealed class Remote(value: Int) : GalleryPhotosErrors(value) {
+            class UnknownError : Remote(-1)
+            class Ok : Remote(0)
+            class BadRequest : Remote(1)
+        }
+
+        sealed class Local(value: Int) : GalleryPhotosErrors(value) {
+            class Timeout : Local(-1001)
+        }
+    }
+
+    //local
     sealed class TakePhotoErrors(value: Int) : ErrorCode(value) {
         class UnknownError : TakePhotoErrors(-1)
         class Ok(val photo: MyPhoto) : TakePhotoErrors(0)
@@ -71,7 +84,7 @@ sealed class ErrorCode(val value: Int) {
 
     companion object {
         inline fun <reified T> fromInt(errorCodeInt: Int?): T {
-            when (T::class.java) {
+            return when (T::class.java) {
                 UploadPhotoErrors::class.java -> {
                     val errorCode = when (errorCodeInt) {
                         //local errors
@@ -88,7 +101,7 @@ sealed class ErrorCode(val value: Int) {
                         else -> throw IllegalArgumentException("Unknown errorCodeInt $errorCodeInt")
                     }
 
-                    return errorCode as T
+                    errorCode as T
                 }
 
                 FindPhotoAnswerErrors::class.java -> {
@@ -110,7 +123,7 @@ sealed class ErrorCode(val value: Int) {
                         else -> throw IllegalArgumentException("Unknown errorCodeInt $errorCodeInt")
                     }
 
-                    return errorCode as T
+                    errorCode as T
                 }
 
                 MarkPhotoAsReceivedErrors::class.java -> {
@@ -128,7 +141,7 @@ sealed class ErrorCode(val value: Int) {
                         else -> throw IllegalArgumentException("Unknown errorCodeInt $errorCodeInt")
                     }
 
-                    return errorCode as T
+                    errorCode as T
                 }
 
                 else -> throw IllegalArgumentException("Unknown response class ${T::class.java}")

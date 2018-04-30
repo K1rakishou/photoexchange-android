@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.helper.api
 
+import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
 import io.reactivex.Single
@@ -20,4 +21,7 @@ interface ApiService {
     @GET("/v1/api/get_answer/{photo_names}/{user_id}")
     fun getPhotoAnswers(@Path("photo_names") photoNames: String,
                         @Path("user_id") userId: String): Single<Response<PhotoAnswerResponse>>
+
+    @GET("/v1/api/get_gallery_photos/{last_id}")
+    fun getGalleryPhotos(@Path("last_id") lastId: Long): Single<Response<GalleryPhotosResponse>>
 }
