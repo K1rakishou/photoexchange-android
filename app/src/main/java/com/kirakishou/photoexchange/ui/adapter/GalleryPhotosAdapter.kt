@@ -18,14 +18,8 @@ class GalleryPhotosAdapter(
     private val items = arrayListOf<GalleryPhotosAdapterItem>()
 
     fun addAll(photos: List<GalleryPhoto>) {
-        for (photo in photos) {
-            add(photo)
-        }
-    }
-
-    fun add(photo: GalleryPhoto) {
-        items.add(0, GalleryPhotosAdapterItem.GalleryPhotoItem(photo))
-        notifyItemInserted(0)
+        items.addAll(photos.map { GalleryPhotosAdapterItem.GalleryPhotoItem(it) })
+        notifyItemRangeInserted(items.size, photos.size)
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -40,13 +34,12 @@ class GalleryPhotosAdapter(
         )
     }
 
-
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
             is GalleryPhotoViewHolder -> {
                 val item = items[position] as GalleryPhotosAdapterItem.GalleryPhotoItem
 
-                holder.photoIdTextView.text = item.photo.id.toString()
+                holder.photoIdTextView.text = item.photo.remoteId.toString()
                 imageLoader.loadImageFromNetInto(item.photo.photoName, ImageLoader.PhotoSize.Small, holder.photoView)
             }
             else -> IllegalArgumentException("Unknown viewHolder: ${holder::class.java.simpleName}")

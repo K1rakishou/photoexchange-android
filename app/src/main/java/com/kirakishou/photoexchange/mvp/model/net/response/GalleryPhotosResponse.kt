@@ -25,6 +25,11 @@ private constructor(
     }
 
     inner class GalleryPhotoResponse(
+
+        @Expose
+        @SerializedName("id")
+        val id: Long,
+
         @Expose
         @SerializedName("photo_name")
         val photoName: String,
@@ -39,6 +44,10 @@ private constructor(
 
         @Expose
         @SerializedName("uploaded_on")
-        val uploadedOn: Long
+        val uploadedOn: Long,
+
+        @Expose
+        @SerializedName("likes_count")
+        val likesCount: Long
     )
 }

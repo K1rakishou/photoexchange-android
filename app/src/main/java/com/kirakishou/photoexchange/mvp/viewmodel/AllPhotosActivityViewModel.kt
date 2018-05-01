@@ -67,8 +67,8 @@ class AllPhotosActivityViewModel(
         super.onCleared()
     }
 
-    fun loadNextPageOfGalleryPhotos(lastId: Long): Observable<List<GalleryPhoto>> {
-        return getGalleryPhotosUseCase.loadNextPageOfGalleryPhotos(lastId)
+    fun loadNextPageOfGalleryPhotos(lastId: Long, photosPerPage: Int): Observable<List<GalleryPhoto>> {
+        return getGalleryPhotosUseCase.loadNextPageOfGalleryPhotos(lastId, photosPerPage)
             .subscribeOn(schedulerProvider.IO())
     }
 

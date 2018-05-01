@@ -9,6 +9,7 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
+import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.GalleryPhotosAdapter
@@ -18,6 +19,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class GalleryFragment : BaseFragment() {
@@ -31,8 +33,10 @@ class GalleryFragment : BaseFragment() {
     @Inject
     lateinit var viewModel: AllPhotosActivityViewModel
 
+    private val _tag = "GalleryFragment"
     private val GALLERY_PHOTO_ADAPTER_VIEW_WIDTH = 144
     private val loadMoreSubject = PublishSubject.create<Int>()
+    private var photosPerPage = 0
     private var lastId = Long.MAX_VALUE
 
     lateinit var adapter: GalleryPhotosAdapter
@@ -51,7 +55,7 @@ class GalleryFragment : BaseFragment() {
     }
 
     private fun loadFirstPage() {
-        compositeDisposable += viewModel.loadNextPageOfGalleryPhotos(lastId)
+        compositeDisposable += viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { photos -> addPhotoToAdapter(photos) }
@@ -61,7 +65,8 @@ class GalleryFragment : BaseFragment() {
     private fun initRx() {
         compositeDisposable += loadMoreSubject
             .subscribeOn(AndroidSchedulers.mainThread())
-            .flatMap { viewModel.loadNextPageOfGalleryPhotos(lastId) }
+            .flatMap { viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage) }
+            .delay(2, TimeUnit.SECONDS, Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { photos -> addPhotoToAdapter(photos) }
             .subscribe()
@@ -75,8 +80,9 @@ class GalleryFragment : BaseFragment() {
 
         val layoutManager = GridLayoutManager(requireContext(), columnsCount)
         layoutManager.spanSizeLookup = GalleryPhotosAdapterSpanSizeLookup(adapter, columnsCount)
+        photosPerPage = Constants.GALLERY_PHOTOS_PER_ROW * layoutManager.spanCount
 
-        endlessScrollListener = EndlessRecyclerOnScrollListener(layoutManager, loadMoreSubject)
+        endlessScrollListener = EndlessRecyclerOnScrollListener(layoutManager, photosPerPage, loadMoreSubject)
 
         galleryPhotosList.layoutManager = layoutManager
         galleryPhotosList.adapter = adapter
@@ -86,6 +92,12 @@ class GalleryFragment : BaseFragment() {
 
     private fun addPhotoToAdapter(photos: List<GalleryPhoto>) {
         requireActivity().runOnUiThread {
+            endlessScrollListener.pageLoaded()
+
+            if (photos.size < photosPerPage) {
+                endlessScrollListener.reachedEnd()
+            }
+
             adapter.addAll(photos)
         }
     }
