@@ -47,7 +47,7 @@ private constructor(
         val uploadedOn: Long,
 
         @Expose
-        @SerializedName("likes_count")
-        val likesCount: Long
+        @SerializedName("favourites_count")
+        val favouritesCount: Long
     )
 }

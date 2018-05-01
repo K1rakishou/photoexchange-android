@@ -67,8 +67,6 @@ class GalleryPhotosAdapter(
             is GalleryPhotoViewHolder -> {
                 val item = items[position] as GalleryPhotosAdapterItem.GalleryPhotoItem
 
-                holder.photoIdTextView.text = item.photo.remoteId.toString()
-
                 //TODO: optimize so it won't ddos the server when user scrolls recyclerview very fast
                 imageLoader.loadImageFromNetInto(item.photo.photoName, ImageLoader.PhotoSize.Small, holder.photoView)
             }
@@ -85,7 +83,8 @@ class GalleryPhotosAdapter(
 
     class GalleryPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val photoView = itemView.findViewById<ImageView>(R.id.photo_view)
-        val galleryPhotoHolder = itemView.findViewById<LinearLayout>(R.id.gallery_photo_holder)
-        val photoIdTextView = itemView.findViewById<TextView>(R.id.photo_id_text_view)
+        val favouriteButton = itemView.findViewById<LinearLayout>(R.id.favourite_button)
+        val reportButton = itemView.findViewById<ImageView>(R.id.report_button)
+        val favouritesCount = itemView.findViewById<TextView>(R.id.favourites_count_text_view)
     }
 }
