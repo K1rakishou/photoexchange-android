@@ -7,8 +7,10 @@ sealed class GalleryPhotosAdapterItem : BaseAdapterItem() {
     override fun getType(): AdapterItemType {
         return when (this) {
             is GalleryPhotoItem -> AdapterItemType.VIEW_GALLERY_PHOTO
+            is GalleryPhotosAdapterItem.ProgressItem -> AdapterItemType.VIEW_PROGRESS
         }
     }
 
     class GalleryPhotoItem(val photo: GalleryPhoto) : GalleryPhotosAdapterItem()
+    class ProgressItem : GalleryPhotosAdapterItem()
 }

@@ -65,9 +65,11 @@ class GalleryFragment : BaseFragment() {
     private fun initRx() {
         compositeDisposable += loadMoreSubject
             .subscribeOn(AndroidSchedulers.mainThread())
+            .doOnNext { addProgressFooter() }
             .flatMap { viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage) }
             .delay(2, TimeUnit.SECONDS, Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { removeProgressFooter() }
             .doOnNext { photos -> addPhotoToAdapter(photos) }
             .subscribe()
     }
@@ -90,8 +92,20 @@ class GalleryFragment : BaseFragment() {
         galleryPhotosList.addOnScrollListener(endlessScrollListener)
     }
 
+    private fun addProgressFooter() {
+        galleryPhotosList.post {
+            adapter.addProgressFooter()
+        }
+    }
+
+    private fun removeProgressFooter() {
+        galleryPhotosList.post {
+            adapter.removeProgressFooter()
+        }
+    }
+
     private fun addPhotoToAdapter(photos: List<GalleryPhoto>) {
-        requireActivity().runOnUiThread {
+        galleryPhotosList.post {
             endlessScrollListener.pageLoaded()
 
             if (photos.isNotEmpty()) {
