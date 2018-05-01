@@ -5,6 +5,7 @@ import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvp.model.exception.ApiException
+import com.kirakishou.photoexchange.mvp.model.net.response.FavouritePhotoResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
@@ -25,7 +26,13 @@ class GetGalleryPhotosRequest<T>(
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
             .lift(OnApiErrorSingle<GalleryPhotosResponse>(gson, GalleryPhotosResponse::class.java))
-            .map { GalleryPhotosResponse.success(it.galleryPhotos) }
+            .map { response ->
+                if (response.serverErrorCode!! == 0) {
+                    return@map GalleryPhotosResponse.success(response.galleryPhotos)
+                } else {
+                    return@map GalleryPhotosResponse.error(ErrorCode.fromInt(ErrorCode.GalleryPhotosErrors::class.java, response.serverErrorCode))
+                }
+            }
             .onErrorReturn(this::extractError) as Single<T>
     }
 

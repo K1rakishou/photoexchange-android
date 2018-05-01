@@ -10,11 +10,13 @@ import android.widget.TextView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
+import io.reactivex.subjects.PublishSubject
 
 class GalleryPhotosAdapter(
     private val context: Context,
     private val imageLoader: ImageLoader,
-    private val columnsCount: Int
+    private val columnsCount: Int,
+    private val adapterButtonClickSubject: PublishSubject<GalleryPhotosAdapterButtonClickEvent>
 ) : BaseAdapter<GalleryPhotosAdapterItem>(context) {
 
     private val IMAGES_PER_COLUMN = 5
@@ -42,6 +44,52 @@ class GalleryPhotosAdapter(
         notifyItemRemoved(lastIndex)
     }
 
+    fun favouritePhoto(photoName: String, isFavourited: Boolean, favouritesCount: Long): Boolean {
+        val photoIndex = items.indexOfFirst { adapterItem ->
+            if (adapterItem !is GalleryPhotosAdapterItem.GalleryPhotoItem) {
+                return@indexOfFirst false
+            }
+
+            return@indexOfFirst adapterItem.photo.photoName == photoName
+        }
+
+        if (photoIndex == -1) {
+            return false
+        }
+
+        if ((items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).favourited == isFavourited) {
+            return false
+        }
+
+        (items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).favourited = isFavourited
+        (items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).photo.favouritesCount = favouritesCount
+
+        notifyItemChanged(photoIndex)
+        return true
+    }
+
+    fun reportPhoto(photoName: String, isReported: Boolean): Boolean {
+        val photoIndex = items.indexOfFirst { adapterItem ->
+            if (adapterItem !is GalleryPhotosAdapterItem.GalleryPhotoItem) {
+                return@indexOfFirst false
+            }
+
+            return@indexOfFirst adapterItem.photo.photoName == photoName
+        }
+
+        if (photoIndex == -1) {
+            return false
+        }
+
+        if ((items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).reported == isReported) {
+            return false
+        }
+
+        (items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).reported = isReported
+        notifyItemChanged(photoIndex)
+        return true
+    }
+
     fun addAll(photos: List<GalleryPhoto>) {
         val lastIndex = items.size
 
@@ -67,6 +115,28 @@ class GalleryPhotosAdapter(
             is GalleryPhotoViewHolder -> {
                 val item = items[position] as GalleryPhotosAdapterItem.GalleryPhotoItem
 
+                holder.favouriteButton.setOnClickListener {
+                    adapterButtonClickSubject.onNext(GalleryPhotosAdapterButtonClickEvent.FavouriteClicked(item.photo.photoName))
+                }
+
+                holder.reportButton.setOnClickListener {
+                    adapterButtonClickSubject.onNext(GalleryPhotosAdapterButtonClickEvent.ReportClicked(item.photo.photoName))
+                }
+
+                if (item.favourited) {
+                    holder.favouriteIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_favorite))
+                } else {
+                    holder.favouriteIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_favorite_border))
+                }
+
+                if (item.reported) {
+                    holder.reportIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_reported))
+                } else {
+                    holder.reportIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_report_border))
+                }
+
+                holder.favouritesCount.text = item.photo.favouritesCount.toString()
+
                 //TODO: optimize so it won't ddos the server when user scrolls recyclerview very fast
                 imageLoader.loadImageFromNetInto(item.photo.photoName, ImageLoader.PhotoSize.Small, holder.photoView)
             }
@@ -84,7 +154,14 @@ class GalleryPhotosAdapter(
     class GalleryPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val photoView = itemView.findViewById<ImageView>(R.id.photo_view)
         val favouriteButton = itemView.findViewById<LinearLayout>(R.id.favourite_button)
-        val reportButton = itemView.findViewById<ImageView>(R.id.report_button)
+        val reportButton = itemView.findViewById<LinearLayout>(R.id.report_button)
         val favouritesCount = itemView.findViewById<TextView>(R.id.favourites_count_text_view)
+        val favouriteIcon = itemView.findViewById<ImageView>(R.id.favourite_icon)
+        val reportIcon = itemView.findViewById<ImageView>(R.id.report_icon)
+    }
+
+    sealed class GalleryPhotosAdapterButtonClickEvent {
+        class FavouriteClicked(val photoName: String) : GalleryPhotosAdapterButtonClickEvent()
+        class ReportClicked(val photoName: String) : GalleryPhotosAdapterButtonClickEvent()
     }
 }

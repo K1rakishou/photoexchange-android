@@ -13,8 +13,6 @@ import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.service.FindPhotoAnswerServiceCallbacks
 import io.reactivex.Maybe
-import io.reactivex.Observable
-import io.reactivex.Single
 import timber.log.Timber
 import java.lang.ref.WeakReference
 
@@ -35,10 +33,10 @@ class FindPhotoAnswersUseCase(
                 val photoNames = data.photoNames
 
                 val response = apiClient.getPhotoAnswers(photoNames, userId).blockingGet()
-                val errorCode = response.errorCode as ErrorCode.FindPhotoAnswerErrors
+                val errorCode = response.errorCode as ErrorCode.GetPhotoAnswersErrors
 
                 when (errorCode) {
-                    is ErrorCode.FindPhotoAnswerErrors.Remote.Ok -> handleSuccessResult(response, callbacks)
+                    is ErrorCode.GetPhotoAnswersErrors.Remote.Ok -> handleSuccessResult(response, callbacks)
                     else -> callbacks.get()?.onFailed(errorCode)
                 }
 

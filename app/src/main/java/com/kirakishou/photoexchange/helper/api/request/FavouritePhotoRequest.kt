@@ -25,7 +25,13 @@ class FavouritePhotoRequest<T>(
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
             .lift(OnApiErrorSingle<FavouritePhotoResponse>(gson, FavouritePhotoResponse::class.java))
-            .map { FavouritePhotoResponse.success() }
+            .map { response ->
+                if (response.serverErrorCode!! == 0) {
+                    return@map FavouritePhotoResponse.success(response.isFavourited, response.favouritesCount)
+                } else {
+                    return@map FavouritePhotoResponse.error(ErrorCode.fromInt(ErrorCode.FavouritePhotoErrors::class.java, response.serverErrorCode))
+                }
+            }
             .onErrorReturn(this::extractError) as Single<T>
     }
 

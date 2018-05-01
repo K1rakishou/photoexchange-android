@@ -15,7 +15,7 @@ class ReportPhotoUseCase(
             val errorCode = response.errorCode as ErrorCode.ReportPhotoErrors
 
             return@fromCallable when (errorCode) {
-                is ErrorCode.ReportPhotoErrors.Remote.Ok -> true
+                is ErrorCode.ReportPhotoErrors.Remote.Ok -> response.isReported
                 else -> false
             }
         }

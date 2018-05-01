@@ -25,7 +25,13 @@ class ReportPhotoRequest<T>(
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
             .lift(OnApiErrorSingle<ReportPhotoResponse>(gson, ReportPhotoResponse::class.java))
-            .map { ReportPhotoResponse.success() }
+            .map { response ->
+                if (response.serverErrorCode!! == 0) {
+                    return@map ReportPhotoResponse.success(response.isReported)
+                } else {
+                    return@map ReportPhotoResponse.error(ErrorCode.fromInt(ErrorCode.ReportPhotoErrors::class.java, response.serverErrorCode))
+                }
+            }
             .onErrorReturn(this::extractError) as Single<T>
     }
 

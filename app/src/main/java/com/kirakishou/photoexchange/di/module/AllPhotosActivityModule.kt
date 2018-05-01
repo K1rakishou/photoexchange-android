@@ -6,7 +6,9 @@ import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerPro
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
+import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.AllPhotosActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
@@ -29,8 +31,17 @@ open class AllPhotosActivityModule(
                                 photosRepository: PhotosRepository,
                                 photoAnswerRepository: PhotoAnswerRepository,
                                 settingsRepository: SettingsRepository,
-                                galleryPhotosUseCase: GetGalleryPhotosUseCase): AllPhotosActivityViewModelFactory {
-        return AllPhotosActivityViewModelFactory(photosRepository, settingsRepository, photoAnswerRepository, galleryPhotosUseCase, schedulerProvider)
+                                galleryPhotosUseCase: GetGalleryPhotosUseCase,
+                                favouritePhotoUseCase: FavouritePhotoUseCase,
+                                reportPhotoUseCase: ReportPhotoUseCase): AllPhotosActivityViewModelFactory {
+        return AllPhotosActivityViewModelFactory(
+            photosRepository,
+            settingsRepository,
+            photoAnswerRepository,
+            galleryPhotosUseCase,
+            favouritePhotoUseCase,
+            reportPhotoUseCase,
+            schedulerProvider)
     }
 
     @PerActivity

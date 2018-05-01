@@ -6,5 +6,5 @@ class GalleryPhoto(
     val lon: Double,
     val lat: Double,
     val uploadedOn: Long,
-    val favouritesCount: Long
+    var favouritesCount: Long
 )

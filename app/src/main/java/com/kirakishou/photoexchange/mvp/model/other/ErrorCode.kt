@@ -27,8 +27,8 @@ sealed class ErrorCode(val value: Int) {
         }
     }
 
-    sealed class FindPhotoAnswerErrors(value: Int) : ErrorCode(value) {
-        sealed class Remote(value: Int) : FindPhotoAnswerErrors(value) {
+    sealed class GetPhotoAnswersErrors(value: Int) : ErrorCode(value) {
+        sealed class Remote(value: Int) : GetPhotoAnswersErrors(value) {
             class UnknownError : Remote(-1)
             class Ok : Remote(0)
             class BadRequest : Remote(1)
@@ -39,21 +39,7 @@ sealed class ErrorCode(val value: Int) {
             class NotEnoughPhotosUploaded : Remote(6)
         }
 
-        sealed class Local(value: Int) : FindPhotoAnswerErrors(value) {
-            class BadServerResponse(val message: String? = null) : Local(-1000)
-            class Timeout : Local(-1001)
-        }
-    }
-
-    sealed class MarkPhotoAsReceivedErrors(value: Int) : ErrorCode(value) {
-        sealed class Remote(value: Int) : MarkPhotoAsReceivedErrors(value) {
-            class UnknownError : Remote(-1)
-            class Ok : Remote(0)
-            class BadRequest : Remote(1)
-            class BadPhotoId : Remote(2)
-        }
-
-        sealed class Local(value: Int) : MarkPhotoAsReceivedErrors(value) {
+        sealed class Local(value: Int) : GetPhotoAnswersErrors(value) {
             class BadServerResponse(val message: String? = null) : Local(-1000)
             class Timeout : Local(-1001)
         }
@@ -135,40 +121,75 @@ sealed class ErrorCode(val value: Int) {
                     errorCode as T
                 }
 
-                FindPhotoAnswerErrors::class.java -> {
+                GetPhotoAnswersErrors::class.java -> {
                     val errorCode = when (errorCodeInt) {
                         //local errors
                         null,
-                        -1000 -> FindPhotoAnswerErrors.Local.BadServerResponse()
-                        -1001 -> FindPhotoAnswerErrors.Local.Timeout()
+                        -1000 -> GetPhotoAnswersErrors.Local.BadServerResponse()
+                        -1001 -> GetPhotoAnswersErrors.Local.Timeout()
 
                         //remote errors
-                        -1 -> FindPhotoAnswerErrors.Remote.UnknownError()
-                        0 -> FindPhotoAnswerErrors.Remote.Ok()
-                        1 -> FindPhotoAnswerErrors.Remote.BadRequest()
-                        2 -> FindPhotoAnswerErrors.Remote.DatabaseError()
-                        3 -> FindPhotoAnswerErrors.Remote.NoPhotosInRequest()
-                        4 -> FindPhotoAnswerErrors.Remote.TooManyPhotosRequested()
-                        5 -> FindPhotoAnswerErrors.Remote.NoPhotosToSendBack()
-                        6 -> FindPhotoAnswerErrors.Remote.NotEnoughPhotosUploaded()
+                        -1 -> GetPhotoAnswersErrors.Remote.UnknownError()
+                        0 -> GetPhotoAnswersErrors.Remote.Ok()
+                        1 -> GetPhotoAnswersErrors.Remote.BadRequest()
+                        2 -> GetPhotoAnswersErrors.Remote.DatabaseError()
+                        3 -> GetPhotoAnswersErrors.Remote.NoPhotosInRequest()
+                        4 -> GetPhotoAnswersErrors.Remote.TooManyPhotosRequested()
+                        5 -> GetPhotoAnswersErrors.Remote.NoPhotosToSendBack()
+                        6 -> GetPhotoAnswersErrors.Remote.NotEnoughPhotosUploaded()
                         else -> throw IllegalArgumentException("Unknown errorCodeInt $errorCodeInt")
                     }
 
                     errorCode as T
                 }
 
-                MarkPhotoAsReceivedErrors::class.java -> {
+                GalleryPhotosErrors::class.java -> {
                     val errorCode = when (errorCodeInt) {
                         //local errors
                         null,
-                        -1000 -> MarkPhotoAsReceivedErrors.Local.BadServerResponse()
-                        -1001 -> MarkPhotoAsReceivedErrors.Local.Timeout()
+                        -1000 -> GalleryPhotosErrors.Local.BadServerResponse()
+                        -1001 -> GalleryPhotosErrors.Local.Timeout()
 
                         //remote errors
-                        -1 -> MarkPhotoAsReceivedErrors.Remote.UnknownError()
-                        0 -> MarkPhotoAsReceivedErrors.Remote.Ok()
-                        1 -> MarkPhotoAsReceivedErrors.Remote.BadRequest()
-                        2 -> MarkPhotoAsReceivedErrors.Remote.BadPhotoId()
+                        -1 -> GalleryPhotosErrors.Remote.UnknownError()
+                        0 -> GalleryPhotosErrors.Remote.Ok()
+                        1 -> GalleryPhotosErrors.Remote.BadRequest()
+                        else -> throw IllegalArgumentException("Unknown errorCodeInt $errorCodeInt")
+                    }
+
+                    errorCode as T
+                }
+
+                FavouritePhotoErrors::class.java -> {
+                    val errorCode = when (errorCodeInt) {
+                        //local errors
+                        null,
+                        -1000 -> FavouritePhotoErrors.Local.BadServerResponse()
+                        -1001 -> FavouritePhotoErrors.Local.Timeout()
+
+                        //remote errors
+                        -1 -> FavouritePhotoErrors.Remote.UnknownError()
+                        0 -> FavouritePhotoErrors.Remote.Ok()
+                        1 -> FavouritePhotoErrors.Remote.AlreadyFavourited()
+                        2 -> FavouritePhotoErrors.Remote.BadRequest()
+                        else -> throw IllegalArgumentException("Unknown errorCodeInt $errorCodeInt")
+                    }
+
+                    errorCode as T
+                }
+
+                ReportPhotoErrors::class.java -> {
+                    val errorCode = when (errorCodeInt) {
+                        //local errors
+                        null,
+                        -1000 -> ReportPhotoErrors.Local.BadServerResponse()
+                        -1001 -> ReportPhotoErrors.Local.Timeout()
+
+                        //remote errors
+                        -1 -> ReportPhotoErrors.Remote.UnknownError()
+                        0 -> ReportPhotoErrors.Remote.Ok()
+                        1 -> ReportPhotoErrors.Remote.AlreadyReported()
+                        2 -> ReportPhotoErrors.Remote.BadRequest()
                         else -> throw IllegalArgumentException("Unknown errorCodeInt $errorCodeInt")
                     }
 

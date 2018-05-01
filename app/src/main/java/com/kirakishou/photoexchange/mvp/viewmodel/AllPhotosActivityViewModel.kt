@@ -77,7 +77,7 @@ class AllPhotosActivityViewModel(
             .subscribeOn(schedulerProvider.IO())
     }
 
-    fun favouritePhoto(photoName: String): Observable<Boolean> {
+    fun favouritePhoto(photoName: String): Observable<Pair<Boolean, Long>> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .concatMap { userId -> favouritePhotoUseCase.favouritePhoto(userId, photoName) }
             .subscribeOn(schedulerProvider.IO())

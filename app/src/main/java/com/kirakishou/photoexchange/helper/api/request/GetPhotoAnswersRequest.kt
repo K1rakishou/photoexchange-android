@@ -5,6 +5,7 @@ import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvp.model.exception.ApiException
+import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
@@ -25,7 +26,13 @@ class GetPhotoAnswersRequest<T>(
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
             .lift(OnApiErrorSingle<PhotoAnswerResponse>(gson, PhotoAnswerResponse::class.java))
-            .map { PhotoAnswerResponse.success(it.photoAnswers) }
+            .map { response ->
+                if (response.serverErrorCode!! == 0) {
+                    return@map PhotoAnswerResponse.success(response.photoAnswers)
+                } else {
+                    return@map PhotoAnswerResponse.error(ErrorCode.fromInt(ErrorCode.GetPhotoAnswersErrors::class.java, response.serverErrorCode))
+                }
+            }
             .onErrorReturn(this::extractError) as Single<T>
     }
 
@@ -33,8 +40,8 @@ class GetPhotoAnswersRequest<T>(
         return when (error) {
             is ApiException -> PhotoAnswerResponse.error(error.errorCode)
             is SocketTimeoutException,
-            is TimeoutException -> PhotoAnswerResponse.error(ErrorCode.FindPhotoAnswerErrors.Local.Timeout())
-            else -> PhotoAnswerResponse.error(ErrorCode.FindPhotoAnswerErrors.Remote.UnknownError())
+            is TimeoutException -> PhotoAnswerResponse.error(ErrorCode.GetPhotoAnswersErrors.Local.Timeout())
+            else -> PhotoAnswerResponse.error(ErrorCode.GetPhotoAnswersErrors.Remote.UnknownError())
         }
     }
 }

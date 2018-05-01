@@ -16,7 +16,7 @@ private constructor(
 
     companion object {
         fun success(photoAnswers: List<PhotoAnswer>): PhotoAnswerResponse {
-            return PhotoAnswerResponse(photoAnswers, ErrorCode.FindPhotoAnswerErrors.Remote.Ok())
+            return PhotoAnswerResponse(photoAnswers, ErrorCode.GetPhotoAnswersErrors.Remote.Ok())
         }
 
         fun error(errorCode: ErrorCode): PhotoAnswerResponse {

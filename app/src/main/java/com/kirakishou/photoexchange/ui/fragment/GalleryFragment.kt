@@ -4,6 +4,7 @@ package com.kirakishou.photoexchange.ui.fragment
 import android.os.Bundle
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.widget.Toast
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
@@ -15,8 +16,10 @@ import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.GalleryPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.GalleryPhotosAdapterSpanSizeLookup
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import java.util.concurrent.TimeUnit
@@ -36,6 +39,7 @@ class GalleryFragment : BaseFragment() {
     private val _tag = "GalleryFragment"
     private val GALLERY_PHOTO_ADAPTER_VIEW_WIDTH = 144
     private val loadMoreSubject = PublishSubject.create<Int>()
+    private val adapterButtonClickSubject = PublishSubject.create<GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent>()
     private var photosPerPage = 0
     private var lastId = Long.MAX_VALUE
 
@@ -72,12 +76,28 @@ class GalleryFragment : BaseFragment() {
             .doOnNext { removeProgressFooter() }
             .doOnNext { photos -> addPhotoToAdapter(photos) }
             .subscribe()
+
+        compositeDisposable += adapterButtonClickSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .filter { buttonClicked -> buttonClicked is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.FavouriteClicked }
+            .cast(GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.FavouriteClicked::class.java)
+            .concatMap { viewModel.favouritePhoto(it.photoName).zipWith(Observable.just(it.photoName)) }
+            .doOnNext { (response, photoName) -> favouritePhoto(photoName, response.first, response.second) }
+            .subscribe()
+
+        compositeDisposable += adapterButtonClickSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .filter { buttonClicked -> buttonClicked is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.ReportClicked }
+            .cast(GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.ReportClicked::class.java)
+            .concatMap { viewModel.reportPhoto(it.photoName).zipWith(Observable.just(it.photoName)) }
+            .doOnNext { (isReported, photoName) -> reportPhoto(photoName, isReported) }
+            .subscribe()
     }
 
     private fun initRecyclerView() {
         val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), GALLERY_PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = GalleryPhotosAdapter(requireContext(), imageLoader, columnsCount)
+        adapter = GalleryPhotosAdapter(requireContext(), imageLoader, columnsCount, adapterButtonClickSubject)
         adapter.init()
 
         val layoutManager = GridLayoutManager(requireContext(), columnsCount)
@@ -90,6 +110,34 @@ class GalleryFragment : BaseFragment() {
         galleryPhotosList.adapter = adapter
         galleryPhotosList.clearOnScrollListeners()
         galleryPhotosList.addOnScrollListener(endlessScrollListener)
+    }
+
+    private fun favouritePhoto(photoName: String, isFavourited: Boolean, favouritesCount: Long) {
+        galleryPhotosList.post {
+            if (!adapter.favouritePhoto(photoName, isFavourited, favouritesCount)) {
+                return@post
+            }
+
+            if (isFavourited) {
+                (requireActivity() as AllPhotosActivity).showToast(getString(R.string.photo_favourited_text), Toast.LENGTH_SHORT)
+            } else {
+                (requireActivity() as AllPhotosActivity).showToast(getString(R.string.photo_unfavourited_text), Toast.LENGTH_SHORT)
+            }
+        }
+    }
+
+    private fun reportPhoto(photoName: String, isReported: Boolean) {
+        galleryPhotosList.post {
+            if (!adapter.reportPhoto(photoName, isReported)) {
+                return@post
+            }
+
+            if (isReported) {
+                (requireActivity() as AllPhotosActivity).showToast(getString(R.string.photo_reported_text), Toast.LENGTH_SHORT)
+            } else {
+                (requireActivity() as AllPhotosActivity).showToast(getString(R.string.photo_unreported_text), Toast.LENGTH_SHORT)
+            }
+        }
     }
 
     private fun addProgressFooter() {
