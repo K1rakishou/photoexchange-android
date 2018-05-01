@@ -1,10 +1,8 @@
 package com.kirakishou.photoexchange.helper.api
 
 import com.kirakishou.photoexchange.mvp.model.net.packet.FavouritePhotoPacket
-import com.kirakishou.photoexchange.mvp.model.net.response.FavouritePhotoResponse
-import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
-import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
-import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
+import com.kirakishou.photoexchange.mvp.model.net.packet.ReportPhotoPacket
+import com.kirakishou.photoexchange.mvp.model.net.response.*
 import io.reactivex.Single
 import okhttp3.MultipartBody
 import retrofit2.Response
@@ -30,4 +28,7 @@ interface ApiService {
 
     @PUT("/v1/api/favourite")
     fun favouritePhoto(@Body packet: FavouritePhotoPacket): Single<Response<FavouritePhotoResponse>>
+
+    @PUT("/v1/api/report")
+    fun reportPhoto(@Body packet: ReportPhotoPacket): Single<Response<ReportPhotoResponse>>
 }

@@ -66,6 +66,7 @@ class OnApiErrorSingle<T : StatusResponse>(
             PhotoAnswerResponse::class.java -> ErrorCode.FindPhotoAnswerErrors.Local.BadServerResponse(message)
             GalleryPhotosResponse::class.java -> ErrorCode.GalleryPhotosErrors.Local.BadServerResponse(message)
             FavouritePhotoResponse::class.java -> ErrorCode.FavouritePhotoErrors.Local.BadServerResponse(message)
+            ReportPhotoResponse::class.java -> ErrorCode.ReportPhotoErrors.Local.BadServerResponse(message)
             else -> throw IllegalArgumentException("Bad class: $clazz")
         }
 

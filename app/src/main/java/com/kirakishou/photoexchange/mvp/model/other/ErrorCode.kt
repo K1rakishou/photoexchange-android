@@ -86,6 +86,20 @@ sealed class ErrorCode(val value: Int) {
         }
     }
 
+    sealed class ReportPhotoErrors(value: Int) : ErrorCode(value) {
+        sealed class Remote(value: Int) : ReportPhotoErrors(value) {
+            class UnknownError : Remote(-1)
+            class Ok : Remote(0)
+            class AlreadyReported : Remote(1)
+            class BadRequest : Remote(2)
+        }
+
+        sealed class Local(value: Int) : ReportPhotoErrors(value) {
+            class BadServerResponse(val message: String? = null) : Local(-1000)
+            class Timeout : Local(-1001)
+        }
+    }
+
     //local
     sealed class TakePhotoErrors(value: Int) : ErrorCode(value) {
         class UnknownError : TakePhotoErrors(-1)
