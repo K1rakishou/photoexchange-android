@@ -1,5 +1,7 @@
 package com.kirakishou.photoexchange.helper.api
 
+import com.kirakishou.photoexchange.mvp.model.net.packet.FavouritePhotoPacket
+import com.kirakishou.photoexchange.mvp.model.net.response.FavouritePhotoResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
@@ -25,4 +27,7 @@ interface ApiService {
     @GET("/v1/api/get_gallery_photos/{last_id}/{count}")
     fun getGalleryPhotos(@Path("last_id") lastId: Long,
                          @Path("count") count: Int): Single<Response<GalleryPhotosResponse>>
+
+    @PUT("/v1/api/favourite")
+    fun favouritePhoto(@Body packet: FavouritePhotoPacket): Single<Response<FavouritePhotoResponse>>
 }

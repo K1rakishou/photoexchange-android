@@ -67,6 +67,21 @@ sealed class ErrorCode(val value: Int) {
         }
 
         sealed class Local(value: Int) : GalleryPhotosErrors(value) {
+            class BadServerResponse(val message: String? = null) : Local(-1000)
+            class Timeout : Local(-1001)
+        }
+    }
+
+    sealed class FavouritePhotoErrors(value: Int) : ErrorCode(value) {
+        sealed class Remote(value: Int) : FavouritePhotoErrors(value) {
+            class UnknownError : Remote(-1)
+            class Ok : Remote(0)
+            class AlreadyFavourited : Remote(1)
+            class BadRequest : Remote(2)
+        }
+
+        sealed class Local(value: Int) : FavouritePhotoErrors(value) {
+            class BadServerResponse(val message: String? = null) : Local(-1000)
             class Timeout : Local(-1001)
         }
     }
@@ -83,8 +98,10 @@ sealed class ErrorCode(val value: Int) {
     }
 
     companion object {
-        inline fun <reified T> fromInt(errorCodeInt: Int?): T {
-            return when (T::class.java) {
+
+        //TODO: don't forget to add errorCodes here
+        fun <T> fromInt(clazz: Class<*>, errorCodeInt: Int?): T {
+            return when (clazz) {
                 UploadPhotoErrors::class.java -> {
                     val errorCode = when (errorCodeInt) {
                         //local errors
@@ -144,7 +161,7 @@ sealed class ErrorCode(val value: Int) {
                     errorCode as T
                 }
 
-                else -> throw IllegalArgumentException("Unknown response class ${T::class.java}")
+                else -> throw IllegalArgumentException("Unknown response class $clazz")
             }
         }
     }

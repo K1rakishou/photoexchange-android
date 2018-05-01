@@ -2,9 +2,7 @@ package com.kirakishou.photoexchange.helper.concurrency.rx.operator
 
 import com.google.gson.Gson
 import com.kirakishou.photoexchange.mvp.model.exception.ApiException
-import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
-import com.kirakishou.photoexchange.mvp.model.net.response.StatusResponse
-import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
+import com.kirakishou.photoexchange.mvp.model.net.response.*
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.SingleObserver
 import io.reactivex.SingleOperator
@@ -58,15 +56,19 @@ class OnApiErrorSingle<T : StatusResponse>(
     }
 
     private fun getErrorCode(errorCodeInt: Int): ErrorCode {
-        return ErrorCode.fromInt(errorCodeInt)
+        return ErrorCode.fromInt(clazz, errorCodeInt)
     }
 
+    //TODO: don't forget to add errorCodes here
     private fun getBadErrorCodeByClass(clazz: Class<*>, message: String): ErrorCode {
-        return when (clazz) {
+        val errorCode = when (clazz) {
             UploadPhotoResponse::class.java -> ErrorCode.UploadPhotoErrors.Local.BadServerResponse(message)
             PhotoAnswerResponse::class.java -> ErrorCode.FindPhotoAnswerErrors.Local.BadServerResponse(message)
-//            MarkPhotoAsReceivedResponse -> ErrorCode.MarkPhotoAsReceivedErrors.Local.BadServerResponse()
+            GalleryPhotosResponse::class.java -> ErrorCode.GalleryPhotosErrors.Local.BadServerResponse(message)
+            FavouritePhotoResponse::class.java -> ErrorCode.FavouritePhotoErrors.Local.BadServerResponse(message)
             else -> throw IllegalArgumentException("Bad class: $clazz")
         }
+
+        return errorCode
     }
 }

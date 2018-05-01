@@ -1,11 +1,13 @@
 package com.kirakishou.photoexchange.helper.api
 
 import com.google.gson.Gson
+import com.kirakishou.photoexchange.helper.api.request.FavouritePhotoRequest
 import com.kirakishou.photoexchange.helper.api.request.GetGalleryPhotosRequest
 import com.kirakishou.photoexchange.helper.api.request.GetPhotoAnswersRequest
 import com.kirakishou.photoexchange.helper.api.request.UploadPhotoRequest
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
+import com.kirakishou.photoexchange.mvp.model.net.response.FavouritePhotoResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
@@ -36,6 +38,11 @@ class ApiClient
 
     fun getGalleryPhotos(lastId: Long, photosPerPage: Int): Single<GalleryPhotosResponse> {
         return GetGalleryPhotosRequest<GalleryPhotosResponse>(lastId, photosPerPage, apiService, schedulerProvider, gson)
+            .execute()
+    }
+
+    fun favouritePhoto(userId: String, photoNames: String): Single<FavouritePhotoResponse> {
+        return FavouritePhotoRequest<FavouritePhotoResponse>(userId, photoNames, apiService, schedulerProvider, gson)
             .execute()
     }
 }
