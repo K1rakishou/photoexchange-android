@@ -51,7 +51,7 @@ class GalleryFragment : BaseFragment() {
     }
 
     override fun onFragmentViewDestroy() {
-
+        adapter.cleanUp()
     }
 
     private fun loadFirstPage() {
@@ -75,7 +75,7 @@ class GalleryFragment : BaseFragment() {
     private fun initRecyclerView() {
         val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), GALLERY_PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = GalleryPhotosAdapter(requireContext(), imageLoader)
+        adapter = GalleryPhotosAdapter(requireContext(), imageLoader, columnsCount)
         adapter.init()
 
         val layoutManager = GridLayoutManager(requireContext(), columnsCount)

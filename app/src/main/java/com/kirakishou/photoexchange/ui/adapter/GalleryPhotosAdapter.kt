@@ -9,13 +9,45 @@ import android.widget.TextView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.schedulers.Schedulers
+import java.util.concurrent.TimeUnit
 
 class GalleryPhotosAdapter(
     private val context: Context,
-    private val imageLoader: ImageLoader
+    private val imageLoader: ImageLoader,
+    private val columnsCount: Int
 ) : BaseAdapter<GalleryPhotosAdapterItem>(context) {
 
+    private val compositeDisposable = CompositeDisposable()
+    private val IMAGES_PER_COLUMN = 5
     private val items = arrayListOf<GalleryPhotosAdapterItem>()
+
+    override fun init() {
+        super.init()
+
+        compositeDisposable += imageLoader.getImageLoadingQueueObservable()
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .buffer(1, TimeUnit.SECONDS, Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { imageInfoList ->
+                for (imageInfo in imageInfoList.takeLast(columnsCount * IMAGES_PER_COLUMN)) {
+                    val view = imageInfo.view.get()
+                        ?: continue
+
+                    imageLoader.loadImageFromNetInto(imageInfo.photoName, imageInfo.photoSize, view)
+                }
+            }
+            .subscribe()
+    }
+
+    override fun cleanUp() {
+        super.cleanUp()
+
+        compositeDisposable.clear()
+    }
 
     fun addAll(photos: List<GalleryPhoto>) {
         items.addAll(photos.map { GalleryPhotosAdapterItem.GalleryPhotoItem(it) })
@@ -40,7 +72,7 @@ class GalleryPhotosAdapter(
                 val item = items[position] as GalleryPhotosAdapterItem.GalleryPhotoItem
 
                 holder.photoIdTextView.text = item.photo.remoteId.toString()
-                imageLoader.loadImageFromNetInto(item.photo.photoName, ImageLoader.PhotoSize.Small, holder.photoView)
+                imageLoader.loadImageFromNetAsync(item.photo.photoName, ImageLoader.PhotoSize.Small, holder.photoView)
             }
             else -> IllegalArgumentException("Unknown viewHolder: ${holder::class.java.simpleName}")
         }

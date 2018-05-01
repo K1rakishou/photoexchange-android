@@ -6,7 +6,10 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.GlideApp
+import io.reactivex.Observable
+import io.reactivex.subjects.PublishSubject
 import java.io.File
+import java.lang.ref.WeakReference
 import javax.inject.Inject
 
 
@@ -18,6 +21,8 @@ class ImageLoader
     private val context: Context
 ) {
     private val basePhotosUrl = "${PhotoExchangeApplication.baseUrl}v1/api/get_photo"
+
+    private val imageLoadingQueue = PublishSubject.create<ImageInfo>()
 
     fun loadImageFromDiskInto(imageFile: File, view: ImageView) {
         GlideApp.with(context)
@@ -36,6 +41,18 @@ class ImageLoader
             .apply(RequestOptions().centerCrop())
             .into(view)
     }
+
+    fun loadImageFromNetAsync(photoName: String, photoSize: PhotoSize, view: ImageView) {
+        imageLoadingQueue.onNext(ImageInfo(photoName, photoSize, WeakReference(view)))
+    }
+
+    fun getImageLoadingQueueObservable(): Observable<ImageInfo> {
+        return imageLoadingQueue
+    }
+
+    data class ImageInfo(val photoName: String,
+                         val photoSize: PhotoSize,
+                         val view: WeakReference<ImageView>)
 
     enum class PhotoSize(val value: String) {
         Big("b"),

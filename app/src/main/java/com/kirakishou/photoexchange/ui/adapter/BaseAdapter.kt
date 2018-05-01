@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.ui.adapter
 
 import android.content.Context
+import android.support.annotation.CallSuper
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
@@ -17,15 +18,15 @@ abstract class BaseAdapter<T : BaseAdapterItem>(
     private var baseAdapterInfo = mutableListOf<BaseAdapterInfo>()
     private var isInited = false
 
-    fun init() {
+    @CallSuper
+    open fun init() {
         baseAdapterInfo = getBaseAdapterInfo()
 
         isInited = true
     }
 
-    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
-        super.onDetachedFromRecyclerView(recyclerView)
-
+    @CallSuper
+    open fun cleanUp() {
         baseAdapterInfo.clear()
     }
 
