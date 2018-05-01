@@ -1,14 +1,10 @@
 package com.kirakishou.photoexchange.helper.api
 
 import com.google.gson.Gson
-import com.kirakishou.photoexchange.helper.api.request.GetGalleryPhotosRequest
-import com.kirakishou.photoexchange.helper.api.request.GetPhotoAnswersRequest
-import com.kirakishou.photoexchange.helper.api.request.UploadPhotoRequest
+import com.kirakishou.photoexchange.helper.api.request.*
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
-import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
-import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
-import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
+import com.kirakishou.photoexchange.mvp.model.net.response.*
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import io.reactivex.Single
 import javax.inject.Inject
@@ -34,8 +30,18 @@ class ApiClient
             .execute()
     }
 
-    fun getGalleryPhotos(lastId: Long): Single<GalleryPhotosResponse> {
-        return GetGalleryPhotosRequest<GalleryPhotosResponse>(lastId, apiService, schedulerProvider, gson)
+    fun getGalleryPhotos(lastId: Long, photosPerPage: Int): Single<GalleryPhotosResponse> {
+        return GetGalleryPhotosRequest<GalleryPhotosResponse>(lastId, photosPerPage, apiService, schedulerProvider, gson)
+            .execute()
+    }
+
+    fun favouritePhoto(userId: String, photoName: String): Single<FavouritePhotoResponse> {
+        return FavouritePhotoRequest<FavouritePhotoResponse>(userId, photoName, apiService, schedulerProvider, gson)
+            .execute()
+    }
+
+    fun reportPhoto(userId: String, photoName: String): Single<ReportPhotoResponse> {
+        return ReportPhotoRequest<ReportPhotoResponse>(userId, photoName, apiService, schedulerProvider, gson)
             .execute()
     }
 }

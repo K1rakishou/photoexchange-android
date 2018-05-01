@@ -8,6 +8,7 @@ import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerPro
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.exception.ApiException
 import com.kirakishou.photoexchange.mvp.model.net.packet.SendPhotoPacket
+import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
@@ -50,7 +51,13 @@ class UploadPhotoRequest<T>(
             .flatMap { body ->
                 return@flatMap apiService.uploadPhoto(body.part(0), body.part(1))
                     .lift(OnApiErrorSingle<UploadPhotoResponse>(gson, UploadPhotoResponse::class.java))
-                    .map { UploadPhotoResponse.success(it.photoName) }
+                    .map { response ->
+                        if (response.serverErrorCode!! == 0) {
+                            return@map UploadPhotoResponse.success(response.photoName)
+                        } else {
+                            return@map UploadPhotoResponse.error(ErrorCode.fromInt(ErrorCode.UploadPhotoErrors::class.java, response.serverErrorCode))
+                        }
+                    }
                     .onErrorReturn(this::extractError) as Single<T>
             }
     }

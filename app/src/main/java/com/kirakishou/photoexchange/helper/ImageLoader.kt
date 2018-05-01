@@ -6,7 +6,10 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.GlideApp
+import io.reactivex.Observable
+import io.reactivex.subjects.PublishSubject
 import java.io.File
+import java.lang.ref.WeakReference
 import javax.inject.Inject
 
 

@@ -5,43 +5,42 @@ import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvp.model.exception.ApiException
-import com.kirakishou.photoexchange.mvp.model.net.response.FavouritePhotoResponse
-import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
+import com.kirakishou.photoexchange.mvp.model.net.packet.ReportPhotoPacket
+import com.kirakishou.photoexchange.mvp.model.net.response.ReportPhotoResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
 import java.net.SocketTimeoutException
 import java.util.concurrent.TimeoutException
 
-class GetGalleryPhotosRequest<T>(
-    private val lastId: Long,
-    private val photosPerPage: Int,
+class ReportPhotoRequest<T>(
+    private val userId: String,
+    private val photoName: String,
     private val apiService: ApiService,
     private val schedulerProvider: SchedulerProvider,
     private val gson: Gson
 ) : AbstractRequest<T>() {
 
-    @Suppress("UNCHECKED_CAST")
     override fun execute(): Single<T> {
-        return apiService.getGalleryPhotos(lastId, photosPerPage)
+        return apiService.reportPhoto(ReportPhotoPacket(userId, photoName))
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
-            .lift(OnApiErrorSingle<GalleryPhotosResponse>(gson, GalleryPhotosResponse::class.java))
+            .lift(OnApiErrorSingle<ReportPhotoResponse>(gson, ReportPhotoResponse::class.java))
             .map { response ->
                 if (response.serverErrorCode!! == 0) {
-                    return@map GalleryPhotosResponse.success(response.galleryPhotos)
+                    return@map ReportPhotoResponse.success(response.isReported)
                 } else {
-                    return@map GalleryPhotosResponse.error(ErrorCode.fromInt(ErrorCode.GalleryPhotosErrors::class.java, response.serverErrorCode))
+                    return@map ReportPhotoResponse.error(ErrorCode.fromInt(ErrorCode.ReportPhotoErrors::class.java, response.serverErrorCode))
                 }
             }
             .onErrorReturn(this::extractError) as Single<T>
     }
 
-    private fun extractError(error: Throwable): GalleryPhotosResponse {
+    private fun extractError(error: Throwable): ReportPhotoResponse {
         return when (error) {
-            is ApiException -> GalleryPhotosResponse.error(error.errorCode as ErrorCode.GalleryPhotosErrors)
+            is ApiException -> ReportPhotoResponse.error(error.errorCode as ErrorCode.ReportPhotoErrors)
             is SocketTimeoutException,
-            is TimeoutException -> GalleryPhotosResponse.error(ErrorCode.GalleryPhotosErrors.Local.Timeout())
-            else -> GalleryPhotosResponse.error(ErrorCode.GalleryPhotosErrors.Remote.UnknownError())
+            is TimeoutException -> ReportPhotoResponse.error(ErrorCode.ReportPhotoErrors.Local.Timeout())
+            else -> ReportPhotoResponse.error(ErrorCode.ReportPhotoErrors.Remote.UnknownError())
         }
     }
 }

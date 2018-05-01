@@ -5,43 +5,42 @@ import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvp.model.exception.ApiException
+import com.kirakishou.photoexchange.mvp.model.net.packet.FavouritePhotoPacket
 import com.kirakishou.photoexchange.mvp.model.net.response.FavouritePhotoResponse
-import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
 import java.net.SocketTimeoutException
 import java.util.concurrent.TimeoutException
 
-class GetGalleryPhotosRequest<T>(
-    private val lastId: Long,
-    private val photosPerPage: Int,
+class FavouritePhotoRequest<T>(
+    private val userId: String,
+    private val photoName: String,
     private val apiService: ApiService,
     private val schedulerProvider: SchedulerProvider,
     private val gson: Gson
 ) : AbstractRequest<T>() {
 
-    @Suppress("UNCHECKED_CAST")
     override fun execute(): Single<T> {
-        return apiService.getGalleryPhotos(lastId, photosPerPage)
+        return apiService.favouritePhoto(FavouritePhotoPacket(userId, photoName))
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
-            .lift(OnApiErrorSingle<GalleryPhotosResponse>(gson, GalleryPhotosResponse::class.java))
+            .lift(OnApiErrorSingle<FavouritePhotoResponse>(gson, FavouritePhotoResponse::class.java))
             .map { response ->
                 if (response.serverErrorCode!! == 0) {
-                    return@map GalleryPhotosResponse.success(response.galleryPhotos)
+                    return@map FavouritePhotoResponse.success(response.isFavourited, response.favouritesCount)
                 } else {
-                    return@map GalleryPhotosResponse.error(ErrorCode.fromInt(ErrorCode.GalleryPhotosErrors::class.java, response.serverErrorCode))
+                    return@map FavouritePhotoResponse.error(ErrorCode.fromInt(ErrorCode.FavouritePhotoErrors::class.java, response.serverErrorCode))
                 }
             }
             .onErrorReturn(this::extractError) as Single<T>
     }
 
-    private fun extractError(error: Throwable): GalleryPhotosResponse {
+    private fun extractError(error: Throwable): FavouritePhotoResponse {
         return when (error) {
-            is ApiException -> GalleryPhotosResponse.error(error.errorCode as ErrorCode.GalleryPhotosErrors)
+            is ApiException -> FavouritePhotoResponse.error(error.errorCode as ErrorCode.FavouritePhotoErrors)
             is SocketTimeoutException,
-            is TimeoutException -> GalleryPhotosResponse.error(ErrorCode.GalleryPhotosErrors.Local.Timeout())
-            else -> GalleryPhotosResponse.error(ErrorCode.GalleryPhotosErrors.Remote.UnknownError())
+            is TimeoutException -> FavouritePhotoResponse.error(ErrorCode.FavouritePhotoErrors.Local.Timeout())
+            else -> FavouritePhotoResponse.error(ErrorCode.FavouritePhotoErrors.Remote.UnknownError())
         }
     }
 }

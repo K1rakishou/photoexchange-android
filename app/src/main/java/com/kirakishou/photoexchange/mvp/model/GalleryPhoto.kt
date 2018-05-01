@@ -1,9 +1,10 @@
 package com.kirakishou.photoexchange.mvp.model
 
 class GalleryPhoto(
-    val id: Long,
+    val remoteId: Long,
     val photoName: String,
     val lon: Double,
     val lat: Double,
-    val uploadedOn: Long
+    val uploadedOn: Long,
+    var favouritesCount: Long
 )

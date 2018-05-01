@@ -11,7 +11,6 @@ import android.support.design.widget.Snackbar
 import android.support.design.widget.TabLayout
 import android.support.v4.app.ActivityCompat
 import android.support.v4.view.ViewPager
-import android.support.v4.widget.SwipeRefreshLayout
 import android.view.MenuItem
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -432,38 +431,45 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     private fun showUploadPhotoErrorMessage(errorCode: ErrorCode) {
         val errorMessage = when (errorCode) {
             is ErrorCode.UploadPhotoErrors.Remote.Ok,
-            is ErrorCode.FindPhotoAnswerErrors.Remote.Ok,
-            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.Ok,
-            is ErrorCode.GalleryPhotosErrors.Remote.Ok -> null
+            is ErrorCode.GetPhotoAnswersErrors.Remote.Ok,
+            is ErrorCode.GalleryPhotosErrors.Remote.Ok,
+            is ErrorCode.FavouritePhotoErrors.Remote.Ok,
+            is ErrorCode.ReportPhotoErrors.Remote.Ok -> null
 
             is ErrorCode.UploadPhotoErrors.Remote.UnknownError,
-            is ErrorCode.FindPhotoAnswerErrors.Remote.UnknownError,
-            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.UnknownError,
-            is ErrorCode.GalleryPhotosErrors.Remote.UnknownError -> "Unknown error"
+            is ErrorCode.GetPhotoAnswersErrors.Remote.UnknownError,
+            is ErrorCode.GalleryPhotosErrors.Remote.UnknownError,
+            is ErrorCode.FavouritePhotoErrors.Remote.UnknownError,
+            is ErrorCode.ReportPhotoErrors.Remote.UnknownError -> "Unknown error"
 
             is ErrorCode.UploadPhotoErrors.Remote.BadRequest,
-            is ErrorCode.FindPhotoAnswerErrors.Remote.BadRequest,
-            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.BadRequest,
-            is ErrorCode.GalleryPhotosErrors.Remote.BadRequest -> "Bad request error"
+            is ErrorCode.GetPhotoAnswersErrors.Remote.BadRequest,
+            is ErrorCode.GalleryPhotosErrors.Remote.BadRequest,
+            is ErrorCode.FavouritePhotoErrors.Remote.BadRequest,
+            is ErrorCode.ReportPhotoErrors.Remote.BadRequest -> "Bad request error"
 
             is ErrorCode.UploadPhotoErrors.Local.Timeout,
-            is ErrorCode.FindPhotoAnswerErrors.Local.Timeout,
-            is ErrorCode.MarkPhotoAsReceivedErrors.Local.Timeout,
-            is ErrorCode.GalleryPhotosErrors.Local.Timeout -> "Operation timeout error"
+            is ErrorCode.GetPhotoAnswersErrors.Local.Timeout,
+            is ErrorCode.GalleryPhotosErrors.Local.Timeout,
+            is ErrorCode.FavouritePhotoErrors.Local.Timeout,
+            is ErrorCode.ReportPhotoErrors.Local.Timeout -> "Operation timeout error"
 
             is ErrorCode.UploadPhotoErrors.Remote.DatabaseError,
-            is ErrorCode.FindPhotoAnswerErrors.Remote.DatabaseError -> "Server database error"
+            is ErrorCode.GetPhotoAnswersErrors.Remote.DatabaseError -> "Server database error"
 
             is ErrorCode.UploadPhotoErrors.Local.BadServerResponse,
-            is ErrorCode.FindPhotoAnswerErrors.Local.BadServerResponse,
-            is ErrorCode.MarkPhotoAsReceivedErrors.Local.BadServerResponse -> "Bad server response error"
+            is ErrorCode.GetPhotoAnswersErrors.Local.BadServerResponse,
+            is ErrorCode.GalleryPhotosErrors.Local.BadServerResponse,
+            is ErrorCode.ReportPhotoErrors.Local.BadServerResponse,
+            is ErrorCode.FavouritePhotoErrors.Local.BadServerResponse -> "Bad server response error"
 
             is ErrorCode.UploadPhotoErrors.Local.NoPhotoFileOnDisk -> "No photo file on disk error"
-            is ErrorCode.MarkPhotoAsReceivedErrors.Remote.BadPhotoId -> "Bad photo id error"
-            is ErrorCode.FindPhotoAnswerErrors.Remote.NoPhotosInRequest -> "No photos were selected error"
-            is ErrorCode.FindPhotoAnswerErrors.Remote.TooManyPhotosRequested -> "Too many photos requested error"
-            is ErrorCode.FindPhotoAnswerErrors.Remote.NoPhotosToSendBack -> "No photos to send back"
-            is ErrorCode.FindPhotoAnswerErrors.Remote.NotEnoughPhotosUploaded -> "Upload more photos first"
+            is ErrorCode.GetPhotoAnswersErrors.Remote.NoPhotosInRequest -> "No photos were selected error"
+            is ErrorCode.GetPhotoAnswersErrors.Remote.TooManyPhotosRequested -> "Too many photos requested error"
+            is ErrorCode.GetPhotoAnswersErrors.Remote.NoPhotosToSendBack -> "No photos to send back"
+            is ErrorCode.GetPhotoAnswersErrors.Remote.NotEnoughPhotosUploaded -> "Upload more photos first"
+            is ErrorCode.FavouritePhotoErrors.Remote.AlreadyFavourited -> "You have already added this photo to favourites"
+            is ErrorCode.ReportPhotoErrors.Remote.AlreadyReported -> "You have already reported this photo"
 
             is ErrorCode.TakePhotoErrors.UnknownError,
             is ErrorCode.TakePhotoErrors.Ok,
