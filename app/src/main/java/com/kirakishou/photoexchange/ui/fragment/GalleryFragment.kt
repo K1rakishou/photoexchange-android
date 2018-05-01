@@ -94,6 +94,10 @@ class GalleryFragment : BaseFragment() {
         requireActivity().runOnUiThread {
             endlessScrollListener.pageLoaded()
 
+            if (photos.isNotEmpty()) {
+                lastId = photos.last().remoteId
+            }
+
             if (photos.size < photosPerPage) {
                 endlessScrollListener.reachedEnd()
             }
