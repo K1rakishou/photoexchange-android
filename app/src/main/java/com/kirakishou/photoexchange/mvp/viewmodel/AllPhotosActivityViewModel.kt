@@ -7,7 +7,9 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import com.kirakishou.photoexchange.helper.extension.minutes
 import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.helper.util.TimeUtils
+import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
+import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
 import com.kirakishou.photoexchange.mvp.model.*
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
@@ -32,6 +34,8 @@ class AllPhotosActivityViewModel(
     private val settingsRepository: SettingsRepository,
     private val photoAnswerRepository: PhotoAnswerRepository,
     private val getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
+    private val favouritePhotoUseCase: FavouritePhotoUseCase,
+    private val reportPhotoUseCase: ReportPhotoUseCase,
     private val schedulerProvider: SchedulerProvider
 ) : BaseViewModel<AllPhotosActivityView>() {
 
@@ -65,6 +69,18 @@ class AllPhotosActivityViewModel(
         Timber.tag(tag).d("onCleared()")
 
         super.onCleared()
+    }
+
+    fun reportPhoto(photoName: String): Observable<Boolean> {
+        return Observable.fromCallable { settingsRepository.getUserId() }
+            .concatMap { userId -> reportPhotoUseCase.reportPhoto(userId, photoName) }
+            .subscribeOn(schedulerProvider.IO())
+    }
+
+    fun favouritePhoto(photoName: String): Observable<Boolean> {
+        return Observable.fromCallable { settingsRepository.getUserId() }
+            .concatMap { userId -> favouritePhotoUseCase.favouritePhoto(userId, photoName) }
+            .subscribeOn(schedulerProvider.IO())
     }
 
     fun loadNextPageOfGalleryPhotos(lastId: Long, photosPerPage: Int): Observable<List<GalleryPhoto>> {
