@@ -70,7 +70,7 @@ class GalleryFragment : BaseFragment() {
         compositeDisposable += loadMoreSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .doOnNext { addProgressFooter() }
-            .flatMap { viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage) }
+            .concatMap { viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage) }
             .delay(2, TimeUnit.SECONDS, Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { removeProgressFooter() }

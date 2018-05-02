@@ -226,21 +226,29 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         initTabs()
     }
 
+    //kinda hacky, but fixes a memory leak when activity getting destroyed while location is being updated
     override fun getCurrentLocation(): Single<LonLat> {
-        val resultSingle = Single.fromCallable {
-            if (!locationManager.isGpsEnabled()) {
-                return@fromCallable LonLat.empty()
-            }
+        return Single.create { emitter ->
+            compositeDisposable += Single.fromCallable { locationManager.isGpsEnabled() }
+                .flatMap { isGpsEnabled ->
+                    if (!isGpsEnabled) {
+                        return@flatMap Single.just(LonLat.empty())
+                    }
 
-            return@fromCallable RxLocationManager.start(locationManager)
-                .observeOn(Schedulers.io())
-                .timeout(GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-                .onErrorReturnItem(LonLat.empty())
-                .blockingFirst()
+                    return@flatMap RxLocationManager.start(locationManager)
+                        .observeOn(Schedulers.io())
+                        .single(LonLat.empty())
+                        .timeout(GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                }
+                .delay(GPS_DELAY_MS, TimeUnit.MILLISECONDS)
+                .doOnSuccess { location ->
+                    emitter.onSuccess(location)
+                }
+                .doOnError { error ->
+                    emitter.onError(error)
+                }
+                .subscribe()
         }
-
-        return resultSingle
-            .delay(GPS_DELAY_MS, TimeUnit.MILLISECONDS)
     }
 
     private fun initTabs() {
@@ -470,6 +478,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             is ErrorCode.GetPhotoAnswersErrors.Remote.NotEnoughPhotosUploaded -> "Upload more photos first"
             is ErrorCode.FavouritePhotoErrors.Remote.AlreadyFavourited -> "You have already added this photo to favourites"
             is ErrorCode.ReportPhotoErrors.Remote.AlreadyReported -> "You have already reported this photo"
+            is ErrorCode.UploadPhotoErrors.Local.Interrupted -> "The process was interrupted by user"
 
             is ErrorCode.TakePhotoErrors.UnknownError,
             is ErrorCode.TakePhotoErrors.Ok,

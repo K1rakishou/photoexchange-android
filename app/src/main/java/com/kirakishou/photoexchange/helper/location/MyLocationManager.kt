@@ -12,13 +12,15 @@ import android.os.Looper
 import android.support.v4.app.ActivityCompat
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import timber.log.Timber
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Created by kirakishou on 12/24/2017.
  */
 class MyLocationManager(
         val context: Context
-) {
+) : AtomicBoolean(false) {
+    private val tag = "MyLocationManager"
     private var listener: OnLocationChanged? = null
 
     private val locationManager: LocationManager by lazy {
@@ -36,7 +38,7 @@ class MyLocationManager(
         }
 
         override fun onLocationChanged(location: Location) {
-            Timber.d("MyLocationManager: New location retrieved")
+            Timber.tag(tag).d("MyLocationManager: New location retrieved")
             listener!!.onNewLocation(getTruncatedLonLat(location))
         }
     }
@@ -46,7 +48,12 @@ class MyLocationManager(
 
     @SuppressLint("MissingPermission")
     fun start(listener: OnLocationChanged) {
-        Timber.d("MyLocationManager: start")
+        if (!compareAndSet(false, true)) {
+            Timber.tag(tag).w("MyLocationManager: already started")
+            return
+        }
+
+        Timber.tag(tag).d("MyLocationManager: start")
 
         checkNotNull(listener)
         this.listener = listener
@@ -57,7 +64,12 @@ class MyLocationManager(
 
     @SuppressLint("MissingPermission")
     fun stop() {
-        Timber.d("MyLocationManager: stop")
+        if (!compareAndSet(true, false)) {
+            Timber.tag(tag).w("MyLocationManager: already stopped")
+            return
+        }
+
+        Timber.tag(tag).d("MyLocationManager: stop")
 
         checkPermissions()
         locationManager.removeUpdates(locationListener)

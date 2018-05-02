@@ -14,6 +14,7 @@ import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
 import okhttp3.MultipartBody
+import timber.log.Timber
 import java.io.File
 import java.net.SocketTimeoutException
 import java.util.concurrent.TimeoutException
@@ -31,6 +32,8 @@ class UploadPhotoRequest<T>(
     private val schedulerProvider: SchedulerProvider,
     private val gson: Gson
 ) : AbstractRequest<T>() {
+
+    private val tag = "UploadPhotoRequest"
 
     @Suppress("UNCHECKED_CAST")
     override fun execute(): Single<T> {
@@ -50,6 +53,8 @@ class UploadPhotoRequest<T>(
             .observeOn(schedulerProvider.IO())
             .flatMap { body ->
                 return@flatMap apiService.uploadPhoto(body.part(0), body.part(1))
+                    .doOnSubscribe { Timber.tag(tag).d("calling apiService.uploadPhoto") }
+                    .doOnSuccess { Timber.tag(tag).d("after apiService.uploadPhoto") }
                     .lift(OnApiErrorSingle<UploadPhotoResponse>(gson, UploadPhotoResponse::class.java))
                     .map { response ->
                         if (response.serverErrorCode!! == 0) {
@@ -58,6 +63,7 @@ class UploadPhotoRequest<T>(
                             return@map UploadPhotoResponse.error(ErrorCode.fromInt(ErrorCode.UploadPhotoErrors::class.java, response.serverErrorCode))
                         }
                     }
+                    .doOnSuccess { Timber.tag(tag).d("after map") }
                     .onErrorReturn(this::extractError) as Single<T>
             }
     }

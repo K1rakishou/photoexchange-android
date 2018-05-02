@@ -8,6 +8,8 @@ import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import timber.log.Timber
 import java.io.File
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /**
  * Created by kirakishou on 3/3/2018.
@@ -19,6 +21,7 @@ open class PhotosRepository(
     private val tag = "PhotosRepository"
     private val myPhotoDao = database.myPhotoDao()
     private val tempFileDao = database.tempFileDao()
+    private val lock = ReentrantLock()
 
     init {
         createTempFilesDirIfNotExists()
@@ -109,23 +112,38 @@ open class PhotosRepository(
         return myPhotoDao.countAllByStates(states)
     }
 
-    fun findPhotoByStateAndUpdateState(oldState: PhotoState, newState: PhotoState): MyPhoto? {
-        var photo: MyPhotoEntity? = null
+    fun findPhotosByStateAndUpdateState(oldState: PhotoState, newState: PhotoState): List<MyPhoto> {
+        return lock.withLock {
+            var photos = mutableListOf<MyPhotoEntity>()
 
-        database.transactional {
-            photo = myPhotoDao.findOnePhotoWithState(oldState)
-            if (photo == null || photo?.id == null) {
-                return@transactional false
+            database.transactional {
+                photos = myPhotoDao.findOnePhotoWithState(oldState)
+                if (photos.isEmpty()) {
+                    return@transactional false
+                }
+
+                for (photo in photos) {
+                    if (myPhotoDao.updateSetNewPhotoState(photo.id!!, newState) != 1) {
+                        return@transactional false
+                    }
+                }
+
+                return@transactional true
             }
 
-            return@transactional myPhotoDao.updateSetNewPhotoState(photo!!.id!!, newState) == 1
-        }
-
-        return photo?.let { myPhoto ->
-            myPhoto.id?.let { photoId ->
-                val tempFileEntity = findTempFileById(photoId)
-                return@let MyPhotoEntityMapper.toMyPhoto(myPhoto, tempFileEntity)
+            for (photo in photos) {
+                photo.id?.let { photoId ->
+                    val tempFileEntity = findTempFileById(photoId)
+                    return@let MyPhotoEntityMapper.toMyPhoto(photo, tempFileEntity)
+                }
             }
+            return@withLock photos.asSequence()
+                .filter { it.id != null }
+                .map { photo ->
+                    val tempFileEntity = findTempFileById(photo.id!!)
+                    MyPhotoEntityMapper.toMyPhoto(photo, tempFileEntity)
+                }
+                .toList()
         }
     }
 

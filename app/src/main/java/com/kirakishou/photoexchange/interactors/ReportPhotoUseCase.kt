@@ -10,14 +10,15 @@ class ReportPhotoUseCase(
     private val tag = "ReportPhotoUseCase"
 
     fun reportPhoto(userId: String, photoName: String): Observable<Boolean> {
-        return Observable.fromCallable {
-            val response = apiClient.reportPhoto(userId, photoName).blockingGet()
-            val errorCode = response.errorCode as ErrorCode.ReportPhotoErrors
+        return apiClient.reportPhoto(userId, photoName)
+            .map { response ->
+                val errorCode = response.errorCode as ErrorCode.ReportPhotoErrors
 
-            return@fromCallable when (errorCode) {
-                is ErrorCode.ReportPhotoErrors.Remote.Ok -> response.isReported
-                else -> false
+                return@map when (errorCode) {
+                    is ErrorCode.ReportPhotoErrors.Remote.Ok -> response.isReported
+                    else -> false
+                }
             }
-        }
+            .toObservable()
     }
 }

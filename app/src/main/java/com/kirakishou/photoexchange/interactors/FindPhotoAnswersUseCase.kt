@@ -13,6 +13,7 @@ import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.service.FindPhotoAnswerServiceCallbacks
 import io.reactivex.Maybe
+import io.reactivex.Single
 import timber.log.Timber
 import java.lang.ref.WeakReference
 
@@ -27,12 +28,9 @@ class FindPhotoAnswersUseCase(
     private val tag = "FindPhotoAnswersUseCase"
 
     fun getPhotoAnswers(data: FindPhotosData, callbacks: WeakReference<FindPhotoAnswerServiceCallbacks>): Maybe<Unit> {
-        return Maybe.fromCallable {
-            try {
-                val userId = data.userId!!
-                val photoNames = data.photoNames
-
-                val response = apiClient.getPhotoAnswers(photoNames, userId).blockingGet()
+        return Single.just(data)
+            .flatMap { _data -> apiClient.getPhotoAnswers(_data.photoNames, _data.userId!!) }
+            .map { response ->
                 val errorCode = response.errorCode as ErrorCode.GetPhotoAnswersErrors
 
                 when (errorCode) {
@@ -40,11 +38,13 @@ class FindPhotoAnswersUseCase(
                     else -> callbacks.get()?.onFailed(errorCode)
                 }
 
-            } catch (error: Exception) {
+                Unit
+            }
+            .doOnError { error ->
                 Timber.e(error)
                 callbacks.get()?.onError(error)
             }
-        }
+            .toMaybe()
     }
 
     private fun handleSuccessResult(response: PhotoAnswerResponse, callbacks: WeakReference<FindPhotoAnswerServiceCallbacks>) {

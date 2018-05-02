@@ -12,14 +12,15 @@ class GetGalleryPhotosUseCase(
     private val tag = "GetGalleryPhotosUseCase"
 
     fun loadNextPageOfGalleryPhotos(lastId: Long, photosPerPage: Int): Observable<List<GalleryPhoto>> {
-        return Observable.fromCallable {
-            val response = apiClient.getGalleryPhotos(lastId, photosPerPage).blockingGet()
-            val errorCode = response.errorCode
+        return apiClient.getGalleryPhotos(lastId, photosPerPage)
+            .map { response ->
+                val errorCode = response.errorCode
 
-            return@fromCallable when (errorCode) {
-                is ErrorCode.GalleryPhotosErrors.Remote.Ok -> GalleryPhotoResponseMapper.toGalleryPhoto(response.galleryPhotos)
-                else -> emptyList()
+                return@map when (errorCode) {
+                    is ErrorCode.GalleryPhotosErrors.Remote.Ok -> GalleryPhotoResponseMapper.toGalleryPhoto(response.galleryPhotos)
+                    else -> emptyList()
+                }
             }
-        }
+            .toObservable()
     }
 }
