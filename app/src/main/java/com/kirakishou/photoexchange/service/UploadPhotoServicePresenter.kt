@@ -9,6 +9,7 @@ import com.kirakishou.photoexchange.mvp.model.UploadPhotoData
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
+import timber.log.Timber
 import java.lang.ref.WeakReference
 
 /**
@@ -29,12 +30,16 @@ class UploadPhotoServicePresenter(
         compositeDisposable += uploadPhotosSubject
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
+            .doOnNext { Timber.tag(tag).d("before firstOrError") }
             .firstOrError()
+            .doOnSuccess { Timber.tag(tag).d("after firstOrError") }
             .map {
                 val userId = settingsRepository.getUserId()
                     ?: return@map UploadPhotoData.empty()
                 val location = settingsRepository.getLastLocation()
                     ?: return@map UploadPhotoData.empty()
+
+                Timber.tag(tag).d("userId = $userId, location = $location")
 
                 return@map UploadPhotoData(false, userId, location)
             }
@@ -65,6 +70,7 @@ class UploadPhotoServicePresenter(
     }
 
     fun uploadPhotos() {
+        Timber.tag(tag).d("uploadPhotos called")
         uploadPhotosSubject.onNext(Unit)
     }
 }

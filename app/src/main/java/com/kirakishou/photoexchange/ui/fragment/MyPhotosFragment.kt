@@ -160,7 +160,6 @@ class MyPhotosFragment : BaseFragment() {
                     adapter.addMyPhoto(event.photo.also { it.photoState = PhotoState.PHOTO_UPLOADING })
                 }
                 is PhotoUploadEvent.OnProgress -> {
-                    Timber.e("OnProgress, photoId = ${event.photo.id}")
                     adapter.addMyPhoto(event.photo)
                     adapter.updatePhotoProgress(event.photo.id, event.progress)
                 }
@@ -170,6 +169,7 @@ class MyPhotosFragment : BaseFragment() {
                     adapter.addMyPhoto(event.photo.also { it.photoState = PhotoState.PHOTO_UPLOADED })
                 }
                 is PhotoUploadEvent.OnFailedToUpload -> {
+                    Timber.e("OnFailedToUpload, photoId = ${event.photo.id}")
                     adapter.removePhotoById(event.photo.id)
                     adapter.addMyPhoto(event.photo.also { it.photoState = PhotoState.FAILED_TO_UPLOAD })
                 }
@@ -177,9 +177,10 @@ class MyPhotosFragment : BaseFragment() {
                     adapter.updatePhotoState(event.photoId, PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED)
                 }
                 is PhotoUploadEvent.OnEnd -> {
+                    //TODO: start update adapter photos routine
                 }
                 is PhotoUploadEvent.OnUnknownError -> {
-                    adapter.clear()
+
                 }
                 else -> throw IllegalArgumentException("Unknown PhotoUploadEvent $event")
             }

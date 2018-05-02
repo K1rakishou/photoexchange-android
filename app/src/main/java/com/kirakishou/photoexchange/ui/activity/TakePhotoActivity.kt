@@ -11,7 +11,6 @@ import android.support.v4.app.ActivityCompat
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AccelerateInterpolator
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.core.animation.addListener
@@ -21,6 +20,7 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.TakePhotoActivityModule
 import com.kirakishou.photoexchange.helper.CameraProvider
+import com.kirakishou.photoexchange.helper.Vibrator
 import com.kirakishou.photoexchange.helper.extension.debounceClicks
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
@@ -61,6 +61,9 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
     @Inject
     lateinit var cameraProvider: CameraProvider
 
+    @Inject
+    lateinit var vibrator: Vibrator
+
     private val tag = "TakePhotoActivity"
     private var translationDelta: Float = 0f
 
@@ -70,38 +73,9 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
         initViews()
     }
 
-    private fun initViews() {
-        translationDelta = AndroidUtils.dpToPx(96f, this)
-
-        takePhotoButton.translationY = takePhotoButton.translationY + translationDelta
-        showAllPhotosButton.translationX = showAllPhotosButton.translationX + translationDelta
-    }
-
-    override fun onInitRx() {
-        compositeDisposable += RxView.clicks(takePhotoButton)
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .debounceClicks()
-            .observeOn(Schedulers.io())
-            .concatMap { viewModel.takePhoto() }
-            .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { errorCode ->
-                if (errorCode is ErrorCode.TakePhotoErrors.Ok) {
-                    onPhotoTaken(errorCode.photo)
-                } else {
-                    onCouldNotTakePhoto(errorCode)
-                }
-            }
-            .subscribe()
-
-        compositeDisposable += RxView.clicks(showAllPhotosButton)
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .debounceClicks()
-            .doOnNext { runActivity(AllPhotosActivity::class.java) }
-            .subscribe()
-    }
-
     override fun onActivityStart() {
         viewModel.setView(this)
+        initRx()
     }
 
     override fun onResume() {
@@ -117,6 +91,37 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
 
     override fun onActivityStop() {
         viewModel.clearView()
+    }
+
+    private fun initViews() {
+        translationDelta = AndroidUtils.dpToPx(96f, this)
+
+        takePhotoButton.translationY = takePhotoButton.translationY + translationDelta
+        showAllPhotosButton.translationX = showAllPhotosButton.translationX + translationDelta
+    }
+
+    private fun initRx() {
+        compositeDisposable += RxView.clicks(takePhotoButton)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .debounceClicks()
+            .doOnNext { vibrator.vibrate(this, 25) }
+            .observeOn(Schedulers.io())
+            .concatMap { viewModel.takePhoto().toObservable() }
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { errorCode ->
+                if (errorCode is ErrorCode.TakePhotoErrors.Ok) {
+                    onPhotoTaken(errorCode.photo)
+                } else {
+                    onCouldNotTakePhoto(errorCode)
+                }
+            }
+            .subscribe()
+
+        compositeDisposable += RxView.clicks(showAllPhotosButton)
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .debounceClicks()
+            .doOnNext { runActivity(AllPhotosActivity::class.java) }
+            .subscribe()
     }
 
     private fun checkPermissions() {
@@ -214,6 +219,10 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
             set.playTogether(animation1, animation2)
             set.setStartDelay(50)
             set.setDuration(200)
+            set.addListener(onEnd = {
+                takePhotoButton.isClickable = true
+                showAllPhotosButton.isClickable = true
+            })
             set.start()
         }
     }
@@ -230,7 +239,10 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
 
             set.playTogether(animation1, animation2)
             set.setDuration(250)
-            set.addListener(onEnd = {
+            set.addListener(onStart = {
+                takePhotoButton.isClickable = false
+                showAllPhotosButton.isClickable = false
+            }, onEnd = {
                 emitter.onComplete()
             })
             set.start()

@@ -8,7 +8,7 @@ import io.fotoapparat.selector.highestResolution
 import io.fotoapparat.selector.manualJpegQuality
 import io.fotoapparat.view.CameraView
 import io.reactivex.Single
-import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
@@ -91,8 +91,8 @@ open class CameraProvider(
         }
 
         return single
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeOn(Schedulers.io())
+            .observeOn(Schedulers.io())
     }
 
     class CameraIsNotStartedException(msg: String) : Exception(msg)

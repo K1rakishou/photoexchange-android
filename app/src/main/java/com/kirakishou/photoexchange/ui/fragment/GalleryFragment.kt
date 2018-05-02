@@ -37,7 +37,7 @@ class GalleryFragment : BaseFragment() {
     lateinit var viewModel: AllPhotosActivityViewModel
 
     private val _tag = "GalleryFragment"
-    private val GALLERY_PHOTO_ADAPTER_VIEW_WIDTH = 144
+    private val GALLERY_PHOTO_ADAPTER_VIEW_WIDTH = 288
     private val loadMoreSubject = PublishSubject.create<Int>()
     private val adapterButtonClickSubject = PublishSubject.create<GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent>()
     private var photosPerPage = 0
@@ -70,7 +70,7 @@ class GalleryFragment : BaseFragment() {
         compositeDisposable += loadMoreSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .doOnNext { addProgressFooter() }
-            .flatMap { viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage) }
+            .concatMap { viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage) }
             .delay(2, TimeUnit.SECONDS, Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { removeProgressFooter() }

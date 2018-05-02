@@ -32,12 +32,12 @@ abstract class MyDatabase : RoomDatabase() {
         this.beginTransaction()
 
         try {
-            if (func()) {
+            val result = func()
+            if (result) {
                 this.setTransactionSuccessful()
-                return true
             }
 
-            return false
+            return result
         } finally {
             this.endTransaction()
         }

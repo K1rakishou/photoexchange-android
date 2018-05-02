@@ -12,6 +12,7 @@ class UploadPhotoServiceConnection(
     val activity: AllPhotosActivity
 ) : AtomicBoolean(false), ServiceConnection {
 
+    private val tag = "UploadPhotoServiceConnection"
     private var uploadPhotoService: UploadPhotoService? = null
 
     override fun onServiceConnected(className: ComponentName, _service: IBinder) {
@@ -22,25 +23,21 @@ class UploadPhotoServiceConnection(
         onUploadingServiceDisconnected()
     }
 
-    fun isConnected(): Boolean {
-        return this.get()
-    }
-
     private fun onUploadingServiceConnected(_service: IBinder) {
         if (this.compareAndSet(false, true)) {
-            Timber.d("+++ onUploadingServiceConnected")
+            Timber.tag(tag).d("+++ onUploadingServiceConnected")
 
             uploadPhotoService = (_service as UploadPhotoService.UploadPhotosBinder).getService()
             uploadPhotoService!!.attachCallback(WeakReference(activity))
             uploadPhotoService!!.startPhotosUploading()
         } else {
-            Timber.d("+++ onUploadingServiceConnected already connected")
+            Timber.tag(tag).d("+++ onUploadingServiceConnected already connected")
         }
     }
 
     fun onUploadingServiceDisconnected() {
         if (this.compareAndSet(true, false)) {
-            Timber.d("--- onUploadingServiceDisconnected")
+            Timber.tag(tag).d("--- onUploadingServiceDisconnected")
 
             uploadPhotoService?.let { srvc ->
                 srvc.detachCallback()
@@ -49,7 +46,7 @@ class UploadPhotoServiceConnection(
 
             activity.unbindService(this)
         } else {
-            Timber.d("--- onUploadingServiceDisconnected already disconnected")
+            Timber.tag(tag).d("--- onUploadingServiceDisconnected already disconnected")
         }
     }
 }

@@ -13,8 +13,11 @@ import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.service.UploadPhotoServiceCallbacks
 import io.reactivex.Maybe
-import io.reactivex.Observable
 import io.reactivex.Single
+import kotlinx.coroutines.experimental.CommonPool
+import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.rx2.asMaybe
+import kotlinx.coroutines.experimental.rx2.await
 import timber.log.Timber
 import java.io.File
 import java.lang.ref.WeakReference
@@ -27,54 +30,65 @@ class UploadPhotosUseCase(
     private val tag = "UploadPhotosUseCase"
 
     fun uploadPhotos(userId: String, location: LonLat, callbacks: WeakReference<UploadPhotoServiceCallbacks>?): Maybe<Unit> {
-        return Maybe.fromCallable {
+        return async {
             Timber.tag(tag).d("Start photo uploading")
 
-            while (true) {
-                val photo = myPhotosRepository.findPhotoByStateAndUpdateState(PhotoState.PHOTO_QUEUED_UP, PhotoState.PHOTO_UPLOADING)
-                if (photo == null) {
-                    Timber.tag(tag).d("Could not find photo with state PHOTO_QUEUED_UP. Exiting.")
-                    break
-                }
-
-                Timber.tag(tag).d("Photo found. photoId = ${photo.id} ")
+            val photosToUpload = myPhotosRepository.findPhotosByStateAndUpdateState(PhotoState.PHOTO_QUEUED_UP, PhotoState.PHOTO_UPLOADING)
+            for (photo in photosToUpload) {
+                val rotatedPhotoFile = handlePhotoUploadingStart(callbacks, photo)
 
                 try {
-                    val rotatedPhotoFile = handlePhotoUploadingStart(callbacks, photo)
+                    if (photo.photoTempFile == null || !photo.photoTempFile!!.exists()) {
+                        Timber.tag(tag).e("Photo does not exists on disk! ${photo.photoTempFile?.absoluteFile ?: "(No photoTempFile)"}")
+                        continue
+                    }
 
-                    try {
-                        if (BitmapUtils.rotatePhoto(photo.photoTempFile, rotatedPhotoFile)) {
-                            Timber.tag(tag).d("Photo rotated. Starting the uploading routine...")
+                    if (BitmapUtils.rotatePhoto(photo.photoTempFile!!, rotatedPhotoFile)) {
+                        Timber.tag(tag).d("Photo rotated. Starting the uploading routine...")
 
-                            val response = uploadPhoto(rotatedPhotoFile, location, userId, photo.isPublic, callbacks, photo).blockingGet()
-                            val errorCode = response.errorCode as ErrorCode.UploadPhotoErrors
-                            when (errorCode) {
-                                is ErrorCode.UploadPhotoErrors.Remote.Ok -> {
-                                    Timber.tag(tag).d("Photo uploaded. Saving the result")
+                        val response = try {
+                            uploadPhoto(rotatedPhotoFile, location, userId, photo.isPublic, callbacks, photo).await()
+                        } catch (error: RuntimeException) {
+                            if (error.cause == null && error.cause !is InterruptedException) {
+                                throw error
+                            }
 
-                                    if (!handlePhotoUploaded(photo, response, callbacks)) {
-                                        Timber.tag(tag).d("Could not save photo uploading result")
-                                        handleFailedPhoto(photo, callbacks, errorCode)
-                                    }
-                                }
+                            Timber.tag(tag).d("Interrupted")
+                            UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.Local.Interrupted())
+                        }
 
-                                else -> {
-                                    Timber.tag(tag).d("Could not upload photo with id ${photo.id}")
+                        val errorCode = response.errorCode as ErrorCode.UploadPhotoErrors
+                        when (errorCode) {
+                            is ErrorCode.UploadPhotoErrors.Remote.Ok -> {
+                                Timber.tag(tag).d("Photo uploaded. Saving the result")
+
+                                if (!handlePhotoUploaded(photo, response, callbacks)) {
+                                    Timber.tag(tag).d("Could not save photo uploading result")
                                     handleFailedPhoto(photo, callbacks, errorCode)
                                 }
                             }
-                        } else {
-                            Timber.tag(tag).d("Could not rotate photo with id ${photo.id}")
+
+                            is ErrorCode.UploadPhotoErrors.Local.Interrupted -> {
+                                Timber.tag(tag).d("Interrupted exception")
+                                handleFailedPhoto(photo, callbacks, errorCode)
+                            }
+
+                            else -> {
+                                Timber.tag(tag).d("Could not upload photo with id ${photo.id}")
+                                handleFailedPhoto(photo, callbacks, errorCode)
+                            }
                         }
-                    } finally {
-                        FileUtils.deleteFile(rotatedPhotoFile)
+                    } else {
+                        Timber.tag(tag).d("Could not rotate photo with id ${photo.id}")
                     }
                 } catch (error: Exception) {
                     Timber.tag(tag).e(error)
                     handleUnknownError(photo, callbacks, error)
+                } finally {
+                    FileUtils.deleteFile(rotatedPhotoFile)
                 }
             }
-        }
+        }.asMaybe(CommonPool)
     }
 
     private fun handlePhotoUploadingStart(callbacks: WeakReference<UploadPhotoServiceCallbacks>?, photo: MyPhoto): File {
@@ -97,16 +111,16 @@ class UploadPhotosUseCase(
         photo.photoTempFile = null
 
         val dbResult = database.transactional {
-            val deleteResult = myPhotosRepository.deleteTempFileById(photo.id)
             val updateResult1 = myPhotosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_UPLOADED)
             val updateResult2 = myPhotosRepository.updateSetTempFileId(photo.id, null)
             val updateResult3 = myPhotosRepository.updateSetPhotoName(photo.id, response.photoName)
 
-            Timber.tag(tag).d("deleteResult = $deleteResult, updateResult1 = $updateResult1, updateResult2 = $updateResult2, updateResult3 = $updateResult3")
-            return@transactional deleteResult && updateResult1 && updateResult2 && updateResult3
+            Timber.tag(tag).d("updateResult1 = $updateResult1, updateResult2 = $updateResult2, updateResult3 = $updateResult3")
+            return@transactional updateResult1 && updateResult2 && updateResult3
         }
 
         if (dbResult) {
+            myPhotosRepository.deleteTempFileById(photo.id)
             callbacks?.get()?.onUploadingEvent(PhotoUploadEvent.OnUploaded(photo))
         }
 

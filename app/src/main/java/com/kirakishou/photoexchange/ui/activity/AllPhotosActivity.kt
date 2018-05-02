@@ -96,8 +96,8 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     private val MY_PHOTOS_TAB_INDEX = 0
     private val RECEIVED_PHOTO_TAB_INDEX = 1
 
-    private var findServiceConnection = FindPhotoAnswerServiceConnection(this)
-    private var uploadServiceConnection = UploadPhotoServiceConnection(this)
+    private lateinit var findServiceConnection: FindPhotoAnswerServiceConnection
+    private lateinit var uploadServiceConnection: UploadPhotoServiceConnection
 
     private val adapter = FragmentTabsPager(supportFragmentManager)
     private val locationManager by lazy { MyLocationManager(applicationContext) }
@@ -108,22 +108,47 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         this.savedInstanceState = savedInstanceState
+
+        findServiceConnection = FindPhotoAnswerServiceConnection(this)
+        uploadServiceConnection = UploadPhotoServiceConnection(this)
     }
 
-    override fun onInitRx() {
+    override fun onActivityStart() {
+        initRx()
+        viewModel.setView(this)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        checkPermissions(this.savedInstanceState)
+    }
+
+    override fun onActivityStop() {
+        findServiceConnection.onFindingServiceDisconnected()
+        uploadServiceConnection.onUploadingServiceDisconnected()
+
+        viewModel.clearView()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
+        super.onSaveInstanceState(outState, outPersistentState)
+
+        viewState.lastOpenedTab = viewPager.currentItem
+        viewState.saveToBundle(outState)
+    }
+
+    private fun initRx() {
         compositeDisposable += viewModel.startPhotoUploadingServiceSubject
             .subscribeOn(Schedulers.io())
             .observeOn(Schedulers.io())
-            .filter { !uploadServiceConnection.isConnected() }
-            .doOnNext { startUploadingService() }
+            .doOnNext { bindUploadingService() }
             .doOnError { Timber.e(it) }
             .subscribe()
 
         compositeDisposable += viewModel.startFindPhotoAnswerServiceSubject
             .subscribeOn(Schedulers.io())
             .observeOn(Schedulers.io())
-            .filter { !findServiceConnection.isConnected() }
-            .doOnNext { startFindingService() }
+            .doOnNext { bindFindingService() }
             .doOnError { Timber.e(it) }
             .subscribe()
 
@@ -149,29 +174,6 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             .subscribeOn(AndroidSchedulers.mainThread())
             .doOnNext { onViewStateChanged(it) }
             .subscribe()
-    }
-
-    override fun onActivityStart() {
-        viewModel.setView(this)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        checkPermissions(this.savedInstanceState)
-    }
-
-    override fun onActivityStop() {
-        findServiceConnection.onFindingServiceDisconnected()
-        uploadServiceConnection.onUploadingServiceDisconnected()
-
-        viewModel.clearView()
-    }
-
-    override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
-        super.onSaveInstanceState(outState, outPersistentState)
-
-        viewState.lastOpenedTab = viewPager.currentItem
-        viewState.saveToBundle(outState)
     }
 
     private fun checkPermissions(savedInstanceState: Bundle?) {
@@ -209,7 +211,11 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         initViews()
         restoreMyPhotosFragmentFromViewState(savedInstanceState)
 
-        viewModel.checkShouldStartPhotoUploadingService(isGranted)
+        if (!UploadPhotoService.isRunning(this)) {
+            viewModel.checkShouldStartPhotoUploadingService(isGranted)
+        } else {
+            bindUploadingService(false)
+        }
     }
 
     private fun restoreMyPhotosFragmentFromViewState(savedInstanceState: Bundle?) {
@@ -226,21 +232,30 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         initTabs()
     }
 
+    //kinda hacky, but fixes a memory leak when activity getting destroyed while location is being updated
     override fun getCurrentLocation(): Single<LonLat> {
-        val resultSingle = Single.fromCallable {
-            if (!locationManager.isGpsEnabled()) {
-                return@fromCallable LonLat.empty()
-            }
+        return Single.create { emitter ->
+            compositeDisposable += Single.fromCallable { locationManager.isGpsEnabled() }
+                .flatMap { isGpsEnabled ->
+                    if (!isGpsEnabled) {
+                        return@flatMap Single.just(LonLat.empty())
+                    }
 
-            return@fromCallable RxLocationManager.start(locationManager)
-                .observeOn(Schedulers.io())
-                .timeout(GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-                .onErrorReturnItem(LonLat.empty())
-                .blockingFirst()
+                    return@flatMap RxLocationManager.start(locationManager)
+                        .observeOn(Schedulers.io())
+                        .single(LonLat.empty())
+                        .timeout(GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                        .onErrorReturnItem(LonLat.empty())
+                }
+                .delay(GPS_DELAY_MS, TimeUnit.MILLISECONDS)
+                .doOnSuccess { location ->
+                    emitter.onSuccess(location)
+                }
+                .doOnError { error ->
+                    emitter.onError(error)
+                }
+                .subscribe()
         }
-
-        return resultSingle
-            .delay(GPS_DELAY_MS, TimeUnit.MILLISECONDS)
     }
 
     private fun initTabs() {
@@ -330,7 +345,11 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             }
 
             is PhotoUploadEvent.OnEnd -> {
-                viewModel.checkShouldStartFindPhotoAnswersService()
+                if (!FindPhotoAnswerService.isRunning(this)) {
+                    viewModel.checkShouldStartFindPhotoAnswersService()
+                } else {
+                    bindFindingService(false)
+                }
             }
         }
     }
@@ -412,19 +431,27 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         permissionManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
-    private fun startFindingService() {
-        Timber.tag(tag).d("startFindingService")
+    private fun bindFindingService(start: Boolean = true) {
+        Timber.tag(tag).d("bindFindingService")
 
         val serviceIntent = Intent(applicationContext, FindPhotoAnswerService::class.java)
-        startService(serviceIntent)
+
+        if (start) {
+            startService(serviceIntent)
+        }
+
         bindService(serviceIntent, findServiceConnection, Context.BIND_AUTO_CREATE)
     }
 
-    private fun startUploadingService() {
-        Timber.tag(tag).d("startUploadingService")
+    private fun bindUploadingService(start: Boolean = true) {
+        Timber.tag(tag).d("bindUploadingService")
 
         val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
-        startService(serviceIntent)
+
+        if (start) {
+            startService(serviceIntent)
+        }
+
         bindService(serviceIntent, uploadServiceConnection, Context.BIND_AUTO_CREATE)
     }
 
@@ -470,6 +497,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             is ErrorCode.GetPhotoAnswersErrors.Remote.NotEnoughPhotosUploaded -> "Upload more photos first"
             is ErrorCode.FavouritePhotoErrors.Remote.AlreadyFavourited -> "You have already added this photo to favourites"
             is ErrorCode.ReportPhotoErrors.Remote.AlreadyReported -> "You have already reported this photo"
+            is ErrorCode.UploadPhotoErrors.Local.Interrupted -> "The process was interrupted by user"
 
             is ErrorCode.TakePhotoErrors.UnknownError,
             is ErrorCode.TakePhotoErrors.Ok,

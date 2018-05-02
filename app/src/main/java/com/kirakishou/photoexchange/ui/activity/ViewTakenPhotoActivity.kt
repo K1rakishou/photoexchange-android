@@ -33,10 +33,20 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         takenPhoto = MyPhoto.fromBundle(intent.extras)
+
         showViewTakenPhotoFragment(intent)
     }
 
-    override fun onInitRx() {
+    override fun onActivityStart() {
+        viewModel.setView(this)
+        initRx()
+    }
+
+    override fun onActivityStop() {
+        viewModel.clearView()
+    }
+
+    private fun initRx() {
         compositeDisposable += viewModel.addToGalleryFragmentResult
             .subscribeOn(AndroidSchedulers.mainThread())
             .flatMap { fragmentResult ->
@@ -60,14 +70,6 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
             .add(R.id.fragment_container, AddToGalleryDialogFragment(), AddToGalleryDialogFragment.TAG)
             .addToBackStack(null)
             .commit()
-    }
-
-    override fun onActivityStart() {
-        viewModel.setView(this)
-    }
-
-    override fun onActivityStop() {
-        viewModel.clearView()
     }
 
     override fun onPhotoUpdated() {

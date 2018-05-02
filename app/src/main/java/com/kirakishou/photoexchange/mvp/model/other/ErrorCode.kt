@@ -24,6 +24,7 @@ sealed class ErrorCode(val value: Int) {
             class BadServerResponse(val message: String? = null) : Local(-1000)
             class NoPhotoFileOnDisk : Local(-1001)
             class Timeout : Local(-1002)
+            class Interrupted : Local(-1003)
         }
     }
 
@@ -109,6 +110,7 @@ sealed class ErrorCode(val value: Int) {
                         -1000 -> UploadPhotoErrors.Local.BadServerResponse()
                         -1001 -> UploadPhotoErrors.Local.NoPhotoFileOnDisk()
                         -1002 -> UploadPhotoErrors.Local.Timeout()
+                        -1003 -> UploadPhotoErrors.Local.Interrupted()
 
                         //remote errors
                         -1 -> UploadPhotoErrors.Remote.UnknownError()
