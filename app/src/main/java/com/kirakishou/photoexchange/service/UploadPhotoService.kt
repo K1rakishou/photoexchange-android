@@ -38,7 +38,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
 
     override fun onCreate() {
         super.onCreate()
-        Timber.tag(tag).e("UploadPhotoService started")
+        Timber.tag(tag).d("UploadPhotoService started")
 
         resolveDaggerDependency()
         startForeground(NOTIFICATION_ID, createNotificationUploading())
@@ -50,14 +50,16 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
         presenter.onDetach()
         detachCallback()
 
-        Timber.tag(tag).e("UploadPhotoService destroyed")
+        Timber.tag(tag).d("UploadPhotoService destroyed")
     }
 
     fun attachCallback(_callback: WeakReference<PhotoUploadingCallback>) {
+        Timber.tag(tag).d("attachCallback")
         callback = _callback
     }
 
     fun detachCallback() {
+        Timber.tag(tag).d("detachCallback")
         callback = WeakReference<PhotoUploadingCallback>(null)
     }
 
@@ -69,6 +71,12 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     }
 
     override fun onUploadingEvent(event: PhotoUploadEvent) {
+        if (callback.get() == null) {
+            Timber.tag(tag).d("NO CALLBACK ATTACHED")
+        } else {
+            Timber.tag(tag).d("CALLBACK ATTACHED")
+        }
+
         callback.get()?.onUploadPhotosEvent(event)
     }
 
@@ -78,7 +86,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     }
 
     override fun stopService() {
-        Timber.tag(tag).e("Stopping service")
+        Timber.tag(tag).d("Stopping service")
 
         updateUploadingNotificationShowSuccess()
         stopForeground(true)
@@ -226,18 +234,6 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     inner class UploadPhotosBinder : Binder() {
         fun getService(): UploadPhotoService {
             return this@UploadPhotoService
-        }
-    }
-
-    companion object {
-        fun isRunning(context: Context): Boolean {
-            val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
-            for (service in manager!!.getRunningServices(Integer.MAX_VALUE)) {
-                if (UploadPhotoService::class.java.name == service.service.className) {
-                    return true
-                }
-            }
-            return false
         }
     }
 }

@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.VIBRATE"/>
 
     <!-- Required OpenGL ES 2.0. for Maps V2 -->
     <uses-feature
@@ -28,6 +29,7 @@
         </activity>
         <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity" />
         <activity android:name="com.kirakishou.photoexchange.ui.activity.AllPhotosActivity" />
+        <activity android:name="com.kirakishou.photoexchange.ui.activity.SettingsActivity" />
 
         <meta-data
             android:name="io.fabric.ApiKey"
@@ -44,7 +46,6 @@
             android:exported="true"
             android:permission="android.permission.BIND_JOB_SERVICE" />
 
-        <activity android:name="com.kirakishou.photoexchange.ui.activity.SettingsActivity"></activity>
     </application>
 
 </manifest>

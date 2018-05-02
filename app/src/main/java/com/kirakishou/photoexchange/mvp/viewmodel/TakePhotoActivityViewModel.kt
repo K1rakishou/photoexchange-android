@@ -8,7 +8,11 @@ import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
-import io.reactivex.Observable
+import io.reactivex.Single
+import kotlinx.coroutines.experimental.CommonPool
+import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.rx2.asSingle
+import kotlinx.coroutines.experimental.rx2.await
 import timber.log.Timber
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -31,8 +35,8 @@ class TakePhotoActivityViewModel(
         super.onCleared()
     }
 
-    fun takePhoto(): Observable<ErrorCode.TakePhotoErrors> {
-        return Observable.fromCallable {
+    fun takePhoto(): Single<ErrorCode.TakePhotoErrors> {
+        return async {
             var myPhoto: MyPhoto = MyPhoto.empty()
             var file: File? = null
 
@@ -46,27 +50,27 @@ class TakePhotoActivityViewModel(
                 val takePhotoStatus = getView()?.takePhoto(file)
                     ?.observeOn(schedulerProvider.IO())
                     ?.timeout(3, TimeUnit.SECONDS)
-                    ?.blockingGet() ?: false
+                    ?.await() ?: false
 
                 if (!takePhotoStatus) {
                     cleanUp(file, null)
-                    return@fromCallable ErrorCode.TakePhotoErrors.CouldNotTakePhoto()
+                    return@async ErrorCode.TakePhotoErrors.CouldNotTakePhoto()
                 }
 
                 myPhoto = photosRepository.saveTakenPhoto(file)
                 if (myPhoto.isEmpty()) {
                     cleanUp(file, myPhoto)
-                    return@fromCallable ErrorCode.TakePhotoErrors.DatabaseError()
+                    return@async ErrorCode.TakePhotoErrors.DatabaseError()
                 }
 
-                return@fromCallable ErrorCode.TakePhotoErrors.Ok(myPhoto)
+                return@async ErrorCode.TakePhotoErrors.Ok(myPhoto)
             } catch (error: Exception) {
                 Timber.tag(tag).e(error)
 
                 cleanUp(file, myPhoto)
-                return@fromCallable handleException(error)
+                return@async handleException(error)
             }
-        }
+        }.asSingle(CommonPool)
     }
 
     private fun cleanUp(file: File?, photo: MyPhoto?) {
