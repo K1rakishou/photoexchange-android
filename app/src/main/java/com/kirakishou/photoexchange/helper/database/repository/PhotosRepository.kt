@@ -214,10 +214,6 @@ open class PhotosRepository(
         return tempFileDao.deleteById(id) > 0
     }
 
-    fun hasTempFile(id: Long): Boolean {
-        return tempFileDao.findById(id) != null
-    }
-
     private fun createTempFilesDirIfNotExists() {
         val fullPathFile = File(filesDir)
         if (!fullPathFile.exists()) {

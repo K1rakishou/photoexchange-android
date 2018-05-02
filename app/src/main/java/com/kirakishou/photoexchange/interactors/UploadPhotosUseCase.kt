@@ -38,7 +38,12 @@ class UploadPhotosUseCase(
                 val rotatedPhotoFile = handlePhotoUploadingStart(callbacks, photo)
 
                 try {
-                    if (BitmapUtils.rotatePhoto(photo.photoTempFile, rotatedPhotoFile)) {
+                    if (photo.photoTempFile == null || !photo.photoTempFile!!.exists()) {
+                        Timber.tag(tag).e("Photo does not exists on disk! ${photo.photoTempFile?.absoluteFile ?: "(No photoTempFile)"}")
+                        continue
+                    }
+
+                    if (BitmapUtils.rotatePhoto(photo.photoTempFile!!, rotatedPhotoFile)) {
                         Timber.tag(tag).d("Photo rotated. Starting the uploading routine...")
 
                         val response = try {
@@ -106,16 +111,16 @@ class UploadPhotosUseCase(
         photo.photoTempFile = null
 
         val dbResult = database.transactional {
-            val deleteResult = myPhotosRepository.deleteTempFileById(photo.id)
             val updateResult1 = myPhotosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_UPLOADED)
             val updateResult2 = myPhotosRepository.updateSetTempFileId(photo.id, null)
             val updateResult3 = myPhotosRepository.updateSetPhotoName(photo.id, response.photoName)
 
-            Timber.tag(tag).d("deleteResult = $deleteResult, updateResult1 = $updateResult1, updateResult2 = $updateResult2, updateResult3 = $updateResult3")
-            return@transactional deleteResult && updateResult1 && updateResult2 && updateResult3
+            Timber.tag(tag).d("updateResult1 = $updateResult1, updateResult2 = $updateResult2, updateResult3 = $updateResult3")
+            return@transactional updateResult1 && updateResult2 && updateResult3
         }
 
         if (dbResult) {
+            myPhotosRepository.deleteTempFileById(photo.id)
             callbacks?.get()?.onUploadingEvent(PhotoUploadEvent.OnUploaded(photo))
         }
 

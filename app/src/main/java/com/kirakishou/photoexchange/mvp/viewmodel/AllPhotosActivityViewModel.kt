@@ -157,8 +157,15 @@ class AllPhotosActivityViewModel(
 
                 //request new location every LOCATION_CHECK_INTERVAL_MS
                 if (lastTimeCheck == null || (now - lastTimeCheck > LOCATION_CHECK_INTERVAL_MS)) {
-                    val currentLocation = getView()?.getCurrentLocation()?.await()
-                        ?: return@async
+                    val currentLocation = try {
+                        getView()?.getCurrentLocation()?.await()
+                    } catch (error: Exception) {
+                        LonLat.empty()
+                    }
+
+                    if (currentLocation == null) {
+                        return@async
+                    }
 
                     val lastLocation = settingsRepository.getLastLocation()
                     if (lastLocation != null && !lastLocation.isEmpty() && currentLocation.isEmpty()) {

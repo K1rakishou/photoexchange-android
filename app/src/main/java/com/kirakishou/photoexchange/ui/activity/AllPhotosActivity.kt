@@ -245,6 +245,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
                         .observeOn(Schedulers.io())
                         .single(LonLat.empty())
                         .timeout(GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                        .onErrorReturnItem(LonLat.empty())
                 }
                 .delay(GPS_DELAY_MS, TimeUnit.MILLISECONDS)
                 .doOnSuccess { location ->
