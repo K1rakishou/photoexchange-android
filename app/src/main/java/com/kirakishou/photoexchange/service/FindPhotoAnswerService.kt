@@ -232,4 +232,16 @@ class FindPhotoAnswerService : Service(), FindPhotoAnswerServiceCallbacks {
             return this@FindPhotoAnswerService
         }
     }
+
+    companion object {
+        fun isRunning(context: Context): Boolean {
+            val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
+            for (service in manager!!.getRunningServices(Integer.MAX_VALUE)) {
+                if (FindPhotoAnswerService::class.java.name == service.service.className) {
+                    return true
+                }
+            }
+            return false
+        }
+    }
 }

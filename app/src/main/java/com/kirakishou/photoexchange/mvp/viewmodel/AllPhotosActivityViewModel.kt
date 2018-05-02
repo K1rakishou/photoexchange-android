@@ -141,6 +141,7 @@ class AllPhotosActivityViewModel(
                     .delay(1, TimeUnit.SECONDS)
                     .doOnNext { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification()) }
             }
+            .doOnError { Timber.e(it) }
             .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)
     }
 

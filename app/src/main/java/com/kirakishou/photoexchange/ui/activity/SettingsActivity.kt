@@ -37,9 +37,6 @@ class SettingsActivity : BaseActivity() {
         }
     }
 
-    override fun onInitRx() {
-    }
-
     override fun onActivityStart() {
     }
 

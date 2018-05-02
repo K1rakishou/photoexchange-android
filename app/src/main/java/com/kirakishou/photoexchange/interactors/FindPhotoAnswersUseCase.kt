@@ -35,6 +35,8 @@ class FindPhotoAnswersUseCase(
 
                 when (errorCode) {
                     is ErrorCode.GetPhotoAnswersErrors.Remote.Ok -> handleSuccessResult(response, callbacks)
+                    //TODO: probably should start JobService here
+                    is ErrorCode.GetPhotoAnswersErrors.Remote.NoPhotosToSendBack -> callbacks.get()?.stopService()
                     else -> callbacks.get()?.onFailed(errorCode)
                 }
 

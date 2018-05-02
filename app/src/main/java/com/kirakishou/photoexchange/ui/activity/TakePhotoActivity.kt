@@ -73,6 +73,26 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
         initViews()
     }
 
+    override fun onActivityStart() {
+        viewModel.setView(this)
+        initRx()
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        checkPermissions()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        cameraProvider.stopCamera()
+    }
+
+    override fun onActivityStop() {
+        viewModel.clearView()
+    }
+
     private fun initViews() {
         translationDelta = AndroidUtils.dpToPx(96f, this)
 
@@ -80,7 +100,7 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
         showAllPhotosButton.translationX = showAllPhotosButton.translationX + translationDelta
     }
 
-    override fun onInitRx() {
+    private fun initRx() {
         compositeDisposable += RxView.clicks(takePhotoButton)
             .subscribeOn(AndroidSchedulers.mainThread())
             .debounceClicks()
@@ -102,25 +122,6 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
             .debounceClicks()
             .doOnNext { runActivity(AllPhotosActivity::class.java) }
             .subscribe()
-    }
-
-    override fun onActivityStart() {
-        viewModel.setView(this)
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        checkPermissions()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        cameraProvider.stopCamera()
-    }
-
-    override fun onActivityStop() {
-        viewModel.clearView()
     }
 
     private fun checkPermissions() {

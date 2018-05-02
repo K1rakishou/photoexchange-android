@@ -71,12 +71,6 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     }
 
     override fun onUploadingEvent(event: PhotoUploadEvent) {
-        if (callback.get() == null) {
-            Timber.tag(tag).d("NO CALLBACK ATTACHED")
-        } else {
-            Timber.tag(tag).d("CALLBACK ATTACHED")
-        }
-
         callback.get()?.onUploadPhotosEvent(event)
     }
 
@@ -234,6 +228,18 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     inner class UploadPhotosBinder : Binder() {
         fun getService(): UploadPhotoService {
             return this@UploadPhotoService
+        }
+    }
+
+    companion object {
+        fun isRunning(context: Context): Boolean {
+            val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
+            for (service in manager!!.getRunningServices(Integer.MAX_VALUE)) {
+                if (UploadPhotoService::class.java.name == service.service.className) {
+                    return true
+                }
+            }
+            return false
         }
     }
 }

@@ -96,8 +96,8 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     private val MY_PHOTOS_TAB_INDEX = 0
     private val RECEIVED_PHOTO_TAB_INDEX = 1
 
-    private var findServiceConnection = FindPhotoAnswerServiceConnection(this)
-    private var uploadServiceConnection = UploadPhotoServiceConnection(this)
+    private lateinit var findServiceConnection: FindPhotoAnswerServiceConnection
+    private lateinit var uploadServiceConnection: UploadPhotoServiceConnection
 
     private val adapter = FragmentTabsPager(supportFragmentManager)
     private val locationManager by lazy { MyLocationManager(applicationContext) }
@@ -108,22 +108,47 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         this.savedInstanceState = savedInstanceState
+
+        findServiceConnection = FindPhotoAnswerServiceConnection(this)
+        uploadServiceConnection = UploadPhotoServiceConnection(this)
     }
 
-    override fun onInitRx() {
+    override fun onActivityStart() {
+        initRx()
+        viewModel.setView(this)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        checkPermissions(this.savedInstanceState)
+    }
+
+    override fun onActivityStop() {
+        findServiceConnection.onFindingServiceDisconnected()
+        uploadServiceConnection.onUploadingServiceDisconnected()
+
+        viewModel.clearView()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
+        super.onSaveInstanceState(outState, outPersistentState)
+
+        viewState.lastOpenedTab = viewPager.currentItem
+        viewState.saveToBundle(outState)
+    }
+
+    private fun initRx() {
         compositeDisposable += viewModel.startPhotoUploadingServiceSubject
             .subscribeOn(Schedulers.io())
             .observeOn(Schedulers.io())
-            .filter { !uploadServiceConnection.isConnected() }
-            .doOnNext { startUploadingService() }
+            .doOnNext { bindUploadingService() }
             .doOnError { Timber.e(it) }
             .subscribe()
 
         compositeDisposable += viewModel.startFindPhotoAnswerServiceSubject
             .subscribeOn(Schedulers.io())
             .observeOn(Schedulers.io())
-            .filter { !findServiceConnection.isConnected() }
-            .doOnNext { startFindingService() }
+            .doOnNext { bindFindingService() }
             .doOnError { Timber.e(it) }
             .subscribe()
 
@@ -149,29 +174,6 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             .subscribeOn(AndroidSchedulers.mainThread())
             .doOnNext { onViewStateChanged(it) }
             .subscribe()
-    }
-
-    override fun onActivityStart() {
-        viewModel.setView(this)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        checkPermissions(this.savedInstanceState)
-    }
-
-    override fun onActivityStop() {
-        findServiceConnection.onFindingServiceDisconnected()
-        uploadServiceConnection.onUploadingServiceDisconnected()
-
-        viewModel.clearView()
-    }
-
-    override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
-        super.onSaveInstanceState(outState, outPersistentState)
-
-        viewState.lastOpenedTab = viewPager.currentItem
-        viewState.saveToBundle(outState)
     }
 
     private fun checkPermissions(savedInstanceState: Bundle?) {
@@ -209,7 +211,11 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         initViews()
         restoreMyPhotosFragmentFromViewState(savedInstanceState)
 
-        viewModel.checkShouldStartPhotoUploadingService(isGranted)
+        if (!UploadPhotoService.isRunning(this)) {
+            viewModel.checkShouldStartPhotoUploadingService(isGranted)
+        } else {
+            bindUploadingService(false)
+        }
     }
 
     private fun restoreMyPhotosFragmentFromViewState(savedInstanceState: Bundle?) {
@@ -338,7 +344,11 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             }
 
             is PhotoUploadEvent.OnEnd -> {
-                viewModel.checkShouldStartFindPhotoAnswersService()
+                if (!FindPhotoAnswerService.isRunning(this)) {
+                    viewModel.checkShouldStartFindPhotoAnswersService()
+                } else {
+                    bindFindingService(false)
+                }
             }
         }
     }
@@ -420,19 +430,27 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         permissionManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
-    private fun startFindingService() {
-        Timber.tag(tag).d("startFindingService")
+    private fun bindFindingService(start: Boolean = true) {
+        Timber.tag(tag).d("bindFindingService")
 
         val serviceIntent = Intent(applicationContext, FindPhotoAnswerService::class.java)
-        startService(serviceIntent)
+
+        if (start) {
+            startService(serviceIntent)
+        }
+
         bindService(serviceIntent, findServiceConnection, Context.BIND_AUTO_CREATE)
     }
 
-    private fun startUploadingService() {
-        Timber.tag(tag).d("startUploadingService")
+    private fun bindUploadingService(start: Boolean = true) {
+        Timber.tag(tag).d("bindUploadingService")
 
         val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
-        startService(serviceIntent)
+
+        if (start) {
+            startService(serviceIntent)
+        }
+
         bindService(serviceIntent, uploadServiceConnection, Context.BIND_AUTO_CREATE)
     }
 

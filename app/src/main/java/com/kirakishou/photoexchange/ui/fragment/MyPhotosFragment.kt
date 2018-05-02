@@ -160,7 +160,6 @@ class MyPhotosFragment : BaseFragment() {
                     adapter.addMyPhoto(event.photo.also { it.photoState = PhotoState.PHOTO_UPLOADING })
                 }
                 is PhotoUploadEvent.OnProgress -> {
-                    Timber.e("OnProgress, photoId = ${event.photo.id}")
                     adapter.addMyPhoto(event.photo)
                     adapter.updatePhotoProgress(event.photo.id, event.progress)
                 }

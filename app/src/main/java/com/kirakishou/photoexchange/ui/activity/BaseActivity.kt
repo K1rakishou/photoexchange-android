@@ -57,7 +57,6 @@ abstract class BaseActivity : AppCompatActivity() {
             .doOnError(this::onUnknownError)
             .subscribe(this::onUnknownError)
 
-        onInitRx()
         onActivityStart()
     }
 
@@ -129,7 +128,6 @@ abstract class BaseActivity : AppCompatActivity() {
 
     protected abstract fun getContentView(): Int
     protected abstract fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent)
-    protected abstract fun onInitRx()
     protected abstract fun onActivityStart()
     protected abstract fun onActivityStop()
     protected abstract fun resolveDaggerDependency()
