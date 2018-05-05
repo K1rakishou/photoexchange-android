@@ -13,6 +13,7 @@ import java.net.SocketTimeoutException
 import java.util.concurrent.TimeoutException
 
 class GetGalleryPhotosRequest<T>(
+    private val userId: String,
     private val lastId: Long,
     private val photosPerPage: Int,
     private val apiService: ApiService,
@@ -22,7 +23,7 @@ class GetGalleryPhotosRequest<T>(
 
     @Suppress("UNCHECKED_CAST")
     override fun execute(): Single<T> {
-        return apiService.getGalleryPhotos(lastId, photosPerPage)
+        return apiService.getGalleryPhotos(userId, lastId, photosPerPage)
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
             .lift(OnApiErrorSingle<GalleryPhotosResponse>(gson, GalleryPhotosResponse::class.java))

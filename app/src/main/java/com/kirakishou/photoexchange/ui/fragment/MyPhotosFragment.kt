@@ -82,23 +82,27 @@ class MyPhotosFragment : BaseFragment() {
         compositeDisposable += viewModel.onPhotoUploadEventSubject
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { event -> onUploadingEvent(event) }
+            .doOnError { Timber.e(it) }
             .subscribe()
 
         compositeDisposable += viewModel.myPhotosFragmentViewStateSubject
             .observeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { viewState -> onViewStateChanged(viewState) }
+            .doOnError { Timber.e(it) }
             .subscribe()
 
         compositeDisposable += adapterButtonsClickSubject
             .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(viewModel.myPhotosAdapterButtonClickSubject::onNext, viewModel.myPhotosAdapterButtonClickSubject::onError)
+            .doOnError { Timber.e(it) }
+            .subscribe(viewModel.myPhotosAdapterButtonClickSubject::onNext)
     }
 
     private fun loadPhotos() {
         compositeDisposable += viewModel.loadMyPhotos()
             .observeOn(AndroidSchedulers.mainThread())
             .doOnSuccess { photos -> addPhotosToAdapter(photos) }
+            .doOnError { Timber.e(it) }
             .subscribe()
     }
 

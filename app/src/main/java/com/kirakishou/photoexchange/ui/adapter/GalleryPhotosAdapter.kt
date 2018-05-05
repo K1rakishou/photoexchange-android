@@ -57,11 +57,11 @@ class GalleryPhotosAdapter(
             return false
         }
 
-        if ((items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).favourited == isFavourited) {
+        if ((items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).photo.isFavourited == isFavourited) {
             return false
         }
 
-        (items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).favourited = isFavourited
+        (items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).photo.isFavourited = isFavourited
         (items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).photo.favouritesCount = favouritesCount
 
         notifyItemChanged(photoIndex)
@@ -81,11 +81,11 @@ class GalleryPhotosAdapter(
             return false
         }
 
-        if ((items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).reported == isReported) {
+        if ((items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).photo.isReported == isReported) {
             return false
         }
 
-        (items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).reported = isReported
+        (items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).photo.isReported = isReported
         notifyItemChanged(photoIndex)
         return true
     }
@@ -93,7 +93,7 @@ class GalleryPhotosAdapter(
     fun addAll(photos: List<GalleryPhoto>) {
         val lastIndex = items.size
 
-        items.addAll(photos.map { GalleryPhotosAdapterItem.GalleryPhotoItem(it) })
+        items.addAll(photos.map { galleryPhoto -> GalleryPhotosAdapterItem.GalleryPhotoItem(galleryPhoto) })
         notifyItemRangeInserted(lastIndex, photos.size)
     }
 
@@ -123,13 +123,13 @@ class GalleryPhotosAdapter(
                     adapterButtonClickSubject.onNext(GalleryPhotosAdapterButtonClickEvent.ReportClicked(item.photo.photoName))
                 }
 
-                if (item.favourited) {
+                if (item.photo.isFavourited) {
                     holder.favouriteIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_favorite))
                 } else {
                     holder.favouriteIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_favorite_border))
                 }
 
-                if (item.reported) {
+                if (item.photo.isReported) {
                     holder.reportIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_reported))
                 } else {
                     holder.reportIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_report_border))

@@ -56,10 +56,13 @@ class AllPhotosActivityViewModel(
 
     init {
         compositeDisposable += myPhotosAdapterButtonClickSubject
-            .flatMap { getView()?.handleMyPhotoFragmentAdapterButtonClicks(it) ?: Observable.just(false) }
+            .flatMap {
+                getView()?.handleMyPhotoFragmentAdapterButtonClicks(it) ?: Observable.just(false)
+            }
             .filter { startUploadingService -> startUploadingService }
             .map { Unit }
-            .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)
+            .doOnError { Timber.e(it) }
+            .subscribe(startPhotoUploadingServiceSubject::onNext)
     }
 
     override fun onCleared() {
@@ -81,8 +84,11 @@ class AllPhotosActivityViewModel(
     }
 
     fun loadNextPageOfGalleryPhotos(lastId: Long, photosPerPage: Int): Observable<List<GalleryPhoto>> {
-        return getGalleryPhotosUseCase.loadNextPageOfGalleryPhotos(lastId, photosPerPage)
-            .subscribeOn(schedulerProvider.IO())
+        return Observable.fromCallable { settingsRepository.getUserId() }
+            .concatMap { userId ->
+                getGalleryPhotosUseCase.loadNextPageOfGalleryPhotos(userId, lastId, photosPerPage)
+                    .subscribeOn(schedulerProvider.IO())
+            }
     }
 
     fun checkShouldStartFindPhotoAnswersService() {
@@ -103,7 +109,8 @@ class AllPhotosActivityViewModel(
             }
             .filter { uploadedPhotosMoreThanReceived -> uploadedPhotosMoreThanReceived }
             .map { Unit }
-            .subscribe(startFindPhotoAnswerServiceSubject::onNext, startFindPhotoAnswerServiceSubject::onError)
+            .doOnError { Timber.e(it) }
+            .subscribe(startFindPhotoAnswerServiceSubject::onNext)
     }
 
     fun checkShouldStartPhotoUploadingService() {
@@ -117,6 +124,7 @@ class AllPhotosActivityViewModel(
             .filter { count -> count == 0 }
             .doOnNext { Timber.tag(tag).d("checkShouldStartPhotoUploadingService count == 0") }
             .doOnNext { checkShouldStartFindPhotoAnswersService() }
+            .doOnError { Timber.e(it) }
             .subscribe()
 
         compositeDisposable += observable

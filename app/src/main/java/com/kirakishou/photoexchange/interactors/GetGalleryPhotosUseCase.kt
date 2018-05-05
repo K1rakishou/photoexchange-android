@@ -11,8 +11,8 @@ class GetGalleryPhotosUseCase(
 ) {
     private val tag = "GetGalleryPhotosUseCase"
 
-    fun loadNextPageOfGalleryPhotos(lastId: Long, photosPerPage: Int): Observable<List<GalleryPhoto>> {
-        return apiClient.getGalleryPhotos(lastId, photosPerPage)
+    fun loadNextPageOfGalleryPhotos(userId: String, lastId: Long, photosPerPage: Int): Observable<List<GalleryPhoto>> {
+        return apiClient.getGalleryPhotos(userId, lastId, photosPerPage)
             .map { response ->
                 val errorCode = response.errorCode
 

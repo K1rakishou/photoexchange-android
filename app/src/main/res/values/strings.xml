@@ -32,8 +32,6 @@
     <string name="make_public_btn_text">Make public</string>
     <string name="do_not_make_public_btn_text">Do not</string>
     <string name="settings_menu_item_text">Settings</string>
-    <string name="photo_favourited_text">Photo has been favourited</string>
-    <string name="photo_unfavourited_text">Photo has been unfavourited</string>
     <string name="photo_reported_text">Photo has been reported as inappropriate</string>
     <string name="photo_unreported_text">Report has been removed from photo</string>
 </resources>

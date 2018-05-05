@@ -48,6 +48,14 @@ private constructor(
 
         @Expose
         @SerializedName("favourites_count")
-        val favouritesCount: Long
+        val favouritesCount: Long,
+
+        @Expose
+        @SerializedName("is_favourited")
+        val isFavourited: Boolean,
+
+        @Expose
+        @SerializedName("is_reported")
+        val isReported: Boolean
     )
 }
