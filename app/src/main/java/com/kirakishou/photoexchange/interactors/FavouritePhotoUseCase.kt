@@ -10,17 +10,22 @@ class FavouritePhotoUseCase(
 ) {
     private val TAG = "FavouritePhotoUseCase"
 
-    fun favouritePhoto(userId: String, photoName: String): Observable<Pair<Boolean, Long>> {
+    fun favouritePhoto(userId: String, photoName: String): Observable<UseCaseResult<FavouritePhotoResult>> {
         return apiClient.favouritePhoto(userId, photoName)
             .map { response ->
                 val errorCode = response.errorCode as ErrorCode.FavouritePhotoErrors
 
-                return@map when (errorCode) {
-                    is ErrorCode.FavouritePhotoErrors.Remote.Ok -> Pair(response.isFavourited, response.favouritesCount)
-                    else -> Pair(false, 0L)
+                val result = when (errorCode) {
+                    is ErrorCode.FavouritePhotoErrors.Remote.Ok -> UseCaseResult.Result(FavouritePhotoResult(response.isFavourited, response.favouritesCount))
+                    else -> UseCaseResult.Error(errorCode)
                 }
+
+                return@map result as UseCaseResult<FavouritePhotoResult>
             }
             .toObservable()
             .doOnError { Timber.tag(TAG).e(it) }
     }
+
+    data class FavouritePhotoResult(val isFavourited: Boolean,
+                                    val favouritesCount: Long)
 }

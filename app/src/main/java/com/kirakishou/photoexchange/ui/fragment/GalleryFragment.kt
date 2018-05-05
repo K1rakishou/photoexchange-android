@@ -69,6 +69,11 @@ class GalleryFragment : BaseFragment() {
     }
 
     private fun initRx() {
+        compositeDisposable += viewModel.errorCodesSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .doOnNext { (requireActivity() as AllPhotosActivity).showErrorCodeToast(it) }
+            .subscribe()
+
         compositeDisposable += loadMoreSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .doOnNext { addProgressFooter() }
@@ -85,7 +90,7 @@ class GalleryFragment : BaseFragment() {
             .filter { buttonClicked -> buttonClicked is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.FavouriteClicked }
             .cast(GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.FavouriteClicked::class.java)
             .concatMap { viewModel.favouritePhoto(it.photoName).zipWith(Observable.just(it.photoName)) }
-            .doOnNext { (response, photoName) -> favouritePhoto(photoName, response.first, response.second) }
+            .doOnNext { (response, photoName) -> favouritePhoto(photoName, response.isFavourited, response.favouritesCount) }
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
 

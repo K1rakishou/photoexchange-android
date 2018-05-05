@@ -118,7 +118,7 @@ abstract class BaseActivity : AppCompatActivity() {
         }
     }
 
-    protected fun showErrorCodeToast(errorCode: ErrorCode) {
+    fun showErrorCodeToast(errorCode: ErrorCode) {
         val errorMessage = when (errorCode) {
             is ErrorCode.UploadPhotoErrors.Remote.Ok,
             is ErrorCode.GetPhotoAnswersErrors.Remote.Ok,

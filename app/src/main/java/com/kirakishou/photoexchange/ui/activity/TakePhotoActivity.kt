@@ -195,7 +195,7 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
     }
 
     private fun onCouldNotTakePhoto(errorCode: ErrorCode.TakePhotoErrors) {
-
+        showErrorCodeToast(errorCode)
     }
 
     private fun animateAppear() {

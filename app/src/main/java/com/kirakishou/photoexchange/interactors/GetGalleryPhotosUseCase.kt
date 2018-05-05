@@ -12,15 +12,17 @@ class GetGalleryPhotosUseCase(
 ) {
     private val TAG = "GetGalleryPhotosUseCase"
 
-    fun loadNextPageOfGalleryPhotos(userId: String, lastId: Long, photosPerPage: Int): Observable<List<GalleryPhoto>> {
+    fun loadNextPageOfGalleryPhotos(userId: String, lastId: Long, photosPerPage: Int): Observable<UseCaseResult<List<GalleryPhoto>>> {
         return apiClient.getGalleryPhotos(userId, lastId, photosPerPage)
             .map { response ->
                 val errorCode = response.errorCode
 
-                return@map when (errorCode) {
-                    is ErrorCode.GalleryPhotosErrors.Remote.Ok -> GalleryPhotoResponseMapper.toGalleryPhoto(response.galleryPhotos)
-                    else -> emptyList()
+                val result = when (errorCode) {
+                    is ErrorCode.GalleryPhotosErrors.Remote.Ok -> UseCaseResult.Result(GalleryPhotoResponseMapper.toGalleryPhoto(response.galleryPhotos))
+                    else -> UseCaseResult.Error(errorCode)
                 }
+
+                return@map result as UseCaseResult<List<GalleryPhoto>>
             }
             .toObservable()
             .doOnError { Timber.tag(TAG).e(it) }

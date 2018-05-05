@@ -4,15 +4,14 @@ import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerPro
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.helper.extension.minutes
-import com.kirakishou.photoexchange.helper.extension.seconds
-import com.kirakishou.photoexchange.helper.util.TimeUtils
+import com.kirakishou.photoexchange.helper.extension.drainErrorCodesTo
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
 import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
+import com.kirakishou.photoexchange.interactors.UseCaseResult
 import com.kirakishou.photoexchange.mvp.model.*
 import com.kirakishou.photoexchange.mvp.model.other.Constants
-import com.kirakishou.photoexchange.mvp.model.other.LonLat
+import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.viewstate.AllPhotosActivityViewStateEvent
@@ -23,12 +22,7 @@ import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
-import kotlinx.coroutines.experimental.CommonPool
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.rx2.asSingle
-import kotlinx.coroutines.experimental.rx2.await
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
 
 /**
  * Created by kirakishou on 3/11/2018.
@@ -53,6 +47,7 @@ class AllPhotosActivityViewModel(
     val startPhotoUploadingServiceSubject = PublishSubject.create<Unit>().toSerialized()
     val startFindPhotoAnswerServiceSubject = PublishSubject.create<Unit>().toSerialized()
     val myPhotosAdapterButtonClickSubject = PublishSubject.create<MyPhotosAdapter.MyPhotosAdapterButtonClickEvent>().toSerialized()
+    val errorCodesSubject = PublishSubject.create<ErrorCode>().toSerialized()
 
     init {
         compositeDisposable += myPhotosAdapterButtonClickSubject
@@ -74,13 +69,15 @@ class AllPhotosActivityViewModel(
     fun reportPhoto(photoName: String): Observable<Boolean> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .concatMap { userId -> reportPhotoUseCase.reportPhoto(userId, photoName) }
+            .drainErrorCodesTo(errorCodesSubject)
             .subscribeOn(schedulerProvider.IO())
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
-    fun favouritePhoto(photoName: String): Observable<Pair<Boolean, Long>> {
+    fun favouritePhoto(photoName: String): Observable<FavouritePhotoUseCase.FavouritePhotoResult> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .concatMap { userId -> favouritePhotoUseCase.favouritePhoto(userId, photoName) }
+            .drainErrorCodesTo(errorCodesSubject)
             .subscribeOn(schedulerProvider.IO())
             .doOnError { Timber.tag(TAG).e(it) }
     }
@@ -91,6 +88,7 @@ class AllPhotosActivityViewModel(
                 getGalleryPhotosUseCase.loadNextPageOfGalleryPhotos(userId, lastId, photosPerPage)
                     .subscribeOn(schedulerProvider.IO())
             }
+            .drainErrorCodesTo(errorCodesSubject)
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
