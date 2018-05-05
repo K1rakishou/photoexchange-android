@@ -46,6 +46,9 @@ android {
             includeAndroidResources = true
         }
     }
+    lintOptions {
+        disable 'TimberTagLength'
+    }
 }
 
 dependencies {

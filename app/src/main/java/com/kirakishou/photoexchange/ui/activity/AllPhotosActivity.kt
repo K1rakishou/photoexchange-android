@@ -90,8 +90,6 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private val tag = "AllPhotosActivity"
-    private val GPS_DELAY_MS = 1.seconds()
-    private val GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS = 15.seconds()
     private val FRAGMENT_SCROLL_DELAY_MS = 250L
     private val MY_PHOTOS_TAB_INDEX = 0
     private val RECEIVED_PHOTO_TAB_INDEX = 1
@@ -100,7 +98,6 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     private lateinit var uploadServiceConnection: UploadPhotoServiceConnection
 
     private val adapter = FragmentTabsPager(supportFragmentManager)
-    private val locationManager by lazy { MyLocationManager(applicationContext) }
     private var savedInstanceState: Bundle? = null
     private var viewState = AllPhotosActivityViewState()
 
@@ -184,18 +181,14 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
                 throw RuntimeException("Couldn't find Manifest.permission.CAMERA in result permissions")
             }
 
-            var granted = true
-
             if (grantResults[index] == PackageManager.PERMISSION_DENIED) {
-                granted = false
-
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
                     showGpsRationaleDialog(savedInstanceState)
                     return@askForPermission
                 }
             }
 
-            onPermissionsCallback(savedInstanceState, granted)
+            onPermissionsCallback(savedInstanceState)
         }
     }
 
@@ -203,16 +196,16 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         GpsRationaleDialog().show(this, {
             checkPermissions(savedInstanceState)
         }, {
-            onPermissionsCallback(savedInstanceState, false)
+            onPermissionsCallback(savedInstanceState)
         })
     }
 
-    private fun onPermissionsCallback(savedInstanceState: Bundle?, isGranted: Boolean) {
+    private fun onPermissionsCallback(savedInstanceState: Bundle?) {
         initViews()
         restoreMyPhotosFragmentFromViewState(savedInstanceState)
 
         if (!UploadPhotoService.isRunning(this)) {
-            viewModel.checkShouldStartPhotoUploadingService(isGranted)
+            viewModel.checkShouldStartPhotoUploadingService()
         } else {
             bindUploadingService(false)
         }
@@ -230,32 +223,6 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
     private fun initViews() {
         initTabs()
-    }
-
-    //kinda hacky, but fixes a memory leak when activity getting destroyed while location is being updated
-    override fun getCurrentLocation(): Single<LonLat> {
-        return Single.create { emitter ->
-            compositeDisposable += Single.fromCallable { locationManager.isGpsEnabled() }
-                .flatMap { isGpsEnabled ->
-                    if (!isGpsEnabled) {
-                        return@flatMap Single.just(LonLat.empty())
-                    }
-
-                    return@flatMap RxLocationManager.start(locationManager)
-                        .observeOn(Schedulers.io())
-                        .single(LonLat.empty())
-                        .timeout(GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-                        .onErrorReturnItem(LonLat.empty())
-                }
-                .delay(GPS_DELAY_MS, TimeUnit.MILLISECONDS)
-                .doOnSuccess { location ->
-                    emitter.onSuccess(location)
-                }
-                .doOnError { error ->
-                    emitter.onError(error)
-                }
-                .subscribe()
-        }
     }
 
     private fun initTabs() {
@@ -333,7 +300,6 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
         when (event) {
             is PhotoUploadEvent.OnUploaded -> {
-                showPhotoUploadedSnackbar()
             }
 
             is PhotoUploadEvent.OnFailedToUpload -> {
@@ -390,21 +356,6 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
                     }.map { true }
             }
         }
-    }
-
-    private fun showPhotoUploadedSnackbar() {
-        Snackbar.make(rootLayout, "A photo has been uploaded", Snackbar.LENGTH_LONG)
-            .setAction("VIEW", {
-                if (viewPager.currentItem != MY_PHOTOS_TAB_INDEX) {
-                    viewPager.currentItem = MY_PHOTOS_TAB_INDEX
-                }
-
-                compositeDisposable += Single.timer(FRAGMENT_SCROLL_DELAY_MS, TimeUnit.MILLISECONDS)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .doOnSuccess { viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.ScrollToTop()) }
-                    .subscribe()
-            }).show()
     }
 
     private fun showPhotoAnswerFoundSnackbar() {

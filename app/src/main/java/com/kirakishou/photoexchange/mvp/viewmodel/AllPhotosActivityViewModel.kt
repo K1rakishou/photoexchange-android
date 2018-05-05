@@ -44,9 +44,6 @@ class AllPhotosActivityViewModel(
 ) : BaseViewModel<AllPhotosActivityView>() {
 
     private val tag = "AllPhotosActivityViewModel"
-    private val LOCATION_CHECK_INTERVAL_MS = 0.minutes()
-    private val SERVICE_START_DEBOUNCE_TIME_MS = 10.seconds()
-    private val CHECK_SHOULD_START_SERVICE_DELAY_MS = 1500L
 
     val onPhotoUploadEventSubject = PublishSubject.create<PhotoUploadEvent>().toSerialized()
     val onPhotoFindEventSubject = PublishSubject.create<PhotoFindEvent>().toSerialized()
@@ -105,12 +102,11 @@ class AllPhotosActivityViewModel(
                 return@map uploadedPhotosCount > receivedPhotosCount
             }
             .filter { uploadedPhotosMoreThanReceived -> uploadedPhotosMoreThanReceived }
-            .delay(CHECK_SHOULD_START_SERVICE_DELAY_MS, TimeUnit.MILLISECONDS)
             .map { Unit }
             .subscribe(startFindPhotoAnswerServiceSubject::onNext, startFindPhotoAnswerServiceSubject::onError)
     }
 
-    fun checkShouldStartPhotoUploadingService(updateLastLocation: Boolean) {
+    fun checkShouldStartPhotoUploadingService() {
         val observable = Observable.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
@@ -125,59 +121,10 @@ class AllPhotosActivityViewModel(
 
         compositeDisposable += observable
             .filter { count -> count > 0 }
-            .delay(CHECK_SHOULD_START_SERVICE_DELAY_MS, TimeUnit.MILLISECONDS)
-            .debounce(SERVICE_START_DEBOUNCE_TIME_MS, TimeUnit.MILLISECONDS)
             .doOnNext { Timber.tag(tag).d("checkShouldStartPhotoUploadingService count > 0") }
             .map { Unit }
-            .concatMap {
-                Observable.just(1)
-                    .observeOn(schedulerProvider.IO())
-                    .doOnNext { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification()) }
-                    .concatMap { updateLastLocation(updateLastLocation) }
-                    .delay(1, TimeUnit.SECONDS)
-                    .doOnNext { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification()) }
-            }
             .doOnError { Timber.e(it) }
             .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)
-    }
-
-    private fun updateLastLocation(updateLastLocation: Boolean): Observable<Unit> {
-        return async {
-            // if gps is disabled by user then set the last location as empty (-1.0, -1.0) immediately
-            // so the user doesn't have to wait 15 seconds until getCurrentLocation returns empty
-            // location because of timeout
-
-            if (updateLastLocation) {
-                val now = TimeUtils.getTimeFast()
-                val lastTimeCheck = settingsRepository.getLastLocationCheckTime()
-
-                //request new location every LOCATION_CHECK_INTERVAL_MS
-                if (lastTimeCheck == null || (now - lastTimeCheck > LOCATION_CHECK_INTERVAL_MS)) {
-                    val currentLocation = try {
-                        getView()?.getCurrentLocation()?.await()
-                    } catch (error: Exception) {
-                        LonLat.empty()
-                    }
-
-                    if (currentLocation == null) {
-                        return@async
-                    }
-
-                    val lastLocation = settingsRepository.getLastLocation()
-                    if (lastLocation != null && !lastLocation.isEmpty() && currentLocation.isEmpty()) {
-                        return@async
-                    }
-
-                    settingsRepository.saveLastLocationCheckTime(now)
-                    settingsRepository.saveLastLocation(currentLocation)
-                }
-            } else {
-                settingsRepository.saveLastLocation(LonLat.empty())
-            }
-
-            return@async
-        }.asSingle(CommonPool)
-            .toObservable()
     }
 
     fun loadPhotoAnswers(): Single<List<PhotoAnswer>> {

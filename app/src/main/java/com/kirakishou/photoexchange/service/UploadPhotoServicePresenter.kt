@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
 import com.kirakishou.photoexchange.mvp.model.UploadPhotoData
+import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
@@ -23,53 +24,53 @@ class UploadPhotoServicePresenter(
     private val schedulerProvider: SchedulerProvider,
     private val updatePhotosUseCase: UploadPhotosUseCase
 ) {
-    private val tag = "UploadPhotoServicePresenter"
+    private val TAG = "UploadPhotoServicePresenter"
     private val uploadPhotosSubject = PublishSubject.create<Unit>().toSerialized()
-    private var compositeDisposable = CompositeDisposable()
+    private val compositeDisposable = CompositeDisposable()
 
     init {
         compositeDisposable += uploadPhotosSubject
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
-            .map {
+            .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnLocationUpdateStart()) }
+            .flatMap { callbacks.get()?.getCurrentLocation()?.toObservable() ?: Observable.just(LonLat.empty()) }
+            .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnLocationUpdateEnd()) }
+            .map { location ->
                 val userId = settingsRepository.getUserId()
                     ?: return@map UploadPhotoData.empty()
-                val location = settingsRepository.getLastLocation()
-                    ?: return@map UploadPhotoData.empty()
 
-                Timber.tag(tag).d("userId = $userId, location = $location")
+                Timber.tag(TAG).d("userId = $userId, location = $location")
                 return@map UploadPhotoData(false, userId, location)
             }
             .doOnError { error ->
-                callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnUnknownError(error))
                 callbacks.get()?.onError(error)
                 callbacks.get()?.stopService()
             }
             .doOnNext { data ->
-                Timber.tag(tag).d("Check if data is empty")
+                Timber.tag(TAG).d("Check if data is empty")
                 if (data.isEmpty()) {
                     callbacks.get()?.stopService()
                 }
             }
             .filter { data -> !data.isEmpty() }
             .doOnEach { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnPrepare()) }
-            .flatMap { data ->
-                Timber.tag(tag).d("Upload data")
+            .concatMap { data ->
+                Timber.tag(TAG).d("Upload data")
 
-                return@flatMap updatePhotosUseCase.uploadPhotos(data.userId, data.location, callbacks)
+                return@concatMap updatePhotosUseCase.uploadPhotos(data.userId, data.location, callbacks)
                     .toObservable()
             }
             .doOnNext { allUploaded ->
-                Timber.tag(tag).d("onUploadingEvent(PhotoUploadEvent.OnEnd($allUploaded))")
+                Timber.tag(TAG).d("onUploadingEvent(PhotoUploadEvent.OnEnd($allUploaded))")
                 callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnEnd(allUploaded))
             }
             .doOnError { error ->
-                Timber.tag(tag).d("onUploadingEvent(PhotoUploadEvent.OnEnd())")
+                Timber.tag(TAG).d("onUploadingEvent(PhotoUploadEvent.OnEnd())")
                 callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnUnknownError(error))
                 callbacks.get()?.onError(error)
             }
             .doOnEach {
-                Timber.tag(tag).d("stopService")
+                Timber.tag(TAG).d("stopService")
                 callbacks.get()?.stopService()
             }
             .subscribe()
@@ -80,7 +81,7 @@ class UploadPhotoServicePresenter(
     }
 
     fun uploadPhotos() {
-        Timber.tag(tag).d("uploadPhotos called")
+        Timber.tag(TAG).d("uploadPhotos called")
         uploadPhotosSubject.onNext(Unit)
     }
 }

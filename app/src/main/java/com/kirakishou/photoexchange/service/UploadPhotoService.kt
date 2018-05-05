@@ -10,12 +10,20 @@ import android.support.annotation.RequiresApi
 import android.support.v4.app.NotificationCompat
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.*
+import com.kirakishou.photoexchange.helper.extension.seconds
+import com.kirakishou.photoexchange.helper.location.MyLocationManager
+import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
+import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
+import io.reactivex.Single
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.lang.ref.WeakReference
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 /**
@@ -28,9 +36,13 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
 
     private val tag = "UploadPhotoService"
 
+    private val locationManager by lazy { MyLocationManager(applicationContext) }
     private var notificationManager: NotificationManager? = null
     private val binder = UploadPhotosBinder()
+    private val compositeDisposable = CompositeDisposable()
 
+    private val GPS_DELAY_MS = 1.seconds()
+    private val GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS = 15.seconds()
     private var callback = WeakReference<PhotoUploadingCallback>(null)
     private val NOTIFICATION_ID = 1
     private val CHANNEL_ID = "1"
@@ -49,6 +61,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
 
         presenter.onDetach()
         detachCallback()
+        compositeDisposable.clear()
 
         Timber.tag(tag).d("UploadPhotoService destroyed")
     }
@@ -92,6 +105,22 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
 
         stopForeground(true)
         stopSelf()
+    }
+
+    override fun getCurrentLocation(): Single<LonLat> {
+        return Single.fromCallable { locationManager.isGpsEnabled() }
+            .flatMap { isGpsEnabled ->
+                if (!isGpsEnabled) {
+                    return@flatMap Single.just(LonLat.empty())
+                }
+
+                return@flatMap RxLocationManager.start(locationManager)
+                    .observeOn(Schedulers.io())
+                    .single(LonLat.empty())
+                    .timeout(GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                    .onErrorReturnItem(LonLat.empty())
+            }
+            .delay(GPS_DELAY_MS, TimeUnit.MILLISECONDS)
     }
 
     //notifications

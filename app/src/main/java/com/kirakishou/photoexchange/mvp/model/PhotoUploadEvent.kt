@@ -6,6 +6,8 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
  * Created by kirakishou on 3/17/2018.
  */
 sealed class PhotoUploadEvent {
+    class OnLocationUpdateStart : PhotoUploadEvent()
+    class OnLocationUpdateEnd : PhotoUploadEvent()
     class OnFailedToUpload(val photo: MyPhoto, val errorCode: ErrorCode.UploadPhotoErrors) : PhotoUploadEvent()
     class OnUnknownError(val error: Throwable) : PhotoUploadEvent()
     class OnPrepare : PhotoUploadEvent()

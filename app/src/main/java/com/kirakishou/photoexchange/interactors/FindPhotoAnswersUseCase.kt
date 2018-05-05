@@ -12,7 +12,6 @@ import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.service.FindPhotoAnswerServiceCallbacks
-import io.reactivex.Maybe
 import io.reactivex.Single
 import timber.log.Timber
 import java.lang.ref.WeakReference
@@ -25,13 +24,17 @@ class FindPhotoAnswersUseCase(
     private val apiClient: ApiClient
 ) {
 
-    private val tag = "FindPhotoAnswersUseCase"
+    private val TAG = "FindPhotoAnswersUseCase"
 
-    fun getPhotoAnswers(data: FindPhotosData, callbacks: WeakReference<FindPhotoAnswerServiceCallbacks>): Maybe<Unit> {
+    fun getPhotoAnswers(data: FindPhotosData, callbacks: WeakReference<FindPhotoAnswerServiceCallbacks>): Single<Unit> {
         return Single.just(data)
-            .flatMap { _data -> apiClient.getPhotoAnswers(_data.photoNames, _data.userId!!) }
+            .flatMap { _data ->
+                Timber.tag(TAG).d("Send getPhotoAnswers request")
+                apiClient.getPhotoAnswers(_data.photoNames, _data.userId!!)
+            }
             .map { response ->
                 val errorCode = response.errorCode as ErrorCode.GetPhotoAnswersErrors
+                Timber.tag(TAG).d("Got response, errorCode = $errorCode")
 
                 when (errorCode) {
                     is ErrorCode.GetPhotoAnswersErrors.Remote.Ok -> handleSuccessResult(response, callbacks)
@@ -46,7 +49,6 @@ class FindPhotoAnswersUseCase(
                 Timber.e(error)
                 callbacks.get()?.onError(error)
             }
-            .toMaybe()
     }
 
     private fun handleSuccessResult(response: PhotoAnswerResponse, callbacks: WeakReference<FindPhotoAnswerServiceCallbacks>) {
@@ -56,7 +58,7 @@ class FindPhotoAnswersUseCase(
             val result = database.transactional {
                 insertedPhotoAnswerId = photoAnswerRepository.insert(photoAnswerResponse)
                 if (insertedPhotoAnswerId!!.isFail()) {
-                    Timber.tag(tag).w("Could not save photo with name ${photoAnswerResponse.photoAnswerName}")
+                    Timber.tag(TAG).w("Could not save photo with name ${photoAnswerResponse.photoAnswerName}")
                     return@transactional false
                 }
 

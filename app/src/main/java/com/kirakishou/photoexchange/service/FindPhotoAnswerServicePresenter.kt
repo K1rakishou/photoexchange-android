@@ -6,7 +6,6 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import com.kirakishou.photoexchange.interactors.FindPhotoAnswersUseCase
 import com.kirakishou.photoexchange.mvp.model.FindPhotosData
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
@@ -21,6 +20,7 @@ class FindPhotoAnswerServicePresenter(
     private val findPhotoAnswersUseCase: FindPhotoAnswersUseCase
 ) {
 
+    private val TAG = "FindPhotoAnswerServicePresenter"
     private val findPhotosSubject = PublishSubject.create<Unit>().toSerialized()
     private var compositeDisposable = CompositeDisposable()
 
@@ -28,7 +28,6 @@ class FindPhotoAnswerServicePresenter(
         compositeDisposable += findPhotosSubject
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
-            .firstOrError()
             .map { myPhotosRepository.findAllByState(PhotoState.PHOTO_UPLOADED) }
             .filter { uploadedPhotos -> uploadedPhotos.isNotEmpty() }
             .map { uploadedPhotos ->
@@ -36,9 +35,12 @@ class FindPhotoAnswerServicePresenter(
                     .joinToString(",") { it.photoName!! }
 
                 val userId = settingsRepository.getUserId()
+
+                Timber.tag(TAG).d("userId = $userId, photoNames = $photoNames")
                 return@map FindPhotosData(userId, photoNames)
             }
-            .doOnSuccess { photosData ->
+            .doOnNext { photosData ->
+                Timber.tag(TAG).d("Check if data is empty")
                 if (photosData.isEmpty()) {
                     callbacks.get()?.stopService()
                 }
@@ -48,11 +50,18 @@ class FindPhotoAnswerServicePresenter(
                 callbacks.get()?.onError(error )
                 callbacks.get()?.stopService()
             }
-            .concatMap { data -> findPhotoAnswersUseCase.getPhotoAnswers(data, callbacks) }
+            .concatMap { data ->
+                Timber.tag(TAG).d("getPhotoAnswers")
+                findPhotoAnswersUseCase.getPhotoAnswers(data, callbacks).toObservable()
+            }
             .doOnError { error ->
+                Timber.tag(TAG).d("onError")
                 callbacks.get()?.onError(error)
             }
-            .doOnEvent { _, _ -> callbacks.get()?.stopService() }
+            .doOnEach {
+                Timber.tag(TAG).d("stopService")
+                callbacks.get()?.stopService()
+            }
             .subscribe()
     }
 
@@ -61,6 +70,7 @@ class FindPhotoAnswerServicePresenter(
     }
 
     fun startFindPhotoAnswers() {
+        Timber.tag(TAG).d("startFindPhotoAnswers called")
         findPhotosSubject.onNext(Unit)
     }
 }

@@ -44,6 +44,7 @@ class MyPhotosFragment : BaseFragment() {
 
     lateinit var adapter: MyPhotosAdapter
 
+    private val TAG = "MyPhotosFragment"
     private val PHOTO_ADAPTER_VIEW_WIDTH = 288
     private val adapterButtonsClickSubject = PublishSubject.create<MyPhotosAdapter.MyPhotosAdapterButtonClickEvent>().toSerialized()
     private var viewState = MyPhotosFragmentViewState()
@@ -66,12 +67,6 @@ class MyPhotosFragment : BaseFragment() {
     private fun restoreMyPhotosFragmentFromViewState(savedInstanceState: Bundle?) {
         viewState = MyPhotosFragmentViewState()
             .also { it.loadFromBundle(savedInstanceState) }
-
-        if (viewState.showObtainCurrentLocationNotification) {
-            adapter.showObtainCurrentLocationNotification()
-        } else {
-            adapter.hideObtainCurrentLocationNotification()
-        }
     }
 
     override fun onFragmentViewDestroy() {
@@ -120,8 +115,6 @@ class MyPhotosFragment : BaseFragment() {
         }
 
         requireActivity().runOnUiThread {
-            viewState.updateFromViewStateEvent(viewStateEvent)
-
             when (viewStateEvent) {
                 is MyPhotosFragmentViewStateEvent.ScrollToTop -> {
                     myPhotosList.scrollToPosition(0)
@@ -153,10 +146,19 @@ class MyPhotosFragment : BaseFragment() {
 
         requireActivity().runOnUiThread {
             when (event) {
+                is PhotoUploadEvent.OnLocationUpdateStart -> {
+                    Timber.tag(TAG).d("OnLocationUpdateStart")
+                    adapter.showObtainCurrentLocationNotification()
+                }
+                is PhotoUploadEvent.OnLocationUpdateEnd -> {
+                    Timber.tag(TAG).d("OnLocationUpdateEnd")
+                    adapter.hideObtainCurrentLocationNotification()
+                }
                 is PhotoUploadEvent.OnPrepare -> {
+
                 }
                 is PhotoUploadEvent.OnPhotoUploadStart -> {
-                    Timber.e("OnPhotoUploadStart, photoId = ${event.photo.id}")
+                    Timber.tag(TAG).d("OnPhotoUploadStart, photoId = ${event.photo.id}")
                     adapter.addMyPhoto(event.photo.also { it.photoState = PhotoState.PHOTO_UPLOADING })
                 }
                 is PhotoUploadEvent.OnProgress -> {
@@ -164,12 +166,12 @@ class MyPhotosFragment : BaseFragment() {
                     adapter.updatePhotoProgress(event.photo.id, event.progress)
                 }
                 is PhotoUploadEvent.OnUploaded -> {
-                    Timber.e("OnUploaded, photoId = ${event.photo.id}")
+                    Timber.tag(TAG).d("OnUploaded, photoId = ${event.photo.id}")
                     adapter.removePhotoById(event.photo.id)
                     adapter.addMyPhoto(event.photo.also { it.photoState = PhotoState.PHOTO_UPLOADED })
                 }
                 is PhotoUploadEvent.OnFailedToUpload -> {
-                    Timber.e("OnFailedToUpload, photoId = ${event.photo.id}")
+                    Timber.tag(TAG).d("OnFailedToUpload, photoId = ${event.photo.id}")
                     adapter.removePhotoById(event.photo.id)
                     adapter.addMyPhoto(event.photo.also { it.photoState = PhotoState.FAILED_TO_UPLOAD })
                 }
@@ -177,7 +179,6 @@ class MyPhotosFragment : BaseFragment() {
                     adapter.updatePhotoState(event.photoId, PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED)
                 }
                 is PhotoUploadEvent.OnEnd -> {
-                    //TODO: start update adapter photos routine
                 }
                 is PhotoUploadEvent.OnUnknownError -> {
 
