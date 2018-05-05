@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
 import com.kirakishou.photoexchange.mvp.model.UploadPhotoData
+import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
@@ -30,9 +31,6 @@ class UploadPhotoServicePresenter(
         compositeDisposable += uploadPhotosSubject
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
-            .doOnNext { Timber.tag(tag).d("before firstOrError") }
-            .firstOrError()
-            .doOnSuccess { Timber.tag(tag).d("after firstOrError") }
             .map {
                 val userId = settingsRepository.getUserId()
                     ?: return@map UploadPhotoData.empty()
@@ -40,7 +38,6 @@ class UploadPhotoServicePresenter(
                     ?: return@map UploadPhotoData.empty()
 
                 Timber.tag(tag).d("userId = $userId, location = $location")
-
                 return@map UploadPhotoData(false, userId, location)
             }
             .doOnError { error ->
@@ -48,20 +45,33 @@ class UploadPhotoServicePresenter(
                 callbacks.get()?.onError(error)
                 callbacks.get()?.stopService()
             }
-            .doOnSuccess { data ->
+            .doOnNext { data ->
+                Timber.tag(tag).d("Check if data is empty")
                 if (data.isEmpty()) {
                     callbacks.get()?.stopService()
                 }
             }
             .filter { data -> !data.isEmpty() }
-            .doOnEvent { _, _ -> callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnPrepare()) }
-            .concatMap { data -> updatePhotosUseCase.uploadPhotos(data.userId, data.location, callbacks) }
-            .doOnSuccess { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnEnd()) }
+            .doOnEach { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnPrepare()) }
+            .flatMap { data ->
+                Timber.tag(tag).d("Upload data")
+
+                return@flatMap updatePhotosUseCase.uploadPhotos(data.userId, data.location, callbacks)
+                    .toObservable()
+            }
+            .doOnNext { allUploaded ->
+                Timber.tag(tag).d("onUploadingEvent(PhotoUploadEvent.OnEnd($allUploaded))")
+                callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnEnd(allUploaded))
+            }
             .doOnError { error ->
+                Timber.tag(tag).d("onUploadingEvent(PhotoUploadEvent.OnEnd())")
                 callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnUnknownError(error))
                 callbacks.get()?.onError(error)
             }
-            .doOnEvent { _, _ -> callbacks.get()?.stopService() }
+            .doOnEach {
+                Timber.tag(tag).d("stopService")
+                callbacks.get()?.stopService()
+            }
             .subscribe()
     }
 

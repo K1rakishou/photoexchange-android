@@ -59,13 +59,9 @@ class AllPhotosActivityViewModel(
 
     init {
         compositeDisposable += myPhotosAdapterButtonClickSubject
-            .flatMap {
-                getView()?.handleMyPhotoFragmentAdapterButtonClicks(it) ?: Observable.just(false)
-            }
+            .flatMap { getView()?.handleMyPhotoFragmentAdapterButtonClicks(it) ?: Observable.just(false) }
             .filter { startUploadingService -> startUploadingService }
             .map { Unit }
-            .doOnNext { checkShouldStartPhotoUploadingService(true) }
-            .doOnError { Timber.e(it) }
             .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)
     }
 

@@ -44,8 +44,6 @@ abstract class BaseActivity : AppCompatActivity() {
         resolveDaggerDependency()
 
         unBinder = ButterKnife.bind(this)
-
-        Fabric.with(this, Crashlytics())
         onActivityCreate(savedInstanceState, intent)
     }
 

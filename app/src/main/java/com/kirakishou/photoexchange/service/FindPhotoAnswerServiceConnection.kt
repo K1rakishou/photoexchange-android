@@ -26,11 +26,15 @@ class FindPhotoAnswerServiceConnection(
         return this.get()
     }
 
+    fun startSearchingForPhotoAnswers() {
+        findPhotoAnswerService!!.startSearchingForPhotoAnswers()
+    }
+
     private fun onFindingServiceConnected(_service: IBinder) {
         if (this.compareAndSet(false, true)) {
             findPhotoAnswerService = (_service as FindPhotoAnswerService.FindPhotoAnswerBinder).getService()
             findPhotoAnswerService!!.attachCallback(WeakReference(activity))
-            findPhotoAnswerService!!.startSearchingForPhotoAnswers()
+            startSearchingForPhotoAnswers()
         }
     }
 

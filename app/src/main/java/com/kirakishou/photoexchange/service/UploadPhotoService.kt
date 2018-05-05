@@ -72,17 +72,24 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
 
     override fun onUploadingEvent(event: PhotoUploadEvent) {
         callback.get()?.onUploadPhotosEvent(event)
+
+        if (event is PhotoUploadEvent.OnEnd) {
+            if (event.allUploaded) {
+                updateUploadingNotificationShowSuccess("All photos has been successfully uploaded")
+            } else {
+                updateUploadingNotificationShowError("Could not upload one or more photos")
+            }
+        }
     }
 
     override fun onError(error: Throwable) {
         Timber.e(error)
-        updateUploadingNotificationShowError()
+        updateUploadingNotificationShowError(error.message ?: "Could not upload photos. Unknown error.")
     }
 
     override fun stopService() {
         Timber.tag(tag).d("Stopping service")
 
-        updateUploadingNotificationShowSuccess()
         stopForeground(true)
         stopSelf()
     }
@@ -93,23 +100,23 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
         getNotificationManager().notify(NOTIFICATION_ID, newNotification)
     }
 
-    private fun updateUploadingNotificationShowSuccess() {
-        val newNotification = createNotificationSuccess()
+    private fun updateUploadingNotificationShowSuccess(message: String) {
+        val newNotification = createNotificationSuccess(message)
         getNotificationManager().notify(NOTIFICATION_ID, newNotification)
     }
 
-    private fun updateUploadingNotificationShowError() {
-        val newNotification = createNotificationError()
+    private fun updateUploadingNotificationShowError(message: String) {
+        val newNotification = createNotificationError(message)
         getNotificationManager().notify(NOTIFICATION_ID, newNotification)
     }
 
-    private fun createNotificationError(): Notification {
+    private fun createNotificationError(message: String): Notification {
         if (AndroidUtils.isOreoOrHigher()) {
             createNotificationChannelIfNotExists()
 
             return NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Error")
-                .setContentText("Could not upload photo")
+                .setContentText(message)
                 .setSmallIcon(android.R.drawable.stat_notify_error)
                 .setWhen(System.currentTimeMillis())
                 .setContentIntent(getNotificationIntent())
@@ -118,7 +125,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
         } else {
             return NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Error")
-                .setContentText("Could not upload photo")
+                .setContentText(message)
                 .setSmallIcon(android.R.drawable.stat_notify_error)
                 .setWhen(System.currentTimeMillis())
                 .setContentIntent(getNotificationIntent())
@@ -127,13 +134,13 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
         }
     }
 
-    private fun createNotificationSuccess(): Notification {
+    private fun createNotificationSuccess(message: String): Notification {
         if (AndroidUtils.isOreoOrHigher()) {
             createNotificationChannelIfNotExists()
 
             return NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Done")
-                .setContentText("Photo has been uploaded!")
+                .setContentText(message)
                 .setSmallIcon(android.R.drawable.stat_sys_upload_done)
                 .setWhen(System.currentTimeMillis())
                 .setContentIntent(getNotificationIntent())
@@ -142,7 +149,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
         } else {
             return NotificationCompat.Builder(this)
                 .setContentTitle("Done")
-                .setContentText("Photo has been uploaded!")
+                .setContentText(message)
                 .setSmallIcon(android.R.drawable.stat_sys_upload_done)
                 .setWhen(System.currentTimeMillis())
                 .setContentIntent(getNotificationIntent())

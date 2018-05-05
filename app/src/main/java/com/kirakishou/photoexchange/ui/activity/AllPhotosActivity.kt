@@ -432,27 +432,35 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun bindFindingService(start: Boolean = true) {
-        Timber.tag(tag).d("bindFindingService")
+        if (!findServiceConnection.isConnected()) {
+            Timber.tag(tag).d("bindFindingService, start = $start")
 
-        val serviceIntent = Intent(applicationContext, FindPhotoAnswerService::class.java)
+            val serviceIntent = Intent(applicationContext, FindPhotoAnswerService::class.java)
+            if (start) {
+                startService(serviceIntent)
+            }
 
-        if (start) {
-            startService(serviceIntent)
+            bindService(serviceIntent, findServiceConnection, Context.BIND_AUTO_CREATE)
+        } else {
+            Timber.tag(tag).d("Already connected, force startSearchingForPhotoAnswers")
+            findServiceConnection.startSearchingForPhotoAnswers()
         }
-
-        bindService(serviceIntent, findServiceConnection, Context.BIND_AUTO_CREATE)
     }
 
     private fun bindUploadingService(start: Boolean = true) {
-        Timber.tag(tag).d("bindUploadingService")
+        if (!uploadServiceConnection.isConnected()) {
+            Timber.tag(tag).d("bindUploadingService, start = $start")
 
-        val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
+            val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
+            if (start) {
+                startService(serviceIntent)
+            }
 
-        if (start) {
-            startService(serviceIntent)
+            bindService(serviceIntent, uploadServiceConnection, Context.BIND_AUTO_CREATE)
+        } else {
+            Timber.tag(tag).d("Already connected, force startPhotosUploading")
+            uploadServiceConnection.startPhotosUploading()
         }
-
-        bindService(serviceIntent, uploadServiceConnection, Context.BIND_AUTO_CREATE)
     }
 
     private fun showUploadPhotoErrorMessage(errorCode: ErrorCode) {
