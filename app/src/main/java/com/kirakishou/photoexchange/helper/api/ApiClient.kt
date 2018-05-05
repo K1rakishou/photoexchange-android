@@ -30,8 +30,8 @@ class ApiClient
             .execute()
     }
 
-    fun getGalleryPhotos(userId: String, lastId: Long, photosPerPage: Int): Single<GalleryPhotosResponse> {
-        return GetGalleryPhotosRequest<GalleryPhotosResponse>(userId, lastId, photosPerPage, apiService, schedulerProvider, gson)
+    fun getGalleryPhotos(lastId: Long, photosPerPage: Int): Single<GalleryPhotoIdsResponse> {
+        return GetGalleryPhotosRequest<GalleryPhotoIdsResponse>(lastId, photosPerPage, apiService, schedulerProvider, gson)
             .execute()
     }
 

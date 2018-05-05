@@ -5,7 +5,6 @@ import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvp.model.exception.ApiException
-import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single

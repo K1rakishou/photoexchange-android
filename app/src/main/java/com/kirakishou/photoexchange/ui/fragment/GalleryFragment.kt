@@ -60,9 +60,13 @@ class GalleryFragment : BaseFragment() {
     }
 
     private fun loadFirstPage() {
-        compositeDisposable += viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage)
-            .subscribeOn(Schedulers.io())
+        compositeDisposable += Observable.just(1)
             .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { addProgressFooter() }
+            .observeOn(Schedulers.io())
+            .flatMap { viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage) }
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { removeProgressFooter() }
             .doOnNext { photos -> addPhotoToAdapter(photos) }
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
@@ -77,8 +81,9 @@ class GalleryFragment : BaseFragment() {
         compositeDisposable += loadMoreSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .doOnNext { addProgressFooter() }
+            .observeOn(Schedulers.io())
             .concatMap { viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage) }
-            .delay(2, TimeUnit.SECONDS, Schedulers.io())
+            .delay(2, TimeUnit.SECONDS)
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { removeProgressFooter() }
             .doOnNext { photos -> addPhotoToAdapter(photos) }

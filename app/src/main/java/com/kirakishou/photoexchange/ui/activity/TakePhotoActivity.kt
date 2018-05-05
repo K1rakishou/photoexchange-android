@@ -114,7 +114,7 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
                 if (errorCode is ErrorCode.TakePhotoErrors.Ok) {
                     onPhotoTaken(errorCode.photo)
                 } else {
-                    onCouldNotTakePhoto(errorCode)
+                    showErrorCodeToast(errorCode)
                 }
             }
             .doOnError { Timber.tag(TAG).e(it) }
@@ -192,10 +192,6 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
     private fun onPhotoTaken(myPhoto: MyPhoto) {
         runActivityWithArgs(ViewTakenPhotoActivity::class.java,
             myPhoto.toBundle(), false)
-    }
-
-    private fun onCouldNotTakePhoto(errorCode: ErrorCode.TakePhotoErrors) {
-        showErrorCodeToast(errorCode)
     }
 
     private fun animateAppear() {
