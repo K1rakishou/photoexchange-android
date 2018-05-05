@@ -22,15 +22,12 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.AllPhotosActivityModule
 import com.kirakishou.photoexchange.helper.extension.debounceClicks
-import com.kirakishou.photoexchange.helper.extension.seconds
-import com.kirakishou.photoexchange.helper.location.MyLocationManager
-import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
+import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoFindEvent
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.service.FindPhotoAnswerServiceConnection
@@ -51,6 +48,7 @@ import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.exceptions.CompositeException
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
@@ -91,6 +89,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
     private val tag = "AllPhotosActivity"
     private val FRAGMENT_SCROLL_DELAY_MS = 250L
+    private val PHOTO_DELETE_DELAY = 3000L
     private val MY_PHOTOS_TAB_INDEX = 0
     private val RECEIVED_PHOTO_TAB_INDEX = 1
 
@@ -334,12 +333,8 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     override fun handleMyPhotoFragmentAdapterButtonClicks(adapterButtonsClickEvent: MyPhotosAdapter.MyPhotosAdapterButtonClickEvent): Observable<Boolean> {
         return when (adapterButtonsClickEvent) {
             is MyPhotosAdapter.MyPhotosAdapterButtonClickEvent.DeleteButtonClick -> {
-                Observable.fromCallable { viewModel.deletePhotoById(adapterButtonsClickEvent.photo.id).blockingAwait() }
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .doOnNext {
-                        viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.RemovePhotoById(adapterButtonsClickEvent.photo.id))
-                    }
+                Observable.fromCallable { showPhotoDeletedSnackbar(adapterButtonsClickEvent.photo) }
+                    .subscribeOn(AndroidSchedulers.mainThread())
                     .map { false }
             }
 
@@ -351,11 +346,32 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
                         val photo = adapterButtonsClickEvent.photo
                         photo.photoState = PhotoState.PHOTO_QUEUED_UP
 
-                        viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.RemovePhotoById(photo.id))
+                        viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.RemovePhoto(photo))
                         viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.AddPhoto(photo))
                     }.map { true }
             }
         }
+    }
+
+    private fun showPhotoDeletedSnackbar(photo: MyPhoto) {
+        val disposable = Single.just(1)
+            .observeOn(Schedulers.io())
+            .doOnSuccess {
+                viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.RemovePhoto(photo))
+            }
+            .zipWith(Single.timer(PHOTO_DELETE_DELAY, TimeUnit.MILLISECONDS))
+            .flatMap { viewModel.deletePhotoById(photo.id).toSingleDefault(Unit) }
+            .subscribe()
+
+        compositeDisposable += disposable
+
+        Snackbar.make(rootLayout, "The photo has been deleted", Snackbar.LENGTH_LONG)
+            .setDuration(PHOTO_DELETE_DELAY.toInt())
+            .setAction("CANCEL", {
+                viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.AddPhoto(photo))
+                disposable.dispose()
+            })
+            .show()
     }
 
     private fun showPhotoAnswerFoundSnackbar() {

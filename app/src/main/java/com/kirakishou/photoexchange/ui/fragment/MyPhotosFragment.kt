@@ -1,11 +1,9 @@
 package com.kirakishou.photoexchange.ui.fragment
 
 import android.os.Bundle
-import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import butterknife.BindView
-import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
@@ -16,18 +14,13 @@ import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapterSpanSizeLookup
-import com.kirakishou.photoexchange.ui.viewstate.AllPhotosActivityViewStateEvent
 import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewState
 import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
-import io.reactivex.Completable
-import io.reactivex.Observable
-import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 
@@ -128,8 +121,8 @@ class MyPhotosFragment : BaseFragment() {
                 is MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification -> {
                     adapter.hideObtainCurrentLocationNotification()
                 }
-                is MyPhotosFragmentViewStateEvent.RemovePhotoById -> {
-                    adapter.removePhotoById(viewStateEvent.photoId)
+                is MyPhotosFragmentViewStateEvent.RemovePhoto -> {
+                    adapter.removePhotoById(viewStateEvent.photo.id)
                 }
                 is MyPhotosFragmentViewStateEvent.AddPhoto -> {
                     adapter.addMyPhoto(viewStateEvent.photo)

@@ -10,6 +10,8 @@ import com.kirakishou.photoexchange.helper.database.entity.MyPhotoEntity
 import com.kirakishou.photoexchange.helper.database.entity.PhotoAnswerEntity
 import com.kirakishou.photoexchange.helper.database.entity.SettingEntity
 import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /**
  * Created by kirakishou on 9/12/2017.
@@ -23,23 +25,27 @@ import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
 ], version = 1)
 abstract class MyDatabase : RoomDatabase() {
 
+    val dbLock = ReentrantLock()
+
     abstract fun myPhotoDao(): MyPhotoDao
     abstract fun tempFileDao(): TempFileDao
     abstract fun settingsDao(): SettingsDao
     abstract fun photoAnswerDao(): PhotoAnswerDao
 
     inline fun transactional(func: () -> Boolean): Boolean {
-        this.beginTransaction()
+        dbLock.withLock {
+            this.beginTransaction()
 
-        try {
-            val result = func()
-            if (result) {
-                this.setTransactionSuccessful()
+            try {
+                val result = func()
+                if (result) {
+                    this.setTransactionSuccessful()
+                }
+
+                return result
+            } finally {
+                this.endTransaction()
             }
-
-            return result
-        } finally {
-            this.endTransaction()
         }
     }
 
@@ -54,5 +60,13 @@ internal fun Long.isFail(): Boolean {
 }
 
 internal fun Long.isSuccess(): Boolean {
+    return this > 0L
+}
+
+internal fun Int.isFail(): Boolean {
+    return this <= 0L
+}
+
+internal fun Int.isSuccess(): Boolean {
     return this > 0L
 }
