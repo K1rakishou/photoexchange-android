@@ -1,11 +1,9 @@
 package com.kirakishou.photoexchange.ui.fragment
 
 import android.os.Bundle
-import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import butterknife.BindView
-import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
@@ -16,18 +14,13 @@ import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapterSpanSizeLookup
-import com.kirakishou.photoexchange.ui.viewstate.AllPhotosActivityViewStateEvent
 import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewState
 import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
-import io.reactivex.Completable
-import io.reactivex.Observable
-import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 
@@ -44,6 +37,7 @@ class MyPhotosFragment : BaseFragment() {
 
     lateinit var adapter: MyPhotosAdapter
 
+    private val TAG = "MyPhotosFragment"
     private val PHOTO_ADAPTER_VIEW_WIDTH = 288
     private val adapterButtonsClickSubject = PublishSubject.create<MyPhotosAdapter.MyPhotosAdapterButtonClickEvent>().toSerialized()
     private var viewState = MyPhotosFragmentViewState()
@@ -66,12 +60,6 @@ class MyPhotosFragment : BaseFragment() {
     private fun restoreMyPhotosFragmentFromViewState(savedInstanceState: Bundle?) {
         viewState = MyPhotosFragmentViewState()
             .also { it.loadFromBundle(savedInstanceState) }
-
-        if (viewState.showObtainCurrentLocationNotification) {
-            adapter.showObtainCurrentLocationNotification()
-        } else {
-            adapter.hideObtainCurrentLocationNotification()
-        }
     }
 
     override fun onFragmentViewDestroy() {
@@ -94,23 +82,27 @@ class MyPhotosFragment : BaseFragment() {
         compositeDisposable += viewModel.onPhotoUploadEventSubject
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { event -> onUploadingEvent(event) }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
 
         compositeDisposable += viewModel.myPhotosFragmentViewStateSubject
             .observeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { viewState -> onViewStateChanged(viewState) }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
 
         compositeDisposable += adapterButtonsClickSubject
             .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(viewModel.myPhotosAdapterButtonClickSubject::onNext, viewModel.myPhotosAdapterButtonClickSubject::onError)
+            .doOnError { Timber.tag(TAG).e(it) }
+            .subscribe(viewModel.myPhotosAdapterButtonClickSubject::onNext)
     }
 
     private fun loadPhotos() {
         compositeDisposable += viewModel.loadMyPhotos()
             .observeOn(AndroidSchedulers.mainThread())
             .doOnSuccess { photos -> addPhotosToAdapter(photos) }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
     }
 
@@ -120,8 +112,6 @@ class MyPhotosFragment : BaseFragment() {
         }
 
         requireActivity().runOnUiThread {
-            viewState.updateFromViewStateEvent(viewStateEvent)
-
             when (viewStateEvent) {
                 is MyPhotosFragmentViewStateEvent.ScrollToTop -> {
                     myPhotosList.scrollToPosition(0)
@@ -135,8 +125,8 @@ class MyPhotosFragment : BaseFragment() {
                 is MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification -> {
                     adapter.hideObtainCurrentLocationNotification()
                 }
-                is MyPhotosFragmentViewStateEvent.RemovePhotoById -> {
-                    adapter.removePhotoById(viewStateEvent.photoId)
+                is MyPhotosFragmentViewStateEvent.RemovePhoto -> {
+                    adapter.removePhotoById(viewStateEvent.photo.id)
                 }
                 is MyPhotosFragmentViewStateEvent.AddPhoto -> {
                     adapter.addMyPhoto(viewStateEvent.photo)
@@ -153,10 +143,19 @@ class MyPhotosFragment : BaseFragment() {
 
         requireActivity().runOnUiThread {
             when (event) {
+                is PhotoUploadEvent.OnLocationUpdateStart -> {
+                    Timber.tag(TAG).d("OnLocationUpdateStart")
+                    adapter.showObtainCurrentLocationNotification()
+                }
+                is PhotoUploadEvent.OnLocationUpdateEnd -> {
+                    Timber.tag(TAG).d("OnLocationUpdateEnd")
+                    adapter.hideObtainCurrentLocationNotification()
+                }
                 is PhotoUploadEvent.OnPrepare -> {
+
                 }
                 is PhotoUploadEvent.OnPhotoUploadStart -> {
-                    Timber.e("OnPhotoUploadStart, photoId = ${event.photo.id}")
+                    Timber.tag(TAG).d("OnPhotoUploadStart, photoId = ${event.photo.id}")
                     adapter.addMyPhoto(event.photo.also { it.photoState = PhotoState.PHOTO_UPLOADING })
                 }
                 is PhotoUploadEvent.OnProgress -> {
@@ -164,12 +163,12 @@ class MyPhotosFragment : BaseFragment() {
                     adapter.updatePhotoProgress(event.photo.id, event.progress)
                 }
                 is PhotoUploadEvent.OnUploaded -> {
-                    Timber.e("OnUploaded, photoId = ${event.photo.id}")
+                    Timber.tag(TAG).d("OnUploaded, photoId = ${event.photo.id}")
                     adapter.removePhotoById(event.photo.id)
                     adapter.addMyPhoto(event.photo.also { it.photoState = PhotoState.PHOTO_UPLOADED })
                 }
                 is PhotoUploadEvent.OnFailedToUpload -> {
-                    Timber.e("OnFailedToUpload, photoId = ${event.photo.id}")
+                    Timber.tag(TAG).d("OnFailedToUpload, photoId = ${event.photo.id}")
                     adapter.removePhotoById(event.photo.id)
                     adapter.addMyPhoto(event.photo.also { it.photoState = PhotoState.FAILED_TO_UPLOAD })
                 }
@@ -177,7 +176,6 @@ class MyPhotosFragment : BaseFragment() {
                     adapter.updatePhotoState(event.photoId, PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED)
                 }
                 is PhotoUploadEvent.OnEnd -> {
-                    //TODO: start update adapter photos routine
                 }
                 is PhotoUploadEvent.OnUnknownError -> {
 

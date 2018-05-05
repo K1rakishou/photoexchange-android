@@ -29,7 +29,7 @@ class MyPhotosFragmentViewState(
             }
 
             is MyPhotosFragmentViewStateEvent.Default,
-            is MyPhotosFragmentViewStateEvent.RemovePhotoById -> {
+            is MyPhotosFragmentViewStateEvent.RemovePhoto -> {
                 //Do nothing
             }
         }

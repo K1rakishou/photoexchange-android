@@ -14,6 +14,9 @@ import com.kirakishou.photoexchange.di.module.DatabaseModule
 import com.kirakishou.photoexchange.di.module.NetworkModule
 import com.kirakishou.photoexchange.di.module.SchedulerProviderModule
 import com.kirakishou.photoexchange.mvp.model.other.Constants
+import io.fabric.sdk.android.Fabric
+import com.crashlytics.android.core.CrashlyticsCore
+import com.kirakishou.fixmypc.photoexchange.BuildConfig
 
 
 /**
@@ -43,9 +46,18 @@ open class PhotoExchangeApplication : Application() {
     }
 
     open fun init() {
+        initCrashlytics()
         initTimber()
         initLeakCanary()
         //enabledStrictMode()
+    }
+
+    private fun initCrashlytics() {
+        val crashlyticsKit = Crashlytics.Builder()
+            .core(CrashlyticsCore.Builder().disabled(BuildConfig.DEBUG).build())
+            .build()
+
+        Fabric.with(this, crashlyticsKit)
     }
 
     private fun initLeakCanary() {
@@ -83,7 +95,7 @@ open class PhotoExchangeApplication : Application() {
     }
 
     class DebugTree : Timber.Tree() {
-        override fun log(priority: Int, tag: String?, message: String?, t: Throwable?) {
+        override fun log(priority: Int, tag: String?, message: String, error: Throwable?) {
             when (priority) {
                 Log.DEBUG -> {
                     System.out.println("_DEBUG: ($tag) $message")
@@ -95,7 +107,7 @@ open class PhotoExchangeApplication : Application() {
 
                 Log.ERROR -> {
                     System.err.println("_ERROR: ($tag) $message")
-                    t?.printStackTrace()
+                    error?.printStackTrace()
                 }
 
                 else -> {
@@ -106,7 +118,7 @@ open class PhotoExchangeApplication : Application() {
     }
 
     class CrashlyticsTree : Timber.Tree() {
-        override fun log(priority: Int, tagParam: String?, messageParam: String?, error: Throwable?) {
+        override fun log(priority: Int, tagParam: String?, messageParam: String, error: Throwable?) {
             if (priority != Log.WARN && priority != Log.ERROR && priority != Log.DEBUG) {
                 return
             }
@@ -118,16 +130,12 @@ open class PhotoExchangeApplication : Application() {
 
             when (priority) {
                 Log.DEBUG -> {
-                    if (messageParam != null) {
-                        Crashlytics.log(Log.DEBUG, tag, messageParam)
-                    }
+                    Crashlytics.log(Log.DEBUG, tag, messageParam)
                 }
 
                 Log.WARN -> {
                     if (error == null) {
-                        if (messageParam != null) {
-                            Crashlytics.log(Log.WARN, tag, messageParam)
-                        }
+                        Crashlytics.log(Log.WARN, tag, messageParam)
                     } else {
                         Crashlytics.logException(error)
                     }
@@ -135,9 +143,7 @@ open class PhotoExchangeApplication : Application() {
 
                 Log.ERROR -> {
                     if (error == null) {
-                        if (messageParam != null) {
-                            Crashlytics.log(Log.ERROR, tag, messageParam)
-                        }
+                        Crashlytics.log(Log.ERROR, tag, messageParam)
                     } else {
                         Crashlytics.logException(error)
                     }

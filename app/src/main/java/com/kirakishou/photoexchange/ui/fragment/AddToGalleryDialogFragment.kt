@@ -21,6 +21,7 @@ import com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity
 import io.reactivex.Completable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import timber.log.Timber
 import javax.inject.Inject
 
 class AddToGalleryDialogFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressAwareFragment {
@@ -42,6 +43,7 @@ class AddToGalleryDialogFragment : BaseFragment(), ViewTakenPhotoActivity.BackPr
 
     override fun getContentView(): Int = R.layout.fragment_add_to_gallery_dialog
 
+    private val TAG = "AddToGalleryDialogFragment"
     private var viewHeight: Float = 0f
     private val fragmentResult = FragmentResult(false, false)
 
@@ -60,6 +62,7 @@ class AddToGalleryDialogFragment : BaseFragment(), ViewTakenPhotoActivity.BackPr
             .subscribeOn(AndroidSchedulers.mainThread())
             .debounceClicks()
             .doOnNext { rememberChoice -> fragmentResult.rememberChoice = rememberChoice }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
 
         compositeDisposable += RxView.clicks(doNotMakePublicButton)
@@ -67,6 +70,7 @@ class AddToGalleryDialogFragment : BaseFragment(), ViewTakenPhotoActivity.BackPr
             .debounceClicks()
             .doOnNext { fragmentResult.makePublic = false }
             .doOnNext { viewModel.addToGalleryFragmentResult.onNext(fragmentResult) }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
 
         compositeDisposable += RxView.clicks(makePublicButton)
@@ -74,6 +78,7 @@ class AddToGalleryDialogFragment : BaseFragment(), ViewTakenPhotoActivity.BackPr
             .debounceClicks()
             .doOnNext { fragmentResult.makePublic = true }
             .doOnNext { viewModel.addToGalleryFragmentResult.onNext(fragmentResult) }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
     }
 
@@ -133,6 +138,6 @@ class AddToGalleryDialogFragment : BaseFragment(), ViewTakenPhotoActivity.BackPr
         var makePublic: Boolean)
 
     companion object {
-        const val TAG = "ADD_TO_GALLERY_DIALOG_FRAGMENT"
+        const val BACKSTACK_TAG = "ADD_TO_GALLERY_DIALOG_FRAGMENT"
     }
 }

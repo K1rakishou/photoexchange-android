@@ -18,6 +18,7 @@ import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewState
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
+import timber.log.Timber
 import javax.inject.Inject
 
 class ReceivedPhotosFragment : BaseFragment() {
@@ -33,6 +34,7 @@ class ReceivedPhotosFragment : BaseFragment() {
 
     lateinit var adapter: ReceivedPhotosAdapter
 
+    private val TAG = "ReceivedPhotosFragment"
     private val PHOTO_ADAPTER_VIEW_WIDTH = 288
 
     override fun getContentView(): Int = R.layout.fragment_received_photos
@@ -48,12 +50,14 @@ class ReceivedPhotosFragment : BaseFragment() {
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { event -> onPhotoFindEvent(event) }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
 
         compositeDisposable += viewModel.receivedPhotosFragmentViewStateSubject
             .observeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { viewState -> onViewStateChanged(viewState) }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
     }
 
@@ -74,6 +78,7 @@ class ReceivedPhotosFragment : BaseFragment() {
         viewModel.loadPhotoAnswers()
             .observeOn(AndroidSchedulers.mainThread())
             .doOnSuccess { photos -> addPhotosToAdapter(photos) }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
     }
 

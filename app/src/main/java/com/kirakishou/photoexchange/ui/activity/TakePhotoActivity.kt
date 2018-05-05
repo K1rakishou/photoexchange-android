@@ -64,7 +64,9 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
     @Inject
     lateinit var vibrator: Vibrator
 
-    private val tag = "TakePhotoActivity"
+    private val TAG = "TakePhotoActivity"
+    private val VIBRATION_TIME_MS = 25L
+    private val BUTTONS_TRANSITION_DELTA = 96f
     private var translationDelta: Float = 0f
 
     override fun getContentView(): Int = R.layout.activity_take_photo
@@ -94,7 +96,7 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
     }
 
     private fun initViews() {
-        translationDelta = AndroidUtils.dpToPx(96f, this)
+        translationDelta = AndroidUtils.dpToPx(BUTTONS_TRANSITION_DELTA, this)
 
         takePhotoButton.translationY = takePhotoButton.translationY + translationDelta
         showAllPhotosButton.translationX = showAllPhotosButton.translationX + translationDelta
@@ -104,7 +106,7 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
         compositeDisposable += RxView.clicks(takePhotoButton)
             .subscribeOn(AndroidSchedulers.mainThread())
             .debounceClicks()
-            .doOnNext { vibrator.vibrate(this, 25) }
+            .doOnNext { vibrator.vibrate(this, VIBRATION_TIME_MS) }
             .observeOn(Schedulers.io())
             .concatMap { viewModel.takePhoto().toObservable() }
             .observeOn(AndroidSchedulers.mainThread())
@@ -112,15 +114,17 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
                 if (errorCode is ErrorCode.TakePhotoErrors.Ok) {
                     onPhotoTaken(errorCode.photo)
                 } else {
-                    onCouldNotTakePhoto(errorCode)
+                    showErrorCodeToast(errorCode)
                 }
             }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
 
         compositeDisposable += RxView.clicks(showAllPhotosButton)
             .subscribeOn(AndroidSchedulers.mainThread())
             .debounceClicks()
             .doOnNext { runActivity(AllPhotosActivity::class.java) }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
     }
 
@@ -136,7 +140,7 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
                     showCameraRationaleDialog()
                 } else {
-                    Timber.tag(tag).d("getPermissions() Could not obtain camera permission")
+                    Timber.tag(TAG).d("getPermissions() Could not obtain camera permission")
                     showAppCannotWorkWithoutCameraPermissionDialog()
                 }
 
@@ -188,22 +192,6 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
     private fun onPhotoTaken(myPhoto: MyPhoto) {
         runActivityWithArgs(ViewTakenPhotoActivity::class.java,
             myPhoto.toBundle(), false)
-    }
-
-    private fun onCouldNotTakePhoto(errorCode: ErrorCode.TakePhotoErrors) {
-        val errorMessage = when (errorCode) {
-            is ErrorCode.TakePhotoErrors.Ok -> return
-
-            is ErrorCode.TakePhotoErrors.UnknownError -> "Could not take photo (unknown error)"
-            is ErrorCode.TakePhotoErrors.CameraIsNotAvailable -> "Could not take photo (camera is not available)"
-            is ErrorCode.TakePhotoErrors.CameraIsNotStartedException -> "Could not take photo (camera is not started)"
-            is ErrorCode.TakePhotoErrors.TimeoutException -> "Could not take photo (exceeded maximum camera wait time)"
-            is ErrorCode.TakePhotoErrors.DatabaseError -> "Could not take photo (database error)"
-            is ErrorCode.TakePhotoErrors.CouldNotTakePhoto -> "Could not take photo (probably the view was disconnected)"
-        }
-
-        Timber.tag(tag).e(errorMessage)
-        showToast(errorMessage, Toast.LENGTH_SHORT)
     }
 
     private fun animateAppear() {

@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.view.ViewTakenPhotoActivityView
 import com.kirakishou.photoexchange.ui.fragment.AddToGalleryDialogFragment
+import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
@@ -19,12 +20,12 @@ class ViewTakenPhotoActivityViewModel(
     private val settingsRepository: SettingsRepository
 ) : BaseViewModel<ViewTakenPhotoActivityView>() {
 
-    private val tag = "[${this::class.java.simpleName}] "
+    private val TAG = "ViewTakenPhotoActivityViewModel"
 
     val addToGalleryFragmentResult = PublishSubject.create<AddToGalleryDialogFragment.FragmentResult>().toSerialized()
 
     override fun onCleared() {
-        Timber.tag(tag).d("onCleared()")
+        Timber.tag(TAG).d("onCleared()")
 
         super.onCleared()
     }
@@ -33,20 +34,29 @@ class ViewTakenPhotoActivityViewModel(
         return Observable
             .fromCallable { photosRepository.updatePhotoState(takenPhotoId, PhotoState.PHOTO_QUEUED_UP) }
             .subscribeOn(schedulerProvider.IO())
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun updateSetIsPhotoPublic(takenPhotoId: Long): Observable<Boolean> {
         return Observable
             .fromCallable { photosRepository.updateMakePhotoPublic(takenPhotoId) }
             .subscribeOn(schedulerProvider.IO())
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 
-    fun saveMakePublicFlag(makePublic: Boolean) {
-        settingsRepository.saveMakePublicFlag(makePublic)
+    fun saveMakePublicFlag(rememberChoice: Boolean, makePublic: Boolean): Completable {
+        return Completable.fromAction {
+            if (!rememberChoice) {
+                return@fromAction
+            }
+
+            settingsRepository.saveMakePublicFlag(makePublic)
+        }.doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun getMakePublicFlag(): Observable<SettingsRepository.MakePhotosPublicState> {
         return Observable.fromCallable { settingsRepository.getMakePublicFlag() }
             .subscribeOn(schedulerProvider.IO())
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 }

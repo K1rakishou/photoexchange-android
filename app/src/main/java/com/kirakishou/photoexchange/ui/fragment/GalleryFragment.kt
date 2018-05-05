@@ -22,6 +22,7 @@ import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
+import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -36,7 +37,7 @@ class GalleryFragment : BaseFragment() {
     @Inject
     lateinit var viewModel: AllPhotosActivityViewModel
 
-    private val _tag = "GalleryFragment"
+    private val TAG = "GalleryFragment"
     private val GALLERY_PHOTO_ADAPTER_VIEW_WIDTH = 288
     private val loadMoreSubject = PublishSubject.create<Int>()
     private val adapterButtonClickSubject = PublishSubject.create<GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent>()
@@ -59,22 +60,34 @@ class GalleryFragment : BaseFragment() {
     }
 
     private fun loadFirstPage() {
-        compositeDisposable += viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage)
-            .subscribeOn(Schedulers.io())
+        compositeDisposable += Observable.just(1)
             .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { addProgressFooter() }
+            .observeOn(Schedulers.io())
+            .flatMap { viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage) }
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { removeProgressFooter() }
             .doOnNext { photos -> addPhotoToAdapter(photos) }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
     }
 
     private fun initRx() {
+        compositeDisposable += viewModel.errorCodesSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .doOnNext { (requireActivity() as AllPhotosActivity).showErrorCodeToast(it) }
+            .subscribe()
+
         compositeDisposable += loadMoreSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .doOnNext { addProgressFooter() }
+            .observeOn(Schedulers.io())
             .concatMap { viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage) }
-            .delay(2, TimeUnit.SECONDS, Schedulers.io())
+            .delay(2, TimeUnit.SECONDS)
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { removeProgressFooter() }
             .doOnNext { photos -> addPhotoToAdapter(photos) }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
 
         compositeDisposable += adapterButtonClickSubject
@@ -82,7 +95,8 @@ class GalleryFragment : BaseFragment() {
             .filter { buttonClicked -> buttonClicked is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.FavouriteClicked }
             .cast(GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.FavouriteClicked::class.java)
             .concatMap { viewModel.favouritePhoto(it.photoName).zipWith(Observable.just(it.photoName)) }
-            .doOnNext { (response, photoName) -> favouritePhoto(photoName, response.first, response.second) }
+            .doOnNext { (response, photoName) -> favouritePhoto(photoName, response.isFavourited, response.favouritesCount) }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
 
         compositeDisposable += adapterButtonClickSubject
@@ -91,6 +105,7 @@ class GalleryFragment : BaseFragment() {
             .cast(GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.ReportClicked::class.java)
             .concatMap { viewModel.reportPhoto(it.photoName).zipWith(Observable.just(it.photoName)) }
             .doOnNext { (isReported, photoName) -> reportPhoto(photoName, isReported) }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
     }
 
@@ -116,12 +131,6 @@ class GalleryFragment : BaseFragment() {
         galleryPhotosList.post {
             if (!adapter.favouritePhoto(photoName, isFavourited, favouritesCount)) {
                 return@post
-            }
-
-            if (isFavourited) {
-                (requireActivity() as AllPhotosActivity).showToast(getString(R.string.photo_favourited_text), Toast.LENGTH_SHORT)
-            } else {
-                (requireActivity() as AllPhotosActivity).showToast(getString(R.string.photo_unfavourited_text), Toast.LENGTH_SHORT)
             }
         }
     }

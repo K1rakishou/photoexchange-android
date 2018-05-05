@@ -10,12 +10,20 @@ import android.support.annotation.RequiresApi
 import android.support.v4.app.NotificationCompat
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.*
+import com.kirakishou.photoexchange.helper.extension.seconds
+import com.kirakishou.photoexchange.helper.location.MyLocationManager
+import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
+import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
+import io.reactivex.Single
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.lang.ref.WeakReference
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 /**
@@ -28,9 +36,13 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
 
     private val tag = "UploadPhotoService"
 
+    private val locationManager by lazy { MyLocationManager(applicationContext) }
     private var notificationManager: NotificationManager? = null
     private val binder = UploadPhotosBinder()
+    private val compositeDisposable = CompositeDisposable()
 
+    private val GPS_DELAY_MS = 1.seconds()
+    private val GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS = 15.seconds()
     private var callback = WeakReference<PhotoUploadingCallback>(null)
     private val NOTIFICATION_ID = 1
     private val CHANNEL_ID = "1"
@@ -49,6 +61,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
 
         presenter.onDetach()
         detachCallback()
+        compositeDisposable.clear()
 
         Timber.tag(tag).d("UploadPhotoService destroyed")
     }
@@ -72,19 +85,42 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
 
     override fun onUploadingEvent(event: PhotoUploadEvent) {
         callback.get()?.onUploadPhotosEvent(event)
+
+        if (event is PhotoUploadEvent.OnEnd) {
+            if (event.allUploaded) {
+                updateUploadingNotificationShowSuccess("All photos has been successfully uploaded")
+            } else {
+                updateUploadingNotificationShowError("Could not upload one or more photos")
+            }
+        }
     }
 
     override fun onError(error: Throwable) {
         Timber.e(error)
-        updateUploadingNotificationShowError()
+        updateUploadingNotificationShowError(error.message ?: "Could not upload photos. Unknown error.")
     }
 
     override fun stopService() {
         Timber.tag(tag).d("Stopping service")
 
-        updateUploadingNotificationShowSuccess()
         stopForeground(true)
         stopSelf()
+    }
+
+    override fun getCurrentLocation(): Single<LonLat> {
+        return Single.fromCallable { locationManager.isGpsEnabled() }
+            .flatMap { isGpsEnabled ->
+                if (!isGpsEnabled) {
+                    return@flatMap Single.just(LonLat.empty())
+                }
+
+                return@flatMap RxLocationManager.start(locationManager)
+                    .observeOn(Schedulers.io())
+                    .single(LonLat.empty())
+                    .timeout(GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                    .onErrorReturnItem(LonLat.empty())
+            }
+            .delay(GPS_DELAY_MS, TimeUnit.MILLISECONDS)
     }
 
     //notifications
@@ -93,23 +129,23 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
         getNotificationManager().notify(NOTIFICATION_ID, newNotification)
     }
 
-    private fun updateUploadingNotificationShowSuccess() {
-        val newNotification = createNotificationSuccess()
+    private fun updateUploadingNotificationShowSuccess(message: String) {
+        val newNotification = createNotificationSuccess(message)
         getNotificationManager().notify(NOTIFICATION_ID, newNotification)
     }
 
-    private fun updateUploadingNotificationShowError() {
-        val newNotification = createNotificationError()
+    private fun updateUploadingNotificationShowError(message: String) {
+        val newNotification = createNotificationError(message)
         getNotificationManager().notify(NOTIFICATION_ID, newNotification)
     }
 
-    private fun createNotificationError(): Notification {
+    private fun createNotificationError(message: String): Notification {
         if (AndroidUtils.isOreoOrHigher()) {
             createNotificationChannelIfNotExists()
 
             return NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Error")
-                .setContentText("Could not upload photo")
+                .setContentText(message)
                 .setSmallIcon(android.R.drawable.stat_notify_error)
                 .setWhen(System.currentTimeMillis())
                 .setContentIntent(getNotificationIntent())
@@ -118,7 +154,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
         } else {
             return NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Error")
-                .setContentText("Could not upload photo")
+                .setContentText(message)
                 .setSmallIcon(android.R.drawable.stat_notify_error)
                 .setWhen(System.currentTimeMillis())
                 .setContentIntent(getNotificationIntent())
@@ -127,13 +163,13 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
         }
     }
 
-    private fun createNotificationSuccess(): Notification {
+    private fun createNotificationSuccess(message: String): Notification {
         if (AndroidUtils.isOreoOrHigher()) {
             createNotificationChannelIfNotExists()
 
             return NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Done")
-                .setContentText("Photo has been uploaded!")
+                .setContentText(message)
                 .setSmallIcon(android.R.drawable.stat_sys_upload_done)
                 .setWhen(System.currentTimeMillis())
                 .setContentIntent(getNotificationIntent())
@@ -142,7 +178,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
         } else {
             return NotificationCompat.Builder(this)
                 .setContentTitle("Done")
-                .setContentText("Photo has been uploaded!")
+                .setContentText(message)
                 .setSmallIcon(android.R.drawable.stat_sys_upload_done)
                 .setWhen(System.currentTimeMillis())
                 .setContentIntent(getNotificationIntent())

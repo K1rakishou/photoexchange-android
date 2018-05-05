@@ -6,6 +6,8 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
 import com.kirakishou.photoexchange.mvp.model.UploadPhotoData
+import com.kirakishou.photoexchange.mvp.model.other.LonLat
+import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
@@ -22,47 +24,77 @@ class UploadPhotoServicePresenter(
     private val schedulerProvider: SchedulerProvider,
     private val updatePhotosUseCase: UploadPhotosUseCase
 ) {
-    private val tag = "UploadPhotoServicePresenter"
+    private val TAG = "UploadPhotoServicePresenter"
     private val uploadPhotosSubject = PublishSubject.create<Unit>().toSerialized()
-    private var compositeDisposable = CompositeDisposable()
+    private val compositeDisposable = CompositeDisposable()
 
     init {
         compositeDisposable += uploadPhotosSubject
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
-            .doOnNext { Timber.tag(tag).d("before firstOrError") }
-            .firstOrError()
-            .doOnSuccess { Timber.tag(tag).d("after firstOrError") }
-            .map {
+            .flatMap { getCurrentLocation() }
+            .map { location ->
                 val userId = settingsRepository.getUserId()
                     ?: return@map UploadPhotoData.empty()
-                val location = settingsRepository.getLastLocation()
-                    ?: return@map UploadPhotoData.empty()
 
-                Timber.tag(tag).d("userId = $userId, location = $location")
-
+                Timber.tag(TAG).d("userId = $userId, location = $location")
                 return@map UploadPhotoData(false, userId, location)
             }
             .doOnError { error ->
-                callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnUnknownError(error))
                 callbacks.get()?.onError(error)
                 callbacks.get()?.stopService()
             }
-            .doOnSuccess { data ->
+            .doOnNext { data ->
+                Timber.tag(TAG).d("Check if data is empty")
                 if (data.isEmpty()) {
                     callbacks.get()?.stopService()
                 }
             }
             .filter { data -> !data.isEmpty() }
-            .doOnEvent { _, _ -> callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnPrepare()) }
-            .concatMap { data -> updatePhotosUseCase.uploadPhotos(data.userId, data.location, callbacks) }
-            .doOnSuccess { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnEnd()) }
+            .doOnEach { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnPrepare()) }
+            .concatMap { data ->
+                Timber.tag(TAG).d("Upload data")
+
+                return@concatMap updatePhotosUseCase.uploadPhotos(data.userId, data.location, callbacks)
+                    .toObservable()
+            }
+            .doOnNext { allUploaded ->
+                Timber.tag(TAG).d("onUploadingEvent(PhotoUploadEvent.OnEnd($allUploaded))")
+                callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnEnd(allUploaded))
+            }
             .doOnError { error ->
+                Timber.tag(TAG).d("onUploadingEvent(PhotoUploadEvent.OnEnd())")
                 callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnUnknownError(error))
                 callbacks.get()?.onError(error)
             }
-            .doOnEvent { _, _ -> callbacks.get()?.stopService() }
+            .doOnEach {
+                Timber.tag(TAG).d("stopService")
+                callbacks.get()?.stopService()
+            }
             .subscribe()
+    }
+
+    private fun getCurrentLocation(): Observable<LonLat> {
+        val gpsGrantedObservable = Observable.fromCallable {
+            settingsRepository.isGpsPermissionGranted()
+        }
+
+        val gpsGranted = gpsGrantedObservable
+            .filter { it }
+            .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnLocationUpdateStart()) }
+            .doOnNext { Timber.tag(TAG).d("Gps permission is granted") }
+            .flatMap {
+                callbacks.get()?.getCurrentLocation()?.toObservable()
+                    ?: Observable.just(LonLat.empty())
+            }
+            .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnLocationUpdateEnd()) }
+
+        val gpsNotGranted = gpsGrantedObservable
+            .filter { !it }
+            .doOnNext { Timber.tag(TAG).d("Gps permission is not granted") }
+            .map { LonLat.empty() }
+
+        return Observable.merge(gpsGranted, gpsNotGranted)
     }
 
     fun onDetach() {
@@ -70,7 +102,7 @@ class UploadPhotoServicePresenter(
     }
 
     fun uploadPhotos() {
-        Timber.tag(tag).d("uploadPhotos called")
+        Timber.tag(TAG).d("uploadPhotos called")
         uploadPhotosSubject.onNext(Unit)
     }
 }

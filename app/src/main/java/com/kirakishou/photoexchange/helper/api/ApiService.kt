@@ -22,9 +22,9 @@ interface ApiService {
     fun getPhotoAnswers(@Path("photo_names") photoNames: String,
                         @Path("user_id") userId: String): Single<Response<PhotoAnswerResponse>>
 
-    @GET("/v1/api/get_gallery_photos/{last_id}/{count}")
+    @GET("/v1/api/get_gallery_photo_ids/{last_id}/{count}")
     fun getGalleryPhotos(@Path("last_id") lastId: Long,
-                         @Path("count") count: Int): Single<Response<GalleryPhotosResponse>>
+                         @Path("count") count: Int): Single<Response<GalleryPhotoIdsResponse>>
 
     @PUT("/v1/api/favourite")
     fun favouritePhoto(@Body packet: FavouritePhotoPacket): Single<Response<FavouritePhotoResponse>>

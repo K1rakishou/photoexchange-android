@@ -22,15 +22,12 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.AllPhotosActivityModule
 import com.kirakishou.photoexchange.helper.extension.debounceClicks
-import com.kirakishou.photoexchange.helper.extension.seconds
-import com.kirakishou.photoexchange.helper.location.MyLocationManager
-import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
+import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoFindEvent
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
 import com.kirakishou.photoexchange.service.FindPhotoAnswerServiceConnection
@@ -51,6 +48,7 @@ import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.exceptions.CompositeException
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
@@ -89,10 +87,9 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             .plus(AllPhotosActivityModule(this))
     }
 
-    private val tag = "AllPhotosActivity"
-    private val GPS_DELAY_MS = 1.seconds()
-    private val GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS = 15.seconds()
+    private val TAG = "AllPhotosActivity"
     private val FRAGMENT_SCROLL_DELAY_MS = 250L
+    private val PHOTO_DELETE_DELAY = 3000L
     private val MY_PHOTOS_TAB_INDEX = 0
     private val RECEIVED_PHOTO_TAB_INDEX = 1
 
@@ -100,7 +97,6 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     private lateinit var uploadServiceConnection: UploadPhotoServiceConnection
 
     private val adapter = FragmentTabsPager(supportFragmentManager)
-    private val locationManager by lazy { MyLocationManager(applicationContext) }
     private var savedInstanceState: Bundle? = null
     private var viewState = AllPhotosActivityViewState()
 
@@ -116,10 +112,6 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     override fun onActivityStart() {
         initRx()
         viewModel.setView(this)
-    }
-
-    override fun onResume() {
-        super.onResume()
         checkPermissions(this.savedInstanceState)
     }
 
@@ -156,23 +148,27 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
             .subscribeOn(AndroidSchedulers.mainThread())
             .debounceClicks()
             .doOnNext { finish() }
+            .doOnError { Timber.e(it) }
             .subscribe()
 
         compositeDisposable += RxView.clicks(takePhotoButton)
             .subscribeOn(AndroidSchedulers.mainThread())
             .debounceClicks()
             .doOnNext { finish() }
+            .doOnError { Timber.e(it) }
             .subscribe()
 
         compositeDisposable += RxView.clicks(menuButton)
             .subscribeOn(AndroidSchedulers.mainThread())
             .debounceClicks()
             .doOnNext { createMenu() }
+            .doOnError { Timber.e(it) }
             .subscribe()
 
         compositeDisposable += viewModel.allPhotosActivityViewStateSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .doOnNext { onViewStateChanged(it) }
+            .doOnError { Timber.e(it) }
             .subscribe()
     }
 
@@ -207,15 +203,28 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         })
     }
 
-    private fun onPermissionsCallback(savedInstanceState: Bundle?, isGranted: Boolean) {
-        initViews()
-        restoreMyPhotosFragmentFromViewState(savedInstanceState)
-
-        if (!UploadPhotoService.isRunning(this)) {
-            viewModel.checkShouldStartPhotoUploadingService(isGranted)
-        } else {
-            bindUploadingService(false)
+    private fun onPermissionsCallback(savedInstanceState: Bundle?, granted: Boolean) {
+        compositeDisposable += Observable.fromCallable {
+            initViews()
+            restoreMyPhotosFragmentFromViewState(savedInstanceState)
         }
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .observeOn(Schedulers.io())
+            .concatMap {
+                viewModel.updateGpsPermissionGranted(granted)
+                    .toObservable<Unit>()
+                    .startWith(Unit)
+            }
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext {
+                if (!UploadPhotoService.isRunning(this)) {
+                    viewModel.checkShouldStartPhotoUploadingService()
+                } else {
+                    bindUploadingService(false)
+                }
+            }
+            .subscribe()
+
     }
 
     private fun restoreMyPhotosFragmentFromViewState(savedInstanceState: Bundle?) {
@@ -230,32 +239,6 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
     private fun initViews() {
         initTabs()
-    }
-
-    //kinda hacky, but fixes a memory leak when activity getting destroyed while location is being updated
-    override fun getCurrentLocation(): Single<LonLat> {
-        return Single.create { emitter ->
-            compositeDisposable += Single.fromCallable { locationManager.isGpsEnabled() }
-                .flatMap { isGpsEnabled ->
-                    if (!isGpsEnabled) {
-                        return@flatMap Single.just(LonLat.empty())
-                    }
-
-                    return@flatMap RxLocationManager.start(locationManager)
-                        .observeOn(Schedulers.io())
-                        .single(LonLat.empty())
-                        .timeout(GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-                        .onErrorReturnItem(LonLat.empty())
-                }
-                .delay(GPS_DELAY_MS, TimeUnit.MILLISECONDS)
-                .doOnSuccess { location ->
-                    emitter.onSuccess(location)
-                }
-                .doOnError { error ->
-                    emitter.onError(error)
-                }
-                .subscribe()
-        }
     }
 
     private fun initTabs() {
@@ -333,7 +316,6 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
         when (event) {
             is PhotoUploadEvent.OnUploaded -> {
-                showPhotoUploadedSnackbar()
             }
 
             is PhotoUploadEvent.OnFailedToUpload -> {
@@ -368,13 +350,10 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     override fun handleMyPhotoFragmentAdapterButtonClicks(adapterButtonsClickEvent: MyPhotosAdapter.MyPhotosAdapterButtonClickEvent): Observable<Boolean> {
         return when (adapterButtonsClickEvent) {
             is MyPhotosAdapter.MyPhotosAdapterButtonClickEvent.DeleteButtonClick -> {
-                Observable.fromCallable { viewModel.deletePhotoById(adapterButtonsClickEvent.photo.id).blockingAwait() }
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .doOnNext {
-                        viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.RemovePhotoById(adapterButtonsClickEvent.photo.id))
-                    }
+                Observable.fromCallable { showPhotoDeletedSnackbar(adapterButtonsClickEvent.photo) }
+                    .subscribeOn(AndroidSchedulers.mainThread())
                     .map { false }
+                    .doOnError { Timber.e(it) }
             }
 
             is MyPhotosAdapter.MyPhotosAdapterButtonClickEvent.RetryButtonClick -> {
@@ -385,31 +364,39 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
                         val photo = adapterButtonsClickEvent.photo
                         photo.photoState = PhotoState.PHOTO_QUEUED_UP
 
-                        viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.RemovePhotoById(photo.id))
+                        viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.RemovePhoto(photo))
                         viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.AddPhoto(photo))
                     }.map { true }
+                    .doOnError { Timber.e(it) }
             }
         }
     }
 
-    private fun showPhotoUploadedSnackbar() {
-        Snackbar.make(rootLayout, "A photo has been uploaded", Snackbar.LENGTH_LONG)
-            .setAction("VIEW", {
-                if (viewPager.currentItem != MY_PHOTOS_TAB_INDEX) {
-                    viewPager.currentItem = MY_PHOTOS_TAB_INDEX
-                }
+    private fun showPhotoDeletedSnackbar(photo: MyPhoto) {
+        val disposable = Single.just(1)
+            .observeOn(Schedulers.io())
+            .doOnSuccess {
+                viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.RemovePhoto(photo))
+            }
+            .zipWith(Single.timer(PHOTO_DELETE_DELAY, TimeUnit.MILLISECONDS))
+            .flatMap { viewModel.deletePhotoById(photo.id).toSingleDefault(Unit) }
+            .doOnError { Timber.e(it) }
+            .subscribe()
 
-                compositeDisposable += Single.timer(FRAGMENT_SCROLL_DELAY_MS, TimeUnit.MILLISECONDS)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .doOnSuccess { viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.ScrollToTop()) }
-                    .subscribe()
-            }).show()
+        compositeDisposable += disposable
+
+        Snackbar.make(rootLayout, getString(R.string.photo_has_been_deleted_snackbar_text), Snackbar.LENGTH_LONG)
+            .setDuration(PHOTO_DELETE_DELAY.toInt())
+            .setAction(getString(R.string.cancel_snackbar_action_text), {
+                viewModel.myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.AddPhoto(photo))
+                disposable.dispose()
+            })
+            .show()
     }
 
     private fun showPhotoAnswerFoundSnackbar() {
-        Snackbar.make(rootLayout, "A photo has been received", Snackbar.LENGTH_LONG)
-            .setAction("VIEW", {
+        Snackbar.make(rootLayout, getString(R.string.photo_has_been_received_snackbar_text), Snackbar.LENGTH_LONG)
+            .setAction(getString(R.string.show_snackbar_action_text), {
                 if (viewPager.currentItem != RECEIVED_PHOTO_TAB_INDEX) {
                     viewPager.currentItem = RECEIVED_PHOTO_TAB_INDEX
                 }
@@ -418,6 +405,7 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .doOnSuccess { viewModel.receivedPhotosFragmentViewStateSubject.onNext(ReceivedPhotosFragmentViewStateEvent.ScrollToTop()) }
+                    .doOnError { Timber.e(it) }
                     .subscribe()
             }).show()
     }
@@ -432,85 +420,39 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     }
 
     private fun bindFindingService(start: Boolean = true) {
-        Timber.tag(tag).d("bindFindingService")
+        if (!findServiceConnection.isConnected()) {
+            Timber.tag(TAG).d("bindFindingService, start = $start")
 
-        val serviceIntent = Intent(applicationContext, FindPhotoAnswerService::class.java)
+            val serviceIntent = Intent(applicationContext, FindPhotoAnswerService::class.java)
+            if (start) {
+                startService(serviceIntent)
+            }
 
-        if (start) {
-            startService(serviceIntent)
+            bindService(serviceIntent, findServiceConnection, Context.BIND_AUTO_CREATE)
+        } else {
+            Timber.tag(TAG).d("Already connected, force startSearchingForPhotoAnswers")
+            findServiceConnection.startSearchingForPhotoAnswers()
         }
-
-        bindService(serviceIntent, findServiceConnection, Context.BIND_AUTO_CREATE)
     }
 
     private fun bindUploadingService(start: Boolean = true) {
-        Timber.tag(tag).d("bindUploadingService")
+        if (!uploadServiceConnection.isConnected()) {
+            Timber.tag(TAG).d("bindUploadingService, start = $start")
 
-        val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
+            val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
+            if (start) {
+                startService(serviceIntent)
+            }
 
-        if (start) {
-            startService(serviceIntent)
+            bindService(serviceIntent, uploadServiceConnection, Context.BIND_AUTO_CREATE)
+        } else {
+            Timber.tag(TAG).d("Already connected, force startPhotosUploading")
+            uploadServiceConnection.startPhotosUploading()
         }
-
-        bindService(serviceIntent, uploadServiceConnection, Context.BIND_AUTO_CREATE)
     }
 
     private fun showUploadPhotoErrorMessage(errorCode: ErrorCode) {
-        val errorMessage = when (errorCode) {
-            is ErrorCode.UploadPhotoErrors.Remote.Ok,
-            is ErrorCode.GetPhotoAnswersErrors.Remote.Ok,
-            is ErrorCode.GalleryPhotosErrors.Remote.Ok,
-            is ErrorCode.FavouritePhotoErrors.Remote.Ok,
-            is ErrorCode.ReportPhotoErrors.Remote.Ok -> null
-
-            is ErrorCode.UploadPhotoErrors.Remote.UnknownError,
-            is ErrorCode.GetPhotoAnswersErrors.Remote.UnknownError,
-            is ErrorCode.GalleryPhotosErrors.Remote.UnknownError,
-            is ErrorCode.FavouritePhotoErrors.Remote.UnknownError,
-            is ErrorCode.ReportPhotoErrors.Remote.UnknownError -> "Unknown error"
-
-            is ErrorCode.UploadPhotoErrors.Remote.BadRequest,
-            is ErrorCode.GetPhotoAnswersErrors.Remote.BadRequest,
-            is ErrorCode.GalleryPhotosErrors.Remote.BadRequest,
-            is ErrorCode.FavouritePhotoErrors.Remote.BadRequest,
-            is ErrorCode.ReportPhotoErrors.Remote.BadRequest -> "Bad request error"
-
-            is ErrorCode.UploadPhotoErrors.Local.Timeout,
-            is ErrorCode.GetPhotoAnswersErrors.Local.Timeout,
-            is ErrorCode.GalleryPhotosErrors.Local.Timeout,
-            is ErrorCode.FavouritePhotoErrors.Local.Timeout,
-            is ErrorCode.ReportPhotoErrors.Local.Timeout -> "Operation timeout error"
-
-            is ErrorCode.UploadPhotoErrors.Remote.DatabaseError,
-            is ErrorCode.GetPhotoAnswersErrors.Remote.DatabaseError -> "Server database error"
-
-            is ErrorCode.UploadPhotoErrors.Local.BadServerResponse,
-            is ErrorCode.GetPhotoAnswersErrors.Local.BadServerResponse,
-            is ErrorCode.GalleryPhotosErrors.Local.BadServerResponse,
-            is ErrorCode.ReportPhotoErrors.Local.BadServerResponse,
-            is ErrorCode.FavouritePhotoErrors.Local.BadServerResponse -> "Bad server response error"
-
-            is ErrorCode.UploadPhotoErrors.Local.NoPhotoFileOnDisk -> "No photo file on disk error"
-            is ErrorCode.GetPhotoAnswersErrors.Remote.NoPhotosInRequest -> "No photos were selected error"
-            is ErrorCode.GetPhotoAnswersErrors.Remote.TooManyPhotosRequested -> "Too many photos requested error"
-            is ErrorCode.GetPhotoAnswersErrors.Remote.NoPhotosToSendBack -> "No photos to send back"
-            is ErrorCode.GetPhotoAnswersErrors.Remote.NotEnoughPhotosUploaded -> "Upload more photos first"
-            is ErrorCode.FavouritePhotoErrors.Remote.AlreadyFavourited -> "You have already added this photo to favourites"
-            is ErrorCode.ReportPhotoErrors.Remote.AlreadyReported -> "You have already reported this photo"
-            is ErrorCode.UploadPhotoErrors.Local.Interrupted -> "The process was interrupted by user"
-
-            is ErrorCode.TakePhotoErrors.UnknownError,
-            is ErrorCode.TakePhotoErrors.Ok,
-            is ErrorCode.TakePhotoErrors.CameraIsNotAvailable,
-            is ErrorCode.TakePhotoErrors.CameraIsNotStartedException,
-            is ErrorCode.TakePhotoErrors.TimeoutException,
-            is ErrorCode.TakePhotoErrors.DatabaseError,
-            is ErrorCode.TakePhotoErrors.CouldNotTakePhoto -> null
-        }
-
-        errorMessage?.let { msg ->
-            showToast(msg, Toast.LENGTH_SHORT)
-        }
+        showErrorCodeToast(errorCode)
     }
 
     private fun showUnknownErrorMessage(error: Throwable) {
@@ -524,7 +466,8 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
             else -> {
                 Timber.e(error)
-                showToast(error.message ?: "Unknown error (exception)", Toast.LENGTH_SHORT)
+                showToast(error.message
+                    ?: getString(R.string.unknown_error_exception_text), Toast.LENGTH_SHORT)
             }
         }
     }

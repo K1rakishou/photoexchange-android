@@ -12,6 +12,7 @@ import com.kirakishou.photoexchange.mvp.viewmodel.SettingsActivityViewModel
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
+import timber.log.Timber
 import javax.inject.Inject
 
 class SettingsActivity : BaseActivity() {
@@ -21,6 +22,8 @@ class SettingsActivity : BaseActivity() {
 
     @Inject
     lateinit var viewModel: SettingsActivityViewModel
+
+    private val TAG = "SettingsActivity"
 
     override fun getContentView(): Int = R.layout.activity_settings
 
@@ -33,6 +36,7 @@ class SettingsActivity : BaseActivity() {
                     Toast.makeText(this, "Done", Toast.LENGTH_SHORT).show()
                     finish()
                 }
+                .doOnError { Timber.tag(TAG).e(it) }
                 .subscribe()
         }
     }

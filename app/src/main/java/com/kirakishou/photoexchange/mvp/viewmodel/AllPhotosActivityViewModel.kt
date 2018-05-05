@@ -4,15 +4,14 @@ import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerPro
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.helper.extension.minutes
-import com.kirakishou.photoexchange.helper.extension.seconds
-import com.kirakishou.photoexchange.helper.util.TimeUtils
+import com.kirakishou.photoexchange.helper.extension.drainErrorCodesTo
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
 import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
+import com.kirakishou.photoexchange.interactors.UseCaseResult
 import com.kirakishou.photoexchange.mvp.model.*
 import com.kirakishou.photoexchange.mvp.model.other.Constants
-import com.kirakishou.photoexchange.mvp.model.other.LonLat
+import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 import com.kirakishou.photoexchange.ui.viewstate.AllPhotosActivityViewStateEvent
@@ -23,12 +22,7 @@ import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
-import kotlinx.coroutines.experimental.CommonPool
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.rx2.asSingle
-import kotlinx.coroutines.experimental.rx2.await
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
 
 /**
  * Created by kirakishou on 3/11/2018.
@@ -43,10 +37,7 @@ class AllPhotosActivityViewModel(
     private val schedulerProvider: SchedulerProvider
 ) : BaseViewModel<AllPhotosActivityView>() {
 
-    private val tag = "AllPhotosActivityViewModel"
-    private val LOCATION_CHECK_INTERVAL_MS = 0.minutes()
-    private val SERVICE_START_DEBOUNCE_TIME_MS = 10.seconds()
-    private val CHECK_SHOULD_START_SERVICE_DELAY_MS = 1500L
+    private val TAG = "AllPhotosActivityViewModel"
 
     val onPhotoUploadEventSubject = PublishSubject.create<PhotoUploadEvent>().toSerialized()
     val onPhotoFindEventSubject = PublishSubject.create<PhotoFindEvent>().toSerialized()
@@ -56,6 +47,7 @@ class AllPhotosActivityViewModel(
     val startPhotoUploadingServiceSubject = PublishSubject.create<Unit>().toSerialized()
     val startFindPhotoAnswerServiceSubject = PublishSubject.create<Unit>().toSerialized()
     val myPhotosAdapterButtonClickSubject = PublishSubject.create<MyPhotosAdapter.MyPhotosAdapterButtonClickEvent>().toSerialized()
+    val errorCodesSubject = PublishSubject.create<ErrorCode>().toSerialized()
 
     init {
         compositeDisposable += myPhotosAdapterButtonClickSubject
@@ -64,13 +56,12 @@ class AllPhotosActivityViewModel(
             }
             .filter { startUploadingService -> startUploadingService }
             .map { Unit }
-            .doOnNext { checkShouldStartPhotoUploadingService(true) }
-            .doOnError { Timber.e(it) }
-            .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)
+            .doOnError { Timber.tag(TAG).e(it) }
+            .subscribe(startPhotoUploadingServiceSubject::onNext)
     }
 
     override fun onCleared() {
-        Timber.tag(tag).d("onCleared()")
+        Timber.tag(TAG).d("onCleared()")
 
         super.onCleared()
     }
@@ -78,18 +69,27 @@ class AllPhotosActivityViewModel(
     fun reportPhoto(photoName: String): Observable<Boolean> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .concatMap { userId -> reportPhotoUseCase.reportPhoto(userId, photoName) }
+            .drainErrorCodesTo(errorCodesSubject)
             .subscribeOn(schedulerProvider.IO())
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 
-    fun favouritePhoto(photoName: String): Observable<Pair<Boolean, Long>> {
+    fun favouritePhoto(photoName: String): Observable<FavouritePhotoUseCase.FavouritePhotoResult> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .concatMap { userId -> favouritePhotoUseCase.favouritePhoto(userId, photoName) }
+            .drainErrorCodesTo(errorCodesSubject)
             .subscribeOn(schedulerProvider.IO())
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun loadNextPageOfGalleryPhotos(lastId: Long, photosPerPage: Int): Observable<List<GalleryPhoto>> {
-        return getGalleryPhotosUseCase.loadNextPageOfGalleryPhotos(lastId, photosPerPage)
-            .subscribeOn(schedulerProvider.IO())
+        return Observable.fromCallable { settingsRepository.getUserId() }
+            .concatMap { userId ->
+                getGalleryPhotosUseCase.loadNextPageOfGalleryPhotos(userId, lastId, photosPerPage)
+                    .subscribeOn(schedulerProvider.IO())
+            }
+            .drainErrorCodesTo(errorCodesSubject)
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun checkShouldStartFindPhotoAnswersService() {
@@ -103,18 +103,18 @@ class AllPhotosActivityViewModel(
                 val receivedPhotosCount = photoAnswerRepository.countAll()
 
                 if (Constants.isDebugBuild) {
-                    Timber.tag(tag).e("uploadedPhotosCount: $uploadedPhotosCount, receivedPhotosCount: $receivedPhotosCount")
+                    Timber.tag(TAG).d("uploadedPhotosCount: $uploadedPhotosCount, receivedPhotosCount: $receivedPhotosCount")
                 }
 
                 return@map uploadedPhotosCount > receivedPhotosCount
             }
             .filter { uploadedPhotosMoreThanReceived -> uploadedPhotosMoreThanReceived }
-            .delay(CHECK_SHOULD_START_SERVICE_DELAY_MS, TimeUnit.MILLISECONDS)
             .map { Unit }
-            .subscribe(startFindPhotoAnswerServiceSubject::onNext, startFindPhotoAnswerServiceSubject::onError)
+            .doOnError { Timber.tag(TAG).e(it) }
+            .subscribe(startFindPhotoAnswerServiceSubject::onNext)
     }
 
-    fun checkShouldStartPhotoUploadingService(updateLastLocation: Boolean) {
+    fun checkShouldStartPhotoUploadingService() {
         val observable = Observable.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
@@ -123,71 +123,32 @@ class AllPhotosActivityViewModel(
 
         compositeDisposable += observable
             .filter { count -> count == 0 }
-            .doOnNext { Timber.tag(tag).d("checkShouldStartPhotoUploadingService count == 0") }
+            .doOnNext {
+                if (Constants.isDebugBuild) {
+                    Timber.tag(TAG).d("checkShouldStartPhotoUploadingService count == 0")
+                }
+            }
             .doOnNext { checkShouldStartFindPhotoAnswersService() }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
 
         compositeDisposable += observable
             .filter { count -> count > 0 }
-            .delay(CHECK_SHOULD_START_SERVICE_DELAY_MS, TimeUnit.MILLISECONDS)
-            .debounce(SERVICE_START_DEBOUNCE_TIME_MS, TimeUnit.MILLISECONDS)
-            .doOnNext { Timber.tag(tag).d("checkShouldStartPhotoUploadingService count > 0") }
-            .map { Unit }
-            .concatMap {
-                Observable.just(1)
-                    .observeOn(schedulerProvider.IO())
-                    .doOnNext { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification()) }
-                    .concatMap { updateLastLocation(updateLastLocation) }
-                    .delay(1, TimeUnit.SECONDS)
-                    .doOnNext { myPhotosFragmentViewStateSubject.onNext(MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification()) }
-            }
-            .doOnError { Timber.e(it) }
-            .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)
-    }
-
-    private fun updateLastLocation(updateLastLocation: Boolean): Observable<Unit> {
-        return async {
-            // if gps is disabled by user then set the last location as empty (-1.0, -1.0) immediately
-            // so the user doesn't have to wait 15 seconds until getCurrentLocation returns empty
-            // location because of timeout
-
-            if (updateLastLocation) {
-                val now = TimeUtils.getTimeFast()
-                val lastTimeCheck = settingsRepository.getLastLocationCheckTime()
-
-                //request new location every LOCATION_CHECK_INTERVAL_MS
-                if (lastTimeCheck == null || (now - lastTimeCheck > LOCATION_CHECK_INTERVAL_MS)) {
-                    val currentLocation = try {
-                        getView()?.getCurrentLocation()?.await()
-                    } catch (error: Exception) {
-                        LonLat.empty()
-                    }
-
-                    if (currentLocation == null) {
-                        return@async
-                    }
-
-                    val lastLocation = settingsRepository.getLastLocation()
-                    if (lastLocation != null && !lastLocation.isEmpty() && currentLocation.isEmpty()) {
-                        return@async
-                    }
-
-                    settingsRepository.saveLastLocationCheckTime(now)
-                    settingsRepository.saveLastLocation(currentLocation)
+            .doOnNext {
+                if (Constants.isDebugBuild) {
+                    Timber.tag(TAG).d("checkShouldStartPhotoUploadingService count > 0")
                 }
-            } else {
-                settingsRepository.saveLastLocation(LonLat.empty())
             }
-
-            return@async
-        }.asSingle(CommonPool)
-            .toObservable()
+            .map { Unit }
+            .doOnError { Timber.tag(TAG).e(it) }
+            .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)
     }
 
     fun loadPhotoAnswers(): Single<List<PhotoAnswer>> {
         return Single.fromCallable { photoAnswerRepository.findAll() }
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun loadMyPhotos(): Single<MutableList<MyPhoto>> {
@@ -212,6 +173,7 @@ class AllPhotosActivityViewModel(
             return@fromCallable photos
         }.subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun forwardUploadPhotoEvent(event: PhotoUploadEvent) {
@@ -230,11 +192,19 @@ class AllPhotosActivityViewModel(
             }
         }.subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun changePhotoState(photoId: Long, newPhotoState: PhotoState): Completable {
         return Completable.fromAction { photosRepository.updatePhotoState(photoId, newPhotoState) }
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
+            .doOnError { Timber.tag(TAG).e(it) }
+    }
+
+    fun updateGpsPermissionGranted(granted: Boolean): Completable {
+        return Completable.fromAction {
+            settingsRepository.updateGpsPermissionGranted(granted)
+        }
     }
 }
