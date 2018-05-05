@@ -39,6 +39,14 @@ class SettingsRepository(
         return MakePhotosPublicState.fromInt(result.settingValue?.toInt())
     }
 
+    fun updateGpsPermissionGranted(granted: Boolean) {
+        settingsDao.insert(SettingEntity(GPS_PERMISSION_GRANTED_SETTING, granted.toString()))
+    }
+
+    fun isGpsPermissionGranted(): Boolean {
+        return settingsDao.findByName(GPS_PERMISSION_GRANTED_SETTING)?.settingValue?.toBoolean() ?: false
+    }
+
     enum class MakePhotosPublicState(val value: Int) {
         AlwaysPublic(0),
         AlwaysPrivate(1),
@@ -66,5 +74,6 @@ class SettingsRepository(
     companion object {
         const val USER_ID_SETTING = "USER_ID"
         const val MAKE_PHOTOS_PUBLIC_SETTING = "MAKE_PHOTOS_PUBLIC"
+        const val GPS_PERMISSION_GRANTED_SETTING = "GPS_PERMISSION_GRANTED"
     }
 }

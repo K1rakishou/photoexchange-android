@@ -32,9 +32,7 @@ class UploadPhotoServicePresenter(
         compositeDisposable += uploadPhotosSubject
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
-            .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnLocationUpdateStart()) }
-            .flatMap { callbacks.get()?.getCurrentLocation()?.toObservable() ?: Observable.just(LonLat.empty()) }
-            .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnLocationUpdateEnd()) }
+            .flatMap { getCurrentLocation() }
             .map { location ->
                 val userId = settingsRepository.getUserId()
                     ?: return@map UploadPhotoData.empty()
@@ -74,6 +72,29 @@ class UploadPhotoServicePresenter(
                 callbacks.get()?.stopService()
             }
             .subscribe()
+    }
+
+    private fun getCurrentLocation(): Observable<LonLat> {
+        val gpsGrantedObservable = Observable.fromCallable {
+            settingsRepository.isGpsPermissionGranted()
+        }
+
+        val gpsGranted = gpsGrantedObservable
+            .filter { it }
+            .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnLocationUpdateStart()) }
+            .doOnNext { Timber.tag(TAG).d("Gps permission is granted") }
+            .flatMap {
+                callbacks.get()?.getCurrentLocation()?.toObservable()
+                    ?: Observable.just(LonLat.empty())
+            }
+            .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnLocationUpdateEnd()) }
+
+        val gpsNotGranted = gpsGrantedObservable
+            .filter { !it }
+            .doOnNext { Timber.tag(TAG).d("Gps permission is not granted") }
+            .map { LonLat.empty() }
+
+        return Observable.merge(gpsGranted, gpsNotGranted)
     }
 
     fun onDetach() {

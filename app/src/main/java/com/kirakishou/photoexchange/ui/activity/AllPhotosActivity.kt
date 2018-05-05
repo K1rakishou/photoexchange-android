@@ -112,10 +112,6 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
     override fun onActivityStart() {
         initRx()
         viewModel.setView(this)
-    }
-
-    override fun onResume() {
-        super.onResume()
         checkPermissions(this.savedInstanceState)
     }
 
@@ -184,14 +180,18 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
                 throw RuntimeException("Couldn't find Manifest.permission.CAMERA in result permissions")
             }
 
+            var granted = true
+
             if (grantResults[index] == PackageManager.PERMISSION_DENIED) {
+                granted = false
+
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
                     showGpsRationaleDialog(savedInstanceState)
                     return@askForPermission
                 }
             }
 
-            onPermissionsCallback(savedInstanceState)
+            onPermissionsCallback(savedInstanceState, granted)
         }
     }
 
@@ -199,19 +199,32 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
         GpsRationaleDialog().show(this, {
             checkPermissions(savedInstanceState)
         }, {
-            onPermissionsCallback(savedInstanceState)
+            onPermissionsCallback(savedInstanceState, false)
         })
     }
 
-    private fun onPermissionsCallback(savedInstanceState: Bundle?) {
-        initViews()
-        restoreMyPhotosFragmentFromViewState(savedInstanceState)
-
-        if (!UploadPhotoService.isRunning(this)) {
-            viewModel.checkShouldStartPhotoUploadingService()
-        } else {
-            bindUploadingService(false)
+    private fun onPermissionsCallback(savedInstanceState: Bundle?, granted: Boolean) {
+        compositeDisposable += Observable.fromCallable {
+            initViews()
+            restoreMyPhotosFragmentFromViewState(savedInstanceState)
         }
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .observeOn(Schedulers.io())
+            .concatMap {
+                viewModel.updateGpsPermissionGranted(granted)
+                    .toObservable<Unit>()
+                    .startWith(Unit)
+            }
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext {
+                if (!UploadPhotoService.isRunning(this)) {
+                    viewModel.checkShouldStartPhotoUploadingService()
+                } else {
+                    bindUploadingService(false)
+                }
+            }
+            .subscribe()
+
     }
 
     private fun restoreMyPhotosFragmentFromViewState(savedInstanceState: Bundle?) {
@@ -453,7 +466,8 @@ class AllPhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTab
 
             else -> {
                 Timber.e(error)
-                showToast(error.message ?: getString(R.string.unknown_error_exception_text), Toast.LENGTH_SHORT)
+                showToast(error.message
+                    ?: getString(R.string.unknown_error_exception_text), Toast.LENGTH_SHORT)
             }
         }
     }

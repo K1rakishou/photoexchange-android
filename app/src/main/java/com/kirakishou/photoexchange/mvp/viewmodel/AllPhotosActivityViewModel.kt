@@ -203,4 +203,10 @@ class AllPhotosActivityViewModel(
             .observeOn(schedulerProvider.IO())
             .doOnError { Timber.tag(TAG).e(it) }
     }
+
+    fun updateGpsPermissionGranted(granted: Boolean): Completable {
+        return Completable.fromAction {
+            settingsRepository.updateGpsPermissionGranted(granted)
+        }
+    }
 }
