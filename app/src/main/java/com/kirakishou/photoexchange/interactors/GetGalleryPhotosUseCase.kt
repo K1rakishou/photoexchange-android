@@ -5,11 +5,12 @@ import com.kirakishou.photoexchange.helper.api.mapper.GalleryPhotoResponseMapper
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Observable
+import timber.log.Timber
 
 class GetGalleryPhotosUseCase(
     private val apiClient: ApiClient
 ) {
-    private val tag = "GetGalleryPhotosUseCase"
+    private val TAG = "GetGalleryPhotosUseCase"
 
     fun loadNextPageOfGalleryPhotos(userId: String, lastId: Long, photosPerPage: Int): Observable<List<GalleryPhoto>> {
         return apiClient.getGalleryPhotos(userId, lastId, photosPerPage)
@@ -22,5 +23,6 @@ class GetGalleryPhotosUseCase(
                 }
             }
             .toObservable()
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 }

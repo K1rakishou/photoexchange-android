@@ -46,7 +46,7 @@ class FindPhotoAnswersUseCase(
                 Unit
             }
             .doOnError { error ->
-                Timber.e(error)
+                Timber.tag(TAG).e(error)
                 callbacks.get()?.onError(error)
             }
     }

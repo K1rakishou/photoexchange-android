@@ -24,13 +24,15 @@ import timber.log.Timber
  */
 abstract class BaseActivity : AppCompatActivity() {
 
+    private val TAG = "${this::class.java}"
+
     private val registry by lazy {
         LifecycleRegistry(this)
     }
 
     override fun getLifecycle(): LifecycleRegistry = registry
 
-    protected val unknownErrorsSubject = PublishSubject.create<Throwable>()!!
+    protected val unknownErrorsSubject = PublishSubject.create<Throwable>()
 
     protected val compositeDisposable = CompositeDisposable()
     private var unBinder: Unbinder? = null
@@ -38,7 +40,6 @@ abstract class BaseActivity : AppCompatActivity() {
     @Suppress("UNCHECKED_CAST")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Timber.e("${this::class.java}.onCreate")
 
         setContentView(getContentView())
         resolveDaggerDependency()
@@ -74,8 +75,6 @@ abstract class BaseActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        //Timber.d("${this::class.java}.onDestroy")
-
         unBinder?.unbind()
         PhotoExchangeApplication.watch(this, this::class.simpleName)
         super.onDestroy()
@@ -85,11 +84,6 @@ abstract class BaseActivity : AppCompatActivity() {
         runOnUiThread {
             Toast.makeText(this, message, duration).show()
         }
-    }
-
-    @CallSuper
-    open fun onBadResponse(errorCode: ErrorCode) {
-        Timber.e("ErrorCode: $errorCode")
     }
 
     @CallSuper
@@ -121,6 +115,65 @@ abstract class BaseActivity : AppCompatActivity() {
 
         if (finishCurrentActivity) {
             finish()
+        }
+    }
+
+    protected fun showErrorCodeToast(errorCode: ErrorCode) {
+        val errorMessage = when (errorCode) {
+            is ErrorCode.UploadPhotoErrors.Remote.Ok,
+            is ErrorCode.GetPhotoAnswersErrors.Remote.Ok,
+            is ErrorCode.GalleryPhotosErrors.Remote.Ok,
+            is ErrorCode.FavouritePhotoErrors.Remote.Ok,
+            is ErrorCode.TakePhotoErrors.Ok,
+            is ErrorCode.ReportPhotoErrors.Remote.Ok -> null
+
+            is ErrorCode.UploadPhotoErrors.Remote.UnknownError,
+            is ErrorCode.GetPhotoAnswersErrors.Remote.UnknownError,
+            is ErrorCode.GalleryPhotosErrors.Remote.UnknownError,
+            is ErrorCode.FavouritePhotoErrors.Remote.UnknownError,
+            is ErrorCode.ReportPhotoErrors.Remote.UnknownError -> "Unknown error"
+
+            is ErrorCode.UploadPhotoErrors.Remote.BadRequest,
+            is ErrorCode.GetPhotoAnswersErrors.Remote.BadRequest,
+            is ErrorCode.GalleryPhotosErrors.Remote.BadRequest,
+            is ErrorCode.FavouritePhotoErrors.Remote.BadRequest,
+            is ErrorCode.ReportPhotoErrors.Remote.BadRequest -> "Bad request error"
+
+            is ErrorCode.UploadPhotoErrors.Local.Timeout,
+            is ErrorCode.GetPhotoAnswersErrors.Local.Timeout,
+            is ErrorCode.GalleryPhotosErrors.Local.Timeout,
+            is ErrorCode.FavouritePhotoErrors.Local.Timeout,
+            is ErrorCode.ReportPhotoErrors.Local.Timeout -> "Operation timeout error"
+
+            is ErrorCode.UploadPhotoErrors.Remote.DatabaseError,
+            is ErrorCode.GetPhotoAnswersErrors.Remote.DatabaseError -> "Server database error"
+
+            is ErrorCode.UploadPhotoErrors.Local.BadServerResponse,
+            is ErrorCode.GetPhotoAnswersErrors.Local.BadServerResponse,
+            is ErrorCode.GalleryPhotosErrors.Local.BadServerResponse,
+            is ErrorCode.ReportPhotoErrors.Local.BadServerResponse,
+            is ErrorCode.FavouritePhotoErrors.Local.BadServerResponse -> "Bad server response error"
+
+            is ErrorCode.UploadPhotoErrors.Local.NoPhotoFileOnDisk -> "No photo file on disk error"
+            is ErrorCode.GetPhotoAnswersErrors.Remote.NoPhotosInRequest -> "No photos were selected error"
+            is ErrorCode.GetPhotoAnswersErrors.Remote.TooManyPhotosRequested -> "Too many photos requested error"
+            is ErrorCode.GetPhotoAnswersErrors.Remote.NoPhotosToSendBack -> "No photos to send back"
+            is ErrorCode.GetPhotoAnswersErrors.Remote.NotEnoughPhotosUploaded -> "Upload more photos first"
+            is ErrorCode.FavouritePhotoErrors.Remote.AlreadyFavourited -> "You have already added this photo to favourites"
+            is ErrorCode.ReportPhotoErrors.Remote.AlreadyReported -> "You have already reported this photo"
+            is ErrorCode.UploadPhotoErrors.Local.Interrupted -> "The process was interrupted by user"
+
+            is ErrorCode.TakePhotoErrors.UnknownError -> "Could not take photo (unknown error)"
+            is ErrorCode.TakePhotoErrors.CameraIsNotAvailable -> "Could not take photo (camera is not available)"
+            is ErrorCode.TakePhotoErrors.CameraIsNotStartedException -> "Could not take photo (camera is not started)"
+            is ErrorCode.TakePhotoErrors.TimeoutException -> "Could not take photo (exceeded maximum camera wait time)"
+            is ErrorCode.TakePhotoErrors.DatabaseError -> "Could not take photo (database error)"
+            is ErrorCode.TakePhotoErrors.CouldNotTakePhoto -> "Could not take photo (probably the view was disconnected)"
+        }
+
+        if (errorMessage != null) {
+            Timber.tag(TAG).e(errorMessage)
+            onShowToast(errorMessage, Toast.LENGTH_SHORT)
         }
     }
 

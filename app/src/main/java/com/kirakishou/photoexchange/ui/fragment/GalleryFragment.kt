@@ -37,7 +37,7 @@ class GalleryFragment : BaseFragment() {
     @Inject
     lateinit var viewModel: AllPhotosActivityViewModel
 
-    private val _tag = "GalleryFragment"
+    private val TAG = "GalleryFragment"
     private val GALLERY_PHOTO_ADAPTER_VIEW_WIDTH = 288
     private val loadMoreSubject = PublishSubject.create<Int>()
     private val adapterButtonClickSubject = PublishSubject.create<GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent>()
@@ -64,7 +64,7 @@ class GalleryFragment : BaseFragment() {
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { photos -> addPhotoToAdapter(photos) }
-            .doOnError { Timber.e(it) }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
     }
 
@@ -77,7 +77,7 @@ class GalleryFragment : BaseFragment() {
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { removeProgressFooter() }
             .doOnNext { photos -> addPhotoToAdapter(photos) }
-            .doOnError { Timber.e(it) }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
 
         compositeDisposable += adapterButtonClickSubject
@@ -86,7 +86,7 @@ class GalleryFragment : BaseFragment() {
             .cast(GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.FavouriteClicked::class.java)
             .concatMap { viewModel.favouritePhoto(it.photoName).zipWith(Observable.just(it.photoName)) }
             .doOnNext { (response, photoName) -> favouritePhoto(photoName, response.first, response.second) }
-            .doOnError { Timber.e(it) }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
 
         compositeDisposable += adapterButtonClickSubject
@@ -95,7 +95,7 @@ class GalleryFragment : BaseFragment() {
             .cast(GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.ReportClicked::class.java)
             .concatMap { viewModel.reportPhoto(it.photoName).zipWith(Observable.just(it.photoName)) }
             .doOnNext { (isReported, photoName) -> reportPhoto(photoName, isReported) }
-            .doOnError { Timber.e(it) }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
     }
 

@@ -27,10 +27,10 @@ class TakePhotoActivityViewModel(
     private val settingsRepository: SettingsRepository
 ) : BaseViewModel<TakePhotoActivityView>() {
 
-    private val tag = "TakePhotoActivityViewModel"
+    private val TAG = "TakePhotoActivityViewModel"
 
     override fun onCleared() {
-        Timber.tag(tag).d("onCleared()")
+        Timber.tag(TAG).d("onCleared()")
 
         super.onCleared()
     }
@@ -65,7 +65,7 @@ class TakePhotoActivityViewModel(
 
                 return@async ErrorCode.TakePhotoErrors.Ok(myPhoto)
             } catch (error: Exception) {
-                Timber.tag(tag).e(error)
+                Timber.tag(TAG).e(error)
 
                 cleanUp(file, myPhoto)
                 return@async handleException(error)

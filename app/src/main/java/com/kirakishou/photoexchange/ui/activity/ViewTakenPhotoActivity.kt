@@ -15,12 +15,15 @@ import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
+import timber.log.Timber
 import javax.inject.Inject
 
 class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
 
     @Inject
     lateinit var viewModel: ViewTakenPhotoActivityViewModel
+
+    private val TAG = "ViewTakenPhotoActivity"
 
     lateinit var takenPhoto: MyPhoto
 
@@ -55,19 +58,20 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
             }
             .concatMap { fragmentResult -> onAddToGalleryFragmentResult(fragmentResult) }
             .doOnNext { onPhotoUpdated() }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
     }
 
     private fun showViewTakenPhotoFragment(intent: Intent) {
         supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, ViewTakenPhotoFragment.newInstance(intent), ViewTakenPhotoFragment.TAG)
+            .replace(R.id.fragment_container, ViewTakenPhotoFragment.newInstance(intent), ViewTakenPhotoFragment.BACKSTACK_TAG)
             .addToBackStack(null)
             .commit()
     }
 
     fun showDialogFragment() {
         supportFragmentManager.beginTransaction()
-            .add(R.id.fragment_container, AddToGalleryDialogFragment(), AddToGalleryDialogFragment.TAG)
+            .add(R.id.fragment_container, AddToGalleryDialogFragment(), AddToGalleryDialogFragment.BACKSTACK_TAG)
             .addToBackStack(null)
             .commit()
     }
@@ -81,13 +85,9 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
     }
 
     private fun onAddToGalleryFragmentResult(fragmentResult: AddToGalleryDialogFragment.FragmentResult): Observable<Boolean> {
-        return Observable.fromCallable {
-            if (fragmentResult.rememberChoice) {
-                viewModel.saveMakePublicFlag(fragmentResult.makePublic)
-            }
-
-            return@fromCallable fragmentResult.makePublic
-        }
+        return viewModel.saveMakePublicFlag(fragmentResult.rememberChoice, fragmentResult.makePublic)
+            .toObservable<Boolean>()
+            .startWith(fragmentResult.makePublic)
             .subscribeOn(Schedulers.io())
             .observeOn(Schedulers.io())
             .flatMap { isPublic ->
@@ -97,6 +97,7 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
 
                 return@flatMap Observable.just(isPublic)
             }
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     override fun onBackPressed() {
@@ -109,6 +110,7 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
                     super.onBackPressed()
                 }
             }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
     }
 

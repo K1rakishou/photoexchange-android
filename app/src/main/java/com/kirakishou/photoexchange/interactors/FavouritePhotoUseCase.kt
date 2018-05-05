@@ -3,11 +3,12 @@ package com.kirakishou.photoexchange.interactors
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Observable
+import timber.log.Timber
 
 class FavouritePhotoUseCase(
     private val apiClient: ApiClient
 ) {
-    private val tag = "FavouritePhotoUseCase"
+    private val TAG = "FavouritePhotoUseCase"
 
     fun favouritePhoto(userId: String, photoName: String): Observable<Pair<Boolean, Long>> {
         return apiClient.favouritePhoto(userId, photoName)
@@ -20,5 +21,6 @@ class FavouritePhotoUseCase(
                 }
             }
             .toObservable()
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 }

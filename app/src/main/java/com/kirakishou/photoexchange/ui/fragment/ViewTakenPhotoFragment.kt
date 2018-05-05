@@ -24,6 +24,7 @@ import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import timber.log.Timber
 import javax.inject.Inject
 
 
@@ -44,6 +45,7 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
     @Inject
     lateinit var viewModel: ViewTakenPhotoActivityViewModel
 
+    private val TAG = "ViewTakenPhotoFragment"
     lateinit var takenPhoto: MyPhoto
 
     override fun getContentView(): Int = R.layout.fragment_view_taken_photo
@@ -65,6 +67,7 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
             .subscribeOn(AndroidSchedulers.mainThread())
             .debounceClicks()
             .doOnNext { (requireActivity() as ViewTakenPhotoActivity).onBackPressed() }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
 
         compositeDisposable += RxView.clicks(fabSendPhoto)
@@ -89,6 +92,7 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
                         }
                     }
             }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
     }
 
@@ -160,7 +164,7 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
     }
 
     companion object {
-        const val TAG = "VIEW_TAKEN_PHOTO_FRAGMENT"
+        const val BACKSTACK_TAG = "VIEW_TAKEN_PHOTO_FRAGMENT"
 
         fun newInstance(intent: Intent): ViewTakenPhotoFragment {
             val fragment = ViewTakenPhotoFragment()

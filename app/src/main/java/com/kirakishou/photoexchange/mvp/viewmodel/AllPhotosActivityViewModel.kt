@@ -43,7 +43,7 @@ class AllPhotosActivityViewModel(
     private val schedulerProvider: SchedulerProvider
 ) : BaseViewModel<AllPhotosActivityView>() {
 
-    private val tag = "AllPhotosActivityViewModel"
+    private val TAG = "AllPhotosActivityViewModel"
 
     val onPhotoUploadEventSubject = PublishSubject.create<PhotoUploadEvent>().toSerialized()
     val onPhotoFindEventSubject = PublishSubject.create<PhotoFindEvent>().toSerialized()
@@ -61,12 +61,12 @@ class AllPhotosActivityViewModel(
             }
             .filter { startUploadingService -> startUploadingService }
             .map { Unit }
-            .doOnError { Timber.e(it) }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe(startPhotoUploadingServiceSubject::onNext)
     }
 
     override fun onCleared() {
-        Timber.tag(tag).d("onCleared()")
+        Timber.tag(TAG).d("onCleared()")
 
         super.onCleared()
     }
@@ -75,12 +75,14 @@ class AllPhotosActivityViewModel(
         return Observable.fromCallable { settingsRepository.getUserId() }
             .concatMap { userId -> reportPhotoUseCase.reportPhoto(userId, photoName) }
             .subscribeOn(schedulerProvider.IO())
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun favouritePhoto(photoName: String): Observable<Pair<Boolean, Long>> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .concatMap { userId -> favouritePhotoUseCase.favouritePhoto(userId, photoName) }
             .subscribeOn(schedulerProvider.IO())
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun loadNextPageOfGalleryPhotos(lastId: Long, photosPerPage: Int): Observable<List<GalleryPhoto>> {
@@ -89,6 +91,7 @@ class AllPhotosActivityViewModel(
                 getGalleryPhotosUseCase.loadNextPageOfGalleryPhotos(userId, lastId, photosPerPage)
                     .subscribeOn(schedulerProvider.IO())
             }
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun checkShouldStartFindPhotoAnswersService() {
@@ -102,14 +105,14 @@ class AllPhotosActivityViewModel(
                 val receivedPhotosCount = photoAnswerRepository.countAll()
 
                 if (Constants.isDebugBuild) {
-                    Timber.tag(tag).e("uploadedPhotosCount: $uploadedPhotosCount, receivedPhotosCount: $receivedPhotosCount")
+                    Timber.tag(TAG).d("uploadedPhotosCount: $uploadedPhotosCount, receivedPhotosCount: $receivedPhotosCount")
                 }
 
                 return@map uploadedPhotosCount > receivedPhotosCount
             }
             .filter { uploadedPhotosMoreThanReceived -> uploadedPhotosMoreThanReceived }
             .map { Unit }
-            .doOnError { Timber.e(it) }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe(startFindPhotoAnswerServiceSubject::onNext)
     }
 
@@ -122,16 +125,24 @@ class AllPhotosActivityViewModel(
 
         compositeDisposable += observable
             .filter { count -> count == 0 }
-            .doOnNext { Timber.tag(tag).d("checkShouldStartPhotoUploadingService count == 0") }
+            .doOnNext {
+                if (Constants.isDebugBuild) {
+                    Timber.tag(TAG).d("checkShouldStartPhotoUploadingService count == 0")
+                }
+            }
             .doOnNext { checkShouldStartFindPhotoAnswersService() }
-            .doOnError { Timber.e(it) }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
 
         compositeDisposable += observable
             .filter { count -> count > 0 }
-            .doOnNext { Timber.tag(tag).d("checkShouldStartPhotoUploadingService count > 0") }
+            .doOnNext {
+                if (Constants.isDebugBuild) {
+                    Timber.tag(TAG).d("checkShouldStartPhotoUploadingService count > 0")
+                }
+            }
             .map { Unit }
-            .doOnError { Timber.e(it) }
+            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)
     }
 
@@ -139,6 +150,7 @@ class AllPhotosActivityViewModel(
         return Single.fromCallable { photoAnswerRepository.findAll() }
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun loadMyPhotos(): Single<MutableList<MyPhoto>> {
@@ -163,6 +175,7 @@ class AllPhotosActivityViewModel(
             return@fromCallable photos
         }.subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun forwardUploadPhotoEvent(event: PhotoUploadEvent) {
@@ -181,11 +194,13 @@ class AllPhotosActivityViewModel(
             }
         }.subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun changePhotoState(photoId: Long, newPhotoState: PhotoState): Completable {
         return Completable.fromAction { photosRepository.updatePhotoState(photoId, newPhotoState) }
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 }
