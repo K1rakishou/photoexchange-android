@@ -125,12 +125,14 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.GalleryPhotosErrors.Remote.Ok,
             is ErrorCode.FavouritePhotoErrors.Remote.Ok,
             is ErrorCode.TakePhotoErrors.Ok,
+            is ErrorCode.GetUserIdError.Remote.Ok,
             is ErrorCode.ReportPhotoErrors.Remote.Ok -> null
 
             is ErrorCode.UploadPhotoErrors.Remote.UnknownError,
             is ErrorCode.GetPhotoAnswersErrors.Remote.UnknownError,
             is ErrorCode.GalleryPhotosErrors.Remote.UnknownError,
             is ErrorCode.FavouritePhotoErrors.Remote.UnknownError,
+            is ErrorCode.GetUserIdError.Remote.UnknownError,
             is ErrorCode.ReportPhotoErrors.Remote.UnknownError -> "Unknown error"
 
             is ErrorCode.UploadPhotoErrors.Remote.BadRequest,
@@ -143,15 +145,19 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.GetPhotoAnswersErrors.Local.Timeout,
             is ErrorCode.GalleryPhotosErrors.Local.Timeout,
             is ErrorCode.FavouritePhotoErrors.Local.Timeout,
+            is ErrorCode.GetUserIdError.Local.Timeout,
             is ErrorCode.ReportPhotoErrors.Local.Timeout -> "Operation timeout error"
 
             is ErrorCode.UploadPhotoErrors.Remote.DatabaseError,
+            is ErrorCode.GetUserIdError.Remote.DatabaseError,
+            is ErrorCode.GetUserIdError.Local.DatabaseError,
             is ErrorCode.GetPhotoAnswersErrors.Remote.DatabaseError -> "Server database error"
 
             is ErrorCode.UploadPhotoErrors.Local.BadServerResponse,
             is ErrorCode.GetPhotoAnswersErrors.Local.BadServerResponse,
             is ErrorCode.GalleryPhotosErrors.Local.BadServerResponse,
             is ErrorCode.ReportPhotoErrors.Local.BadServerResponse,
+            is ErrorCode.GetUserIdError.Local.BadServerResponse,
             is ErrorCode.FavouritePhotoErrors.Local.BadServerResponse -> "Bad server response error"
 
             is ErrorCode.UploadPhotoErrors.Local.NoPhotoFileOnDisk -> "No photo file on disk error"
@@ -162,7 +168,6 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.FavouritePhotoErrors.Remote.AlreadyFavourited -> "You have already added this photo to favourites"
             is ErrorCode.ReportPhotoErrors.Remote.AlreadyReported -> "You have already reported this photo"
             is ErrorCode.UploadPhotoErrors.Local.Interrupted -> "The process was interrupted by user"
-
             is ErrorCode.TakePhotoErrors.UnknownError -> "Could not take photo (unknown error)"
             is ErrorCode.TakePhotoErrors.CameraIsNotAvailable -> "Could not take photo (camera is not available)"
             is ErrorCode.TakePhotoErrors.CameraIsNotStartedException -> "Could not take photo (camera is not started)"
@@ -170,6 +175,8 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.TakePhotoErrors.DatabaseError -> "Could not take photo (database error)"
             is ErrorCode.TakePhotoErrors.CouldNotTakePhoto -> "Could not take photo (probably the view was disconnected)"
             is ErrorCode.GalleryPhotosErrors.Local.DatabaseError -> "Could not cache gallery photos in the database"
+            is ErrorCode.UploadPhotoErrors.Remote.CouldNotGetUserId -> "Could not retrieve user id from the server"
+            is ErrorCode.UploadPhotoErrors.Local.DatabaseError -> "Could not save user id in the database"
         }
 
         if (errorMessage != null) {

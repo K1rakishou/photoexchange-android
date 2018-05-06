@@ -18,6 +18,7 @@ sealed class ErrorCode(val value: Int) {
             class Ok : Remote(0)
             class BadRequest : Remote(1)
             class DatabaseError : Remote(2)
+            class CouldNotGetUserId : Remote(3)
         }
 
         sealed class Local(value: Int) : UploadPhotoErrors(value) {
@@ -25,6 +26,7 @@ sealed class ErrorCode(val value: Int) {
             class NoPhotoFileOnDisk : Local(-1001)
             class Timeout : Local(-1002)
             class Interrupted : Local(-1003)
+            class DatabaseError : Local(-1004)
         }
     }
 
@@ -85,6 +87,20 @@ sealed class ErrorCode(val value: Int) {
         sealed class Local(value: Int) : ReportPhotoErrors(value) {
             class BadServerResponse(val message: String? = null) : Local(-1000)
             class Timeout : Local(-1001)
+        }
+    }
+
+    sealed class GetUserIdError(value: Int) : ErrorCode(value) {
+        sealed class Remote(value: Int) : GetUserIdError(value) {
+            class UnknownError : Remote(-1)
+            class Ok : Remote(0)
+            class DatabaseError : Remote(1)
+        }
+
+        sealed class Local(value: Int) : GetUserIdError(value) {
+            class BadServerResponse(val message: String? = null) : Local(-1000)
+            class Timeout : Local(-1001)
+            class DatabaseError : Local(-1002)
         }
     }
 

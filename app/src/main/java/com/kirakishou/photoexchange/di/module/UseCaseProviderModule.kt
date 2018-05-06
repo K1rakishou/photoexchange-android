@@ -50,4 +50,11 @@ class UseCaseProviderModule {
     fun provideFavouritePhotoUseCase(apiClient: ApiClient): FavouritePhotoUseCase {
         return FavouritePhotoUseCase(apiClient)
     }
+
+    @Singleton
+    @Provides
+    fun provideGetUserIdUseCase(settingsRepository: SettingsRepository,
+                                apiClient: ApiClient): GetUserIdUseCase {
+        return GetUserIdUseCase(settingsRepository, apiClient)
+    }
 }

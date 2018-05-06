@@ -49,4 +49,9 @@ class ApiClient
         return ReportPhotoRequest<ReportPhotoResponse>(userId, photoName, apiService, schedulerProvider, gson)
             .execute()
     }
+
+    fun getUserId(): Single<GetUserIdResponse> {
+        return GetUserIdRequest<GetUserIdResponse>(apiService, schedulerProvider, gson)
+            .execute()
+    }
 }

@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.interactors
 
+import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotoMapper
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepository
@@ -19,7 +20,7 @@ class GetGalleryPhotosUseCase(
 ) {
     private val TAG = "GetGalleryPhotosUseCase"
 
-    fun loadNextPageOfGalleryPhotos(userId: String, lastId: Long, photosPerPage: Int): Single<UseCaseResult<List<GalleryPhoto>>> {
+    fun loadNextPageOfGalleryPhotos(userId: String, lastId: Long, photosPerPage: Int): Single<Either<ErrorCode, List<GalleryPhoto>>> {
         return async {
             Timber.tag(TAG).d("sending getGalleryPhotoIds request...")
 
@@ -28,7 +29,7 @@ class GetGalleryPhotosUseCase(
 
             Timber.tag(TAG).d("Got getGalleryPhotoIdsResponse answer, errorCode is $getGalleryPhotoIdsErrorCode")
             if (getGalleryPhotoIdsErrorCode !is ErrorCode.GalleryPhotosErrors.Remote.Ok) {
-                return@async UseCaseResult.Error(getGalleryPhotoIdsErrorCode) as UseCaseResult<List<GalleryPhoto>>
+                return@async Either.Error(getGalleryPhotoIdsErrorCode)
             }
 
             val resultList = mutableListOf<GalleryPhoto>()
@@ -50,12 +51,12 @@ class GetGalleryPhotosUseCase(
 
                 Timber.tag(TAG).d("Got getGalleryPhotosResponse answer, errorCode is $getGalleryPhotosErrorCode")
                 if (getGalleryPhotosErrorCode !is ErrorCode.GalleryPhotosErrors.Remote.Ok) {
-                    return@async UseCaseResult.Error(getGalleryPhotosErrorCode) as UseCaseResult<List<GalleryPhoto>>
+                    return@async Either.Error(getGalleryPhotosErrorCode)
                 }
 
                 Timber.tag(TAG).d("galleryPhotoIds2 = ${getGalleryPhotosResponse.galleryPhotos.map { it.id }}")
                 if (!galleryPhotoRepository.saveMany(getGalleryPhotosResponse.galleryPhotos)) {
-                    return@async UseCaseResult.Error(ErrorCode.GalleryPhotosErrors.Local.DatabaseError()) as UseCaseResult<List<GalleryPhoto>>
+                    return@async Either.Error(ErrorCode.GalleryPhotosErrors.Local.DatabaseError())
                 }
 
                 resultList.addAll(GalleryPhotoMapper.toGalleryPhotoList(getGalleryPhotosResponse.galleryPhotos))
@@ -64,7 +65,7 @@ class GetGalleryPhotosUseCase(
             resultList.sortByDescending { it.galleryPhotoId }
 
             Timber.tag(TAG).d("resultList = ${resultList.map { it.galleryPhotoId }}")
-            return@async UseCaseResult.Result(resultList) as UseCaseResult<List<GalleryPhoto>>
+            return@async Either.Value(resultList)
         }.asSingle(CommonPool)
     }
 

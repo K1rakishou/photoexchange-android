@@ -35,4 +35,7 @@ interface ApiService {
 
     @PUT("/v1/api/report")
     fun reportPhoto(@Body packet: ReportPhotoPacket): Single<Response<ReportPhotoResponse>>
+
+    @GET("/v1/api/get_user_id")
+    fun getUserId(): Single<Response<GetUserIdResponse>>
 }

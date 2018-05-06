@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerPro
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.extension.asWeak
+import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.service.UploadPhotoService
 import com.kirakishou.photoexchange.service.UploadPhotoServicePresenter

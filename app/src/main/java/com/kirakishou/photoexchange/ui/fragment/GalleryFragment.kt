@@ -66,6 +66,7 @@ class GalleryFragment : BaseFragment() {
             .doOnNext { addProgressFooter() }
             .observeOn(Schedulers.io())
             .flatMap { viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage) }
+            .delay(1, TimeUnit.SECONDS)
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { removeProgressFooter() }
             .doOnNext { photos -> addPhotoToAdapter(photos) }
