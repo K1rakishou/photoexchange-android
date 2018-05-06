@@ -1,7 +1,6 @@
 package com.kirakishou.photoexchange.helper.extension
 
-import com.kirakishou.photoexchange.interactors.UseCaseResult
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
+import com.kirakishou.photoexchange.helper.Either
 import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -18,14 +17,14 @@ fun <T> Observable<T>.debounceClicks(): Observable<T> {
         .observeOn(AndroidSchedulers.mainThread())
 }
 
-inline fun <T, reified R : UseCaseResult.Result<T>> Observable<UseCaseResult<T>>.drainErrorCodesTo(observer: Observer<ErrorCode>): Observable<T> {
+inline fun <E, V, reified R : Either.Value<V>> Observable<Either<E, V>>.drainErrorCodesTo(observer: Observer<E>): Observable<V> {
     return this.map { useCaseResult ->
         if (useCaseResult !is R) {
-            observer.onNext((useCaseResult as UseCaseResult.Error).errorCode)
+            observer.onNext((useCaseResult as Either.Error).error)
         }
 
         return@map useCaseResult
     }
         .filter { it is R }
-        .map { (it as R).result }
+        .map { (it as R).value }
 }

@@ -8,11 +8,11 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.ActivityCompat
+import android.support.v7.widget.CardView
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AccelerateInterpolator
 import android.widget.LinearLayout
-import android.widget.Toast
 import androidx.core.animation.addListener
 import butterknife.BindView
 import com.jakewharton.rxbinding2.view.RxView
@@ -33,12 +33,14 @@ import com.kirakishou.photoexchange.ui.dialog.CameraIsNotAvailableDialog
 import com.kirakishou.photoexchange.ui.dialog.CameraRationaleDialog
 import io.fotoapparat.view.CameraView
 import io.reactivex.Completable
+import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.io.File
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
@@ -51,6 +53,9 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
 
     @BindView(R.id.take_photo_button)
     lateinit var takePhotoButton: FloatingActionButton
+
+    @BindView(R.id.notification)
+    lateinit var notification: CardView
 
     @Inject
     lateinit var viewModel: TakePhotoActivityViewModel
@@ -100,9 +105,15 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
 
         takePhotoButton.translationY = takePhotoButton.translationY + translationDelta
         showAllPhotosButton.translationX = showAllPhotosButton.translationX + translationDelta
+        notification.alpha = 0f
     }
 
     private fun initRx() {
+        compositeDisposable += viewModel.errorCodesSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .doOnNext { showErrorCodeToast(it) }
+            .subscribe()
+
         compositeDisposable += RxView.clicks(takePhotoButton)
             .subscribeOn(AndroidSchedulers.mainThread())
             .debounceClicks()
@@ -147,9 +158,31 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
                 return@askForPermission
             }
 
-            animateAppear()
-            startCamera()
+            onPermissionCallback()
         }
+    }
+
+    private fun onPermissionCallback() {
+        compositeDisposable += viewModel.hasUserIdAlready()
+            .subscribeOn(Schedulers.io())
+            .flatMap { hasUserId ->
+                if (!hasUserId) {
+                    Observable
+                        .fromCallable { showNotification() }
+                        .observeOn(Schedulers.io())
+                        .flatMap { viewModel.getUserId() }
+                        .delay(1, TimeUnit.SECONDS)
+                        .flatMap { Observable.fromCallable { hideNotification() } }
+                        .doOnError { Timber.tag(TAG).e(it) }
+                        .map { Unit }
+                } else {
+                    Observable.just(Unit)
+                }
+            }
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { startCamera() }
+            .doOnNext { animateAppear() }
+            .subscribe()
     }
 
     private fun startCamera() {
@@ -194,6 +227,38 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
             myPhoto.toBundle(), false)
     }
 
+    private fun showNotification() {
+        runOnUiThread {
+            val set = AnimatorSet()
+
+            val animation = ObjectAnimator.ofFloat(notification, View.ALPHA, 0f, 1f)
+            animation.setInterpolator(AccelerateDecelerateInterpolator())
+
+            set.play(animation)
+            set.setDuration(200)
+            set.addListener(onStart = {
+                notification.visibility = View.VISIBLE
+            })
+            set.start()
+        }
+    }
+
+    private fun hideNotification() {
+        runOnUiThread {
+            val set = AnimatorSet()
+
+            val animation = ObjectAnimator.ofFloat(notification, View.ALPHA, 1f, 0f)
+            animation.setInterpolator(AccelerateInterpolator())
+
+            set.play(animation)
+            set.setDuration(200)
+            set.addListener(onEnd = {
+                notification.visibility = View.GONE
+            })
+            set.start()
+        }
+    }
+
     private fun animateAppear() {
         runOnUiThread {
             val set = AnimatorSet()
@@ -210,6 +275,9 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
             set.addListener(onEnd = {
                 takePhotoButton.isClickable = true
                 showAllPhotosButton.isClickable = true
+            }, onStart = {
+                takePhotoButton.visibility = View.VISIBLE
+                showAllPhotosButton.visibility = View.VISIBLE
             })
             set.start()
         }
@@ -231,6 +299,9 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
                 takePhotoButton.isClickable = false
                 showAllPhotosButton.isClickable = false
             }, onEnd = {
+                takePhotoButton.visibility = View.GONE
+                showAllPhotosButton.visibility = View.GONE
+
                 emitter.onComplete()
             })
             set.start()

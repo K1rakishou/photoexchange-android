@@ -33,13 +33,15 @@ class EndlessRecyclerOnScrollListener(
         totalItemCount = gridLayoutManager.itemCount
         lastVisibleItem = gridLayoutManager.findLastVisibleItemPosition()
 
-        if (!loading.get() && (totalItemCount <= (lastVisibleItem + visibleThreshold))) {
-            loading.set(true)
-
+        if (loading.compareAndSet(false, true) && (totalItemCount <= (lastVisibleItem + visibleThreshold))) {
             Timber.tag(tag).d("Loading new page $currentPage")
             loadMoreSubject.onNext(currentPage)
             currentPage++
         }
+    }
+
+    fun pageLoading() {
+        loading.set(true)
     }
 
     fun pageLoaded() {

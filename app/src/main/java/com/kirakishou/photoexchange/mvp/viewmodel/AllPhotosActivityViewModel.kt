@@ -8,7 +8,6 @@ import com.kirakishou.photoexchange.helper.extension.drainErrorCodesTo
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
 import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
-import com.kirakishou.photoexchange.interactors.UseCaseResult
 import com.kirakishou.photoexchange.mvp.model.*
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
@@ -87,6 +86,7 @@ class AllPhotosActivityViewModel(
             .concatMap { userId ->
                 getGalleryPhotosUseCase.loadNextPageOfGalleryPhotos(userId, lastId, photosPerPage)
                     .subscribeOn(schedulerProvider.IO())
+                    .toObservable()
             }
             .drainErrorCodesTo(errorCodesSubject)
             .doOnError { Timber.tag(TAG).e(it) }

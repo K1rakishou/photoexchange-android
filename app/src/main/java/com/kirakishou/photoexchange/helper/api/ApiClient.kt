@@ -30,8 +30,13 @@ class ApiClient
             .execute()
     }
 
-    fun getGalleryPhotos(lastId: Long, photosPerPage: Int): Single<GalleryPhotoIdsResponse> {
-        return GetGalleryPhotosRequest<GalleryPhotoIdsResponse>(lastId, photosPerPage, apiService, schedulerProvider, gson)
+    fun getGalleryPhotoIds(lastId: Long, photosPerPage: Int): Single<GalleryPhotoIdsResponse> {
+        return GetGalleryPhotoIdsRequest<GalleryPhotoIdsResponse>(lastId, photosPerPage, apiService, schedulerProvider, gson)
+            .execute()
+    }
+
+    fun getGalleryPhotos(userId: String, galleryPhotoIds: String): Single<GalleryPhotosResponse> {
+        return GetGalleryPhotosRequest<GalleryPhotosResponse>(userId, galleryPhotoIds, apiService, schedulerProvider, gson)
             .execute()
     }
 
@@ -42,6 +47,11 @@ class ApiClient
 
     fun reportPhoto(userId: String, photoName: String): Single<ReportPhotoResponse> {
         return ReportPhotoRequest<ReportPhotoResponse>(userId, photoName, apiService, schedulerProvider, gson)
+            .execute()
+    }
+
+    fun getUserId(): Single<GetUserIdResponse> {
+        return GetUserIdRequest<GetUserIdResponse>(apiService, schedulerProvider, gson)
             .execute()
     }
 }

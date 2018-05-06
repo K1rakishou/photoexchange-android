@@ -9,8 +9,8 @@ import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
-import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
+import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.service.UploadPhotoServiceCallbacks
 import io.reactivex.Single
 import kotlinx.coroutines.experimental.CommonPool
@@ -62,7 +62,6 @@ class UploadPhotosUseCase(
                                     throw error
                                 }
 
-                                Timber.tag(TAG).d("Interrupted")
                                 UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.Local.Interrupted())
                             }
 

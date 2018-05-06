@@ -4,6 +4,7 @@ import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.TakePhotoActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
 import dagger.Module
@@ -23,7 +24,8 @@ class MockTakePhotoActivityModule(
     @Provides
     fun provideViewModelFactory(schedulerProvider: SchedulerProvider,
                                 photosRepository: PhotosRepository,
-                                settingsRepository: SettingsRepository): TakePhotoActivityViewModelFactory {
-        return TakePhotoActivityViewModelFactory(WeakReference(mockedView), photosRepository, settingsRepository, schedulerProvider)
+                                settingsRepository: SettingsRepository,
+                                getUserIdUseCase: GetUserIdUseCase): TakePhotoActivityViewModelFactory {
+        return TakePhotoActivityViewModelFactory(photosRepository, schedulerProvider, settingsRepository, getUserIdUseCase)
     }
 }

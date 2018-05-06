@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.interactors
 
+import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Observable
@@ -10,17 +11,15 @@ class ReportPhotoUseCase(
 ) {
     private val TAG = "ReportPhotoUseCase"
 
-    fun reportPhoto(userId: String, photoName: String): Observable<UseCaseResult<Boolean>> {
+    fun reportPhoto(userId: String, photoName: String): Observable<Either<ErrorCode, Boolean>> {
         return apiClient.reportPhoto(userId, photoName)
             .map { response ->
-                val errorCode = response.errorCode as ErrorCode.ReportPhotoErrors
-
-                val result =  when (errorCode) {
-                    is ErrorCode.ReportPhotoErrors.Remote.Ok -> UseCaseResult.Result(response.isReported)
-                    else -> UseCaseResult.Error(errorCode)
+                val errorCode = response.errorCode
+                if (errorCode !is ErrorCode.ReportPhotoErrors.Remote.Ok) {
+                    return@map Either.Error(errorCode)
                 }
 
-                return@map result as UseCaseResult<Boolean>
+                return@map Either.Value(response.isReported)
             }
             .toObservable()
             .doOnError { Timber.tag(TAG).e(it) }

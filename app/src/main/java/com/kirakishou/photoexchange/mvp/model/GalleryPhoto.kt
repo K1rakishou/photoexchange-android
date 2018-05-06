@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.mvp.model
 
 class GalleryPhoto(
-    val remoteId: Long,
+    val galleryPhotoId: Long,
     val photoName: String,
     val lon: Double,
     val lat: Double,

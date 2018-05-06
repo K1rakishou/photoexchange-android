@@ -5,11 +5,11 @@ import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
-import com.kirakishou.photoexchange.mvp.model.UploadPhotoData
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.rxkotlin.zipWith
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.lang.ref.WeakReference
@@ -22,7 +22,7 @@ class UploadPhotoServicePresenter(
     private val myPhotosRepository: PhotosRepository,
     private val settingsRepository: SettingsRepository,
     private val schedulerProvider: SchedulerProvider,
-    private val updatePhotosUseCase: UploadPhotosUseCase
+    private val uploadPhotosUseCase: UploadPhotosUseCase
 ) {
     private val TAG = "UploadPhotoServicePresenter"
     private val uploadPhotosSubject = PublishSubject.create<Unit>().toSerialized()
@@ -33,29 +33,12 @@ class UploadPhotoServicePresenter(
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
             .flatMap { getCurrentLocation() }
-            .map { location ->
-                val userId = settingsRepository.getUserId()
-                    ?: return@map UploadPhotoData.empty()
-
-                Timber.tag(TAG).d("userId = $userId, location = $location")
-                return@map UploadPhotoData(false, userId, location)
-            }
-            .doOnError { error ->
-                callbacks.get()?.onError(error)
-                callbacks.get()?.stopService()
-            }
-            .doOnNext { data ->
-                Timber.tag(TAG).d("Check if data is empty")
-                if (data.isEmpty()) {
-                    callbacks.get()?.stopService()
-                }
-            }
-            .filter { data -> !data.isEmpty() }
+            .flatMap { location -> getUserId().zipWith(Observable.just(location)) }
             .doOnEach { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnPrepare()) }
-            .concatMap { data ->
+            .concatMap { (userId, location) ->
                 Timber.tag(TAG).d("Upload data")
 
-                return@concatMap updatePhotosUseCase.uploadPhotos(data.userId, data.location, callbacks)
+                return@concatMap uploadPhotosUseCase.uploadPhotos(userId, location, callbacks)
                     .toObservable()
             }
             .doOnNext { allUploaded ->
@@ -72,6 +55,15 @@ class UploadPhotoServicePresenter(
                 callbacks.get()?.stopService()
             }
             .subscribe()
+    }
+
+    private fun getUserId(): Observable<String> {
+        return Observable.fromCallable { settingsRepository.getUserId() }
+            .doOnNext { userId ->
+                if (userId.isEmpty()) {
+                    throw IllegalStateException("Empty userId!")
+                }
+            }
     }
 
     private fun getCurrentLocation(): Observable<LonLat> {
