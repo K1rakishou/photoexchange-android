@@ -1,9 +1,9 @@
 package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.api.ApiClient
-import com.kirakishou.photoexchange.helper.api.mapper.PhotoAnswerResponseMapper
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.isFail
+import com.kirakishou.photoexchange.helper.database.mapper.PhotoAnswerMapper
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
@@ -66,7 +66,7 @@ class FindPhotoAnswersUseCase(
                     PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED)
             }
 
-            val photoAnswer = PhotoAnswerResponseMapper.toPhotoAnswer(insertedPhotoAnswerId, photoAnswerResponse)
+            val photoAnswer = PhotoAnswerMapper.toPhotoAnswer(insertedPhotoAnswerId, photoAnswerResponse)
 
             if (result) {
                 val photoId = myPhotosRepository.findByPhotoIdByName(photoAnswer.uploadedPhotoName)

@@ -7,7 +7,7 @@ import com.kirakishou.photoexchange.mvp.model.MyPhoto
 /**
  * Created by kirakishou on 3/9/2018.
  */
-object MyPhotoEntityMapper {
+object MyPhotoMapper {
 
     fun toMyPhoto(myPhotoEntity: MyPhotoEntity, tempFileEntity: TempFileEntity): MyPhoto {
         if (myPhotoEntity.id == null || myPhotoEntity.id!! <= 0L) {

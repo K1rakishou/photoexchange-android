@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.di.module
 
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.MyDatabase
+import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepository
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
@@ -33,8 +34,9 @@ class UseCaseProviderModule {
 
     @Singleton
     @Provides
-    fun provideGetGalleryPhotosUseCase(apiClient: ApiClient): GetGalleryPhotosUseCase {
-        return GetGalleryPhotosUseCase(apiClient)
+    fun provideGetGalleryPhotosUseCase(apiClient: ApiClient,
+                                       galleryPhotoRepository: GalleryPhotoRepository): GetGalleryPhotosUseCase {
+        return GetGalleryPhotosUseCase(apiClient, galleryPhotoRepository)
     }
 
     @Singleton

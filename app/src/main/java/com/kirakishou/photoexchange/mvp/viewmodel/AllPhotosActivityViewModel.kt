@@ -87,6 +87,7 @@ class AllPhotosActivityViewModel(
             .concatMap { userId ->
                 getGalleryPhotosUseCase.loadNextPageOfGalleryPhotos(userId, lastId, photosPerPage)
                     .subscribeOn(schedulerProvider.IO())
+                    .toObservable()
             }
             .drainErrorCodesTo(errorCodesSubject)
             .doOnError { Timber.tag(TAG).e(it) }

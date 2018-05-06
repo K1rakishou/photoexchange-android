@@ -1,9 +1,8 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
-import com.kirakishou.photoexchange.helper.api.mapper.PhotoAnswerResponseMapper
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.PhotoAnswerEntity
-import com.kirakishou.photoexchange.helper.database.mapper.PhotoAnswerEntityMapper
+import com.kirakishou.photoexchange.helper.database.mapper.PhotoAnswerMapper
 import com.kirakishou.photoexchange.mvp.model.PhotoAnswer
 import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
 
@@ -17,7 +16,7 @@ open class PhotoAnswerRepository(
     }
 
     fun insert(photoAnswer: PhotoAnswerResponse.PhotoAnswer): Long {
-        val photoAnswerEntity = PhotoAnswerResponseMapper.toPhotoAnswerEntity(photoAnswer)
+        val photoAnswerEntity = PhotoAnswerMapper.toPhotoAnswerEntity(photoAnswer)
         return insert(photoAnswerEntity)
     }
 
@@ -27,6 +26,6 @@ open class PhotoAnswerRepository(
 
     fun findAll(): List<PhotoAnswer> {
         val allPhotos = photoAnswerDao.findAll()
-        return allPhotos.map { PhotoAnswerEntityMapper.toPhotoAnswer(it) }
+        return allPhotos.map { PhotoAnswerMapper.toPhotoAnswer(it) }
     }
 }

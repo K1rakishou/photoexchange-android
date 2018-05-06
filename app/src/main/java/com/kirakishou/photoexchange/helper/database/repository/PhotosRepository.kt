@@ -4,13 +4,11 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.MyPhotoEntity
 import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
 import com.kirakishou.photoexchange.helper.database.isFail
-import com.kirakishou.photoexchange.helper.database.mapper.MyPhotoEntityMapper
+import com.kirakishou.photoexchange.helper.database.mapper.MyPhotoMapper
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import timber.log.Timber
 import java.io.File
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
 
 /**
  * Created by kirakishou on 3/3/2018.
@@ -42,7 +40,7 @@ open class PhotosRepository(
             val myPhotoId = myPhotoDao.insert(myPhotoEntity)
 
             myPhotoEntity.id = myPhotoId
-            photo = MyPhotoEntityMapper.toMyPhoto(myPhotoEntity, tempFileEntity)
+            photo = MyPhotoMapper.toMyPhoto(myPhotoEntity, tempFileEntity)
 
             return@transactional true
         }
@@ -95,7 +93,7 @@ open class PhotosRepository(
             val myPhotoEntity = myPhotoDao.findById(id) ?: MyPhotoEntity.empty()
             val tempFileEntity = findTempFileById(id)
 
-            photo = MyPhotoEntityMapper.toMyPhoto(myPhotoEntity, tempFileEntity)
+            photo = MyPhotoMapper.toMyPhoto(myPhotoEntity, tempFileEntity)
             return@transactional true
         }
 
@@ -113,7 +111,7 @@ open class PhotosRepository(
                 myPhotoEntity.id?.let { myPhotoId ->
                     val tempFile = findTempFileById(myPhotoId)
 
-                    MyPhotoEntityMapper.toMyPhoto(myPhotoEntity, tempFile).let { myPhoto ->
+                    MyPhotoMapper.toMyPhoto(myPhotoEntity, tempFile).let { myPhoto ->
                         allMyPhotos += myPhoto
                     }
                 }
@@ -166,7 +164,7 @@ open class PhotosRepository(
             for (photo in photos) {
                 photo.id?.let { photoId ->
                     val tempFileEntity = findTempFileById(photoId)
-                    return@let MyPhotoEntityMapper.toMyPhoto(photo, tempFileEntity)
+                    return@let MyPhotoMapper.toMyPhoto(photo, tempFileEntity)
                 }
             }
 
@@ -174,7 +172,7 @@ open class PhotosRepository(
                 .filter { it.id != null }
                 .map { photo ->
                     val tempFileEntity = findTempFileById(photo.id!!)
-                    MyPhotoEntityMapper.toMyPhoto(photo, tempFileEntity)
+                    MyPhotoMapper.toMyPhoto(photo, tempFileEntity)
                 }
                 .toList()
 
@@ -192,7 +190,7 @@ open class PhotosRepository(
 
             for (photo in allPhotoReadyToUploading) {
                 val tempFileEntity = findTempFileById(photo.id!!)
-                resultList += MyPhotoEntityMapper.toMyPhoto(photo, tempFileEntity)
+                resultList += MyPhotoMapper.toMyPhoto(photo, tempFileEntity)
             }
 
             return@transactional true

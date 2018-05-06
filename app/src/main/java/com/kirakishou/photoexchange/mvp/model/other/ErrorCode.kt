@@ -56,6 +56,7 @@ sealed class ErrorCode(val value: Int) {
         sealed class Local(value: Int) : GalleryPhotosErrors(value) {
             class BadServerResponse(val message: String? = null) : Local(-1000)
             class Timeout : Local(-1001)
+            class DatabaseError : Local(-1002)
         }
     }
 

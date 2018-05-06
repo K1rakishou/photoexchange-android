@@ -169,6 +169,7 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.TakePhotoErrors.TimeoutException -> "Could not take photo (exceeded maximum camera wait time)"
             is ErrorCode.TakePhotoErrors.DatabaseError -> "Could not take photo (database error)"
             is ErrorCode.TakePhotoErrors.CouldNotTakePhoto -> "Could not take photo (probably the view was disconnected)"
+            is ErrorCode.GalleryPhotosErrors.Local.DatabaseError -> "Could not cache gallery photos in the database"
         }
 
         if (errorMessage != null) {

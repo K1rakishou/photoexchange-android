@@ -62,6 +62,7 @@ class GalleryFragment : BaseFragment() {
     private fun loadFirstPage() {
         compositeDisposable += Observable.just(1)
             .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { endlessScrollListener.pageLoading() }
             .doOnNext { addProgressFooter() }
             .observeOn(Schedulers.io())
             .flatMap { viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage) }
@@ -166,7 +167,7 @@ class GalleryFragment : BaseFragment() {
             endlessScrollListener.pageLoaded()
 
             if (photos.isNotEmpty()) {
-                lastId = photos.last().remoteId
+                lastId = photos.last().galleryPhotoId
             }
 
             if (photos.size < photosPerPage) {

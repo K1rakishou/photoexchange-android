@@ -41,6 +41,7 @@ class TakePhotoActivityViewModel(
             var file: File? = null
 
             try {
+                //TODO: move userId generation in other place where it can be called even if user not taking any photos
                 settingsRepository.generateUserIdIfNotExists()
                 photosRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN)
                 photosRepository.cleanFilesDirectory()

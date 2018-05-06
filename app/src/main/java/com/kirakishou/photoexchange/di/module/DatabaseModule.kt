@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.di.module
 import android.arch.persistence.room.Room
 import android.content.Context
 import com.kirakishou.photoexchange.helper.database.MyDatabase
+import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepository
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
@@ -44,5 +45,11 @@ open class DatabaseModule(
     @Provides
     open fun providePhotoAnswerRepository(database: MyDatabase): PhotoAnswerRepository {
         return PhotoAnswerRepository(database)
+    }
+
+    @Singleton
+    @Provides
+    open fun provideGalleryPhotoRepository(database: MyDatabase): GalleryPhotoRepository {
+        return GalleryPhotoRepository(database)
     }
 }
