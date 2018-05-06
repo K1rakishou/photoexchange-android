@@ -4,9 +4,9 @@ import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotoMapper
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepository
+import com.kirakishou.photoexchange.helper.extension.minutes
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import io.reactivex.Observable
 import io.reactivex.Single
 import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.async
@@ -19,6 +19,7 @@ class GetGalleryPhotosUseCase(
     private val galleryPhotoRepository: GalleryPhotoRepository
 ) {
     private val TAG = "GetGalleryPhotosUseCase"
+    private val INTERVAL_TO_REFRESH_PHOTO_FROM_SERVER = 20.minutes()
 
     fun loadNextPageOfGalleryPhotos(userId: String, lastId: Long, photosPerPage: Int): Single<Either<ErrorCode, List<GalleryPhoto>>> {
         return async {
@@ -33,12 +34,12 @@ class GetGalleryPhotosUseCase(
             }
 
             val resultList = mutableListOf<GalleryPhoto>()
-            val galleryPhotosFromDb = galleryPhotoRepository.findMany(getGalleryPhotoIdsResponse.galleryPhotoIds)
-            val notCachedIds = getPhotoIdsNotCachedInDb(getGalleryPhotoIdsResponse.galleryPhotoIds.toSet(), galleryPhotosFromDb.map { it.galleryPhotoId }.toSet())
+            val galleryPhotosFromDb = galleryPhotoRepository.findMany(getGalleryPhotoIdsResponse.galleryPhotoIds, INTERVAL_TO_REFRESH_PHOTO_FROM_SERVER)
+            val notCachedIds = filterNotCached(getGalleryPhotoIdsResponse.galleryPhotoIds.toSet(), galleryPhotosFromDb.map { it.galleryPhotoId }.toSet())
 
-            Timber.tag(TAG).d("galleryPhotoIds1 = ${getGalleryPhotoIdsResponse.galleryPhotoIds}")
+            Timber.tag(TAG).d("getGalleryPhotoIdsResponse = ${getGalleryPhotoIdsResponse.galleryPhotoIds}")
             Timber.tag(TAG).d("galleryPhotosFromDb = ${galleryPhotosFromDb.map { it.galleryPhotoId }}")
-            Timber.tag(TAG).d("notCachedIds = ${notCachedIds}")
+            Timber.tag(TAG).d("notCachedIds = $notCachedIds")
 
             resultList.addAll(galleryPhotosFromDb)
 
@@ -69,7 +70,7 @@ class GetGalleryPhotosUseCase(
         }.asSingle(CommonPool)
     }
 
-    private fun getPhotoIdsNotCachedInDb(photoIdsFromServer: Set<Long>, photoIdsFromDb: Set<Long>): List<Long> {
+    private fun filterNotCached(photoIdsFromServer: Set<Long>, photoIdsFromDb: Set<Long>): List<Long> {
         val resultList = mutableListOf<Long>()
 
         if (photoIdsFromServer.size == photoIdsFromDb.size) {
