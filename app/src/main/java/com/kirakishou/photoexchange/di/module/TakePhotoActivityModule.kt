@@ -27,10 +27,8 @@ open class TakePhotoActivityModule(
     @PerActivity
     @Provides
     open fun provideViewModelFactory(schedulerProvider: SchedulerProvider,
-                                     photosRepository: PhotosRepository,
-                                     settingsRepository: SettingsRepository,
-                                     getUserIdUseCase: GetUserIdUseCase): TakePhotoActivityViewModelFactory {
-        return TakePhotoActivityViewModelFactory(photosRepository, schedulerProvider, settingsRepository, getUserIdUseCase)
+                                     photosRepository: PhotosRepository): TakePhotoActivityViewModelFactory {
+        return TakePhotoActivityViewModelFactory(photosRepository, schedulerProvider)
     }
 
     @PerActivity

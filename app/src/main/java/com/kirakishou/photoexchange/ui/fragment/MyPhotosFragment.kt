@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.ui.fragment
 import android.os.Bundle
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.widget.Toast
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
@@ -151,6 +152,10 @@ class MyPhotosFragment : BaseFragment() {
                     Timber.tag(TAG).d("OnLocationUpdateEnd")
                     adapter.hideObtainCurrentLocationNotification()
                 }
+                is PhotoUploadEvent.OnCouldNotGetUserIdFromUserver -> {
+                    Timber.tag(TAG).e("Could not get user id from the server")
+                    showToast("Could not get user id from the server")
+                }
                 is PhotoUploadEvent.OnPrepare -> {
 
                 }
@@ -178,7 +183,7 @@ class MyPhotosFragment : BaseFragment() {
                 is PhotoUploadEvent.OnEnd -> {
                 }
                 is PhotoUploadEvent.OnUnknownError -> {
-
+                    adapter.updateAllPhotosState(PhotoState.FAILED_TO_UPLOAD)
                 }
                 else -> throw IllegalArgumentException("Unknown PhotoUploadEvent $event")
             }
@@ -198,6 +203,10 @@ class MyPhotosFragment : BaseFragment() {
                 //TODO: show notification that no photos has been uploaded yet
             }
         }
+    }
+
+    private fun showToast(message: String, duration: Int = Toast.LENGTH_LONG) {
+        (requireActivity() as AllPhotosActivity).showToast(message, duration)
     }
 
     override fun resolveDaggerDependency() {

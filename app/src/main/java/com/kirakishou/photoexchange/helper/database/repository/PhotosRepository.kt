@@ -146,6 +146,10 @@ open class PhotosRepository(
         return count
     }
 
+    fun updateStates(oldState: PhotoState, newState: PhotoState) {
+        myPhotoDao.updateStates(oldState, newState)
+    }
+
     fun findPhotosByStateAndUpdateState(oldState: PhotoState, newState: PhotoState): List<MyPhoto> {
         var resultPhotos = emptyList<MyPhoto>()
 

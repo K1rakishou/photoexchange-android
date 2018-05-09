@@ -47,8 +47,9 @@ class UseCaseProviderModule {
 
     @Singleton
     @Provides
-    fun provideFavouritePhotoUseCase(apiClient: ApiClient): FavouritePhotoUseCase {
-        return FavouritePhotoUseCase(apiClient)
+    fun provideFavouritePhotoUseCase(apiClient: ApiClient,
+                                     galleryPhotoRepository: GalleryPhotoRepository): FavouritePhotoUseCase {
+        return FavouritePhotoUseCase(apiClient, galleryPhotoRepository)
     }
 
     @Singleton

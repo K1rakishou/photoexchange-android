@@ -15,13 +15,11 @@ import javax.inject.Inject
 class TakePhotoActivityViewModelFactory
 @Inject constructor(
     val photosRepository: PhotosRepository,
-    val schedulerProvider: SchedulerProvider,
-    val settingsRepository: SettingsRepository,
-    val getUserIdUseCase: GetUserIdUseCase
+    val schedulerProvider: SchedulerProvider
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
-        return TakePhotoActivityViewModel(schedulerProvider, photosRepository, settingsRepository, getUserIdUseCase) as T
+        return TakePhotoActivityViewModel(schedulerProvider, photosRepository) as T
     }
 }
