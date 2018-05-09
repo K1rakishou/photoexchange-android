@@ -27,9 +27,7 @@ import java.util.concurrent.TimeoutException
  */
 class TakePhotoActivityViewModel(
     private val schedulerProvider: SchedulerProvider,
-    private val photosRepository: PhotosRepository,
-    private val settingsRepository: SettingsRepository,
-    private val getUserIdUseCase: GetUserIdUseCase
+    private val photosRepository: PhotosRepository
 ) : BaseViewModel<TakePhotoActivityView>() {
 
     private val TAG = "TakePhotoActivityViewModel"
@@ -40,19 +38,6 @@ class TakePhotoActivityViewModel(
         Timber.tag(TAG).d("onCleared()")
 
         super.onCleared()
-    }
-
-    fun hasUserIdAlready(): Observable<Boolean> {
-        return Observable.fromCallable {
-            return@fromCallable settingsRepository.getUserId().isNotEmpty()
-        }
-    }
-
-    fun getUserId(): Observable<String> {
-        return getUserIdUseCase.getUserId()
-            .toObservable()
-            .drainErrorCodesTo(errorCodesSubject)
-            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun takePhoto(): Single<ErrorCode.TakePhotoErrors> {

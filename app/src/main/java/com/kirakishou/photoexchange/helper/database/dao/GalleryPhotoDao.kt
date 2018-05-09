@@ -13,9 +13,15 @@ abstract class GalleryPhotoDao {
     abstract fun saveMany(galleryPhotos: List<GalleryPhotoEntity>): Array<Long>
 
     @Query("SELECT * FROM ${GalleryPhotoEntity.TABLE_NAME} " +
-        "WHERE " +
-        "${GalleryPhotoEntity.GALLERY_PHOTO_ID_COLUMN} IN (:galleryPhotoIds) " +
-        " AND " +
-        "${GalleryPhotoEntity.LAST_UPDATE_TIME_COLUMN} > :lastUpdateTime")
-    abstract fun findMany(galleryPhotoIds: List<Long>, lastUpdateTime: Long): List<GalleryPhotoEntity>
+        "WHERE ${GalleryPhotoEntity.GALLERY_PHOTO_ID_COLUMN} IN (:galleryPhotoIds)")
+    abstract fun findMany(galleryPhotoIds: List<Long>): List<GalleryPhotoEntity>
+
+    @Query("SELECT * FROM ${GalleryPhotoEntity.TABLE_NAME} " +
+        "WHERE ${GalleryPhotoEntity.PHOTO_NAME_COLUMN} = :photoName")
+    abstract fun findByPhotoName(photoName: String): GalleryPhotoEntity?
+
+    @Query("UPDATE ${GalleryPhotoEntity.TABLE_NAME} " +
+        "SET ${GalleryPhotoEntity.FAVOURITED_COUNT_COLUMN} = :favouritesCount " +
+        "WHERE ${GalleryPhotoEntity.PHOTO_NAME_COLUMN} = :photoName")
+    abstract fun updateFavouritesCount(photoName: String, favouritesCount: Long): Int
 }

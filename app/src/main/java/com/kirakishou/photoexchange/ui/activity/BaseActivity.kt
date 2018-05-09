@@ -8,10 +8,8 @@ import android.support.v7.app.AppCompatActivity
 import android.widget.Toast
 import butterknife.ButterKnife
 import butterknife.Unbinder
-import com.crashlytics.android.Crashlytics
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import io.fabric.sdk.android.Fabric
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
@@ -122,30 +120,34 @@ abstract class BaseActivity : AppCompatActivity() {
         val errorMessage = when (errorCode) {
             is ErrorCode.UploadPhotoErrors.Remote.Ok,
             is ErrorCode.GetPhotoAnswersErrors.Remote.Ok,
-            is ErrorCode.GalleryPhotosErrors.Remote.Ok,
+            is ErrorCode.GetGalleryPhotosErrors.Remote.Ok,
             is ErrorCode.FavouritePhotoErrors.Remote.Ok,
             is ErrorCode.TakePhotoErrors.Ok,
             is ErrorCode.GetUserIdError.Remote.Ok,
+            is ErrorCode.GetGalleryPhotosInfoError.Remote.Ok,
             is ErrorCode.ReportPhotoErrors.Remote.Ok -> null
 
             is ErrorCode.UploadPhotoErrors.Remote.UnknownError,
             is ErrorCode.GetPhotoAnswersErrors.Remote.UnknownError,
-            is ErrorCode.GalleryPhotosErrors.Remote.UnknownError,
+            is ErrorCode.GetGalleryPhotosErrors.Remote.UnknownError,
             is ErrorCode.FavouritePhotoErrors.Remote.UnknownError,
             is ErrorCode.GetUserIdError.Remote.UnknownError,
+            is ErrorCode.GetGalleryPhotosInfoError.Remote.UnknownError,
             is ErrorCode.ReportPhotoErrors.Remote.UnknownError -> "Unknown error"
 
             is ErrorCode.UploadPhotoErrors.Remote.BadRequest,
             is ErrorCode.GetPhotoAnswersErrors.Remote.BadRequest,
-            is ErrorCode.GalleryPhotosErrors.Remote.BadRequest,
+            is ErrorCode.GetGalleryPhotosErrors.Remote.BadRequest,
             is ErrorCode.FavouritePhotoErrors.Remote.BadRequest,
+            is ErrorCode.GetGalleryPhotosInfoError.Remote.BadRequest,
             is ErrorCode.ReportPhotoErrors.Remote.BadRequest -> "Bad request error"
 
             is ErrorCode.UploadPhotoErrors.Local.Timeout,
             is ErrorCode.GetPhotoAnswersErrors.Local.Timeout,
-            is ErrorCode.GalleryPhotosErrors.Local.Timeout,
+            is ErrorCode.GetGalleryPhotosErrors.Local.Timeout,
             is ErrorCode.FavouritePhotoErrors.Local.Timeout,
             is ErrorCode.GetUserIdError.Local.Timeout,
+            is ErrorCode.GetGalleryPhotosInfoError.Local.Timeout,
             is ErrorCode.ReportPhotoErrors.Local.Timeout -> "Operation timeout error"
 
             is ErrorCode.UploadPhotoErrors.Remote.DatabaseError,
@@ -155,13 +157,17 @@ abstract class BaseActivity : AppCompatActivity() {
 
             is ErrorCode.UploadPhotoErrors.Local.BadServerResponse,
             is ErrorCode.GetPhotoAnswersErrors.Local.BadServerResponse,
-            is ErrorCode.GalleryPhotosErrors.Local.BadServerResponse,
+            is ErrorCode.GetGalleryPhotosErrors.Local.BadServerResponse,
             is ErrorCode.ReportPhotoErrors.Local.BadServerResponse,
             is ErrorCode.GetUserIdError.Local.BadServerResponse,
+            is ErrorCode.GetGalleryPhotosInfoError.Local.BadServerResponse,
             is ErrorCode.FavouritePhotoErrors.Local.BadServerResponse -> "Bad server response error"
 
-            is ErrorCode.UploadPhotoErrors.Local.NoPhotoFileOnDisk -> "No photo file on disk error"
+            is ErrorCode.GetGalleryPhotosErrors.Remote.NoPhotosInRequest,
+            is ErrorCode.GetGalleryPhotosInfoError.Remote.NoPhotosInRequest,
             is ErrorCode.GetPhotoAnswersErrors.Remote.NoPhotosInRequest -> "No photos were selected error"
+
+            is ErrorCode.UploadPhotoErrors.Local.NoPhotoFileOnDisk -> "No photo file on disk error"
             is ErrorCode.GetPhotoAnswersErrors.Remote.TooManyPhotosRequested -> "Too many photos requested error"
             is ErrorCode.GetPhotoAnswersErrors.Remote.NoPhotosToSendBack -> "No photos to send back"
             is ErrorCode.GetPhotoAnswersErrors.Remote.NotEnoughPhotosUploaded -> "Upload more photos first"
@@ -174,9 +180,10 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.TakePhotoErrors.TimeoutException -> "Could not take photo (exceeded maximum camera wait time)"
             is ErrorCode.TakePhotoErrors.DatabaseError -> "Could not take photo (database error)"
             is ErrorCode.TakePhotoErrors.CouldNotTakePhoto -> "Could not take photo (probably the view was disconnected)"
-            is ErrorCode.GalleryPhotosErrors.Local.DatabaseError -> "Could not cache gallery photos in the database"
+            is ErrorCode.GetGalleryPhotosErrors.Local.DatabaseError -> "Could not cache gallery photos in the database"
             is ErrorCode.UploadPhotoErrors.Remote.CouldNotGetUserId -> "Could not retrieve user id from the server"
             is ErrorCode.UploadPhotoErrors.Local.DatabaseError -> "Could not save user id in the database"
+            is ErrorCode.GetGalleryPhotosInfoError.Local.DatabaseError -> "Could not save gallery photo info in the database"
         }
 
         if (errorMessage != null) {

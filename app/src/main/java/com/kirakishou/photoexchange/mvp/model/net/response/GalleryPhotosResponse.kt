@@ -11,15 +11,15 @@ private constructor(
     @SerializedName("gallery_photos")
     val galleryPhotos: List<GalleryPhotoResponseData>,
 
-    errorCode: ErrorCode.GalleryPhotosErrors
+    errorCode: ErrorCode.GetGalleryPhotosErrors
 ) : StatusResponse(errorCode.value, errorCode) {
 
     companion object {
         fun success(galleryPhotos: List<GalleryPhotoResponseData>): GalleryPhotosResponse {
-            return GalleryPhotosResponse(galleryPhotos, ErrorCode.GalleryPhotosErrors.Remote.Ok())
+            return GalleryPhotosResponse(galleryPhotos, ErrorCode.GetGalleryPhotosErrors.Remote.Ok())
         }
 
-        fun fail(errorCode: ErrorCode.GalleryPhotosErrors): GalleryPhotosResponse {
+        fun fail(errorCode: ErrorCode.GetGalleryPhotosErrors): GalleryPhotosResponse {
             return GalleryPhotosResponse(emptyList(), errorCode)
         }
     }
@@ -48,14 +48,6 @@ private constructor(
 
         @Expose
         @SerializedName("favourites_count")
-        val favouritesCount: Long,
-
-        @Expose
-        @SerializedName("is_favourited")
-        val isFavourited: Boolean,
-
-        @Expose
-        @SerializedName("is_reported")
-        val isReported: Boolean
+        val favouritesCount: Long
     )
 }

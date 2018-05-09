@@ -47,6 +47,17 @@ class MyPhotosAdapter(
         }
     }
 
+    fun updateAllPhotosState(newPhotoState: PhotoState) {
+        for (photoIndex in 0 until queuedUpItems.size) {
+            val item = queuedUpItems[photoIndex] as MyPhotosAdapterItem.MyPhotoItem
+            val failedToUploadItem = MyPhotosAdapterItem.FailedToUploadItem(item.myPhoto)
+            failedToUploadItem.failedToUploadPhoto.photoState = newPhotoState
+            queuedUpItems[photoIndex] = failedToUploadItem
+        }
+
+        notifyItemRangeChanged(headerItems.size, queuedUpItems.size)
+    }
+
     fun updatePhotoProgress(photoId: Long, newProgress: Int) {
         checkInited()
 

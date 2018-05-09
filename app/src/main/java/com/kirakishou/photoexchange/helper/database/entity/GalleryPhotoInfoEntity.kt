@@ -1,0 +1,47 @@
+package com.kirakishou.photoexchange.helper.database.entity
+
+import android.arch.persistence.room.ColumnInfo
+import android.arch.persistence.room.Entity
+import android.arch.persistence.room.PrimaryKey
+import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoInfoEntity.Companion.TABLE_NAME
+import com.kirakishou.photoexchange.helper.util.TimeUtils
+
+@Entity(tableName = TABLE_NAME)
+class GalleryPhotoInfoEntity(
+
+    @PrimaryKey(autoGenerate = false)
+    @ColumnInfo(name = GALLERY_PHOTO_ID_COLUMN, index = true)
+    var galleryPhotoId: Long = 0L,
+
+    @ColumnInfo(name = IS_FAVOURITED_COLUMN)
+    var isFavourited: Boolean = false,
+
+    @ColumnInfo(name = IS_REPORTED_COLUMN)
+    var isReported: Boolean = false,
+
+    @ColumnInfo(name = LAST_UPDATE_TIME_COLUMN)
+    var lastUpdateTime: Long = 0L
+) {
+
+    fun isEmpty(): Boolean {
+        return this.galleryPhotoId == -1L
+    }
+
+    companion object {
+
+        fun empty(): GalleryPhotoInfoEntity {
+            return GalleryPhotoInfoEntity(-1L)
+        }
+
+        fun create(id: Long, isFavourited: Boolean, isReported: Boolean): GalleryPhotoInfoEntity {
+            return GalleryPhotoInfoEntity(id, isFavourited, isReported, TimeUtils.getTimeFast())
+        }
+
+        const val TABLE_NAME = "gallery_photo_info"
+
+        const val GALLERY_PHOTO_ID_COLUMN = "GALLERY_PHOTO_ID"
+        const val IS_FAVOURITED_COLUMN = "IS_FAVOURITED"
+        const val IS_REPORTED_COLUMN = "IS_REPORTED"
+        const val LAST_UPDATE_TIME_COLUMN = "LAST_UPDATE_TIME"
+    }
+}

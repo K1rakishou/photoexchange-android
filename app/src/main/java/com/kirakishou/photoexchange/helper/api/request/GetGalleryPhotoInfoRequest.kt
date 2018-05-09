@@ -5,13 +5,14 @@ import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.mvp.model.exception.ApiException
-import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
+import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotoInfoResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
 import java.net.SocketTimeoutException
 import java.util.concurrent.TimeoutException
 
-class GetGalleryPhotosRequest<T>(
+class GetGalleryPhotoInfoRequest<T>(
+    private val userId: String,
     private val galleryPhotoIds: String,
     private val apiService: ApiService,
     private val schedulerProvider: SchedulerProvider,
@@ -19,26 +20,26 @@ class GetGalleryPhotosRequest<T>(
 ) : AbstractRequest<T>() {
 
     override fun execute(): Single<T> {
-        return apiService.getGalleryPhotos(galleryPhotoIds)
+        return apiService.getGalleryPhotoInfo(userId, galleryPhotoIds)
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
-            .lift(OnApiErrorSingle<GalleryPhotosResponse>(gson, GalleryPhotosResponse::class.java))
+            .lift(OnApiErrorSingle<GalleryPhotoInfoResponse>(gson, GalleryPhotoInfoResponse::class.java))
             .map { response ->
                 if (response.serverErrorCode!! == 0) {
-                    return@map GalleryPhotosResponse.success(response.galleryPhotos)
+                    return@map GalleryPhotoInfoResponse.success(response.galleryPhotosInfo)
                 } else {
-                    return@map GalleryPhotosResponse.fail(ErrorCode.fromInt(ErrorCode.GetGalleryPhotosErrors::class.java, response.serverErrorCode))
+                    return@map GalleryPhotoInfoResponse.fail(ErrorCode.fromInt(ErrorCode.GetGalleryPhotosInfoError::class.java, response.serverErrorCode))
                 }
             }
             .onErrorReturn(this::extractError) as Single<T>
     }
 
-    private fun extractError(error: Throwable): GalleryPhotosResponse {
+    private fun extractError(error: Throwable): GalleryPhotoInfoResponse {
         return when (error) {
-            is ApiException -> GalleryPhotosResponse.fail(error.errorCode as ErrorCode.GetGalleryPhotosErrors)
+            is ApiException -> GalleryPhotoInfoResponse.fail(error.errorCode as ErrorCode.GetGalleryPhotosInfoError)
             is SocketTimeoutException,
-            is TimeoutException -> GalleryPhotosResponse.fail(ErrorCode.GetGalleryPhotosErrors.Local.Timeout())
-            else -> GalleryPhotosResponse.fail(ErrorCode.GetGalleryPhotosErrors.Remote.UnknownError())
+            is TimeoutException -> GalleryPhotoInfoResponse.fail(ErrorCode.GetGalleryPhotosInfoError.Local.Timeout())
+            else -> GalleryPhotoInfoResponse.fail(ErrorCode.GetGalleryPhotosInfoError.Remote.UnknownError())
         }
     }
 }

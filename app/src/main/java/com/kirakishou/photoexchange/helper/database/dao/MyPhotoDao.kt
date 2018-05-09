@@ -71,6 +71,12 @@ abstract class MyPhotoDao {
     abstract fun updateSetNewPhotoState(id: Long, photoState: PhotoState): Int
 
     @Query("UPDATE ${MyPhotoEntity.TABLE_NAME} " +
+        "SET ${MyPhotoEntity.PHOTO_STATE_COLUMN} = :newState " +
+        "WHERE ${MyPhotoEntity.PHOTO_STATE_COLUMN} = :oldState")
+    @TypeConverters(PhotoStateConverter::class)
+    abstract fun updateStates(oldState: PhotoState, newState: PhotoState): Int
+
+    @Query("UPDATE ${MyPhotoEntity.TABLE_NAME} " +
         "SET ${MyPhotoEntity.TEMP_FILE_ID_COLUMN} = :newTempFileId " +
         "WHERE ${MyPhotoEntity.ID_COLUMN} = :photoId")
     abstract fun updateSetTempFileId(photoId: Long, newTempFileId: Long?): Int

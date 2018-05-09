@@ -2,10 +2,13 @@ package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotoInfoMapper
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotoMapper
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepository
 import com.kirakishou.photoexchange.helper.extension.minutes
+import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
+import com.kirakishou.photoexchange.mvp.model.GalleryPhotoInfo
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
 import kotlinx.coroutines.experimental.CommonPool
@@ -19,66 +22,149 @@ class GetGalleryPhotosUseCase(
     private val galleryPhotoRepository: GalleryPhotoRepository
 ) {
     private val TAG = "GetGalleryPhotosUseCase"
-    private val INTERVAL_TO_REFRESH_PHOTO_FROM_SERVER = 20.minutes()
 
-    fun loadNextPageOfGalleryPhotos(userId: String, lastId: Long, photosPerPage: Int): Single<Either<ErrorCode, List<GalleryPhoto>>> {
+    //interval to update photos in the db with fresh information
+    private val INTERVAL_TO_REFRESH_PHOTO_FROM_SERVER = 30.minutes()
+
+    fun loadPageOfPhotos(userId: String, lastId: Long, photosPerPage: Int): Single<Either<ErrorCode, List<GalleryPhoto>>> {
         return async {
-            Timber.tag(TAG).d("sending getGalleryPhotoIds request...")
+            try {
+                Timber.tag(TAG).d("sending request...")
 
-            val getGalleryPhotoIdsResponse = apiClient.getGalleryPhotoIds(lastId, photosPerPage).await()
-            val getGalleryPhotoIdsErrorCode = getGalleryPhotoIdsResponse.errorCode
+                //get fresh photo ids from the server
+                val getGalleryPhotoIdsResponse = apiClient.getGalleryPhotoIds(lastId, photosPerPage).await()
+                val getGalleryPhotoIdsErrorCode = getGalleryPhotoIdsResponse.errorCode
 
-            Timber.tag(TAG).d("Got getGalleryPhotoIdsResponse answer, errorCode is $getGalleryPhotoIdsErrorCode")
-            if (getGalleryPhotoIdsErrorCode !is ErrorCode.GalleryPhotosErrors.Remote.Ok) {
-                return@async Either.Error(getGalleryPhotoIdsErrorCode)
-            }
-
-            val resultList = mutableListOf<GalleryPhoto>()
-            val galleryPhotosFromDb = galleryPhotoRepository.findMany(getGalleryPhotoIdsResponse.galleryPhotoIds, INTERVAL_TO_REFRESH_PHOTO_FROM_SERVER)
-            val notCachedIds = filterNotCached(getGalleryPhotoIdsResponse.galleryPhotoIds.toSet(), galleryPhotosFromDb.map { it.galleryPhotoId }.toSet())
-
-            Timber.tag(TAG).d("getGalleryPhotoIdsResponse = ${getGalleryPhotoIdsResponse.galleryPhotoIds}")
-            Timber.tag(TAG).d("galleryPhotosFromDb = ${galleryPhotosFromDb.map { it.galleryPhotoId }}")
-            Timber.tag(TAG).d("notCachedIds = $notCachedIds")
-
-            resultList.addAll(galleryPhotosFromDb)
-
-            if (notCachedIds.isNotEmpty()) {
-                val photoIdsToBeRequestedFromServer = notCachedIds.joinToString(",")
-
-                Timber.tag(TAG).d("sending getGalleryPhotos request with ids = $photoIdsToBeRequestedFromServer...")
-                val getGalleryPhotosResponse = apiClient.getGalleryPhotos(userId, photoIdsToBeRequestedFromServer).await()
-                val getGalleryPhotosErrorCode = getGalleryPhotosResponse.errorCode
-
-                Timber.tag(TAG).d("Got getGalleryPhotosResponse answer, errorCode is $getGalleryPhotosErrorCode")
-                if (getGalleryPhotosErrorCode !is ErrorCode.GalleryPhotosErrors.Remote.Ok) {
-                    return@async Either.Error(getGalleryPhotosErrorCode)
+                if (getGalleryPhotoIdsErrorCode !is ErrorCode.GetGalleryPhotosErrors.Remote.Ok) {
+                    return@async Either.Error(getGalleryPhotoIdsErrorCode)
                 }
 
-                Timber.tag(TAG).d("galleryPhotoIds2 = ${getGalleryPhotosResponse.galleryPhotos.map { it.id }}")
-                if (!galleryPhotoRepository.saveMany(getGalleryPhotosResponse.galleryPhotos)) {
-                    return@async Either.Error(ErrorCode.GalleryPhotosErrors.Local.DatabaseError())
+                val photosResultList = mutableListOf<GalleryPhoto>()
+                val galleryPhotoIds = getGalleryPhotoIdsResponse.galleryPhotoIds
+                if (galleryPhotoIds.isEmpty()) {
+                    return@async Either.Value(photosResultList)
                 }
 
-                resultList.addAll(GalleryPhotoMapper.toGalleryPhotoList(getGalleryPhotosResponse.galleryPhotos))
+                //get photos by the ids from the database
+                val galleryPhotosFromDb = galleryPhotoRepository.findMany(galleryPhotoIds)
+                val photoIdsToGetFromServer = filterNotCachedIds(galleryPhotoIds, galleryPhotosFromDb.map { it.galleryPhotoId })
+                photosResultList.addAll(galleryPhotosFromDb)
+
+                Timber.tag(TAG).d("Fresh photos' ids = $galleryPhotoIds")
+                Timber.tag(TAG).d("Cached gallery photo ids = ${galleryPhotosFromDb.map { it.galleryPhotoId }}")
+
+                //if we got photo ids that are not cached in the DB yet - get the fresh photos
+                //by these ids from the server and cache them in the DB
+                if (photoIdsToGetFromServer.isNotEmpty()) {
+                    val result = getFreshPhotosFromServer(photoIdsToGetFromServer)
+                    if (result is Either.Error) {
+                        Timber.tag(TAG).w("Could not get fresh photos from the server, errorCode = ${result.error}")
+                        return@async Either.Error(result.error)
+                    }
+
+                    (result as Either.Value)
+
+                    Timber.tag(TAG).d("Fresh gallery photo ids = ${result.value.map { it.galleryPhotoId }}")
+                    photosResultList += result.value
+                }
+
+                //if the user has received userId - get photos' additional info
+                //(like whether the user has the photo favourited or reported already)
+                if (userId.isNotEmpty()) {
+                    photosResultList.forEach { it.galleryPhotoInfo = GalleryPhotoInfo.empty() }
+
+                    //get photos' info by the ids from the database
+                    val galleryPhotoInfoFromDb = galleryPhotoRepository.findManyInfo(galleryPhotoIds, INTERVAL_TO_REFRESH_PHOTO_FROM_SERVER)
+                    val photoInfoIdsToGetFromServer = filterNotCachedIds(galleryPhotoIds, galleryPhotoInfoFromDb.map { it.galleryPhotoId })
+                    updateGalleryPhotoInfo(photosResultList, galleryPhotoInfoFromDb)
+
+                    Timber.tag(TAG).d("Cached gallery photo info ids = ${galleryPhotoInfoFromDb.map { it.galleryPhotoId }}")
+
+                    //get the rest from the server
+                    if (photoInfoIdsToGetFromServer.isNotEmpty()) {
+                        val result = getFreshPhotoInfosFromServer(userId, photoInfoIdsToGetFromServer)
+                        if (result is Either.Error) {
+                            Timber.tag(TAG).w("Could not get fresh photo info from the server, errorCode = ${result.error}")
+                            return@async Either.Error(result.error)
+                        }
+
+                        (result as Either.Value)
+
+                        val galleryPhotoInfoList = result.value
+                        Timber.tag(TAG).d("Fresh gallery photo info list ids = ${galleryPhotoInfoList.map { it.galleryPhotoId }}")
+
+                        updateGalleryPhotoInfo(photosResultList, galleryPhotoInfoList)
+                    }
+                }
+
+                photosResultList.sortByDescending { it.galleryPhotoId }
+                return@async Either.Value(photosResultList)
+            } catch (error: Throwable) {
+                Timber.tag(TAG).e(error)
+                return@async Either.Error(ErrorCode.GetGalleryPhotosErrors.Remote.UnknownError())
             }
-
-            resultList.sortByDescending { it.galleryPhotoId }
-
-            Timber.tag(TAG).d("resultList = ${resultList.map { it.galleryPhotoId }}")
-            return@async Either.Value(resultList)
         }.asSingle(CommonPool)
     }
 
-    private fun filterNotCached(photoIdsFromServer: Set<Long>, photoIdsFromDb: Set<Long>): List<Long> {
+    private fun updateGalleryPhotoInfo(photosResultList: MutableList<GalleryPhoto>, galleryPhotoInfoList: List<GalleryPhotoInfo>) {
+        photosResultList.forEach { galleryPhoto ->
+            val galleryPhotoInfo = galleryPhotoInfoList.firstOrNull { galleryPhotoInfo ->
+                galleryPhotoInfo.galleryPhotoId == galleryPhoto.galleryPhotoId
+            }
+
+            if (galleryPhotoInfo == null) {
+                return@forEach
+            }
+
+            galleryPhoto.galleryPhotoInfo = galleryPhotoInfo
+        }
+    }
+
+    private suspend fun getFreshPhotoInfosFromServer(userId: String, photoIds: List<Long>): Either<ErrorCode, List<GalleryPhotoInfo>> {
+        val photoIdsToBeRequested = photoIds.joinToString(",")
+
+        val response = apiClient.getGalleryPhotoInfo(userId, photoIdsToBeRequested).await()
+        val errorCode = response.errorCode
+
+        if (errorCode !is ErrorCode.GetGalleryPhotosInfoError.Remote.Ok) {
+            return Either.Error(errorCode)
+        }
+
+        if (!galleryPhotoRepository.saveManyInfo(response.galleryPhotosInfo)) {
+            return Either.Error(ErrorCode.GetGalleryPhotosInfoError.Local.DatabaseError())
+        }
+
+        return Either.Value(GalleryPhotoInfoMapper.FromResponse.ToObject.toGalleryPhotoInfoList(response.galleryPhotosInfo))
+    }
+
+    private suspend fun getFreshPhotosFromServer(photoIds: List<Long>): Either<ErrorCode, List<GalleryPhoto>> {
+        val photoIdsToBeRequested = photoIds.joinToString(",")
+
+        val response = apiClient.getGalleryPhotos(photoIdsToBeRequested).await()
+        val errorCode = response.errorCode
+
+        if (errorCode !is ErrorCode.GetGalleryPhotosErrors.Remote.Ok) {
+            return Either.Error(errorCode)
+        }
+
+        if (!galleryPhotoRepository.saveMany(response.galleryPhotos)) {
+            return Either.Error(ErrorCode.GetGalleryPhotosErrors.Local.DatabaseError())
+        }
+
+        return Either.Value(GalleryPhotoMapper.FromResponse.ToObject.toGalleryPhotoList(response.galleryPhotos))
+    }
+
+    private fun filterNotCachedIds(freshIdsList: List<Long>, idsFromDbList: List<Long>): List<Long> {
+        val freshIdsSet = freshIdsList.toSet()
+        val idsFromDbSet = idsFromDbList.toSet()
         val resultList = mutableListOf<Long>()
 
-        if (photoIdsFromServer.size == photoIdsFromDb.size) {
+        if (freshIdsSet.size == idsFromDbSet.size) {
             return resultList
         }
 
-        for (photoId in photoIdsFromServer) {
-            if (!photoIdsFromDb.contains(photoId)) {
+        for (photoId in freshIdsSet) {
+            if (!idsFromDbSet.contains(photoId)) {
                 resultList += photoId
             }
         }

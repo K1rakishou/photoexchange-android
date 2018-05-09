@@ -11,15 +11,15 @@ private constructor(
     @SerializedName("gallery_photo_ids")
     val galleryPhotoIds: List<Long>,
 
-    errorCode: ErrorCode.GalleryPhotosErrors
+    errorCode: ErrorCode.GetGalleryPhotosErrors
 ) : StatusResponse(errorCode.value, errorCode) {
 
     companion object {
         fun success(galleryPhotoIds: List<Long>): GalleryPhotoIdsResponse {
-            return GalleryPhotoIdsResponse(galleryPhotoIds, ErrorCode.GalleryPhotosErrors.Remote.Ok())
+            return GalleryPhotoIdsResponse(galleryPhotoIds, ErrorCode.GetGalleryPhotosErrors.Remote.Ok())
         }
 
-        fun error(errorCode: ErrorCode.GalleryPhotosErrors): GalleryPhotoIdsResponse {
+        fun error(errorCode: ErrorCode.GetGalleryPhotosErrors): GalleryPhotoIdsResponse {
             return GalleryPhotoIdsResponse(emptyList(), errorCode)
         }
     }

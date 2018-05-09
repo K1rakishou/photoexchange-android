@@ -32,8 +32,9 @@ class UploadPhotoServiceModule(
     fun provideUploadPhotoServicePresenter(myPhotosRepository: PhotosRepository,
                                            settingsRepository: SettingsRepository,
                                            schedulerProvider: SchedulerProvider,
-                                           uploadPhotosUseCase: UploadPhotosUseCase): UploadPhotoServicePresenter {
+                                           uploadPhotosUseCase: UploadPhotosUseCase,
+                                           getUserIdUseCase: GetUserIdUseCase): UploadPhotoServicePresenter {
         return UploadPhotoServicePresenter(service.asWeak(), myPhotosRepository,
-            settingsRepository, schedulerProvider, uploadPhotosUseCase)
+            settingsRepository, schedulerProvider, uploadPhotosUseCase, getUserIdUseCase)
     }
 }
