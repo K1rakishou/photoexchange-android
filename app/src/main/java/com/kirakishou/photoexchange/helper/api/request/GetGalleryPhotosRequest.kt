@@ -12,7 +12,6 @@ import java.net.SocketTimeoutException
 import java.util.concurrent.TimeoutException
 
 class GetGalleryPhotosRequest<T>(
-    private val userId: String,
     private val galleryPhotoIds: String,
     private val apiService: ApiService,
     private val schedulerProvider: SchedulerProvider,
@@ -20,7 +19,7 @@ class GetGalleryPhotosRequest<T>(
 ) : AbstractRequest<T>() {
 
     override fun execute(): Single<T> {
-        return apiService.getGalleryPhotos(userId, galleryPhotoIds)
+        return apiService.getGalleryPhotos(galleryPhotoIds)
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
             .lift(OnApiErrorSingle<GalleryPhotosResponse>(gson, GalleryPhotosResponse::class.java))

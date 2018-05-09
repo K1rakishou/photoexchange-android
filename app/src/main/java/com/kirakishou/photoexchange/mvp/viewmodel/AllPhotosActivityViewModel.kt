@@ -84,7 +84,7 @@ class AllPhotosActivityViewModel(
     fun loadNextPageOfGalleryPhotos(lastId: Long, photosPerPage: Int): Observable<List<GalleryPhoto>> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .concatMap { userId ->
-                getGalleryPhotosUseCase.loadNextPageOfGalleryPhotos(userId, lastId, photosPerPage)
+                getGalleryPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
                     .subscribeOn(schedulerProvider.IO())
                     .toObservable()
             }

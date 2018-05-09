@@ -26,9 +26,8 @@ interface ApiService {
     fun getGalleryPhotoIds(@Path("last_id") lastId: Long,
                            @Path("count") count: Int): Single<Response<GalleryPhotoIdsResponse>>
 
-    @GET("/v1/api/get_gallery_photos/{user_id}/{photo_ids}")
-    fun getGalleryPhotos(@Path("user_id") userId: String,
-                         @Path("photo_ids") photoIds: String): Single<Response<GalleryPhotosResponse>>
+    @GET("/v1/api/get_gallery_photos/photo_ids}")
+    fun getGalleryPhotos(@Path("photo_ids") photoIds: String): Single<Response<GalleryPhotosResponse>>
 
     @PUT("/v1/api/favourite")
     fun favouritePhoto(@Body packet: FavouritePhotoPacket): Single<Response<FavouritePhotoResponse>>

@@ -35,8 +35,8 @@ class ApiClient
             .execute()
     }
 
-    fun getGalleryPhotos(userId: String, galleryPhotoIds: String): Single<GalleryPhotosResponse> {
-        return GetGalleryPhotosRequest<GalleryPhotosResponse>(userId, galleryPhotoIds, apiService, schedulerProvider, gson)
+    fun getGalleryPhotos(galleryPhotoIds: String): Single<GalleryPhotosResponse> {
+        return GetGalleryPhotosRequest<GalleryPhotosResponse>(galleryPhotoIds, apiService, schedulerProvider, gson)
             .execute()
     }
 

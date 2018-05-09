@@ -15,8 +15,7 @@ class GalleryPhotoRepository(
         return galleryPhotoDao.saveMany(GalleryPhotoMapper.toGalleryPhotoEntitiesList(galleryPhotos)).size == galleryPhotos.size
     }
 
-    fun findMany(galleryPhotoIds: List<Long>, maxLastUpdateTime: Long): List<GalleryPhoto> {
-        val lastUpdateTime = TimeUtils.getTimeFast() - maxLastUpdateTime
-        return GalleryPhotoMapper.toGalleryPhotos(galleryPhotoDao.findMany(galleryPhotoIds, lastUpdateTime))
+    fun findMany(galleryPhotoIds: List<Long>): List<GalleryPhoto> {
+        return GalleryPhotoMapper.toGalleryPhotos(galleryPhotoDao.findMany(galleryPhotoIds))
     }
 }
