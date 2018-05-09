@@ -64,9 +64,11 @@ class OnApiErrorSingle<T : StatusResponse>(
         val errorCode = when (clazz) {
             UploadPhotoResponse::class.java -> ErrorCode.UploadPhotoErrors.Local.BadServerResponse(message)
             PhotoAnswerResponse::class.java -> ErrorCode.GetPhotoAnswersErrors.Local.BadServerResponse(message)
-            GalleryPhotoIdsResponse::class.java -> ErrorCode.GalleryPhotosErrors.Local.BadServerResponse(message)
+            GalleryPhotoIdsResponse::class.java -> ErrorCode.GetGalleryPhotosErrors.Local.BadServerResponse(message)
             FavouritePhotoResponse::class.java -> ErrorCode.FavouritePhotoErrors.Local.BadServerResponse(message)
             ReportPhotoResponse::class.java -> ErrorCode.ReportPhotoErrors.Local.BadServerResponse(message)
+            GetUserIdResponse::class.java -> ErrorCode.GetUserIdError.Local.BadServerResponse(message)
+            GalleryPhotoInfoResponse::class.java -> ErrorCode.GetGalleryPhotosInfoError.Local.BadServerResponse(message)
             else -> throw IllegalArgumentException("Bad class: $clazz")
         }
 

@@ -48,14 +48,30 @@ sealed class ErrorCode(val value: Int) {
         }
     }
 
-    sealed class GalleryPhotosErrors(value: Int) : ErrorCode(value) {
-        sealed class Remote(value: Int) : GalleryPhotosErrors(value) {
+    sealed class GetGalleryPhotosErrors(value: Int) : ErrorCode(value) {
+        sealed class Remote(value: Int) : GetGalleryPhotosErrors(value) {
             class UnknownError : Remote(-1)
             class Ok : Remote(0)
             class BadRequest : Remote(1)
+            class NoPhotosInRequest : Remote(2)
         }
 
-        sealed class Local(value: Int) : GalleryPhotosErrors(value) {
+        sealed class Local(value: Int) : GetGalleryPhotosErrors(value) {
+            class BadServerResponse(val message: String? = null) : Local(-1000)
+            class Timeout : Local(-1001)
+            class DatabaseError : Local(-1002)
+        }
+    }
+
+    sealed class GetGalleryPhotosInfoError(value: Int) : ErrorCode(value) {
+        sealed class Remote(value: Int) : GetGalleryPhotosInfoError(value) {
+            class UnknownError : Remote(-1)
+            class Ok : Remote(0)
+            class BadRequest : Remote(1)
+            class NoPhotosInRequest : Remote(2)
+        }
+
+        sealed class Local(value: Int) : GetGalleryPhotosInfoError(value) {
             class BadServerResponse(val message: String? = null) : Local(-1000)
             class Timeout : Local(-1001)
             class DatabaseError : Local(-1002)
@@ -162,17 +178,17 @@ sealed class ErrorCode(val value: Int) {
                     errorCode as T
                 }
 
-                GalleryPhotosErrors::class.java -> {
+                GetGalleryPhotosErrors::class.java -> {
                     val errorCode = when (errorCodeInt) {
                         //local errors
                         null,
-                        -1000 -> GalleryPhotosErrors.Local.BadServerResponse()
-                        -1001 -> GalleryPhotosErrors.Local.Timeout()
+                        -1000 -> GetGalleryPhotosErrors.Local.BadServerResponse()
+                        -1001 -> GetGalleryPhotosErrors.Local.Timeout()
 
                         //remote errors
-                        -1 -> GalleryPhotosErrors.Remote.UnknownError()
-                        0 -> GalleryPhotosErrors.Remote.Ok()
-                        1 -> GalleryPhotosErrors.Remote.BadRequest()
+                        -1 -> GetGalleryPhotosErrors.Remote.UnknownError()
+                        0 -> GetGalleryPhotosErrors.Remote.Ok()
+                        1 -> GetGalleryPhotosErrors.Remote.BadRequest()
                         else -> throw IllegalArgumentException("Unknown errorCodeInt $errorCodeInt")
                     }
 

@@ -2,10 +2,7 @@ package com.kirakishou.photoexchange.di.module
 
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepository
-import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
-import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.interactors.*
 import dagger.Module
 import dagger.Provides
@@ -41,15 +38,17 @@ class UseCaseProviderModule {
 
     @Singleton
     @Provides
-    fun provideReportPhotoUseCase(apiClient: ApiClient): ReportPhotoUseCase {
-        return ReportPhotoUseCase(apiClient)
+    fun provideReportPhotoUseCase(apiClient: ApiClient,
+                                  galleryPhotoRepository: GalleryPhotoRepository): ReportPhotoUseCase {
+        return ReportPhotoUseCase(apiClient, galleryPhotoRepository)
     }
 
     @Singleton
     @Provides
     fun provideFavouritePhotoUseCase(apiClient: ApiClient,
+                                     database: MyDatabase,
                                      galleryPhotoRepository: GalleryPhotoRepository): FavouritePhotoUseCase {
-        return FavouritePhotoUseCase(apiClient, galleryPhotoRepository)
+        return FavouritePhotoUseCase(apiClient, database, galleryPhotoRepository)
     }
 
     @Singleton

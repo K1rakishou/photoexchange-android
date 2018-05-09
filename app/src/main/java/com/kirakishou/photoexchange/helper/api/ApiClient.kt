@@ -40,6 +40,11 @@ class ApiClient
             .execute()
     }
 
+    fun getGalleryPhotoInfo(userId: String, galleryPhotoIds: String): Single<GalleryPhotoInfoResponse> {
+        return GetGalleryPhotoInfoRequest<GalleryPhotoInfoResponse>(userId, galleryPhotoIds, apiService, schedulerProvider, gson)
+            .execute()
+    }
+
     fun favouritePhoto(userId: String, photoName: String): Single<FavouritePhotoResponse> {
         return FavouritePhotoRequest<FavouritePhotoResponse>(userId, photoName, apiService, schedulerProvider, gson)
             .execute()

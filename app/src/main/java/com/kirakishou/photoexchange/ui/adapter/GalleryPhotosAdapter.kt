@@ -57,11 +57,15 @@ class GalleryPhotosAdapter(
             return false
         }
 
-        if ((items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).photo.isFavourited == isFavourited) {
+        if ((items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).photo.galleryPhotoInfo == null) {
             return false
         }
 
-        (items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).photo.isFavourited = isFavourited
+        if ((items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).photo.galleryPhotoInfo!!.isFavourited == isFavourited) {
+            return false
+        }
+
+        (items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).photo.galleryPhotoInfo!!.isFavourited = isFavourited
         (items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).photo.favouritesCount = favouritesCount
 
         notifyItemChanged(photoIndex)
@@ -81,11 +85,15 @@ class GalleryPhotosAdapter(
             return false
         }
 
-        if ((items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).photo.isReported == isReported) {
+        if ((items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).photo.galleryPhotoInfo == null) {
             return false
         }
 
-        (items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).photo.isReported = isReported
+        if ((items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).photo.galleryPhotoInfo!!.isReported == isReported) {
+            return false
+        }
+
+        (items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).photo.galleryPhotoInfo!!.isReported = isReported
         notifyItemChanged(photoIndex)
         return true
     }
@@ -115,24 +123,34 @@ class GalleryPhotosAdapter(
             is GalleryPhotoViewHolder -> {
                 val item = items[position] as GalleryPhotosAdapterItem.GalleryPhotoItem
 
-                holder.favouriteButton.setOnClickListener {
-                    adapterButtonClickSubject.onNext(GalleryPhotosAdapterButtonClickEvent.FavouriteClicked(item.photo.photoName))
-                }
+                if (item.photo.galleryPhotoInfo != null) {
+                    holder.photoButtonsHolder.visibility = View.VISIBLE
+                    holder.favouriteButton.isClickable = true
+                    holder.reportButton.isClickable = true
 
-                holder.reportButton.setOnClickListener {
-                    adapterButtonClickSubject.onNext(GalleryPhotosAdapterButtonClickEvent.ReportClicked(item.photo.photoName))
-                }
+                    holder.favouriteButton.setOnClickListener {
+                        adapterButtonClickSubject.onNext(GalleryPhotosAdapterButtonClickEvent.FavouriteClicked(item.photo.photoName))
+                    }
 
-                if (item.photo.isFavourited) {
-                    holder.favouriteIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_favorite))
+                    holder.reportButton.setOnClickListener {
+                        adapterButtonClickSubject.onNext(GalleryPhotosAdapterButtonClickEvent.ReportClicked(item.photo.photoName))
+                    }
+
+                    if (item.photo.galleryPhotoInfo!!.isFavourited) {
+                        holder.favouriteIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_favorite))
+                    } else {
+                        holder.favouriteIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_favorite_border))
+                    }
+
+                    if (item.photo.galleryPhotoInfo!!.isReported) {
+                        holder.reportIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_reported))
+                    } else {
+                        holder.reportIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_report_border))
+                    }
                 } else {
-                    holder.favouriteIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_favorite_border))
-                }
-
-                if (item.photo.isReported) {
-                    holder.reportIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_reported))
-                } else {
-                    holder.reportIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_report_border))
+                    holder.photoButtonsHolder.visibility = View.GONE
+                    holder.favouriteButton.isClickable = false
+                    holder.reportButton.isClickable = false
                 }
 
                 holder.favouritesCount.text = item.photo.favouritesCount.toString()
@@ -156,6 +174,7 @@ class GalleryPhotosAdapter(
         val favouriteButton = itemView.findViewById<LinearLayout>(R.id.favourite_button)
         val reportButton = itemView.findViewById<LinearLayout>(R.id.report_button)
         val favouritesCount = itemView.findViewById<TextView>(R.id.favourites_count_text_view)
+        val photoButtonsHolder = itemView.findViewById<LinearLayout>(R.id.photo_buttons_holder)
         val favouriteIcon = itemView.findViewById<ImageView>(R.id.favourite_icon)
         val reportIcon = itemView.findViewById<ImageView>(R.id.report_icon)
     }

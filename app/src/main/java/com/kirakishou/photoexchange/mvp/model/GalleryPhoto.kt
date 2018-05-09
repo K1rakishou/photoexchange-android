@@ -7,6 +7,5 @@ class GalleryPhoto(
     val lat: Double,
     val uploadedOn: Long,
     var favouritesCount: Long,
-    var isFavourited: Boolean,
-    var isReported: Boolean
+    var galleryPhotoInfo: GalleryPhotoInfo? = null
 )

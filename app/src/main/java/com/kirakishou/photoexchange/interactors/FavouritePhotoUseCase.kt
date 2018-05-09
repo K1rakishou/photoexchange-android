@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepository
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Observable
@@ -9,6 +10,7 @@ import timber.log.Timber
 
 class FavouritePhotoUseCase(
     private val apiClient: ApiClient,
+    private val database: MyDatabase,
     private val galleryPhotoRepository: GalleryPhotoRepository
 ) {
     private val TAG = "FavouritePhotoUseCase"
@@ -19,6 +21,22 @@ class FavouritePhotoUseCase(
                 val errorCode = response.errorCode
                 if (errorCode !is ErrorCode.FavouritePhotoErrors.Remote.Ok) {
                     return@map Either.Error(errorCode)
+                }
+
+                val galleryPhoto = galleryPhotoRepository.findByPhotoName(photoName)
+                if (galleryPhoto != null) {
+                    database.transactional {
+                        if (!galleryPhotoRepository.favouritePhoto(galleryPhoto.galleryPhotoId)) {
+                            return@transactional false
+                        }
+
+                        if (!galleryPhotoRepository.updateFavouritesCount(photoName, response.favouritesCount)) {
+                            return@transactional false
+                        }
+
+                        return@transactional true
+                    }
+
                 }
 
                 return@map Either.Value(FavouritePhotoResult(response.isFavourited, response.favouritesCount))

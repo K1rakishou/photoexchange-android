@@ -3,10 +3,7 @@ package com.kirakishou.photoexchange.di.module
 import android.arch.persistence.room.Room
 import android.content.Context
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepository
-import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
-import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.database.repository.*
 import dagger.Module
 import dagger.Provides
 import javax.inject.Singleton

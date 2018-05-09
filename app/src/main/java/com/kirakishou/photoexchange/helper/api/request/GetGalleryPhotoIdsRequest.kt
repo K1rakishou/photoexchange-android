@@ -29,7 +29,7 @@ class GetGalleryPhotoIdsRequest<T>(
                 if (response.serverErrorCode!! == 0) {
                     return@map GalleryPhotoIdsResponse.success(response.galleryPhotoIds)
                 } else {
-                    return@map GalleryPhotoIdsResponse.error(ErrorCode.fromInt(ErrorCode.GalleryPhotosErrors::class.java, response.serverErrorCode))
+                    return@map GalleryPhotoIdsResponse.error(ErrorCode.fromInt(ErrorCode.GetGalleryPhotosErrors::class.java, response.serverErrorCode))
                 }
             }
             .onErrorReturn(this::extractError) as Single<T>
@@ -37,10 +37,10 @@ class GetGalleryPhotoIdsRequest<T>(
 
     private fun extractError(error: Throwable): GalleryPhotoIdsResponse {
         return when (error) {
-            is ApiException -> GalleryPhotoIdsResponse.error(error.errorCode as ErrorCode.GalleryPhotosErrors)
+            is ApiException -> GalleryPhotoIdsResponse.error(error.errorCode as ErrorCode.GetGalleryPhotosErrors)
             is SocketTimeoutException,
-            is TimeoutException -> GalleryPhotoIdsResponse.error(ErrorCode.GalleryPhotosErrors.Local.Timeout())
-            else -> GalleryPhotoIdsResponse.error(ErrorCode.GalleryPhotosErrors.Remote.UnknownError())
+            is TimeoutException -> GalleryPhotoIdsResponse.error(ErrorCode.GetGalleryPhotosErrors.Local.Timeout())
+            else -> GalleryPhotoIdsResponse.error(ErrorCode.GetGalleryPhotosErrors.Remote.UnknownError())
         }
     }
 }

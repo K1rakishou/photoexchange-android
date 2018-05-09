@@ -28,13 +28,7 @@ class GalleryPhotoEntity(
     var lastUpdateTime: Long = 0L,
 
     @ColumnInfo(name = FAVOURITED_COUNT_COLUMN)
-    var favouritedCount: Long = 0L,
-
-    @ColumnInfo(name = IS_FAVOURITED_COLUMN)
-    var isFavourited: Boolean = false,
-
-    @ColumnInfo(name = IS_REPORTED_COLUMN)
-    var isReported: Boolean = false
+    var favouritedCount: Long = 0L
 ) {
 
     fun isEmpty(): Boolean {
@@ -48,8 +42,8 @@ class GalleryPhotoEntity(
         }
 
         fun create(id: Long, photoName: String, lon: Double, lat: Double, uploadedOn: Long, lastUpdateTime: Long,
-                   favouritedCount: Long, isFavourited: Boolean, isReported: Boolean): GalleryPhotoEntity {
-            return GalleryPhotoEntity(id, photoName, lon, lat, uploadedOn, lastUpdateTime, favouritedCount, isFavourited, isReported)
+                   favouritedCount: Long): GalleryPhotoEntity {
+            return GalleryPhotoEntity(id, photoName, lon, lat, uploadedOn, lastUpdateTime, favouritedCount)
         }
 
         const val TABLE_NAME = "gallery_photos"
@@ -61,7 +55,5 @@ class GalleryPhotoEntity(
         const val UPLOADED_ON_COLUMN = "UPLOADED_ON"
         const val LAST_UPDATE_TIME_COLUMN = "LAST_UPDATE_TIME"
         const val FAVOURITED_COUNT_COLUMN = "FAVOURITED_COUNT"
-        const val IS_FAVOURITED_COLUMN = "IS_FAVOURITED"
-        const val IS_REPORTED_COLUMN = "IS_REPORTED"
     }
 }

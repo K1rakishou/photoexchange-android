@@ -16,7 +16,8 @@ import kotlin.concurrent.withLock
     TempFileEntity::class,
     SettingEntity::class,
     PhotoAnswerEntity::class,
-    GalleryPhotoEntity::class
+    GalleryPhotoEntity::class,
+    GalleryPhotoInfoEntity::class
 ], version = 1)
 abstract class MyDatabase : RoomDatabase() {
 
@@ -27,6 +28,7 @@ abstract class MyDatabase : RoomDatabase() {
     abstract fun settingsDao(): SettingsDao
     abstract fun photoAnswerDao(): PhotoAnswerDao
     abstract fun galleryPhotoDao(): GalleryPhotoDao
+    abstract fun galleryPhotoInfoDao(): GalleryPhotoInfoDao
 
     inline fun transactional(func: () -> Boolean): Boolean {
         dbLock.withLock {
