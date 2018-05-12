@@ -13,11 +13,11 @@ import java.io.File
 /**
  * Created by kirakishou on 3/3/2018.
  */
-open class PhotosRepository(
+open class TakenPhotosRepository(
     private val filesDir: String,
     private val database: MyDatabase
 ) {
-    private val tag = "PhotosRepository"
+    private val tag = "TakenPhotosRepository"
     private val takenPhotoDao = database.takenPhotoDao()
     private val tempFileDao = database.tempFileDao()
 
@@ -224,6 +224,15 @@ open class PhotosRepository(
         }
 
         return deletePhotoById(takenPhoto.id)
+    }
+
+    fun deletePhotoByName(photoName: String): Boolean {
+        val photoId = takenPhotoDao.findPhotoIdByName(photoName)
+        if (photoId == null) {
+            return true
+        }
+
+        return deletePhotoById(photoId)
     }
 
     fun deletePhotoById(photoId: Long): Boolean {

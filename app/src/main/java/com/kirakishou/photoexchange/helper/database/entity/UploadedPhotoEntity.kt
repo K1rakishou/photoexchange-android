@@ -16,6 +16,12 @@ class UploadedPhotoEntity(
     @ColumnInfo(name = PHOTO_NAME_COLUMN, index = true)
     var photoName: String? = null,
 
+    @ColumnInfo(name = LON_COLUMN)
+    var lon: Double = 0.0,
+
+    @ColumnInfo(name = LAT_COLUMN)
+    var lat: Double = 0.0,
+
     @ColumnInfo(name = UPLOADED_ON_COLUMN)
     var uploadedOn: Long? = null
 ) {
@@ -31,13 +37,15 @@ class UploadedPhotoEntity(
         }
 
         fun create(photoId: Long, photoName: String): UploadedPhotoEntity {
-            return UploadedPhotoEntity(photoId, photoName, TimeUtils.getTimeFast())
+            return UploadedPhotoEntity(photoId, photoName, 0.0, 0.0, TimeUtils.getTimeFast())
         }
 
         const val TABLE_NAME = "UPLOADED_PHOTO"
 
         const val PHOTO_ID_COLUMN = "PHOTO_ID"
         const val PHOTO_NAME_COLUMN = "PHOTO_NAME"
+        const val LON_COLUMN = "LON"
+        const val LAT_COLUMN = "LAT"
         const val UPLOADED_ON_COLUMN = "UPLOADED_ON"
     }
 }

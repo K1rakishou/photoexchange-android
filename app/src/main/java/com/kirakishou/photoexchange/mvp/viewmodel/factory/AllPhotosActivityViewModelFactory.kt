@@ -4,8 +4,9 @@ import android.arch.lifecycle.ViewModel
 import android.arch.lifecycle.ViewModelProvider
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
 import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
@@ -17,7 +18,8 @@ import javax.inject.Inject
  */
 class AllPhotosActivityViewModelFactory
 @Inject constructor(
-    val photosRepository: PhotosRepository,
+    val takenPhotosRepository: TakenPhotosRepository,
+    val uploadedPhotosRepository: UploadedPhotosRepository,
     val settingsRepository: SettingsRepository,
     val receivedPhotosRepository: ReceivedPhotosRepository,
     val galleryPhotosUseCase: GetGalleryPhotosUseCase,
@@ -29,7 +31,8 @@ class AllPhotosActivityViewModelFactory
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
         return PhotosActivityViewModel(
-            photosRepository,
+            takenPhotosRepository,
+            uploadedPhotosRepository,
             settingsRepository,
             receivedPhotosRepository,
             galleryPhotosUseCase,

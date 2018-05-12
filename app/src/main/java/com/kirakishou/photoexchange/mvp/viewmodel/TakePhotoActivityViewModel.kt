@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.helper.CameraProvider
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
@@ -23,7 +23,7 @@ import java.util.concurrent.TimeoutException
  */
 class TakePhotoActivityViewModel(
     private val schedulerProvider: SchedulerProvider,
-    private val photosRepository: PhotosRepository
+    private val takenPhotosRepository: TakenPhotosRepository
 ) : BaseViewModel<TakePhotoActivityView>() {
 
     private val TAG = "TakePhotoActivityViewModel"
@@ -42,10 +42,10 @@ class TakePhotoActivityViewModel(
             var file: File? = null
 
             try {
-                photosRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN)
-                photosRepository.cleanFilesDirectory()
+                takenPhotosRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN)
+                takenPhotosRepository.cleanFilesDirectory()
 
-                file = photosRepository.createFile()
+                file = takenPhotosRepository.createFile()
 
                 val takePhotoStatus = getView()?.takePhoto(file)
                     ?.observeOn(schedulerProvider.IO())
@@ -57,7 +57,7 @@ class TakePhotoActivityViewModel(
                     return@async ErrorCode.TakePhotoErrors.CouldNotTakePhoto()
                 }
 
-                takenPhoto = photosRepository.saveTakenPhoto(file)
+                takenPhoto = takenPhotosRepository.saveTakenPhoto(file)
                 if (takenPhoto.isEmpty()) {
                     cleanUp(file, takenPhoto)
                     return@async ErrorCode.TakePhotoErrors.DatabaseError()
@@ -74,8 +74,8 @@ class TakePhotoActivityViewModel(
     }
 
     private fun cleanUp(file: File?, photo: TakenPhoto?) {
-        photosRepository.deleteFileIfExists(file)
-        photosRepository.deleteMyPhoto(photo)
+        takenPhotosRepository.deleteFileIfExists(file)
+        takenPhotosRepository.deleteMyPhoto(photo)
     }
 
     private fun handleException(error: Exception): ErrorCode.TakePhotoErrors {

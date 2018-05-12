@@ -11,7 +11,7 @@ import android.support.v4.app.NotificationCompat
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.ReceivePhotosServiceModule
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvp.model.PhotoAnswer
+import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.ReceivePhotosEvent
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
@@ -68,9 +68,9 @@ class ReceivePhotosService : Service(), ReceivePhotosServiceCallbacks {
         presenter.startPhotosReceiving()
     }
 
-    override fun onPhotoReceived(photoAnswer: PhotoAnswer, photoId: Long) {
+    override fun onPhotoReceived(receivedPhoto: ReceivedPhoto, photoId: Long) {
         updateDownloadingNotificationShowSuccess()
-        callback.get()?.onPhotoFindEvent(ReceivePhotosEvent.OnPhotoReceived(photoAnswer, photoId))
+        callback.get()?.onPhotoFindEvent(ReceivePhotosEvent.OnPhotoReceived(receivedPhoto))
     }
 
     override fun onFailed(errorCode: ErrorCode.ReceivePhotosErrors) {

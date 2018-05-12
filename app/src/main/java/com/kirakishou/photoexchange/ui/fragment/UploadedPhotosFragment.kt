@@ -130,7 +130,7 @@ class UploadedPhotosFragment : BaseFragment() {
                     adapter.removePhotoById(viewStateEvent.photo.id)
                 }
                 is UploadedPhotosFragmentViewStateEvent.AddPhoto -> {
-                    adapter.addMyPhoto(viewStateEvent.photo)
+                    adapter.addTakenPhoto(viewStateEvent.photo)
                 }
                 else -> throw IllegalArgumentException("Unknown UploadedPhotosFragmentViewStateEvent $viewStateEvent")
             }
@@ -161,24 +161,24 @@ class UploadedPhotosFragment : BaseFragment() {
                 }
                 is PhotoUploadEvent.OnPhotoUploadStart -> {
                     Timber.tag(TAG).d("OnPhotoUploadStart, photoId = ${event.photo.id}")
-                    adapter.addMyPhoto(event.photo.also { it.photoState = PhotoState.PHOTO_UPLOADING })
+                    adapter.addTakenPhoto(event.photo.also { it.photoState = PhotoState.PHOTO_UPLOADING })
                 }
                 is PhotoUploadEvent.OnProgress -> {
-                    adapter.addMyPhoto(event.photo)
+                    adapter.addTakenPhoto(event.photo)
                     adapter.updatePhotoProgress(event.photo.id, event.progress)
                 }
                 is PhotoUploadEvent.OnUploaded -> {
-                    Timber.tag(TAG).d("OnUploaded, photoId = ${event.photo.id}")
-                    adapter.removePhotoById(event.photo.id)
-                    adapter.addMyPhoto(event.photo.also { it.photoState = PhotoState.PHOTO_UPLOADED })
+                    Timber.tag(TAG).d("OnUploaded, photoId = ${event.photo.photoId}")
+                    adapter.removePhotoById(event.photo.photoId)
+                    adapter.addUploadedPhoto(event.photo)
                 }
                 is PhotoUploadEvent.OnFailedToUpload -> {
                     Timber.tag(TAG).d("OnFailedToUpload, photoId = ${event.photo.id}")
                     adapter.removePhotoById(event.photo.id)
-                    adapter.addMyPhoto(event.photo.also { it.photoState = PhotoState.FAILED_TO_UPLOAD })
+                    adapter.addTakenPhoto(event.photo.also { it.photoState = PhotoState.FAILED_TO_UPLOAD })
                 }
                 is PhotoUploadEvent.OnFoundPhotoAnswer -> {
-                    adapter.updatePhotoState(event.photoId, PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED)
+                    adapter.updateUploadedPhotoSetReceiverInfo(event.photo)
                 }
                 is PhotoUploadEvent.OnEnd -> {
                 }
@@ -198,7 +198,7 @@ class UploadedPhotosFragment : BaseFragment() {
         requireActivity().runOnUiThread {
             if (uploadedPhotos.isNotEmpty()) {
                 adapter.clear()
-                adapter.addMyPhotos(uploadedPhotos)
+                adapter.addTakenPhotos(uploadedPhotos)
             } else {
                 //TODO: show notification that no photos has been uploaded yet
             }

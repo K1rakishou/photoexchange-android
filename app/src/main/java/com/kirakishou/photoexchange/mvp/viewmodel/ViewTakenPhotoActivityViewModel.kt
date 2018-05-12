@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.view.ViewTakenPhotoActivityView
@@ -16,7 +16,7 @@ import timber.log.Timber
  */
 class ViewTakenPhotoActivityViewModel(
     private val schedulerProvider: SchedulerProvider,
-    private val photosRepository: PhotosRepository,
+    private val takenPhotosRepository: TakenPhotosRepository,
     private val settingsRepository: SettingsRepository
 ) : BaseViewModel<ViewTakenPhotoActivityView>() {
 
@@ -32,14 +32,14 @@ class ViewTakenPhotoActivityViewModel(
 
     fun queueUpTakenPhoto(takenPhotoId: Long): Observable<Boolean> {
         return Observable
-            .fromCallable { photosRepository.updatePhotoState(takenPhotoId, PhotoState.PHOTO_QUEUED_UP) }
+            .fromCallable { takenPhotosRepository.updatePhotoState(takenPhotoId, PhotoState.PHOTO_QUEUED_UP) }
             .subscribeOn(schedulerProvider.IO())
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun updateSetIsPhotoPublic(takenPhotoId: Long): Observable<Boolean> {
         return Observable
-            .fromCallable { photosRepository.updateMakePhotoPublic(takenPhotoId) }
+            .fromCallable { takenPhotosRepository.updateMakePhotoPublic(takenPhotoId) }
             .subscribeOn(schedulerProvider.IO())
             .doOnError { Timber.tag(TAG).e(it) }
     }

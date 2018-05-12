@@ -13,7 +13,7 @@ class UploadedPhotosAdapterSpanSizeLookup(
     override fun getSpanSize(position: Int): Int {
         val type = adapter.getItemViewType(position)
         return when (type) {
-            AdapterItemType.VIEW_MY_PHOTO.type,
+            AdapterItemType.VIEW_TAKEN_PHOTO.type,
             AdapterItemType.VIEW_FAILED_TO_UPLOAD.type -> 1
 
             AdapterItemType.EMPTY.type,

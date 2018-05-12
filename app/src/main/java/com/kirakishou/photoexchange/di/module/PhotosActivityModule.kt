@@ -4,8 +4,9 @@ import android.arch.lifecycle.ViewModelProviders
 import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
 import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
@@ -27,14 +28,16 @@ open class PhotosActivityModule(
     @PerActivity
     @Provides
     fun provideViewModelFactory(schedulerProvider: SchedulerProvider,
-                                photosRepository: PhotosRepository,
+                                takenPhotosRepository: TakenPhotosRepository,
+                                uploadedPhotosRepository: UploadedPhotosRepository,
                                 receivedPhotosRepository: ReceivedPhotosRepository,
                                 settingsRepository: SettingsRepository,
                                 galleryPhotosUseCase: GetGalleryPhotosUseCase,
                                 favouritePhotoUseCase: FavouritePhotoUseCase,
                                 reportPhotoUseCase: ReportPhotoUseCase): AllPhotosActivityViewModelFactory {
         return AllPhotosActivityViewModelFactory(
-            photosRepository,
+            takenPhotosRepository,
+            uploadedPhotosRepository,
             settingsRepository,
             receivedPhotosRepository,
             galleryPhotosUseCase,

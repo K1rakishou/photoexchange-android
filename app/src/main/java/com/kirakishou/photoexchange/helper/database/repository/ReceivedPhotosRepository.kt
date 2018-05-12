@@ -3,7 +3,7 @@ package com.kirakishou.photoexchange.helper.database.repository
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.ReceivedPhotoEntity
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
-import com.kirakishou.photoexchange.mvp.model.PhotoAnswer
+import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.net.response.ReceivedPhotosResponse
 
 open class ReceivedPhotosRepository(
@@ -24,7 +24,7 @@ open class ReceivedPhotosRepository(
         return photoAnswerDao.countAll().toInt()
     }
 
-    fun findAll(): List<PhotoAnswer> {
+    fun findAll(): List<ReceivedPhoto> {
         val allPhotos = photoAnswerDao.findAll()
         return allPhotos.map { ReceivedPhotosMapper.toPhotoAnswer(it) }
     }

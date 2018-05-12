@@ -5,10 +5,9 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.isFail
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.mvp.model.FindPhotosData
-import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.net.response.ReceivedPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.service.ReceivePhotosServiceCallbacks
@@ -18,7 +17,7 @@ import java.lang.ref.WeakReference
 
 class ReceivePhotosUseCase(
     private val database: MyDatabase,
-    private val photosRepository: PhotosRepository,
+    private val takenPhotosRepository: TakenPhotosRepository,
     private val settingsRepository: SettingsRepository,
     private val receivedPhotosRepository: ReceivedPhotosRepository,
     private val apiClient: ApiClient
@@ -38,7 +37,6 @@ class ReceivePhotosUseCase(
 
                 when (errorCode) {
                     is ErrorCode.ReceivePhotosErrors.Remote.Ok -> handleSuccessResult(response, callbacks)
-                    //TODO: probably should start JobService here
                     is ErrorCode.ReceivePhotosErrors.Remote.NoPhotosToSendBack -> callbacks.get()?.stopService()
                     else -> callbacks.get()?.onFailed(errorCode)
                 }
@@ -62,14 +60,13 @@ class ReceivePhotosUseCase(
                     return@transactional false
                 }
 
-                return@transactional photosRepository.updatePhotoState(photoAnswerResponse.uploadedPhotoName,
-                    PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED)
+                return@transactional takenPhotosRepository.deletePhotoByName(photoAnswerResponse.uploadedPhotoName)
             }
 
             val photoAnswer = ReceivedPhotosMapper.toPhotoAnswer(insertedPhotoAnswerId, photoAnswerResponse)
 
             if (result) {
-                val photoId = photosRepository.findByPhotoIdByName(photoAnswer.uploadedPhotoName)
+                val photoId = takenPhotosRepository.findByPhotoIdByName(photoAnswer.uploadedPhotoName)
                 callbacks.get()?.onPhotoReceived(photoAnswer, photoId)
             }
         }

@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.service
 
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
@@ -23,7 +23,7 @@ import java.lang.ref.WeakReference
  */
 class UploadPhotoServicePresenter(
     private val callbacks: WeakReference<UploadPhotoServiceCallbacks>,
-    private val myPhotosRepository: PhotosRepository,
+    private val myTakenPhotosRepository: TakenPhotosRepository,
     private val settingsRepository: SettingsRepository,
     private val schedulerProvider: SchedulerProvider,
     private val uploadPhotosUseCase: UploadPhotosUseCase,
@@ -73,8 +73,8 @@ class UploadPhotoServicePresenter(
     }
 
     private fun markAllPhotosAsFailed() {
-        myPhotosRepository.updateStates(PhotoState.PHOTO_QUEUED_UP, PhotoState.FAILED_TO_UPLOAD)
-        myPhotosRepository.updateStates(PhotoState.PHOTO_UPLOADING, PhotoState.FAILED_TO_UPLOAD)
+        myTakenPhotosRepository.updateStates(PhotoState.PHOTO_QUEUED_UP, PhotoState.FAILED_TO_UPLOAD)
+        myTakenPhotosRepository.updateStates(PhotoState.PHOTO_UPLOADING, PhotoState.FAILED_TO_UPLOAD)
     }
 
     private fun getUserId(): Observable<Either<ErrorCode, String>> {

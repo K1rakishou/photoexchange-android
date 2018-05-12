@@ -8,7 +8,7 @@ import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvp.model.PhotoAnswer
+import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.ReceivePhotosEvent
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
@@ -75,7 +75,7 @@ class ReceivedPhotosFragment : BaseFragment() {
     }
 
     private fun loadPhotos() {
-        viewModel.loadPhotoAnswers()
+        viewModel.loadReceivedPhotos()
             .observeOn(AndroidSchedulers.mainThread())
             .doOnSuccess { photos -> addPhotosToAdapter(photos) }
             .doOnError { Timber.tag(TAG).e(it) }
@@ -105,7 +105,7 @@ class ReceivedPhotosFragment : BaseFragment() {
         requireActivity().runOnUiThread {
             when (event) {
                 is ReceivePhotosEvent.OnPhotoReceived -> {
-                    adapter.addPhotoAnswer(event.photoAnswer)
+                    adapter.addPhotoAnswer(event.receivedPhoto)
                 }
                 is ReceivePhotosEvent.OnFailed,
                 is ReceivePhotosEvent.OnUnknownError -> {
@@ -115,14 +115,14 @@ class ReceivedPhotosFragment : BaseFragment() {
         }
     }
 
-    private fun addPhotosToAdapter(photoAnswers: List<PhotoAnswer>) {
+    private fun addPhotosToAdapter(receivedPhotos: List<ReceivedPhoto>) {
         if (!isAdded) {
             return
         }
 
         requireActivity().runOnUiThread {
-            if (photoAnswers.isNotEmpty()) {
-                adapter.addPhotoAnswers(photoAnswers)
+            if (receivedPhotos.isNotEmpty()) {
+                adapter.addPhotoAnswers(receivedPhotos)
             } else {
                 //TODO: show notification that no photos has been uploaded yet
             }

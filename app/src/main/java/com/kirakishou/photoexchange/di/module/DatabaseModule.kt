@@ -26,10 +26,10 @@ open class DatabaseModule(
 
     @Singleton
     @Provides
-    open fun provideMyPhotoRepository(context: Context,
-                                      database: MyDatabase): PhotosRepository {
+    open fun provideTakenPhotoRepository(context: Context,
+                                         database: MyDatabase): TakenPhotosRepository {
         val filesDir = context.filesDir.absolutePath
-        return PhotosRepository(filesDir, database)
+        return TakenPhotosRepository(filesDir, database)
     }
 
     @Singleton
@@ -40,7 +40,7 @@ open class DatabaseModule(
 
     @Singleton
     @Provides
-    open fun providePhotoAnswerRepository(database: MyDatabase): ReceivedPhotosRepository {
+    open fun provideReceivedPhotoRepository(database: MyDatabase): ReceivedPhotosRepository {
         return ReceivedPhotosRepository(database)
     }
 
@@ -48,5 +48,11 @@ open class DatabaseModule(
     @Provides
     open fun provideGalleryPhotoRepository(database: MyDatabase): GalleryPhotoRepository {
         return GalleryPhotoRepository(database)
+    }
+
+    @Singleton
+    @Provides
+    open fun provideUploadedPhotoRepository(database: MyDatabase): UploadedPhotosRepository {
+        return UploadedPhotosRepository(database)
     }
 }

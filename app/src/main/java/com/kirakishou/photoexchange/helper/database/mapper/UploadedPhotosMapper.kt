@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.helper.database.mapper
 
 import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
+import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.net.response.GetUploadedPhotosResponse
 
@@ -45,6 +46,17 @@ object UploadedPhotosMapper {
 
             fun toUploadedPhotos(uploadedPhotoEntityList: List<UploadedPhotoEntity>): List<UploadedPhoto> {
                 return uploadedPhotoEntityList.map { toUploadedPhoto(it) }
+            }
+        }
+    }
+
+    object FromObject {
+        object ToEntity {
+            fun toUploadedPhotoEntity(takenPhoto: TakenPhoto): UploadedPhotoEntity {
+                return UploadedPhotoEntity.create(
+                    takenPhoto.id,
+                    takenPhoto.photoName!!
+                )
             }
         }
     }

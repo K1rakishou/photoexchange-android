@@ -2,8 +2,9 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.extension.drainErrorCodesTo
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
@@ -27,7 +28,8 @@ import timber.log.Timber
  * Created by kirakishou on 3/11/2018.
  */
 class PhotosActivityViewModel(
-    private val photosRepository: PhotosRepository,
+    private val takenPhotosRepository: TakenPhotosRepository,
+    private val uploadedPhotosRepository: UploadedPhotosRepository,
     private val settingsRepository: SettingsRepository,
     private val receivedPhotosRepository: ReceivedPhotosRepository,
     private val getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
@@ -93,13 +95,13 @@ class PhotosActivityViewModel(
     }
 
     fun checkShouldStartReceivePhotosService() {
-        compositeDisposable += Observable.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
+        compositeDisposable += Observable.fromCallable { takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
             //do not start the service if there are queued up photos
             .filter { count -> count == 0 }
             .map {
-                val uploadedPhotosCount = photosRepository.countAllByStates(arrayOf(PhotoState.PHOTO_UPLOADED, PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED))
+                val uploadedPhotosCount = uploadedPhotosRepository.count()
                 val receivedPhotosCount = receivedPhotosRepository.countAll()
 
                 if (Constants.isDebugBuild) {
@@ -115,7 +117,7 @@ class PhotosActivityViewModel(
     }
 
     fun checkShouldStartPhotoUploadingService() {
-        val observable = Observable.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
+        val observable = Observable.fromCallable { takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
             .publish()
@@ -144,7 +146,7 @@ class PhotosActivityViewModel(
             .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)
     }
 
-    fun loadPhotoAnswers(): Single<List<PhotoAnswer>> {
+    fun loadReceivedPhotos(): Single<List<ReceivedPhoto>> {
         return Single.fromCallable { receivedPhotosRepository.findAll() }
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
@@ -155,20 +157,14 @@ class PhotosActivityViewModel(
         return Single.fromCallable {
             val photos = mutableListOf<TakenPhoto>()
 
-            val uploadingPhotos = photosRepository.findAllByState(PhotoState.PHOTO_UPLOADING)
+            val uploadingPhotos = takenPhotosRepository.findAllByState(PhotoState.PHOTO_UPLOADING)
             photos += uploadingPhotos.sortedBy { it.id }
 
-            val queuedUpPhotos = photosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP)
+            val queuedUpPhotos = takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP)
             photos += queuedUpPhotos.sortedBy { it.id }
 
-            val failedPhotos = photosRepository.findAllByState(PhotoState.FAILED_TO_UPLOAD)
+            val failedPhotos = takenPhotosRepository.findAllByState(PhotoState.FAILED_TO_UPLOAD)
             photos += failedPhotos.sortedBy { it.id }
-
-            val uploadedPhotos = photosRepository.findAllByState(PhotoState.PHOTO_UPLOADED)
-            photos += uploadedPhotos.sortedBy { it.id }
-
-            val uploadedAndReceivedAnswerPhotos = photosRepository.findAllByState(PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED)
-            photos += uploadedAndReceivedAnswerPhotos.sortedBy { it.id }
 
             return@fromCallable photos
         }.subscribeOn(schedulerProvider.IO())
@@ -186,9 +182,9 @@ class PhotosActivityViewModel(
 
     fun deletePhotoById(photoId: Long): Completable {
         return Completable.fromAction {
-            photosRepository.deletePhotoById(photoId)
+            takenPhotosRepository.deletePhotoById(photoId)
             if (Constants.isDebugBuild) {
-                check(photosRepository.findById(photoId).isEmpty())
+                check(takenPhotosRepository.findById(photoId).isEmpty())
             }
         }.subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
@@ -196,7 +192,7 @@ class PhotosActivityViewModel(
     }
 
     fun changePhotoState(photoId: Long, newPhotoState: PhotoState): Completable {
-        return Completable.fromAction { photosRepository.updatePhotoState(photoId, newPhotoState) }
+        return Completable.fromAction { takenPhotosRepository.updatePhotoState(photoId, newPhotoState) }
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
             .doOnError { Timber.tag(TAG).e(it) }

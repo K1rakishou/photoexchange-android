@@ -52,7 +52,7 @@ class TakePhotoActivityViewModelTests : AbstractTest() {
 //    fun should_take_photo_and_store_photo_info_in_the_database() {
 //        runBlocking {
 //            val realTempFilesRepository = TempFileRepository(tempFilesDir, database)
-//            val realMyPhotosRepository = PhotosRepository(database, realTempFilesRepository)
+//            val realMyPhotosRepository = TakenPhotosRepository(database, realTempFilesRepository)
 //            val viewModel = TakePhotoActivityViewModel(mockedView, coroutinesPool, realMyPhotosRepository)
 //
 //            whenever(mockedView.takePhoto(any())).thenReturn(Single.just(true))
@@ -83,7 +83,7 @@ class TakePhotoActivityViewModelTests : AbstractTest() {
 //    fun should_cleanup_and_show_toast_if_repository_insert_fails() {
 //        runBlocking {
 //            val realTempFilesRepository = TempFileRepository(tempFilesDir, database)
-//            val spyMyPhotosRepository = Mockito.spy(PhotosRepository(database, realTempFilesRepository))
+//            val spyMyPhotosRepository = Mockito.spy(TakenPhotosRepository(database, realTempFilesRepository))
 //
 //            val result = async(Unconfined) { TakenPhoto.empty() }
 //            doReturn(result).`when`(spyMyPhotosRepository).insert(any())

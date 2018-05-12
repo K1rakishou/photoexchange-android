@@ -1,8 +1,9 @@
 package com.kirakishou.photoexchange.service
 
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.interactors.ReceivePhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.FindPhotosData
 import com.kirakishou.photoexchange.mvp.model.PhotoState
@@ -14,7 +15,8 @@ import java.lang.ref.WeakReference
 
 class ReceivePhotosServicePresenter(
     private val callbacks: WeakReference<ReceivePhotosServiceCallbacks>,
-    private val myPhotosRepository: PhotosRepository,
+    private val takenPhotosRepository: TakenPhotosRepository,
+    private val uploadedPhotosRepository: UploadedPhotosRepository,
     private val settingsRepository: SettingsRepository,
     private val schedulerProvider: SchedulerProvider,
     private val receivePhotosUseCase: ReceivePhotosUseCase
@@ -28,11 +30,11 @@ class ReceivePhotosServicePresenter(
         compositeDisposable += findPhotosSubject
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
-            .map { myPhotosRepository.findAllByState(PhotoState.PHOTO_UPLOADED) }
+            .map { uploadedPhotosRepository.findAll(false) }
             .filter { uploadedPhotos -> uploadedPhotos.isNotEmpty() }
             .map { uploadedPhotos ->
                 val photoNames = uploadedPhotos
-                    .joinToString(",") { it.photoName!! }
+                    .joinToString(",") { it.photoName }
 
                 val userId = settingsRepository.getUserId()
 

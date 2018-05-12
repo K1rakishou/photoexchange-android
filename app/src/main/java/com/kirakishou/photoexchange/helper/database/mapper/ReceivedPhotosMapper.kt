@@ -1,13 +1,13 @@
 package com.kirakishou.photoexchange.helper.database.mapper
 
 import com.kirakishou.photoexchange.helper.database.entity.ReceivedPhotoEntity
-import com.kirakishou.photoexchange.mvp.model.PhotoAnswer
+import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.net.response.ReceivedPhotosResponse
 
 object ReceivedPhotosMapper {
 
-    fun toPhotoAnswer(receivedPhotoEntity: ReceivedPhotoEntity): PhotoAnswer {
-        return PhotoAnswer(
+    fun toPhotoAnswer(receivedPhotoEntity: ReceivedPhotoEntity): ReceivedPhoto {
+        return ReceivedPhoto(
             receivedPhotoEntity.id!!,
             receivedPhotoEntity.uploadedPhotoName!!,
             receivedPhotoEntity.receivedPhotoName!!,
@@ -16,8 +16,8 @@ object ReceivedPhotosMapper {
         )
     }
 
-    fun toPhotoAnswer(id: Long?, receivedPhotosResponse: ReceivedPhotosResponse.ReceivedPhoto): PhotoAnswer {
-        return PhotoAnswer(
+    fun toPhotoAnswer(id: Long?, receivedPhotosResponse: ReceivedPhotosResponse.ReceivedPhoto): ReceivedPhoto {
+        return ReceivedPhoto(
             id,
             receivedPhotosResponse.uploadedPhotoName,
             receivedPhotosResponse.receivedPhotoName,
