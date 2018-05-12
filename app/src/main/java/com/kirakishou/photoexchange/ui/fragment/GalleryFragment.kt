@@ -12,6 +12,7 @@ import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
+import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.GalleryPhotosAdapter
@@ -79,6 +80,7 @@ class GalleryFragment : BaseFragment() {
     private fun initRx() {
         compositeDisposable += viewModel.errorCodesSubject
             .subscribeOn(AndroidSchedulers.mainThread())
+            .doOnNext { handleError(it) }
             .doOnNext { (requireActivity() as PhotosActivity).showErrorCodeToast(it) }
             .subscribe()
 
@@ -178,6 +180,12 @@ class GalleryFragment : BaseFragment() {
             }
 
             adapter.addAll(photos)
+        }
+    }
+
+    private fun handleError(errorCode: ErrorCode) {
+        galleryPhotosList.post {
+            adapter.removeProgressFooter()
         }
     }
 
