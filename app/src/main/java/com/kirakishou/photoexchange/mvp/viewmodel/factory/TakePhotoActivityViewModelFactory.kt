@@ -3,9 +3,7 @@ package com.kirakishou.photoexchange.mvp.viewmodel.factory
 import android.arch.lifecycle.ViewModel
 import android.arch.lifecycle.ViewModelProvider
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
 import javax.inject.Inject
 
@@ -14,12 +12,12 @@ import javax.inject.Inject
  */
 class TakePhotoActivityViewModelFactory
 @Inject constructor(
-    val photosRepository: PhotosRepository,
+    val takenPhotosRepository: TakenPhotosRepository,
     val schedulerProvider: SchedulerProvider
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
-        return TakePhotoActivityViewModel(schedulerProvider, photosRepository) as T
+        return TakePhotoActivityViewModel(schedulerProvider, takenPhotosRepository) as T
     }
 }

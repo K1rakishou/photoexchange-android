@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.service
 
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
@@ -23,7 +23,7 @@ import java.lang.ref.WeakReference
  */
 class UploadPhotoServicePresenter(
     private val callbacks: WeakReference<UploadPhotoServiceCallbacks>,
-    private val myPhotosRepository: PhotosRepository,
+    private val myTakenPhotosRepository: TakenPhotosRepository,
     private val settingsRepository: SettingsRepository,
     private val schedulerProvider: SchedulerProvider,
     private val uploadPhotosUseCase: UploadPhotosUseCase,
@@ -37,44 +37,55 @@ class UploadPhotoServicePresenter(
         compositeDisposable += uploadPhotosSubject
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
-            .flatMap { getCurrentLocation() }
-            .flatMap { location -> getUserId().zipWith(Observable.just(location)) }
-            .map { (userIdResult, location) ->
-                if (userIdResult is Either.Error) {
-                    callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnCouldNotGetUserIdFromUserver(userIdResult.error as ErrorCode.UploadPhotoErrors))
-                    throw StopUploadingException()
-                }
+            .flatMap {
+                return@flatMap getCurrentLocation()
+                    .flatMap { location -> getUserId().zipWith(Observable.just(location)) }
+                    .flatMap { (userIdResult, location) ->
+                        if (userIdResult is Either.Error) {
+                            callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnCouldNotGetUserIdFromServerError(userIdResult.error as ErrorCode.UploadPhotoErrors))
+                            return@flatMap Observable.error<Pair<String, LonLat>>(CouldNotGetUserIdFromServerException())
+                        }
 
-                return@map Pair((userIdResult as Either.Value).value, location)
-            }
-            .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnPrepare()) }
-            .concatMap { (userId, location) ->
-                Timber.tag(TAG).d("Upload data")
+                        return@flatMap Observable.just(Pair((userIdResult as Either.Value).value, location))
+                    }
+                    .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnPrepare()) }
+                    .concatMap { (userId, location) ->
+                        Timber.tag(TAG).d("Upload data")
 
-                return@concatMap uploadPhotosUseCase.uploadPhotos(userId, location, callbacks)
-                    .toObservable()
-            }
-            .doOnNext { allUploaded ->
-                Timber.tag(TAG).d("onUploadingEvent(PhotoUploadEvent.OnEnd($allUploaded))")
-                callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnEnd(allUploaded))
-            }
-            .doOnError { error ->
-                Timber.tag(TAG).d("onUploadingEvent(PhotoUploadEvent.OnEnd())")
+                        return@concatMap uploadPhotosUseCase.uploadPhotos(userId, location, callbacks)
+                            .toObservable()
+                    }
+                    .doOnNext { allUploaded ->
+                        Timber.tag(TAG).d("onUploadingEvent(PhotoUploadEvent.OnEnd($allUploaded))")
+                        callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnEnd(allUploaded))
+                    }
+                    .doOnEach {
+                        Timber.tag(TAG).d("stopService")
+                        callbacks.get()?.stopService()
+                    }
+                    .doOnError { error ->
+                        Timber.tag(TAG).d("onUploadingEvent(PhotoUploadEvent.OnEnd())")
 
-                markAllPhotosAsFailed()
-                callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnUnknownError(error))
-                callbacks.get()?.onError(error)
-            }
-            .doOnEach {
-                Timber.tag(TAG).d("stopService")
-                callbacks.get()?.stopService()
+                        markAllPhotosAsFailed()
+
+                        when (error) {
+                            is CouldNotGetUserIdFromServerException -> {
+                            }
+
+                            else -> callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnUnknownError(error))
+                        }
+
+                        callbacks.get()?.onError(error)
+                    }
+                    .map { Unit }
+                    .onErrorReturnItem(Unit)
             }
             .subscribe()
     }
 
     private fun markAllPhotosAsFailed() {
-        myPhotosRepository.updateStates(PhotoState.PHOTO_QUEUED_UP, PhotoState.FAILED_TO_UPLOAD)
-        myPhotosRepository.updateStates(PhotoState.PHOTO_UPLOADING, PhotoState.FAILED_TO_UPLOAD)
+        myTakenPhotosRepository.updateStates(PhotoState.PHOTO_QUEUED_UP, PhotoState.FAILED_TO_UPLOAD)
+        myTakenPhotosRepository.updateStates(PhotoState.PHOTO_UPLOADING, PhotoState.FAILED_TO_UPLOAD)
     }
 
     private fun getUserId(): Observable<Either<ErrorCode, String>> {
@@ -91,12 +102,12 @@ class UploadPhotoServicePresenter(
     }
 
     private fun getCurrentLocation(): Observable<LonLat> {
-        val gpsGrantedObservable = Observable.fromCallable {
+        val gpsPermissionGrantedObservable = Observable.fromCallable {
             settingsRepository.isGpsPermissionGranted()
         }
 
-        val gpsGranted = gpsGrantedObservable
-            .filter { it }
+        val gpsGranted = gpsPermissionGrantedObservable
+            .filter { permissionGranted -> permissionGranted }
             .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnLocationUpdateStart()) }
             .doOnNext { Timber.tag(TAG).d("Gps permission is granted") }
             .flatMap {
@@ -105,8 +116,8 @@ class UploadPhotoServicePresenter(
             }
             .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnLocationUpdateEnd()) }
 
-        val gpsNotGranted = gpsGrantedObservable
-            .filter { !it }
+        val gpsNotGranted = gpsPermissionGrantedObservable
+            .filter { permissionGranted -> !permissionGranted }
             .doOnNext { Timber.tag(TAG).d("Gps permission is not granted") }
             .map { LonLat.empty() }
 
@@ -122,5 +133,5 @@ class UploadPhotoServicePresenter(
         uploadPhotosSubject.onNext(Unit)
     }
 
-    class StopUploadingException() : Exception()
+    class CouldNotGetUserIdFromServerException() : Exception()
 }

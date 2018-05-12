@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.mvp.model.other
 
-import com.kirakishou.photoexchange.mvp.model.MyPhoto
+import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 
 /**
  * Created by kirakishou on 7/26/2017.
@@ -30,8 +30,8 @@ sealed class ErrorCode(val value: Int) {
         }
     }
 
-    sealed class GetPhotoAnswersErrors(value: Int) : ErrorCode(value) {
-        sealed class Remote(value: Int) : GetPhotoAnswersErrors(value) {
+    sealed class ReceivePhotosErrors(value: Int) : ErrorCode(value) {
+        sealed class Remote(value: Int) : ReceivePhotosErrors(value) {
             class UnknownError : Remote(-1)
             class Ok : Remote(0)
             class BadRequest : Remote(1)
@@ -42,7 +42,7 @@ sealed class ErrorCode(val value: Int) {
             class NotEnoughPhotosUploaded : Remote(6)
         }
 
-        sealed class Local(value: Int) : GetPhotoAnswersErrors(value) {
+        sealed class Local(value: Int) : ReceivePhotosErrors(value) {
             class BadServerResponse(val message: String? = null) : Local(-1000)
             class Timeout : Local(-1001)
         }
@@ -120,10 +120,40 @@ sealed class ErrorCode(val value: Int) {
         }
     }
 
+    sealed class GetUploadedPhotoIdsError(value: Int) : ErrorCode(value) {
+        sealed class Remote(value: Int) : GetUploadedPhotoIdsError(value) {
+            class UnknownError : Remote(-1)
+            class Ok : Remote(0)
+            class DatabaseError : Remote(1)
+            class BadRequest : Remote(2)
+        }
+
+        sealed class Local(value: Int) : GetUploadedPhotoIdsError(value) {
+            class BadServerResponse(val message: String? = null) : Local(-1000)
+            class Timeout : Local(-1001)
+            class DatabaseError : Local(-1002)
+        }
+    }
+
+    sealed class GetUploadedPhotosError(value: Int) : ErrorCode(value) {
+        sealed class Remote(value: Int) : GetUploadedPhotosError(value) {
+            class UnknownError : Remote(-1)
+            class Ok : Remote(0)
+            class DatabaseError : Remote(1)
+            class BadRequest : Remote(2)
+        }
+
+        sealed class Local(value: Int) : GetUploadedPhotosError(value) {
+            class BadServerResponse(val message: String? = null) : Local(-1000)
+            class Timeout : Local(-1001)
+            class DatabaseError : Local(-1002)
+        }
+    }
+
     //local
     sealed class TakePhotoErrors(value: Int) : ErrorCode(value) {
         class UnknownError : TakePhotoErrors(-1)
-        class Ok(val photo: MyPhoto) : TakePhotoErrors(0)
+        class Ok(val photo: TakenPhoto) : TakePhotoErrors(0)
         class CameraIsNotAvailable : TakePhotoErrors(1)
         class CameraIsNotStartedException : TakePhotoErrors(2)
         class TimeoutException : TakePhotoErrors(3)
@@ -156,22 +186,22 @@ sealed class ErrorCode(val value: Int) {
                     errorCode as T
                 }
 
-                GetPhotoAnswersErrors::class.java -> {
+                ReceivePhotosErrors::class.java -> {
                     val errorCode = when (errorCodeInt) {
                         //local errors
                         null,
-                        -1000 -> GetPhotoAnswersErrors.Local.BadServerResponse()
-                        -1001 -> GetPhotoAnswersErrors.Local.Timeout()
+                        -1000 -> ReceivePhotosErrors.Local.BadServerResponse()
+                        -1001 -> ReceivePhotosErrors.Local.Timeout()
 
                         //remote errors
-                        -1 -> GetPhotoAnswersErrors.Remote.UnknownError()
-                        0 -> GetPhotoAnswersErrors.Remote.Ok()
-                        1 -> GetPhotoAnswersErrors.Remote.BadRequest()
-                        2 -> GetPhotoAnswersErrors.Remote.DatabaseError()
-                        3 -> GetPhotoAnswersErrors.Remote.NoPhotosInRequest()
-                        4 -> GetPhotoAnswersErrors.Remote.TooManyPhotosRequested()
-                        5 -> GetPhotoAnswersErrors.Remote.NoPhotosToSendBack()
-                        6 -> GetPhotoAnswersErrors.Remote.NotEnoughPhotosUploaded()
+                        -1 -> ReceivePhotosErrors.Remote.UnknownError()
+                        0 -> ReceivePhotosErrors.Remote.Ok()
+                        1 -> ReceivePhotosErrors.Remote.BadRequest()
+                        2 -> ReceivePhotosErrors.Remote.DatabaseError()
+                        3 -> ReceivePhotosErrors.Remote.NoPhotosInRequest()
+                        4 -> ReceivePhotosErrors.Remote.TooManyPhotosRequested()
+                        5 -> ReceivePhotosErrors.Remote.NoPhotosToSendBack()
+                        6 -> ReceivePhotosErrors.Remote.NotEnoughPhotosUploaded()
                         else -> throw IllegalArgumentException("Unknown errorCodeInt $errorCodeInt")
                     }
 

@@ -8,10 +8,10 @@ import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvp.model.PhotoAnswer
-import com.kirakishou.photoexchange.mvp.model.PhotoFindEvent
-import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
-import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
+import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
+import com.kirakishou.photoexchange.mvp.model.ReceivePhotosEvent
+import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
+import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapterSpanSizeLookup
 import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewStateEvent
@@ -30,7 +30,7 @@ class ReceivedPhotosFragment : BaseFragment() {
     lateinit var imageLoader: ImageLoader
 
     @Inject
-    lateinit var viewModel: AllPhotosActivityViewModel
+    lateinit var viewModel: PhotosActivityViewModel
 
     lateinit var adapter: ReceivedPhotosAdapter
 
@@ -75,7 +75,7 @@ class ReceivedPhotosFragment : BaseFragment() {
     }
 
     private fun loadPhotos() {
-        viewModel.loadPhotoAnswers()
+        viewModel.loadReceivedPhotos()
             .observeOn(AndroidSchedulers.mainThread())
             .doOnSuccess { photos -> addPhotosToAdapter(photos) }
             .doOnError { Timber.tag(TAG).e(it) }
@@ -92,37 +92,37 @@ class ReceivedPhotosFragment : BaseFragment() {
                 is ReceivedPhotosFragmentViewStateEvent.ScrollToTop -> {
                     receivedPhotosList.scrollToPosition(0)
                 }
-                else -> throw IllegalArgumentException("Unknown MyPhotosFragmentViewStateEvent $viewStateEvent")
+                else -> throw IllegalArgumentException("Unknown UploadedPhotosFragmentViewStateEvent $viewStateEvent")
             }
         }
     }
 
-    private fun onPhotoFindEvent(event: PhotoFindEvent) {
+    private fun onPhotoFindEvent(event: ReceivePhotosEvent) {
         if (!isAdded) {
             return
         }
 
         requireActivity().runOnUiThread {
             when (event) {
-                is PhotoFindEvent.OnPhotoAnswerFound -> {
-                    adapter.addPhotoAnswer(event.photoAnswer)
+                is ReceivePhotosEvent.OnPhotoReceived -> {
+                    adapter.addPhotoAnswer(event.receivedPhoto)
                 }
-                is PhotoFindEvent.OnFailed,
-                is PhotoFindEvent.OnUnknownError -> {
+                is ReceivePhotosEvent.OnFailed,
+                is ReceivePhotosEvent.OnUnknownError -> {
                     //do nothing here
                 }
             }
         }
     }
 
-    private fun addPhotosToAdapter(photoAnswers: List<PhotoAnswer>) {
+    private fun addPhotosToAdapter(receivedPhotos: List<ReceivedPhoto>) {
         if (!isAdded) {
             return
         }
 
         requireActivity().runOnUiThread {
-            if (photoAnswers.isNotEmpty()) {
-                adapter.addPhotoAnswers(photoAnswers)
+            if (receivedPhotos.isNotEmpty()) {
+                adapter.addPhotoAnswers(receivedPhotos)
             } else {
                 //TODO: show notification that no photos has been uploaded yet
             }
@@ -133,7 +133,7 @@ class ReceivedPhotosFragment : BaseFragment() {
     }
 
     override fun resolveDaggerDependency() {
-        (requireActivity() as AllPhotosActivity).activityComponent
+        (requireActivity() as PhotosActivity).activityComponent
             .inject(this)
     }
 

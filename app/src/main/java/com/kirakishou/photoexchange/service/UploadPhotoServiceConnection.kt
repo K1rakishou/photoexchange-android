@@ -3,13 +3,13 @@ package com.kirakishou.photoexchange.service
 import android.content.ComponentName
 import android.content.ServiceConnection
 import android.os.IBinder
-import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
+import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import timber.log.Timber
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicBoolean
 
 class UploadPhotoServiceConnection(
-    val activity: AllPhotosActivity
+    val activity: PhotosActivity
 ) : AtomicBoolean(false), ServiceConnection {
 
     private val tag = "UploadPhotoServiceConnection"

@@ -2,15 +2,11 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.helper.CameraProvider
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.helper.extension.drainErrorCodesTo
-import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
-import com.kirakishou.photoexchange.mvp.model.MyPhoto
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
-import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.experimental.CommonPool
@@ -27,7 +23,7 @@ import java.util.concurrent.TimeoutException
  */
 class TakePhotoActivityViewModel(
     private val schedulerProvider: SchedulerProvider,
-    private val photosRepository: PhotosRepository
+    private val takenPhotosRepository: TakenPhotosRepository
 ) : BaseViewModel<TakePhotoActivityView>() {
 
     private val TAG = "TakePhotoActivityViewModel"
@@ -42,14 +38,14 @@ class TakePhotoActivityViewModel(
 
     fun takePhoto(): Single<ErrorCode.TakePhotoErrors> {
         return async {
-            var myPhoto: MyPhoto = MyPhoto.empty()
+            var takenPhoto: TakenPhoto = TakenPhoto.empty()
             var file: File? = null
 
             try {
-                photosRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN)
-                photosRepository.cleanFilesDirectory()
+                takenPhotosRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN)
+                takenPhotosRepository.cleanFilesDirectory()
 
-                file = photosRepository.createFile()
+                file = takenPhotosRepository.createFile()
 
                 val takePhotoStatus = getView()?.takePhoto(file)
                     ?.observeOn(schedulerProvider.IO())
@@ -61,25 +57,25 @@ class TakePhotoActivityViewModel(
                     return@async ErrorCode.TakePhotoErrors.CouldNotTakePhoto()
                 }
 
-                myPhoto = photosRepository.saveTakenPhoto(file)
-                if (myPhoto.isEmpty()) {
-                    cleanUp(file, myPhoto)
+                takenPhoto = takenPhotosRepository.saveTakenPhoto(file)
+                if (takenPhoto.isEmpty()) {
+                    cleanUp(file, takenPhoto)
                     return@async ErrorCode.TakePhotoErrors.DatabaseError()
                 }
 
-                return@async ErrorCode.TakePhotoErrors.Ok(myPhoto)
+                return@async ErrorCode.TakePhotoErrors.Ok(takenPhoto)
             } catch (error: Exception) {
                 Timber.tag(TAG).e(error)
 
-                cleanUp(file, myPhoto)
+                cleanUp(file, takenPhoto)
                 return@async handleException(error)
             }
         }.asSingle(CommonPool)
     }
 
-    private fun cleanUp(file: File?, photo: MyPhoto?) {
-        photosRepository.deleteFileIfExists(file)
-        photosRepository.deleteMyPhoto(photo)
+    private fun cleanUp(file: File?, photo: TakenPhoto?) {
+        takenPhotosRepository.deleteFileIfExists(file)
+        takenPhotosRepository.deleteMyPhoto(photo)
     }
 
     private fun handleException(error: Exception): ErrorCode.TakePhotoErrors {

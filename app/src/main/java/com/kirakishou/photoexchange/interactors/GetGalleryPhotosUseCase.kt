@@ -2,13 +2,14 @@ package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiClient
-import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotoInfoMapper
-import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotoMapper
+import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosInfoMapper
+import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosMapper
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepository
 import com.kirakishou.photoexchange.helper.extension.minutes
-import com.kirakishou.photoexchange.helper.extension.seconds
+import com.kirakishou.photoexchange.helper.util.Utils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.GalleryPhotoInfo
+import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
 import kotlinx.coroutines.experimental.CommonPool
@@ -24,12 +25,12 @@ class GetGalleryPhotosUseCase(
     private val TAG = "GetGalleryPhotosUseCase"
 
     //interval to update photos in the db with fresh information
-    private val INTERVAL_TO_REFRESH_PHOTO_FROM_SERVER = 30.minutes()
+    private val INTERVAL_TO_REFRESH_PHOTOS_FROM_SERVER = 30.minutes()
 
     fun loadPageOfPhotos(userId: String, lastId: Long, photosPerPage: Int): Single<Either<ErrorCode, List<GalleryPhoto>>> {
         return async {
             try {
-                Timber.tag(TAG).d("sending request...")
+                Timber.tag(TAG).d("sending loadPageOfPhotos request...")
 
                 //get fresh photo ids from the server
                 val getGalleryPhotoIdsResponse = apiClient.getGalleryPhotoIds(lastId, photosPerPage).await()
@@ -47,7 +48,7 @@ class GetGalleryPhotosUseCase(
 
                 //get photos by the ids from the database
                 val galleryPhotosFromDb = galleryPhotoRepository.findMany(galleryPhotoIds)
-                val photoIdsToGetFromServer = filterNotCachedIds(galleryPhotoIds, galleryPhotosFromDb.map { it.galleryPhotoId })
+                val photoIdsToGetFromServer = Utils.filterListAlreadyContaning(galleryPhotoIds, galleryPhotosFromDb.map { it.galleryPhotoId })
                 photosResultList.addAll(galleryPhotosFromDb)
 
                 Timber.tag(TAG).d("Fresh photos' ids = $galleryPhotoIds")
@@ -74,8 +75,8 @@ class GetGalleryPhotosUseCase(
                     photosResultList.forEach { it.galleryPhotoInfo = GalleryPhotoInfo.empty() }
 
                     //get photos' info by the ids from the database
-                    val galleryPhotoInfoFromDb = galleryPhotoRepository.findManyInfo(galleryPhotoIds, INTERVAL_TO_REFRESH_PHOTO_FROM_SERVER)
-                    val photoInfoIdsToGetFromServer = filterNotCachedIds(galleryPhotoIds, galleryPhotoInfoFromDb.map { it.galleryPhotoId })
+                    val galleryPhotoInfoFromDb = galleryPhotoRepository.findManyInfo(galleryPhotoIds, INTERVAL_TO_REFRESH_PHOTOS_FROM_SERVER)
+                    val photoInfoIdsToGetFromServer = Utils.filterListAlreadyContaning(galleryPhotoIds, galleryPhotoInfoFromDb.map { it.galleryPhotoId })
                     updateGalleryPhotoInfo(photosResultList, galleryPhotoInfoFromDb)
 
                     Timber.tag(TAG).d("Cached gallery photo info ids = ${galleryPhotoInfoFromDb.map { it.galleryPhotoId }}")
@@ -121,7 +122,7 @@ class GetGalleryPhotosUseCase(
     }
 
     private suspend fun getFreshPhotoInfosFromServer(userId: String, photoIds: List<Long>): Either<ErrorCode, List<GalleryPhotoInfo>> {
-        val photoIdsToBeRequested = photoIds.joinToString(",")
+        val photoIdsToBeRequested = photoIds.joinToString(Constants.PHOTOS_DELIMITER)
 
         val response = apiClient.getGalleryPhotoInfo(userId, photoIdsToBeRequested).await()
         val errorCode = response.errorCode
@@ -134,11 +135,11 @@ class GetGalleryPhotosUseCase(
             return Either.Error(ErrorCode.GetGalleryPhotosInfoError.Local.DatabaseError())
         }
 
-        return Either.Value(GalleryPhotoInfoMapper.FromResponse.ToObject.toGalleryPhotoInfoList(response.galleryPhotosInfo))
+        return Either.Value(GalleryPhotosInfoMapper.FromResponse.ToObject.toGalleryPhotoInfoList(response.galleryPhotosInfo))
     }
 
     private suspend fun getFreshPhotosFromServer(photoIds: List<Long>): Either<ErrorCode, List<GalleryPhoto>> {
-        val photoIdsToBeRequested = photoIds.joinToString(",")
+        val photoIdsToBeRequested = photoIds.joinToString(Constants.PHOTOS_DELIMITER)
 
         val response = apiClient.getGalleryPhotos(photoIdsToBeRequested).await()
         val errorCode = response.errorCode
@@ -151,24 +152,6 @@ class GetGalleryPhotosUseCase(
             return Either.Error(ErrorCode.GetGalleryPhotosErrors.Local.DatabaseError())
         }
 
-        return Either.Value(GalleryPhotoMapper.FromResponse.ToObject.toGalleryPhotoList(response.galleryPhotos))
-    }
-
-    private fun filterNotCachedIds(freshIdsList: List<Long>, idsFromDbList: List<Long>): List<Long> {
-        val freshIdsSet = freshIdsList.toSet()
-        val idsFromDbSet = idsFromDbList.toSet()
-        val resultList = mutableListOf<Long>()
-
-        if (freshIdsSet.size == idsFromDbSet.size) {
-            return resultList
-        }
-
-        for (photoId in freshIdsSet) {
-            if (!idsFromDbSet.contains(photoId)) {
-                resultList += photoId
-            }
-        }
-
-        return resultList
+        return Either.Value(GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(response.galleryPhotos))
     }
 }

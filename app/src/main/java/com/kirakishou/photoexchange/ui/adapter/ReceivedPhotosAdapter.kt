@@ -7,7 +7,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.mvp.model.PhotoAnswer
+import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 
 class ReceivedPhotosAdapter(
     private val context: Context,
@@ -16,14 +16,14 @@ class ReceivedPhotosAdapter(
 
     val items = arrayListOf<ReceivedPhotosAdapterItem>()
 
-    fun addPhotoAnswers(photoAnswers: List<PhotoAnswer>) {
-        for (photoAnswer in photoAnswers) {
+    fun addPhotoAnswers(receivedPhotos: List<ReceivedPhoto>) {
+        for (photoAnswer in receivedPhotos) {
             addPhotoAnswer(photoAnswer)
         }
     }
 
-    fun addPhotoAnswer(photoAnswer: PhotoAnswer) {
-        items.add(0, ReceivedPhotosAdapterItem.ReceivedPhotoItem(photoAnswer))
+    fun addPhotoAnswer(receivedPhoto: ReceivedPhoto) {
+        items.add(0, ReceivedPhotosAdapterItem.ReceivedPhotoItem(receivedPhoto))
         notifyItemInserted(0)
     }
 
@@ -42,7 +42,7 @@ class ReceivedPhotosAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
             is PhotoAnswerViewHolder -> {
-                val photoAnswer = (items[position] as? ReceivedPhotosAdapterItem.ReceivedPhotoItem)?.photoAnswer
+                val photoAnswer = (items[position] as? ReceivedPhotosAdapterItem.ReceivedPhotoItem)?.receivedPhoto
                     ?: return
 
                 imageLoader.loadImageFromNetInto(photoAnswer.photoAnswerName, ImageLoader.PhotoSize.Small, holder.photoView)

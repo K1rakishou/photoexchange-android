@@ -3,7 +3,7 @@ package com.kirakishou.photoexchange.di.component
 import android.app.Application
 import com.kirakishou.photoexchange.di.module.*
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.tests.viewmodel.TakePhotoActivityViewModelTests
 import dagger.Component
 import javax.inject.Singleton
@@ -21,7 +21,7 @@ interface MockApplicationComponent : ApplicationComponent {
 
     fun exposeApplication(): Application
     fun exposeSchedulerProvider(): SchedulerProvider
-    fun exposeMyPhotoRepository(): PhotosRepository
+    fun exposeMyPhotoRepository(): TakenPhotosRepository
 
     fun testPlus(module: MockTakePhotoActivityModule): MockTakePhotoActivityComponent
 }

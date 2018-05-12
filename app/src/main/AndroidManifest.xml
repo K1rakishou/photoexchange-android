@@ -28,7 +28,7 @@
             </intent-filter>
         </activity>
         <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity" />
-        <activity android:name="com.kirakishou.photoexchange.ui.activity.AllPhotosActivity" />
+        <activity android:name="com.kirakishou.photoexchange.ui.activity.PhotosActivity" />
         <activity android:name="com.kirakishou.photoexchange.ui.activity.SettingsActivity" />
 
         <meta-data
@@ -42,7 +42,7 @@
             android:name="com.kirakishou.photoexchange.service.UploadPhotoService"
             android:exported="false" />
         <service
-            android:name="com.kirakishou.photoexchange.service.FindPhotoAnswerService"
+            android:name="com.kirakishou.photoexchange.service.ReceivePhotosService"
             android:exported="true"
             android:permission="android.permission.BIND_JOB_SERVICE" />
 

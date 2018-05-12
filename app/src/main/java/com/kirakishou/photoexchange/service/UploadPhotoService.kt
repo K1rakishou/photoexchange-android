@@ -16,7 +16,7 @@ import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
-import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
+import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
@@ -228,7 +228,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     }
 
     private fun getNotificationIntent(): PendingIntent {
-        val notificationIntent = Intent(this, AllPhotosActivity::class.java)
+        val notificationIntent = Intent(this, PhotosActivity::class.java)
         notificationIntent.action = Intent.ACTION_MAIN
         notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER)
         //notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

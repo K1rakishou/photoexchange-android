@@ -14,19 +14,20 @@ class UseCaseProviderModule {
     @Singleton
     @Provides
     fun provideUploadPhotosUseCase(database: MyDatabase,
-                                   myPhotosRepository: PhotosRepository,
+                                   takenPhotosRepository: TakenPhotosRepository,
+                                   uploadedPhotosRepository: UploadedPhotosRepository,
                                    apiClient: ApiClient): UploadPhotosUseCase {
-        return UploadPhotosUseCase(database, myPhotosRepository, apiClient)
+        return UploadPhotosUseCase(database, takenPhotosRepository, uploadedPhotosRepository, apiClient)
     }
 
     @Singleton
     @Provides
     fun provideFindPhotoAnswersUseCase(database: MyDatabase,
-                                       myPhotosRepository: PhotosRepository,
+                                       takenPhotosRepository: TakenPhotosRepository,
                                        settingsRepository: SettingsRepository,
-                                       photoAnswerRepository: PhotoAnswerRepository,
-                                       apiClient: ApiClient): FindPhotoAnswersUseCase {
-        return FindPhotoAnswersUseCase(database, myPhotosRepository, settingsRepository, photoAnswerRepository, apiClient)
+                                       receivedPhotosRepository: ReceivedPhotosRepository,
+                                       apiClient: ApiClient): ReceivePhotosUseCase {
+        return ReceivePhotosUseCase(database, takenPhotosRepository, settingsRepository, receivedPhotosRepository, apiClient)
     }
 
     @Singleton
@@ -56,5 +57,13 @@ class UseCaseProviderModule {
     fun provideGetUserIdUseCase(settingsRepository: SettingsRepository,
                                 apiClient: ApiClient): GetUserIdUseCase {
         return GetUserIdUseCase(settingsRepository, apiClient)
+    }
+
+    @Singleton
+    @Provides
+    fun provideGetUploadedPhotosUseCase(uploadedPhotosRepository: UploadedPhotosRepository,
+                                        settingsRepository: SettingsRepository,
+                                        apiClient: ApiClient): GetUploadedPhotosUseCase {
+        return GetUploadedPhotosUseCase(uploadedPhotosRepository, settingsRepository, apiClient)
     }
 }

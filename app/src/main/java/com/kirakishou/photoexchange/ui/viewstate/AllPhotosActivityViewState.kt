@@ -1,8 +1,6 @@
 package com.kirakishou.photoexchange.ui.viewstate
 
 import android.os.Bundle
-import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 
 class AllPhotosActivityViewState(
     var lastOpenedTab: Int = 0

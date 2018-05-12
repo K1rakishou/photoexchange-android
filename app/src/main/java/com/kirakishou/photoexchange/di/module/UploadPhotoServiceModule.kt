@@ -3,7 +3,7 @@ package com.kirakishou.photoexchange.di.module
 import android.content.Context
 import com.kirakishou.photoexchange.di.scope.PerService
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.extension.asWeak
 import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
@@ -29,12 +29,12 @@ class UploadPhotoServiceModule(
 
     @PerService
     @Provides
-    fun provideUploadPhotoServicePresenter(myPhotosRepository: PhotosRepository,
+    fun provideUploadPhotoServicePresenter(myTakenPhotosRepository: TakenPhotosRepository,
                                            settingsRepository: SettingsRepository,
                                            schedulerProvider: SchedulerProvider,
                                            uploadPhotosUseCase: UploadPhotosUseCase,
                                            getUserIdUseCase: GetUserIdUseCase): UploadPhotoServicePresenter {
-        return UploadPhotoServicePresenter(service.asWeak(), myPhotosRepository,
+        return UploadPhotoServicePresenter(service.asWeak(), myTakenPhotosRepository,
             settingsRepository, schedulerProvider, uploadPhotosUseCase, getUserIdUseCase)
     }
 }

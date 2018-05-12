@@ -2,12 +2,14 @@ package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.util.BitmapUtils
 import com.kirakishou.photoexchange.helper.util.FileUtils
-import com.kirakishou.photoexchange.mvp.model.MyPhoto
+import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
+import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
@@ -25,7 +27,8 @@ import java.lang.ref.WeakReference
 
 class UploadPhotosUseCase(
     private val database: MyDatabase,
-    private val myPhotosRepository: PhotosRepository,
+    private val takenPhotosRepository: TakenPhotosRepository,
+    private val uploadedPhotosRepository: UploadedPhotosRepository,
     private val apiClient: ApiClient
 ) {
     private val TAG = "UploadPhotosUseCase"
@@ -36,7 +39,7 @@ class UploadPhotosUseCase(
             return@async mutex.withLock {
                 Timber.tag(TAG).d("Start photo uploading")
 
-                val photosToUpload = myPhotosRepository.findPhotosByStateAndUpdateState(PhotoState.PHOTO_QUEUED_UP, PhotoState.PHOTO_UPLOADING)
+                val photosToUpload = takenPhotosRepository.findPhotosByStateAndUpdateState(PhotoState.PHOTO_QUEUED_UP, PhotoState.PHOTO_UPLOADING)
                 if (photosToUpload.isEmpty()) {
                     return@withLock true
                 }
@@ -106,13 +109,13 @@ class UploadPhotosUseCase(
         }.asSingle(CommonPool)
     }
 
-    private fun handlePhotoUploadingStart(callbacks: WeakReference<UploadPhotoServiceCallbacks>?, photo: MyPhoto): File {
+    private fun handlePhotoUploadingStart(callbacks: WeakReference<UploadPhotoServiceCallbacks>?, photo: TakenPhoto): File {
         val rotatedPhotoFile = File.createTempFile("rotated_photo", ".tmp")
         callbacks?.get()?.onUploadingEvent(PhotoUploadEvent.OnPhotoUploadStart(photo))
         return rotatedPhotoFile
     }
 
-    private fun uploadPhoto(rotatedPhotoFile: File, location: LonLat, userId: String, isPublic: Boolean, callbacks: WeakReference<UploadPhotoServiceCallbacks>?, photo: MyPhoto): Single<UploadPhotoResponse> {
+    private fun uploadPhoto(rotatedPhotoFile: File, location: LonLat, userId: String, isPublic: Boolean, callbacks: WeakReference<UploadPhotoServiceCallbacks>?, photo: TakenPhoto): Single<UploadPhotoResponse> {
         return apiClient.uploadPhoto(rotatedPhotoFile.absolutePath, location, userId, isPublic, object : PhotoUploadProgressCallback {
             override fun onProgress(progress: Int) {
                 callbacks?.get()?.onUploadingEvent(PhotoUploadEvent.OnProgress(photo, progress))
@@ -120,37 +123,33 @@ class UploadPhotosUseCase(
         })
     }
 
-    private fun handlePhotoUploaded(photo: MyPhoto, response: UploadPhotoResponse, callbacks: WeakReference<UploadPhotoServiceCallbacks>?): Boolean {
-        photo.photoState = PhotoState.PHOTO_UPLOADED
+    private fun handlePhotoUploaded(photo: TakenPhoto, response: UploadPhotoResponse, callbacks: WeakReference<UploadPhotoServiceCallbacks>?): Boolean {
         photo.photoName = response.photoName
-        photo.photoTempFile = null
 
         val dbResult = database.transactional {
-            val updateResult1 = myPhotosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_UPLOADED)
-            val updateResult2 = myPhotosRepository.updateSetTempFileId(photo.id, null)
-            val updateResult3 = myPhotosRepository.updateSetPhotoName(photo.id, response.photoName)
+            val updateResult1 = takenPhotosRepository.deletePhotoById(photo.id)
+            val updateResult2 = uploadedPhotosRepository.save(photo)
 
-            Timber.tag(TAG).d("updateResult1 = $updateResult1, updateResult2 = $updateResult2, updateResult3 = $updateResult3")
-            return@transactional updateResult1 && updateResult2 && updateResult3
+            Timber.tag(TAG).d("updateResult1 = $updateResult1, updateResult2 = $updateResult2")
+            return@transactional updateResult1 && updateResult2
         }
 
         if (dbResult) {
-            myPhotosRepository.deleteTempFileById(photo.id)
-            callbacks?.get()?.onUploadingEvent(PhotoUploadEvent.OnUploaded(photo))
+            callbacks?.get()?.onUploadingEvent(PhotoUploadEvent.OnUploaded(UploadedPhoto(photo.id, photo.photoName!!)))
         }
 
         return dbResult
     }
 
-    private fun handleFailedPhoto(photo: MyPhoto, callbacks: WeakReference<UploadPhotoServiceCallbacks>?, errorCode: ErrorCode.UploadPhotoErrors) {
-        myPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
+    private fun handleFailedPhoto(photo: TakenPhoto, callbacks: WeakReference<UploadPhotoServiceCallbacks>?, errorCode: ErrorCode.UploadPhotoErrors) {
+        takenPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
         photo.photoState = PhotoState.FAILED_TO_UPLOAD
 
         callbacks?.get()?.onUploadingEvent(PhotoUploadEvent.OnFailedToUpload(photo, errorCode))
     }
 
-    private fun handleUnknownError(photo: MyPhoto, callbacks: WeakReference<UploadPhotoServiceCallbacks>?, error: Throwable) {
-        myPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
+    private fun handleUnknownError(photo: TakenPhoto, callbacks: WeakReference<UploadPhotoServiceCallbacks>?, error: Throwable) {
+        takenPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
         photo.photoState = PhotoState.FAILED_TO_UPLOAD
 
         callbacks?.get()?.onUploadingEvent(PhotoUploadEvent.OnUnknownError(error))

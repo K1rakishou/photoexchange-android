@@ -3,8 +3,8 @@ package com.kirakishou.photoexchange.helper.database.repository
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoInfoEntity
 import com.kirakishou.photoexchange.helper.database.isSuccess
-import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotoInfoMapper
-import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotoMapper
+import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosInfoMapper
+import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.GalleryPhotoInfo
@@ -18,17 +18,17 @@ class GalleryPhotoRepository(
     private val galleryPhotoInfoDao = database.galleryPhotoInfoDao()
 
     fun saveManyInfo(galleryPhotoInfoList: List<GalleryPhotoInfoResponse.GalleryPhotosInfoData>): Boolean {
-        val galleryPhotoInfoEntityList = GalleryPhotoInfoMapper.FromResponse.ToEntity.toGalleryPhotoInfoEntityList(galleryPhotoInfoList)
+        val galleryPhotoInfoEntityList = GalleryPhotosInfoMapper.FromResponse.ToEntity.toGalleryPhotoInfoEntityList(galleryPhotoInfoList)
         return galleryPhotoInfoDao.saveMany(galleryPhotoInfoEntityList).size == galleryPhotoInfoList.size
     }
 
     fun saveMany(galleryPhotos: List<GalleryPhotosResponse.GalleryPhotoResponseData>): Boolean {
-        return galleryPhotoDao.saveMany(GalleryPhotoMapper.FromResponse.ToEntity.toGalleryPhotoEntitiesList(galleryPhotos)).size == galleryPhotos.size
+        return galleryPhotoDao.saveMany(GalleryPhotosMapper.FromResponse.ToEntity.toGalleryPhotoEntitiesList(galleryPhotos)).size == galleryPhotos.size
     }
 
     fun findManyInfo(galleryPhotoIds: List<Long>, timeDelta: Long): List<GalleryPhotoInfo> {
         val time = TimeUtils.getTimeFast() - timeDelta
-        return GalleryPhotoInfoMapper.ToObject.toGalleryPhotoInfoList(galleryPhotoInfoDao.findMany(galleryPhotoIds, time))
+        return GalleryPhotosInfoMapper.ToObject.toGalleryPhotoInfoList(galleryPhotoInfoDao.findMany(galleryPhotoIds, time))
     }
 
     fun findByPhotoName(photoName: String): GalleryPhoto? {
@@ -39,14 +39,14 @@ class GalleryPhotoRepository(
 
         val galleryPhotoInfoEntity = galleryPhotoInfoDao.find(galleryPhotoEntity.galleryPhotoId)
 
-        val galleryPhoto = GalleryPhotoMapper.FromEntity.toGalleryPhoto(galleryPhotoEntity)
-        galleryPhoto.galleryPhotoInfo = GalleryPhotoInfoMapper.ToObject.toGalleryPhotoInfo(galleryPhotoInfoEntity)
+        val galleryPhoto = GalleryPhotosMapper.FromEntity.toGalleryPhoto(galleryPhotoEntity)
+        galleryPhoto.galleryPhotoInfo = GalleryPhotosInfoMapper.ToObject.toGalleryPhotoInfo(galleryPhotoInfoEntity)
 
         return galleryPhoto
     }
 
     fun findMany(galleryPhotoIds: List<Long>): List<GalleryPhoto> {
-        return GalleryPhotoMapper.FromEntity.toGalleryPhotos(galleryPhotoDao.findMany(galleryPhotoIds))
+        return GalleryPhotosMapper.FromEntity.toGalleryPhotos(galleryPhotoDao.findMany(galleryPhotoIds))
     }
 
     fun updateFavouritesCount(photoName: String, favouritesCount: Long): Boolean {

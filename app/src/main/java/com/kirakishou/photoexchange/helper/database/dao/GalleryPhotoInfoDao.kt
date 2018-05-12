@@ -30,4 +30,7 @@ abstract class GalleryPhotoInfoDao {
     @Query("DELETE FROM ${GalleryPhotoInfoEntity.TABLE_NAME} " +
         "WHERE ${GalleryPhotoInfoEntity.GALLERY_PHOTO_ID_COLUMN} = :galleryPhotoId")
     abstract fun delete(galleryPhotoId: Long)
+
+    @Query("SELECT * FROM ${GalleryPhotoInfoEntity.TABLE_NAME}")
+    abstract fun findAll(): List<GalleryPhotoInfoEntity>
 }

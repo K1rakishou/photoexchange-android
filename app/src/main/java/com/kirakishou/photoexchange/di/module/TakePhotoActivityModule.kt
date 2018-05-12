@@ -5,15 +5,12 @@ import android.content.Context
 import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.helper.CameraProvider
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.TakePhotoActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
 import dagger.Module
 import dagger.Provides
-import java.lang.ref.WeakReference
 
 /**
  * Created by kirakishou on 3/3/2018.
@@ -27,8 +24,8 @@ open class TakePhotoActivityModule(
     @PerActivity
     @Provides
     open fun provideViewModelFactory(schedulerProvider: SchedulerProvider,
-                                     photosRepository: PhotosRepository): TakePhotoActivityViewModelFactory {
-        return TakePhotoActivityViewModelFactory(photosRepository, schedulerProvider)
+                                     takenPhotosRepository: TakenPhotosRepository): TakePhotoActivityViewModelFactory {
+        return TakePhotoActivityViewModelFactory(takenPhotosRepository, schedulerProvider)
     }
 
     @PerActivity

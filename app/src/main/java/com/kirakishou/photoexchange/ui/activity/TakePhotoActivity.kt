@@ -8,7 +8,6 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.support.v4.app.ActivityCompat
-import android.support.v7.widget.CardView
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AccelerateInterpolator
@@ -24,7 +23,7 @@ import com.kirakishou.photoexchange.helper.Vibrator
 import com.kirakishou.photoexchange.helper.extension.debounceClicks
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvp.model.MyPhoto
+import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
@@ -33,14 +32,12 @@ import com.kirakishou.photoexchange.ui.dialog.CameraIsNotAvailableDialog
 import com.kirakishou.photoexchange.ui.dialog.CameraRationaleDialog
 import io.fotoapparat.view.CameraView
 import io.reactivex.Completable
-import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.io.File
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
@@ -130,7 +127,7 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
         compositeDisposable += RxView.clicks(showAllPhotosButton)
             .subscribeOn(AndroidSchedulers.mainThread())
             .debounceClicks()
-            .doOnNext { runActivity(AllPhotosActivity::class.java) }
+            .doOnNext { runActivity(PhotosActivity::class.java) }
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
     }
@@ -200,9 +197,9 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
 
     override fun takePhoto(file: File): Single<Boolean> = cameraProvider.takePhoto(file)
 
-    private fun onPhotoTaken(myPhoto: MyPhoto) {
+    private fun onPhotoTaken(takenPhoto: TakenPhoto) {
         runActivityWithArgs(ViewTakenPhotoActivity::class.java,
-            myPhoto.toBundle(), false)
+            takenPhoto.toBundle(), false)
     }
 
     private fun animateAppear() {

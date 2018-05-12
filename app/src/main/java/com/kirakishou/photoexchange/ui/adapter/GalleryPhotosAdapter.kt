@@ -15,11 +15,9 @@ import io.reactivex.subjects.PublishSubject
 class GalleryPhotosAdapter(
     private val context: Context,
     private val imageLoader: ImageLoader,
-    private val columnsCount: Int,
     private val adapterButtonClickSubject: PublishSubject<GalleryPhotosAdapterButtonClickEvent>
 ) : BaseAdapter<GalleryPhotosAdapterItem>(context) {
 
-    private val IMAGES_PER_COLUMN = 5
     private val items = arrayListOf<GalleryPhotosAdapterItem>()
 
     fun addProgressFooter() {

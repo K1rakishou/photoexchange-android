@@ -4,7 +4,7 @@ import android.arch.persistence.room.Room
 import android.content.Context
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import dagger.Module
 import dagger.Provides
 import javax.inject.Singleton
@@ -25,9 +25,8 @@ class InMemoryDatabaseModule {
     @Singleton
     @Provides
     fun provideMyPhotoRepository(context: Context,
-                                 database: MyDatabase,
-                                 apiClient: ApiClient): PhotosRepository {
+                                 database: MyDatabase): TakenPhotosRepository {
         val filesDir = context.filesDir.absolutePath
-        return PhotosRepository(filesDir, database, apiClient)
+        return TakenPhotosRepository(filesDir, database)
     }
 }
