@@ -151,9 +151,9 @@ class PhotosActivityViewModel(
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
-    fun loadMyPhotos(): Single<MutableList<MyPhoto>> {
+    fun loadMyPhotos(): Single<MutableList<TakenPhoto>> {
         return Single.fromCallable {
-            val photos = mutableListOf<MyPhoto>()
+            val photos = mutableListOf<TakenPhoto>()
 
             val uploadingPhotos = photosRepository.findAllByState(PhotoState.PHOTO_UPLOADING)
             photos += uploadingPhotos.sortedBy { it.id }

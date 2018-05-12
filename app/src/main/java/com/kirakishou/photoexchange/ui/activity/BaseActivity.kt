@@ -184,6 +184,22 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.UploadPhotoErrors.Remote.CouldNotGetUserId -> "Could not retrieve user id from the server"
             is ErrorCode.UploadPhotoErrors.Local.DatabaseError -> "Could not save user id in the database"
             is ErrorCode.GetGalleryPhotosInfoError.Local.DatabaseError -> "Could not save gallery photo info in the database"
+
+            //TODO: rewrite all this class
+            is ErrorCode.GetUploadedPhotoIdsError.Remote.UnknownError,
+            is ErrorCode.GetUploadedPhotoIdsError.Remote.Ok,
+            is ErrorCode.GetUploadedPhotoIdsError.Remote.DatabaseError,
+            is ErrorCode.GetUploadedPhotoIdsError.Remote.BadRequest,
+            is ErrorCode.GetUploadedPhotoIdsError.Local.BadServerResponse,
+            is ErrorCode.GetUploadedPhotoIdsError.Local.Timeout,
+            is ErrorCode.GetUploadedPhotoIdsError.Local.DatabaseError,
+            is ErrorCode.GetUploadedPhotosError.Remote.UnknownError,
+            is ErrorCode.GetUploadedPhotosError.Remote.Ok,
+            is ErrorCode.GetUploadedPhotosError.Remote.DatabaseError,
+            is ErrorCode.GetUploadedPhotosError.Remote.BadRequest,
+            is ErrorCode.GetUploadedPhotosError.Local.BadServerResponse,
+            is ErrorCode.GetUploadedPhotosError.Local.Timeout,
+            is ErrorCode.GetUploadedPhotosError.Local.DatabaseError -> "REWRITE ME"
         }
 
         if (errorMessage != null) {

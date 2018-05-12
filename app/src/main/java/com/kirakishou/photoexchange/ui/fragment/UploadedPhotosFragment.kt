@@ -8,7 +8,7 @@ import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvp.model.MyPhoto
+import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
@@ -190,7 +190,7 @@ class UploadedPhotosFragment : BaseFragment() {
         }
     }
 
-    private fun addPhotosToAdapter(uploadedPhotos: List<MyPhoto>) {
+    private fun addPhotosToAdapter(uploadedPhotos: List<TakenPhoto>) {
         if (!isAdded) {
             return
         }

@@ -25,8 +25,8 @@ class ApiClient
             .execute()
     }
 
-    fun receivePhotos(photoNames: String, userId: String): Single<ReceivePhotosResponse> {
-        return ReceivePhotosRequest<ReceivePhotosResponse>(photoNames, userId, apiService, schedulerProvider, gson)
+    fun receivePhotos(photoNames: String, userId: String): Single<ReceivedPhotosResponse> {
+        return ReceivePhotosRequest<ReceivedPhotosResponse>(photoNames, userId, apiService, schedulerProvider, gson)
             .execute()
     }
 
@@ -57,6 +57,16 @@ class ApiClient
 
     fun getUserId(): Single<GetUserIdResponse> {
         return GetUserIdRequest<GetUserIdResponse>(apiService, schedulerProvider, gson)
+            .execute()
+    }
+
+    fun getUploadedPhotoIds(userId: String, lastId: Long, count: Int): Single<GetUploadedPhotoIdsResponse> {
+        return GetUploadedPhotoIdsRequest<GetUploadedPhotoIdsResponse>(userId, lastId, count, apiService, schedulerProvider, gson)
+            .execute()
+    }
+
+    fun getUploadedPhotos(userId: String, photoIds: String): Single<GetUploadedPhotosResponse> {
+        return GetUploadedPhotosRequest<GetUploadedPhotosResponse>(userId, photoIds, apiService, schedulerProvider, gson)
             .execute()
     }
 }

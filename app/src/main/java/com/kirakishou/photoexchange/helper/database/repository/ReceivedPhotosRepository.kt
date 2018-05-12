@@ -1,22 +1,22 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.entity.PhotoAnswerEntity
-import com.kirakishou.photoexchange.helper.database.mapper.PhotoAnswerMapper
+import com.kirakishou.photoexchange.helper.database.entity.ReceivedPhotoEntity
+import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.mvp.model.PhotoAnswer
-import com.kirakishou.photoexchange.mvp.model.net.response.ReceivePhotosResponse
+import com.kirakishou.photoexchange.mvp.model.net.response.ReceivedPhotosResponse
 
 open class ReceivedPhotosRepository(
     private val database: MyDatabase
 ) {
-    private val photoAnswerDao = database.photoAnswerDao()
+    private val photoAnswerDao = database.receivedPhotoDao()
 
-    fun insert(photoAnswerEntity: PhotoAnswerEntity): Long {
-        return photoAnswerDao.insert(photoAnswerEntity)
+    fun insert(receivedPhotoEntity: ReceivedPhotoEntity): Long {
+        return photoAnswerDao.insert(receivedPhotoEntity)
     }
 
-    fun insert(receivePhotos: ReceivePhotosResponse.PhotoAnswer): Long {
-        val photoAnswerEntity = PhotoAnswerMapper.toPhotoAnswerEntity(receivePhotos)
+    fun insert(receivedPhotos: ReceivedPhotosResponse.ReceivedPhoto): Long {
+        val photoAnswerEntity = ReceivedPhotosMapper.toPhotoAnswerEntity(receivedPhotos)
         return insert(photoAnswerEntity)
     }
 
@@ -26,6 +26,6 @@ open class ReceivedPhotosRepository(
 
     fun findAll(): List<PhotoAnswer> {
         val allPhotos = photoAnswerDao.findAll()
-        return allPhotos.map { PhotoAnswerMapper.toPhotoAnswer(it) }
+        return allPhotos.map { ReceivedPhotosMapper.toPhotoAnswer(it) }
     }
 }

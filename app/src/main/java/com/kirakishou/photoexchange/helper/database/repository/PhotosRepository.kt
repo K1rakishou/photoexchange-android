@@ -1,11 +1,11 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.entity.MyPhotoEntity
+import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
 import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
 import com.kirakishou.photoexchange.helper.database.isFail
-import com.kirakishou.photoexchange.helper.database.mapper.MyPhotoMapper
-import com.kirakishou.photoexchange.mvp.model.MyPhoto
+import com.kirakishou.photoexchange.helper.database.mapper.TakenPhotosMapper
+import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import timber.log.Timber
 import java.io.File
@@ -18,29 +18,29 @@ open class PhotosRepository(
     private val database: MyDatabase
 ) {
     private val tag = "PhotosRepository"
-    private val myPhotoDao = database.myPhotoDao()
+    private val takenPhotoDao = database.takenPhotoDao()
     private val tempFileDao = database.tempFileDao()
 
     init {
         createTempFilesDirIfNotExists()
     }
 
-    fun saveTakenPhoto(file: File): MyPhoto {
-        var photo = MyPhoto.empty()
+    fun saveTakenPhoto(file: File): TakenPhoto {
+        var photo = TakenPhoto.empty()
 
         database.transactional {
             val tempFileEntity = TempFileEntity.create(file.absolutePath)
             val tempFileId = tempFileDao.insert(tempFileEntity)
             if (tempFileId <= 0L) {
-                photo = MyPhoto.empty()
+                photo = TakenPhoto.empty()
                 return@transactional false
             }
 
-            val myPhotoEntity = MyPhotoEntity.create(tempFileId, false)
-            val myPhotoId = myPhotoDao.insert(myPhotoEntity)
+            val myPhotoEntity = TakenPhotoEntity.create(tempFileId, false)
+            val myPhotoId = takenPhotoDao.insert(myPhotoEntity)
 
             myPhotoEntity.id = myPhotoId
-            photo = MyPhotoMapper.toMyPhoto(myPhotoEntity, tempFileEntity)
+            photo = TakenPhotosMapper.toMyPhoto(myPhotoEntity, tempFileEntity)
 
             return@transactional true
         }
@@ -50,34 +50,34 @@ open class PhotosRepository(
 
     fun updateSetPhotoName(photoId: Long, photoName: String): Boolean {
         return database.transactional {
-            myPhotoDao.updateSetPhotoName(photoId, photoName) == 1
+            takenPhotoDao.updateSetPhotoName(photoId, photoName) == 1
         }
     }
 
     fun updateSetTempFileId(photoId: Long, newTempFileId: Long?): Boolean {
         return database.transactional {
-            myPhotoDao.updateSetTempFileId(photoId, newTempFileId) == 1
+            takenPhotoDao.updateSetTempFileId(photoId, newTempFileId) == 1
         }
     }
 
     fun updatePhotoState(photoId: Long, newPhotoState: PhotoState): Boolean {
         return database.transactional {
-            myPhotoDao.updateSetNewPhotoState(photoId, newPhotoState) == 1
+            takenPhotoDao.updateSetNewPhotoState(photoId, newPhotoState) == 1
         }
     }
 
     fun updatePhotoState(photoName: String, newPhotoState: PhotoState): Boolean {
         return database.transactional {
-            val photoId = myPhotoDao.findByName(photoName)?.id
+            val photoId = takenPhotoDao.findByName(photoName)?.id
                 ?: return@transactional false
 
-            return@transactional myPhotoDao.updateSetNewPhotoState(photoId, newPhotoState) == 1
+            return@transactional takenPhotoDao.updateSetNewPhotoState(photoId, newPhotoState) == 1
         }
     }
 
     fun updateMakePhotoPublic(takenPhotoId: Long): Boolean {
         return database.transactional {
-            return myPhotoDao.updateSetPhotoPublic(takenPhotoId) == 1
+            return takenPhotoDao.updateSetPhotoPublic(takenPhotoId) == 1
         }
     }
 
@@ -86,32 +86,32 @@ open class PhotosRepository(
         return File.createTempFile("file_", ".tmp", fullPathFile)
     }
 
-    fun findById(id: Long): MyPhoto {
-        var photo = MyPhoto.empty()
+    fun findById(id: Long): TakenPhoto {
+        var photo = TakenPhoto.empty()
 
         database.transactional {
-            val myPhotoEntity = myPhotoDao.findById(id) ?: MyPhotoEntity.empty()
+            val myPhotoEntity = takenPhotoDao.findById(id) ?: TakenPhotoEntity.empty()
             val tempFileEntity = findTempFileById(id)
 
-            photo = MyPhotoMapper.toMyPhoto(myPhotoEntity, tempFileEntity)
+            photo = TakenPhotosMapper.toMyPhoto(myPhotoEntity, tempFileEntity)
             return@transactional true
         }
 
         return photo
     }
 
-    fun findAll(): List<MyPhoto> {
-        var photos = emptyList<MyPhoto>()
+    fun findAll(): List<TakenPhoto> {
+        var photos = emptyList<TakenPhoto>()
 
         database.transactional {
-            val allMyPhotos = arrayListOf<MyPhoto>()
-            val allMyPhotoEntities = myPhotoDao.findAll()
+            val allMyPhotos = arrayListOf<TakenPhoto>()
+            val allMyPhotoEntities = takenPhotoDao.findAll()
 
             for (myPhotoEntity in allMyPhotoEntities) {
                 myPhotoEntity.id?.let { myPhotoId ->
                     val tempFile = findTempFileById(myPhotoId)
 
-                    MyPhotoMapper.toMyPhoto(myPhotoEntity, tempFile).let { myPhoto ->
+                    TakenPhotosMapper.toMyPhoto(myPhotoEntity, tempFile).let { myPhoto ->
                         allMyPhotos += myPhoto
                     }
                 }
@@ -128,7 +128,7 @@ open class PhotosRepository(
         var count = 0
 
         database.transactional {
-            count = myPhotoDao.countAllByState(state).toInt()
+            count = takenPhotoDao.countAllByState(state).toInt()
             return@transactional true
         }
 
@@ -139,7 +139,7 @@ open class PhotosRepository(
         var count = 0
 
         database.transactional {
-            count = myPhotoDao.countAllByStates(states)
+            count = takenPhotoDao.countAllByStates(states)
             return@transactional true
         }
 
@@ -147,20 +147,20 @@ open class PhotosRepository(
     }
 
     fun updateStates(oldState: PhotoState, newState: PhotoState) {
-        myPhotoDao.updateStates(oldState, newState)
+        takenPhotoDao.updateStates(oldState, newState)
     }
 
-    fun findPhotosByStateAndUpdateState(oldState: PhotoState, newState: PhotoState): List<MyPhoto> {
-        var resultPhotos = emptyList<MyPhoto>()
+    fun findPhotosByStateAndUpdateState(oldState: PhotoState, newState: PhotoState): List<TakenPhoto> {
+        var resultPhotos = emptyList<TakenPhoto>()
 
         database.transactional {
-            val photos = myPhotoDao.findOnePhotoWithState(oldState)
+            val photos = takenPhotoDao.findOnePhotoWithState(oldState)
             if (photos.isEmpty()) {
                 return@transactional false
             }
 
             for (photo in photos) {
-                if (myPhotoDao.updateSetNewPhotoState(photo.id!!, newState) != 1) {
+                if (takenPhotoDao.updateSetNewPhotoState(photo.id!!, newState) != 1) {
                     return@transactional false
                 }
             }
@@ -168,7 +168,7 @@ open class PhotosRepository(
             for (photo in photos) {
                 photo.id?.let { photoId ->
                     val tempFileEntity = findTempFileById(photoId)
-                    return@let MyPhotoMapper.toMyPhoto(photo, tempFileEntity)
+                    return@let TakenPhotosMapper.toMyPhoto(photo, tempFileEntity)
                 }
             }
 
@@ -176,7 +176,7 @@ open class PhotosRepository(
                 .filter { it.id != null }
                 .map { photo ->
                     val tempFileEntity = findTempFileById(photo.id!!)
-                    MyPhotoMapper.toMyPhoto(photo, tempFileEntity)
+                    TakenPhotosMapper.toMyPhoto(photo, tempFileEntity)
                 }
                 .toList()
 
@@ -186,15 +186,15 @@ open class PhotosRepository(
         return resultPhotos
     }
 
-    fun findAllByState(state: PhotoState): List<MyPhoto> {
-        val resultList = mutableListOf<MyPhoto>()
+    fun findAllByState(state: PhotoState): List<TakenPhoto> {
+        val resultList = mutableListOf<TakenPhoto>()
 
         database.transactional {
-            val allPhotoReadyToUploading = myPhotoDao.findAllWithState(state)
+            val allPhotoReadyToUploading = takenPhotoDao.findAllWithState(state)
 
             for (photo in allPhotoReadyToUploading) {
                 val tempFileEntity = findTempFileById(photo.id!!)
-                resultList += MyPhotoMapper.toMyPhoto(photo, tempFileEntity)
+                resultList += TakenPhotosMapper.toMyPhoto(photo, tempFileEntity)
             }
 
             return@transactional true
@@ -207,28 +207,28 @@ open class PhotosRepository(
         var photoId = -1L
 
         database.transactional {
-            photoId = myPhotoDao.findPhotoIdByName(photoName) ?: -1L
+            photoId = takenPhotoDao.findPhotoIdByName(photoName) ?: -1L
             return@transactional true
         }
 
         return photoId
     }
 
-    fun deleteMyPhoto(myPhoto: MyPhoto?): Boolean {
-        if (myPhoto == null) {
+    fun deleteMyPhoto(takenPhoto: TakenPhoto?): Boolean {
+        if (takenPhoto == null) {
             return true
         }
 
-        if (myPhoto.isEmpty()) {
+        if (takenPhoto.isEmpty()) {
             return true
         }
 
-        return deletePhotoById(myPhoto.id)
+        return deletePhotoById(takenPhoto.id)
     }
 
     fun deletePhotoById(photoId: Long): Boolean {
         return database.transactional {
-            if (myPhotoDao.deleteById(photoId).isFail()) {
+            if (takenPhotoDao.deleteById(photoId).isFail()) {
                 return@transactional false
             }
 
@@ -238,7 +238,7 @@ open class PhotosRepository(
 
     fun deleteAllWithState(photoState: PhotoState): Boolean {
         return database.transactional {
-            val myPhotosList = myPhotoDao.findAllWithState(photoState)
+            val myPhotosList = takenPhotoDao.findAllWithState(photoState)
 
             for (myPhoto in myPhotosList) {
                 if (!deletePhotoById(myPhoto.id!!)) {

@@ -7,7 +7,7 @@ import java.io.File
 /**
  * Created by kirakishou on 3/9/2018.
  */
-data class MyPhoto(
+data class TakenPhoto(
     val id: Long,
     var photoState: PhotoState,
     val isPublic: Boolean = false,
@@ -32,11 +32,11 @@ data class MyPhoto(
 
     companion object {
 
-        fun empty(): MyPhoto {
-            return MyPhoto(0L, PhotoState.PHOTO_TAKEN, false, null)
+        fun empty(): TakenPhoto {
+            return TakenPhoto(0L, PhotoState.PHOTO_TAKEN, false, null)
         }
 
-        fun fromBundle(bundle: Bundle?): MyPhoto {
+        fun fromBundle(bundle: Bundle?): TakenPhoto {
             if (bundle == null) {
                 return empty()
             }
@@ -50,7 +50,7 @@ data class MyPhoto(
             val photoFileString = bundle.getString("photo_temp_file")
             val photoFile = if (photoFileString.isEmpty()) null else File(photoFileString)
 
-            return MyPhoto(id, photoState, false, null, photoFile)
+            return TakenPhoto(id, photoState, false, null, photoFile)
         }
     }
 }

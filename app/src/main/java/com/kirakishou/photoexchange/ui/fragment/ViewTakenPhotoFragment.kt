@@ -17,7 +17,7 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.extension.debounceClicks
-import com.kirakishou.photoexchange.mvp.model.MyPhoto
+import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.ViewTakenPhotoActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity
 import io.reactivex.Completable
@@ -46,12 +46,12 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
     lateinit var viewModel: ViewTakenPhotoActivityViewModel
 
     private val TAG = "ViewTakenPhotoFragment"
-    lateinit var takenPhoto: MyPhoto
+    lateinit var takenPhoto: TakenPhoto
 
     override fun getContentView(): Int = R.layout.fragment_view_taken_photo
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
-        takenPhoto = MyPhoto.fromBundle(arguments)
+        takenPhoto = TakenPhoto.fromBundle(arguments)
 
         initRx()
         initViews()

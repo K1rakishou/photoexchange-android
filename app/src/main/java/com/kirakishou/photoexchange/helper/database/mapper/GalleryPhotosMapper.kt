@@ -6,7 +6,7 @@ import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
 import java.util.concurrent.TimeUnit
 
-object GalleryPhotoMapper {
+object GalleryPhotosMapper {
 
     object FromEntity {
         fun toGalleryPhoto(galleryPhotoEntity: GalleryPhotoEntity): GalleryPhoto {

@@ -5,7 +5,7 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.util.BitmapUtils
 import com.kirakishou.photoexchange.helper.util.FileUtils
-import com.kirakishou.photoexchange.mvp.model.MyPhoto
+import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
@@ -106,13 +106,13 @@ class UploadPhotosUseCase(
         }.asSingle(CommonPool)
     }
 
-    private fun handlePhotoUploadingStart(callbacks: WeakReference<UploadPhotoServiceCallbacks>?, photo: MyPhoto): File {
+    private fun handlePhotoUploadingStart(callbacks: WeakReference<UploadPhotoServiceCallbacks>?, photo: TakenPhoto): File {
         val rotatedPhotoFile = File.createTempFile("rotated_photo", ".tmp")
         callbacks?.get()?.onUploadingEvent(PhotoUploadEvent.OnPhotoUploadStart(photo))
         return rotatedPhotoFile
     }
 
-    private fun uploadPhoto(rotatedPhotoFile: File, location: LonLat, userId: String, isPublic: Boolean, callbacks: WeakReference<UploadPhotoServiceCallbacks>?, photo: MyPhoto): Single<UploadPhotoResponse> {
+    private fun uploadPhoto(rotatedPhotoFile: File, location: LonLat, userId: String, isPublic: Boolean, callbacks: WeakReference<UploadPhotoServiceCallbacks>?, photo: TakenPhoto): Single<UploadPhotoResponse> {
         return apiClient.uploadPhoto(rotatedPhotoFile.absolutePath, location, userId, isPublic, object : PhotoUploadProgressCallback {
             override fun onProgress(progress: Int) {
                 callbacks?.get()?.onUploadingEvent(PhotoUploadEvent.OnProgress(photo, progress))
@@ -120,7 +120,7 @@ class UploadPhotosUseCase(
         })
     }
 
-    private fun handlePhotoUploaded(photo: MyPhoto, response: UploadPhotoResponse, callbacks: WeakReference<UploadPhotoServiceCallbacks>?): Boolean {
+    private fun handlePhotoUploaded(photo: TakenPhoto, response: UploadPhotoResponse, callbacks: WeakReference<UploadPhotoServiceCallbacks>?): Boolean {
         photo.photoState = PhotoState.PHOTO_UPLOADED
         photo.photoName = response.photoName
         photo.photoTempFile = null
@@ -142,14 +142,14 @@ class UploadPhotosUseCase(
         return dbResult
     }
 
-    private fun handleFailedPhoto(photo: MyPhoto, callbacks: WeakReference<UploadPhotoServiceCallbacks>?, errorCode: ErrorCode.UploadPhotoErrors) {
+    private fun handleFailedPhoto(photo: TakenPhoto, callbacks: WeakReference<UploadPhotoServiceCallbacks>?, errorCode: ErrorCode.UploadPhotoErrors) {
         myPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
         photo.photoState = PhotoState.FAILED_TO_UPLOAD
 
         callbacks?.get()?.onUploadingEvent(PhotoUploadEvent.OnFailedToUpload(photo, errorCode))
     }
 
-    private fun handleUnknownError(photo: MyPhoto, callbacks: WeakReference<UploadPhotoServiceCallbacks>?, error: Throwable) {
+    private fun handleUnknownError(photo: TakenPhoto, callbacks: WeakReference<UploadPhotoServiceCallbacks>?, error: Throwable) {
         myPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
         photo.photoState = PhotoState.FAILED_TO_UPLOAD
 

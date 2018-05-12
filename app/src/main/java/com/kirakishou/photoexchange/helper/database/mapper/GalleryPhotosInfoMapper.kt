@@ -4,7 +4,7 @@ import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoInfoEntit
 import com.kirakishou.photoexchange.mvp.model.GalleryPhotoInfo
 import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotoInfoResponse
 
-object GalleryPhotoInfoMapper {
+object GalleryPhotosInfoMapper {
 
     object FromResponse {
         object ToEntity {

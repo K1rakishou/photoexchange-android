@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.mvp.model.other
 
-import com.kirakishou.photoexchange.mvp.model.MyPhoto
+import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 
 /**
  * Created by kirakishou on 7/26/2017.
@@ -120,10 +120,40 @@ sealed class ErrorCode(val value: Int) {
         }
     }
 
+    sealed class GetUploadedPhotoIdsError(value: Int) : ErrorCode(value) {
+        sealed class Remote(value: Int) : GetUploadedPhotoIdsError(value) {
+            class UnknownError : Remote(-1)
+            class Ok : Remote(0)
+            class DatabaseError : Remote(1)
+            class BadRequest : Remote(2)
+        }
+
+        sealed class Local(value: Int) : GetUploadedPhotoIdsError(value) {
+            class BadServerResponse(val message: String? = null) : Local(-1000)
+            class Timeout : Local(-1001)
+            class DatabaseError : Local(-1002)
+        }
+    }
+
+    sealed class GetUploadedPhotosError(value: Int) : ErrorCode(value) {
+        sealed class Remote(value: Int) : GetUploadedPhotosError(value) {
+            class UnknownError : Remote(-1)
+            class Ok : Remote(0)
+            class DatabaseError : Remote(1)
+            class BadRequest : Remote(2)
+        }
+
+        sealed class Local(value: Int) : GetUploadedPhotosError(value) {
+            class BadServerResponse(val message: String? = null) : Local(-1000)
+            class Timeout : Local(-1001)
+            class DatabaseError : Local(-1002)
+        }
+    }
+
     //local
     sealed class TakePhotoErrors(value: Int) : ErrorCode(value) {
         class UnknownError : TakePhotoErrors(-1)
-        class Ok(val photo: MyPhoto) : TakePhotoErrors(0)
+        class Ok(val photo: TakenPhoto) : TakePhotoErrors(0)
         class CameraIsNotAvailable : TakePhotoErrors(1)
         class CameraIsNotStartedException : TakePhotoErrors(2)
         class TimeoutException : TakePhotoErrors(3)

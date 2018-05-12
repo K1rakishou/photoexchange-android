@@ -3,10 +3,10 @@ package com.kirakishou.photoexchange.helper.database.entity
 import android.arch.persistence.room.ColumnInfo
 import android.arch.persistence.room.Entity
 import android.arch.persistence.room.PrimaryKey
-import com.kirakishou.photoexchange.helper.database.entity.PhotoAnswerEntity.Companion.TABLE_NAME
+import com.kirakishou.photoexchange.helper.database.entity.ReceivedPhotoEntity.Companion.TABLE_NAME
 
 @Entity(tableName = TABLE_NAME)
-class PhotoAnswerEntity(
+class ReceivedPhotoEntity(
 
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = ID_COLUMN)
@@ -15,8 +15,8 @@ class PhotoAnswerEntity(
     @ColumnInfo(name = UPLOADED_PHOTO_NAME_COLUMN)
     var uploadedPhotoName: String? = null,
 
-    @ColumnInfo(name = PHOTO_ANSWER_NAME_COLUMN)
-    var photoAnswerName: String? = null,
+    @ColumnInfo(name = RECEIVED_PHOTO_NAME_COLUMN)
+    var receivedPhotoName: String? = null,
 
     @ColumnInfo(name = LON_COLUMN)
     var lon: Double? = null,
@@ -31,15 +31,15 @@ class PhotoAnswerEntity(
 
     companion object {
 
-        fun empty(): PhotoAnswerEntity {
-            return PhotoAnswerEntity()
+        fun empty(): ReceivedPhotoEntity {
+            return ReceivedPhotoEntity()
         }
 
-        const val TABLE_NAME = "PHOTO_ANSWER"
+        const val TABLE_NAME = "RECEIVED_PHOTO"
 
         const val ID_COLUMN = "ID"
         const val UPLOADED_PHOTO_NAME_COLUMN = "UPLOADED_PHOTO_NAME"
-        const val PHOTO_ANSWER_NAME_COLUMN = "PHOTO_ANSWER_NAME"
+        const val RECEIVED_PHOTO_NAME_COLUMN = "RECEIVED_PHOTO_NAME"
         const val LON_COLUMN = "LON"
         const val LAT_COLUMN = "LAT"
     }

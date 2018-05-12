@@ -11,5 +11,9 @@ object Constants {
     val SHARED_PREFS_PREFIX = "${appid}_SHARED_PREF"
     val BASE_URL = "http://kez1911.asuscomm.com:8080/"
     val DATABASE_NAME = "photoexchange_db"
-    val GALLERY_PHOTOS_PER_ROW = 25
+
+    val PHOTOS_DELIMITER = ","
+
+    val GALLERY_PHOTOS_PER_ROW = 15
+    val UPLOADED_PHOTOS_PER_ROW = 15
 }

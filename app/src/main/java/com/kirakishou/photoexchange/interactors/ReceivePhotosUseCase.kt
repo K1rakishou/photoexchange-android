@@ -3,13 +3,13 @@ package com.kirakishou.photoexchange.interactors
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.isFail
-import com.kirakishou.photoexchange.helper.database.mapper.PhotoAnswerMapper
+import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.mvp.model.FindPhotosData
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.net.response.ReceivePhotosResponse
+import com.kirakishou.photoexchange.mvp.model.net.response.ReceivedPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.service.ReceivePhotosServiceCallbacks
 import io.reactivex.Single
@@ -51,14 +51,14 @@ class ReceivePhotosUseCase(
             }
     }
 
-    private fun handleSuccessResult(response: ReceivePhotosResponse, callbacks: WeakReference<ReceivePhotosServiceCallbacks>) {
-        for (photoAnswerResponse in response.photoAnswers) {
+    private fun handleSuccessResult(response: ReceivedPhotosResponse, callbacks: WeakReference<ReceivePhotosServiceCallbacks>) {
+        for (photoAnswerResponse in response.receivedPhotos) {
             var insertedPhotoAnswerId: Long? = null
 
             val result = database.transactional {
                 insertedPhotoAnswerId = receivedPhotosRepository.insert(photoAnswerResponse)
                 if (insertedPhotoAnswerId!!.isFail()) {
-                    Timber.tag(TAG).w("Could not save photo with name ${photoAnswerResponse.photoAnswerName}")
+                    Timber.tag(TAG).w("Could not save photo with name ${photoAnswerResponse.receivedPhotoName}")
                     return@transactional false
                 }
 
@@ -66,7 +66,7 @@ class ReceivePhotosUseCase(
                     PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED)
             }
 
-            val photoAnswer = PhotoAnswerMapper.toPhotoAnswer(insertedPhotoAnswerId, photoAnswerResponse)
+            val photoAnswer = ReceivedPhotosMapper.toPhotoAnswer(insertedPhotoAnswerId, photoAnswerResponse)
 
             if (result) {
                 val photoId = photosRepository.findByPhotoIdByName(photoAnswer.uploadedPhotoName)

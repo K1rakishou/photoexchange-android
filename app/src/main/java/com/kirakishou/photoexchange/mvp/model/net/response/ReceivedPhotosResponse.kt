@@ -4,34 +4,34 @@ import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 
-open class ReceivePhotosResponse
+open class ReceivedPhotosResponse
 private constructor(
 
     @Expose
-    @SerializedName("photo_answers")
-    val photoAnswers: List<PhotoAnswer>,
+    @SerializedName("received_photos")
+    val receivedPhotos: List<ReceivedPhoto>,
 
     errorCode: ErrorCode
 ) : StatusResponse(errorCode.value, errorCode) {
 
     companion object {
-        fun success(photoAnswers: List<PhotoAnswer>): ReceivePhotosResponse {
-            return ReceivePhotosResponse(photoAnswers, ErrorCode.ReceivePhotosErrors.Remote.Ok())
+        fun success(receivedPhotos: List<ReceivedPhoto>): ReceivedPhotosResponse {
+            return ReceivedPhotosResponse(receivedPhotos, ErrorCode.ReceivePhotosErrors.Remote.Ok())
         }
 
-        fun error(errorCode: ErrorCode): ReceivePhotosResponse {
-            return ReceivePhotosResponse(emptyList(), errorCode)
+        fun error(errorCode: ErrorCode): ReceivedPhotosResponse {
+            return ReceivedPhotosResponse(emptyList(), errorCode)
         }
     }
 
-    inner class PhotoAnswer(
+    inner class ReceivedPhoto(
         @Expose
         @SerializedName("uploaded_photo_name")
         val uploadedPhotoName: String,
 
         @Expose
-        @SerializedName("photo_answer_name")
-        val photoAnswerName: String,
+        @SerializedName("received_photo_name")
+        val receivedPhotoName: String,
 
         @Expose
         @SerializedName("lon")

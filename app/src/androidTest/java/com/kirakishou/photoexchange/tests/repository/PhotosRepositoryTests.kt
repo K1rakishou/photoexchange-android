@@ -41,8 +41,8 @@ class PhotosRepositoryTests {
 //        runBlocking {
 //            myPhotosRepository.init()
 //
-//            val myPhoto = myPhotosRepository.insert(MyPhotoEntity.create())
-//            val myPhoto2 = myPhotosRepository.insert(MyPhotoEntity.create())
+//            val myPhoto = myPhotosRepository.insert(TakenPhotoEntity.create())
+//            val myPhoto2 = myPhotosRepository.insert(TakenPhotoEntity.create())
 //
 //            assertEquals(1, myPhoto.id)
 //            assertEquals(2, myPhoto2.id)
@@ -58,12 +58,12 @@ class PhotosRepositoryTests {
 //        runBlocking {
 //            myPhotosRepository.init()
 //
-//            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_TAKEN))
-//            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_UPLOADING))
-//            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_UPLOADING))
-//            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_UPLOADED))
-//            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_UPLOADED))
-//            myPhotosRepository.insert(MyPhotoEntity.create(PhotoState.PHOTO_UPLOADED))
+//            myPhotosRepository.insert(TakenPhotoEntity.create(PhotoState.PHOTO_TAKEN))
+//            myPhotosRepository.insert(TakenPhotoEntity.create(PhotoState.PHOTO_UPLOADING))
+//            myPhotosRepository.insert(TakenPhotoEntity.create(PhotoState.PHOTO_UPLOADING))
+//            myPhotosRepository.insert(TakenPhotoEntity.create(PhotoState.PHOTO_UPLOADED))
+//            myPhotosRepository.insert(TakenPhotoEntity.create(PhotoState.PHOTO_UPLOADED))
+//            myPhotosRepository.insert(TakenPhotoEntity.create(PhotoState.PHOTO_UPLOADED))
 //
 //            assertEquals(true, myPhotosRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN))
 //            myPhotosRepository.findAll().let { allPhotos ->

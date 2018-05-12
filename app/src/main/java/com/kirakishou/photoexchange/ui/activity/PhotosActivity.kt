@@ -23,7 +23,7 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.PhotosActivityModule
 import com.kirakishou.photoexchange.helper.extension.debounceClicks
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
-import com.kirakishou.photoexchange.mvp.model.MyPhoto
+import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.ReceivePhotosEvent
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
@@ -373,7 +373,7 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
         }
     }
 
-    private fun showPhotoDeletedSnackbar(photo: MyPhoto) {
+    private fun showPhotoDeletedSnackbar(photo: TakenPhoto) {
         val disposable = Single.just(1)
             .observeOn(Schedulers.io())
             .doOnSuccess {

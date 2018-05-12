@@ -23,7 +23,7 @@ import com.kirakishou.photoexchange.helper.Vibrator
 import com.kirakishou.photoexchange.helper.extension.debounceClicks
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvp.model.MyPhoto
+import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
@@ -197,9 +197,9 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
 
     override fun takePhoto(file: File): Single<Boolean> = cameraProvider.takePhoto(file)
 
-    private fun onPhotoTaken(myPhoto: MyPhoto) {
+    private fun onPhotoTaken(takenPhoto: TakenPhoto) {
         runActivityWithArgs(ViewTakenPhotoActivity::class.java,
-            myPhoto.toBundle(), false)
+            takenPhoto.toBundle(), false)
     }
 
     private fun animateAppear() {

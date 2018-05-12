@@ -12,23 +12,25 @@ import kotlin.concurrent.withLock
  */
 
 @Database(entities = [
-    MyPhotoEntity::class,
+    TakenPhotoEntity::class,
     TempFileEntity::class,
     SettingEntity::class,
-    PhotoAnswerEntity::class,
+    ReceivedPhotoEntity::class,
     GalleryPhotoEntity::class,
-    GalleryPhotoInfoEntity::class
+    GalleryPhotoInfoEntity::class,
+    UploadedPhotoEntity::class
 ], version = 1)
 abstract class MyDatabase : RoomDatabase() {
 
     val dbLock = ReentrantLock()
 
-    abstract fun myPhotoDao(): MyPhotoDao
+    abstract fun takenPhotoDao(): TakenPhotoDao
     abstract fun tempFileDao(): TempFileDao
     abstract fun settingsDao(): SettingsDao
-    abstract fun photoAnswerDao(): PhotoAnswerDao
+    abstract fun receivedPhotoDao(): ReceivedPhotoDao
     abstract fun galleryPhotoDao(): GalleryPhotoDao
     abstract fun galleryPhotoInfoDao(): GalleryPhotoInfoDao
+    abstract fun uploadedPhotoDao(): UploadedPhotoDao
 
     inline fun transactional(func: () -> Boolean): Boolean {
         dbLock.withLock {

@@ -27,4 +27,22 @@ object Utils {
     fun generateUserId(): String {
         return generateRandomString(64, numericAlphabetic) + "_photoexchange"
     }
+
+    fun filterListAlreadyContaning(listOne: List<Long>, listTwo: List<Long>): List<Long> {
+        val setOne = listOne.toSet()
+        val setTwo = listTwo.toSet()
+        val resultList = mutableListOf<Long>()
+
+        if (setOne.size == setTwo.size) {
+            return resultList
+        }
+
+        for (photoId in setOne) {
+            if (!setTwo.contains(photoId)) {
+                resultList += photoId
+            }
+        }
+
+        return resultList
+    }
 }

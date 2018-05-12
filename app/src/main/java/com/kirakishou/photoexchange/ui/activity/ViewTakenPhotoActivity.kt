@@ -5,7 +5,7 @@ import android.os.Bundle
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.ViewTakenPhotoActivityModule
-import com.kirakishou.photoexchange.mvp.model.MyPhoto
+import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.view.ViewTakenPhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.ViewTakenPhotoActivityViewModel
 import com.kirakishou.photoexchange.ui.fragment.AddToGalleryDialogFragment
@@ -25,7 +25,7 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
 
     private val TAG = "ViewTakenPhotoActivity"
 
-    lateinit var takenPhoto: MyPhoto
+    lateinit var takenPhoto: TakenPhoto
 
     val activityComponent by lazy {
         (application as PhotoExchangeApplication).applicationComponent
@@ -35,7 +35,7 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
     override fun getContentView(): Int = R.layout.activity_view_taken_photo
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
-        takenPhoto = MyPhoto.fromBundle(intent.extras)
+        takenPhoto = TakenPhoto.fromBundle(intent.extras)
 
         showViewTakenPhotoFragment(intent)
     }

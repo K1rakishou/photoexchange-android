@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.ui.adapter
 
-import com.kirakishou.photoexchange.mvp.model.MyPhoto
+import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 
 sealed class MyPhotosAdapterItem : BaseAdapterItem() {
 
@@ -15,8 +15,8 @@ sealed class MyPhotosAdapterItem : BaseAdapterItem() {
     }
 
     class EmptyItem : MyPhotosAdapterItem()
-    class MyPhotoItem(val myPhoto: MyPhoto) : MyPhotosAdapterItem()
+    class MyPhotoItem(val takenPhoto: TakenPhoto) : MyPhotosAdapterItem()
     class ProgressItem : MyPhotosAdapterItem()
-    class FailedToUploadItem(val failedToUploadPhoto: MyPhoto) : MyPhotosAdapterItem()
+    class FailedToUploadItem(val failedToUploadPhoto: TakenPhoto) : MyPhotosAdapterItem()
     class ObtainCurrentLocationItem : MyPhotosAdapterItem()
 }
