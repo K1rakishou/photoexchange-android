@@ -24,9 +24,9 @@ interface ApiService {
     @PUT("/v1/api/report")
     fun reportPhoto(@Body packet: ReportPhotoPacket): Single<Response<ReportPhotoResponse>>
 
-    @GET("/v1/api/get_answer/{photo_names}/{user_id}")
-    fun getPhotoAnswers(@Path("photo_names") photoNames: String,
-                        @Path("user_id") userId: String): Single<Response<PhotoAnswerResponse>>
+    @GET("/v1/api/receive_photos/{photo_names}/{user_id}")
+    fun receivePhotos(@Path("photo_names") photoNames: String,
+                      @Path("user_id") userId: String): Single<Response<ReceivePhotosResponse>>
 
     @GET("/v1/api/get_gallery_photo_ids/{last_id}/{count}")
     fun getGalleryPhotoIds(@Path("last_id") lastId: Long,

@@ -24,9 +24,9 @@ class UseCaseProviderModule {
     fun provideFindPhotoAnswersUseCase(database: MyDatabase,
                                        myPhotosRepository: PhotosRepository,
                                        settingsRepository: SettingsRepository,
-                                       photoAnswerRepository: PhotoAnswerRepository,
-                                       apiClient: ApiClient): FindPhotoAnswersUseCase {
-        return FindPhotoAnswersUseCase(database, myPhotosRepository, settingsRepository, photoAnswerRepository, apiClient)
+                                       receivedPhotosRepository: ReceivedPhotosRepository,
+                                       apiClient: ApiClient): ReceivePhotosUseCase {
+        return ReceivePhotosUseCase(database, myPhotosRepository, settingsRepository, receivedPhotosRepository, apiClient)
     }
 
     @Singleton

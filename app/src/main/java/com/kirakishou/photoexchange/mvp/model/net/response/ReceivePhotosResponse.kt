@@ -4,7 +4,7 @@ import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 
-open class PhotoAnswerResponse
+open class ReceivePhotosResponse
 private constructor(
 
     @Expose
@@ -15,12 +15,12 @@ private constructor(
 ) : StatusResponse(errorCode.value, errorCode) {
 
     companion object {
-        fun success(photoAnswers: List<PhotoAnswer>): PhotoAnswerResponse {
-            return PhotoAnswerResponse(photoAnswers, ErrorCode.GetPhotoAnswersErrors.Remote.Ok())
+        fun success(photoAnswers: List<PhotoAnswer>): ReceivePhotosResponse {
+            return ReceivePhotosResponse(photoAnswers, ErrorCode.ReceivePhotosErrors.Remote.Ok())
         }
 
-        fun error(errorCode: ErrorCode): PhotoAnswerResponse {
-            return PhotoAnswerResponse(emptyList(), errorCode)
+        fun error(errorCode: ErrorCode): ReceivePhotosResponse {
+            return ReceivePhotosResponse(emptyList(), errorCode)
         }
     }
 

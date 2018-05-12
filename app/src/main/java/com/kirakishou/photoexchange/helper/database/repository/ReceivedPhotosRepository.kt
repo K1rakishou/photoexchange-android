@@ -4,9 +4,9 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.PhotoAnswerEntity
 import com.kirakishou.photoexchange.helper.database.mapper.PhotoAnswerMapper
 import com.kirakishou.photoexchange.mvp.model.PhotoAnswer
-import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
+import com.kirakishou.photoexchange.mvp.model.net.response.ReceivePhotosResponse
 
-open class PhotoAnswerRepository(
+open class ReceivedPhotosRepository(
     private val database: MyDatabase
 ) {
     private val photoAnswerDao = database.photoAnswerDao()
@@ -15,8 +15,8 @@ open class PhotoAnswerRepository(
         return photoAnswerDao.insert(photoAnswerEntity)
     }
 
-    fun insert(photoAnswer: PhotoAnswerResponse.PhotoAnswer): Long {
-        val photoAnswerEntity = PhotoAnswerMapper.toPhotoAnswerEntity(photoAnswer)
+    fun insert(receivePhotos: ReceivePhotosResponse.PhotoAnswer): Long {
+        val photoAnswerEntity = PhotoAnswerMapper.toPhotoAnswerEntity(receivePhotos)
         return insert(photoAnswerEntity)
     }
 

@@ -9,13 +9,13 @@ import android.os.IBinder
 import android.support.annotation.RequiresApi
 import android.support.v4.app.NotificationCompat
 import com.kirakishou.photoexchange.PhotoExchangeApplication
-import com.kirakishou.photoexchange.di.module.FindPhotoAnswerServiceModule
+import com.kirakishou.photoexchange.di.module.ReceivePhotosServiceModule
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoAnswer
-import com.kirakishou.photoexchange.mvp.model.PhotoFindEvent
+import com.kirakishou.photoexchange.mvp.model.ReceivePhotosEvent
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
-import com.kirakishou.photoexchange.ui.callback.FindPhotoAnswerCallback
+import com.kirakishou.photoexchange.ui.activity.PhotosActivity
+import com.kirakishou.photoexchange.ui.callback.ReceivePhotosServiceCallback
 import io.reactivex.disposables.CompositeDisposable
 import timber.log.Timber
 import java.lang.ref.WeakReference
@@ -25,23 +25,23 @@ import android.app.ActivityManager
 
 
 
-class FindPhotoAnswerService : Service(), FindPhotoAnswerServiceCallbacks {
+class ReceivePhotosService : Service(), ReceivePhotosServiceCallbacks {
 
     @Inject
-    lateinit var presenter: FindPhotoAnswerServicePresenter
+    lateinit var presenter: ReceivePhotosServicePresenter
 
-    private val tag = "FindPhotoAnswerService"
+    private val tag = "ReceivePhotosService"
     private val compositeDisposable = CompositeDisposable()
     private var notificationManager: NotificationManager? = null
-    private val binder = FindPhotoAnswerBinder()
-    private var callback = WeakReference<FindPhotoAnswerCallback>(null)
+    private val binder = ReceivePhotosBinder()
+    private var callback = WeakReference<ReceivePhotosServiceCallback>(null)
     private val NOTIFICATION_ID = 2
     private val CHANNEL_ID = "1"
     private val CHANNED_NAME = "name"
 
     override fun onCreate() {
         super.onCreate()
-        Timber.tag(tag).d("FindPhotoAnswerService started")
+        Timber.tag(tag).d("ReceivePhotosService started")
 
         resolveDaggerDependency()
         startForeground(NOTIFICATION_ID, createNotificationDownloading())
@@ -49,38 +49,38 @@ class FindPhotoAnswerService : Service(), FindPhotoAnswerServiceCallbacks {
 
     override fun onDestroy() {
         super.onDestroy()
-        Timber.tag(tag).d("FindPhotoAnswerService destroyed")
+        Timber.tag(tag).d("ReceivePhotosService destroyed")
 
         presenter.onDetach()
         compositeDisposable.clear()
     }
 
-    fun attachCallback(_callback: WeakReference<FindPhotoAnswerCallback>) {
+    fun attachCallback(_callback: WeakReference<ReceivePhotosServiceCallback>) {
         callback = _callback
     }
 
     fun detachCallback() {
-        callback = WeakReference<FindPhotoAnswerCallback>(null)
+        callback = WeakReference<ReceivePhotosServiceCallback>(null)
     }
 
-    fun startSearchingForPhotoAnswers() {
+    fun startPhotosReceiving() {
         updateUploadingNotificationShowDownloading()
-        presenter.startFindPhotoAnswers()
+        presenter.startPhotosReceiving()
     }
 
     override fun onPhotoReceived(photoAnswer: PhotoAnswer, photoId: Long) {
         updateDownloadingNotificationShowSuccess()
-        callback.get()?.onPhotoFindEvent(PhotoFindEvent.OnPhotoAnswerFound(photoAnswer, photoId))
+        callback.get()?.onPhotoFindEvent(ReceivePhotosEvent.OnPhotoReceived(photoAnswer, photoId))
     }
 
-    override fun onFailed(errorCode: ErrorCode.GetPhotoAnswersErrors) {
+    override fun onFailed(errorCode: ErrorCode.ReceivePhotosErrors) {
         updateUploadingNotificationShowError()
-        callback.get()?.onPhotoFindEvent(PhotoFindEvent.OnFailed(errorCode))
+        callback.get()?.onPhotoFindEvent(ReceivePhotosEvent.OnFailed(errorCode))
     }
 
     override fun onError(error: Throwable) {
         updateUploadingNotificationShowError()
-        callback.get()?.onPhotoFindEvent(PhotoFindEvent.OnUnknownError(error))
+        callback.get()?.onPhotoFindEvent(ReceivePhotosEvent.OnUnknownError(error))
     }
 
     override fun stopService() {
@@ -194,7 +194,7 @@ class FindPhotoAnswerService : Service(), FindPhotoAnswerServiceCallbacks {
     }
 
     private fun getNotificationIntent(): PendingIntent {
-        val notificationIntent = Intent(this, AllPhotosActivity::class.java)
+        val notificationIntent = Intent(this, PhotosActivity::class.java)
         notificationIntent.action = Intent.ACTION_MAIN
         notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER)
         //notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -215,7 +215,7 @@ class FindPhotoAnswerService : Service(), FindPhotoAnswerServiceCallbacks {
 
     private fun resolveDaggerDependency() {
         (application as PhotoExchangeApplication).applicationComponent
-            .plus(FindPhotoAnswerServiceModule(this))
+            .plus(ReceivePhotosServiceModule(this))
             .inject(this)
     }
 
@@ -227,9 +227,9 @@ class FindPhotoAnswerService : Service(), FindPhotoAnswerServiceCallbacks {
         return binder
     }
 
-    inner class FindPhotoAnswerBinder : Binder() {
-        fun getService(): FindPhotoAnswerService {
-            return this@FindPhotoAnswerService
+    inner class ReceivePhotosBinder : Binder() {
+        fun getService(): ReceivePhotosService {
+            return this@ReceivePhotosService
         }
     }
 
@@ -237,7 +237,7 @@ class FindPhotoAnswerService : Service(), FindPhotoAnswerServiceCallbacks {
         fun isRunning(context: Context): Boolean {
             val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
             for (service in manager!!.getRunningServices(Integer.MAX_VALUE)) {
-                if (FindPhotoAnswerService::class.java.name == service.service.className) {
+                if (ReceivePhotosService::class.java.name == service.service.className) {
                     return true
                 }
             }

@@ -3,7 +3,7 @@ package com.kirakishou.photoexchange.service
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.interactors.FindPhotoAnswersUseCase
+import com.kirakishou.photoexchange.interactors.ReceivePhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.FindPhotosData
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import io.reactivex.disposables.CompositeDisposable
@@ -12,15 +12,15 @@ import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.lang.ref.WeakReference
 
-class FindPhotoAnswerServicePresenter(
-    private val callbacks: WeakReference<FindPhotoAnswerServiceCallbacks>,
+class ReceivePhotosServicePresenter(
+    private val callbacks: WeakReference<ReceivePhotosServiceCallbacks>,
     private val myPhotosRepository: PhotosRepository,
     private val settingsRepository: SettingsRepository,
     private val schedulerProvider: SchedulerProvider,
-    private val findPhotoAnswersUseCase: FindPhotoAnswersUseCase
+    private val receivePhotosUseCase: ReceivePhotosUseCase
 ) {
 
-    private val TAG = "FindPhotoAnswerServicePresenter"
+    private val TAG = "ReceivePhotosServicePresenter"
     private val findPhotosSubject = PublishSubject.create<Unit>().toSerialized()
     private var compositeDisposable = CompositeDisposable()
 
@@ -51,8 +51,8 @@ class FindPhotoAnswerServicePresenter(
                 callbacks.get()?.stopService()
             }
             .concatMap { data ->
-                Timber.tag(TAG).d("getPhotoAnswers")
-                findPhotoAnswersUseCase.getPhotoAnswers(data, callbacks).toObservable()
+                Timber.tag(TAG).d("receivePhotos")
+                receivePhotosUseCase.receivePhotos(data, callbacks).toObservable()
             }
             .doOnError { error ->
                 Timber.tag(TAG).d("onError")
@@ -69,8 +69,8 @@ class FindPhotoAnswerServicePresenter(
         this.compositeDisposable.clear()
     }
 
-    fun startFindPhotoAnswers() {
-        Timber.tag(TAG).d("startFindPhotoAnswers called")
+    fun startPhotosReceiving() {
+        Timber.tag(TAG).d("startPhotosReceiving called")
         findPhotosSubject.onNext(Unit)
     }
 }

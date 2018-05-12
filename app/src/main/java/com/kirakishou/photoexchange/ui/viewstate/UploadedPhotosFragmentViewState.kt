@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.ui.viewstate
 
 import android.os.Bundle
 
-class MyPhotosFragmentViewState(
+class UploadedPhotosFragmentViewState(
     var showObtainCurrentLocationNotification: Boolean = false
 ) : BaseViewState {
     override fun saveToBundle(bundle: Bundle?) {
@@ -19,17 +19,17 @@ class MyPhotosFragmentViewState(
         }
     }
 
-    fun updateFromViewStateEvent(viewStateEvent: MyPhotosFragmentViewStateEvent) {
+    fun updateFromViewStateEvent(viewStateEvent: UploadedPhotosFragmentViewStateEvent) {
         when (viewStateEvent) {
-            is MyPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification -> {
+            is UploadedPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification -> {
                 showObtainCurrentLocationNotification = true
             }
-            is MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification -> {
+            is UploadedPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification -> {
                 showObtainCurrentLocationNotification = false
             }
 
-            is MyPhotosFragmentViewStateEvent.Default,
-            is MyPhotosFragmentViewStateEvent.RemovePhoto -> {
+            is UploadedPhotosFragmentViewStateEvent.Default,
+            is UploadedPhotosFragmentViewStateEvent.RemovePhoto -> {
                 //Do nothing
             }
         }

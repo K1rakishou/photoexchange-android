@@ -11,12 +11,12 @@ import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.MyPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
-import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
-import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
-import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
-import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapterSpanSizeLookup
-import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewState
-import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
+import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
+import com.kirakishou.photoexchange.ui.activity.PhotosActivity
+import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapter
+import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapterSpanSizeLookup
+import com.kirakishou.photoexchange.ui.viewstate.UploadedPhotosFragmentViewState
+import com.kirakishou.photoexchange.ui.viewstate.UploadedPhotosFragmentViewStateEvent
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
@@ -25,7 +25,7 @@ import timber.log.Timber
 import javax.inject.Inject
 
 
-class MyPhotosFragment : BaseFragment() {
+class UploadedPhotosFragment : BaseFragment() {
 
     @BindView(R.id.my_photos_list)
     lateinit var myPhotosList: RecyclerView
@@ -34,23 +34,23 @@ class MyPhotosFragment : BaseFragment() {
     lateinit var imageLoader: ImageLoader
 
     @Inject
-    lateinit var viewModel: AllPhotosActivityViewModel
+    lateinit var viewModel: PhotosActivityViewModel
 
-    lateinit var adapter: MyPhotosAdapter
+    lateinit var adapter: UploadedPhotosAdapter
 
-    private val TAG = "MyPhotosFragment"
+    private val TAG = "UploadedPhotosFragment"
     private val PHOTO_ADAPTER_VIEW_WIDTH = 288
-    private val adapterButtonsClickSubject = PublishSubject.create<MyPhotosAdapter.MyPhotosAdapterButtonClickEvent>().toSerialized()
-    private var viewState = MyPhotosFragmentViewState()
+    private val adapterButtonsClickSubject = PublishSubject.create<UploadedPhotosAdapter.UploadedPhotosAdapterButtonClickEvent>().toSerialized()
+    private var viewState = UploadedPhotosFragmentViewState()
 
-    override fun getContentView(): Int = R.layout.fragment_my_photos
+    override fun getContentView(): Int = R.layout.fragment_uploaded_photos
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRx()
         initRecyclerView()
         loadPhotos()
 
-        restoreMyPhotosFragmentFromViewState(savedInstanceState)
+        restoreFragmentFromViewState(savedInstanceState)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -58,8 +58,8 @@ class MyPhotosFragment : BaseFragment() {
         viewState.saveToBundle(outState)
     }
 
-    private fun restoreMyPhotosFragmentFromViewState(savedInstanceState: Bundle?) {
-        viewState = MyPhotosFragmentViewState()
+    private fun restoreFragmentFromViewState(savedInstanceState: Bundle?) {
+        viewState = UploadedPhotosFragmentViewState()
             .also { it.loadFromBundle(savedInstanceState) }
     }
 
@@ -69,11 +69,11 @@ class MyPhotosFragment : BaseFragment() {
     private fun initRecyclerView() {
         val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = MyPhotosAdapter(requireContext(), imageLoader, adapterButtonsClickSubject)
+        adapter = UploadedPhotosAdapter(requireContext(), imageLoader, adapterButtonsClickSubject)
         adapter.init()
 
         val layoutManager = GridLayoutManager(requireContext(), columnsCount)
-        layoutManager.spanSizeLookup = MyPhotosAdapterSpanSizeLookup(adapter, columnsCount)
+        layoutManager.spanSizeLookup = UploadedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
 
         myPhotosList.layoutManager = layoutManager
         myPhotosList.adapter = adapter
@@ -86,7 +86,7 @@ class MyPhotosFragment : BaseFragment() {
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
 
-        compositeDisposable += viewModel.myPhotosFragmentViewStateSubject
+        compositeDisposable += viewModel.uploadedPhotosFragmentViewStateSubject
             .observeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { viewState -> onViewStateChanged(viewState) }
@@ -96,7 +96,7 @@ class MyPhotosFragment : BaseFragment() {
         compositeDisposable += adapterButtonsClickSubject
             .observeOn(AndroidSchedulers.mainThread())
             .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe(viewModel.myPhotosAdapterButtonClickSubject::onNext)
+            .subscribe(viewModel.uploadedPhotosAdapterButtonClickSubject::onNext)
     }
 
     private fun loadPhotos() {
@@ -107,32 +107,32 @@ class MyPhotosFragment : BaseFragment() {
             .subscribe()
     }
 
-    private fun onViewStateChanged(viewStateEvent: MyPhotosFragmentViewStateEvent) {
+    private fun onViewStateChanged(viewStateEvent: UploadedPhotosFragmentViewStateEvent) {
         if (!isAdded) {
             return
         }
 
         requireActivity().runOnUiThread {
             when (viewStateEvent) {
-                is MyPhotosFragmentViewStateEvent.ScrollToTop -> {
+                is UploadedPhotosFragmentViewStateEvent.ScrollToTop -> {
                     myPhotosList.scrollToPosition(0)
                 }
-                is MyPhotosFragmentViewStateEvent.Default -> {
+                is UploadedPhotosFragmentViewStateEvent.Default -> {
 
                 }
-                is MyPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification -> {
+                is UploadedPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification -> {
                     adapter.showObtainCurrentLocationNotification()
                 }
-                is MyPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification -> {
+                is UploadedPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification -> {
                     adapter.hideObtainCurrentLocationNotification()
                 }
-                is MyPhotosFragmentViewStateEvent.RemovePhoto -> {
+                is UploadedPhotosFragmentViewStateEvent.RemovePhoto -> {
                     adapter.removePhotoById(viewStateEvent.photo.id)
                 }
-                is MyPhotosFragmentViewStateEvent.AddPhoto -> {
+                is UploadedPhotosFragmentViewStateEvent.AddPhoto -> {
                     adapter.addMyPhoto(viewStateEvent.photo)
                 }
-                else -> throw IllegalArgumentException("Unknown MyPhotosFragmentViewStateEvent $viewStateEvent")
+                else -> throw IllegalArgumentException("Unknown UploadedPhotosFragmentViewStateEvent $viewStateEvent")
             }
         }
     }
@@ -206,17 +206,17 @@ class MyPhotosFragment : BaseFragment() {
     }
 
     private fun showToast(message: String, duration: Int = Toast.LENGTH_LONG) {
-        (requireActivity() as AllPhotosActivity).showToast(message, duration)
+        (requireActivity() as PhotosActivity).showToast(message, duration)
     }
 
     override fun resolveDaggerDependency() {
-        (requireActivity() as AllPhotosActivity).activityComponent
+        (requireActivity() as PhotosActivity).activityComponent
             .inject(this)
     }
 
     companion object {
-        fun newInstance(): MyPhotosFragment {
-            val fragment = MyPhotosFragment()
+        fun newInstance(): UploadedPhotosFragment {
+            val fragment = UploadedPhotosFragment()
             val args = Bundle()
 
             fragment.arguments = args

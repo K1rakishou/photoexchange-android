@@ -34,7 +34,7 @@
     <string name="settings_menu_item_text">Settings</string>
     <string name="photo_reported_text">Photo has been reported as inappropriate</string>
     <string name="photo_unreported_text">Report has been removed from photo</string>
-    <string name="photo_has_been_deleted_snackbar_text">The photo has been deleted</string>
+    <string name="photo_has_been_deleted_snackbar_text">Photo has been deleted</string>
     <string name="cancel_snackbar_action_text">CANCEL</string>
     <string name="photo_has_been_received_snackbar_text">A photo has been received</string>
     <string name="show_snackbar_action_text">SHOW</string>

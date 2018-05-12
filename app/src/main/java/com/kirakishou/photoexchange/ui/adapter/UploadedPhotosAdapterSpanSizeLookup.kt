@@ -1,14 +1,12 @@
 package com.kirakishou.photoexchange.ui.adapter
 
 import android.support.v7.widget.GridLayoutManager
-import com.kirakishou.photoexchange.ui.adapter.AdapterItemType
-import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
 
 /**
  * Created by kirakishou on 11/26/2017.
  */
-class MyPhotosAdapterSpanSizeLookup(
-    private val adapter: MyPhotosAdapter,
+class UploadedPhotosAdapterSpanSizeLookup(
+    private val adapter: UploadedPhotosAdapter,
     private val columnsCount: Int
 ) : GridLayoutManager.SpanSizeLookup() {
 

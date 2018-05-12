@@ -40,8 +40,8 @@ open class DatabaseModule(
 
     @Singleton
     @Provides
-    open fun providePhotoAnswerRepository(database: MyDatabase): PhotoAnswerRepository {
-        return PhotoAnswerRepository(database)
+    open fun providePhotoAnswerRepository(database: MyDatabase): ReceivedPhotosRepository {
+        return ReceivedPhotosRepository(database)
     }
 
     @Singleton

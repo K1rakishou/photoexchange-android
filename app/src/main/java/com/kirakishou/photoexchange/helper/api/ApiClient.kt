@@ -25,8 +25,8 @@ class ApiClient
             .execute()
     }
 
-    fun getPhotoAnswers(photoNames: String, userId: String): Single<PhotoAnswerResponse> {
-        return GetPhotoAnswersRequest<PhotoAnswerResponse>(photoNames, userId, apiService, schedulerProvider, gson)
+    fun receivePhotos(photoNames: String, userId: String): Single<ReceivePhotosResponse> {
+        return ReceivePhotosRequest<ReceivePhotosResponse>(photoNames, userId, apiService, schedulerProvider, gson)
             .execute()
     }
 

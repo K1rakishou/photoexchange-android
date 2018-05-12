@@ -12,8 +12,8 @@ import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
-import com.kirakishou.photoexchange.mvp.viewmodel.AllPhotosActivityViewModel
-import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
+import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
+import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.GalleryPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.GalleryPhotosAdapterSpanSizeLookup
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
@@ -36,7 +36,7 @@ class GalleryFragment : BaseFragment() {
     lateinit var imageLoader: ImageLoader
 
     @Inject
-    lateinit var viewModel: AllPhotosActivityViewModel
+    lateinit var viewModel: PhotosActivityViewModel
 
     private val TAG = "GalleryFragment"
     private val GALLERY_PHOTO_ADAPTER_VIEW_WIDTH = 288
@@ -79,7 +79,7 @@ class GalleryFragment : BaseFragment() {
     private fun initRx() {
         compositeDisposable += viewModel.errorCodesSubject
             .subscribeOn(AndroidSchedulers.mainThread())
-            .doOnNext { (requireActivity() as AllPhotosActivity).showErrorCodeToast(it) }
+            .doOnNext { (requireActivity() as PhotosActivity).showErrorCodeToast(it) }
             .subscribe()
 
         compositeDisposable += loadMoreSubject
@@ -146,9 +146,9 @@ class GalleryFragment : BaseFragment() {
             }
 
             if (isReported) {
-                (requireActivity() as AllPhotosActivity).showToast(getString(R.string.photo_reported_text), Toast.LENGTH_SHORT)
+                (requireActivity() as PhotosActivity).showToast(getString(R.string.photo_reported_text), Toast.LENGTH_SHORT)
             } else {
-                (requireActivity() as AllPhotosActivity).showToast(getString(R.string.photo_unreported_text), Toast.LENGTH_SHORT)
+                (requireActivity() as PhotosActivity).showToast(getString(R.string.photo_unreported_text), Toast.LENGTH_SHORT)
             }
         }
     }
@@ -182,7 +182,7 @@ class GalleryFragment : BaseFragment() {
     }
 
     override fun resolveDaggerDependency() {
-        (requireActivity() as AllPhotosActivity).activityComponent
+        (requireActivity() as PhotosActivity).activityComponent
             .inject(this)
     }
 

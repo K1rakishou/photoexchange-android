@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.helper.database.mapper
 
 import com.kirakishou.photoexchange.helper.database.entity.PhotoAnswerEntity
 import com.kirakishou.photoexchange.mvp.model.PhotoAnswer
-import com.kirakishou.photoexchange.mvp.model.net.response.PhotoAnswerResponse
+import com.kirakishou.photoexchange.mvp.model.net.response.ReceivePhotosResponse
 
 object PhotoAnswerMapper {
 
@@ -16,23 +16,23 @@ object PhotoAnswerMapper {
         )
     }
 
-    fun toPhotoAnswer(id: Long?, photoAnswerResponse: PhotoAnswerResponse.PhotoAnswer): PhotoAnswer {
+    fun toPhotoAnswer(id: Long?, receivePhotosResponse: ReceivePhotosResponse.PhotoAnswer): PhotoAnswer {
         return PhotoAnswer(
             id,
-            photoAnswerResponse.uploadedPhotoName,
-            photoAnswerResponse.photoAnswerName,
-            photoAnswerResponse.lon,
-            photoAnswerResponse.lat
+            receivePhotosResponse.uploadedPhotoName,
+            receivePhotosResponse.photoAnswerName,
+            receivePhotosResponse.lon,
+            receivePhotosResponse.lat
         )
     }
 
-    fun toPhotoAnswerEntity(photoAnswer: PhotoAnswerResponse.PhotoAnswer): PhotoAnswerEntity {
+    fun toPhotoAnswerEntity(receivePhotos: ReceivePhotosResponse.PhotoAnswer): PhotoAnswerEntity {
         return PhotoAnswerEntity(
             null,
-            photoAnswer.uploadedPhotoName,
-            photoAnswer.photoAnswerName,
-            photoAnswer.lon,
-            photoAnswer.lat
+            receivePhotos.uploadedPhotoName,
+            receivePhotos.photoAnswerName,
+            receivePhotos.lon,
+            receivePhotos.lat
         )
     }
 }

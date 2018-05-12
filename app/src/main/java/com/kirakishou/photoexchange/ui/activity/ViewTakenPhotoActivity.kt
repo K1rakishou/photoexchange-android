@@ -77,7 +77,7 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
     }
 
     override fun onPhotoUpdated() {
-        runActivity(AllPhotosActivity::class.java, true)
+        runActivity(PhotosActivity::class.java, true)
     }
 
     override fun showToast(message: String, duration: Int) {

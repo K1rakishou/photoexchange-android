@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.database.repository.PhotoAnswerRepository
+import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.PhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.extension.drainErrorCodesTo
@@ -12,9 +12,9 @@ import com.kirakishou.photoexchange.mvp.model.*
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
-import com.kirakishou.photoexchange.ui.adapter.MyPhotosAdapter
-import com.kirakishou.photoexchange.ui.viewstate.AllPhotosActivityViewStateEvent
-import com.kirakishou.photoexchange.ui.viewstate.MyPhotosFragmentViewStateEvent
+import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapter
+import com.kirakishou.photoexchange.ui.viewstate.PhotosActivityViewStateEvent
+import com.kirakishou.photoexchange.ui.viewstate.UploadedPhotosFragmentViewStateEvent
 import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewStateEvent
 import io.reactivex.Completable
 import io.reactivex.Observable
@@ -26,32 +26,32 @@ import timber.log.Timber
 /**
  * Created by kirakishou on 3/11/2018.
  */
-class AllPhotosActivityViewModel(
+class PhotosActivityViewModel(
     private val photosRepository: PhotosRepository,
     private val settingsRepository: SettingsRepository,
-    private val photoAnswerRepository: PhotoAnswerRepository,
+    private val receivedPhotosRepository: ReceivedPhotosRepository,
     private val getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
     private val favouritePhotoUseCase: FavouritePhotoUseCase,
     private val reportPhotoUseCase: ReportPhotoUseCase,
     private val schedulerProvider: SchedulerProvider
 ) : BaseViewModel<AllPhotosActivityView>() {
 
-    private val TAG = "AllPhotosActivityViewModel"
+    private val TAG = "PhotosActivityViewModel"
 
     val onPhotoUploadEventSubject = PublishSubject.create<PhotoUploadEvent>().toSerialized()
-    val onPhotoFindEventSubject = PublishSubject.create<PhotoFindEvent>().toSerialized()
-    val allPhotosActivityViewStateSubject = PublishSubject.create<AllPhotosActivityViewStateEvent>().toSerialized()
-    val myPhotosFragmentViewStateSubject = PublishSubject.create<MyPhotosFragmentViewStateEvent>().toSerialized()
+    val onPhotoFindEventSubject = PublishSubject.create<ReceivePhotosEvent>().toSerialized()
+    val photosActivityViewStateSubject = PublishSubject.create<PhotosActivityViewStateEvent>().toSerialized()
+    val uploadedPhotosFragmentViewStateSubject = PublishSubject.create<UploadedPhotosFragmentViewStateEvent>().toSerialized()
     val receivedPhotosFragmentViewStateSubject = PublishSubject.create<ReceivedPhotosFragmentViewStateEvent>().toSerialized()
     val startPhotoUploadingServiceSubject = PublishSubject.create<Unit>().toSerialized()
-    val startFindPhotoAnswerServiceSubject = PublishSubject.create<Unit>().toSerialized()
-    val myPhotosAdapterButtonClickSubject = PublishSubject.create<MyPhotosAdapter.MyPhotosAdapterButtonClickEvent>().toSerialized()
+    val startPhotoReceivingServiceSubject = PublishSubject.create<Unit>().toSerialized()
+    val uploadedPhotosAdapterButtonClickSubject = PublishSubject.create<UploadedPhotosAdapter.UploadedPhotosAdapterButtonClickEvent>().toSerialized()
     val errorCodesSubject = PublishSubject.create<ErrorCode>().toSerialized()
 
     init {
-        compositeDisposable += myPhotosAdapterButtonClickSubject
+        compositeDisposable += uploadedPhotosAdapterButtonClickSubject
             .flatMap {
-                getView()?.handleMyPhotoFragmentAdapterButtonClicks(it) ?: Observable.just(false)
+                getView()?.handleUploadedPhotosFragmentAdapterButtonClicks(it) ?: Observable.just(false)
             }
             .filter { startUploadingService -> startUploadingService }
             .map { Unit }
@@ -92,7 +92,7 @@ class AllPhotosActivityViewModel(
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
-    fun checkShouldStartFindPhotoAnswersService() {
+    fun checkShouldStartReceivePhotosService() {
         compositeDisposable += Observable.fromCallable { photosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
@@ -100,7 +100,7 @@ class AllPhotosActivityViewModel(
             .filter { count -> count == 0 }
             .map {
                 val uploadedPhotosCount = photosRepository.countAllByStates(arrayOf(PhotoState.PHOTO_UPLOADED, PhotoState.PHOTO_UPLOADED_ANSWER_RECEIVED))
-                val receivedPhotosCount = photoAnswerRepository.countAll()
+                val receivedPhotosCount = receivedPhotosRepository.countAll()
 
                 if (Constants.isDebugBuild) {
                     Timber.tag(TAG).d("uploadedPhotosCount: $uploadedPhotosCount, receivedPhotosCount: $receivedPhotosCount")
@@ -111,7 +111,7 @@ class AllPhotosActivityViewModel(
             .filter { uploadedPhotosMoreThanReceived -> uploadedPhotosMoreThanReceived }
             .map { Unit }
             .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe(startFindPhotoAnswerServiceSubject::onNext)
+            .subscribe(startPhotoReceivingServiceSubject::onNext)
     }
 
     fun checkShouldStartPhotoUploadingService() {
@@ -128,7 +128,7 @@ class AllPhotosActivityViewModel(
                     Timber.tag(TAG).d("checkShouldStartPhotoUploadingService count == 0")
                 }
             }
-            .doOnNext { checkShouldStartFindPhotoAnswersService() }
+            .doOnNext { checkShouldStartReceivePhotosService() }
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
 
@@ -145,7 +145,7 @@ class AllPhotosActivityViewModel(
     }
 
     fun loadPhotoAnswers(): Single<List<PhotoAnswer>> {
-        return Single.fromCallable { photoAnswerRepository.findAll() }
+        return Single.fromCallable { receivedPhotosRepository.findAll() }
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
             .doOnError { Timber.tag(TAG).e(it) }
@@ -180,7 +180,7 @@ class AllPhotosActivityViewModel(
         onPhotoUploadEventSubject.onNext(event)
     }
 
-    fun forwardPhotoFindEvent(event: PhotoFindEvent) {
+    fun forwardPhotoFindEvent(event: ReceivePhotosEvent) {
         onPhotoFindEventSubject.onNext(event)
     }
 

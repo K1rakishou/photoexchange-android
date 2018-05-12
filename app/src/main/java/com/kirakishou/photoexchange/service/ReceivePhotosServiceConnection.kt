@@ -3,16 +3,15 @@ package com.kirakishou.photoexchange.service
 import android.content.ComponentName
 import android.content.ServiceConnection
 import android.os.IBinder
-import com.kirakishou.photoexchange.ui.activity.AllPhotosActivity
-import timber.log.Timber
+import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicBoolean
 
-class FindPhotoAnswerServiceConnection(
-    val activity: AllPhotosActivity
+class ReceivePhotosServiceConnection(
+    val activity: PhotosActivity
 ) : AtomicBoolean(false), ServiceConnection {
 
-    private var findPhotoAnswerService: FindPhotoAnswerService? = null
+    private var receivePhotosService: ReceivePhotosService? = null
 
     override fun onServiceConnected(className: ComponentName, _service: IBinder) {
         onFindingServiceConnected(_service)
@@ -26,23 +25,23 @@ class FindPhotoAnswerServiceConnection(
         return this.get()
     }
 
-    fun startSearchingForPhotoAnswers() {
-        findPhotoAnswerService!!.startSearchingForPhotoAnswers()
+    fun startPhotosReceiving() {
+        receivePhotosService!!.startPhotosReceiving()
     }
 
     private fun onFindingServiceConnected(_service: IBinder) {
         if (this.compareAndSet(false, true)) {
-            findPhotoAnswerService = (_service as FindPhotoAnswerService.FindPhotoAnswerBinder).getService()
-            findPhotoAnswerService!!.attachCallback(WeakReference(activity))
-            startSearchingForPhotoAnswers()
+            receivePhotosService = (_service as ReceivePhotosService.ReceivePhotosBinder).getService()
+            receivePhotosService!!.attachCallback(WeakReference(activity))
+            startPhotosReceiving()
         }
     }
 
     fun onFindingServiceDisconnected() {
         if (this.compareAndSet(true, false)) {
-            findPhotoAnswerService?.let { srvc ->
+            receivePhotosService?.let { srvc ->
                 srvc.detachCallback()
-                findPhotoAnswerService = null
+                receivePhotosService = null
             }
 
             activity.unbindService(this)

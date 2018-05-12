@@ -119,7 +119,7 @@ abstract class BaseActivity : AppCompatActivity() {
     fun showErrorCodeToast(errorCode: ErrorCode) {
         val errorMessage = when (errorCode) {
             is ErrorCode.UploadPhotoErrors.Remote.Ok,
-            is ErrorCode.GetPhotoAnswersErrors.Remote.Ok,
+            is ErrorCode.ReceivePhotosErrors.Remote.Ok,
             is ErrorCode.GetGalleryPhotosErrors.Remote.Ok,
             is ErrorCode.FavouritePhotoErrors.Remote.Ok,
             is ErrorCode.TakePhotoErrors.Ok,
@@ -128,7 +128,7 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.ReportPhotoErrors.Remote.Ok -> null
 
             is ErrorCode.UploadPhotoErrors.Remote.UnknownError,
-            is ErrorCode.GetPhotoAnswersErrors.Remote.UnknownError,
+            is ErrorCode.ReceivePhotosErrors.Remote.UnknownError,
             is ErrorCode.GetGalleryPhotosErrors.Remote.UnknownError,
             is ErrorCode.FavouritePhotoErrors.Remote.UnknownError,
             is ErrorCode.GetUserIdError.Remote.UnknownError,
@@ -136,14 +136,14 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.ReportPhotoErrors.Remote.UnknownError -> "Unknown error"
 
             is ErrorCode.UploadPhotoErrors.Remote.BadRequest,
-            is ErrorCode.GetPhotoAnswersErrors.Remote.BadRequest,
+            is ErrorCode.ReceivePhotosErrors.Remote.BadRequest,
             is ErrorCode.GetGalleryPhotosErrors.Remote.BadRequest,
             is ErrorCode.FavouritePhotoErrors.Remote.BadRequest,
             is ErrorCode.GetGalleryPhotosInfoError.Remote.BadRequest,
             is ErrorCode.ReportPhotoErrors.Remote.BadRequest -> "Bad request error"
 
             is ErrorCode.UploadPhotoErrors.Local.Timeout,
-            is ErrorCode.GetPhotoAnswersErrors.Local.Timeout,
+            is ErrorCode.ReceivePhotosErrors.Local.Timeout,
             is ErrorCode.GetGalleryPhotosErrors.Local.Timeout,
             is ErrorCode.FavouritePhotoErrors.Local.Timeout,
             is ErrorCode.GetUserIdError.Local.Timeout,
@@ -153,10 +153,10 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.UploadPhotoErrors.Remote.DatabaseError,
             is ErrorCode.GetUserIdError.Remote.DatabaseError,
             is ErrorCode.GetUserIdError.Local.DatabaseError,
-            is ErrorCode.GetPhotoAnswersErrors.Remote.DatabaseError -> "Server database error"
+            is ErrorCode.ReceivePhotosErrors.Remote.DatabaseError -> "Server database error"
 
             is ErrorCode.UploadPhotoErrors.Local.BadServerResponse,
-            is ErrorCode.GetPhotoAnswersErrors.Local.BadServerResponse,
+            is ErrorCode.ReceivePhotosErrors.Local.BadServerResponse,
             is ErrorCode.GetGalleryPhotosErrors.Local.BadServerResponse,
             is ErrorCode.ReportPhotoErrors.Local.BadServerResponse,
             is ErrorCode.GetUserIdError.Local.BadServerResponse,
@@ -165,12 +165,12 @@ abstract class BaseActivity : AppCompatActivity() {
 
             is ErrorCode.GetGalleryPhotosErrors.Remote.NoPhotosInRequest,
             is ErrorCode.GetGalleryPhotosInfoError.Remote.NoPhotosInRequest,
-            is ErrorCode.GetPhotoAnswersErrors.Remote.NoPhotosInRequest -> "No photos were selected error"
+            is ErrorCode.ReceivePhotosErrors.Remote.NoPhotosInRequest -> "No photos were selected error"
 
             is ErrorCode.UploadPhotoErrors.Local.NoPhotoFileOnDisk -> "No photo file on disk error"
-            is ErrorCode.GetPhotoAnswersErrors.Remote.TooManyPhotosRequested -> "Too many photos requested error"
-            is ErrorCode.GetPhotoAnswersErrors.Remote.NoPhotosToSendBack -> "No photos to send back"
-            is ErrorCode.GetPhotoAnswersErrors.Remote.NotEnoughPhotosUploaded -> "Upload more photos first"
+            is ErrorCode.ReceivePhotosErrors.Remote.TooManyPhotosRequested -> "Too many photos requested error"
+            is ErrorCode.ReceivePhotosErrors.Remote.NoPhotosToSendBack -> "No photos to send back"
+            is ErrorCode.ReceivePhotosErrors.Remote.NotEnoughPhotosUploaded -> "Upload more photos first"
             is ErrorCode.FavouritePhotoErrors.Remote.AlreadyFavourited -> "You have already added this photo to favourites"
             is ErrorCode.ReportPhotoErrors.Remote.AlreadyReported -> "You have already reported this photo"
             is ErrorCode.UploadPhotoErrors.Local.Interrupted -> "The process was interrupted by user"
