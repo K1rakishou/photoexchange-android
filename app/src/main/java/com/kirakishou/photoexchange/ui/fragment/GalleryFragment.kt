@@ -118,7 +118,7 @@ class GalleryFragment : BaseFragment() {
     private fun initRecyclerView() {
         val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), GALLERY_PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = GalleryPhotosAdapter(requireContext(), imageLoader, columnsCount, adapterButtonClickSubject)
+        adapter = GalleryPhotosAdapter(requireContext(), imageLoader, adapterButtonClickSubject)
         adapter.init()
 
         val layoutManager = GridLayoutManager(requireContext(), columnsCount)

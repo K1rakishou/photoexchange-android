@@ -58,4 +58,12 @@ class UseCaseProviderModule {
                                 apiClient: ApiClient): GetUserIdUseCase {
         return GetUserIdUseCase(settingsRepository, apiClient)
     }
+
+    @Singleton
+    @Provides
+    fun provideGetUploadedPhotosUseCase(uploadedPhotosRepository: UploadedPhotosRepository,
+                                        settingsRepository: SettingsRepository,
+                                        apiClient: ApiClient): GetUploadedPhotosUseCase {
+        return GetUploadedPhotosUseCase(uploadedPhotosRepository, settingsRepository, apiClient)
+    }
 }

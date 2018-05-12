@@ -10,7 +10,7 @@ sealed class PhotoUploadEvent {
     class OnLocationUpdateEnd : PhotoUploadEvent()
     class OnFailedToUpload(val photo: TakenPhoto, val errorCode: ErrorCode.UploadPhotoErrors) : PhotoUploadEvent()
     class OnUnknownError(val error: Throwable) : PhotoUploadEvent()
-    class OnCouldNotGetUserIdFromUserver(val errorCode: ErrorCode.UploadPhotoErrors) : PhotoUploadEvent()
+    class OnCouldNotGetUserIdFromServerError(val errorCode: ErrorCode.UploadPhotoErrors) : PhotoUploadEvent()
     class OnPrepare : PhotoUploadEvent()
     class OnPhotoUploadStart(val photo: TakenPhoto) : PhotoUploadEvent()
     class OnProgress(val photo: TakenPhoto, val progress: Int) : PhotoUploadEvent()

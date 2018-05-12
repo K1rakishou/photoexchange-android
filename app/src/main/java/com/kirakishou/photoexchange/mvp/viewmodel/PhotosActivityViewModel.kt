@@ -8,6 +8,7 @@ import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRep
 import com.kirakishou.photoexchange.helper.extension.drainErrorCodesTo
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
+import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
 import com.kirakishou.photoexchange.mvp.model.*
 import com.kirakishou.photoexchange.mvp.model.other.Constants
@@ -33,6 +34,7 @@ class PhotosActivityViewModel(
     private val settingsRepository: SettingsRepository,
     private val receivedPhotosRepository: ReceivedPhotosRepository,
     private val getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
+    private val getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
     private val favouritePhotoUseCase: FavouritePhotoUseCase,
     private val reportPhotoUseCase: ReportPhotoUseCase,
     private val schedulerProvider: SchedulerProvider
@@ -90,6 +92,14 @@ class PhotosActivityViewModel(
                     .subscribeOn(schedulerProvider.IO())
                     .toObservable()
             }
+            .drainErrorCodesTo(errorCodesSubject)
+            .doOnError { Timber.tag(TAG).e(it) }
+    }
+
+    fun loadNextPageOfUploadedPhotos(lastId: Long, photosPerPage: Int): Observable<List<UploadedPhoto>> {
+        return getUploadedPhotosUseCase.loadPageOfPhotos(lastId, photosPerPage)
+            .subscribeOn(schedulerProvider.IO())
+            .toObservable()
             .drainErrorCodesTo(errorCodesSubject)
             .doOnError { Timber.tag(TAG).e(it) }
     }

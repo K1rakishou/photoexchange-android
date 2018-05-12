@@ -24,7 +24,7 @@ class GetUploadedPhotosUseCase(
 
     private val TAG = "GetUploadedPhotosUseCase"
 
-    fun getUploadedPhotos(lastId: Long, count: Int): Single<Either<ErrorCode, List<UploadedPhoto>>> {
+    fun loadPageOfPhotos(lastId: Long, count: Int): Single<Either<ErrorCode, List<UploadedPhoto>>> {
         return async {
             try {
                 val userId = settingsRepository.getUserId()
@@ -32,7 +32,7 @@ class GetUploadedPhotosUseCase(
                     throw IllegalStateException("userId cannot be empty!")
                 }
 
-                Timber.tag(TAG).d("sending getUploadedPhotos request...")
+                Timber.tag(TAG).d("sending loadPageOfPhotos request...")
 
                 val response = apiClient.getUploadedPhotoIds(userId, lastId, count).await()
                 val errorCode = response.errorCode
@@ -81,12 +81,12 @@ class GetUploadedPhotosUseCase(
         val response = apiClient.getUploadedPhotos(userId, photoIdsToBeRequested).await()
         val errorCode = response.errorCode
 
-        if (errorCode !is ErrorCode.GetGalleryPhotosErrors.Remote.Ok) {
+        if (errorCode !is ErrorCode.GetUploadedPhotosError.Remote.Ok) {
             return Either.Error(errorCode)
         }
 
         if (!uploadedPhotosRepository.saveMany(response.uploadedPhotos)) {
-            return Either.Error(ErrorCode.GetGalleryPhotosErrors.Local.DatabaseError())
+            return Either.Error(ErrorCode.GetUploadedPhotosError.Local.DatabaseError())
         }
 
         return Either.Value(UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhotos(response.uploadedPhotos))

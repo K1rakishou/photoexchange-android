@@ -314,17 +314,6 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
         viewModel.forwardUploadPhotoEvent(event)
 
         when (event) {
-            is PhotoUploadEvent.OnUploaded -> {
-            }
-
-            is PhotoUploadEvent.OnFailedToUpload -> {
-                showUploadPhotoErrorMessage(event.errorCode)
-            }
-
-            is PhotoUploadEvent.OnUnknownError -> {
-                showUnknownErrorMessage(event.error)
-            }
-
             is PhotoUploadEvent.OnEnd -> {
                 if (!ReceivePhotosService.isRunning(this)) {
                     viewModel.checkShouldStartReceivePhotosService()
@@ -452,11 +441,11 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
         }
     }
 
-    private fun showUploadPhotoErrorMessage(errorCode: ErrorCode) {
+    fun showUploadPhotoErrorMessage(errorCode: ErrorCode) {
         showErrorCodeToast(errorCode)
     }
 
-    private fun showUnknownErrorMessage(error: Throwable) {
+    fun showUnknownErrorMessage(error: Throwable) {
         when (error) {
             is CompositeException -> {
                 for (exception in error.exceptions) {

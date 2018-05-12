@@ -21,17 +21,20 @@ abstract class UploadedPhotoDao {
 
     @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
         "WHERE " +
-        "${UploadedPhotoEntity.LON_COLUMN} = 0.0 " +
+        "${UploadedPhotoEntity.LON_COLUMN} != 0.0 " +
         " AND " +
-        "${UploadedPhotoEntity.LAT_COLUMN} = 0.0")
+        "${UploadedPhotoEntity.LAT_COLUMN} != 0.0")
     abstract fun findAllWithReceiverInfo(): List<UploadedPhotoEntity>
 
     @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
         "WHERE " +
-        "${UploadedPhotoEntity.LON_COLUMN} != 0.0 " +
+        "${UploadedPhotoEntity.LON_COLUMN} = 0.0 " +
         " AND " +
-        "${UploadedPhotoEntity.LAT_COLUMN} != 0.0")
+        "${UploadedPhotoEntity.LAT_COLUMN} = 0.0")
     abstract fun findAllWithoutReceiverInfo(): List<UploadedPhotoEntity>
+
+    @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME}")
+    abstract fun findAll(): List<UploadedPhotoEntity>
 
     @Query("SELECT COUNT(*) FROM ${UploadedPhotoEntity.TABLE_NAME}")
     abstract fun count(): Long

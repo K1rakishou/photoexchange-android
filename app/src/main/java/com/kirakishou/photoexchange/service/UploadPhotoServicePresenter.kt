@@ -37,37 +37,48 @@ class UploadPhotoServicePresenter(
         compositeDisposable += uploadPhotosSubject
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
-            .flatMap { getCurrentLocation() }
-            .flatMap { location -> getUserId().zipWith(Observable.just(location)) }
-            .map { (userIdResult, location) ->
-                if (userIdResult is Either.Error) {
-                    callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnCouldNotGetUserIdFromUserver(userIdResult.error as ErrorCode.UploadPhotoErrors))
-                    throw StopUploadingException()
-                }
+            .flatMap {
+                return@flatMap getCurrentLocation()
+                    .flatMap { location -> getUserId().zipWith(Observable.just(location)) }
+                    .flatMap { (userIdResult, location) ->
+                        if (userIdResult is Either.Error) {
+                            callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnCouldNotGetUserIdFromServerError(userIdResult.error as ErrorCode.UploadPhotoErrors))
+                            return@flatMap Observable.error<Pair<String, LonLat>>(CouldNotGetUserIdFromServerException())
+                        }
 
-                return@map Pair((userIdResult as Either.Value).value, location)
-            }
-            .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnPrepare()) }
-            .concatMap { (userId, location) ->
-                Timber.tag(TAG).d("Upload data")
+                        return@flatMap Observable.just(Pair((userIdResult as Either.Value).value, location))
+                    }
+                    .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnPrepare()) }
+                    .concatMap { (userId, location) ->
+                        Timber.tag(TAG).d("Upload data")
 
-                return@concatMap uploadPhotosUseCase.uploadPhotos(userId, location, callbacks)
-                    .toObservable()
-            }
-            .doOnNext { allUploaded ->
-                Timber.tag(TAG).d("onUploadingEvent(PhotoUploadEvent.OnEnd($allUploaded))")
-                callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnEnd(allUploaded))
-            }
-            .doOnError { error ->
-                Timber.tag(TAG).d("onUploadingEvent(PhotoUploadEvent.OnEnd())")
+                        return@concatMap uploadPhotosUseCase.uploadPhotos(userId, location, callbacks)
+                            .toObservable()
+                    }
+                    .doOnNext { allUploaded ->
+                        Timber.tag(TAG).d("onUploadingEvent(PhotoUploadEvent.OnEnd($allUploaded))")
+                        callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnEnd(allUploaded))
+                    }
+                    .doOnEach {
+                        Timber.tag(TAG).d("stopService")
+                        callbacks.get()?.stopService()
+                    }
+                    .doOnError { error ->
+                        Timber.tag(TAG).d("onUploadingEvent(PhotoUploadEvent.OnEnd())")
 
-                markAllPhotosAsFailed()
-                callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnUnknownError(error))
-                callbacks.get()?.onError(error)
-            }
-            .doOnEach {
-                Timber.tag(TAG).d("stopService")
-                callbacks.get()?.stopService()
+                        markAllPhotosAsFailed()
+
+                        when (error) {
+                            is CouldNotGetUserIdFromServerException -> {
+                            }
+
+                            else -> callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnUnknownError(error))
+                        }
+
+                        callbacks.get()?.onError(error)
+                    }
+                    .map { Unit }
+                    .onErrorReturnItem(Unit)
             }
             .subscribe()
     }
@@ -122,5 +133,5 @@ class UploadPhotoServicePresenter(
         uploadPhotosSubject.onNext(Unit)
     }
 
-    class StopUploadingException() : Exception()
+    class CouldNotGetUserIdFromServerException() : Exception()
 }
