@@ -49,7 +49,7 @@ class UploadedPhotosFragment : BaseFragment() {
 
     private val TAG = "UploadedPhotosFragment"
     private val PHOTO_ADAPTER_VIEW_WIDTH = 288
-    private val EVENT_FORWARDING_DELAY = 50L
+    private val EVENT_FORWARDING_DELAY = 150L
     private val adapterButtonsClickSubject = PublishSubject.create<UploadedPhotosAdapter.UploadedPhotosAdapterButtonClickEvent>().toSerialized()
     private var viewState = UploadedPhotosFragmentViewState()
     private val loadMoreSubject = PublishSubject.create<Int>()
