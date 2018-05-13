@@ -11,8 +11,8 @@ object UploadedPhotosMapper {
         object ToEntity {
             fun toUploadedPhotoEntity(uploadedPhotoData: GetUploadedPhotosResponse.UploadedPhotoData): UploadedPhotoEntity {
                 return UploadedPhotoEntity.create(
-                    uploadedPhotoData.photoId,
                     uploadedPhotoData.photoName,
+                    uploadedPhotoData.photoId,
                     uploadedPhotoData.receiverLon,
                     uploadedPhotoData.receiverLat
                 )
@@ -58,8 +58,8 @@ object UploadedPhotosMapper {
         object ToEntity {
             fun toUploadedPhotoEntity(takenPhoto: TakenPhoto): UploadedPhotoEntity {
                 return UploadedPhotoEntity.create(
-                    takenPhoto.id,
-                    takenPhoto.photoName!!
+                    takenPhoto.photoName!!,
+                    takenPhoto.id
                 )
             }
         }

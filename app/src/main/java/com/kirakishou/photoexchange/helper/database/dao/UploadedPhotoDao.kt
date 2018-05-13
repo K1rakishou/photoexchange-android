@@ -24,6 +24,10 @@ abstract class UploadedPhotoDao {
     abstract fun findManyByPhotoName(photoNames: List<String>): List<UploadedPhotoEntity>
 
     @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
+        "WHERE ${UploadedPhotoEntity.PHOTO_ID_COLUMN} IN (:photoIds)")
+    abstract fun findManyByRemotePhotoId(photoIds: List<Long>): List<UploadedPhotoEntity>
+
+    @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
         "WHERE " +
         "${UploadedPhotoEntity.LON_COLUMN} != 0.0 " +
         " AND " +
