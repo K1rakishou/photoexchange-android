@@ -4,6 +4,7 @@ import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerPro
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.mvp.view.SettingsActivityView
 import io.reactivex.Completable
+import io.reactivex.Single
 import timber.log.Timber
 
 class SettingsActivityViewModel(
@@ -20,4 +21,8 @@ class SettingsActivityViewModel(
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
+    fun getUserId(): Single<String> {
+        return Single.fromCallable { settingsRepository.getUserId() }
+            .subscribeOn(schedulerProvider.IO())
+    }
 }

@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.ui.activity
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.widget.AppCompatButton
+import android.widget.TextView
 import android.widget.Toast
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
@@ -19,6 +20,9 @@ class SettingsActivity : BaseActivity() {
 
     @BindView(R.id.reset_make_public_photo_option_button)
     lateinit var resetButton: AppCompatButton
+
+    @BindView(R.id.user_id_text_view)
+    lateinit var userIdTextView: TextView
 
     @Inject
     lateinit var viewModel: SettingsActivityViewModel
@@ -39,6 +43,15 @@ class SettingsActivity : BaseActivity() {
                 .doOnError { Timber.tag(TAG).e(it) }
                 .subscribe()
         }
+
+        compositeDisposable += viewModel.getUserId()
+            .subscribe({ userId ->
+                if (userId.isEmpty()) {
+                    userIdTextView.text = "Empty userId"
+                } else {
+                    userIdTextView.text = userId
+                }
+            })
     }
 
     override fun onActivityStart() {
