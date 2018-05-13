@@ -18,20 +18,14 @@ import timber.log.Timber
 
 class GetUploadedPhotosUseCase(
     private val uploadedPhotosRepository: UploadedPhotosRepository,
-    private val settingsRepository: SettingsRepository,
     private val apiClient: ApiClient
 ) {
 
     private val TAG = "GetUploadedPhotosUseCase"
 
-    fun loadPageOfPhotos(lastId: Long, count: Int): Single<Either<ErrorCode, List<UploadedPhoto>>> {
+    fun loadPageOfPhotos(userId: String, lastId: Long, count: Int): Single<Either<ErrorCode, List<UploadedPhoto>>> {
         return async {
             try {
-                val userId = settingsRepository.getUserId()
-                if (userId.isEmpty()) {
-                    throw IllegalStateException("userId cannot be empty!")
-                }
-
                 Timber.tag(TAG).d("sending loadPageOfPhotos request...")
 
                 val response = apiClient.getUploadedPhotoIds(userId, lastId, count).await()
@@ -49,6 +43,7 @@ class GetUploadedPhotosUseCase(
 
                 val uploadedPhotosFromDb = uploadedPhotosRepository.findMany(uploadedPhotoIds)
                 val photoIdsToGetFromServer = Utils.filterListAlreadyContaning(uploadedPhotoIds, uploadedPhotosFromDb.map { it.photoId })
+                photosResultList += uploadedPhotosFromDb
 
                 Timber.tag(TAG).d("Fresh photos' ids = $uploadedPhotoIds")
                 Timber.tag(TAG).d("Cached gallery photo ids = ${uploadedPhotosFromDb.map { it.photoId }}")
@@ -66,7 +61,7 @@ class GetUploadedPhotosUseCase(
                     photosResultList += result.value
                 }
 
-                photosResultList.sortByDescending { it.photoId }
+                photosResultList.sortBy { it.photoId }
                 return@async Either.Value(photosResultList)
 
             } catch (error: Throwable) {

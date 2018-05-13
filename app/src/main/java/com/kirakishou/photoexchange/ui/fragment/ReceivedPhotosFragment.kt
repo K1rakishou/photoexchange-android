@@ -7,9 +7,11 @@ import android.support.v7.widget.RecyclerView
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
+import com.kirakishou.photoexchange.helper.extension.filterErrorCodes
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.ReceivePhotosEvent
+import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapter
@@ -45,7 +47,17 @@ class ReceivedPhotosFragment : BaseFragment() {
         loadPhotos()
     }
 
+    override fun onFragmentViewDestroy() {
+    }
+
     private fun initRx() {
+        compositeDisposable += viewModel.errorCodesSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .filterErrorCodes(ReceivedPhotosFragment::class.java)
+            .filter { isVisible }
+            .doOnNext { handleError(it) }
+            .subscribe()
+
         compositeDisposable += viewModel.onPhotoFindEventSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(AndroidSchedulers.mainThread())
@@ -129,7 +141,8 @@ class ReceivedPhotosFragment : BaseFragment() {
         }
     }
 
-    override fun onFragmentViewDestroy() {
+    private fun handleError(errorCode: ErrorCode) {
+        (requireActivity() as PhotosActivity).showErrorCodeToast(errorCode)
     }
 
     override fun resolveDaggerDependency() {

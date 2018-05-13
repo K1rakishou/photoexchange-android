@@ -185,7 +185,7 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.UploadPhotoErrors.Local.DatabaseError -> "Could not save user id in the database"
             is ErrorCode.GetGalleryPhotosInfoError.Local.DatabaseError -> "Could not save gallery photo info in the database"
 
-            //TODO: rewrite all this class
+            //TODO: rewrite this class
             is ErrorCode.GetUploadedPhotoIdsError.Remote.UnknownError,
             is ErrorCode.GetUploadedPhotoIdsError.Remote.Ok,
             is ErrorCode.GetUploadedPhotoIdsError.Remote.DatabaseError,
@@ -199,6 +199,7 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.GetUploadedPhotosError.Remote.BadRequest,
             is ErrorCode.GetUploadedPhotosError.Local.BadServerResponse,
             is ErrorCode.GetUploadedPhotosError.Local.Timeout,
+            is ErrorCode.GetUploadedPhotosError.Local.UserIdIsEmpty,
             is ErrorCode.GetUploadedPhotosError.Local.DatabaseError -> "REWRITE ME"
         }
 

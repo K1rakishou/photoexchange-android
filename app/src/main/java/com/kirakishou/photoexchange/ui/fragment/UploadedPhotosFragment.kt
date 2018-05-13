@@ -7,6 +7,7 @@ import android.widget.Toast
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
+import com.kirakishou.photoexchange.helper.extension.filterErrorCodes
 import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
@@ -14,6 +15,7 @@ import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
+import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapter
@@ -21,6 +23,7 @@ import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapterSpanSizeLook
 import com.kirakishou.photoexchange.ui.viewstate.UploadedPhotosFragmentViewState
 import com.kirakishou.photoexchange.ui.viewstate.UploadedPhotosFragmentViewStateEvent
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
@@ -46,7 +49,6 @@ class UploadedPhotosFragment : BaseFragment() {
 
     private val TAG = "UploadedPhotosFragment"
     private val PHOTO_ADAPTER_VIEW_WIDTH = 288
-    private val ADAPTER_LOAD_MORE_ITEMS_DELAY_MS = 1.seconds()
     private val adapterButtonsClickSubject = PublishSubject.create<UploadedPhotosAdapter.UploadedPhotosAdapterButtonClickEvent>().toSerialized()
     private var viewState = UploadedPhotosFragmentViewState()
     private val loadMoreSubject = PublishSubject.create<Int>()
@@ -95,6 +97,13 @@ class UploadedPhotosFragment : BaseFragment() {
     }
 
     private fun initRx() {
+        compositeDisposable += viewModel.errorCodesSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .filterErrorCodes(UploadedPhotosFragment::class.java)
+            .filter { isVisible }
+            .doOnNext { handleError(it) }
+            .subscribe()
+
         compositeDisposable += viewModel.onPhotoUploadEventSubject
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { event -> onUploadingEvent(event) }
@@ -115,12 +124,9 @@ class UploadedPhotosFragment : BaseFragment() {
 
         compositeDisposable += loadMoreSubject
             .subscribeOn(AndroidSchedulers.mainThread())
-            .doOnNext { addProgressFooter() }
             .observeOn(Schedulers.io())
             .concatMap { viewModel.loadNextPageOfUploadedPhotos(lastId, photosPerPage) }
-            .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
             .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { removeProgressFooter() }
             .doOnNext { photos -> addUploadedPhotosToAdapter(photos) }
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
@@ -132,9 +138,8 @@ class UploadedPhotosFragment : BaseFragment() {
             .doOnSuccess { photos -> addTakenPhotosToAdapter(photos) }
             .toObservable()
             .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { addProgressFooter() }
             .observeOn(Schedulers.io())
-            .flatMap { viewModel.loadNextPageOfUploadedPhotos(lastId, photosPerPage) }
+            .concatMap { viewModel.loadNextPageOfUploadedPhotos(lastId, photosPerPage) }
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { photos -> addUploadedPhotosToAdapter(photos) }
             .doOnError { Timber.tag(TAG).e(it) }
@@ -159,6 +164,12 @@ class UploadedPhotosFragment : BaseFragment() {
                 }
                 is UploadedPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification -> {
                     adapter.hideObtainCurrentLocationNotification()
+                }
+                is UploadedPhotosFragmentViewStateEvent.ShowProgressFooter -> {
+                    addProgressFooter()
+                }
+                is UploadedPhotosFragmentViewStateEvent.HideProgressFooter -> {
+                    removeProgressFooter()
                 }
                 is UploadedPhotosFragmentViewStateEvent.RemovePhoto -> {
                     adapter.removePhotoById(viewStateEvent.photo.id)
@@ -204,7 +215,7 @@ class UploadedPhotosFragment : BaseFragment() {
                     (requireActivity() as PhotosActivity).showUploadPhotoErrorMessage(event.errorCode)
                 }
                 is PhotoUploadEvent.OnFoundPhotoAnswer -> {
-                    adapter.updateUploadedPhotoSetReceiverInfo(event.photo)
+                    adapter.updateUploadedPhotoSetReceiverInfo(event.photo, event.takenPhotoId)
                 }
                 is PhotoUploadEvent.OnEnd -> {
                 }
@@ -222,7 +233,7 @@ class UploadedPhotosFragment : BaseFragment() {
         when (event) {
             is PhotoUploadEvent.OnCouldNotGetUserIdFromServerError -> {
                 Timber.tag(TAG).e("Could not get user id from the server")
-                (requireActivity() as PhotosActivity).onShowToast("Could not get user id from the server")
+                showToast("Could not get user id from the server")
             }
             is PhotoUploadEvent.OnUnknownError -> {
                 (requireActivity() as PhotosActivity).showUnknownErrorMessage(event.error)
@@ -238,12 +249,15 @@ class UploadedPhotosFragment : BaseFragment() {
             return
         }
 
-        endlessScrollListener.pageLoaded()
-
         photosList.post {
+            endlessScrollListener.pageLoaded()
+
             if (uploadedPhotos.isNotEmpty()) {
+                lastId = uploadedPhotos.last().photoId
                 adapter.addUploadedPhotos(uploadedPhotos)
-            } else {
+            }
+
+            if (uploadedPhotos.size < photosPerPage) {
                 endlessScrollListener.reachedEnd()
             }
         }
@@ -274,6 +288,16 @@ class UploadedPhotosFragment : BaseFragment() {
         photosList.post {
             adapter.hideProgressFooter()
         }
+    }
+
+    private fun handleError(errorCode: ErrorCode) {
+        when (errorCode) {
+            is ErrorCode.GetUploadedPhotosError.Local.UserIdIsEmpty -> {
+                removeProgressFooter()
+            }
+        }
+
+        (requireActivity() as PhotosActivity).showErrorCodeToast(errorCode)
     }
 
     private fun showToast(message: String, duration: Int = Toast.LENGTH_LONG) {

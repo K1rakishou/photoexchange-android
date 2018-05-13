@@ -8,6 +8,7 @@ import android.widget.Toast
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
+import com.kirakishou.photoexchange.helper.extension.filterErrorCodes
 import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
@@ -41,7 +42,6 @@ class GalleryFragment : BaseFragment() {
 
     private val TAG = "GalleryFragment"
     private val GALLERY_PHOTO_ADAPTER_VIEW_WIDTH = 288
-    private val ADAPTER_LOAD_MORE_ITEMS_DELAY_MS = 1.seconds()
     private val loadMoreSubject = PublishSubject.create<Int>()
     private val adapterButtonClickSubject = PublishSubject.create<GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent>()
     private var photosPerPage = 0
@@ -69,7 +69,6 @@ class GalleryFragment : BaseFragment() {
             .doOnNext { addProgressFooter() }
             .observeOn(Schedulers.io())
             .flatMap { viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage) }
-            .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { removeProgressFooter() }
             .doOnNext { photos -> addPhotoToAdapter(photos) }
@@ -80,8 +79,9 @@ class GalleryFragment : BaseFragment() {
     private fun initRx() {
         compositeDisposable += viewModel.errorCodesSubject
             .subscribeOn(AndroidSchedulers.mainThread())
+            .filterErrorCodes(GalleryFragment::class.java)
+            .filter { isVisible }
             .doOnNext { handleError(it) }
-            .doOnNext { (requireActivity() as PhotosActivity).showErrorCodeToast(it) }
             .subscribe()
 
         compositeDisposable += loadMoreSubject
@@ -89,7 +89,6 @@ class GalleryFragment : BaseFragment() {
             .doOnNext { addProgressFooter() }
             .observeOn(Schedulers.io())
             .concatMap { viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage) }
-            .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { removeProgressFooter() }
             .doOnNext { photos -> addPhotoToAdapter(photos) }
@@ -173,13 +172,12 @@ class GalleryFragment : BaseFragment() {
 
             if (photos.isNotEmpty()) {
                 lastId = photos.last().galleryPhotoId
+                adapter.addAll(photos)
             }
 
             if (photos.size < photosPerPage) {
                 endlessScrollListener.reachedEnd()
             }
-
-            adapter.addAll(photos)
         }
     }
 
@@ -187,6 +185,8 @@ class GalleryFragment : BaseFragment() {
         galleryPhotosList.post {
             adapter.removeProgressFooter()
         }
+
+        (requireActivity() as PhotosActivity).showErrorCodeToast(errorCode)
     }
 
     override fun resolveDaggerDependency() {

@@ -36,8 +36,8 @@ class UploadedPhotoEntity(
             return UploadedPhotoEntity()
         }
 
-        fun create(photoId: Long, photoName: String): UploadedPhotoEntity {
-            return UploadedPhotoEntity(photoId, photoName, 0.0, 0.0, TimeUtils.getTimeFast())
+        fun create(photoId: Long, photoName: String, lon: Double = 0.0, lat: Double = 0.0): UploadedPhotoEntity {
+            return UploadedPhotoEntity(photoId, photoName, lon, lat, TimeUtils.getTimeFast())
         }
 
         const val TABLE_NAME = "UPLOADED_PHOTO"

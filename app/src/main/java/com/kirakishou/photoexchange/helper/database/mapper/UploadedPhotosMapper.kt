@@ -12,7 +12,9 @@ object UploadedPhotosMapper {
             fun toUploadedPhotoEntity(uploadedPhotoData: GetUploadedPhotosResponse.UploadedPhotoData): UploadedPhotoEntity {
                 return UploadedPhotoEntity.create(
                     uploadedPhotoData.photoId,
-                    uploadedPhotoData.photoName
+                    uploadedPhotoData.photoName,
+                    uploadedPhotoData.receiverLon,
+                    uploadedPhotoData.receiverLat
                 )
             }
 
@@ -25,7 +27,8 @@ object UploadedPhotosMapper {
             fun toUploadedPhoto(uploadedPhotoData: GetUploadedPhotosResponse.UploadedPhotoData): UploadedPhoto {
                 return UploadedPhoto(
                     uploadedPhotoData.photoId,
-                    uploadedPhotoData.photoName
+                    uploadedPhotoData.photoName,
+                    UploadedPhoto.ReceiverInfo(uploadedPhotoData.receiverLon, uploadedPhotoData.receiverLat)
                 )
             }
 
@@ -40,7 +43,8 @@ object UploadedPhotosMapper {
             fun toUploadedPhoto(uploadedPhotoEntity: UploadedPhotoEntity): UploadedPhoto {
                 return UploadedPhoto(
                     uploadedPhotoEntity.photoId!!,
-                    uploadedPhotoEntity.photoName!!
+                    uploadedPhotoEntity.photoName!!,
+                    UploadedPhoto.ReceiverInfo(uploadedPhotoEntity.lon, uploadedPhotoEntity.lat)
                 )
             }
 

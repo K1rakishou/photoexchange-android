@@ -17,10 +17,17 @@ fun <T> Observable<T>.debounceClicks(): Observable<T> {
         .observeOn(AndroidSchedulers.mainThread())
 }
 
-inline fun <E, V, reified R : Either.Value<V>> Observable<Either<E, V>>.drainErrorCodesTo(observer: Observer<E>): Observable<V> {
+fun <T> Observable<Pair<Class<*>, T>>.filterErrorCodes(clazz: Class<*>): Observable<T> {
+    return this
+        .filter { it.first == clazz }
+        .map { it.second }
+}
+
+inline fun <E, V, reified R : Either.Value<V>> Observable<Either<E, V>>.drainErrorCodesTo(clazz: Class<*>, observer: Observer<Pair<Class<*>, E>>): Observable<V> {
     return this.map { useCaseResult ->
         if (useCaseResult !is R) {
-            observer.onNext((useCaseResult as Either.Error).error)
+            val error = Pair(clazz, (useCaseResult as Either.Error).error)
+            observer.onNext(error)
         }
 
         return@map useCaseResult

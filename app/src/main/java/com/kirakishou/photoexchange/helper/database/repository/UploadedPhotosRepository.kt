@@ -13,12 +13,31 @@ open class UploadedPhotosRepository(
     private val uploadedPhotoDao = database.uploadedPhotoDao()
 
     fun saveMany(uploadedPhotoDataList: List<GetUploadedPhotosResponse.UploadedPhotoData>): Boolean {
+        val photoNames = uploadedPhotoDataList.map { it.photoName }
+        val alreadyCachedMap = findManyByPhotoName(photoNames)
+            .groupBy { it.photoName }
+
         val entities = UploadedPhotosMapper.FromResponse.ToEntity.toUploadedPhotoEntities(uploadedPhotoDataList)
+
+        for (entity in entities) {
+            if (alreadyCachedMap.containsKey(entity.photoName!!)) {
+                val uploadedPhoto = alreadyCachedMap[entity.photoName!!]!!
+                    .firstOrNull { it.photoName == entity.photoName!! }
+                if (uploadedPhoto != null) {
+                    entity.photoId = uploadedPhoto.photoId
+                }
+            }
+        }
+
         return uploadedPhotoDao.saveMany(entities).size == uploadedPhotoDataList.size
     }
 
     fun findMany(uploadedPhotoIds: List<Long>): List<UploadedPhoto> {
         return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.findMany(uploadedPhotoIds))
+    }
+
+    fun findManyByPhotoName(photoNames: List<String>): List<UploadedPhoto> {
+        return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.findManyByPhotoName(photoNames))
     }
 
     fun save(photo: TakenPhoto): Boolean {
@@ -30,6 +49,10 @@ open class UploadedPhotosRepository(
         return uploadedPhotoDao.count().toInt()
     }
 
+    fun findAll(): List<UploadedPhoto> {
+        return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.findAll())
+    }
+
     fun findAll(withReceivedInfo: Boolean): List<UploadedPhoto> {
         val entities = if (withReceivedInfo) {
             uploadedPhotoDao.findAllWithReceiverInfo()
@@ -38,5 +61,13 @@ open class UploadedPhotosRepository(
         }
 
         return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(entities)
+    }
+
+    fun findByPhotoIdByName(uploadedPhotoName: String): Long {
+        return uploadedPhotoDao.findByPhotoIdByName(uploadedPhotoName)
+    }
+
+    fun updateReceiverInfo(uploadedPhotoName: String, lon: Double, lat: Double): Boolean {
+        return uploadedPhotoDao.updateReceiverInfo(uploadedPhotoName, lon, lat) == 1
     }
 }

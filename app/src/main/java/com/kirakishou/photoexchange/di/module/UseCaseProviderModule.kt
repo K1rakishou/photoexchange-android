@@ -26,8 +26,10 @@ class UseCaseProviderModule {
                                        takenPhotosRepository: TakenPhotosRepository,
                                        settingsRepository: SettingsRepository,
                                        receivedPhotosRepository: ReceivedPhotosRepository,
+                                       uploadedPhotosRepository: UploadedPhotosRepository,
                                        apiClient: ApiClient): ReceivePhotosUseCase {
-        return ReceivePhotosUseCase(database, takenPhotosRepository, settingsRepository, receivedPhotosRepository, apiClient)
+        return ReceivePhotosUseCase(database, takenPhotosRepository, settingsRepository,
+            receivedPhotosRepository, uploadedPhotosRepository, apiClient)
     }
 
     @Singleton
@@ -62,8 +64,7 @@ class UseCaseProviderModule {
     @Singleton
     @Provides
     fun provideGetUploadedPhotosUseCase(uploadedPhotosRepository: UploadedPhotosRepository,
-                                        settingsRepository: SettingsRepository,
                                         apiClient: ApiClient): GetUploadedPhotosUseCase {
-        return GetUploadedPhotosUseCase(uploadedPhotosRepository, settingsRepository, apiClient)
+        return GetUploadedPhotosUseCase(uploadedPhotosRepository, apiClient)
     }
 }

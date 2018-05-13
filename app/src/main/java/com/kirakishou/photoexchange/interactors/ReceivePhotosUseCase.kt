@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.mvp.model.FindPhotosData
 import com.kirakishou.photoexchange.mvp.model.net.response.ReceivedPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
@@ -20,6 +21,7 @@ class ReceivePhotosUseCase(
     private val takenPhotosRepository: TakenPhotosRepository,
     private val settingsRepository: SettingsRepository,
     private val receivedPhotosRepository: ReceivedPhotosRepository,
+    private val uploadedPhotosRepository: UploadedPhotosRepository,
     private val apiClient: ApiClient
 ) {
 
@@ -60,14 +62,19 @@ class ReceivePhotosUseCase(
                     return@transactional false
                 }
 
+                if (!uploadedPhotosRepository.updateReceiverInfo(photoAnswerResponse.uploadedPhotoName, photoAnswerResponse.lon, photoAnswerResponse.lat)) {
+                    Timber.tag(TAG).w("Could not update receiver name for photo ${photoAnswerResponse.uploadedPhotoName}")
+                    return@transactional false
+                }
+
                 return@transactional takenPhotosRepository.deletePhotoByName(photoAnswerResponse.uploadedPhotoName)
             }
 
             val photoAnswer = ReceivedPhotosMapper.toPhotoAnswer(insertedPhotoAnswerId, photoAnswerResponse)
 
             if (result) {
-                val photoId = takenPhotosRepository.findByPhotoIdByName(photoAnswer.uploadedPhotoName)
-                callbacks.get()?.onPhotoReceived(photoAnswer, photoId)
+                val takenPhotoId = uploadedPhotosRepository.findByPhotoIdByName(photoAnswer.uploadedPhotoName)
+                callbacks.get()?.onPhotoReceived(photoAnswer, takenPhotoId)
             }
         }
     }

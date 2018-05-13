@@ -147,6 +147,7 @@ sealed class ErrorCode(val value: Int) {
             class BadServerResponse(val message: String? = null) : Local(-1000)
             class Timeout : Local(-1001)
             class DatabaseError : Local(-1002)
+            class UserIdIsEmpty : Local(-1003)
         }
     }
 
