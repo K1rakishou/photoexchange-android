@@ -8,7 +8,6 @@ import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.extension.filterErrorCodes
-import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
@@ -23,13 +22,11 @@ import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapterSpanSizeLook
 import com.kirakishou.photoexchange.ui.viewstate.UploadedPhotosFragmentViewState
 import com.kirakishou.photoexchange.ui.viewstate.UploadedPhotosFragmentViewStateEvent
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
-import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 
@@ -292,7 +289,7 @@ class UploadedPhotosFragment : BaseFragment() {
 
     private fun handleError(errorCode: ErrorCode) {
         when (errorCode) {
-            is ErrorCode.GetUploadedPhotosError.Local.UserIdIsEmpty -> {
+            is ErrorCode.GetUploadedPhotosErrors.LocalUserIdIsEmpty -> {
                 removeProgressFooter()
             }
         }

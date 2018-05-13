@@ -36,7 +36,7 @@ class GetGalleryPhotosUseCase(
                 val getGalleryPhotoIdsResponse = apiClient.getGalleryPhotoIds(lastId, photosPerPage).await()
                 val getGalleryPhotoIdsErrorCode = getGalleryPhotoIdsResponse.errorCode
 
-                if (getGalleryPhotoIdsErrorCode !is ErrorCode.GetGalleryPhotosErrors.Remote.Ok) {
+                if (getGalleryPhotoIdsErrorCode !is ErrorCode.GalleryPhotosErrors.Ok) {
                     return@async Either.Error(getGalleryPhotoIdsErrorCode)
                 }
 
@@ -102,7 +102,7 @@ class GetGalleryPhotosUseCase(
                 return@async Either.Value(photosResultList)
             } catch (error: Throwable) {
                 Timber.tag(TAG).e(error)
-                return@async Either.Error(ErrorCode.GetGalleryPhotosErrors.Remote.UnknownError())
+                return@async Either.Error(ErrorCode.GalleryPhotosErrors.UnknownError())
             }
         }.asSingle(CommonPool)
     }
@@ -127,12 +127,12 @@ class GetGalleryPhotosUseCase(
         val response = apiClient.getGalleryPhotoInfo(userId, photoIdsToBeRequested).await()
         val errorCode = response.errorCode
 
-        if (errorCode !is ErrorCode.GetGalleryPhotosInfoError.Remote.Ok) {
+        if (errorCode !is ErrorCode.GalleryPhotosErrors.Ok) {
             return Either.Error(errorCode)
         }
 
         if (!galleryPhotoRepository.saveManyInfo(response.galleryPhotosInfo)) {
-            return Either.Error(ErrorCode.GetGalleryPhotosInfoError.Local.DatabaseError())
+            return Either.Error(ErrorCode.GalleryPhotosErrors.LocalDatabaseError())
         }
 
         return Either.Value(GalleryPhotosInfoMapper.FromResponse.ToObject.toGalleryPhotoInfoList(response.galleryPhotosInfo))
@@ -144,12 +144,12 @@ class GetGalleryPhotosUseCase(
         val response = apiClient.getGalleryPhotos(photoIdsToBeRequested).await()
         val errorCode = response.errorCode
 
-        if (errorCode !is ErrorCode.GetGalleryPhotosErrors.Remote.Ok) {
+        if (errorCode !is ErrorCode.GalleryPhotosErrors.Ok) {
             return Either.Error(errorCode)
         }
 
         if (!galleryPhotoRepository.saveMany(response.galleryPhotos)) {
-            return Either.Error(ErrorCode.GetGalleryPhotosErrors.Local.DatabaseError())
+            return Either.Error(ErrorCode.GalleryPhotosErrors.LocalDatabaseError())
         }
 
         return Either.Value(GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(response.galleryPhotos))

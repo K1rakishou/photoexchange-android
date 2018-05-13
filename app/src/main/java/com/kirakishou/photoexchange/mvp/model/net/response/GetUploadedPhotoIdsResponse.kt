@@ -12,11 +12,11 @@ private constructor(
     val uploadedPhotoIds: List<Long>,
 
     errorCode: ErrorCode
-) : StatusResponse(errorCode.value, errorCode) {
+) : StatusResponse(errorCode.getValue(), errorCode) {
 
     companion object {
         fun success(uploadedPhotoIds: List<Long>): GetUploadedPhotoIdsResponse {
-            return GetUploadedPhotoIdsResponse(uploadedPhotoIds, ErrorCode.GetUploadedPhotoIdsError.Remote.Ok())
+            return GetUploadedPhotoIdsResponse(uploadedPhotoIds, ErrorCode.GetUploadedPhotosErrors.Ok())
         }
 
         fun fail(errorCode: ErrorCode): GetUploadedPhotoIdsResponse {

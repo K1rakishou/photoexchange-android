@@ -15,15 +15,15 @@ private constructor(
     @SerializedName("count")
     val favouritesCount: Long,
 
-    errorCode: ErrorCode.FavouritePhotoErrors
-) : StatusResponse(errorCode.value, errorCode) {
+    errorCode: ErrorCode
+) : StatusResponse(errorCode.getValue(), errorCode) {
 
     companion object {
         fun success(isFavourited: Boolean, count: Long): FavouritePhotoResponse {
-            return FavouritePhotoResponse(isFavourited, count, ErrorCode.FavouritePhotoErrors.Remote.Ok())
+            return FavouritePhotoResponse(isFavourited, count, ErrorCode.FavouritePhotoErrors.Ok())
         }
 
-        fun error(errorCode: ErrorCode.FavouritePhotoErrors): FavouritePhotoResponse {
+        fun error(errorCode: ErrorCode): FavouritePhotoResponse {
             return FavouritePhotoResponse(false, 0, errorCode)
         }
     }

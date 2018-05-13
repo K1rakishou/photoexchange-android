@@ -38,8 +38,8 @@ class ReceivePhotosUseCase(
                 Timber.tag(TAG).d("Got response, errorCode = $errorCode")
 
                 when (errorCode) {
-                    is ErrorCode.ReceivePhotosErrors.Remote.Ok -> handleSuccessResult(response, callbacks)
-                    is ErrorCode.ReceivePhotosErrors.Remote.NoPhotosToSendBack -> callbacks.get()?.stopService()
+                    is ErrorCode.ReceivePhotosErrors.Ok -> handleSuccessResult(response, callbacks)
+                    is ErrorCode.ReceivePhotosErrors.NoPhotosToSendBack -> callbacks.get()?.stopService()
                     else -> callbacks.get()?.onFailed(errorCode)
                 }
 

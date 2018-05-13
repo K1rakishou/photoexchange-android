@@ -11,15 +11,15 @@ private constructor(
     @SerializedName("is_reported")
     val isReported: Boolean,
 
-    errorCode: ErrorCode.ReportPhotoErrors
-) : StatusResponse(errorCode.value, errorCode) {
+    errorCode: ErrorCode
+) : StatusResponse(errorCode.getValue(), errorCode) {
 
     companion object {
         fun success(isReported: Boolean): ReportPhotoResponse {
-            return ReportPhotoResponse(isReported, ErrorCode.ReportPhotoErrors.Remote.Ok())
+            return ReportPhotoResponse(isReported, ErrorCode.ReportPhotoErrors.Ok())
         }
 
-        fun error(errorCode: ErrorCode.ReportPhotoErrors): ReportPhotoResponse {
+        fun error(errorCode: ErrorCode): ReportPhotoResponse {
             return ReportPhotoResponse(false, errorCode)
         }
     }

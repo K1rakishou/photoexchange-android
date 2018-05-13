@@ -30,21 +30,21 @@ class GetUserIdUseCase(
                         throw error
                     }
 
-                    return@async Either.Error(ErrorCode.UploadPhotoErrors.Local.Interrupted())
+                    return@async Either.Error(ErrorCode.UploadPhotoErrors.LocalInterrupted())
                 }
 
                 val errorCode = response.errorCode
-                if (errorCode !is ErrorCode.GetUserIdError.Remote.Ok) {
-                    return@async Either.Error(ErrorCode.UploadPhotoErrors.Remote.CouldNotGetUserId())
+                if (errorCode !is ErrorCode.GetUserIdError.Ok) {
+                    return@async Either.Error(ErrorCode.UploadPhotoErrors.LocalCouldNotGetUserId())
                 }
 
                 if (!settingsRepository.saveUserId(response.userId)) {
-                    return@async Either.Error(ErrorCode.UploadPhotoErrors.Local.DatabaseError())
+                    return@async Either.Error(ErrorCode.UploadPhotoErrors.LocalDatabaseError())
                 }
 
                 return@async Either.Value(response.userId)
             } catch (error: Throwable) {
-                return@async Either.Error(ErrorCode.GetUserIdError.Remote.UnknownError())
+                return@async Either.Error(ErrorCode.GetUserIdError.UnknownError())
             }
         }.asSingle(CommonPool)
     }

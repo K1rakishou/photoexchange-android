@@ -3,7 +3,6 @@ package com.kirakishou.photoexchange.interactors
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.util.Utils
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
@@ -31,7 +30,7 @@ class GetUploadedPhotosUseCase(
                 val response = apiClient.getUploadedPhotoIds(userId, lastId, count).await()
                 val errorCode = response.errorCode
 
-                if (errorCode !is ErrorCode.GetUploadedPhotoIdsError.Remote.Ok) {
+                if (errorCode !is ErrorCode.GetUploadedPhotosErrors.Ok) {
                     return@async Either.Error(errorCode)
                 }
 
@@ -65,7 +64,7 @@ class GetUploadedPhotosUseCase(
                 return@async Either.Value(photosResultList)
 
             } catch (error: Throwable) {
-                return@async Either.Error(ErrorCode.GetUploadedPhotoIdsError.Remote.UnknownError())
+                return@async Either.Error(ErrorCode.GetUploadedPhotosErrors.UnknownErrors())
             }
         }.asSingle(CommonPool)
     }
@@ -76,12 +75,12 @@ class GetUploadedPhotosUseCase(
         val response = apiClient.getUploadedPhotos(userId, photoIdsToBeRequested).await()
         val errorCode = response.errorCode
 
-        if (errorCode !is ErrorCode.GetUploadedPhotosError.Remote.Ok) {
+        if (errorCode !is ErrorCode.GetUploadedPhotosErrors.Ok) {
             return Either.Error(errorCode)
         }
 
         if (!uploadedPhotosRepository.saveMany(response.uploadedPhotos)) {
-            return Either.Error(ErrorCode.GetUploadedPhotosError.Local.DatabaseError())
+            return Either.Error(ErrorCode.GetUploadedPhotosErrors.DatabaseErrors())
         }
 
         return Either.Value(UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhotos(response.uploadedPhotos))

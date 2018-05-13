@@ -21,12 +21,12 @@ class GetUserIdRequest<T>(
         return apiService.getUserId()
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
-            .lift(OnApiErrorSingle<GetUserIdResponse>(gson, GetUserIdResponse::class.java))
+            .lift(OnApiErrorSingle<GetUserIdResponse>(gson, GetUserIdResponse::class))
             .map { response ->
-                if (response.serverErrorCode!! == 0) {
+                if (ErrorCode.GetUserIdError.fromInt(response.serverErrorCode!!) is ErrorCode.GetUserIdError.Ok) {
                     return@map GetUserIdResponse.success(response.userId)
                 } else {
-                    return@map GetUserIdResponse.error(ErrorCode.fromInt(GetUserIdResponse::class.java, response.serverErrorCode))
+                    return@map GetUserIdResponse.error(ErrorCode.fromInt(ErrorCode.GetUserIdError::class, response.serverErrorCode!!))
                 }
             }
             .onErrorReturn(this::extractError) as Single<T>
@@ -36,8 +36,8 @@ class GetUserIdRequest<T>(
         return when (error) {
             is ApiException -> GetUserIdResponse.error(error.errorCode as ErrorCode.GetUserIdError)
             is SocketTimeoutException,
-            is TimeoutException -> GetUserIdResponse.error(ErrorCode.GetUserIdError.Local.Timeout())
-            else -> GetUserIdResponse.error(ErrorCode.GetUserIdError.Remote.UnknownError())
+            is TimeoutException -> GetUserIdResponse.error(ErrorCode.GetUserIdError.LocalTimeout())
+            else -> GetUserIdResponse.error(ErrorCode.GetUserIdError.UnknownError())
         }
     }
 }

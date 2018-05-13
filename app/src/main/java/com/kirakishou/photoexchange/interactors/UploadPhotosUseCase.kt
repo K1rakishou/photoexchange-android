@@ -65,14 +65,14 @@ class UploadPhotosUseCase(
                                     throw error
                                 }
 
-                                UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.Local.Interrupted())
+                                UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.LocalInterrupted())
                             }
 
                             val errorCode = response.errorCode as ErrorCode.UploadPhotoErrors
-                            results += errorCode is ErrorCode.UploadPhotoErrors.Remote.Ok
+                            results += errorCode is ErrorCode.UploadPhotoErrors.Ok
 
                             when (errorCode) {
-                                is ErrorCode.UploadPhotoErrors.Remote.Ok -> {
+                                is ErrorCode.UploadPhotoErrors.Ok -> {
                                     Timber.tag(TAG).d("Photo uploaded. Saving the result")
 
                                     if (!handlePhotoUploaded(photo, response, callbacks)) {
@@ -81,7 +81,7 @@ class UploadPhotosUseCase(
                                     }
                                 }
 
-                                is ErrorCode.UploadPhotoErrors.Local.Interrupted -> {
+                                is ErrorCode.UploadPhotoErrors.LocalInterrupted -> {
                                     Timber.tag(TAG).d("Interrupted exception")
                                     handleFailedPhoto(photo, callbacks, errorCode)
                                 }

@@ -24,12 +24,12 @@ class ReportPhotoRequest<T>(
         return apiService.reportPhoto(ReportPhotoPacket(userId, photoName))
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
-            .lift(OnApiErrorSingle<ReportPhotoResponse>(gson, ReportPhotoResponse::class.java))
+            .lift(OnApiErrorSingle<ReportPhotoResponse>(gson, ReportPhotoResponse::class))
             .map { response ->
-                if (response.serverErrorCode!! == 0) {
+                if (ErrorCode.ReportPhotoErrors.fromInt(response.serverErrorCode!!) is ErrorCode.ReportPhotoErrors.Ok) {
                     return@map ReportPhotoResponse.success(response.isReported)
                 } else {
-                    return@map ReportPhotoResponse.error(ErrorCode.fromInt(ErrorCode.ReportPhotoErrors::class.java, response.serverErrorCode))
+                    return@map ReportPhotoResponse.error(ErrorCode.fromInt(ErrorCode.ReportPhotoErrors::class, response.serverErrorCode!!))
                 }
             }
             .onErrorReturn(this::extractError) as Single<T>
@@ -39,8 +39,8 @@ class ReportPhotoRequest<T>(
         return when (error) {
             is ApiException -> ReportPhotoResponse.error(error.errorCode as ErrorCode.ReportPhotoErrors)
             is SocketTimeoutException,
-            is TimeoutException -> ReportPhotoResponse.error(ErrorCode.ReportPhotoErrors.Local.Timeout())
-            else -> ReportPhotoResponse.error(ErrorCode.ReportPhotoErrors.Remote.UnknownError())
+            is TimeoutException -> ReportPhotoResponse.error(ErrorCode.ReportPhotoErrors.LocalTimeout())
+            else -> ReportPhotoResponse.error(ErrorCode.ReportPhotoErrors.UnknownError())
         }
     }
 }

@@ -118,89 +118,71 @@ abstract class BaseActivity : AppCompatActivity() {
 
     fun showErrorCodeToast(errorCode: ErrorCode) {
         val errorMessage = when (errorCode) {
-            is ErrorCode.UploadPhotoErrors.Remote.Ok,
-            is ErrorCode.ReceivePhotosErrors.Remote.Ok,
-            is ErrorCode.GetGalleryPhotosErrors.Remote.Ok,
-            is ErrorCode.FavouritePhotoErrors.Remote.Ok,
             is ErrorCode.TakePhotoErrors.Ok,
-            is ErrorCode.GetUserIdError.Remote.Ok,
-            is ErrorCode.GetGalleryPhotosInfoError.Remote.Ok,
-            is ErrorCode.ReportPhotoErrors.Remote.Ok -> null
+            is ErrorCode.UploadPhotoErrors.Ok,
+            is ErrorCode.ReceivePhotosErrors.Ok,
+            is ErrorCode.GalleryPhotosErrors.Ok,
+            is ErrorCode.FavouritePhotoErrors.Ok,
+            is ErrorCode.ReportPhotoErrors.Ok,
+            is ErrorCode.GetUserIdError.Ok,
+            is ErrorCode.GetUploadedPhotosErrors.Ok -> null
 
-            is ErrorCode.UploadPhotoErrors.Remote.UnknownError,
-            is ErrorCode.ReceivePhotosErrors.Remote.UnknownError,
-            is ErrorCode.GetGalleryPhotosErrors.Remote.UnknownError,
-            is ErrorCode.FavouritePhotoErrors.Remote.UnknownError,
-            is ErrorCode.GetUserIdError.Remote.UnknownError,
-            is ErrorCode.GetGalleryPhotosInfoError.Remote.UnknownError,
-            is ErrorCode.ReportPhotoErrors.Remote.UnknownError -> "Unknown error"
+            is ErrorCode.TakePhotoErrors.UnknownError,
+            is ErrorCode.UploadPhotoErrors.UnknownError,
+            is ErrorCode.ReceivePhotosErrors.UnknownError,
+            is ErrorCode.GalleryPhotosErrors.UnknownError,
+            is ErrorCode.FavouritePhotoErrors.UnknownError,
+            is ErrorCode.ReportPhotoErrors.UnknownError,
+            is ErrorCode.GetUserIdError.UnknownError,
+            is ErrorCode.GetUploadedPhotosErrors.UnknownErrors -> "Unknown error"
 
-            is ErrorCode.UploadPhotoErrors.Remote.BadRequest,
-            is ErrorCode.ReceivePhotosErrors.Remote.BadRequest,
-            is ErrorCode.GetGalleryPhotosErrors.Remote.BadRequest,
-            is ErrorCode.FavouritePhotoErrors.Remote.BadRequest,
-            is ErrorCode.GetGalleryPhotosInfoError.Remote.BadRequest,
-            is ErrorCode.ReportPhotoErrors.Remote.BadRequest -> "Bad request error"
+            is ErrorCode.UploadPhotoErrors.BadRequest,
+            is ErrorCode.ReceivePhotosErrors.BadRequest,
+            is ErrorCode.GalleryPhotosErrors.BadRequest,
+            is ErrorCode.FavouritePhotoErrors.BadRequest,
+            is ErrorCode.ReportPhotoErrors.BadRequest,
+            is ErrorCode.GetUploadedPhotosErrors.BadRequest,
+            is ErrorCode.ReceivePhotosErrors.NoPhotosInRequest,
+            is ErrorCode.GalleryPhotosErrors.NoPhotosInRequest,
+            is ErrorCode.GetUploadedPhotosErrors.NoPhotosInRequest -> "Bad request error"
 
-            is ErrorCode.UploadPhotoErrors.Local.Timeout,
-            is ErrorCode.ReceivePhotosErrors.Local.Timeout,
-            is ErrorCode.GetGalleryPhotosErrors.Local.Timeout,
-            is ErrorCode.FavouritePhotoErrors.Local.Timeout,
-            is ErrorCode.GetUserIdError.Local.Timeout,
-            is ErrorCode.GetGalleryPhotosInfoError.Local.Timeout,
-            is ErrorCode.ReportPhotoErrors.Local.Timeout -> "Operation timeout error"
+            is ErrorCode.TakePhotoErrors.DatabaseError,
+            is ErrorCode.UploadPhotoErrors.DatabaseError,
+            is ErrorCode.GetUserIdError.DatabaseError,
+            is ErrorCode.GetUploadedPhotosErrors.DatabaseErrors -> "Server database error"
 
-            is ErrorCode.UploadPhotoErrors.Remote.DatabaseError,
-            is ErrorCode.GetUserIdError.Remote.DatabaseError,
-            is ErrorCode.GetUserIdError.Local.DatabaseError,
-            is ErrorCode.ReceivePhotosErrors.Remote.DatabaseError -> "Server database error"
+            is ErrorCode.GalleryPhotosErrors.LocalBadServerResponse,
+            is ErrorCode.UploadPhotoErrors.LocalBadServerResponse,
+            is ErrorCode.ReceivePhotosErrors.LocalBadServerResponse,
+            is ErrorCode.FavouritePhotoErrors.LocalBadServerResponse,
+            is ErrorCode.ReportPhotoErrors.LocalBadServerResponse,
+            is ErrorCode.GetUserIdError.LocalBadServerResponse,
+            is ErrorCode.GetUploadedPhotosErrors.LocalBadServerResponse -> "Bad server response error"
 
-            is ErrorCode.UploadPhotoErrors.Local.BadServerResponse,
-            is ErrorCode.ReceivePhotosErrors.Local.BadServerResponse,
-            is ErrorCode.GetGalleryPhotosErrors.Local.BadServerResponse,
-            is ErrorCode.ReportPhotoErrors.Local.BadServerResponse,
-            is ErrorCode.GetUserIdError.Local.BadServerResponse,
-            is ErrorCode.GetGalleryPhotosInfoError.Local.BadServerResponse,
-            is ErrorCode.FavouritePhotoErrors.Local.BadServerResponse -> "Bad server response error"
+            is ErrorCode.UploadPhotoErrors.LocalTimeout,
+            is ErrorCode.ReceivePhotosErrors.LocalTimeout,
+            is ErrorCode.GalleryPhotosErrors.LocalTimeout,
+            is ErrorCode.FavouritePhotoErrors.LocalTimeout,
+            is ErrorCode.ReportPhotoErrors.LocalTimeout,
+            is ErrorCode.GetUserIdError.LocalTimeout,
+            is ErrorCode.GetUploadedPhotosErrors.LocalTimeout,
+            is ErrorCode.TakePhotoErrors.TimeoutException -> "Operation timeout error"
 
-            is ErrorCode.GetGalleryPhotosErrors.Remote.NoPhotosInRequest,
-            is ErrorCode.GetGalleryPhotosInfoError.Remote.NoPhotosInRequest,
-            is ErrorCode.ReceivePhotosErrors.Remote.NoPhotosInRequest -> "No photos were selected error"
+            is ErrorCode.ReceivePhotosErrors.LocalDatabaseError,
+            is ErrorCode.GalleryPhotosErrors.LocalDatabaseError,
+            is ErrorCode.UploadPhotoErrors.LocalDatabaseError,
+            is ErrorCode.GetUserIdError.LocalDatabaseError -> "Couldn't store data from the server on the disk"
 
-            is ErrorCode.UploadPhotoErrors.Local.NoPhotoFileOnDisk -> "No photo file on disk error"
-            is ErrorCode.ReceivePhotosErrors.Remote.TooManyPhotosRequested -> "Too many photos requested error"
-            is ErrorCode.ReceivePhotosErrors.Remote.NoPhotosToSendBack -> "No photos to send back"
-            is ErrorCode.ReceivePhotosErrors.Remote.NotEnoughPhotosUploaded -> "Upload more photos first"
-            is ErrorCode.FavouritePhotoErrors.Remote.AlreadyFavourited -> "You have already added this photo to favourites"
-            is ErrorCode.ReportPhotoErrors.Remote.AlreadyReported -> "You have already reported this photo"
-            is ErrorCode.UploadPhotoErrors.Local.Interrupted -> "The process was interrupted by user"
-            is ErrorCode.TakePhotoErrors.UnknownError -> "Could not take photo (unknown error)"
-            is ErrorCode.TakePhotoErrors.CameraIsNotAvailable -> "Could not take photo (camera is not available)"
-            is ErrorCode.TakePhotoErrors.CameraIsNotStartedException -> "Could not take photo (camera is not started)"
-            is ErrorCode.TakePhotoErrors.TimeoutException -> "Could not take photo (exceeded maximum camera wait time)"
-            is ErrorCode.TakePhotoErrors.DatabaseError -> "Could not take photo (database error)"
-            is ErrorCode.TakePhotoErrors.CouldNotTakePhoto -> "Could not take photo (probably the view was disconnected)"
-            is ErrorCode.GetGalleryPhotosErrors.Local.DatabaseError -> "Could not cache gallery photos in the database"
-            is ErrorCode.UploadPhotoErrors.Remote.CouldNotGetUserId -> "Could not retrieve user id from the server"
-            is ErrorCode.UploadPhotoErrors.Local.DatabaseError -> "Could not save user id in the database"
-            is ErrorCode.GetGalleryPhotosInfoError.Local.DatabaseError -> "Could not save gallery photo info in the database"
-
-            //TODO: rewrite this class
-            is ErrorCode.GetUploadedPhotoIdsError.Remote.UnknownError,
-            is ErrorCode.GetUploadedPhotoIdsError.Remote.Ok,
-            is ErrorCode.GetUploadedPhotoIdsError.Remote.DatabaseError,
-            is ErrorCode.GetUploadedPhotoIdsError.Remote.BadRequest,
-            is ErrorCode.GetUploadedPhotoIdsError.Local.BadServerResponse,
-            is ErrorCode.GetUploadedPhotoIdsError.Local.Timeout,
-            is ErrorCode.GetUploadedPhotoIdsError.Local.DatabaseError,
-            is ErrorCode.GetUploadedPhotosError.Remote.UnknownError,
-            is ErrorCode.GetUploadedPhotosError.Remote.Ok,
-            is ErrorCode.GetUploadedPhotosError.Remote.DatabaseError,
-            is ErrorCode.GetUploadedPhotosError.Remote.BadRequest,
-            is ErrorCode.GetUploadedPhotosError.Local.BadServerResponse,
-            is ErrorCode.GetUploadedPhotosError.Local.Timeout,
-            is ErrorCode.GetUploadedPhotosError.Local.UserIdIsEmpty,
-            is ErrorCode.GetUploadedPhotosError.Local.DatabaseError -> "REWRITE ME"
+            is ErrorCode.UploadPhotoErrors.LocalNoPhotoFileOnDisk -> "No photo on disk"
+            is ErrorCode.UploadPhotoErrors.LocalInterrupted -> "Interrupted by user"
+            is ErrorCode.UploadPhotoErrors.LocalCouldNotGetUserId -> "Could not get user id from the server"
+            is ErrorCode.ReceivePhotosErrors.NoPhotosToSendBack -> "Server has no available photos"
+            is ErrorCode.ReceivePhotosErrors.LocalTooManyPhotosRequested -> "Too many photos in one request"
+            is ErrorCode.ReceivePhotosErrors.LocalNotEnoughPhotosUploaded -> "Upload more photos first"
+            is ErrorCode.GetUploadedPhotosErrors.LocalUserIdIsEmpty -> "This operation cannot be done without user id"
+            is ErrorCode.TakePhotoErrors.CameraIsNotAvailable -> "Camera is not available on this phone"
+            is ErrorCode.TakePhotoErrors.CameraIsNotStartedException -> "Camera is not started"
+            is ErrorCode.TakePhotoErrors.CouldNotTakePhoto -> "Error while trying to take a photo"
         }
 
         if (errorMessage != null) {
