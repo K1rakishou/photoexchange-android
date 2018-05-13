@@ -33,7 +33,7 @@ class UploadedPhotosAdapter(
     private val queuedUpItems = arrayListOf<UploadedPhotosAdapterItem>()
     private val failedToUploadItems = arrayListOf<UploadedPhotosAdapterItem>()
     private val uploadedItems = arrayListOf<UploadedPhotosAdapterItem>()
-    private val uploadedWithReceiverInfo = arrayListOf<UploadedPhotosAdapterItem>()
+    private val uploadedWithReceiverInfoItems = arrayListOf<UploadedPhotosAdapterItem>()
     private val footerItems = arrayListOf<UploadedPhotosAdapterItem>()
 
     private val duplicatesCheckerSet = hashSetOf<Long>()
@@ -44,8 +44,8 @@ class UploadedPhotosAdapter(
         footerItems.add(FOOTER_PROGRESS_INDICATOR_INDEX, UploadedPhotosAdapterItem.EmptyItem())
     }
 
-    fun updateUploadedPhotoSetReceiverInfo(receivedPhoto: ReceivedPhoto) {
-        val uploadedItemIndex = uploadedItems.indexOfFirst { (it as UploadedPhotosAdapterItem.UploadedPhotoItem).uploadedPhoto.photoId == receivedPhoto.id!! }
+    fun updateUploadedPhotoSetReceiverInfo(receivedPhoto: ReceivedPhoto, takenPhotoId: Long) {
+        val uploadedItemIndex = uploadedItems.indexOfFirst { (it as UploadedPhotosAdapterItem.UploadedPhotoItem).uploadedPhoto.photoId == takenPhotoId }
         if (uploadedItemIndex == -1) {
             return
         }
@@ -54,10 +54,10 @@ class UploadedPhotosAdapter(
         uploadedPhoto.receiverInfo = UploadedPhoto.ReceiverInfo(receivedPhoto.lon, receivedPhoto.lat)
 
         uploadedItems.removeAt(uploadedItemIndex)
-        uploadedWithReceiverInfo.add(0, UploadedPhotosAdapterItem.UploadedPhotoItem(uploadedPhoto))
+        uploadedWithReceiverInfoItems.add(0, UploadedPhotosAdapterItem.UploadedPhotoItem(uploadedPhoto))
 
-        val prevElementsCount = headerItems.size + queuedUpItems.size + failedToUploadItems.size
-        notifyItemMoved(prevElementsCount + uploadedItemIndex, prevElementsCount + uploadedItems.size)
+        notifyItemRemoved(headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItemIndex)
+        notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size)
     }
 
     fun updateAllPhotosState(newPhotoState: PhotoState) {
@@ -111,7 +111,7 @@ class UploadedPhotosAdapter(
             return
         }
 
-        footerItems[FOOTER_PROGRESS_INDICATOR_INDEX] = UploadedPhotosAdapterItem.ObtainCurrentLocationItem()
+        footerItems[FOOTER_PROGRESS_INDICATOR_INDEX] = UploadedPhotosAdapterItem.ProgressItem()
         notifyItemChanged(FOOTER_PROGRESS_INDICATOR_INDEX)
     }
 
@@ -171,7 +171,7 @@ class UploadedPhotosAdapter(
             uploadedItems.add(0, UploadedPhotosAdapterItem.UploadedPhotoItem(photo))
             notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size)
         } else {
-            uploadedWithReceiverInfo.add(0, UploadedPhotosAdapterItem.UploadedPhotoItem(photo))
+            uploadedWithReceiverInfoItems.add(0, UploadedPhotosAdapterItem.UploadedPhotoItem(photo))
             notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size)
         }
     }
@@ -233,7 +233,7 @@ class UploadedPhotosAdapter(
             notifyItemRemoved(globalIndex)
         }
 
-        for ((index, adapterItem) in uploadedWithReceiverInfo.withIndex()) {
+        for ((index, adapterItem) in uploadedWithReceiverInfoItems.withIndex()) {
             adapterItem as UploadedPhotosAdapterItem.UploadedPhotoItem
             if (adapterItem.uploadedPhoto.photoId == photoId) {
                 localIndex = index
@@ -244,7 +244,7 @@ class UploadedPhotosAdapter(
         }
 
         if (localIndex != -1) {
-            uploadedWithReceiverInfo.removeAt(localIndex)
+            uploadedWithReceiverInfoItems.removeAt(localIndex)
             notifyItemRemoved(globalIndex)
         }
     }
@@ -283,7 +283,7 @@ class UploadedPhotosAdapter(
             ++index
         }
 
-        for (adapterItem in uploadedWithReceiverInfo) {
+        for (adapterItem in uploadedWithReceiverInfoItems) {
             adapterItem as UploadedPhotosAdapterItem.UploadedPhotoItem
             if (adapterItem.uploadedPhoto.photoId == photoId) {
                 return index
@@ -300,7 +300,8 @@ class UploadedPhotosAdapter(
         val queuedUpItemsRange = IntRange(headerItemsRange.endInclusive, headerItemsRange.endInclusive + queuedUpItems.size)
         val failedToUploadItemsRange = IntRange(queuedUpItemsRange.endInclusive, queuedUpItemsRange.endInclusive + failedToUploadItems.size)
         val uploadedItemsRange = IntRange(failedToUploadItemsRange.endInclusive, failedToUploadItemsRange.endInclusive + uploadedItems.size)
-        val uploadedWithAnswerItemsRange = IntRange(uploadedItemsRange.endInclusive, uploadedItemsRange.endInclusive + uploadedWithReceiverInfo.size)
+        val uploadedWithAnswerItemsRange = IntRange(uploadedItemsRange.endInclusive, uploadedItemsRange.endInclusive + uploadedWithReceiverInfoItems.size)
+        val footerItemsRange = IntRange(uploadedWithAnswerItemsRange.endInclusive, uploadedWithAnswerItemsRange.endInclusive + footerItems.size)
 
         return when (index) {
             in headerItemsRange -> {
@@ -316,43 +317,46 @@ class UploadedPhotosAdapter(
                 uploadedItems[index - (headerItems.size + queuedUpItems.size + failedToUploadItems.size)]
             }
             in uploadedWithAnswerItemsRange -> {
-                uploadedWithReceiverInfo[index - (headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size)]
+                uploadedWithReceiverInfoItems[index - (headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size)]
+            }
+            in footerItemsRange -> {
+                footerItems[index - (headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size + uploadedWithReceiverInfoItems.size)]
             }
             else -> null
         }
     }
 
-    private fun updateAdapterItemById(photoId: Long, updateFunction: (photo: TakenPhoto) -> TakenPhoto) {
-        var currentIndex = headerItems.size
-
-        if (!isPhotoAlreadyAdded(photoId)) {
-            return
-        }
-
-        for ((localIndex, adapterItem) in queuedUpItems.withIndex()) {
-            adapterItem as UploadedPhotosAdapterItem.TakenPhotoItem
-            if (adapterItem.takenPhoto.id == photoId) {
-                val updatedAdapterItem = updateFunction(adapterItem.takenPhoto)
-                queuedUpItems[localIndex] = UploadedPhotosAdapterItem.TakenPhotoItem(updatedAdapterItem)
-                notifyItemChanged(currentIndex)
-                return
-            }
-
-            ++currentIndex
-        }
-
-        for ((localIndex, adapterItem) in failedToUploadItems.withIndex()) {
-            adapterItem as UploadedPhotosAdapterItem.FailedToUploadItem
-            if (adapterItem.failedToUploadPhoto.id == photoId) {
-                val updatedAdapterItem = updateFunction(adapterItem.failedToUploadPhoto)
-                failedToUploadItems[localIndex] = UploadedPhotosAdapterItem.FailedToUploadItem(updatedAdapterItem)
-                notifyItemChanged(currentIndex)
-                return
-            }
-
-            ++currentIndex
-        }
-    }
+//    private fun updateAdapterItemById(photoId: Long, updateFunction: (photo: TakenPhoto) -> TakenPhoto) {
+//        var currentIndex = headerItems.size
+//
+//        if (!isPhotoAlreadyAdded(photoId)) {
+//            return
+//        }
+//
+//        for ((localIndex, adapterItem) in queuedUpItems.withIndex()) {
+//            adapterItem as UploadedPhotosAdapterItem.TakenPhotoItem
+//            if (adapterItem.takenPhoto.id == photoId) {
+//                val updatedAdapterItem = updateFunction(adapterItem.takenPhoto)
+//                queuedUpItems[localIndex] = UploadedPhotosAdapterItem.TakenPhotoItem(updatedAdapterItem)
+//                notifyItemChanged(currentIndex)
+//                return
+//            }
+//
+//            ++currentIndex
+//        }
+//
+//        for ((localIndex, adapterItem) in failedToUploadItems.withIndex()) {
+//            adapterItem as UploadedPhotosAdapterItem.FailedToUploadItem
+//            if (adapterItem.failedToUploadPhoto.id == photoId) {
+//                val updatedAdapterItem = updateFunction(adapterItem.failedToUploadPhoto)
+//                failedToUploadItems[localIndex] = UploadedPhotosAdapterItem.FailedToUploadItem(updatedAdapterItem)
+//                notifyItemChanged(currentIndex)
+//                return
+//            }
+//
+//            ++currentIndex
+//        }
+//    }
 
     private fun isPhotoAlreadyAdded(photoId: Long): Boolean {
         return duplicatesCheckerSet.contains(photoId)
@@ -372,7 +376,7 @@ class UploadedPhotosAdapter(
         queuedUpItems.clear()
         failedToUploadItems.clear()
         uploadedItems.clear()
-        uploadedWithReceiverInfo.clear()
+        uploadedWithReceiverInfoItems.clear()
         duplicatesCheckerSet.clear()
 
         notifyDataSetChanged()
@@ -383,7 +387,7 @@ class UploadedPhotosAdapter(
     }
 
     override fun getItemCount(): Int {
-        return headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size + uploadedWithReceiverInfo.size
+        return headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size + uploadedWithReceiverInfoItems.size + footerItems.size
     }
 
     override fun getBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
@@ -446,6 +450,7 @@ class UploadedPhotosAdapter(
                     context.getDrawable(R.drawable.ic_done_all)
                 }
 
+                holder.photoidTextView.text = uploadedPhoto.photoId.toString()
                 holder.receivedIconImageView.setImageDrawable(drawable)
                 holder.photoUploadingStateIndicator.background = ColorDrawable(context.resources.getColor(R.color.photo_state_uploaded_color))
                 holder.receivedIconImageView.visibility = View.VISIBLE

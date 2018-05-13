@@ -24,12 +24,12 @@ class GetUploadedPhotoIdsRequest<T>(
         return apiService.getUploadedPhotoIds(userId, lastId, count)
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
-            .lift(OnApiErrorSingle<GetUploadedPhotoIdsResponse>(gson, GetUploadedPhotoIdsResponse::class.java))
+            .lift(OnApiErrorSingle<GetUploadedPhotoIdsResponse>(gson, GetUploadedPhotoIdsResponse::class))
             .map { response ->
-                if (response.serverErrorCode!! == 0) {
+                if (ErrorCode.GetUploadedPhotosErrors.fromInt(response.serverErrorCode!!) is ErrorCode.GetUploadedPhotosErrors.Ok) {
                     return@map GetUploadedPhotoIdsResponse.success(response.uploadedPhotoIds)
                 } else {
-                    return@map GetUploadedPhotoIdsResponse.fail(ErrorCode.fromInt(ErrorCode.GetUploadedPhotoIdsError::class.java, response.serverErrorCode))
+                    return@map GetUploadedPhotoIdsResponse.fail(ErrorCode.fromInt(ErrorCode.GetUploadedPhotosErrors::class, response.serverErrorCode!!))
                 }
             }
             .onErrorReturn(this::extractError) as Single<T>
@@ -39,8 +39,8 @@ class GetUploadedPhotoIdsRequest<T>(
         return when (error) {
             is ApiException -> GetUploadedPhotoIdsResponse.fail(error.errorCode)
             is SocketTimeoutException,
-            is TimeoutException -> GetUploadedPhotoIdsResponse.fail(ErrorCode.GetUploadedPhotoIdsError.Local.Timeout())
-            else -> GetUploadedPhotoIdsResponse.fail(ErrorCode.GetUploadedPhotoIdsError.Remote.UnknownError())
+            is TimeoutException -> GetUploadedPhotoIdsResponse.fail(ErrorCode.GetUploadedPhotosErrors.LocalTimeout())
+            else -> GetUploadedPhotoIdsResponse.fail(ErrorCode.GetUploadedPhotosErrors.UnknownErrors())
         }
     }
 }

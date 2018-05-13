@@ -23,12 +23,12 @@ class GetGalleryPhotoInfoRequest<T>(
         return apiService.getGalleryPhotoInfo(userId, galleryPhotoIds)
             .subscribeOn(schedulerProvider.IO())
             .observeOn(schedulerProvider.IO())
-            .lift(OnApiErrorSingle<GalleryPhotoInfoResponse>(gson, GalleryPhotoInfoResponse::class.java))
+            .lift(OnApiErrorSingle<GalleryPhotoInfoResponse>(gson, GalleryPhotoInfoResponse::class))
             .map { response ->
-                if (response.serverErrorCode!! == 0) {
+                if (ErrorCode.GalleryPhotosErrors.fromInt(response.serverErrorCode!!) is ErrorCode.GalleryPhotosErrors.Ok) {
                     return@map GalleryPhotoInfoResponse.success(response.galleryPhotosInfo)
                 } else {
-                    return@map GalleryPhotoInfoResponse.fail(ErrorCode.fromInt(ErrorCode.GetGalleryPhotosInfoError::class.java, response.serverErrorCode))
+                    return@map GalleryPhotoInfoResponse.fail(ErrorCode.fromInt(ErrorCode.GalleryPhotosErrors::class, response.serverErrorCode!!))
                 }
             }
             .onErrorReturn(this::extractError) as Single<T>
@@ -36,10 +36,10 @@ class GetGalleryPhotoInfoRequest<T>(
 
     private fun extractError(error: Throwable): GalleryPhotoInfoResponse {
         return when (error) {
-            is ApiException -> GalleryPhotoInfoResponse.fail(error.errorCode as ErrorCode.GetGalleryPhotosInfoError)
+            is ApiException -> GalleryPhotoInfoResponse.fail(error.errorCode as ErrorCode.GalleryPhotosErrors)
             is SocketTimeoutException,
-            is TimeoutException -> GalleryPhotoInfoResponse.fail(ErrorCode.GetGalleryPhotosInfoError.Local.Timeout())
-            else -> GalleryPhotoInfoResponse.fail(ErrorCode.GetGalleryPhotosInfoError.Remote.UnknownError())
+            is TimeoutException -> GalleryPhotoInfoResponse.fail(ErrorCode.GalleryPhotosErrors.LocalTimeout())
+            else -> GalleryPhotoInfoResponse.fail(ErrorCode.GalleryPhotosErrors.UnknownError())
         }
     }
 }

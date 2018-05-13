@@ -19,7 +19,7 @@ class FavouritePhotoUseCase(
         return apiClient.favouritePhoto(userId, photoName)
             .map { response ->
                 val errorCode = response.errorCode
-                if (errorCode !is ErrorCode.FavouritePhotoErrors.Remote.Ok) {
+                if (errorCode !is ErrorCode.FavouritePhotoErrors.Ok) {
                     return@map Either.Error(errorCode)
                 }
 

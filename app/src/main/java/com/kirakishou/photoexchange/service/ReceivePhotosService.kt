@@ -68,9 +68,9 @@ class ReceivePhotosService : Service(), ReceivePhotosServiceCallbacks {
         presenter.startPhotosReceiving()
     }
 
-    override fun onPhotoReceived(receivedPhoto: ReceivedPhoto, photoId: Long) {
+    override fun onPhotoReceived(receivedPhoto: ReceivedPhoto, takenPhotoId: Long) {
         updateDownloadingNotificationShowSuccess()
-        callback.get()?.onPhotoFindEvent(ReceivePhotosEvent.OnPhotoReceived(receivedPhoto))
+        callback.get()?.onPhotoFindEvent(ReceivePhotosEvent.OnPhotoReceived(receivedPhoto, takenPhotoId))
     }
 
     override fun onFailed(errorCode: ErrorCode.ReceivePhotosErrors) {

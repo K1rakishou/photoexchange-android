@@ -17,7 +17,7 @@ class ReportPhotoUseCase(
         return apiClient.reportPhoto(userId, photoName)
             .map { response ->
                 val errorCode = response.errorCode
-                if (errorCode !is ErrorCode.ReportPhotoErrors.Remote.Ok) {
+                if (errorCode !is ErrorCode.ReportPhotoErrors.Ok) {
                     return@map Either.Error(errorCode)
                 }
 

@@ -54,12 +54,12 @@ class UploadPhotoRequest<T>(
                 return@flatMap apiService.uploadPhoto(body.part(0), body.part(1))
                     .doOnSubscribe { Timber.tag(tag).d("calling apiService.uploadPhoto") }
                     .doOnSuccess { Timber.tag(tag).d("after apiService.uploadPhoto") }
-                    .lift(OnApiErrorSingle<UploadPhotoResponse>(gson, UploadPhotoResponse::class.java))
+                    .lift(OnApiErrorSingle<UploadPhotoResponse>(gson, UploadPhotoResponse::class))
                     .map { response ->
-                        if (response.serverErrorCode!! == 0) {
+                        if (ErrorCode.UploadPhotoErrors.fromInt(response.serverErrorCode!!) is ErrorCode.UploadPhotoErrors.Ok) {
                             return@map UploadPhotoResponse.success(response.photoName)
                         } else {
-                            return@map UploadPhotoResponse.error(ErrorCode.fromInt(ErrorCode.UploadPhotoErrors::class.java, response.serverErrorCode))
+                            return@map UploadPhotoResponse.error(ErrorCode.fromInt(ErrorCode.UploadPhotoErrors::class, response.serverErrorCode!!))
                         }
                     }
                     .doOnSuccess { Timber.tag(tag).d("after map") }
@@ -71,9 +71,9 @@ class UploadPhotoRequest<T>(
         return when (error) {
             is ApiException -> UploadPhotoResponse.error(error.errorCode)
             is SocketTimeoutException,
-            is TimeoutException -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.Local.Timeout())
-            is NoPhotoFileOnDiskException -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.Local.NoPhotoFileOnDisk())
-            else -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.Remote.UnknownError())
+            is TimeoutException -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.LocalTimeout())
+            is NoPhotoFileOnDiskException -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.LocalNoPhotoFileOnDisk())
+            else -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.UnknownError())
         }
     }
 

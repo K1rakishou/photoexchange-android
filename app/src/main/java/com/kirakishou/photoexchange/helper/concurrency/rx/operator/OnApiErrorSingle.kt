@@ -8,6 +8,7 @@ import io.reactivex.SingleObserver
 import io.reactivex.SingleOperator
 import io.reactivex.disposables.Disposable
 import retrofit2.Response
+import kotlin.reflect.KClass
 
 /**
  * Created by kirakishou on 8/25/2017.
@@ -19,7 +20,7 @@ import retrofit2.Response
  * */
 class OnApiErrorSingle<T : StatusResponse>(
     val gson: Gson,
-    val clazz: Class<*>
+    val clazz: KClass<*>
 ) : SingleOperator<T, Response<T>> {
 
     override fun apply(observer: SingleObserver<in T>): SingleObserver<in Response<T>> {
@@ -40,8 +41,7 @@ class OnApiErrorSingle<T : StatusResponse>(
 
                         //may happen in some rare cases (like when client and server have endpoints with different parameters)
                         if (error?.serverErrorCode == null) {
-                            val message = "Unknown server error: HttpStatus = ${response.code()}"
-                            observer.onError(ApiException(getBadErrorCodeByClass(clazz, message)))
+                            observer.onError(ApiException(getBadErrorCodeByClass(clazz)))
                         } else {
                             observer.onError(ApiException(getErrorCode(error.serverErrorCode!!)))
                         }
@@ -56,19 +56,19 @@ class OnApiErrorSingle<T : StatusResponse>(
     }
 
     private fun getErrorCode(errorCodeInt: Int): ErrorCode {
-        return ErrorCode.fromInt(clazz, errorCodeInt)
+        return ErrorCode.fromInt(clazz, errorCodeInt)!!
     }
 
     //TODO: don't forget to add errorCodes here
-    private fun getBadErrorCodeByClass(clazz: Class<*>, message: String): ErrorCode {
+    private fun getBadErrorCodeByClass(clazz: KClass<*>): ErrorCode {
         val errorCode = when (clazz) {
-            UploadPhotoResponse::class.java -> ErrorCode.UploadPhotoErrors.Local.BadServerResponse(message)
-            ReceivedPhotosResponse::class.java -> ErrorCode.ReceivePhotosErrors.Local.BadServerResponse(message)
-            GalleryPhotoIdsResponse::class.java -> ErrorCode.GetGalleryPhotosErrors.Local.BadServerResponse(message)
-            FavouritePhotoResponse::class.java -> ErrorCode.FavouritePhotoErrors.Local.BadServerResponse(message)
-            ReportPhotoResponse::class.java -> ErrorCode.ReportPhotoErrors.Local.BadServerResponse(message)
-            GetUserIdResponse::class.java -> ErrorCode.GetUserIdError.Local.BadServerResponse(message)
-            GalleryPhotoInfoResponse::class.java -> ErrorCode.GetGalleryPhotosInfoError.Local.BadServerResponse(message)
+            UploadPhotoResponse::class -> ErrorCode.UploadPhotoErrors.LocalBadServerResponse()
+            ReceivedPhotosResponse::class -> ErrorCode.ReceivePhotosErrors.LocalBadServerResponse()
+            GalleryPhotoIdsResponse::class -> ErrorCode.GalleryPhotosErrors.LocalBadServerResponse()
+            FavouritePhotoResponse::class -> ErrorCode.FavouritePhotoErrors.LocalBadServerResponse()
+            ReportPhotoResponse::class -> ErrorCode.ReportPhotoErrors.LocalBadServerResponse()
+            GetUserIdResponse::class -> ErrorCode.GetUserIdError.LocalBadServerResponse()
+            GetUploadedPhotosResponse::class -> ErrorCode.GetUploadedPhotosErrors.LocalBadServerResponse()
             else -> throw IllegalArgumentException("Bad class: $clazz")
         }
 

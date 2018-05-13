@@ -30,6 +30,10 @@ open class UploadedPhotosRepository(
         return uploadedPhotoDao.count().toInt()
     }
 
+    fun findAll(): List<UploadedPhoto> {
+        return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.findAll())
+    }
+
     fun findAll(withReceivedInfo: Boolean): List<UploadedPhoto> {
         val entities = if (withReceivedInfo) {
             uploadedPhotoDao.findAllWithReceiverInfo()
@@ -38,5 +42,13 @@ open class UploadedPhotosRepository(
         }
 
         return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(entities)
+    }
+
+    fun findByPhotoIdByName(uploadedPhotoName: String): Long {
+        return uploadedPhotoDao.findByPhotoIdByName(uploadedPhotoName)
+    }
+
+    fun updateReceiverInfo(uploadedPhotoName: String, lon: Double, lat: Double): Boolean {
+        return uploadedPhotoDao.updateReceiverInfo(uploadedPhotoName, lon, lat) == 1
     }
 }

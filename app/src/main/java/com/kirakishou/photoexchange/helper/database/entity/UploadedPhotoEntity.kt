@@ -9,12 +9,12 @@ import com.kirakishou.photoexchange.helper.util.TimeUtils
 @Entity(tableName = TABLE_NAME)
 class UploadedPhotoEntity(
 
-    @PrimaryKey(autoGenerate = false)
-    @ColumnInfo(name = PHOTO_ID_COLUMN)
-    var photoId: Long? = null,
+    @PrimaryKey
+    @ColumnInfo(name = PHOTO_NAME_COLUMN)
+    var photoName: String = "",
 
-    @ColumnInfo(name = PHOTO_NAME_COLUMN, index = true)
-    var photoName: String? = null,
+    @ColumnInfo(name = PHOTO_ID_COLUMN, index = true)
+    var photoId: Long? = null,
 
     @ColumnInfo(name = LON_COLUMN)
     var lon: Double = 0.0,
@@ -27,7 +27,7 @@ class UploadedPhotoEntity(
 ) {
 
     fun isEmpty() : Boolean {
-        return photoId == null
+        return photoName.isEmpty()
     }
 
     companion object {
@@ -36,8 +36,8 @@ class UploadedPhotoEntity(
             return UploadedPhotoEntity()
         }
 
-        fun create(photoId: Long, photoName: String): UploadedPhotoEntity {
-            return UploadedPhotoEntity(photoId, photoName, 0.0, 0.0, TimeUtils.getTimeFast())
+        fun create(photoName: String, photoId: Long, lon: Double = 0.0, lat: Double = 0.0): UploadedPhotoEntity {
+            return UploadedPhotoEntity(photoName, photoId, lon, lat, TimeUtils.getTimeFast())
         }
 
         const val TABLE_NAME = "UPLOADED_PHOTO"

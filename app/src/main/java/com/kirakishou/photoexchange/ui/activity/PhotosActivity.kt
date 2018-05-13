@@ -329,7 +329,7 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
 
         when (event) {
             is ReceivePhotosEvent.OnPhotoReceived -> {
-                viewModel.forwardUploadPhotoEvent(PhotoUploadEvent.OnFoundPhotoAnswer(event.receivedPhoto))
+                viewModel.forwardUploadPhotoEvent(PhotoUploadEvent.OnFoundPhotoAnswer(event.receivedPhoto, event.takenPhotoId))
                 showPhotoAnswerFoundSnackbar()
             }
         }

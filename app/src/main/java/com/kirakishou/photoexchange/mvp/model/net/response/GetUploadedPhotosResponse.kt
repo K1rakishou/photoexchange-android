@@ -12,11 +12,11 @@ private constructor(
     val uploadedPhotos: List<UploadedPhotoData>,
 
     errorCode: ErrorCode
-) : StatusResponse(errorCode.value, errorCode) {
+) : StatusResponse(errorCode.getValue(), errorCode) {
 
     companion object {
         fun success(uploadedPhotos: List<UploadedPhotoData>): GetUploadedPhotosResponse {
-            return GetUploadedPhotosResponse(uploadedPhotos, ErrorCode.GetUploadedPhotosError.Remote.Ok())
+            return GetUploadedPhotosResponse(uploadedPhotos, ErrorCode.GetUploadedPhotosErrors.Ok())
         }
 
         fun fail(errorCode: ErrorCode): GetUploadedPhotosResponse {
@@ -32,6 +32,14 @@ private constructor(
 
         @Expose
         @SerializedName("photo_name")
-        val photoName: String
+        val photoName: String,
+
+        @Expose
+        @SerializedName("receiver_lon")
+        val receiverLon: Double,
+
+        @Expose
+        @SerializedName("receiver_lat")
+        val receiverLat: Double
     )
 }

@@ -11,15 +11,15 @@ private constructor(
     @SerializedName("user_id")
     val userId: String,
 
-    errorCode: ErrorCode.GetUserIdError
-) : StatusResponse(errorCode.value, errorCode) {
+    errorCode: ErrorCode
+) : StatusResponse(errorCode.getValue(), errorCode) {
 
     companion object {
         fun success(userId: String): GetUserIdResponse {
-            return GetUserIdResponse(userId, ErrorCode.GetUserIdError.Remote.Ok())
+            return GetUserIdResponse(userId, ErrorCode.GetUserIdError.Ok())
         }
 
-        fun error(errorCode: ErrorCode.GetUserIdError): GetUserIdResponse {
+        fun error(errorCode: ErrorCode): GetUserIdResponse {
             return GetUserIdResponse("", errorCode)
         }
     }

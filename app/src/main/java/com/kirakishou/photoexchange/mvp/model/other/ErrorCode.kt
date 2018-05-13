@@ -1,267 +1,250 @@
 package com.kirakishou.photoexchange.mvp.model.other
 
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
+import kotlin.reflect.KClass
 
 /**
  * Created by kirakishou on 7/26/2017.
  */
 
-sealed class ErrorCode(val value: Int) {
+sealed class ErrorCode(private val _value: Int) {
 
-    fun toInt(): Int {
-        return this.value
+    fun getValue(): Int {
+        return _value + offset()
+    }
+
+    abstract fun offset(): Int
+
+    sealed class TakePhotoErrors(value: Int) : ErrorCode(value) {
+        override fun offset(): Int = -50
+
+        class UnknownError : TakePhotoErrors(0)
+        class Ok(val photo: TakenPhoto) : TakePhotoErrors(1)
+        class CameraIsNotAvailable : TakePhotoErrors(2)
+        class CameraIsNotStartedException : TakePhotoErrors(3)
+        class TimeoutException : TakePhotoErrors(4)
+        class DatabaseError : TakePhotoErrors(5)
+        class CouldNotTakePhoto : TakePhotoErrors(6)
     }
 
     sealed class UploadPhotoErrors(value: Int) : ErrorCode(value) {
-        sealed class Remote(value: Int) : UploadPhotoErrors(value) {
-            class UnknownError : Remote(-1)
-            class Ok : Remote(0)
-            class BadRequest : Remote(1)
-            class DatabaseError : Remote(2)
-            class CouldNotGetUserId : Remote(3)
-        }
+        override fun offset(): Int = 50
 
-        sealed class Local(value: Int) : UploadPhotoErrors(value) {
-            class BadServerResponse(val message: String? = null) : Local(-1000)
-            class NoPhotoFileOnDisk : Local(-1001)
-            class Timeout : Local(-1002)
-            class Interrupted : Local(-1003)
-            class DatabaseError : Local(-1004)
+        class UnknownError : UploadPhotoErrors(0)
+        class Ok : UploadPhotoErrors(1)
+        class BadRequest : UploadPhotoErrors(2)
+        class DatabaseError : UploadPhotoErrors(3)
+
+        class LocalBadServerResponse : UploadPhotoErrors(25)
+        class LocalNoPhotoFileOnDisk : UploadPhotoErrors(26)
+        class LocalTimeout : UploadPhotoErrors(27)
+        class LocalInterrupted : UploadPhotoErrors(28)
+        class LocalDatabaseError : UploadPhotoErrors(29)
+        class LocalCouldNotGetUserId : UploadPhotoErrors(30)
+
+        companion object {
+            fun fromInt(value: Int): UploadPhotoErrors {
+                return when (value) {
+                    50 -> UnknownError()
+                    51 -> Ok()
+                    52 -> BadRequest()
+                    53 -> DatabaseError()
+
+                    75 -> LocalBadServerResponse()
+                    66 -> LocalNoPhotoFileOnDisk()
+                    77 -> LocalTimeout()
+                    78 -> LocalInterrupted()
+                    79 -> LocalDatabaseError()
+                    800 -> LocalCouldNotGetUserId()
+                    else -> throw IllegalArgumentException("Unknown value $value")
+                }
+            }
         }
     }
 
     sealed class ReceivePhotosErrors(value: Int) : ErrorCode(value) {
-        sealed class Remote(value: Int) : ReceivePhotosErrors(value) {
-            class UnknownError : Remote(-1)
-            class Ok : Remote(0)
-            class BadRequest : Remote(1)
-            class DatabaseError : Remote(2)
-            class NoPhotosInRequest : Remote(3)
-            class TooManyPhotosRequested : Remote(4)
-            class NoPhotosToSendBack : Remote(5)
-            class NotEnoughPhotosUploaded : Remote(6)
-        }
+        override fun offset(): Int = 100
 
-        sealed class Local(value: Int) : ReceivePhotosErrors(value) {
-            class BadServerResponse(val message: String? = null) : Local(-1000)
-            class Timeout : Local(-1001)
+        class UnknownError : ReceivePhotosErrors(0)
+        class Ok : ReceivePhotosErrors(1)
+        class BadRequest : ReceivePhotosErrors(2)
+        class NoPhotosInRequest : ReceivePhotosErrors(3)
+        class NoPhotosToSendBack : ReceivePhotosErrors(4)
+
+        class LocalDatabaseError : ReceivePhotosErrors(25)
+        class LocalTooManyPhotosRequested : ReceivePhotosErrors(26)
+        class LocalNotEnoughPhotosUploaded : ReceivePhotosErrors(27)
+        class LocalBadServerResponse : ReceivePhotosErrors(28)
+        class LocalTimeout : ReceivePhotosErrors(29)
+
+        companion object {
+            fun fromInt(value: Int): ReceivePhotosErrors {
+                return when (value) {
+                    100 -> UnknownError()
+                    101 -> Ok()
+                    102 -> BadRequest()
+                    103 -> NoPhotosInRequest()
+                    104 -> NoPhotosToSendBack()
+
+                    125 -> LocalDatabaseError()
+                    126 -> LocalTooManyPhotosRequested()
+                    127 -> LocalNotEnoughPhotosUploaded()
+                    128 -> LocalBadServerResponse()
+                    129 -> LocalTimeout()
+                    else -> throw IllegalArgumentException("Unknown value $value")
+                }
+            }
         }
     }
 
-    sealed class GetGalleryPhotosErrors(value: Int) : ErrorCode(value) {
-        sealed class Remote(value: Int) : GetGalleryPhotosErrors(value) {
-            class UnknownError : Remote(-1)
-            class Ok : Remote(0)
-            class BadRequest : Remote(1)
-            class NoPhotosInRequest : Remote(2)
-        }
+    sealed class GalleryPhotosErrors(value: Int) : ErrorCode(value) {
+        override fun offset(): Int = 150
 
-        sealed class Local(value: Int) : GetGalleryPhotosErrors(value) {
-            class BadServerResponse(val message: String? = null) : Local(-1000)
-            class Timeout : Local(-1001)
-            class DatabaseError : Local(-1002)
-        }
-    }
+        class UnknownError : GalleryPhotosErrors(0)
+        class Ok : GalleryPhotosErrors(1)
+        class BadRequest : GalleryPhotosErrors(2)
+        class NoPhotosInRequest : GalleryPhotosErrors(3)
 
-    sealed class GetGalleryPhotosInfoError(value: Int) : ErrorCode(value) {
-        sealed class Remote(value: Int) : GetGalleryPhotosInfoError(value) {
-            class UnknownError : Remote(-1)
-            class Ok : Remote(0)
-            class BadRequest : Remote(1)
-            class NoPhotosInRequest : Remote(2)
-        }
+        class LocalBadServerResponse : GalleryPhotosErrors(25)
+        class LocalTimeout : GalleryPhotosErrors(26)
+        class LocalDatabaseError : GalleryPhotosErrors(27)
 
-        sealed class Local(value: Int) : GetGalleryPhotosInfoError(value) {
-            class BadServerResponse(val message: String? = null) : Local(-1000)
-            class Timeout : Local(-1001)
-            class DatabaseError : Local(-1002)
+        companion object {
+            fun fromInt(value: Int): GalleryPhotosErrors {
+                return when (value) {
+                    150 -> UnknownError()
+                    151 -> Ok()
+                    152 -> BadRequest()
+                    153 -> NoPhotosInRequest()
+
+                    175 -> LocalBadServerResponse()
+                    176 -> LocalTimeout()
+                    177 -> LocalDatabaseError()
+                    else -> throw IllegalArgumentException("Unknown value $value")
+                }
+            }
         }
     }
 
     sealed class FavouritePhotoErrors(value: Int) : ErrorCode(value) {
-        sealed class Remote(value: Int) : FavouritePhotoErrors(value) {
-            class UnknownError : Remote(-1)
-            class Ok : Remote(0)
-            class AlreadyFavourited : Remote(1)
-            class BadRequest : Remote(2)
-        }
+        override fun offset(): Int = 200
 
-        sealed class Local(value: Int) : FavouritePhotoErrors(value) {
-            class BadServerResponse(val message: String? = null) : Local(-1000)
-            class Timeout : Local(-1001)
+        class UnknownError : FavouritePhotoErrors(0)
+        class Ok : FavouritePhotoErrors(1)
+        class BadRequest : FavouritePhotoErrors(2)
+
+        class LocalBadServerResponse : FavouritePhotoErrors(25)
+        class LocalTimeout : FavouritePhotoErrors(26)
+
+        companion object {
+            fun fromInt(value: Int): FavouritePhotoErrors {
+                return when (value) {
+                    200 -> UnknownError()
+                    201 -> Ok()
+                    202 -> BadRequest()
+
+                    225 -> LocalBadServerResponse()
+                    226 -> LocalTimeout()
+                    else -> throw IllegalArgumentException("Unknown value $value")
+                }
+            }
         }
     }
 
     sealed class ReportPhotoErrors(value: Int) : ErrorCode(value) {
-        sealed class Remote(value: Int) : ReportPhotoErrors(value) {
-            class UnknownError : Remote(-1)
-            class Ok : Remote(0)
-            class AlreadyReported : Remote(1)
-            class BadRequest : Remote(2)
-        }
+        override fun offset(): Int = 250
 
-        sealed class Local(value: Int) : ReportPhotoErrors(value) {
-            class BadServerResponse(val message: String? = null) : Local(-1000)
-            class Timeout : Local(-1001)
+        class UnknownError : ReportPhotoErrors(0)
+        class Ok : ReportPhotoErrors(1)
+        class BadRequest : ReportPhotoErrors(2)
+
+        class LocalBadServerResponse : ReportPhotoErrors(25)
+        class LocalTimeout : ReportPhotoErrors(26)
+
+        companion object {
+            fun fromInt(value: Int): ReportPhotoErrors {
+                return when (value) {
+                    250 -> UnknownError()
+                    251 -> Ok()
+                    252 -> BadRequest()
+
+                    275 -> LocalBadServerResponse()
+                    276 -> LocalTimeout()
+                    else -> throw IllegalArgumentException("Unknown value $value")
+                }
+            }
         }
     }
 
     sealed class GetUserIdError(value: Int) : ErrorCode(value) {
-        sealed class Remote(value: Int) : GetUserIdError(value) {
-            class UnknownError : Remote(-1)
-            class Ok : Remote(0)
-            class DatabaseError : Remote(1)
-        }
+        override fun offset(): Int = 300
 
-        sealed class Local(value: Int) : GetUserIdError(value) {
-            class BadServerResponse(val message: String? = null) : Local(-1000)
-            class Timeout : Local(-1001)
-            class DatabaseError : Local(-1002)
-        }
-    }
+        class UnknownError : GetUserIdError(0)
+        class Ok : GetUserIdError(1)
+        class DatabaseError : GetUserIdError(2)
 
-    sealed class GetUploadedPhotoIdsError(value: Int) : ErrorCode(value) {
-        sealed class Remote(value: Int) : GetUploadedPhotoIdsError(value) {
-            class UnknownError : Remote(-1)
-            class Ok : Remote(0)
-            class DatabaseError : Remote(1)
-            class BadRequest : Remote(2)
-        }
+        class LocalBadServerResponse : GetUserIdError(25)
+        class LocalTimeout : GetUserIdError(26)
+        class LocalDatabaseError : GetUserIdError(27)
 
-        sealed class Local(value: Int) : GetUploadedPhotoIdsError(value) {
-            class BadServerResponse(val message: String? = null) : Local(-1000)
-            class Timeout : Local(-1001)
-            class DatabaseError : Local(-1002)
+        companion object {
+            fun fromInt(value: Int): GetUserIdError {
+                return when (value) {
+                    300 -> UnknownError()
+                    301 -> Ok()
+                    302 -> DatabaseError()
+
+                    325 -> LocalBadServerResponse()
+                    326 -> LocalTimeout()
+                    327 -> LocalDatabaseError()
+                    else -> throw IllegalArgumentException("Unknown value $value")
+                }
+            }
         }
     }
 
-    sealed class GetUploadedPhotosError(value: Int) : ErrorCode(value) {
-        sealed class Remote(value: Int) : GetUploadedPhotosError(value) {
-            class UnknownError : Remote(-1)
-            class Ok : Remote(0)
-            class DatabaseError : Remote(1)
-            class BadRequest : Remote(2)
-        }
+    sealed class GetUploadedPhotosErrors(value: Int) : ErrorCode(value) {
+        override fun offset(): Int = 350
 
-        sealed class Local(value: Int) : GetUploadedPhotosError(value) {
-            class BadServerResponse(val message: String? = null) : Local(-1000)
-            class Timeout : Local(-1001)
-            class DatabaseError : Local(-1002)
-        }
-    }
+        class UnknownErrors : GetUploadedPhotosErrors(0)
+        class Ok : GetUploadedPhotosErrors(1)
+        class DatabaseErrors : GetUploadedPhotosErrors(2)
+        class BadRequest : GetUploadedPhotosErrors(3)
+        class NoPhotosInRequest : GetUploadedPhotosErrors(4)
 
-    //local
-    sealed class TakePhotoErrors(value: Int) : ErrorCode(value) {
-        class UnknownError : TakePhotoErrors(-1)
-        class Ok(val photo: TakenPhoto) : TakePhotoErrors(0)
-        class CameraIsNotAvailable : TakePhotoErrors(1)
-        class CameraIsNotStartedException : TakePhotoErrors(2)
-        class TimeoutException : TakePhotoErrors(3)
-        class DatabaseError : TakePhotoErrors(4)
-        class CouldNotTakePhoto : TakePhotoErrors(5)
+        class LocalBadServerResponse : GetUploadedPhotosErrors(25)
+        class LocalTimeout : GetUploadedPhotosErrors(26)
+        class LocalUserIdIsEmpty : GetUploadedPhotosErrors(27)
+
+        companion object {
+            fun fromInt(value: Int): GetUploadedPhotosErrors {
+                return when (value) {
+                    350 -> UnknownErrors()
+                    351 -> Ok()
+                    352 -> DatabaseErrors()
+                    353 -> BadRequest()
+                    354 -> NoPhotosInRequest()
+
+                    375 -> LocalBadServerResponse()
+                    376 -> LocalTimeout()
+                    377 -> LocalUserIdIsEmpty()
+                    else -> throw IllegalArgumentException("Unknown value $value")
+                }
+            }
+        }
     }
 
     companion object {
-
-        //TODO: don't forget to add errorCodes here
-        fun <T> fromInt(clazz: Class<*>, errorCodeInt: Int?): T {
-            return when (clazz) {
-                UploadPhotoErrors::class.java -> {
-                    val errorCode = when (errorCodeInt) {
-                        //local errors
-                        null,
-                        -1000 -> UploadPhotoErrors.Local.BadServerResponse()
-                        -1001 -> UploadPhotoErrors.Local.NoPhotoFileOnDisk()
-                        -1002 -> UploadPhotoErrors.Local.Timeout()
-                        -1003 -> UploadPhotoErrors.Local.Interrupted()
-
-                        //remote errors
-                        -1 -> UploadPhotoErrors.Remote.UnknownError()
-                        0 -> UploadPhotoErrors.Remote.Ok()
-                        1 -> UploadPhotoErrors.Remote.BadRequest()
-                        2 -> UploadPhotoErrors.Remote.DatabaseError()
-                        else -> throw IllegalArgumentException("Unknown errorCodeInt $errorCodeInt")
-                    }
-
-                    errorCode as T
-                }
-
-                ReceivePhotosErrors::class.java -> {
-                    val errorCode = when (errorCodeInt) {
-                        //local errors
-                        null,
-                        -1000 -> ReceivePhotosErrors.Local.BadServerResponse()
-                        -1001 -> ReceivePhotosErrors.Local.Timeout()
-
-                        //remote errors
-                        -1 -> ReceivePhotosErrors.Remote.UnknownError()
-                        0 -> ReceivePhotosErrors.Remote.Ok()
-                        1 -> ReceivePhotosErrors.Remote.BadRequest()
-                        2 -> ReceivePhotosErrors.Remote.DatabaseError()
-                        3 -> ReceivePhotosErrors.Remote.NoPhotosInRequest()
-                        4 -> ReceivePhotosErrors.Remote.TooManyPhotosRequested()
-                        5 -> ReceivePhotosErrors.Remote.NoPhotosToSendBack()
-                        6 -> ReceivePhotosErrors.Remote.NotEnoughPhotosUploaded()
-                        else -> throw IllegalArgumentException("Unknown errorCodeInt $errorCodeInt")
-                    }
-
-                    errorCode as T
-                }
-
-                GetGalleryPhotosErrors::class.java -> {
-                    val errorCode = when (errorCodeInt) {
-                        //local errors
-                        null,
-                        -1000 -> GetGalleryPhotosErrors.Local.BadServerResponse()
-                        -1001 -> GetGalleryPhotosErrors.Local.Timeout()
-
-                        //remote errors
-                        -1 -> GetGalleryPhotosErrors.Remote.UnknownError()
-                        0 -> GetGalleryPhotosErrors.Remote.Ok()
-                        1 -> GetGalleryPhotosErrors.Remote.BadRequest()
-                        else -> throw IllegalArgumentException("Unknown errorCodeInt $errorCodeInt")
-                    }
-
-                    errorCode as T
-                }
-
-                FavouritePhotoErrors::class.java -> {
-                    val errorCode = when (errorCodeInt) {
-                        //local errors
-                        null,
-                        -1000 -> FavouritePhotoErrors.Local.BadServerResponse()
-                        -1001 -> FavouritePhotoErrors.Local.Timeout()
-
-                        //remote errors
-                        -1 -> FavouritePhotoErrors.Remote.UnknownError()
-                        0 -> FavouritePhotoErrors.Remote.Ok()
-                        1 -> FavouritePhotoErrors.Remote.AlreadyFavourited()
-                        2 -> FavouritePhotoErrors.Remote.BadRequest()
-                        else -> throw IllegalArgumentException("Unknown errorCodeInt $errorCodeInt")
-                    }
-
-                    errorCode as T
-                }
-
-                ReportPhotoErrors::class.java -> {
-                    val errorCode = when (errorCodeInt) {
-                        //local errors
-                        null,
-                        -1000 -> ReportPhotoErrors.Local.BadServerResponse()
-                        -1001 -> ReportPhotoErrors.Local.Timeout()
-
-                        //remote errors
-                        -1 -> ReportPhotoErrors.Remote.UnknownError()
-                        0 -> ReportPhotoErrors.Remote.Ok()
-                        1 -> ReportPhotoErrors.Remote.AlreadyReported()
-                        2 -> ReportPhotoErrors.Remote.BadRequest()
-                        else -> throw IllegalArgumentException("Unknown errorCodeInt $errorCodeInt")
-                    }
-
-                    errorCode as T
-                }
-
-                else -> throw IllegalArgumentException("Unknown response class $clazz")
+        fun fromInt(clazz: KClass<*>, errorCodeInt: Int): ErrorCode {
+            return when(clazz) {
+                UploadPhotoErrors::class -> UploadPhotoErrors.fromInt(errorCodeInt)
+                ReceivePhotosErrors::class -> ReceivePhotosErrors.fromInt(errorCodeInt)
+                GalleryPhotosErrors::class -> GalleryPhotosErrors.fromInt(errorCodeInt)
+                FavouritePhotoErrors::class -> FavouritePhotoErrors.fromInt(errorCodeInt)
+                ReportPhotoErrors::class -> ReportPhotoErrors.fromInt(errorCodeInt)
+                GetUserIdError::class -> GetUserIdError.fromInt(errorCodeInt)
+                GetUploadedPhotosErrors::class -> GetUploadedPhotosErrors.fromInt(errorCodeInt)
+                else -> throw IllegalArgumentException("Unknown class  $clazz")
             }
         }
     }

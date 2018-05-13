@@ -12,11 +12,11 @@ private constructor(
     val receivedPhotos: List<ReceivedPhoto>,
 
     errorCode: ErrorCode
-) : StatusResponse(errorCode.value, errorCode) {
+) : StatusResponse(errorCode.getValue(), errorCode) {
 
     companion object {
         fun success(receivedPhotos: List<ReceivedPhoto>): ReceivedPhotosResponse {
-            return ReceivedPhotosResponse(receivedPhotos, ErrorCode.ReceivePhotosErrors.Remote.Ok())
+            return ReceivedPhotosResponse(receivedPhotos, ErrorCode.ReceivePhotosErrors.Ok())
         }
 
         fun error(errorCode: ErrorCode): ReceivedPhotosResponse {

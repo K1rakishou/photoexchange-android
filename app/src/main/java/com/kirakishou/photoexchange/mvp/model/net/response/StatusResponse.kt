@@ -16,7 +16,7 @@ open class StatusResponse(
 ) {
     companion object {
         fun fromErrorCode(errorCode: ErrorCode): StatusResponse {
-            return StatusResponse(errorCode.value, errorCode)
+            return StatusResponse(errorCode.getValue(), errorCode)
         }
     }
 }
