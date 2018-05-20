@@ -52,8 +52,7 @@ class ReceivedPhotosFragment : BaseFragment() {
         initRx()
         initRecyclerView()
 
-        //TODO
-        loadPhotos(lastId, photosPerPage)
+        loadPhotos()
     }
 
     override fun onFragmentViewDestroy() {
@@ -82,6 +81,14 @@ class ReceivedPhotosFragment : BaseFragment() {
             .subscribe()
     }
 
+    private fun loadPhotos() {
+        compositeDisposable += viewModel.loadNextPageOfReceivedPhotos(lastId, photosPerPage)
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { photos -> addReceivedPhotosToAdapter(photos) }
+            .doOnError { Timber.tag(TAG).e(it) }
+            .subscribe()
+    }
+
     private fun initRecyclerView() {
         val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), PHOTO_ADAPTER_VIEW_WIDTH)
 
@@ -98,14 +105,6 @@ class ReceivedPhotosFragment : BaseFragment() {
         receivedPhotosList.adapter = adapter
         receivedPhotosList.clearOnScrollListeners()
         receivedPhotosList.addOnScrollListener(endlessScrollListener)
-    }
-
-    private fun loadPhotos(lastId: Long, photosPerPage: Int) {
-        viewModel.loadNextPageOfReceivedPhotos(lastId, photosPerPage)
-            .observeOn(AndroidSchedulers.mainThread())
-            .doOnSuccess { photos -> addPhotosToAdapter(photos) }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe()
     }
 
     private fun onViewStateChanged(viewStateEvent: ReceivedPhotosFragmentViewStateEvent) {
@@ -141,7 +140,7 @@ class ReceivedPhotosFragment : BaseFragment() {
         }
     }
 
-    private fun addPhotosToAdapter(receivedPhotos: List<ReceivedPhoto>) {
+    private fun addReceivedPhotosToAdapter(receivedPhotos: List<ReceivedPhoto>) {
         if (!isAdded) {
             return
         }

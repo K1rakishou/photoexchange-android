@@ -7,10 +7,7 @@ import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRep
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
-import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
-import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
-import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
-import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
+import com.kirakishou.photoexchange.interactors.*
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import javax.inject.Inject
 
@@ -27,6 +24,7 @@ class AllPhotosActivityViewModelFactory
     val favouritePhotoUseCase: FavouritePhotoUseCase,
     val reportPhotoUseCase: ReportPhotoUseCase,
     val getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
+    val getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
     val schedulerProvider: SchedulerProvider
 ) : ViewModelProvider.Factory {
 
@@ -39,6 +37,7 @@ class AllPhotosActivityViewModelFactory
             receivedPhotosRepository,
             galleryPhotosUseCase,
             getUploadedPhotosUseCase,
+            getReceivedPhotosUseCase,
             favouritePhotoUseCase,
             reportPhotoUseCase,
             schedulerProvider

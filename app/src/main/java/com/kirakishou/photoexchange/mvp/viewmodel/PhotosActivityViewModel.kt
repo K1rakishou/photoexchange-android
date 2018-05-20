@@ -7,10 +7,7 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.extension.drainErrorCodesTo
 import com.kirakishou.photoexchange.helper.extension.seconds
-import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
-import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
-import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
-import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
+import com.kirakishou.photoexchange.interactors.*
 import com.kirakishou.photoexchange.mvp.model.*
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
@@ -39,6 +36,7 @@ class PhotosActivityViewModel(
     private val receivedPhotosRepository: ReceivedPhotosRepository,
     private val getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
     private val getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
+    private val getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
     private val favouritePhotoUseCase: FavouritePhotoUseCase,
     private val reportPhotoUseCase: ReportPhotoUseCase,
     private val schedulerProvider: SchedulerProvider
@@ -119,9 +117,18 @@ class PhotosActivityViewModel(
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
-    fun loadNextPageOfReceivedPhotos(lastId: Long, photosPerPage: Int): Single<List<ReceivedPhoto>> {
-        return Single.fromCallable { receivedPhotosRepository.findAll() }
+    fun loadNextPageOfReceivedPhotos(lastId: Long, photosPerPage: Int): Observable<List<ReceivedPhoto>> {
+        return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
+            .filter { userId -> userId.isNotEmpty() }
+//            .doOnNext { uploadedPhotosFragmentViewStateSubject.onNext(UploadedPhotosFragmentViewStateEvent.ShowProgressFooter()) }
+            .flatMap { userId ->
+                getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
+                    .toObservable()
+            }
+            .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
+//            .doOnNext { uploadedPhotosFragmentViewStateSubject.onNext(UploadedPhotosFragmentViewStateEvent.HideProgressFooter()) }
+            .drainErrorCodesTo(UploadedPhotosFragment::class.java, errorCodesSubject)
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
