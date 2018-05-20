@@ -4,7 +4,7 @@ import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 
-open class ReceivedPhotosResponse
+class GetReceivedPhotosResponse
 private constructor(
 
     @Expose
@@ -15,17 +15,18 @@ private constructor(
 ) : StatusResponse(errorCode.getValue(), errorCode) {
 
     companion object {
-        fun success(receivedPhotos: List<ReceivedPhoto>): ReceivedPhotosResponse {
-            return ReceivedPhotosResponse(receivedPhotos, ErrorCode.ReceivePhotosErrors.Ok())
+        fun success(uploadedPhotos: List<ReceivedPhoto>): GetReceivedPhotosResponse {
+            return GetReceivedPhotosResponse(uploadedPhotos, ErrorCode.GetReceivedPhotosErrors.Ok())
         }
 
-        fun error(errorCode: ErrorCode): ReceivedPhotosResponse {
-            return ReceivedPhotosResponse(emptyList(), errorCode)
+        fun fail(errorCode: ErrorCode): GetReceivedPhotosResponse {
+            return GetReceivedPhotosResponse(emptyList(), errorCode)
         }
     }
 
-    //TODO: add photoId to the response on the server side as well
-    inner class ReceivedPhoto(
+    //TODO: server size
+    class ReceivedPhoto(
+
         @Expose
         @SerializedName("photo_id")
         val photoId: Long,
@@ -39,11 +40,11 @@ private constructor(
         val receivedPhotoName: String,
 
         @Expose
-        @SerializedName("lon")
-        val lon: Double,
+        @SerializedName("receiver_lon")
+        val receiverLon: Double,
 
         @Expose
-        @SerializedName("lat")
-        val lat: Double
+        @SerializedName("receiver_lat")
+        val receiverLat: Double
     )
 }

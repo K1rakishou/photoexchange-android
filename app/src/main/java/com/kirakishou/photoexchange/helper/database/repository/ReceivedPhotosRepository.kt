@@ -1,31 +1,40 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.entity.ReceivedPhotoEntity
+import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
+import com.kirakishou.photoexchange.mvp.model.net.response.GetReceivedPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.ReceivedPhotosResponse
 
 open class ReceivedPhotosRepository(
     private val database: MyDatabase
 ) {
-    private val photoAnswerDao = database.receivedPhotoDao()
+    private val receivedPhotosDao = database.receivedPhotoDao()
 
-    fun insert(receivedPhotoEntity: ReceivedPhotoEntity): Long {
-        return photoAnswerDao.insert(receivedPhotoEntity)
+    fun save(receivedPhoto: GetReceivedPhotosResponse.ReceivedPhoto): Long {
+        return receivedPhotosDao.save(ReceivedPhotosMapper.FromObject.toPhotoAnswerEntity(receivedPhoto))
     }
 
-    fun insert(receivedPhotos: ReceivedPhotosResponse.ReceivedPhoto): Long {
-        val photoAnswerEntity = ReceivedPhotosMapper.toPhotoAnswerEntity(receivedPhotos)
-        return insert(photoAnswerEntity)
+    fun save(receivedPhoto: ReceivedPhotosResponse.ReceivedPhoto): Boolean {
+        return receivedPhotosDao.save(ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhotoEntity(receivedPhoto))
+            .isSuccess()
+    }
+
+    fun saveMany(receivedPhotos: List<GetReceivedPhotosResponse.ReceivedPhoto>): Boolean {
+        return receivedPhotosDao.saveMany(ReceivedPhotosMapper.FromResponse.GetReceivedPhotos.toReceivedPhotoEntities(receivedPhotos))
+            .size == receivedPhotos.size
     }
 
     fun countAll(): Int {
-        return photoAnswerDao.countAll().toInt()
+        return receivedPhotosDao.countAll().toInt()
     }
 
     fun findAll(): List<ReceivedPhoto> {
-        val allPhotos = photoAnswerDao.findAll()
-        return allPhotos.map { ReceivedPhotosMapper.toPhotoAnswer(it) }
+        return ReceivedPhotosMapper.FromEntity.toReceivedPhotos(receivedPhotosDao.findAll())
+    }
+
+    fun findMany(receivedPhotoIds: List<Long>): List<ReceivedPhoto> {
+        return ReceivedPhotosMapper.FromEntity.toReceivedPhotos( receivedPhotosDao.findMany(receivedPhotoIds))
     }
 }

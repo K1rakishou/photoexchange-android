@@ -8,7 +8,7 @@ import com.kirakishou.photoexchange.helper.database.entity.ReceivedPhotoEntity.C
 @Entity(tableName = TABLE_NAME)
 class ReceivedPhotoEntity(
 
-    @PrimaryKey(autoGenerate = true)
+    @PrimaryKey
     @ColumnInfo(name = ID_COLUMN)
     var id: Long? = null,
 
@@ -33,6 +33,10 @@ class ReceivedPhotoEntity(
 
         fun empty(): ReceivedPhotoEntity {
             return ReceivedPhotoEntity()
+        }
+
+        fun create(photoId: Long, uploadedPhotoName: String,  receivedPhotoName: String, lon: Double = 0.0, lat: Double = 0.0): ReceivedPhotoEntity {
+            return ReceivedPhotoEntity(photoId, uploadedPhotoName, receivedPhotoName, lon, lat)
         }
 
         const val TABLE_NAME = "RECEIVED_PHOTO"

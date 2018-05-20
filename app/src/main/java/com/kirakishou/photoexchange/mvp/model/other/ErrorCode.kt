@@ -234,9 +234,40 @@ sealed class ErrorCode(private val _value: Int) {
         }
     }
 
+    sealed class GetReceivedPhotosErrors(value: Int) : ErrorCode(value) {
+        override fun offset(): Int = 400
+
+        class UnknownErrors : GetReceivedPhotosErrors(0)
+        class Ok : GetReceivedPhotosErrors(1)
+        class DatabaseErrors : GetReceivedPhotosErrors(2)
+        class BadRequest : GetReceivedPhotosErrors(3)
+        class NoPhotosInRequest : GetReceivedPhotosErrors(4)
+
+        class LocalBadServerResponse : GetReceivedPhotosErrors(25)
+        class LocalTimeout : GetReceivedPhotosErrors(26)
+        class LocalUserIdIsEmpty : GetReceivedPhotosErrors(27)
+
+        companion object {
+            fun fromInt(value: Int): GetReceivedPhotosErrors {
+                return when (value) {
+                    400 -> UnknownErrors()
+                    401 -> Ok()
+                    402 -> DatabaseErrors()
+                    403 -> BadRequest()
+                    404 -> NoPhotosInRequest()
+
+                    425 -> LocalBadServerResponse()
+                    426 -> LocalTimeout()
+                    427 -> LocalUserIdIsEmpty()
+                    else -> throw IllegalArgumentException("Unknown value $value")
+                }
+            }
+        }
+    }
+
     companion object {
         fun fromInt(clazz: KClass<*>, errorCodeInt: Int): ErrorCode {
-            return when(clazz) {
+            return when (clazz) {
                 UploadPhotoErrors::class -> UploadPhotoErrors.fromInt(errorCodeInt)
                 ReceivePhotosErrors::class -> ReceivePhotosErrors.fromInt(errorCodeInt)
                 GalleryPhotosErrors::class -> GalleryPhotosErrors.fromInt(errorCodeInt)
@@ -244,6 +275,7 @@ sealed class ErrorCode(private val _value: Int) {
                 ReportPhotoErrors::class -> ReportPhotoErrors.fromInt(errorCodeInt)
                 GetUserIdError::class -> GetUserIdError.fromInt(errorCodeInt)
                 GetUploadedPhotosErrors::class -> GetUploadedPhotosErrors.fromInt(errorCodeInt)
+                GetReceivedPhotosErrors::class -> GetReceivedPhotosErrors.fromInt(errorCodeInt)
                 else -> throw IllegalArgumentException("Unknown class  $clazz")
             }
         }

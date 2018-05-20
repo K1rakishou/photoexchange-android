@@ -1,9 +1,9 @@
 package com.kirakishou.photoexchange.mvp.model
 
 data class ReceivedPhoto(
-    val id: Long?,
+    val photoId: Long,
     val uploadedPhotoName: String,
-    var photoAnswerName: String,
+    var receivedPhotoName: String,
     var lon: Double,
     var lat: Double
 )

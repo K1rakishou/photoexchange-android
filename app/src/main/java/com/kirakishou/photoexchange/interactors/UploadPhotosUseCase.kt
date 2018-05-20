@@ -6,19 +6,17 @@ import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosReposi
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.util.BitmapUtils
 import com.kirakishou.photoexchange.helper.util.FileUtils
-import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
+import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.service.UploadPhotoServiceCallbacks
 import io.reactivex.Single
-import kotlinx.coroutines.experimental.CommonPool
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.rx2.asSingle
 import kotlinx.coroutines.experimental.rx2.await
+import kotlinx.coroutines.experimental.rx2.rxSingle
 import kotlinx.coroutines.experimental.sync.Mutex
 import kotlinx.coroutines.experimental.sync.withLock
 import timber.log.Timber
@@ -35,8 +33,8 @@ class UploadPhotosUseCase(
     private val mutex = Mutex()
 
     fun uploadPhotos(userId: String, location: LonLat, callbacks: WeakReference<UploadPhotoServiceCallbacks>?): Single<Boolean> {
-        return async {
-            return@async mutex.withLock {
+        return rxSingle {
+            return@rxSingle mutex.withLock {
                 Timber.tag(TAG).d("Start photo uploading")
 
                 val photosToUpload = takenPhotosRepository.findPhotosByStateAndUpdateState(PhotoState.PHOTO_QUEUED_UP, PhotoState.PHOTO_UPLOADING)
@@ -87,12 +85,12 @@ class UploadPhotosUseCase(
                                 }
 
                                 else -> {
-                                    Timber.tag(TAG).d("Could not upload photo with id ${photo.id}")
+                                    Timber.tag(TAG).d("Could not upload photo with photoId ${photo.id}")
                                     handleFailedPhoto(photo, callbacks, errorCode)
                                 }
                             }
                         } else {
-                            Timber.tag(TAG).d("Could not rotate photo with id ${photo.id}")
+                            Timber.tag(TAG).d("Could not rotate photo with photoId ${photo.id}")
                         }
                     } catch (error: Exception) {
                         Timber.tag(TAG).e(error)
@@ -106,7 +104,7 @@ class UploadPhotosUseCase(
 
                 return@withLock results.none { !it }
             }
-        }.asSingle(CommonPool)
+        }
     }
 
     private fun handlePhotoUploadingStart(callbacks: WeakReference<UploadPhotoServiceCallbacks>?, photo: TakenPhoto): File {

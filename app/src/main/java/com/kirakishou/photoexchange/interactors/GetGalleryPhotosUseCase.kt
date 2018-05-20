@@ -12,10 +12,8 @@ import com.kirakishou.photoexchange.mvp.model.GalleryPhotoInfo
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
-import kotlinx.coroutines.experimental.CommonPool
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.rx2.asSingle
 import kotlinx.coroutines.experimental.rx2.await
+import kotlinx.coroutines.experimental.rx2.rxSingle
 import timber.log.Timber
 
 class GetGalleryPhotosUseCase(
@@ -28,7 +26,7 @@ class GetGalleryPhotosUseCase(
     private val INTERVAL_TO_REFRESH_PHOTOS_FROM_SERVER = 30.minutes()
 
     fun loadPageOfPhotos(userId: String, lastId: Long, photosPerPage: Int): Single<Either<ErrorCode, List<GalleryPhoto>>> {
-        return async {
+        return rxSingle {
             try {
                 Timber.tag(TAG).d("sending loadPageOfPhotos request...")
 
@@ -37,13 +35,13 @@ class GetGalleryPhotosUseCase(
                 val getGalleryPhotoIdsErrorCode = getGalleryPhotoIdsResponse.errorCode
 
                 if (getGalleryPhotoIdsErrorCode !is ErrorCode.GalleryPhotosErrors.Ok) {
-                    return@async Either.Error(getGalleryPhotoIdsErrorCode)
+                    return@rxSingle Either.Error(getGalleryPhotoIdsErrorCode)
                 }
 
                 val photosResultList = mutableListOf<GalleryPhoto>()
                 val galleryPhotoIds = getGalleryPhotoIdsResponse.galleryPhotoIds
                 if (galleryPhotoIds.isEmpty()) {
-                    return@async Either.Value(photosResultList)
+                    return@rxSingle Either.Value(photosResultList)
                 }
 
                 //get photos by the ids from the database
@@ -60,7 +58,7 @@ class GetGalleryPhotosUseCase(
                     val result = getFreshPhotosFromServer(photoIdsToGetFromServer)
                     if (result is Either.Error) {
                         Timber.tag(TAG).w("Could not get fresh photos from the server, errorCode = ${result.error}")
-                        return@async Either.Error(result.error)
+                        return@rxSingle Either.Error(result.error)
                     }
 
                     (result as Either.Value)
@@ -86,7 +84,7 @@ class GetGalleryPhotosUseCase(
                         val result = getFreshPhotoInfosFromServer(userId, photoInfoIdsToGetFromServer)
                         if (result is Either.Error) {
                             Timber.tag(TAG).w("Could not get fresh photo info from the server, errorCode = ${result.error}")
-                            return@async Either.Error(result.error)
+                            return@rxSingle Either.Error(result.error)
                         }
 
                         (result as Either.Value)
@@ -99,12 +97,12 @@ class GetGalleryPhotosUseCase(
                 }
 
                 photosResultList.sortByDescending { it.galleryPhotoId }
-                return@async Either.Value(photosResultList)
+                return@rxSingle Either.Value(photosResultList)
             } catch (error: Throwable) {
                 Timber.tag(TAG).e(error)
-                return@async Either.Error(ErrorCode.GalleryPhotosErrors.UnknownError())
+                return@rxSingle Either.Error(ErrorCode.GalleryPhotosErrors.UnknownError())
             }
-        }.asSingle(CommonPool)
+        }
     }
 
     private fun updateGalleryPhotoInfo(photosResultList: MutableList<GalleryPhoto>, galleryPhotoInfoList: List<GalleryPhotoInfo>) {

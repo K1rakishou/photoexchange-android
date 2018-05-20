@@ -298,7 +298,7 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
                 runActivity(SettingsActivity::class.java)
             }
 
-            else -> throw IllegalArgumentException("Unknown menu item id ${item.itemId}")
+            else -> throw IllegalArgumentException("Unknown menu item photoId ${item.itemId}")
         }
 
         return true

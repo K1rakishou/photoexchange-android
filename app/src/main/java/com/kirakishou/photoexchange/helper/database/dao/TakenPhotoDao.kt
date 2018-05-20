@@ -20,8 +20,8 @@ abstract class TakenPhotoDao {
     abstract fun insert(takenPhotoEntity: TakenPhotoEntity): Long
 
     @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} " +
-        "WHERE ${TakenPhotoEntity.ID_COLUMN} = :id")
-    abstract fun findById(id: Long): TakenPhotoEntity?
+        "WHERE ${TakenPhotoEntity.ID_COLUMN} = :photoId")
+    abstract fun findById(photoId: Long): TakenPhotoEntity?
 
     @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} " +
         "WHERE ${TakenPhotoEntity.PHOTO_STATE_COLUMN} = :photoState " +
@@ -66,9 +66,9 @@ abstract class TakenPhotoDao {
 
     @Query("UPDATE ${TakenPhotoEntity.TABLE_NAME} " +
         "SET ${TakenPhotoEntity.PHOTO_STATE_COLUMN} = :photoState " +
-        "WHERE ${TakenPhotoEntity.ID_COLUMN} = :id")
+        "WHERE ${TakenPhotoEntity.ID_COLUMN} = :photoId")
     @TypeConverters(PhotoStateConverter::class)
-    abstract fun updateSetNewPhotoState(id: Long, photoState: PhotoState): Int
+    abstract fun updateSetNewPhotoState(photoId: Long, photoState: PhotoState): Int
 
     @Query("UPDATE ${TakenPhotoEntity.TABLE_NAME} " +
         "SET ${TakenPhotoEntity.PHOTO_STATE_COLUMN} = :newState " +
@@ -92,6 +92,6 @@ abstract class TakenPhotoDao {
     abstract fun updateSetPhotoPublic(photoId: Long): Int
 
     @Query("DELETE FROM ${TakenPhotoEntity.TABLE_NAME} " +
-        "WHERE ${TakenPhotoEntity.ID_COLUMN} = :id")
-    abstract fun deleteById(id: Long): Int
+        "WHERE ${TakenPhotoEntity.ID_COLUMN} = :photoId")
+    abstract fun deleteById(photoId: Long): Int
 }

@@ -69,4 +69,14 @@ class ApiClient
         return GetUploadedPhotosRequest<GetUploadedPhotosResponse>(userId, photoIds, apiService, schedulerProvider, gson)
             .execute()
     }
+
+    fun getReceivedPhotoIds(userId: String, lastId: Long, count: Int): Single<GetReceivedPhotoIdsResponse> {
+        return GetReceivedPhotoIdsRequest<GetReceivedPhotoIdsResponse>(userId, lastId, count, apiService, schedulerProvider, gson)
+            .execute()
+    }
+
+    fun getReceivedPhotos(userId: String, photoIds: String): Single<GetReceivedPhotosResponse> {
+        return GetReceivedPhotosRequest<GetReceivedPhotosResponse>(userId, photoIds, apiService, schedulerProvider, gson)
+            .execute()
+    }
 }

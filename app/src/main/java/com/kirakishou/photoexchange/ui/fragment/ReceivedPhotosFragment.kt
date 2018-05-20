@@ -11,15 +11,18 @@ import com.kirakishou.photoexchange.helper.extension.filterErrorCodes
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.ReceivePhotosEvent
+import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapterSpanSizeLookup
 import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewStateEvent
+import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
+import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -35,15 +38,20 @@ class ReceivedPhotosFragment : BaseFragment() {
     lateinit var viewModel: PhotosActivityViewModel
 
     lateinit var adapter: ReceivedPhotosAdapter
+    lateinit var endlessScrollListener: EndlessRecyclerOnScrollListener
 
     private val TAG = "ReceivedPhotosFragment"
     private val PHOTO_ADAPTER_VIEW_WIDTH = 288
+    private val loadMoreSubject = PublishSubject.create<Int>()
+    private var photosPerPage = 0
+    private var lastId = Long.MAX_VALUE
 
     override fun getContentView(): Int = R.layout.fragment_received_photos
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRx()
         initRecyclerView()
+
         loadPhotos()
     }
 
@@ -73,6 +81,14 @@ class ReceivedPhotosFragment : BaseFragment() {
             .subscribe()
     }
 
+    private fun loadPhotos() {
+        compositeDisposable += viewModel.loadNextPageOfReceivedPhotos(lastId, photosPerPage)
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { photos -> addReceivedPhotosToAdapter(photos) }
+            .doOnError { Timber.tag(TAG).e(it) }
+            .subscribe()
+    }
+
     private fun initRecyclerView() {
         val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), PHOTO_ADAPTER_VIEW_WIDTH)
 
@@ -81,17 +97,14 @@ class ReceivedPhotosFragment : BaseFragment() {
 
         val layoutManager = GridLayoutManager(requireContext(), columnsCount)
         layoutManager.spanSizeLookup = ReceivedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
+        photosPerPage = Constants.RECEIVED_PHOTOS_PER_ROW * layoutManager.spanCount
+
+        endlessScrollListener = EndlessRecyclerOnScrollListener(layoutManager, photosPerPage, loadMoreSubject)
 
         receivedPhotosList.layoutManager = layoutManager
         receivedPhotosList.adapter = adapter
-    }
-
-    private fun loadPhotos() {
-        viewModel.loadReceivedPhotos()
-            .observeOn(AndroidSchedulers.mainThread())
-            .doOnSuccess { photos -> addPhotosToAdapter(photos) }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe()
+        receivedPhotosList.clearOnScrollListeners()
+        receivedPhotosList.addOnScrollListener(endlessScrollListener)
     }
 
     private fun onViewStateChanged(viewStateEvent: ReceivedPhotosFragmentViewStateEvent) {
@@ -127,7 +140,7 @@ class ReceivedPhotosFragment : BaseFragment() {
         }
     }
 
-    private fun addPhotosToAdapter(receivedPhotos: List<ReceivedPhoto>) {
+    private fun addReceivedPhotosToAdapter(receivedPhotos: List<ReceivedPhoto>) {
         if (!isAdded) {
             return
         }

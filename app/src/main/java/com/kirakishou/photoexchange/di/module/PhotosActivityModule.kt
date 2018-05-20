@@ -7,10 +7,7 @@ import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRep
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
-import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
-import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
-import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
-import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
+import com.kirakishou.photoexchange.interactors.*
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.AllPhotosActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
@@ -36,6 +33,7 @@ open class PhotosActivityModule(
                                 galleryPhotosUseCase: GetGalleryPhotosUseCase,
                                 favouritePhotoUseCase: FavouritePhotoUseCase,
                                 getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
+                                getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
                                 reportPhotoUseCase: ReportPhotoUseCase): AllPhotosActivityViewModelFactory {
         return AllPhotosActivityViewModelFactory(
             takenPhotosRepository,
@@ -46,6 +44,7 @@ open class PhotosActivityModule(
             favouritePhotoUseCase,
             reportPhotoUseCase,
             getUploadedPhotosUseCase,
+            getReceivedPhotosUseCase,
             schedulerProvider)
     }
 

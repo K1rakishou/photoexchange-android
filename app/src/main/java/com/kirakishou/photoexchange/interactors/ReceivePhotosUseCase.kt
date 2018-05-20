@@ -52,25 +52,23 @@ class ReceivePhotosUseCase(
     }
 
     private fun handleSuccessResult(response: ReceivedPhotosResponse, callbacks: WeakReference<ReceivePhotosServiceCallbacks>) {
-        for (photoAnswerResponse in response.receivedPhotos) {
-            var insertedPhotoAnswerId: Long? = null
-
+        for (receivedPhoto in response.receivedPhotos) {
             val result = database.transactional {
-                insertedPhotoAnswerId = receivedPhotosRepository.insert(photoAnswerResponse)
-                if (insertedPhotoAnswerId!!.isFail()) {
-                    Timber.tag(TAG).w("Could not save photo with name ${photoAnswerResponse.receivedPhotoName}")
+                if (!receivedPhotosRepository.save(receivedPhoto)) {
+                    Timber.tag(TAG).w("Could not save photo with name ${receivedPhoto.receivedPhotoName}")
                     return@transactional false
                 }
 
-                if (!uploadedPhotosRepository.updateReceiverInfo(photoAnswerResponse.uploadedPhotoName, photoAnswerResponse.lon, photoAnswerResponse.lat)) {
-                    Timber.tag(TAG).w("Could not update receiver name for photo ${photoAnswerResponse.uploadedPhotoName}")
+                if (!uploadedPhotosRepository.updateReceiverInfo(receivedPhoto.uploadedPhotoName, receivedPhoto.lon, receivedPhoto.lat)) {
+                    Timber.tag(TAG).w("Could not update receiver name for photo ${receivedPhoto.uploadedPhotoName}")
                     return@transactional false
                 }
 
-                return@transactional takenPhotosRepository.deletePhotoByName(photoAnswerResponse.uploadedPhotoName)
+                //TODO: probably should move this out of the transaction
+                return@transactional takenPhotosRepository.deletePhotoByName(receivedPhoto.uploadedPhotoName)
             }
 
-            val photoAnswer = ReceivedPhotosMapper.toPhotoAnswer(insertedPhotoAnswerId, photoAnswerResponse)
+            val photoAnswer = ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhoto(receivedPhoto)
 
             if (result) {
                 val takenPhotoId = uploadedPhotosRepository.findByPhotoIdByName(photoAnswer.uploadedPhotoName)

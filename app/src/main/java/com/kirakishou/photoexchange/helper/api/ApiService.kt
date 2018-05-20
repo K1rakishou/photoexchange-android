@@ -50,4 +50,13 @@ interface ApiService {
     @GET("/v1/api/get_uploaded_photos/{user_id}/{photo_ids}")
     fun getUploadedPhotos(@Path("user_id") userId: String,
                           @Path("photo_ids") photoIds: String): Single<Response<GetUploadedPhotosResponse>>
+
+    @GET("/v1/api/get_received_photo_ids/{user_id}/{last_id}/{count}")
+    fun getReceivedPhotoIds(@Path("user_id") userId: String,
+                            @Path("last_id") lastId: Long,
+                            @Path("count") count: Int): Single<Response<GetReceivedPhotoIdsResponse>>
+
+    @GET("/v1/api/get_received_photos/{user_id}/{photo_ids}")
+    fun getReceivedPhotos(@Path("user_id") userId: String,
+                          @Path("photo_ids") photoIds: String): Single<Response<GetReceivedPhotosResponse>>
 }
