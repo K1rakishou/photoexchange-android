@@ -335,7 +335,7 @@ class UploadedPhotosAdapter(
 //
 //        for ((localIndex, adapterItem) in queuedUpItems.withIndex()) {
 //            adapterItem as UploadedPhotosAdapterItem.TakenPhotoItem
-//            if (adapterItem.takenPhoto.id == photoId) {
+//            if (adapterItem.takenPhoto.photoId == photoId) {
 //                val updatedAdapterItem = updateFunction(adapterItem.takenPhoto)
 //                queuedUpItems[localIndex] = UploadedPhotosAdapterItem.TakenPhotoItem(updatedAdapterItem)
 //                notifyItemChanged(currentIndex)
@@ -347,7 +347,7 @@ class UploadedPhotosAdapter(
 //
 //        for ((localIndex, adapterItem) in failedToUploadItems.withIndex()) {
 //            adapterItem as UploadedPhotosAdapterItem.FailedToUploadItem
-//            if (adapterItem.failedToUploadPhoto.id == photoId) {
+//            if (adapterItem.failedToUploadPhoto.photoId == photoId) {
 //                val updatedAdapterItem = updateFunction(adapterItem.failedToUploadPhoto)
 //                failedToUploadItems[localIndex] = UploadedPhotosAdapterItem.FailedToUploadItem(updatedAdapterItem)
 //                notifyItemChanged(currentIndex)

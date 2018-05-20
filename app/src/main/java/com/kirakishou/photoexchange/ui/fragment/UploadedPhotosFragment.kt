@@ -36,7 +36,7 @@ import javax.inject.Inject
 class UploadedPhotosFragment : BaseFragment() {
 
     @BindView(R.id.my_photos_list)
-    lateinit var photosList: RecyclerView
+    lateinit var uploadedPhotosList: RecyclerView
 
     @Inject
     lateinit var imageLoader: ImageLoader
@@ -91,10 +91,10 @@ class UploadedPhotosFragment : BaseFragment() {
 
         endlessScrollListener = EndlessRecyclerOnScrollListener(layoutManager, photosPerPage, loadMoreSubject)
 
-        photosList.layoutManager = layoutManager
-        photosList.adapter = adapter
-        photosList.clearOnScrollListeners()
-        photosList.addOnScrollListener(endlessScrollListener)
+        uploadedPhotosList.layoutManager = layoutManager
+        uploadedPhotosList.adapter = adapter
+        uploadedPhotosList.clearOnScrollListeners()
+        uploadedPhotosList.addOnScrollListener(endlessScrollListener)
     }
 
     private fun initRx() {
@@ -164,10 +164,10 @@ class UploadedPhotosFragment : BaseFragment() {
             return
         }
 
-        photosList.post {
+        uploadedPhotosList.post {
             when (viewStateEvent) {
                 is UploadedPhotosFragmentViewStateEvent.ScrollToTop -> {
-                    photosList.scrollToPosition(0)
+                    uploadedPhotosList.scrollToPosition(0)
                 }
                 is UploadedPhotosFragmentViewStateEvent.Default -> {
 
@@ -200,7 +200,7 @@ class UploadedPhotosFragment : BaseFragment() {
             return
         }
 
-        photosList.post {
+        uploadedPhotosList.post {
             when (event) {
                 is PhotoUploadEvent.OnLocationUpdateStart -> {
                     adapter.showObtainCurrentLocationNotification()
@@ -245,8 +245,8 @@ class UploadedPhotosFragment : BaseFragment() {
     private fun handleErrorEvent(event: PhotoUploadEvent) {
         when (event) {
             is PhotoUploadEvent.OnCouldNotGetUserIdFromServerError -> {
-                Timber.tag(TAG).e("Could not get user id from the server")
-                showToast("Could not get user id from the server")
+                Timber.tag(TAG).e("Could not get user photoId from the server")
+                showToast("Could not get user photoId from the server")
             }
             is PhotoUploadEvent.OnUnknownError -> {
                 (requireActivity() as PhotosActivity).showUnknownErrorMessage(event.error)
@@ -262,7 +262,7 @@ class UploadedPhotosFragment : BaseFragment() {
             return
         }
 
-        photosList.post {
+        uploadedPhotosList.post {
             endlessScrollListener.pageLoaded()
 
             if (uploadedPhotos.isNotEmpty()) {
@@ -281,7 +281,7 @@ class UploadedPhotosFragment : BaseFragment() {
             return
         }
 
-        photosList.post {
+        uploadedPhotosList.post {
             if (takenPhotos.isNotEmpty()) {
                 adapter.clear()
                 adapter.addTakenPhotos(takenPhotos)
@@ -292,13 +292,13 @@ class UploadedPhotosFragment : BaseFragment() {
     }
 
     private fun addProgressFooter() {
-        photosList.post {
+        uploadedPhotosList.post {
             adapter.showProgressFooter()
         }
     }
 
     private fun removeProgressFooter() {
-        photosList.post {
+        uploadedPhotosList.post {
             adapter.hideProgressFooter()
         }
     }

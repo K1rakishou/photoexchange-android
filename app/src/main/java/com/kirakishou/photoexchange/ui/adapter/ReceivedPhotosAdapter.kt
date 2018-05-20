@@ -45,8 +45,8 @@ class ReceivedPhotosAdapter(
                 val photoAnswer = (items[position] as? ReceivedPhotosAdapterItem.ReceivedPhotoItem)?.receivedPhoto
                     ?: return
 
-                imageLoader.loadImageFromNetInto(photoAnswer.photoAnswerName, ImageLoader.PhotoSize.Small, holder.photoView)
-                holder.photoIdTextView.text = photoAnswer.id?.toString() ?: "null"
+                imageLoader.loadImageFromNetInto(photoAnswer.receivedPhotoName, ImageLoader.PhotoSize.Small, holder.photoView)
+                holder.photoIdTextView.text = photoAnswer.photoId?.toString() ?: "null"
             }
             else -> IllegalArgumentException("Unknown viewHolder: ${holder::class.java.simpleName}")
         }

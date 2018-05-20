@@ -9,10 +9,8 @@ import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
-import kotlinx.coroutines.experimental.CommonPool
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.rx2.asSingle
 import kotlinx.coroutines.experimental.rx2.await
+import kotlinx.coroutines.experimental.rx2.rxSingle
 import timber.log.Timber
 
 class GetUploadedPhotosUseCase(
@@ -23,7 +21,7 @@ class GetUploadedPhotosUseCase(
     private val TAG = "GetUploadedPhotosUseCase"
 
     fun loadPageOfPhotos(userId: String, lastId: Long, count: Int): Single<Either<ErrorCode, List<UploadedPhoto>>> {
-        return async {
+        return rxSingle {
             try {
                 Timber.tag(TAG).d("sending loadPageOfPhotos request...")
 
@@ -31,13 +29,13 @@ class GetUploadedPhotosUseCase(
                 val errorCode = response.errorCode
 
                 if (errorCode !is ErrorCode.GetUploadedPhotosErrors.Ok) {
-                    return@async Either.Error(errorCode)
+                    return@rxSingle Either.Error(errorCode)
                 }
 
                 val photosResultList = mutableListOf<UploadedPhoto>()
                 val uploadedPhotoIds = response.uploadedPhotoIds
                 if (uploadedPhotoIds.isEmpty()) {
-                    return@async Either.Value(photosResultList)
+                    return@rxSingle Either.Value(photosResultList)
                 }
 
                 val uploadedPhotosFromDb = uploadedPhotosRepository.findMany(uploadedPhotoIds)
@@ -51,7 +49,7 @@ class GetUploadedPhotosUseCase(
                     val result = getFreshPhotosFromServer(userId, photoIdsToGetFromServer)
                     if (result is Either.Error) {
                         Timber.tag(TAG).w("Could not get fresh photos from the server, errorCode = ${result.error}")
-                        return@async Either.Error(result.error)
+                        return@rxSingle Either.Error(result.error)
                     }
 
                     (result as Either.Value)
@@ -61,12 +59,12 @@ class GetUploadedPhotosUseCase(
                 }
 
                 photosResultList.sortBy { it.photoId }
-                return@async Either.Value(photosResultList)
+                return@rxSingle Either.Value(photosResultList)
 
             } catch (error: Throwable) {
-                return@async Either.Error(ErrorCode.GetUploadedPhotosErrors.UnknownErrors())
+                return@rxSingle Either.Error(ErrorCode.GetUploadedPhotosErrors.UnknownErrors())
             }
-        }.asSingle(CommonPool)
+        }
     }
 
     private suspend fun getFreshPhotosFromServer(userId: String, photoIds: List<Long>): Either<ErrorCode, List<UploadedPhoto>> {

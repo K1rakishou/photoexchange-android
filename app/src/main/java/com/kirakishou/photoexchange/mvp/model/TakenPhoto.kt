@@ -23,7 +23,7 @@ data class TakenPhoto(
 
     fun toBundle(): Bundle {
         val outBundle = Bundle()
-        outBundle.putLong("id", id)
+        outBundle.putLong("photoId", id)
         outBundle.putInt("photo_state", PhotoStateConverter.fromPhotoState(photoState))
         outBundle.putString("photo_temp_file", photoTempFile?.absolutePath ?: "")
 
@@ -41,7 +41,7 @@ data class TakenPhoto(
                 return empty()
             }
 
-            val id = bundle.getLong("id", -1L)
+            val id = bundle.getLong("photoId", -1L)
             if (id == -1L) {
                 return empty()
             }

@@ -125,7 +125,8 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.FavouritePhotoErrors.Ok,
             is ErrorCode.ReportPhotoErrors.Ok,
             is ErrorCode.GetUserIdError.Ok,
-            is ErrorCode.GetUploadedPhotosErrors.Ok -> null
+            is ErrorCode.GetUploadedPhotosErrors.Ok,
+            is ErrorCode.GetReceivedPhotosErrors.Ok -> null
 
             is ErrorCode.TakePhotoErrors.UnknownError,
             is ErrorCode.UploadPhotoErrors.UnknownError,
@@ -134,7 +135,8 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.FavouritePhotoErrors.UnknownError,
             is ErrorCode.ReportPhotoErrors.UnknownError,
             is ErrorCode.GetUserIdError.UnknownError,
-            is ErrorCode.GetUploadedPhotosErrors.UnknownErrors -> "Unknown error"
+            is ErrorCode.GetUploadedPhotosErrors.UnknownErrors,
+            is ErrorCode.GetReceivedPhotosErrors.UnknownErrors -> "Unknown error"
 
             is ErrorCode.UploadPhotoErrors.BadRequest,
             is ErrorCode.ReceivePhotosErrors.BadRequest,
@@ -142,14 +144,18 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.FavouritePhotoErrors.BadRequest,
             is ErrorCode.ReportPhotoErrors.BadRequest,
             is ErrorCode.GetUploadedPhotosErrors.BadRequest,
+            is ErrorCode.GetReceivedPhotosErrors.BadRequest -> "Bad request error"
+
             is ErrorCode.ReceivePhotosErrors.NoPhotosInRequest,
             is ErrorCode.GalleryPhotosErrors.NoPhotosInRequest,
-            is ErrorCode.GetUploadedPhotosErrors.NoPhotosInRequest -> "Bad request error"
+            is ErrorCode.GetUploadedPhotosErrors.NoPhotosInRequest,
+            is ErrorCode.GetReceivedPhotosErrors.NoPhotosInRequest -> "Bad request error (no photos in request)"
 
             is ErrorCode.TakePhotoErrors.DatabaseError,
             is ErrorCode.UploadPhotoErrors.DatabaseError,
             is ErrorCode.GetUserIdError.DatabaseError,
-            is ErrorCode.GetUploadedPhotosErrors.DatabaseErrors -> "Server database error"
+            is ErrorCode.GetUploadedPhotosErrors.DatabaseErrors,
+            is ErrorCode.GetReceivedPhotosErrors.DatabaseErrors -> "Server database error"
 
             is ErrorCode.GalleryPhotosErrors.LocalBadServerResponse,
             is ErrorCode.UploadPhotoErrors.LocalBadServerResponse,
@@ -157,7 +163,8 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.FavouritePhotoErrors.LocalBadServerResponse,
             is ErrorCode.ReportPhotoErrors.LocalBadServerResponse,
             is ErrorCode.GetUserIdError.LocalBadServerResponse,
-            is ErrorCode.GetUploadedPhotosErrors.LocalBadServerResponse -> "Bad server response error"
+            is ErrorCode.GetUploadedPhotosErrors.LocalBadServerResponse,
+            is ErrorCode.GetReceivedPhotosErrors.LocalBadServerResponse -> "Bad server response error"
 
             is ErrorCode.UploadPhotoErrors.LocalTimeout,
             is ErrorCode.ReceivePhotosErrors.LocalTimeout,
@@ -166,6 +173,7 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.ReportPhotoErrors.LocalTimeout,
             is ErrorCode.GetUserIdError.LocalTimeout,
             is ErrorCode.GetUploadedPhotosErrors.LocalTimeout,
+            is ErrorCode.GetReceivedPhotosErrors.LocalTimeout,
             is ErrorCode.TakePhotoErrors.TimeoutException -> "Operation timeout error"
 
             is ErrorCode.ReceivePhotosErrors.LocalDatabaseError,
@@ -173,16 +181,20 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.UploadPhotoErrors.LocalDatabaseError,
             is ErrorCode.GetUserIdError.LocalDatabaseError -> "Couldn't store data from the server on the disk"
 
+            is ErrorCode.GetReceivedPhotosErrors.LocalUserIdIsEmpty,
+            is ErrorCode.GetUploadedPhotosErrors.LocalUserIdIsEmpty -> "This operation cannot be done without user photoId"
+
             is ErrorCode.UploadPhotoErrors.LocalNoPhotoFileOnDisk -> "No photo on disk"
             is ErrorCode.UploadPhotoErrors.LocalInterrupted -> "Interrupted by user"
-            is ErrorCode.UploadPhotoErrors.LocalCouldNotGetUserId -> "Could not get user id from the server"
+            is ErrorCode.UploadPhotoErrors.LocalCouldNotGetUserId -> "Could not get user photoId from the server"
             is ErrorCode.ReceivePhotosErrors.NoPhotosToSendBack -> "Server has no available photos"
             is ErrorCode.ReceivePhotosErrors.LocalTooManyPhotosRequested -> "Too many photos in one request"
             is ErrorCode.ReceivePhotosErrors.LocalNotEnoughPhotosUploaded -> "Upload more photos first"
-            is ErrorCode.GetUploadedPhotosErrors.LocalUserIdIsEmpty -> "This operation cannot be done without user id"
             is ErrorCode.TakePhotoErrors.CameraIsNotAvailable -> "Camera is not available on this phone"
             is ErrorCode.TakePhotoErrors.CameraIsNotStartedException -> "Camera is not started"
             is ErrorCode.TakePhotoErrors.CouldNotTakePhoto -> "Error while trying to take a photo"
+
+
         }
 
         if (errorMessage != null) {

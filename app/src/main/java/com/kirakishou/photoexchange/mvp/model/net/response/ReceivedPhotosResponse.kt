@@ -24,7 +24,12 @@ private constructor(
         }
     }
 
+    //TODO: add photoId to the response on the server side as well
     inner class ReceivedPhoto(
+        @Expose
+        @SerializedName("photo_id")
+        val photoId: Long,
+
         @Expose
         @SerializedName("uploaded_photo_name")
         val uploadedPhotoName: String,

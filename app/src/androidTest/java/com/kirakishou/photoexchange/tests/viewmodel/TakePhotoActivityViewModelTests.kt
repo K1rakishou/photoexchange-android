@@ -72,7 +72,7 @@ class TakePhotoActivityViewModelTests : AbstractTest() {
 //                assertEquals(PhotoState.PHOTO_TAKEN, firstValue.photoState)
 //                assertEquals(true, firstValue.photoTempFile!!.absolutePath.isNotEmpty())
 //
-//                assertEquals(firstValue.id, takenPhoto.id)
+//                assertEquals(firstValue.photoId, takenPhoto.photoId)
 //                assertEquals(firstValue.photoState, takenPhoto.photoState)
 //                assertEquals(firstValue.photoTempFile!!.absolutePath, takenPhoto.photoTempFile!!.absolutePath)
 //            }
@@ -86,7 +86,7 @@ class TakePhotoActivityViewModelTests : AbstractTest() {
 //            val spyMyPhotosRepository = Mockito.spy(TakenPhotosRepository(database, realTempFilesRepository))
 //
 //            val result = async(Unconfined) { TakenPhoto.empty() }
-//            doReturn(result).`when`(spyMyPhotosRepository).insert(any())
+//            doReturn(result).`when`(spyMyPhotosRepository).save(any())
 //
 //            val viewModel = TakePhotoActivityViewModel(mockedView, coroutinesPool, spyMyPhotosRepository)
 //

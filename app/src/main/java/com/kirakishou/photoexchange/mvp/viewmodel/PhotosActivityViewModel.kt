@@ -119,6 +119,12 @@ class PhotosActivityViewModel(
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
+    fun loadNextPageOfReceivedPhotos(lastId: Long, photosPerPage: Int): Single<List<ReceivedPhoto>> {
+        return Single.fromCallable { receivedPhotosRepository.findAll() }
+            .subscribeOn(schedulerProvider.IO())
+            .doOnError { Timber.tag(TAG).e(it) }
+    }
+
     fun checkShouldStartReceivePhotosService() {
         compositeDisposable += Observable.fromCallable { takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
             .subscribeOn(schedulerProvider.IO())
@@ -167,12 +173,6 @@ class PhotosActivityViewModel(
             .map { Unit }
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)
-    }
-
-    fun loadReceivedPhotos(): Single<List<ReceivedPhoto>> {
-        return Single.fromCallable { receivedPhotosRepository.findAll() }
-            .subscribeOn(schedulerProvider.IO())
-            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun loadMyPhotos(): Single<MutableList<TakenPhoto>> {
