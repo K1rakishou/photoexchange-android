@@ -83,8 +83,6 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     }
 
     private fun loadFirstPage() {
-
-
         compositeDisposable += viewModel.loadNextPageOfReceivedPhotos(lastId, photosPerPage)
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { photos -> addReceivedPhotosToAdapter(photos) }

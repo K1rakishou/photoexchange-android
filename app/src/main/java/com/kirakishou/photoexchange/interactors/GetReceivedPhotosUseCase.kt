@@ -74,6 +74,10 @@ class GetReceivedPhotosUseCase(
             return Either.Error(errorCode)
         }
 
+        if (response.receivedPhotos.isEmpty()) {
+            return Either.Value(emptyList())
+        }
+
         if (!receivedPhotosRepository.saveMany(response.receivedPhotos)) {
             return Either.Error(ErrorCode.GetReceivedPhotosErrors.DatabaseError())
         }

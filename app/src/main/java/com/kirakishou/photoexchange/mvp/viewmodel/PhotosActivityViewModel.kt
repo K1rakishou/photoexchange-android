@@ -130,7 +130,7 @@ class PhotosActivityViewModel(
     fun checkHasPhotosToUpload(): Observable<Boolean> {
         return Observable.fromCallable {
             takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
-        }
+        }.subscribeOn(schedulerProvider.IO())
     }
 
     fun checkHasPhotosToReceive(): Observable<Boolean> {
@@ -139,7 +139,7 @@ class PhotosActivityViewModel(
             val receivedPhotosCount = receivedPhotosRepository.countAll()
 
             return@fromCallable uploadedPhotosCount > receivedPhotosCount
-        }
+        }.subscribeOn(schedulerProvider.IO())
     }
 
     fun loadMyPhotos(): Single<MutableList<TakenPhoto>> {
