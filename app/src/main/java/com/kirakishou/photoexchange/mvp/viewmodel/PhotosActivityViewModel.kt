@@ -47,8 +47,6 @@ class PhotosActivityViewModel(
 
     val eventForwarder = PhotosActivityViewModelStateEventForwarder()
 
-//    val onPhotoUploadEventSubject = PublishSubject.create<PhotoUploadEvent>().toSerialized()
-//    val onPhotoFindEventSubject = PublishSubject.create<ReceivePhotosEvent>().toSerialized()
     val startPhotoUploadingServiceSubject = PublishSubject.create<Unit>().toSerialized()
     val startPhotoReceivingServiceSubject = PublishSubject.create<Unit>().toSerialized()
     val uploadedPhotosAdapterButtonClickSubject = PublishSubject.create<UploadedPhotosAdapter.UploadedPhotosAdapterButtonClickEvent>().toSerialized()
@@ -119,13 +117,13 @@ class PhotosActivityViewModel(
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .filter { userId -> userId.isNotEmpty() }
-//            .doOnNext { uploadedPhotosFragmentViewStateSubject.onNext(UploadedPhotosFragmentEvent.ShowProgressFooter()) }
+            .doOnNext { eventForwarder.sendUploadedPhotosFragmentEvent(UploadedPhotosFragmentEvent.ShowProgressFooter()) }
             .flatMap { userId ->
                 getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
                     .toObservable()
             }
             .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-//            .doOnNext { uploadedPhotosFragmentViewStateSubject.onNext(UploadedPhotosFragmentEvent.HideProgressFooter()) }
+            .doOnNext { eventForwarder.sendUploadedPhotosFragmentEvent(UploadedPhotosFragmentEvent.HideProgressFooter()) }
             .drainErrorCodesTo(errorCodesSubject, UploadedPhotosFragment::class.java)
             .doOnError { Timber.tag(TAG).e(it) }
     }
@@ -197,14 +195,6 @@ class PhotosActivityViewModel(
         }.subscribeOn(schedulerProvider.IO())
             .doOnError { Timber.tag(TAG).e(it) }
     }
-
-//    fun forwardUploadPhotoEvent(event: PhotoUploadEvent) {
-//        onPhotoUploadEventSubject.onNext(event)
-//    }
-//
-//    fun forwardPhotoFindEvent(event: ReceivePhotosEvent) {
-//        onPhotoFindEventSubject.onNext(event)
-//    }
 
     fun deletePhotoById(photoId: Long): Completable {
         return Completable.fromAction {

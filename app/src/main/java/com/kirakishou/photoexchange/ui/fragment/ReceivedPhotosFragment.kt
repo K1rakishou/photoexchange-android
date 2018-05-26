@@ -53,8 +53,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener {
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRx()
         initRecyclerView()
-
-        loadPhotos()
+        loadFirstPage()
     }
 
     override fun onFragmentViewDestroy() {
@@ -68,22 +67,24 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener {
             .doOnNext { handleError(it) }
             .subscribe()
 
-//        compositeDisposable += viewModel.onPhotoFindEventSubject
-//            .subscribeOn(AndroidSchedulers.mainThread())
-//            .observeOn(AndroidSchedulers.mainThread())
-//            .doOnNext { event -> onReceivePhotosEvent(event) }
-//            .doOnError { Timber.tag(TAG).e(it) }
-//            .subscribe()
-
         compositeDisposable += viewModel.eventForwarder.getReceivedPhotosFragmentEventsStream()
             .observeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { viewState -> onStateEvent(viewState) }
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
+
+        compositeDisposable += loadMoreSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .observeOn(Schedulers.io())
+            .concatMap { viewModel.loadNextPageOfReceivedPhotos(lastId, photosPerPage) }
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { photos -> addReceivedPhotosToAdapter(photos) }
+            .doOnError { Timber.tag(TAG).e(it) }
+            .subscribe()
     }
 
-    private fun loadPhotos() {
+    private fun loadFirstPage() {
         compositeDisposable += viewModel.loadNextPageOfReceivedPhotos(lastId, photosPerPage)
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { photos -> addReceivedPhotosToAdapter(photos) }
@@ -99,8 +100,8 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener {
 
         val layoutManager = GridLayoutManager(requireContext(), columnsCount)
         layoutManager.spanSizeLookup = ReceivedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
-        photosPerPage = Constants.RECEIVED_PHOTOS_PER_ROW * layoutManager.spanCount
 
+        photosPerPage = Constants.RECEIVED_PHOTOS_PER_ROW * layoutManager.spanCount
         endlessScrollListener = EndlessRecyclerOnScrollListener(layoutManager, photosPerPage, loadMoreSubject)
 
         receivedPhotosList.layoutManager = layoutManager
@@ -139,7 +140,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener {
             return
         }
 
-        requireActivity().runOnUiThread {
+        receivedPhotosList.post {
             when (event) {
                 is ReceivePhotosEvent.OnPhotoReceived -> {
                     adapter.addPhotoAnswer(event.receivedPhoto)
@@ -157,11 +158,16 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener {
             return
         }
 
-        requireActivity().runOnUiThread {
+        receivedPhotosList.post {
+            endlessScrollListener.pageLoaded()
+
             if (receivedPhotos.isNotEmpty()) {
+                lastId = receivedPhotos.last().photoId
                 adapter.addPhotoAnswers(receivedPhotos)
-            } else {
-                //TODO: show notification that no photos has been uploaded yet
+            }
+
+            if (receivedPhotos.size < photosPerPage) {
+                endlessScrollListener.reachedEnd()
             }
         }
     }

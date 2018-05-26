@@ -220,9 +220,7 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
             }
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext {
-                if (!UploadPhotoService.isRunning(this)) {
-                    viewModel.checkShouldStartPhotoUploadingService()
-                } else {
+                if (UploadPhotoService.isRunning(this)) {
                     bindUploadingService(false)
                 }
             }

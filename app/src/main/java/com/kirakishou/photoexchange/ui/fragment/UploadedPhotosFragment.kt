@@ -24,10 +24,8 @@ import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapterSpanSizeLook
 import com.kirakishou.photoexchange.ui.viewstate.UploadedPhotosFragmentViewState
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
-import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
@@ -51,7 +49,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener {
 
     private val TAG = "UploadedPhotosFragment"
     private val PHOTO_ADAPTER_VIEW_WIDTH = 288
-    private val EVENT_FORWARDING_DELAY = 150L
     private val adapterButtonsClickSubject = PublishSubject.create<UploadedPhotosAdapter.UploadedPhotosAdapterButtonClickEvent>().toSerialized()
     private var viewState = UploadedPhotosFragmentViewState()
     private val loadMoreSubject = PublishSubject.create<Int>()
@@ -63,9 +60,13 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener {
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRx()
         initRecyclerView()
-        loadPhotos()
+        loadFirstPage()
 
-        restoreFragmentFromViewState(savedInstanceState)
+        if (savedInstanceState != null) {
+            restoreFragmentFromViewState(savedInstanceState)
+        } else {
+
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -107,24 +108,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener {
             .doOnNext { handleError(it) }
             .subscribe()
 
-//        compositeDisposable += viewModel.onPhotoUploadEventSubject
-//            .observeOn(AndroidSchedulers.mainThread())
-//            .flatMap { event ->
-//                return@flatMap if (event is PhotoUploadEvent.OnProgress) {
-//                    //do not add any delay if event is PhotoUploadEvent.OnProgress
-//                    Observable.just(event)
-//                } else {
-//                    //add slight delay before doing anything with adapter because
-//                    //it will flicker if events come very fast
-//                    Observable.just(event)
-//                        .zipWith(Observable.timer(EVENT_FORWARDING_DELAY, TimeUnit.MILLISECONDS))
-//                        .map { it.first }
-//                }
-//            }
-//            .doOnNext { event -> onUploadingEvent(event) }
-//            .doOnError { Timber.tag(TAG).e(it) }
-//            .subscribe()
-
         compositeDisposable += viewModel.eventForwarder.getUploadedPhotosFragmentEventsStream()
             .observeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -147,7 +130,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener {
             .subscribe()
     }
 
-    private fun loadPhotos() {
+    private fun loadFirstPage() {
         compositeDisposable += viewModel.loadMyPhotos()
             .observeOn(AndroidSchedulers.mainThread())
             .doOnSuccess { photos -> addTakenPhotosToAdapter(photos) }
@@ -157,6 +140,10 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener {
             .concatMap { viewModel.loadNextPageOfUploadedPhotos(lastId, photosPerPage) }
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { photos -> addUploadedPhotosToAdapter(photos) }
+            .observeOn(Schedulers.io())
+            .delay(500, TimeUnit.MILLISECONDS)
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { viewModel.checkShouldStartPhotoUploadingService() }
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
     }
