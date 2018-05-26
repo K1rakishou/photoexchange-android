@@ -206,9 +206,9 @@ sealed class ErrorCode(private val _value: Int) {
     sealed class GetUploadedPhotosErrors(value: Int) : ErrorCode(value) {
         override fun offset(): Int = 350
 
-        class UnknownErrors : GetUploadedPhotosErrors(0)
+        class UnknownError : GetUploadedPhotosErrors(0)
         class Ok : GetUploadedPhotosErrors(1)
-        class DatabaseErrors : GetUploadedPhotosErrors(2)
+        class DatabaseError : GetUploadedPhotosErrors(2)
         class BadRequest : GetUploadedPhotosErrors(3)
         class NoPhotosInRequest : GetUploadedPhotosErrors(4)
 
@@ -219,9 +219,9 @@ sealed class ErrorCode(private val _value: Int) {
         companion object {
             fun fromInt(value: Int): GetUploadedPhotosErrors {
                 return when (value) {
-                    350 -> UnknownErrors()
+                    350 -> UnknownError()
                     351 -> Ok()
-                    352 -> DatabaseErrors()
+                    352 -> DatabaseError()
                     353 -> BadRequest()
                     354 -> NoPhotosInRequest()
 
@@ -237,9 +237,9 @@ sealed class ErrorCode(private val _value: Int) {
     sealed class GetReceivedPhotosErrors(value: Int) : ErrorCode(value) {
         override fun offset(): Int = 400
 
-        class UnknownErrors : GetReceivedPhotosErrors(0)
+        class UnknownError : GetReceivedPhotosErrors(0)
         class Ok : GetReceivedPhotosErrors(1)
-        class DatabaseErrors : GetReceivedPhotosErrors(2)
+        class DatabaseError : GetReceivedPhotosErrors(2)
         class BadRequest : GetReceivedPhotosErrors(3)
         class NoPhotosInRequest : GetReceivedPhotosErrors(4)
 
@@ -250,9 +250,9 @@ sealed class ErrorCode(private val _value: Int) {
         companion object {
             fun fromInt(value: Int): GetReceivedPhotosErrors {
                 return when (value) {
-                    400 -> UnknownErrors()
+                    400 -> UnknownError()
                     401 -> Ok()
-                    402 -> DatabaseErrors()
+                    402 -> DatabaseError()
                     403 -> BadRequest()
                     404 -> NoPhotosInRequest()
 

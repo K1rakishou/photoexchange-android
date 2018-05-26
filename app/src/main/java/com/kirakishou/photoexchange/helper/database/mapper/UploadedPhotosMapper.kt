@@ -47,7 +47,7 @@ object UploadedPhotosMapper {
         object ToObject {
             fun toUploadedPhoto(uploadedPhotoEntity: UploadedPhotoEntity): UploadedPhoto {
                 return UploadedPhoto(
-                    uploadedPhotoEntity.remotePhotoId!!,
+                    uploadedPhotoEntity.localPhotoId!!,
                     uploadedPhotoEntity.photoName,
                     uploadedPhotoEntity.uploaderLon,
                     uploadedPhotoEntity.uploaderLat,

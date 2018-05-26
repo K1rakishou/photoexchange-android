@@ -135,8 +135,8 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.FavouritePhotoErrors.UnknownError,
             is ErrorCode.ReportPhotoErrors.UnknownError,
             is ErrorCode.GetUserIdError.UnknownError,
-            is ErrorCode.GetUploadedPhotosErrors.UnknownErrors,
-            is ErrorCode.GetReceivedPhotosErrors.UnknownErrors -> "Unknown error"
+            is ErrorCode.GetUploadedPhotosErrors.UnknownError,
+            is ErrorCode.GetReceivedPhotosErrors.UnknownError -> "Unknown error"
 
             is ErrorCode.UploadPhotoErrors.BadRequest,
             is ErrorCode.ReceivePhotosErrors.BadRequest,
@@ -154,8 +154,8 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.TakePhotoErrors.DatabaseError,
             is ErrorCode.UploadPhotoErrors.DatabaseError,
             is ErrorCode.GetUserIdError.DatabaseError,
-            is ErrorCode.GetUploadedPhotosErrors.DatabaseErrors,
-            is ErrorCode.GetReceivedPhotosErrors.DatabaseErrors -> "Server database error"
+            is ErrorCode.GetUploadedPhotosErrors.DatabaseError,
+            is ErrorCode.GetReceivedPhotosErrors.DatabaseError -> "Server database error"
 
             is ErrorCode.GalleryPhotosErrors.LocalBadServerResponse,
             is ErrorCode.UploadPhotoErrors.LocalBadServerResponse,

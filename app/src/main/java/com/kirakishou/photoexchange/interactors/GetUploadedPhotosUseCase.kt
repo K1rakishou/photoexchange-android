@@ -59,7 +59,7 @@ class GetUploadedPhotosUseCase(
                 return@rxSingle Either.Value(photosResultList)
             } catch (error: Throwable) {
                 Timber.tag(TAG).e(error)
-                return@rxSingle Either.Error(ErrorCode.GetUploadedPhotosErrors.UnknownErrors())
+                return@rxSingle Either.Error(ErrorCode.GetUploadedPhotosErrors.UnknownError())
             }
         }
     }
@@ -75,7 +75,7 @@ class GetUploadedPhotosUseCase(
         }
 
         if (!uploadedPhotosRepository.saveMany(response.uploadedPhotos)) {
-            return Either.Error(ErrorCode.GetUploadedPhotosErrors.DatabaseErrors())
+            return Either.Error(ErrorCode.GetUploadedPhotosErrors.DatabaseError())
         }
 
         return Either.Value(UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhotos(response.uploadedPhotos))

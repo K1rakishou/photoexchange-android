@@ -1,44 +1,37 @@
 package com.kirakishou.photoexchange.helper.intercom
 
-import com.kirakishou.photoexchange.helper.intercom.event.BaseEvent
+import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
+import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
+import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
 
 class PhotosActivityViewModelStateEventForwarder {
-    private val photosActivityViewStateSubject = PublishSubject.create<BaseEvent>().toSerialized()
-    private val uploadedPhotosFragmentViewStateSubject = PublishSubject.create<BaseEvent>().toSerialized()
-    private val receivedPhotosFragmentViewStateSubject = PublishSubject.create<BaseEvent>().toSerialized()
-    private val galleryPhotosFragmentViewStateSubject = PublishSubject.create<BaseEvent>().toSerialized()
+    private val photosActivityViewStateSubject = PublishSubject.create<PhotosActivityEvent>().toSerialized()
+    private val uploadedPhotosFragmentViewStateSubject = PublishSubject.create<UploadedPhotosFragmentEvent>().toSerialized()
+    private val receivedPhotosFragmentViewStateSubject = PublishSubject.create<ReceivedPhotosFragmentEvent>().toSerialized()
 
-    fun getPhotoActivityEventsStream(): Observable<BaseEvent> {
+    fun getPhotoActivityEventsStream(): Observable<PhotosActivityEvent> {
         return photosActivityViewStateSubject
     }
 
-    fun getUploadedPhotosFragmentEventsStream(): Observable<BaseEvent> {
+    fun getUploadedPhotosFragmentEventsStream(): Observable<UploadedPhotosFragmentEvent> {
         return uploadedPhotosFragmentViewStateSubject
     }
 
-    fun getReceivedPhotosFragmentEventsStream(): Observable<BaseEvent> {
+    fun getReceivedPhotosFragmentEventsStream(): Observable<ReceivedPhotosFragmentEvent> {
         return receivedPhotosFragmentViewStateSubject
     }
 
-    fun getGalleryPhotosFragmentEventsStream(): Observable<BaseEvent> {
-        return galleryPhotosFragmentViewStateSubject
-    }
-
-    fun sendPhotoActivityEvent(event: BaseEvent) {
+    fun sendPhotoActivityEvent(event: PhotosActivityEvent) {
         photosActivityViewStateSubject.onNext(event)
     }
 
-    fun sendUploadedPhotosFragmentEvent(event: BaseEvent) {
+    fun sendUploadedPhotosFragmentEvent(event: UploadedPhotosFragmentEvent) {
         uploadedPhotosFragmentViewStateSubject.onNext(event)
     }
 
-    fun sendReceivedPhotosFragmentEvent(event: BaseEvent) {
+    fun sendReceivedPhotosFragmentEvent(event: ReceivedPhotosFragmentEvent) {
         receivedPhotosFragmentViewStateSubject.onNext(event)
-    }
-
-    fun sendGalleryPhotosFragmentEvent(event: BaseEvent) {
-        galleryPhotosFragmentViewStateSubject.onNext(event)
     }
 }

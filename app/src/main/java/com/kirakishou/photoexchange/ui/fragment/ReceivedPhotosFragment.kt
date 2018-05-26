@@ -9,10 +9,8 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.extension.filterErrorCodes
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
-import com.kirakishou.photoexchange.helper.intercom.event.BaseEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.ReceivePhotosEvent
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
@@ -28,7 +26,7 @@ import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import javax.inject.Inject
 
-class ReceivedPhotosFragment : BaseFragment(), StateEventListener {
+class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotosFragmentEvent> {
 
     @BindView(R.id.received_photos_list)
     lateinit var receivedPhotosList: RecyclerView
@@ -85,6 +83,8 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener {
     }
 
     private fun loadFirstPage() {
+
+
         compositeDisposable += viewModel.loadNextPageOfReceivedPhotos(lastId, photosPerPage)
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { photos -> addReceivedPhotosToAdapter(photos) }
@@ -110,43 +110,43 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener {
         receivedPhotosList.addOnScrollListener(endlessScrollListener)
     }
 
-    override fun onStateEvent(event: BaseEvent) {
+    override fun onStateEvent(event: ReceivedPhotosFragmentEvent) {
         if (!isAdded) {
             return
         }
 
         requireActivity().runOnUiThread {
             when (event) {
-                is ReceivedPhotosFragmentEvent -> {
-                    onFragmentEvent(event)
+                is ReceivedPhotosFragmentEvent.UiEvents -> {
+                    onUiEvent(event)
                 }
-                is ReceivePhotosEvent -> {
+                is ReceivedPhotosFragmentEvent.ReceivePhotosEvent -> {
                     onReceivePhotosEvent(event)
                 }
             }
         }
     }
 
-    private fun onFragmentEvent(event: ReceivedPhotosFragmentEvent) {
+    private fun onUiEvent(event: ReceivedPhotosFragmentEvent.UiEvents) {
         when (event) {
-            is ReceivedPhotosFragmentEvent.ScrollToTop -> {
+            is ReceivedPhotosFragmentEvent.UiEvents.ScrollToTop -> {
                 receivedPhotosList.scrollToPosition(0)
             }
         }
     }
 
-    private fun onReceivePhotosEvent(event: ReceivePhotosEvent) {
+    private fun onReceivePhotosEvent(event: ReceivedPhotosFragmentEvent.ReceivePhotosEvent) {
         if (!isAdded) {
             return
         }
 
         receivedPhotosList.post {
             when (event) {
-                is ReceivePhotosEvent.OnPhotoReceived -> {
-                    adapter.addPhotoAnswer(event.receivedPhoto)
+                is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotoReceived -> {
+                    adapter.addReceivedPhoto(event.receivedPhoto)
                 }
-                is ReceivePhotosEvent.OnFailed,
-                is ReceivePhotosEvent.OnUnknownError -> {
+                is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed,
+                is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnUnknownError -> {
                     //do nothing here
                 }
             }
@@ -163,7 +163,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener {
 
             if (receivedPhotos.isNotEmpty()) {
                 lastId = receivedPhotos.last().photoId
-                adapter.addPhotoAnswers(receivedPhotos)
+                adapter.addReceivedPhotos(receivedPhotos)
             }
 
             if (receivedPhotos.size < photosPerPage) {

@@ -11,10 +11,10 @@ import android.support.v4.app.NotificationCompat
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.*
 import com.kirakishou.photoexchange.helper.extension.seconds
+import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.location.MyLocationManager
 import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
@@ -83,10 +83,10 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
         presenter.uploadPhotos()
     }
 
-    override fun onUploadingEvent(event: PhotoUploadEvent) {
+    override fun onUploadingEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
         callback.get()?.onUploadPhotosEvent(event)
 
-        if (event is PhotoUploadEvent.OnEnd) {
+        if (event is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd) {
             if (event.allUploaded) {
                 updateUploadingNotificationShowSuccess("All photos has been successfully uploaded")
             } else {

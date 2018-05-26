@@ -13,6 +13,9 @@ class UploadedPhotoEntity(
     @ColumnInfo(name = PHOTO_NAME_COLUMN)
     var photoName: String = "",
 
+    @ColumnInfo(name = LOCAL_PHOTO_ID_COLUMN, index = true)
+    var localPhotoId: Long? = null,
+
     @ColumnInfo(name = REMOTE_PHOTO_ID_COLUMN, index = true)
     var remotePhotoId: Long? = null,
 
@@ -39,12 +42,13 @@ class UploadedPhotoEntity(
             return UploadedPhotoEntity()
         }
 
-        fun create(photoName: String, photoId: Long, lon: Double, lat: Double, hasReceiverInfo: Boolean, uploadedOn: Long): UploadedPhotoEntity {
-            return UploadedPhotoEntity(photoName, photoId, lon, lat, hasReceiverInfo, uploadedOn)
+        fun create(photoName: String, localPhotoId: Long, lon: Double, lat: Double, hasReceiverInfo: Boolean, uploadedOn: Long): UploadedPhotoEntity {
+            return UploadedPhotoEntity(photoName, localPhotoId, null, lon, lat, hasReceiverInfo, uploadedOn)
         }
 
         const val TABLE_NAME = "UPLOADED_PHOTO"
 
+        const val LOCAL_PHOTO_ID_COLUMN = "LOCAL_PHOTO_ID"
         const val REMOTE_PHOTO_ID_COLUMN = "REMOTE_PHOTO_ID"
         const val PHOTO_NAME_COLUMN = "PHOTO_NAME"
         const val UPLOADER_LON_COLUMN = "UPLOADER_LON"

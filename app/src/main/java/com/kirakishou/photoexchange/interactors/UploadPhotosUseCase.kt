@@ -4,11 +4,11 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
+import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.BitmapUtils
 import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
@@ -110,14 +110,14 @@ class UploadPhotosUseCase(
 
     private fun handlePhotoUploadingStart(callbacks: WeakReference<UploadPhotoServiceCallbacks>?, photo: TakenPhoto): File {
         val rotatedPhotoFile = File.createTempFile("rotated_photo", ".tmp")
-        callbacks?.get()?.onUploadingEvent(PhotoUploadEvent.OnPhotoUploadStart(photo))
+        callbacks?.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadStart(photo))
         return rotatedPhotoFile
     }
 
     private fun uploadPhoto(rotatedPhotoFile: File, location: LonLat, userId: String, isPublic: Boolean, callbacks: WeakReference<UploadPhotoServiceCallbacks>?, photo: TakenPhoto): Single<UploadPhotoResponse> {
         return apiClient.uploadPhoto(rotatedPhotoFile.absolutePath, location, userId, isPublic, object : PhotoUploadProgressCallback {
             override fun onProgress(progress: Int) {
-                callbacks?.get()?.onUploadingEvent(PhotoUploadEvent.OnProgress(photo, progress))
+                callbacks?.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, progress))
             }
         })
     }
@@ -135,7 +135,7 @@ class UploadPhotosUseCase(
         }
 
         if (dbResult) {
-            callbacks?.get()?.onUploadingEvent(PhotoUploadEvent.OnUploaded(UploadedPhoto(photo.id, photo.photoName!!,
+            callbacks?.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUploaded(UploadedPhoto(photo.id, photo.photoName!!,
                 location.lon, location.lat, false, TimeUtils.getTimeFast())))
         }
 
@@ -146,14 +146,14 @@ class UploadPhotosUseCase(
         takenPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
         photo.photoState = PhotoState.FAILED_TO_UPLOAD
 
-        callbacks?.get()?.onUploadingEvent(PhotoUploadEvent.OnFailedToUpload(photo, errorCode))
+        callbacks?.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUpload(photo, errorCode))
     }
 
     private fun handleUnknownError(photo: TakenPhoto, callbacks: WeakReference<UploadPhotoServiceCallbacks>?, error: Throwable) {
         takenPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
         photo.photoState = PhotoState.FAILED_TO_UPLOAD
 
-        callbacks?.get()?.onUploadingEvent(PhotoUploadEvent.OnUnknownError(error))
+        callbacks?.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError(error))
     }
 
     interface PhotoUploadProgressCallback {

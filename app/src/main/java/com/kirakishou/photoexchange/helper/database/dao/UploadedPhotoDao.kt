@@ -17,6 +17,10 @@ abstract class UploadedPhotoDao {
     abstract fun save(uploadedPhotoEntity: UploadedPhotoEntity): Long
 
     @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
+        "WHERE ${UploadedPhotoEntity.PHOTO_NAME_COLUMN} = :photoName")
+    abstract fun findByPhotoName(photoName: String): UploadedPhotoEntity?
+
+    @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
         "WHERE ${UploadedPhotoEntity.REMOTE_PHOTO_ID_COLUMN} IN (:uploadedPhotoIds)")
     abstract fun findMany(uploadedPhotoIds: List<Long>): List<UploadedPhotoEntity>
 
@@ -35,10 +39,6 @@ abstract class UploadedPhotoDao {
     @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
         "WHERE ${UploadedPhotoEntity.HAS_RECEIVER_INFO_COLUMN} = ${MyDatabase.SQLITE_FALSE}")
     abstract fun findAllWithoutReceiverInfo(): List<UploadedPhotoEntity>
-
-    @Query("SELECT ${UploadedPhotoEntity.REMOTE_PHOTO_ID_COLUMN} FROM ${UploadedPhotoEntity.TABLE_NAME} " +
-        "WHERE ${UploadedPhotoEntity.PHOTO_NAME_COLUMN} = :uploadedPhotoName")
-    abstract fun findByPhotoIdByName(uploadedPhotoName: String): Long
 
     @Query("UPDATE ${UploadedPhotoEntity.TABLE_NAME} " +
         "SET ${UploadedPhotoEntity.HAS_RECEIVER_INFO_COLUMN} = ${MyDatabase.SQLITE_TRUE} " +

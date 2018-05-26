@@ -59,7 +59,7 @@ class GetReceivedPhotosUseCase(
                 return@rxSingle Either.Value(photosResultList)
             } catch (error: Throwable) {
                 Timber.tag(TAG).e(error)
-                return@rxSingle Either.Error(ErrorCode.GetReceivedPhotosErrors.UnknownErrors())
+                return@rxSingle Either.Error(ErrorCode.GetReceivedPhotosErrors.UnknownError())
             }
         }
     }
@@ -75,7 +75,7 @@ class GetReceivedPhotosUseCase(
         }
 
         if (!receivedPhotosRepository.saveMany(response.receivedPhotos)) {
-            return Either.Error(ErrorCode.GetReceivedPhotosErrors.DatabaseErrors())
+            return Either.Error(ErrorCode.GetReceivedPhotosErrors.DatabaseError())
         }
 
         return Either.Value(ReceivedPhotosMapper.FromResponse.GetReceivedPhotos.toReceivedPhotos(response.receivedPhotos))

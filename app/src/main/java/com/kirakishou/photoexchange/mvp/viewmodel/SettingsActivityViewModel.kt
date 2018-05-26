@@ -2,7 +2,6 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.mvp.view.SettingsActivityView
 import io.reactivex.Completable
 import io.reactivex.Single
 import timber.log.Timber
@@ -10,7 +9,7 @@ import timber.log.Timber
 class SettingsActivityViewModel(
     private val settingsRepository: SettingsRepository,
     private val schedulerProvider: SchedulerProvider
-) : BaseViewModel<SettingsActivityView>() {
+) : BaseViewModel() {
 
     private val TAG = "SettingsActivityViewModel"
 

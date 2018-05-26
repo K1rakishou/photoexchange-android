@@ -23,14 +23,10 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.PhotosActivityModule
 import com.kirakishou.photoexchange.helper.extension.debounceClicks
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
-import com.kirakishou.photoexchange.helper.intercom.event.BaseEvent
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
-import com.kirakishou.photoexchange.mvp.model.ReceivePhotosEvent
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.service.ReceivePhotosServiceConnection
 import com.kirakishou.photoexchange.service.ReceivePhotosService
@@ -40,7 +36,7 @@ import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapter
 import com.kirakishou.photoexchange.ui.callback.ReceivePhotosServiceCallback
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
 import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
-import com.kirakishou.photoexchange.ui.viewstate.AllPhotosActivityViewState
+import com.kirakishou.photoexchange.ui.viewstate.PhotosActivityViewState
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
@@ -57,9 +53,9 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 
-class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSelectedListener,
+class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
     ViewPager.OnPageChangeListener, PhotoUploadingCallback, ReceivePhotosServiceCallback,
-    PopupMenu.OnMenuItemClickListener, StateEventListener {
+    PopupMenu.OnMenuItemClickListener, StateEventListener<PhotosActivityEvent> {
 
     @BindView(R.id.root_layout)
     lateinit var rootLayout: CoordinatorLayout
@@ -101,7 +97,7 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
 
     private val adapter = FragmentTabsPager(supportFragmentManager)
     private var savedInstanceState: Bundle? = null
-    private var viewState = AllPhotosActivityViewState()
+    private var viewState = PhotosActivityViewState()
 
     override fun getContentView(): Int = R.layout.activity_all_photos
 
@@ -114,15 +110,12 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
 
     override fun onActivityStart() {
         initRx()
-        viewModel.setView(this)
         checkPermissions(this.savedInstanceState)
     }
 
     override fun onActivityStop() {
         receivePhotosServiceConnection.onFindingServiceDisconnected()
         uploadPhotosServiceConnection.onUploadingServiceDisconnected()
-
-        viewModel.clearView()
     }
 
     override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
@@ -133,20 +126,6 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
     }
 
     private fun initRx() {
-        compositeDisposable += viewModel.startPhotoUploadingServiceSubject
-            .subscribeOn(Schedulers.io())
-            .observeOn(Schedulers.io())
-            .doOnNext { bindUploadingService() }
-            .doOnError { Timber.e(it) }
-            .subscribe()
-
-        compositeDisposable += viewModel.startPhotoReceivingServiceSubject
-            .subscribeOn(Schedulers.io())
-            .observeOn(Schedulers.io())
-            .doOnNext { bindFindingService() }
-            .doOnError { Timber.e(it) }
-            .subscribe()
-
         compositeDisposable += RxView.clicks(ivCloseActivityButton)
             .subscribeOn(AndroidSchedulers.mainThread())
             .debounceClicks()
@@ -228,7 +207,7 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
     }
 
     private fun restoreUploadedPhotosFragmentFromViewState(savedInstanceState: Bundle?) {
-        viewState = AllPhotosActivityViewState().also {
+        viewState = PhotosActivityViewState().also {
             it.loadFromBundle(savedInstanceState)
         }
 
@@ -305,58 +284,75 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
         return true
     }
 
-    override fun onStateEvent(event: BaseEvent) {
+    override fun onStateEvent(event: PhotosActivityEvent) {
         when (event) {
-            //TODO
+            is PhotosActivityEvent.StartUploadingService -> {
+                compositeDisposable += viewModel.checkHasPhotosToUpload()
+                    .filter { hasPhotoToUpload -> hasPhotoToUpload }
+                    .subscribe({ bindUploadingService(true) })
+            }
+            is PhotosActivityEvent.StartReceivingService -> {
+                compositeDisposable += viewModel.checkHasPhotosToReceive()
+                    .filter { hasPhotosToReceive -> hasPhotosToReceive }
+                    .subscribe({ bindReceivingService(true) })
+            }
+            is PhotosActivityEvent.FailedToUploadPhotoButtonClick -> {
+                compositeDisposable += handleUploadedPhotosFragmentAdapterButtonClicks(event.clickType)
+                    .subscribe({ }, { error ->
+                        Timber.tag(TAG).e(error)
+                    })
+            }
         }
     }
 
-    override fun onUploadPhotosEvent(event: PhotoUploadEvent) {
+    override fun onUploadPhotosEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
         viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(event)
 
         when (event) {
-            is PhotoUploadEvent.OnEnd -> {
-                if (!ReceivePhotosService.isRunning(this)) {
-                    viewModel.checkShouldStartReceivePhotosService()
-                } else {
-                    bindFindingService(false)
+            is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
+                if (ReceivePhotosService.isRunning(this)) {
+                    bindReceivingService(false)
                 }
             }
         }
     }
 
-    override fun onPhotoFindEvent(event: ReceivePhotosEvent) {
+    override fun onPhotoFindEvent(event: ReceivedPhotosFragmentEvent.ReceivePhotosEvent) {
         viewModel.eventForwarder.sendReceivedPhotosFragmentEvent(event)
 
         when (event) {
-            is ReceivePhotosEvent.OnPhotoReceived -> {
-                viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(PhotoUploadEvent.OnFoundPhotoAnswer(event.takenPhotoId))
+            is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotoReceived -> {
+                viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(
+                    UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFoundPhotoAnswer(event.takenPhotoName))
                 showPhotoAnswerFoundSnackbar()
             }
         }
     }
 
-    override fun handleUploadedPhotosFragmentAdapterButtonClicks(
-        adapterButtonsClickEvent: UploadedPhotosAdapter.UploadedPhotosAdapterButtonClickEvent): Observable<Boolean> {
+    private fun handleUploadedPhotosFragmentAdapterButtonClicks(
+        adapterButtonsClick: UploadedPhotosAdapter.UploadedPhotosAdapterButtonClick
+    ): Observable<Boolean> {
 
-        return when (adapterButtonsClickEvent) {
-            is UploadedPhotosAdapter.UploadedPhotosAdapterButtonClickEvent.DeleteButtonClick -> {
-                Observable.fromCallable { showPhotoDeletedSnackbar(adapterButtonsClickEvent.photo) }
+        return when (adapterButtonsClick) {
+            is UploadedPhotosAdapter.UploadedPhotosAdapterButtonClick.DeleteButtonClick -> {
+                Observable.fromCallable { showPhotoDeletedSnackbar(adapterButtonsClick.photo) }
                     .subscribeOn(AndroidSchedulers.mainThread())
                     .map { false }
                     .doOnError { Timber.e(it) }
             }
 
-            is UploadedPhotosAdapter.UploadedPhotosAdapterButtonClickEvent.RetryButtonClick -> {
-                Observable.fromCallable { viewModel.changePhotoState(adapterButtonsClickEvent.photo.id, PhotoState.PHOTO_QUEUED_UP).blockingAwait() }
+            is UploadedPhotosAdapter.UploadedPhotosAdapterButtonClick.RetryButtonClick -> {
+                Observable.fromCallable { viewModel.changePhotoState(adapterButtonsClick.photo.id, PhotoState.PHOTO_QUEUED_UP).blockingAwait() }
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .doOnNext {
-                        val photo = adapterButtonsClickEvent.photo
+                        val photo = adapterButtonsClick.photo
                         photo.photoState = PhotoState.PHOTO_QUEUED_UP
 
-                        viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(UploadedPhotosFragmentEvent.RemovePhoto(photo))
-                        viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(UploadedPhotosFragmentEvent.AddPhoto(photo))
+                        viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(
+                            UploadedPhotosFragmentEvent.UiEvents.RemovePhoto(photo))
+                        viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(
+                            UploadedPhotosFragmentEvent.UiEvents.AddPhoto(photo))
                     }.map { true }
                     .doOnError { Timber.e(it) }
             }
@@ -367,7 +363,8 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
         val disposable = Single.just(1)
             .observeOn(Schedulers.io())
             .doOnSuccess {
-                viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(UploadedPhotosFragmentEvent.RemovePhoto(photo))
+                viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(
+                    UploadedPhotosFragmentEvent.UiEvents.RemovePhoto(photo))
             }
             .zipWith(Single.timer(PHOTO_DELETE_DELAY, TimeUnit.MILLISECONDS))
             .flatMap { viewModel.deletePhotoById(photo.id).toSingleDefault(Unit) }
@@ -379,7 +376,8 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
         Snackbar.make(rootLayout, getString(R.string.photo_has_been_deleted_snackbar_text), Snackbar.LENGTH_LONG)
             .setDuration(PHOTO_DELETE_DELAY.toInt())
             .setAction(getString(R.string.cancel_snackbar_action_text), {
-                viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(UploadedPhotosFragmentEvent.AddPhoto(photo))
+                viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(
+                    UploadedPhotosFragmentEvent.UiEvents.AddPhoto(photo))
                 disposable.dispose()
             })
             .show()
@@ -395,13 +393,16 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
                 compositeDisposable += Single.timer(FRAGMENT_SCROLL_DELAY_MS, TimeUnit.MILLISECONDS)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
-                    .doOnSuccess { viewModel.eventForwarder.sendReceivedPhotosFragmentEvent(ReceivedPhotosFragmentEvent.ScrollToTop())  }
+                    .doOnSuccess {
+                        viewModel.eventForwarder.sendReceivedPhotosFragmentEvent(
+                            ReceivedPhotosFragmentEvent.UiEvents.ScrollToTop())
+                    }
                     .doOnError { Timber.e(it) }
                     .subscribe()
             }).show()
     }
 
-    override fun showToast(message: String, duration: Int) {
+    fun showToast(message: String, duration: Int) {
         onShowToast(message, duration)
     }
 
@@ -410,9 +411,9 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
         permissionManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
-    private fun bindFindingService(start: Boolean = true) {
+    private fun bindReceivingService(start: Boolean = true) {
         if (!receivePhotosServiceConnection.isConnected()) {
-            Timber.tag(TAG).d("bindFindingService, start = $start")
+            Timber.tag(TAG).d("bindReceivingService, start = $start")
 
             val serviceIntent = Intent(applicationContext, ReceivePhotosService::class.java)
             if (start) {

@@ -12,7 +12,6 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.ReceivePhotosServiceModule
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.ReceivePhotosEvent
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.callback.ReceivePhotosServiceCallback
@@ -21,9 +20,7 @@ import timber.log.Timber
 import java.lang.ref.WeakReference
 import javax.inject.Inject
 import android.app.ActivityManager
-
-
-
+import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 
 class ReceivePhotosService : Service(), ReceivePhotosServiceCallbacks {
 
@@ -68,19 +65,19 @@ class ReceivePhotosService : Service(), ReceivePhotosServiceCallbacks {
         presenter.startPhotosReceiving()
     }
 
-    override fun onPhotoReceived(receivedPhoto: ReceivedPhoto, takenPhotoId: Long) {
+    override fun onPhotoReceived(receivedPhoto: ReceivedPhoto, takenPhotoName: String) {
         updateDownloadingNotificationShowSuccess()
-        callback.get()?.onPhotoFindEvent(ReceivePhotosEvent.OnPhotoReceived(receivedPhoto, takenPhotoId))
+        callback.get()?.onPhotoFindEvent(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotoReceived(receivedPhoto, takenPhotoName))
     }
 
     override fun onFailed(errorCode: ErrorCode.ReceivePhotosErrors) {
         updateUploadingNotificationShowError()
-        callback.get()?.onPhotoFindEvent(ReceivePhotosEvent.OnFailed(errorCode))
+        callback.get()?.onPhotoFindEvent(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed(errorCode))
     }
 
     override fun onError(error: Throwable) {
         updateUploadingNotificationShowError()
-        callback.get()?.onPhotoFindEvent(ReceivePhotosEvent.OnUnknownError(error))
+        callback.get()?.onPhotoFindEvent(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnUnknownError(error))
     }
 
     override fun stopService() {

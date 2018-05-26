@@ -29,7 +29,7 @@ import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import javax.inject.Inject
 
-class GalleryFragment : BaseFragment(), StateEventListener {
+class GalleryFragment : BaseFragment() {
 
     @BindView(R.id.gallery_photos_list)
     lateinit var galleryPhotosList: RecyclerView
@@ -112,13 +112,6 @@ class GalleryFragment : BaseFragment(), StateEventListener {
             .doOnNext { (isReported, photoName) -> reportPhoto(photoName, isReported) }
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
-
-        compositeDisposable += viewModel.eventForwarder.getGalleryPhotosFragmentEventsStream()
-            .observeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { viewState -> onStateEvent(viewState) }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe()
     }
 
     private fun initRecyclerView() {
@@ -137,10 +130,6 @@ class GalleryFragment : BaseFragment(), StateEventListener {
         galleryPhotosList.adapter = adapter
         galleryPhotosList.clearOnScrollListeners()
         galleryPhotosList.addOnScrollListener(endlessScrollListener)
-    }
-
-    override fun onStateEvent(event: BaseEvent) {
-
     }
 
     private fun favouritePhoto(photoName: String, isFavourited: Boolean, favouritesCount: Long) {

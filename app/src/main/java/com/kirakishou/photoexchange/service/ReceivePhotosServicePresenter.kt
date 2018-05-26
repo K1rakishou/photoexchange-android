@@ -68,10 +68,10 @@ class ReceivePhotosServicePresenter(
                         receivePhotosUseCase.receivePhotos(data, callbacks).toObservable()
                     }
                     .doOnError { error ->
-                        Timber.tag(TAG).d("onError")
+                        Timber.tag(TAG).e(error)
                         callbacks.get()?.onError(error)
                     }
-                    .doOnEach {
+                    .doOnNext {
                         Timber.tag(TAG).d("stopService")
                         callbacks.get()?.stopService()
                     }

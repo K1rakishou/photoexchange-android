@@ -67,11 +67,9 @@ class ReceivePhotosUseCase(
                 return@transactional takenPhotosRepository.deletePhotoByName(receivedPhoto.uploadedPhotoName)
             }
 
-            val photoAnswer = ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhoto(receivedPhoto)
-
             if (result) {
-                val takenPhotoId = uploadedPhotosRepository.findByPhotoIdByName(photoAnswer.uploadedPhotoName)
-                callbacks.get()?.onPhotoReceived(photoAnswer, takenPhotoId)
+                val photoAnswer = ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhoto(receivedPhoto)
+                callbacks.get()?.onPhotoReceived(photoAnswer, photoAnswer.uploadedPhotoName)
             }
         }
     }
