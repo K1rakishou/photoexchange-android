@@ -4,6 +4,7 @@ import android.arch.persistence.room.Dao
 import android.arch.persistence.room.Insert
 import android.arch.persistence.room.OnConflictStrategy
 import android.arch.persistence.room.Query
+import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
 
 @Dao
@@ -16,7 +17,7 @@ abstract class UploadedPhotoDao {
     abstract fun save(uploadedPhotoEntity: UploadedPhotoEntity): Long
 
     @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
-        "WHERE ${UploadedPhotoEntity.PHOTO_ID_COLUMN} IN (:uploadedPhotoIds)")
+        "WHERE ${UploadedPhotoEntity.REMOTE_PHOTO_ID_COLUMN} IN (:uploadedPhotoIds)")
     abstract fun findMany(uploadedPhotoIds: List<Long>): List<UploadedPhotoEntity>
 
     @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
@@ -24,33 +25,25 @@ abstract class UploadedPhotoDao {
     abstract fun findManyByPhotoName(photoNames: List<String>): List<UploadedPhotoEntity>
 
     @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
-        "WHERE ${UploadedPhotoEntity.PHOTO_ID_COLUMN} IN (:photoIds)")
+        "WHERE ${UploadedPhotoEntity.REMOTE_PHOTO_ID_COLUMN} IN (:photoIds)")
     abstract fun findManyByRemotePhotoId(photoIds: List<Long>): List<UploadedPhotoEntity>
 
     @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
-        "WHERE " +
-        "${UploadedPhotoEntity.LON_COLUMN} != 0.0 " +
-        " AND " +
-        "${UploadedPhotoEntity.LAT_COLUMN} != 0.0")
+        "WHERE ${UploadedPhotoEntity.HAS_RECEIVER_INFO_COLUMN} = ${MyDatabase.SQLITE_TRUE}")
     abstract fun findAllWithReceiverInfo(): List<UploadedPhotoEntity>
 
     @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
-        "WHERE " +
-        "${UploadedPhotoEntity.LON_COLUMN} = 0.0 " +
-        " AND " +
-        "${UploadedPhotoEntity.LAT_COLUMN} = 0.0")
+        "WHERE ${UploadedPhotoEntity.HAS_RECEIVER_INFO_COLUMN} = ${MyDatabase.SQLITE_FALSE}")
     abstract fun findAllWithoutReceiverInfo(): List<UploadedPhotoEntity>
 
-    @Query("SELECT ${UploadedPhotoEntity.PHOTO_ID_COLUMN} FROM ${UploadedPhotoEntity.TABLE_NAME} " +
+    @Query("SELECT ${UploadedPhotoEntity.REMOTE_PHOTO_ID_COLUMN} FROM ${UploadedPhotoEntity.TABLE_NAME} " +
         "WHERE ${UploadedPhotoEntity.PHOTO_NAME_COLUMN} = :uploadedPhotoName")
     abstract fun findByPhotoIdByName(uploadedPhotoName: String): Long
 
     @Query("UPDATE ${UploadedPhotoEntity.TABLE_NAME} " +
-        "SET " +
-        "${UploadedPhotoEntity.LON_COLUMN} = :lon, " +
-        "${UploadedPhotoEntity.LAT_COLUMN} = :lat " +
+        "SET ${UploadedPhotoEntity.HAS_RECEIVER_INFO_COLUMN} = ${MyDatabase.SQLITE_TRUE} " +
         "WHERE ${UploadedPhotoEntity.PHOTO_NAME_COLUMN} = :uploadedPhotoName")
-    abstract fun updateReceiverInfo(uploadedPhotoName: String, lon: Double, lat: Double): Int
+    abstract fun updateReceiverInfo(uploadedPhotoName: String): Int
 
     @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME}")
     abstract fun findAll(): List<UploadedPhotoEntity>

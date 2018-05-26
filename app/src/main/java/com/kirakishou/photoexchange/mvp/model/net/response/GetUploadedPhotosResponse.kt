@@ -35,11 +35,19 @@ private constructor(
         val photoName: String,
 
         @Expose
-        @SerializedName("receiver_lon")
-        val receiverLon: Double,
+        @SerializedName("uploader_lon")
+        val uploaderLon: Double,
 
         @Expose
-        @SerializedName("receiver_lat")
-        val receiverLat: Double
+        @SerializedName("uploader_lat")
+        val uploaderLat: Double,
+
+        @Expose
+        @SerializedName("has_receiver_info")
+        val hasReceivedInfo: Boolean,
+
+        @Expose
+        @SerializedName("uploaded_on")
+        val uploadedOn: Long
     )
 }

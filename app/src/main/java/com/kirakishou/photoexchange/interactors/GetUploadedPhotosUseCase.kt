@@ -42,9 +42,6 @@ class GetUploadedPhotosUseCase(
                 val photoIdsToGetFromServer = Utils.filterListAlreadyContaning(uploadedPhotoIds, uploadedPhotosFromDb.map { it.photoId })
                 photosResultList += uploadedPhotosFromDb
 
-                Timber.tag(TAG).d("Fresh photos' ids = $uploadedPhotoIds")
-                Timber.tag(TAG).d("Cached gallery photo ids = ${uploadedPhotosFromDb.map { it.photoId }}")
-
                 if (photoIdsToGetFromServer.isNotEmpty()) {
                     val result = getFreshPhotosFromServer(userId, photoIdsToGetFromServer)
                     if (result is Either.Error) {

@@ -44,14 +44,14 @@ class UploadedPhotosAdapter(
         footerItems.add(FOOTER_PROGRESS_INDICATOR_INDEX, UploadedPhotosAdapterItem.EmptyItem())
     }
 
-    fun updateUploadedPhotoSetReceiverInfo(receivedPhoto: ReceivedPhoto, takenPhotoId: Long) {
+    fun updateUploadedPhotoSetReceiverInfo(takenPhotoId: Long) {
         val uploadedItemIndex = uploadedItems.indexOfFirst { (it as UploadedPhotosAdapterItem.UploadedPhotoItem).uploadedPhoto.photoId == takenPhotoId }
         if (uploadedItemIndex == -1) {
             return
         }
 
         val uploadedPhoto = (uploadedItems[uploadedItemIndex] as UploadedPhotosAdapterItem.UploadedPhotoItem).uploadedPhoto
-        uploadedPhoto.receiverInfo = UploadedPhoto.ReceiverInfo(receivedPhoto.lon, receivedPhoto.lat)
+        uploadedPhoto.hasReceiverInfo = true
 
         uploadedItems.removeAt(uploadedItemIndex)
         uploadedWithReceiverInfoItems.add(0, UploadedPhotosAdapterItem.UploadedPhotoItem(uploadedPhoto))
@@ -167,7 +167,7 @@ class UploadedPhotosAdapter(
 
         duplicatesCheckerSet.add(photo.photoId)
 
-        if (!photo.hasReceivedInfo()) {
+        if (!photo.hasReceiverInfo) {
             uploadedItems.add(0, UploadedPhotosAdapterItem.UploadedPhotoItem(photo))
             notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size)
         } else {
@@ -444,7 +444,7 @@ class UploadedPhotosAdapter(
                 val uploadedPhoto = (getAdapterItemByIndex(position) as? UploadedPhotosAdapterItem.UploadedPhotoItem)?.uploadedPhoto
                     ?: return
 
-                val drawable = if (!uploadedPhoto.hasReceivedInfo()) {
+                val drawable = if (!uploadedPhoto.hasReceiverInfo) {
                     context.getDrawable(R.drawable.ic_done)
                 } else {
                     context.getDrawable(R.drawable.ic_done_all)

@@ -46,7 +46,7 @@ class GalleryPhotoEntity(
             return GalleryPhotoEntity(id, photoName, lon, lat, uploadedOn, lastUpdateTime, favouritedCount)
         }
 
-        const val TABLE_NAME = "gallery_photos"
+        const val TABLE_NAME = "GALLERY_PHOTOS"
 
         const val GALLERY_PHOTO_ID_COLUMN = "GALLERY_PHOTO_ID"
         const val PHOTO_NAME_COLUMN = "PHOTO_NAME"

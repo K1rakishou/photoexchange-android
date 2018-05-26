@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosReposi
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.util.BitmapUtils
 import com.kirakishou.photoexchange.helper.util.FileUtils
+import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
@@ -73,7 +74,7 @@ class UploadPhotosUseCase(
                                 is ErrorCode.UploadPhotoErrors.Ok -> {
                                     Timber.tag(TAG).d("Photo uploaded. Saving the result")
 
-                                    if (!handlePhotoUploaded(photo, response, callbacks)) {
+                                    if (!handlePhotoUploaded(photo, location, response, callbacks)) {
                                         Timber.tag(TAG).d("Could not save photo uploading result")
                                         handleFailedPhoto(photo, callbacks, errorCode)
                                     }
@@ -121,19 +122,21 @@ class UploadPhotosUseCase(
         })
     }
 
-    private fun handlePhotoUploaded(photo: TakenPhoto, response: UploadPhotoResponse, callbacks: WeakReference<UploadPhotoServiceCallbacks>?): Boolean {
+    private fun handlePhotoUploaded(photo: TakenPhoto, location: LonLat,
+                                    response: UploadPhotoResponse, callbacks: WeakReference<UploadPhotoServiceCallbacks>?): Boolean {
         photo.photoName = response.photoName
 
         val dbResult = database.transactional {
             val updateResult1 = takenPhotosRepository.deletePhotoById(photo.id)
-            val updateResult2 = uploadedPhotosRepository.save(photo)
+            val updateResult2 = uploadedPhotosRepository.save(photo, location.lon, location.lat, TimeUtils.getTimeFast())
 
             Timber.tag(TAG).d("updateResult1 = $updateResult1, updateResult2 = $updateResult2")
             return@transactional updateResult1 && updateResult2
         }
 
         if (dbResult) {
-            callbacks?.get()?.onUploadingEvent(PhotoUploadEvent.OnUploaded(UploadedPhoto(photo.id, photo.photoName!!)))
+            callbacks?.get()?.onUploadingEvent(PhotoUploadEvent.OnUploaded(UploadedPhoto(photo.id, photo.photoName!!,
+                location.lon, location.lat, false, TimeUtils.getTimeFast())))
         }
 
         return dbResult

@@ -21,8 +21,8 @@ open class UploadedPhotosRepository(
         return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.findMany(uploadedPhotoIds))
     }
 
-    fun save(photo: TakenPhoto): Boolean {
-        val uploadedPhotoEntity = UploadedPhotosMapper.FromObject.ToEntity.toUploadedPhotoEntity(photo)
+    fun save(photo: TakenPhoto, lon: Double, lat: Double, uploadedOn: Long): Boolean {
+        val uploadedPhotoEntity = UploadedPhotosMapper.FromObject.ToEntity.toUploadedPhotoEntity(photo, lon, lat, uploadedOn)
         return uploadedPhotoDao.save(uploadedPhotoEntity).isSuccess()
     }
 
@@ -48,7 +48,7 @@ open class UploadedPhotosRepository(
         return uploadedPhotoDao.findByPhotoIdByName(uploadedPhotoName)
     }
 
-    fun updateReceiverInfo(uploadedPhotoName: String, lon: Double, lat: Double): Boolean {
-        return uploadedPhotoDao.updateReceiverInfo(uploadedPhotoName, lon, lat) == 1
+    fun updateReceiverInfo(uploadedPhotoName: String): Boolean {
+        return uploadedPhotoDao.updateReceiverInfo(uploadedPhotoName) == 1
     }
 }

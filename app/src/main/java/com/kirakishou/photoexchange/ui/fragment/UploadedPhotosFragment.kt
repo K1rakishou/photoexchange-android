@@ -228,7 +228,7 @@ class UploadedPhotosFragment : BaseFragment() {
                     (requireActivity() as PhotosActivity).showUploadPhotoErrorMessage(event.errorCode)
                 }
                 is PhotoUploadEvent.OnFoundPhotoAnswer -> {
-                    adapter.updateUploadedPhotoSetReceiverInfo(event.photo, event.takenPhotoId)
+                    adapter.updateUploadedPhotoSetReceiverInfo(event.takenPhotoId)
                 }
                 is PhotoUploadEvent.OnEnd -> {
                 }
