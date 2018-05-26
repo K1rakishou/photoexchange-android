@@ -37,7 +37,7 @@ class GalleryPhotoInfoEntity(
             return GalleryPhotoInfoEntity(id, isFavourited, isReported, TimeUtils.getTimeFast())
         }
 
-        const val TABLE_NAME = "gallery_photo_info"
+        const val TABLE_NAME = "GALLERY_PHOTO_INFO"
 
         const val GALLERY_PHOTO_ID_COLUMN = "GALLERY_PHOTO_ID"
         const val IS_FAVOURITED_COLUMN = "IS_FAVOURITED"

@@ -42,9 +42,6 @@ class GetReceivedPhotosUseCase(
                 val photoIdsToGetFromServer = Utils.filterListAlreadyContaning(receivedPhotoIds, receivedPhotosFromDb.map { it.photoId })
                 photosResultList += receivedPhotosFromDb
 
-                Timber.tag(TAG).d("Fresh photos' ids = $receivedPhotoIds")
-                Timber.tag(TAG).d("Cached gallery photo ids = ${receivedPhotosFromDb.map { it.photoId }}")
-
                 if (photoIdsToGetFromServer.isNotEmpty()) {
                     val result = getFreshPhotosFromServer(userId, photoIdsToGetFromServer)
                     if (result is Either.Error) {
@@ -60,9 +57,9 @@ class GetReceivedPhotosUseCase(
 
                 photosResultList.sortBy { it.photoId }
                 return@rxSingle Either.Value(photosResultList)
-
             } catch (error: Throwable) {
-                return@rxSingle Either.Error(ErrorCode.GetReceivedPhotosErrors.UnknownErrors())
+                Timber.tag(TAG).e(error)
+                return@rxSingle Either.Error(ErrorCode.GetReceivedPhotosErrors.UnknownError())
             }
         }
     }
@@ -77,8 +74,12 @@ class GetReceivedPhotosUseCase(
             return Either.Error(errorCode)
         }
 
+        if (response.receivedPhotos.isEmpty()) {
+            return Either.Value(emptyList())
+        }
+
         if (!receivedPhotosRepository.saveMany(response.receivedPhotos)) {
-            return Either.Error(ErrorCode.GetReceivedPhotosErrors.DatabaseErrors())
+            return Either.Error(ErrorCode.GetReceivedPhotosErrors.DatabaseError())
         }
 
         return Either.Value(ReceivedPhotosMapper.FromResponse.GetReceivedPhotos.toReceivedPhotos(response.receivedPhotos))

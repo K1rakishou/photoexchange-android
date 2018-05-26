@@ -4,10 +4,10 @@ import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.PhotoUploadEvent
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import io.reactivex.Observable
@@ -42,13 +42,14 @@ class UploadPhotoServicePresenter(
                     .flatMap { location -> getUserId().zipWith(Observable.just(location)) }
                     .flatMap { (userIdResult, location) ->
                         if (userIdResult is Either.Error) {
-                            callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnCouldNotGetUserIdFromServerError(userIdResult.error as ErrorCode.UploadPhotoErrors))
+                            callbacks.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnCouldNotGetUserIdFromServerError(
+                                userIdResult.error as ErrorCode.UploadPhotoErrors))
                             return@flatMap Observable.error<Pair<String, LonLat>>(CouldNotGetUserIdFromServerException())
                         }
 
                         return@flatMap Observable.just(Pair((userIdResult as Either.Value).value, location))
                     }
-                    .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnPrepare()) }
+                    .doOnNext { callbacks.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPrepare()) }
                     .concatMap { (userId, location) ->
                         Timber.tag(TAG).d("Upload data")
 
@@ -57,9 +58,9 @@ class UploadPhotoServicePresenter(
                     }
                     .doOnNext { allUploaded ->
                         Timber.tag(TAG).d("onUploadingEvent(PhotoUploadEvent.OnEnd($allUploaded))")
-                        callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnEnd(allUploaded))
+                        callbacks.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd(allUploaded))
                     }
-                    .doOnEach {
+                    .doOnNext {
                         Timber.tag(TAG).d("stopService")
                         callbacks.get()?.stopService()
                     }
@@ -72,7 +73,7 @@ class UploadPhotoServicePresenter(
                             is CouldNotGetUserIdFromServerException -> {
                             }
 
-                            else -> callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnUnknownError(error))
+                            else -> callbacks.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError(error))
                         }
 
                         callbacks.get()?.onError(error)
@@ -108,13 +109,13 @@ class UploadPhotoServicePresenter(
 
         val gpsGranted = gpsPermissionGrantedObservable
             .filter { permissionGranted -> permissionGranted }
-            .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnLocationUpdateStart()) }
+            .doOnNext { callbacks.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnLocationUpdateStart()) }
             .doOnNext { Timber.tag(TAG).d("Gps permission is granted") }
             .flatMap {
                 callbacks.get()?.getCurrentLocation()?.toObservable()
                     ?: Observable.just(LonLat.empty())
             }
-            .doOnNext { callbacks.get()?.onUploadingEvent(PhotoUploadEvent.OnLocationUpdateEnd()) }
+            .doOnNext { callbacks.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnLocationUpdateEnd()) }
 
         val gpsNotGranted = gpsPermissionGrantedObservable
             .filter { permissionGranted -> !permissionGranted }

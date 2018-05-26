@@ -28,6 +28,7 @@ android {
         debug {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            resValue("string", "PORT_NUMBER", "8081")
         }
     }
     repositories {
@@ -116,6 +117,8 @@ dependencies {
     implementation('com.crashlytics.sdk.android:crashlytics:2.9.2@aar') {
         transitive = true;
     }
+
+    debugImplementation 'com.amitshekhar.android:debug-db:1.0.3'
 }
 kotlin {
     experimental {

@@ -40,7 +40,7 @@ class GetReceivedPhotoIdsRequest<T>(
             is ApiException -> GetReceivedPhotoIdsResponse.fail(error.errorCode)
             is SocketTimeoutException,
             is TimeoutException -> GetReceivedPhotoIdsResponse.fail(ErrorCode.GetUploadedPhotosErrors.LocalTimeout())
-            else -> GetReceivedPhotoIdsResponse.fail(ErrorCode.GetUploadedPhotosErrors.UnknownErrors())
+            else -> GetReceivedPhotoIdsResponse.fail(ErrorCode.GetUploadedPhotosErrors.UnknownError())
         }
     }
 }

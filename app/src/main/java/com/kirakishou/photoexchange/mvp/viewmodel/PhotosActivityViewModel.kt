@@ -5,19 +5,16 @@ import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRep
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
+import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelStateEventForwarder
 import com.kirakishou.photoexchange.helper.extension.drainErrorCodesTo
 import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.interactors.*
 import com.kirakishou.photoexchange.mvp.model.*
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
-import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapter
 import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
-import com.kirakishou.photoexchange.ui.viewstate.PhotosActivityViewStateEvent
-import com.kirakishou.photoexchange.ui.viewstate.UploadedPhotosFragmentViewStateEvent
-import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewStateEvent
+import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -40,33 +37,13 @@ class PhotosActivityViewModel(
     private val favouritePhotoUseCase: FavouritePhotoUseCase,
     private val reportPhotoUseCase: ReportPhotoUseCase,
     private val schedulerProvider: SchedulerProvider
-) : BaseViewModel<AllPhotosActivityView>() {
+) : BaseViewModel() {
 
     private val TAG = "PhotosActivityViewModel"
-
     private val ADAPTER_LOAD_MORE_ITEMS_DELAY_MS = 1.seconds()
 
-    val onPhotoUploadEventSubject = PublishSubject.create<PhotoUploadEvent>().toSerialized()
-    val onPhotoFindEventSubject = PublishSubject.create<ReceivePhotosEvent>().toSerialized()
-    val photosActivityViewStateSubject = PublishSubject.create<PhotosActivityViewStateEvent>().toSerialized()
-    val uploadedPhotosFragmentViewStateSubject = PublishSubject.create<UploadedPhotosFragmentViewStateEvent>().toSerialized()
-    val receivedPhotosFragmentViewStateSubject = PublishSubject.create<ReceivedPhotosFragmentViewStateEvent>().toSerialized()
-    val startPhotoUploadingServiceSubject = PublishSubject.create<Unit>().toSerialized()
-    val startPhotoReceivingServiceSubject = PublishSubject.create<Unit>().toSerialized()
-    val uploadedPhotosAdapterButtonClickSubject = PublishSubject.create<UploadedPhotosAdapter.UploadedPhotosAdapterButtonClickEvent>().toSerialized()
+    val eventForwarder = PhotosActivityViewModelStateEventForwarder()
     val errorCodesSubject = PublishSubject.create<Pair<Class<*>, ErrorCode>>().toSerialized()
-
-    init {
-        compositeDisposable += uploadedPhotosAdapterButtonClickSubject
-            .flatMap {
-                getView()?.handleUploadedPhotosFragmentAdapterButtonClicks(it)
-                    ?: Observable.just(false)
-            }
-            .filter { startUploadingService -> startUploadingService }
-            .map { Unit }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe(startPhotoUploadingServiceSubject::onNext)
-    }
 
     override fun onCleared() {
         Timber.tag(TAG).d("onCleared()")
@@ -78,7 +55,7 @@ class PhotosActivityViewModel(
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .concatMap { userId -> reportPhotoUseCase.reportPhoto(userId, photoName) }
-            .drainErrorCodesTo(GalleryFragment::class.java, errorCodesSubject)
+            .drainErrorCodesTo(errorCodesSubject, GalleryFragment::class.java)
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
@@ -86,7 +63,7 @@ class PhotosActivityViewModel(
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .concatMap { userId -> favouritePhotoUseCase.favouritePhoto(userId, photoName) }
-            .drainErrorCodesTo(GalleryFragment::class.java, errorCodesSubject)
+            .drainErrorCodesTo(errorCodesSubject, GalleryFragment::class.java)
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
@@ -98,88 +75,71 @@ class PhotosActivityViewModel(
                     .toObservable()
             }
             .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-            .drainErrorCodesTo(GalleryFragment::class.java, errorCodesSubject)
+            .drainErrorCodesTo(errorCodesSubject, GalleryFragment::class.java)
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun loadNextPageOfUploadedPhotos(lastId: Long, photosPerPage: Int): Observable<List<UploadedPhoto>> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
-            .filter { userId -> userId.isNotEmpty() }
-            .doOnNext { uploadedPhotosFragmentViewStateSubject.onNext(UploadedPhotosFragmentViewStateEvent.ShowProgressFooter()) }
-            .flatMap { userId ->
-                getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
-                    .toObservable()
+            .flatMap { _userId ->
+                if (_userId.isEmpty()) {
+                    return@flatMap Observable.just<List<UploadedPhoto>>(emptyList())
+                }
+
+                return@flatMap Observable.just(_userId)
+                    .doOnNext {
+                        eventForwarder.sendUploadedPhotosFragmentEvent(
+                            UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter())
+                    }
+                    .flatMap { userId ->
+                        getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
+                            .toObservable()
+                    }
+                    .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
+                    .doOnNext {
+                        eventForwarder.sendUploadedPhotosFragmentEvent(
+                            UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter())
+                    }
+                    .drainErrorCodesTo(errorCodesSubject, UploadedPhotosFragment::class.java)
+                    .doOnError { Timber.tag(TAG).e(it) }
             }
-            .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-            .doOnNext { uploadedPhotosFragmentViewStateSubject.onNext(UploadedPhotosFragmentViewStateEvent.HideProgressFooter()) }
-            .drainErrorCodesTo(UploadedPhotosFragment::class.java, errorCodesSubject)
-            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun loadNextPageOfReceivedPhotos(lastId: Long, photosPerPage: Int): Observable<List<ReceivedPhoto>> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .filter { userId -> userId.isNotEmpty() }
-//            .doOnNext { uploadedPhotosFragmentViewStateSubject.onNext(UploadedPhotosFragmentViewStateEvent.ShowProgressFooter()) }
+            .doOnNext {
+                eventForwarder.sendUploadedPhotosFragmentEvent(
+                    UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter())
+            }
             .flatMap { userId ->
                 getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
                     .toObservable()
             }
             .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-//            .doOnNext { uploadedPhotosFragmentViewStateSubject.onNext(UploadedPhotosFragmentViewStateEvent.HideProgressFooter()) }
-            .drainErrorCodesTo(UploadedPhotosFragment::class.java, errorCodesSubject)
+            .doOnNext {
+                eventForwarder.sendUploadedPhotosFragmentEvent(
+                    UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter())
+            }
+            .drainErrorCodesTo(errorCodesSubject, UploadedPhotosFragment::class.java)
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
-    fun checkShouldStartReceivePhotosService() {
-        compositeDisposable += Observable.fromCallable { takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
-            .subscribeOn(schedulerProvider.IO())
-            //do not start the service if there are queued up photos
-            .filter { count -> count == 0 }
-            .map {
-                val uploadedPhotosCount = uploadedPhotosRepository.count()
-                val receivedPhotosCount = receivedPhotosRepository.countAll()
-
-                if (Constants.isDebugBuild) {
-                    Timber.tag(TAG).d("uploadedPhotosCount: $uploadedPhotosCount, receivedPhotosCount: $receivedPhotosCount")
-                }
-
-                return@map uploadedPhotosCount > receivedPhotosCount
-            }
-            .filter { uploadedPhotosMoreThanReceived -> uploadedPhotosMoreThanReceived }
-            .map { Unit }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe(startPhotoReceivingServiceSubject::onNext)
+    fun checkHasPhotosToUpload(): Observable<Boolean> {
+        return Observable.fromCallable {
+            takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
+        }.subscribeOn(schedulerProvider.IO())
     }
 
-    fun checkShouldStartPhotoUploadingService() {
-        val observable = Observable.fromCallable { takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) }
-            .subscribeOn(schedulerProvider.IO())
-            .publish()
-            .autoConnect(2)
+    fun checkHasPhotosToReceive(): Observable<Boolean> {
+        return Observable.fromCallable {
+            val uploadedPhotosCount = uploadedPhotosRepository.count()
+            val receivedPhotosCount = receivedPhotosRepository.countAll()
 
-        compositeDisposable += observable
-            .filter { count -> count == 0 }
-            .doOnNext {
-                if (Constants.isDebugBuild) {
-                    Timber.tag(TAG).d("checkShouldStartPhotoUploadingService count == 0")
-                }
-            }
-            .doOnNext { checkShouldStartReceivePhotosService() }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe()
-
-        compositeDisposable += observable
-            .filter { count -> count > 0 }
-            .doOnNext {
-                if (Constants.isDebugBuild) {
-                    Timber.tag(TAG).d("checkShouldStartPhotoUploadingService count > 0")
-                }
-            }
-            .map { Unit }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe(startPhotoUploadingServiceSubject::onNext, startPhotoUploadingServiceSubject::onError)
+            return@fromCallable uploadedPhotosCount > receivedPhotosCount
+        }.subscribeOn(schedulerProvider.IO())
     }
 
     fun loadMyPhotos(): Single<MutableList<TakenPhoto>> {
@@ -198,14 +158,6 @@ class PhotosActivityViewModel(
             return@fromCallable photos
         }.subscribeOn(schedulerProvider.IO())
             .doOnError { Timber.tag(TAG).e(it) }
-    }
-
-    fun forwardUploadPhotoEvent(event: PhotoUploadEvent) {
-        onPhotoUploadEventSubject.onNext(event)
-    }
-
-    fun forwardPhotoFindEvent(event: ReceivePhotosEvent) {
-        onPhotoFindEventSubject.onNext(event)
     }
 
     fun deletePhotoById(photoId: Long): Completable {

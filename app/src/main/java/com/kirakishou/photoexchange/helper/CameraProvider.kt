@@ -1,25 +1,40 @@
 package com.kirakishou.photoexchange.helper
 
 import android.content.Context
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvp.model.TakenPhoto
+import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.fotoapparat.Fotoapparat
 import io.fotoapparat.configuration.CameraConfiguration
 import io.fotoapparat.selector.back
 import io.fotoapparat.selector.highestResolution
 import io.fotoapparat.selector.manualJpegQuality
 import io.fotoapparat.view.CameraView
+import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.experimental.CommonPool
+import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.rx2.asSingle
+import kotlinx.coroutines.experimental.rx2.await
+import kotlinx.coroutines.experimental.rx2.rxObservable
+import kotlinx.coroutines.experimental.rx2.rxSingle
 import timber.log.Timber
 import java.io.File
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Created by kirakishou on 1/4/2018.
  */
 open class CameraProvider(
-    val context: Context
+    val context: Context,
+    private val takenPhotosRepository: TakenPhotosRepository
 ) {
 
+    private val TAG = "CameraProvider"
     private val isStarted = AtomicBoolean(false)
     private var camera: Fotoapparat? = null
     private val tag = "[${this::class.java.simpleName}]: "
@@ -63,7 +78,7 @@ open class CameraProvider(
     fun isStarted(): Boolean = isStarted.get()
     fun isAvailable(): Boolean = camera?.isAvailable(back()) ?: false
 
-    fun takePhoto(file: File): Single<Boolean> {
+    private fun doTakePhoto(file: File): Single<Boolean> {
         val single = Single.create<Boolean> { emitter ->
             if (!isAvailable()) {
                 emitter.onError(CameraIsNotAvailable("Camera is not supported by this device"))
@@ -93,6 +108,57 @@ open class CameraProvider(
         return single
             .subscribeOn(Schedulers.io())
             .observeOn(Schedulers.io())
+    }
+
+    fun takePhoto(): Single<ErrorCode.TakePhotoErrors> {
+        return rxSingle {
+            var takenPhoto: TakenPhoto = TakenPhoto.empty()
+            var file: File? = null
+
+            try {
+                takenPhotosRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN)
+                takenPhotosRepository.cleanFilesDirectory()
+
+                file = takenPhotosRepository.createFile()
+
+                val takePhotoStatus = doTakePhoto(file).await()
+                if (!takePhotoStatus) {
+                    cleanUp(file, null)
+                    return@rxSingle ErrorCode.TakePhotoErrors.CouldNotTakePhoto()
+                }
+
+                takenPhoto = takenPhotosRepository.saveTakenPhoto(file)
+                if (takenPhoto.isEmpty()) {
+                    cleanUp(file, takenPhoto)
+                    return@rxSingle ErrorCode.TakePhotoErrors.DatabaseError()
+                }
+
+                return@rxSingle ErrorCode.TakePhotoErrors.Ok(takenPhoto)
+            } catch (error: Exception) {
+                Timber.tag(TAG).e(error)
+
+                cleanUp(file, takenPhoto)
+                return@rxSingle handleException(error)
+            }
+        }
+    }
+
+    private fun cleanUp(file: File?, photo: TakenPhoto?) {
+        takenPhotosRepository.deleteFileIfExists(file)
+        takenPhotosRepository.deleteMyPhoto(photo)
+    }
+
+    private fun handleException(error: Exception): ErrorCode.TakePhotoErrors {
+        return when (error.cause) {
+            null -> ErrorCode.TakePhotoErrors.DatabaseError()
+
+            else -> when (error.cause!!) {
+                is CameraProvider.CameraIsNotAvailable -> ErrorCode.TakePhotoErrors.CameraIsNotAvailable()
+                is CameraProvider.CameraIsNotStartedException -> ErrorCode.TakePhotoErrors.CameraIsNotStartedException()
+                is TimeoutException -> ErrorCode.TakePhotoErrors.TimeoutException()
+                else -> ErrorCode.TakePhotoErrors.UnknownError()
+            }
+        }
     }
 
     class CameraIsNotStartedException(msg: String) : Exception(msg)

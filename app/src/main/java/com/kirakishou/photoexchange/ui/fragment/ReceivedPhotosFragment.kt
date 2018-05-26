@@ -8,16 +8,16 @@ import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.extension.filterErrorCodes
+import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.ReceivePhotosEvent
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapterSpanSizeLookup
-import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewStateEvent
+import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
@@ -26,7 +26,7 @@ import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import javax.inject.Inject
 
-class ReceivedPhotosFragment : BaseFragment() {
+class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotosFragmentEvent> {
 
     @BindView(R.id.received_photos_list)
     lateinit var receivedPhotosList: RecyclerView
@@ -51,8 +51,7 @@ class ReceivedPhotosFragment : BaseFragment() {
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRx()
         initRecyclerView()
-
-        loadPhotos()
+        loadFirstPage()
     }
 
     override fun onFragmentViewDestroy() {
@@ -66,22 +65,24 @@ class ReceivedPhotosFragment : BaseFragment() {
             .doOnNext { handleError(it) }
             .subscribe()
 
-        compositeDisposable += viewModel.onPhotoFindEventSubject
-            .subscribeOn(AndroidSchedulers.mainThread())
+        compositeDisposable += viewModel.eventForwarder.getReceivedPhotosFragmentEventsStream()
+            .observeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { event -> onPhotoFindEvent(event) }
+            .doOnNext { viewState -> onStateEvent(viewState) }
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
 
-        compositeDisposable += viewModel.receivedPhotosFragmentViewStateSubject
+        compositeDisposable += loadMoreSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
             .observeOn(Schedulers.io())
+            .concatMap { viewModel.loadNextPageOfReceivedPhotos(lastId, photosPerPage) }
             .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { viewState -> onViewStateChanged(viewState) }
+            .doOnNext { photos -> addReceivedPhotosToAdapter(photos) }
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
     }
 
-    private fun loadPhotos() {
+    private fun loadFirstPage() {
         compositeDisposable += viewModel.loadNextPageOfReceivedPhotos(lastId, photosPerPage)
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { photos -> addReceivedPhotosToAdapter(photos) }
@@ -97,8 +98,8 @@ class ReceivedPhotosFragment : BaseFragment() {
 
         val layoutManager = GridLayoutManager(requireContext(), columnsCount)
         layoutManager.spanSizeLookup = ReceivedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
-        photosPerPage = Constants.RECEIVED_PHOTOS_PER_ROW * layoutManager.spanCount
 
+        photosPerPage = Constants.RECEIVED_PHOTOS_PER_ROW * layoutManager.spanCount
         endlessScrollListener = EndlessRecyclerOnScrollListener(layoutManager, photosPerPage, loadMoreSubject)
 
         receivedPhotosList.layoutManager = layoutManager
@@ -107,33 +108,43 @@ class ReceivedPhotosFragment : BaseFragment() {
         receivedPhotosList.addOnScrollListener(endlessScrollListener)
     }
 
-    private fun onViewStateChanged(viewStateEvent: ReceivedPhotosFragmentViewStateEvent) {
-        if (!isAdded) {
-            return
-        }
-
-        requireActivity().runOnUiThread {
-            when (viewStateEvent) {
-                is ReceivedPhotosFragmentViewStateEvent.ScrollToTop -> {
-                    receivedPhotosList.scrollToPosition(0)
-                }
-                else -> throw IllegalArgumentException("Unknown UploadedPhotosFragmentViewStateEvent $viewStateEvent")
-            }
-        }
-    }
-
-    private fun onPhotoFindEvent(event: ReceivePhotosEvent) {
+    override fun onStateEvent(event: ReceivedPhotosFragmentEvent) {
         if (!isAdded) {
             return
         }
 
         requireActivity().runOnUiThread {
             when (event) {
-                is ReceivePhotosEvent.OnPhotoReceived -> {
-                    adapter.addPhotoAnswer(event.receivedPhoto)
+                is ReceivedPhotosFragmentEvent.UiEvents -> {
+                    onUiEvent(event)
                 }
-                is ReceivePhotosEvent.OnFailed,
-                is ReceivePhotosEvent.OnUnknownError -> {
+                is ReceivedPhotosFragmentEvent.ReceivePhotosEvent -> {
+                    onReceivePhotosEvent(event)
+                }
+            }
+        }
+    }
+
+    private fun onUiEvent(event: ReceivedPhotosFragmentEvent.UiEvents) {
+        when (event) {
+            is ReceivedPhotosFragmentEvent.UiEvents.ScrollToTop -> {
+                receivedPhotosList.scrollToPosition(0)
+            }
+        }
+    }
+
+    private fun onReceivePhotosEvent(event: ReceivedPhotosFragmentEvent.ReceivePhotosEvent) {
+        if (!isAdded) {
+            return
+        }
+
+        receivedPhotosList.post {
+            when (event) {
+                is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotoReceived -> {
+                    adapter.addReceivedPhoto(event.receivedPhoto)
+                }
+                is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed,
+                is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnUnknownError -> {
                     //do nothing here
                 }
             }
@@ -145,11 +156,16 @@ class ReceivedPhotosFragment : BaseFragment() {
             return
         }
 
-        requireActivity().runOnUiThread {
+        receivedPhotosList.post {
+            endlessScrollListener.pageLoaded()
+
             if (receivedPhotos.isNotEmpty()) {
-                adapter.addPhotoAnswers(receivedPhotos)
-            } else {
-                //TODO: show notification that no photos has been uploaded yet
+                lastId = receivedPhotos.last().photoId
+                adapter.addReceivedPhotos(receivedPhotos)
+            }
+
+            if (receivedPhotos.size < photosPerPage) {
+                endlessScrollListener.reachedEnd()
             }
         }
     }

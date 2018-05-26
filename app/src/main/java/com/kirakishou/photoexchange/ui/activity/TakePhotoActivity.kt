@@ -25,22 +25,20 @@ import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.ui.dialog.AppCannotWorkWithoutCameraPermissionDialog
 import com.kirakishou.photoexchange.ui.dialog.CameraIsNotAvailableDialog
 import com.kirakishou.photoexchange.ui.dialog.CameraRationaleDialog
 import io.fotoapparat.view.CameraView
 import io.reactivex.Completable
-import io.reactivex.Single
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
-import java.io.File
 import javax.inject.Inject
 
-class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
+class TakePhotoActivity : BaseActivity() {
 
     @BindView(R.id.show_all_photos_btn)
     lateinit var showAllPhotosButton: LinearLayout
@@ -75,7 +73,6 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
     }
 
     override fun onActivityStart() {
-        viewModel.setView(this)
         initRx()
     }
 
@@ -91,7 +88,6 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
     }
 
     override fun onActivityStop() {
-        viewModel.clearView()
     }
 
     private fun initViews() {
@@ -112,17 +108,17 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
             .debounceClicks()
             .doOnNext { vibrator.vibrate(this, VIBRATION_TIME_MS) }
             .observeOn(Schedulers.io())
-            .concatMap { viewModel.takePhoto().toObservable() }
+            .concatMap { takePhoto() }
             .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { errorCode ->
+            .subscribe({ errorCode ->
                 if (errorCode is ErrorCode.TakePhotoErrors.Ok) {
                     onPhotoTaken(errorCode.photo)
                 } else {
                     showErrorCodeToast(errorCode)
                 }
-            }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe()
+            }, { error ->
+                Timber.tag(TAG).e(error)
+            })
 
         compositeDisposable += RxView.clicks(showAllPhotosButton)
             .subscribeOn(AndroidSchedulers.mainThread())
@@ -195,7 +191,9 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
         }
     }
 
-    override fun takePhoto(file: File): Single<Boolean> = cameraProvider.takePhoto(file)
+    private fun takePhoto(): Observable<ErrorCode.TakePhotoErrors> {
+        return cameraProvider.takePhoto().toObservable()
+    }
 
     private fun onPhotoTaken(takenPhoto: TakenPhoto) {
         runActivityWithArgs(ViewTakenPhotoActivity::class.java,
@@ -249,10 +247,6 @@ class TakePhotoActivity : BaseActivity(), TakePhotoActivityView {
             })
             set.start()
         }
-    }
-
-    override fun showToast(message: String, duration: Int) {
-        onShowToast(message, duration)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {

@@ -9,7 +9,8 @@ import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.extension.filterErrorCodes
-import com.kirakishou.photoexchange.helper.extension.seconds
+import com.kirakishou.photoexchange.helper.intercom.StateEventListener
+import com.kirakishou.photoexchange.helper.intercom.event.BaseEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
@@ -26,7 +27,6 @@ import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class GalleryFragment : BaseFragment() {
@@ -122,8 +122,8 @@ class GalleryFragment : BaseFragment() {
 
         val layoutManager = GridLayoutManager(requireContext(), columnsCount)
         layoutManager.spanSizeLookup = GalleryPhotosAdapterSpanSizeLookup(adapter, columnsCount)
-        photosPerPage = Constants.GALLERY_PHOTOS_PER_ROW * layoutManager.spanCount
 
+        photosPerPage = Constants.GALLERY_PHOTOS_PER_ROW * layoutManager.spanCount
         endlessScrollListener = EndlessRecyclerOnScrollListener(layoutManager, photosPerPage, loadMoreSubject)
 
         galleryPhotosList.layoutManager = layoutManager
@@ -166,16 +166,20 @@ class GalleryFragment : BaseFragment() {
         }
     }
 
-    private fun addPhotoToAdapter(photos: List<GalleryPhoto>) {
+    private fun addPhotoToAdapter(galleryPhotos: List<GalleryPhoto>) {
+        if (!isAdded) {
+            return
+        }
+
         galleryPhotosList.post {
             endlessScrollListener.pageLoaded()
 
-            if (photos.isNotEmpty()) {
-                lastId = photos.last().galleryPhotoId
-                adapter.addAll(photos)
+            if (galleryPhotos.isNotEmpty()) {
+                lastId = galleryPhotos.last().galleryPhotoId
+                adapter.addAll(galleryPhotos)
             }
 
-            if (photos.size < photosPerPage) {
+            if (galleryPhotos.size < photosPerPage) {
                 endlessScrollListener.reachedEnd()
             }
         }

@@ -23,11 +23,16 @@ fun <T> Observable<Pair<Class<*>, T>>.filterErrorCodes(clazz: Class<*>): Observa
         .map { it.second }
 }
 
-inline fun <E, V, reified R : Either.Value<V>> Observable<Either<E, V>>.drainErrorCodesTo(clazz: Class<*>, observer: Observer<Pair<Class<*>, E>>): Observable<V> {
+inline fun <E, V, reified R : Either.Value<V>> Observable<Either<E, V>>.drainErrorCodesTo(
+    observer: Observer<Pair<Class<*>, E>>,
+    vararg classes: Class<*>
+): Observable<V> {
     return this.map { useCaseResult ->
         if (useCaseResult !is R) {
-            val error = Pair(clazz, (useCaseResult as Either.Error).error)
-            observer.onNext(error)
+            for (clazz in classes) {
+                val error = Pair(clazz, (useCaseResult as Either.Error).error)
+                observer.onNext(error)
+            }
         }
 
         return@map useCaseResult

@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
 import com.kirakishou.photoexchange.helper.database.MyDatabase
+import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
 import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
@@ -12,17 +13,34 @@ open class UploadedPhotosRepository(
 ) {
     private val uploadedPhotoDao = database.uploadedPhotoDao()
 
+    private fun save(uploadedPhotoEntity: UploadedPhotoEntity): Boolean {
+        val cachedPhoto = uploadedPhotoDao.findByPhotoName(uploadedPhotoEntity.photoName)
+        if (cachedPhoto != null) {
+            uploadedPhotoEntity.localPhotoId = cachedPhoto.localPhotoId
+        }
+
+        return uploadedPhotoDao.save(uploadedPhotoEntity).isSuccess()
+    }
+
     fun saveMany(uploadedPhotoDataList: List<GetUploadedPhotosResponse.UploadedPhotoData>): Boolean {
-        val entities = UploadedPhotosMapper.FromResponse.ToEntity.toUploadedPhotoEntities(uploadedPhotoDataList)
-        return uploadedPhotoDao.saveMany(entities).size == uploadedPhotoDataList.size
+        return database.transactional {
+            for (uploadedPhotoData in uploadedPhotoDataList) {
+                val photo = UploadedPhotosMapper.FromResponse.ToEntity.toUploadedPhotoEntity(uploadedPhotoData)
+                if (!save(photo)) {
+                    return@transactional false
+                }
+            }
+
+            return@transactional true
+        }
     }
 
     fun findMany(uploadedPhotoIds: List<Long>): List<UploadedPhoto> {
         return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.findMany(uploadedPhotoIds))
     }
 
-    fun save(photo: TakenPhoto): Boolean {
-        val uploadedPhotoEntity = UploadedPhotosMapper.FromObject.ToEntity.toUploadedPhotoEntity(photo)
+    fun save(photo: TakenPhoto, lon: Double, lat: Double, uploadedOn: Long): Boolean {
+        val uploadedPhotoEntity = UploadedPhotosMapper.FromObject.ToEntity.toUploadedPhotoEntity(photo, lon, lat, uploadedOn)
         return uploadedPhotoDao.save(uploadedPhotoEntity).isSuccess()
     }
 
@@ -44,11 +62,7 @@ open class UploadedPhotosRepository(
         return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(entities)
     }
 
-    fun findByPhotoIdByName(uploadedPhotoName: String): Long {
-        return uploadedPhotoDao.findByPhotoIdByName(uploadedPhotoName)
-    }
-
-    fun updateReceiverInfo(uploadedPhotoName: String, lon: Double, lat: Double): Boolean {
-        return uploadedPhotoDao.updateReceiverInfo(uploadedPhotoName, lon, lat) == 1
+    fun updateReceiverInfo(uploadedPhotoName: String): Boolean {
+        return uploadedPhotoDao.updateReceiverInfo(uploadedPhotoName) == 1
     }
 }

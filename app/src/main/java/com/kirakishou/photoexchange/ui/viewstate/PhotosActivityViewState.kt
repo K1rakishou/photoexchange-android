@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.ui.viewstate
 
 import android.os.Bundle
 
-class AllPhotosActivityViewState(
+class PhotosActivityViewState(
     var lastOpenedTab: Int = 0
 ) : BaseViewState {
     override fun saveToBundle(bundle: Bundle?) {

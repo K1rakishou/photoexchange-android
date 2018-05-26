@@ -4,7 +4,6 @@ import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerPro
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.view.ViewTakenPhotoActivityView
 import com.kirakishou.photoexchange.ui.fragment.AddToGalleryDialogFragment
 import io.reactivex.Completable
 import io.reactivex.Observable
@@ -18,7 +17,7 @@ class ViewTakenPhotoActivityViewModel(
     private val schedulerProvider: SchedulerProvider,
     private val takenPhotosRepository: TakenPhotosRepository,
     private val settingsRepository: SettingsRepository
-) : BaseViewModel<ViewTakenPhotoActivityView>() {
+) : BaseViewModel() {
 
     private val TAG = "ViewTakenPhotoActivityViewModel"
 

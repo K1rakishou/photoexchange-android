@@ -15,14 +15,19 @@ class ReceivedPhotosAdapter(
 ) : BaseAdapter<ReceivedPhotosAdapterItem>(context) {
 
     val items = arrayListOf<ReceivedPhotosAdapterItem>()
+    val duplicatesChecked = hashSetOf<Long>()
 
-    fun addPhotoAnswers(receivedPhotos: List<ReceivedPhoto>) {
-        for (photoAnswer in receivedPhotos) {
-            addPhotoAnswer(photoAnswer)
+    fun addReceivedPhotos(receivedPhotos: List<ReceivedPhoto>) {
+        for (receivedPhoto in receivedPhotos) {
+            addReceivedPhoto(receivedPhoto)
         }
     }
 
-    fun addPhotoAnswer(receivedPhoto: ReceivedPhoto) {
+    fun addReceivedPhoto(receivedPhoto: ReceivedPhoto) {
+       if (!duplicatesChecked.add(receivedPhoto.photoId)) {
+           return
+       }
+
         items.add(0, ReceivedPhotosAdapterItem.ReceivedPhotoItem(receivedPhoto))
         notifyItemInserted(0)
     }

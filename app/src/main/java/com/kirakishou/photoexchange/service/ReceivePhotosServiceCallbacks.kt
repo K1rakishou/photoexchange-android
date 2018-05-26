@@ -4,7 +4,7 @@ import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 
 interface ReceivePhotosServiceCallbacks {
-    fun onPhotoReceived(receivedPhoto: ReceivedPhoto, takenPhotoId: Long)
+    fun onPhotoReceived(receivedPhoto: ReceivedPhoto, takenPhotoName: String)
     fun onFailed(errorCode: ErrorCode.ReceivePhotosErrors)
     fun onError(error: Throwable)
     fun stopService()

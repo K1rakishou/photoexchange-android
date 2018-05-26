@@ -6,7 +6,6 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.ViewTakenPhotoActivityModule
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
-import com.kirakishou.photoexchange.mvp.view.ViewTakenPhotoActivityView
 import com.kirakishou.photoexchange.mvp.viewmodel.ViewTakenPhotoActivityViewModel
 import com.kirakishou.photoexchange.ui.fragment.AddToGalleryDialogFragment
 import com.kirakishou.photoexchange.ui.fragment.ViewTakenPhotoFragment
@@ -18,7 +17,7 @@ import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import javax.inject.Inject
 
-class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
+class ViewTakenPhotoActivity : BaseActivity() {
 
     @Inject
     lateinit var viewModel: ViewTakenPhotoActivityViewModel
@@ -41,12 +40,10 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
     }
 
     override fun onActivityStart() {
-        viewModel.setView(this)
         initRx()
     }
 
     override fun onActivityStop() {
-        viewModel.clearView()
     }
 
     private fun initRx() {
@@ -76,12 +73,8 @@ class ViewTakenPhotoActivity : BaseActivity(), ViewTakenPhotoActivityView {
             .commit()
     }
 
-    override fun onPhotoUpdated() {
+    private fun onPhotoUpdated() {
         runActivity(PhotosActivity::class.java, true)
-    }
-
-    override fun showToast(message: String, duration: Int) {
-        onShowToast(message, duration)
     }
 
     private fun onAddToGalleryFragmentResult(fragmentResult: AddToGalleryDialogFragment.FragmentResult): Observable<Boolean> {

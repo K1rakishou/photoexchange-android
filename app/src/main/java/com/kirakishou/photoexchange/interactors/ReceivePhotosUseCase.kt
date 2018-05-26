@@ -59,20 +59,17 @@ class ReceivePhotosUseCase(
                     return@transactional false
                 }
 
-                if (!uploadedPhotosRepository.updateReceiverInfo(receivedPhoto.uploadedPhotoName, receivedPhoto.lon, receivedPhoto.lat)) {
+                if (!uploadedPhotosRepository.updateReceiverInfo(receivedPhoto.uploadedPhotoName)) {
                     Timber.tag(TAG).w("Could not update receiver name for photo ${receivedPhoto.uploadedPhotoName}")
                     return@transactional false
                 }
 
-                //TODO: probably should move this out of the transaction
                 return@transactional takenPhotosRepository.deletePhotoByName(receivedPhoto.uploadedPhotoName)
             }
 
-            val photoAnswer = ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhoto(receivedPhoto)
-
             if (result) {
-                val takenPhotoId = uploadedPhotosRepository.findByPhotoIdByName(photoAnswer.uploadedPhotoName)
-                callbacks.get()?.onPhotoReceived(photoAnswer, takenPhotoId)
+                val photoAnswer = ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhoto(receivedPhoto)
+                callbacks.get()?.onPhotoReceived(photoAnswer, photoAnswer.uploadedPhotoName)
             }
         }
     }

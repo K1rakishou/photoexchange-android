@@ -42,9 +42,6 @@ class GetUploadedPhotosUseCase(
                 val photoIdsToGetFromServer = Utils.filterListAlreadyContaning(uploadedPhotoIds, uploadedPhotosFromDb.map { it.photoId })
                 photosResultList += uploadedPhotosFromDb
 
-                Timber.tag(TAG).d("Fresh photos' ids = $uploadedPhotoIds")
-                Timber.tag(TAG).d("Cached gallery photo ids = ${uploadedPhotosFromDb.map { it.photoId }}")
-
                 if (photoIdsToGetFromServer.isNotEmpty()) {
                     val result = getFreshPhotosFromServer(userId, photoIdsToGetFromServer)
                     if (result is Either.Error) {
@@ -60,9 +57,9 @@ class GetUploadedPhotosUseCase(
 
                 photosResultList.sortBy { it.photoId }
                 return@rxSingle Either.Value(photosResultList)
-
             } catch (error: Throwable) {
-                return@rxSingle Either.Error(ErrorCode.GetUploadedPhotosErrors.UnknownErrors())
+                Timber.tag(TAG).e(error)
+                return@rxSingle Either.Error(ErrorCode.GetUploadedPhotosErrors.UnknownError())
             }
         }
     }
@@ -78,7 +75,7 @@ class GetUploadedPhotosUseCase(
         }
 
         if (!uploadedPhotosRepository.saveMany(response.uploadedPhotos)) {
-            return Either.Error(ErrorCode.GetUploadedPhotosErrors.DatabaseErrors())
+            return Either.Error(ErrorCode.GetUploadedPhotosErrors.DatabaseError())
         }
 
         return Either.Value(UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhotos(response.uploadedPhotos))

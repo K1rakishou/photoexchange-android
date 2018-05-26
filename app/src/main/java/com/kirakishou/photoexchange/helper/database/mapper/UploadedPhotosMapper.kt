@@ -13,8 +13,10 @@ object UploadedPhotosMapper {
                 return UploadedPhotoEntity.create(
                     uploadedPhotoData.photoName,
                     uploadedPhotoData.photoId,
-                    uploadedPhotoData.receiverLon,
-                    uploadedPhotoData.receiverLat
+                    uploadedPhotoData.uploaderLon,
+                    uploadedPhotoData.uploaderLat,
+                    uploadedPhotoData.hasReceivedInfo,
+                    uploadedPhotoData.uploadedOn
                 )
             }
 
@@ -28,7 +30,10 @@ object UploadedPhotosMapper {
                 return UploadedPhoto(
                     uploadedPhotoData.photoId,
                     uploadedPhotoData.photoName,
-                    UploadedPhoto.ReceiverInfo(uploadedPhotoData.receiverLon, uploadedPhotoData.receiverLat)
+                    uploadedPhotoData.uploaderLon,
+                    uploadedPhotoData.uploaderLat,
+                    uploadedPhotoData.hasReceivedInfo,
+                    uploadedPhotoData.uploadedOn
                 )
             }
 
@@ -42,9 +47,12 @@ object UploadedPhotosMapper {
         object ToObject {
             fun toUploadedPhoto(uploadedPhotoEntity: UploadedPhotoEntity): UploadedPhoto {
                 return UploadedPhoto(
-                    uploadedPhotoEntity.photoId!!,
-                    uploadedPhotoEntity.photoName!!,
-                    UploadedPhoto.ReceiverInfo(uploadedPhotoEntity.lon, uploadedPhotoEntity.lat)
+                    uploadedPhotoEntity.localPhotoId!!,
+                    uploadedPhotoEntity.photoName,
+                    uploadedPhotoEntity.uploaderLon,
+                    uploadedPhotoEntity.uploaderLat,
+                    uploadedPhotoEntity.hasReceiverInfo,
+                    uploadedPhotoEntity.uploadedOn!!
                 )
             }
 
@@ -56,10 +64,14 @@ object UploadedPhotosMapper {
 
     object FromObject {
         object ToEntity {
-            fun toUploadedPhotoEntity(takenPhoto: TakenPhoto): UploadedPhotoEntity {
+            fun toUploadedPhotoEntity(takenPhoto: TakenPhoto, lon: Double, lat: Double, uploadedOn: Long): UploadedPhotoEntity {
                 return UploadedPhotoEntity.create(
                     takenPhoto.photoName!!,
-                    takenPhoto.id
+                    takenPhoto.id,
+                    lon,
+                    lat,
+                    false,
+                    uploadedOn
                 )
             }
         }

@@ -24,7 +24,6 @@ private constructor(
         }
     }
 
-    //TODO: server size
     class ReceivedPhoto(
 
         @Expose

@@ -13,7 +13,6 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import io.reactivex.subjects.Subject
 
@@ -23,7 +22,7 @@ import io.reactivex.subjects.Subject
 class UploadedPhotosAdapter(
     private val context: Context,
     private val imageLoader: ImageLoader,
-    private val adapterButtonsClickSubject: Subject<UploadedPhotosAdapterButtonClickEvent>
+    private val adapterButtonsClickSubject: Subject<UploadedPhotosAdapterButtonClick>
 ) : BaseAdapter<UploadedPhotosAdapterItem>(context) {
 
     private val HEADER_OBTAIN_CURRENT_LOCATION_NOTIFICATION_INDEX = 0
@@ -44,14 +43,14 @@ class UploadedPhotosAdapter(
         footerItems.add(FOOTER_PROGRESS_INDICATOR_INDEX, UploadedPhotosAdapterItem.EmptyItem())
     }
 
-    fun updateUploadedPhotoSetReceiverInfo(receivedPhoto: ReceivedPhoto, takenPhotoId: Long) {
-        val uploadedItemIndex = uploadedItems.indexOfFirst { (it as UploadedPhotosAdapterItem.UploadedPhotoItem).uploadedPhoto.photoId == takenPhotoId }
+    fun updateUploadedPhotoSetReceiverInfo(takenPhotoName: String) {
+        val uploadedItemIndex = uploadedItems.indexOfFirst { (it as UploadedPhotosAdapterItem.UploadedPhotoItem).uploadedPhoto.photoName == takenPhotoName }
         if (uploadedItemIndex == -1) {
             return
         }
 
         val uploadedPhoto = (uploadedItems[uploadedItemIndex] as UploadedPhotosAdapterItem.UploadedPhotoItem).uploadedPhoto
-        uploadedPhoto.receiverInfo = UploadedPhoto.ReceiverInfo(receivedPhoto.lon, receivedPhoto.lat)
+        uploadedPhoto.hasReceiverInfo = true
 
         uploadedItems.removeAt(uploadedItemIndex)
         uploadedWithReceiverInfoItems.add(0, UploadedPhotosAdapterItem.UploadedPhotoItem(uploadedPhoto))
@@ -167,7 +166,7 @@ class UploadedPhotosAdapter(
 
         duplicatesCheckerSet.add(photo.photoId)
 
-        if (!photo.hasReceivedInfo()) {
+        if (!photo.hasReceiverInfo) {
             uploadedItems.add(0, UploadedPhotosAdapterItem.UploadedPhotoItem(photo))
             notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size)
         } else {
@@ -444,7 +443,7 @@ class UploadedPhotosAdapter(
                 val uploadedPhoto = (getAdapterItemByIndex(position) as? UploadedPhotosAdapterItem.UploadedPhotoItem)?.uploadedPhoto
                     ?: return
 
-                val drawable = if (!uploadedPhoto.hasReceivedInfo()) {
+                val drawable = if (!uploadedPhoto.hasReceiverInfo) {
                     context.getDrawable(R.drawable.ic_done)
                 } else {
                     context.getDrawable(R.drawable.ic_done_all)
@@ -472,11 +471,11 @@ class UploadedPhotosAdapter(
                 }
 
                 holder.deleteFailedToUploadPhotoButton.setOnClickListener {
-                    adapterButtonsClickSubject.onNext(UploadedPhotosAdapterButtonClickEvent.DeleteButtonClick(failedPhoto))
+                    adapterButtonsClickSubject.onNext(UploadedPhotosAdapterButtonClick.DeleteButtonClick(failedPhoto))
                 }
 
                 holder.retryToUploadFailedPhoto.setOnClickListener {
-                    adapterButtonsClickSubject.onNext(UploadedPhotosAdapterButtonClickEvent.RetryButtonClick(failedPhoto))
+                    adapterButtonsClickSubject.onNext(UploadedPhotosAdapterButtonClick.RetryButtonClick(failedPhoto))
                 }
             }
             is ProgressViewHolder -> {
@@ -521,8 +520,8 @@ class UploadedPhotosAdapter(
         val photoUploadingStateIndicator = itemView.findViewById<View>(R.id.photo_uploading_state_indicator)
     }
 
-    sealed class UploadedPhotosAdapterButtonClickEvent {
-        class DeleteButtonClick(val photo: TakenPhoto) : UploadedPhotosAdapterButtonClickEvent()
-        class RetryButtonClick(val photo: TakenPhoto) : UploadedPhotosAdapterButtonClickEvent()
+    sealed class UploadedPhotosAdapterButtonClick {
+        class DeleteButtonClick(val photo: TakenPhoto) : UploadedPhotosAdapterButtonClick()
+        class RetryButtonClick(val photo: TakenPhoto) : UploadedPhotosAdapterButtonClick()
     }
 }
