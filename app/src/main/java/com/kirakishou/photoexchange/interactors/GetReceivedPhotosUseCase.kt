@@ -57,8 +57,8 @@ class GetReceivedPhotosUseCase(
 
                 photosResultList.sortBy { it.photoId }
                 return@rxSingle Either.Value(photosResultList)
-
             } catch (error: Throwable) {
+                Timber.tag(TAG).e(error)
                 return@rxSingle Either.Error(ErrorCode.GetReceivedPhotosErrors.UnknownErrors())
             }
         }

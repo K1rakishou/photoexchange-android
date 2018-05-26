@@ -8,6 +8,8 @@ import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.extension.filterErrorCodes
+import com.kirakishou.photoexchange.helper.intercom.StateEventListener
+import com.kirakishou.photoexchange.helper.intercom.event.BaseEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.ReceivePhotosEvent
@@ -17,7 +19,7 @@ import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapterSpanSizeLookup
-import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewStateEvent
+import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
@@ -26,7 +28,7 @@ import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import javax.inject.Inject
 
-class ReceivedPhotosFragment : BaseFragment() {
+class ReceivedPhotosFragment : BaseFragment(), StateEventListener {
 
     @BindView(R.id.received_photos_list)
     lateinit var receivedPhotosList: RecyclerView
@@ -66,17 +68,17 @@ class ReceivedPhotosFragment : BaseFragment() {
             .doOnNext { handleError(it) }
             .subscribe()
 
-        compositeDisposable += viewModel.onPhotoFindEventSubject
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { event -> onPhotoFindEvent(event) }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe()
+//        compositeDisposable += viewModel.onPhotoFindEventSubject
+//            .subscribeOn(AndroidSchedulers.mainThread())
+//            .observeOn(AndroidSchedulers.mainThread())
+//            .doOnNext { event -> onReceivePhotosEvent(event) }
+//            .doOnError { Timber.tag(TAG).e(it) }
+//            .subscribe()
 
-        compositeDisposable += viewModel.receivedPhotosFragmentViewStateSubject
+        compositeDisposable += viewModel.eventForwarder.getReceivedPhotosFragmentEventsStream()
             .observeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { viewState -> onViewStateChanged(viewState) }
+            .doOnNext { viewState -> onStateEvent(viewState) }
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
     }
@@ -107,22 +109,32 @@ class ReceivedPhotosFragment : BaseFragment() {
         receivedPhotosList.addOnScrollListener(endlessScrollListener)
     }
 
-    private fun onViewStateChanged(viewStateEvent: ReceivedPhotosFragmentViewStateEvent) {
+    override fun onStateEvent(event: BaseEvent) {
         if (!isAdded) {
             return
         }
 
         requireActivity().runOnUiThread {
-            when (viewStateEvent) {
-                is ReceivedPhotosFragmentViewStateEvent.ScrollToTop -> {
-                    receivedPhotosList.scrollToPosition(0)
+            when (event) {
+                is ReceivedPhotosFragmentEvent -> {
+                    onFragmentEvent(event)
                 }
-                else -> throw IllegalArgumentException("Unknown UploadedPhotosFragmentViewStateEvent $viewStateEvent")
+                is ReceivePhotosEvent -> {
+                    onReceivePhotosEvent(event)
+                }
             }
         }
     }
 
-    private fun onPhotoFindEvent(event: ReceivePhotosEvent) {
+    private fun onFragmentEvent(event: ReceivedPhotosFragmentEvent) {
+        when (event) {
+            is ReceivedPhotosFragmentEvent.ScrollToTop -> {
+                receivedPhotosList.scrollToPosition(0)
+            }
+        }
+    }
+
+    private fun onReceivePhotosEvent(event: ReceivePhotosEvent) {
         if (!isAdded) {
             return
         }

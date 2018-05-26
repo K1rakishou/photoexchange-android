@@ -1,11 +1,12 @@
 package com.kirakishou.photoexchange.mvp.model
 
+import com.kirakishou.photoexchange.helper.intercom.event.BaseEvent
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 
 /**
  * Created by kirakishou on 3/17/2018.
  */
-sealed class PhotoUploadEvent {
+sealed class PhotoUploadEvent : BaseEvent {
     class OnLocationUpdateStart : PhotoUploadEvent()
     class OnLocationUpdateEnd : PhotoUploadEvent()
     class OnFailedToUpload(val photo: TakenPhoto, val errorCode: ErrorCode.UploadPhotoErrors) : PhotoUploadEvent()

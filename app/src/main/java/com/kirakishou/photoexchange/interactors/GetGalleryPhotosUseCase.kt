@@ -59,8 +59,6 @@ class GetGalleryPhotosUseCase(
                     }
 
                     (result as Either.Value)
-
-                    Timber.tag(TAG).d("Fresh gallery photo ids = ${result.value.map { it.galleryPhotoId }}")
                     photosResultList += result.value
                 }
 
@@ -87,8 +85,6 @@ class GetGalleryPhotosUseCase(
                         (result as Either.Value)
 
                         val galleryPhotoInfoList = result.value
-                        Timber.tag(TAG).d("Fresh gallery photo info list ids = ${galleryPhotoInfoList.map { it.galleryPhotoId }}")
-
                         updateGalleryPhotoInfo(photosResultList, galleryPhotoInfoList)
                     }
                 }

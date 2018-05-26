@@ -22,6 +22,8 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.PhotosActivityModule
 import com.kirakishou.photoexchange.helper.extension.debounceClicks
+import com.kirakishou.photoexchange.helper.intercom.StateEventListener
+import com.kirakishou.photoexchange.helper.intercom.event.BaseEvent
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.ReceivePhotosEvent
@@ -39,9 +41,9 @@ import com.kirakishou.photoexchange.ui.callback.ReceivePhotosServiceCallback
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
 import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
 import com.kirakishou.photoexchange.ui.viewstate.AllPhotosActivityViewState
-import com.kirakishou.photoexchange.ui.viewstate.PhotosActivityViewStateEvent
-import com.kirakishou.photoexchange.ui.viewstate.UploadedPhotosFragmentViewStateEvent
-import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewStateEvent
+import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
+import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
+import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -56,7 +58,8 @@ import javax.inject.Inject
 
 
 class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSelectedListener,
-    ViewPager.OnPageChangeListener, PhotoUploadingCallback, ReceivePhotosServiceCallback, PopupMenu.OnMenuItemClickListener {
+    ViewPager.OnPageChangeListener, PhotoUploadingCallback, ReceivePhotosServiceCallback,
+    PopupMenu.OnMenuItemClickListener, StateEventListener {
 
     @BindView(R.id.root_layout)
     lateinit var rootLayout: CoordinatorLayout
@@ -165,9 +168,9 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
             .doOnError { Timber.e(it) }
             .subscribe()
 
-        compositeDisposable += viewModel.photosActivityViewStateSubject
+        compositeDisposable += viewModel.eventForwarder.getPhotoActivityEventsStream()
             .subscribeOn(AndroidSchedulers.mainThread())
-            .doOnNext { onViewStateChanged(it) }
+            .doOnNext { onStateEvent(it) }
             .doOnError { Timber.e(it) }
             .subscribe()
     }
@@ -304,14 +307,14 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
         return true
     }
 
-    private fun onViewStateChanged(viewStateEvent: PhotosActivityViewStateEvent) {
-        when (viewStateEvent) {
-            else -> throw IllegalArgumentException("Unknown UploadedPhotosFragmentViewStateEvent $viewStateEvent")
+    override fun onStateEvent(event: BaseEvent) {
+        when (event) {
+            //TODO
         }
     }
 
     override fun onUploadPhotosEvent(event: PhotoUploadEvent) {
-        viewModel.forwardUploadPhotoEvent(event)
+        viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(event)
 
         when (event) {
             is PhotoUploadEvent.OnEnd -> {
@@ -325,11 +328,11 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
     }
 
     override fun onPhotoFindEvent(event: ReceivePhotosEvent) {
-        viewModel.forwardPhotoFindEvent(event)
+        viewModel.eventForwarder.sendReceivedPhotosFragmentEvent(event)
 
         when (event) {
             is ReceivePhotosEvent.OnPhotoReceived -> {
-                viewModel.forwardUploadPhotoEvent(PhotoUploadEvent.OnFoundPhotoAnswer(event.takenPhotoId))
+                viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(PhotoUploadEvent.OnFoundPhotoAnswer(event.takenPhotoId))
                 showPhotoAnswerFoundSnackbar()
             }
         }
@@ -354,8 +357,8 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
                         val photo = adapterButtonsClickEvent.photo
                         photo.photoState = PhotoState.PHOTO_QUEUED_UP
 
-                        viewModel.uploadedPhotosFragmentViewStateSubject.onNext(UploadedPhotosFragmentViewStateEvent.RemovePhoto(photo))
-                        viewModel.uploadedPhotosFragmentViewStateSubject.onNext(UploadedPhotosFragmentViewStateEvent.AddPhoto(photo))
+                        viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(UploadedPhotosFragmentEvent.RemovePhoto(photo))
+                        viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(UploadedPhotosFragmentEvent.AddPhoto(photo))
                     }.map { true }
                     .doOnError { Timber.e(it) }
             }
@@ -366,7 +369,7 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
         val disposable = Single.just(1)
             .observeOn(Schedulers.io())
             .doOnSuccess {
-                viewModel.uploadedPhotosFragmentViewStateSubject.onNext(UploadedPhotosFragmentViewStateEvent.RemovePhoto(photo))
+                viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(UploadedPhotosFragmentEvent.RemovePhoto(photo))
             }
             .zipWith(Single.timer(PHOTO_DELETE_DELAY, TimeUnit.MILLISECONDS))
             .flatMap { viewModel.deletePhotoById(photo.id).toSingleDefault(Unit) }
@@ -378,7 +381,7 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
         Snackbar.make(rootLayout, getString(R.string.photo_has_been_deleted_snackbar_text), Snackbar.LENGTH_LONG)
             .setDuration(PHOTO_DELETE_DELAY.toInt())
             .setAction(getString(R.string.cancel_snackbar_action_text), {
-                viewModel.uploadedPhotosFragmentViewStateSubject.onNext(UploadedPhotosFragmentViewStateEvent.AddPhoto(photo))
+                viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(UploadedPhotosFragmentEvent.AddPhoto(photo))
                 disposable.dispose()
             })
             .show()
@@ -394,7 +397,7 @@ class PhotosActivity : BaseActivity(), AllPhotosActivityView, TabLayout.OnTabSel
                 compositeDisposable += Single.timer(FRAGMENT_SCROLL_DELAY_MS, TimeUnit.MILLISECONDS)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
-                    .doOnSuccess { viewModel.receivedPhotosFragmentViewStateSubject.onNext(ReceivedPhotosFragmentViewStateEvent.ScrollToTop()) }
+                    .doOnSuccess { viewModel.eventForwarder.sendReceivedPhotosFragmentEvent(ReceivedPhotosFragmentEvent.ScrollToTop())  }
                     .doOnError { Timber.e(it) }
                     .subscribe()
             }).show()

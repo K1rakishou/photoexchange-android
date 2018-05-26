@@ -10,6 +10,8 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.extension.filterErrorCodes
 import com.kirakishou.photoexchange.helper.extension.seconds
+import com.kirakishou.photoexchange.helper.intercom.StateEventListener
+import com.kirakishou.photoexchange.helper.intercom.event.BaseEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
@@ -29,7 +31,7 @@ import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-class GalleryFragment : BaseFragment() {
+class GalleryFragment : BaseFragment(), StateEventListener {
 
     @BindView(R.id.gallery_photos_list)
     lateinit var galleryPhotosList: RecyclerView
@@ -112,6 +114,13 @@ class GalleryFragment : BaseFragment() {
             .doOnNext { (isReported, photoName) -> reportPhoto(photoName, isReported) }
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
+
+        compositeDisposable += viewModel.eventForwarder.getGalleryPhotosFragmentEventsStream()
+            .observeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { viewState -> onStateEvent(viewState) }
+            .doOnError { Timber.tag(TAG).e(it) }
+            .subscribe()
     }
 
     private fun initRecyclerView() {
@@ -130,6 +139,10 @@ class GalleryFragment : BaseFragment() {
         galleryPhotosList.adapter = adapter
         galleryPhotosList.clearOnScrollListeners()
         galleryPhotosList.addOnScrollListener(endlessScrollListener)
+    }
+
+    override fun onStateEvent(event: BaseEvent) {
+
     }
 
     private fun favouritePhoto(photoName: String, isFavourited: Boolean, favouritesCount: Long) {

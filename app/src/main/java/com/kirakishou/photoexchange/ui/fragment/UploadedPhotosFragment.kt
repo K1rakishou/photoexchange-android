@@ -8,6 +8,8 @@ import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.extension.filterErrorCodes
+import com.kirakishou.photoexchange.helper.intercom.StateEventListener
+import com.kirakishou.photoexchange.helper.intercom.event.BaseEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
@@ -20,7 +22,7 @@ import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapterSpanSizeLookup
 import com.kirakishou.photoexchange.ui.viewstate.UploadedPhotosFragmentViewState
-import com.kirakishou.photoexchange.ui.viewstate.UploadedPhotosFragmentViewStateEvent
+import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -33,7 +35,7 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 
-class UploadedPhotosFragment : BaseFragment() {
+class UploadedPhotosFragment : BaseFragment(), StateEventListener {
 
     @BindView(R.id.my_photos_list)
     lateinit var uploadedPhotosList: RecyclerView
@@ -105,28 +107,28 @@ class UploadedPhotosFragment : BaseFragment() {
             .doOnNext { handleError(it) }
             .subscribe()
 
-        compositeDisposable += viewModel.onPhotoUploadEventSubject
-            .observeOn(AndroidSchedulers.mainThread())
-            .flatMap { event ->
-                return@flatMap if (event is PhotoUploadEvent.OnProgress) {
-                    //do not add any delay if event is PhotoUploadEvent.OnProgress
-                    Observable.just(event)
-                } else {
-                    //add slight delay before doing anything with adapter because
-                    //it will flicker if events come very fast
-                    Observable.just(event)
-                        .zipWith(Observable.timer(EVENT_FORWARDING_DELAY, TimeUnit.MILLISECONDS))
-                        .map { it.first }
-                }
-            }
-            .doOnNext { event -> onUploadingEvent(event) }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe()
+//        compositeDisposable += viewModel.onPhotoUploadEventSubject
+//            .observeOn(AndroidSchedulers.mainThread())
+//            .flatMap { event ->
+//                return@flatMap if (event is PhotoUploadEvent.OnProgress) {
+//                    //do not add any delay if event is PhotoUploadEvent.OnProgress
+//                    Observable.just(event)
+//                } else {
+//                    //add slight delay before doing anything with adapter because
+//                    //it will flicker if events come very fast
+//                    Observable.just(event)
+//                        .zipWith(Observable.timer(EVENT_FORWARDING_DELAY, TimeUnit.MILLISECONDS))
+//                        .map { it.first }
+//                }
+//            }
+//            .doOnNext { event -> onUploadingEvent(event) }
+//            .doOnError { Timber.tag(TAG).e(it) }
+//            .subscribe()
 
-        compositeDisposable += viewModel.uploadedPhotosFragmentViewStateSubject
+        compositeDisposable += viewModel.eventForwarder.getUploadedPhotosFragmentEventsStream()
             .observeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { viewState -> onViewStateChanged(viewState) }
+            .doOnNext { viewState -> onStateEvent(viewState) }
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
 
@@ -159,39 +161,48 @@ class UploadedPhotosFragment : BaseFragment() {
             .subscribe()
     }
 
-    private fun onViewStateChanged(viewStateEvent: UploadedPhotosFragmentViewStateEvent) {
+    override fun onStateEvent(event: BaseEvent) {
         if (!isAdded) {
             return
         }
 
         uploadedPhotosList.post {
-            when (viewStateEvent) {
-                is UploadedPhotosFragmentViewStateEvent.ScrollToTop -> {
-                    uploadedPhotosList.scrollToPosition(0)
+            when (event) {
+                is UploadedPhotosFragmentEvent -> {
+                    onFragmentEvent(event)
                 }
-                is UploadedPhotosFragmentViewStateEvent.Default -> {
 
+                is PhotoUploadEvent -> {
+                    onUploadingEvent(event)
                 }
-                is UploadedPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification -> {
-                    adapter.showObtainCurrentLocationNotification()
-                }
-                is UploadedPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification -> {
-                    adapter.hideObtainCurrentLocationNotification()
-                }
-                is UploadedPhotosFragmentViewStateEvent.ShowProgressFooter -> {
-                    addProgressFooter()
-                }
-                is UploadedPhotosFragmentViewStateEvent.HideProgressFooter -> {
-                    removeProgressFooter()
-                }
-                is UploadedPhotosFragmentViewStateEvent.RemovePhoto -> {
-                    adapter.removePhotoById(viewStateEvent.photo.id)
-                }
-                is UploadedPhotosFragmentViewStateEvent.AddPhoto -> {
-                    adapter.addTakenPhoto(viewStateEvent.photo)
-                }
-                else -> throw IllegalArgumentException("Unknown UploadedPhotosFragmentViewStateEvent $viewStateEvent")
             }
+        }
+    }
+
+    private fun onFragmentEvent(event: UploadedPhotosFragmentEvent) {
+        when (event) {
+            is UploadedPhotosFragmentEvent.ScrollToTop -> {
+                uploadedPhotosList.scrollToPosition(0)
+            }
+            is UploadedPhotosFragmentEvent.ShowObtainCurrentLocationNotification -> {
+                adapter.showObtainCurrentLocationNotification()
+            }
+            is UploadedPhotosFragmentEvent.HideObtainCurrentLocationNotification -> {
+                adapter.hideObtainCurrentLocationNotification()
+            }
+            is UploadedPhotosFragmentEvent.ShowProgressFooter -> {
+                addProgressFooter()
+            }
+            is UploadedPhotosFragmentEvent.HideProgressFooter -> {
+                removeProgressFooter()
+            }
+            is UploadedPhotosFragmentEvent.RemovePhoto -> {
+                adapter.removePhotoById(event.photo.id)
+            }
+            is UploadedPhotosFragmentEvent.AddPhoto -> {
+                adapter.addTakenPhoto(event.photo)
+            }
+            else -> throw IllegalArgumentException("Unknown UploadedPhotosFragmentEvent $event")
         }
     }
 

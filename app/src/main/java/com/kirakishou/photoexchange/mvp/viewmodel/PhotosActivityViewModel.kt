@@ -5,6 +5,7 @@ import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRep
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
+import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelStateEventForwarder
 import com.kirakishou.photoexchange.helper.extension.drainErrorCodesTo
 import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.interactors.*
@@ -15,9 +16,7 @@ import com.kirakishou.photoexchange.mvp.view.AllPhotosActivityView
 import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapter
 import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
-import com.kirakishou.photoexchange.ui.viewstate.PhotosActivityViewStateEvent
-import com.kirakishou.photoexchange.ui.viewstate.UploadedPhotosFragmentViewStateEvent
-import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewStateEvent
+import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -46,11 +45,10 @@ class PhotosActivityViewModel(
 
     private val ADAPTER_LOAD_MORE_ITEMS_DELAY_MS = 1.seconds()
 
-    val onPhotoUploadEventSubject = PublishSubject.create<PhotoUploadEvent>().toSerialized()
-    val onPhotoFindEventSubject = PublishSubject.create<ReceivePhotosEvent>().toSerialized()
-    val photosActivityViewStateSubject = PublishSubject.create<PhotosActivityViewStateEvent>().toSerialized()
-    val uploadedPhotosFragmentViewStateSubject = PublishSubject.create<UploadedPhotosFragmentViewStateEvent>().toSerialized()
-    val receivedPhotosFragmentViewStateSubject = PublishSubject.create<ReceivedPhotosFragmentViewStateEvent>().toSerialized()
+    val eventForwarder = PhotosActivityViewModelStateEventForwarder()
+
+//    val onPhotoUploadEventSubject = PublishSubject.create<PhotoUploadEvent>().toSerialized()
+//    val onPhotoFindEventSubject = PublishSubject.create<ReceivePhotosEvent>().toSerialized()
     val startPhotoUploadingServiceSubject = PublishSubject.create<Unit>().toSerialized()
     val startPhotoReceivingServiceSubject = PublishSubject.create<Unit>().toSerialized()
     val uploadedPhotosAdapterButtonClickSubject = PublishSubject.create<UploadedPhotosAdapter.UploadedPhotosAdapterButtonClickEvent>().toSerialized()
@@ -78,7 +76,7 @@ class PhotosActivityViewModel(
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .concatMap { userId -> reportPhotoUseCase.reportPhoto(userId, photoName) }
-            .drainErrorCodesTo(GalleryFragment::class.java, errorCodesSubject)
+            .drainErrorCodesTo(errorCodesSubject, GalleryFragment::class.java)
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
@@ -86,7 +84,7 @@ class PhotosActivityViewModel(
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .concatMap { userId -> favouritePhotoUseCase.favouritePhoto(userId, photoName) }
-            .drainErrorCodesTo(GalleryFragment::class.java, errorCodesSubject)
+            .drainErrorCodesTo(errorCodesSubject, GalleryFragment::class.java)
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
@@ -98,7 +96,7 @@ class PhotosActivityViewModel(
                     .toObservable()
             }
             .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-            .drainErrorCodesTo(GalleryFragment::class.java, errorCodesSubject)
+            .drainErrorCodesTo(errorCodesSubject, GalleryFragment::class.java)
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
@@ -106,14 +104,14 @@ class PhotosActivityViewModel(
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .filter { userId -> userId.isNotEmpty() }
-            .doOnNext { uploadedPhotosFragmentViewStateSubject.onNext(UploadedPhotosFragmentViewStateEvent.ShowProgressFooter()) }
+            .doOnNext { eventForwarder.sendUploadedPhotosFragmentEvent(UploadedPhotosFragmentEvent.ShowProgressFooter()) }
             .flatMap { userId ->
                 getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
                     .toObservable()
             }
             .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-            .doOnNext { uploadedPhotosFragmentViewStateSubject.onNext(UploadedPhotosFragmentViewStateEvent.HideProgressFooter()) }
-            .drainErrorCodesTo(UploadedPhotosFragment::class.java, errorCodesSubject)
+            .doOnNext { eventForwarder.sendUploadedPhotosFragmentEvent(UploadedPhotosFragmentEvent.HideProgressFooter()) }
+            .drainErrorCodesTo(errorCodesSubject, UploadedPhotosFragment::class.java)
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
@@ -121,14 +119,14 @@ class PhotosActivityViewModel(
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .filter { userId -> userId.isNotEmpty() }
-//            .doOnNext { uploadedPhotosFragmentViewStateSubject.onNext(UploadedPhotosFragmentViewStateEvent.ShowProgressFooter()) }
+//            .doOnNext { uploadedPhotosFragmentViewStateSubject.onNext(UploadedPhotosFragmentEvent.ShowProgressFooter()) }
             .flatMap { userId ->
                 getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
                     .toObservable()
             }
             .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-//            .doOnNext { uploadedPhotosFragmentViewStateSubject.onNext(UploadedPhotosFragmentViewStateEvent.HideProgressFooter()) }
-            .drainErrorCodesTo(UploadedPhotosFragment::class.java, errorCodesSubject)
+//            .doOnNext { uploadedPhotosFragmentViewStateSubject.onNext(UploadedPhotosFragmentEvent.HideProgressFooter()) }
+            .drainErrorCodesTo(errorCodesSubject, UploadedPhotosFragment::class.java)
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
@@ -200,13 +198,13 @@ class PhotosActivityViewModel(
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
-    fun forwardUploadPhotoEvent(event: PhotoUploadEvent) {
-        onPhotoUploadEventSubject.onNext(event)
-    }
-
-    fun forwardPhotoFindEvent(event: ReceivePhotosEvent) {
-        onPhotoFindEventSubject.onNext(event)
-    }
+//    fun forwardUploadPhotoEvent(event: PhotoUploadEvent) {
+//        onPhotoUploadEventSubject.onNext(event)
+//    }
+//
+//    fun forwardPhotoFindEvent(event: ReceivePhotosEvent) {
+//        onPhotoFindEventSubject.onNext(event)
+//    }
 
     fun deletePhotoById(photoId: Long): Completable {
         return Completable.fromAction {

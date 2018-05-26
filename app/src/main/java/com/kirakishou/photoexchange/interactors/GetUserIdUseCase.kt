@@ -7,11 +7,13 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
 import kotlinx.coroutines.experimental.rx2.await
 import kotlinx.coroutines.experimental.rx2.rxSingle
+import timber.log.Timber
 
 class GetUserIdUseCase(
     private val settingsRepository: SettingsRepository,
     private val apiClient: ApiClient
 ) {
+    private val TAG = "GetUserIdUseCase"
 
     fun getUserId(): Single<Either<ErrorCode, String>> {
         return rxSingle {
@@ -42,6 +44,7 @@ class GetUserIdUseCase(
 
                 return@rxSingle Either.Value(response.userId)
             } catch (error: Throwable) {
+                Timber.tag(TAG).e(error)
                 return@rxSingle Either.Error(ErrorCode.GetUserIdError.UnknownError())
             }
         }

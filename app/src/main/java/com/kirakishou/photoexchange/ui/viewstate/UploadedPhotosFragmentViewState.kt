@@ -19,22 +19,6 @@ class UploadedPhotosFragmentViewState(
         }
     }
 
-    fun updateFromViewStateEvent(viewStateEvent: UploadedPhotosFragmentViewStateEvent) {
-        when (viewStateEvent) {
-            is UploadedPhotosFragmentViewStateEvent.ShowObtainCurrentLocationNotification -> {
-                showObtainCurrentLocationNotification = true
-            }
-            is UploadedPhotosFragmentViewStateEvent.HideObtainCurrentLocationNotification -> {
-                showObtainCurrentLocationNotification = false
-            }
-
-            is UploadedPhotosFragmentViewStateEvent.Default,
-            is UploadedPhotosFragmentViewStateEvent.RemovePhoto -> {
-                //Do nothing
-            }
-        }
-    }
-
     companion object {
         const val SHOW_OBTAIN_CURRENT_LOCATION_NOTIFICATION = "show_obtain_current_location_notification"
     }
