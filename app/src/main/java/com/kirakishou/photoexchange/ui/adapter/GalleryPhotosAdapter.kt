@@ -109,7 +109,7 @@ class GalleryPhotosAdapter(
 
     override fun getItemCount(): Int = items.size
 
-    override fun getBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
+    override fun doGetBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
         return mutableListOf(
             BaseAdapterInfo(AdapterItemType.VIEW_GALLERY_PHOTO, R.layout.adapter_item_gallery_photo, GalleryPhotoViewHolder::class.java),
             BaseAdapterInfo(AdapterItemType.VIEW_PROGRESS, R.layout.adapter_item_progress, ProgressViewHolder::class.java)

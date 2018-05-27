@@ -4,6 +4,7 @@ import android.content.Context
 import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.TextView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
@@ -32,15 +33,38 @@ class ReceivedPhotosAdapter(
         notifyItemInserted(0)
     }
 
+    fun showProgressFooter() {
+        if (items.isNotEmpty() && items.last().getType() == AdapterItemType.VIEW_PROGRESS) {
+            return
+        }
+
+        val lastIndex = items.lastIndex
+
+        items.add(ReceivedPhotosAdapterItem.ProgressItem())
+        notifyItemInserted(lastIndex)
+    }
+
+    fun hideProgressFooter() {
+        if (items.isEmpty() || items.last().getType() != AdapterItemType.VIEW_PROGRESS) {
+            return
+        }
+
+        val lastIndex = items.lastIndex
+
+        items.removeAt(lastIndex)
+        notifyItemRemoved(lastIndex)
+    }
+
     override fun getItemViewType(position: Int): Int {
         return items[position].getType().type
     }
 
     override fun getItemCount(): Int = items.size
 
-    override fun getBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
+    override fun doGetBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
         return arrayListOf(
-            BaseAdapterInfo(AdapterItemType.VIEW_RECEIVED_PHOTO, R.layout.adapter_item_photo_answer, PhotoAnswerViewHolder::class.java)
+            BaseAdapterInfo(AdapterItemType.VIEW_RECEIVED_PHOTO, R.layout.adapter_item_photo_answer, PhotoAnswerViewHolder::class.java),
+            BaseAdapterInfo(AdapterItemType.VIEW_PROGRESS, R.layout.adapter_item_progress, ProgressViewHolder::class.java)
         )
     }
 
@@ -51,10 +75,17 @@ class ReceivedPhotosAdapter(
                     ?: return
 
                 imageLoader.loadImageFromNetInto(photoAnswer.receivedPhotoName, ImageLoader.PhotoSize.Small, holder.photoView)
-                holder.photoIdTextView.text = photoAnswer.photoId?.toString() ?: "null"
+                holder.photoIdTextView.text = photoAnswer.photoId.toString()
+            }
+            is ProgressViewHolder -> {
+                //do nothing
             }
             else -> IllegalArgumentException("Unknown viewHolder: ${holder::class.java.simpleName}")
         }
+    }
+
+    class ProgressViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val progressBar = itemView.findViewById<ProgressBar>(R.id.progressbar)
     }
 
     class PhotoAnswerViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

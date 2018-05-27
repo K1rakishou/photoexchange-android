@@ -6,6 +6,8 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 sealed class ReceivedPhotosFragmentEvent : BaseEvent {
     sealed class UiEvents : ReceivedPhotosFragmentEvent() {
         class ScrollToTop : UiEvents()
+        class ShowProgressFooter : UiEvents()
+        class HideProgressFooter : UiEvents()
     }
 
     sealed class ReceivePhotosEvent : ReceivedPhotosFragmentEvent() {

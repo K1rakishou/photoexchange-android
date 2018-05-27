@@ -1,24 +1,25 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
+import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
-import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelStateEventForwarder
 import com.kirakishou.photoexchange.helper.extension.drainErrorCodesTo
+import com.kirakishou.photoexchange.helper.extension.mapEither
 import com.kirakishou.photoexchange.helper.extension.seconds
+import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelStateEventForwarder
 import com.kirakishou.photoexchange.interactors.*
 import com.kirakishou.photoexchange.mvp.model.*
+import com.kirakishou.photoexchange.mvp.model.exception.ErrorCodeException
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
-import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
-import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
@@ -88,21 +89,12 @@ class PhotosActivityViewModel(
                 }
 
                 return@flatMap Observable.just(_userId)
-                    .doOnNext {
-                        eventForwarder.sendUploadedPhotosFragmentEvent(
-                            UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter())
-                    }
                     .flatMap { userId ->
                         getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
                             .toObservable()
                     }
                     .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-                    .doOnNext {
-                        eventForwarder.sendUploadedPhotosFragmentEvent(
-                            UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter())
-                    }
-                    .drainErrorCodesTo(errorCodesSubject, UploadedPhotosFragment::class.java)
-                    .doOnError { Timber.tag(TAG).e(it) }
+                    .mapEither()
             }
     }
 
@@ -110,19 +102,11 @@ class PhotosActivityViewModel(
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .filter { userId -> userId.isNotEmpty() }
-            .doOnNext {
-                eventForwarder.sendUploadedPhotosFragmentEvent(
-                    UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter())
-            }
             .flatMap { userId ->
                 getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
                     .toObservable()
             }
             .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-            .doOnNext {
-                eventForwarder.sendUploadedPhotosFragmentEvent(
-                    UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter())
-            }
             .drainErrorCodesTo(errorCodesSubject, UploadedPhotosFragment::class.java)
             .doOnError { Timber.tag(TAG).e(it) }
     }

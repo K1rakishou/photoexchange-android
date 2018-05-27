@@ -192,9 +192,8 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.ReceivePhotosErrors.LocalNotEnoughPhotosUploaded -> "Upload more photos first"
             is ErrorCode.TakePhotoErrors.CameraIsNotAvailable -> "Camera is not available on this phone"
             is ErrorCode.TakePhotoErrors.CameraIsNotStartedException -> "Camera is not started"
-            is ErrorCode.TakePhotoErrors.CouldNotTakePhoto -> "Error while trying to take a photo"
-
-
+            is ErrorCode.TakePhotoErrors.CouldNotTakePhoto -> "Could not take a photo"
+            is ErrorCode.UploadPhotoErrors.CouldNotRotatePhoto -> "Could not rotate a photo"
         }
 
         if (errorMessage != null) {

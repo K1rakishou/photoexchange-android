@@ -11,15 +11,14 @@ import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
+import com.kirakishou.photoexchange.mvp.model.exception.PhotoUploadingException
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.service.UploadPhotoServiceCallbacks
+import com.kirakishou.photoexchange.service.UploadPhotoServicePresenter
+import io.reactivex.Observable
 import io.reactivex.Single
-import kotlinx.coroutines.experimental.rx2.await
-import kotlinx.coroutines.experimental.rx2.rxSingle
-import kotlinx.coroutines.experimental.sync.Mutex
-import kotlinx.coroutines.experimental.sync.withLock
 import timber.log.Timber
 import java.io.File
 import java.lang.ref.WeakReference
@@ -31,87 +30,49 @@ class UploadPhotosUseCase(
     private val apiClient: ApiClient
 ) {
     private val TAG = "UploadPhotosUseCase"
-    private val mutex = Mutex()
 
-    fun uploadPhotos(userId: String, location: LonLat, callbacks: WeakReference<UploadPhotoServiceCallbacks>?): Single<Boolean> {
-        return rxSingle {
-            return@rxSingle mutex.withLock {
-                Timber.tag(TAG).d("Start photo uploading")
-
-                val photosToUpload = takenPhotosRepository.findPhotosByStateAndUpdateState(PhotoState.PHOTO_QUEUED_UP, PhotoState.PHOTO_UPLOADING)
-                if (photosToUpload.isEmpty()) {
-                    return@withLock true
+    fun uploadPhoto(photo: TakenPhoto, userId: String, location: LonLat, callbacks: WeakReference<UploadPhotoServiceCallbacks>?): Observable<UploadedPhoto> {
+        return Observable.just(Unit)
+            .concatMap {
+                if (photo.photoTempFile == null || !photo.photoTempFile!!.exists()) {
+                    Timber.tag(TAG).e("Photo does not exists on disk! ${photo.photoTempFile?.absoluteFile
+                        ?: "(No photoTempFile)"}")
+                    throw PhotoUploadingException.PhotoDoesNotExistOnDisk(photo)
                 }
 
-                val results = arrayListOf<Boolean>()
+                return@concatMap Observable.fromCallable { File.createTempFile("rotated_photo", ".tmp") }
+                    .concatMap { photoFile ->
+                        val rotatedPhotoObservable = Observable.fromCallable {
+                            takenPhotosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_UPLOADING)
 
-                for (photo in photosToUpload) {
-                    val rotatedPhotoFile = handlePhotoUploadingStart(callbacks, photo)
-
-                    try {
-                        if (photo.photoTempFile == null || !photo.photoTempFile!!.exists()) {
-                            Timber.tag(TAG).e("Photo does not exists on disk! ${photo.photoTempFile?.absoluteFile ?: "(No photoTempFile)"}")
-                            continue
-                        }
-
-                        if (BitmapUtils.rotatePhoto(photo.photoTempFile!!, rotatedPhotoFile)) {
-                            Timber.tag(TAG).d("Photo rotated. Starting the uploading routine...")
-
-                            val response = try {
-                                uploadPhoto(rotatedPhotoFile, location, userId, photo.isPublic, callbacks, photo).await()
-                            } catch (error: RuntimeException) {
-                                if (error.cause == null && error.cause !is InterruptedException) {
-                                    throw error
-                                }
-
-                                UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.LocalInterrupted())
+                            if (!BitmapUtils.rotatePhoto(photo.photoTempFile!!, photoFile)) {
+                                throw PhotoUploadingException.CouldNotRotatePhoto(photo)
                             }
 
-                            val errorCode = response.errorCode as ErrorCode.UploadPhotoErrors
-                            results += errorCode is ErrorCode.UploadPhotoErrors.Ok
+                            return@fromCallable photoFile
+                        }
 
-                            when (errorCode) {
-                                is ErrorCode.UploadPhotoErrors.Ok -> {
-                                    Timber.tag(TAG).d("Photo uploaded. Saving the result")
+                        return@concatMap rotatedPhotoObservable.concatMap { rotatedPhoto ->
+                            uploadPhoto(rotatedPhoto, location, userId, photo.isPublic, callbacks, photo)
+                                .map { response ->
+                                    val errorCode = response.errorCode as ErrorCode.UploadPhotoErrors
 
-                                    if (!handlePhotoUploaded(photo, location, response, callbacks)) {
-                                        Timber.tag(TAG).d("Could not save photo uploading result")
-                                        handleFailedPhoto(photo, callbacks, errorCode)
+                                    return@map when (errorCode) {
+                                        is ErrorCode.UploadPhotoErrors.Ok -> {
+                                            handlePhotoUploaded(photo, location, response)
+                                        }
+
+                                        else -> {
+                                            Timber.tag(TAG).d("Could not upload photo with photoId ${photo.id}")
+                                            throw PhotoUploadingException.RemoteServerException(errorCode, photo)
+                                        }
                                     }
                                 }
-
-                                is ErrorCode.UploadPhotoErrors.LocalInterrupted -> {
-                                    Timber.tag(TAG).d("Interrupted exception")
-                                    handleFailedPhoto(photo, callbacks, errorCode)
-                                }
-
-                                else -> {
-                                    Timber.tag(TAG).d("Could not upload photo with photoId ${photo.id}")
-                                    handleFailedPhoto(photo, callbacks, errorCode)
-                                }
-                            }
-                        } else {
-                            Timber.tag(TAG).d("Could not rotate photo with photoId ${photo.id}")
+                                .toObservable()
                         }
-                    } catch (error: Exception) {
-                        Timber.tag(TAG).e(error)
-
-                        results += false
-                        handleUnknownError(photo, callbacks, error)
-                    } finally {
-                        FileUtils.deleteFile(rotatedPhotoFile)
+                        .doOnEach { FileUtils.deleteFile(photoFile) }
                     }
-                }
-
-                return@withLock results.none { !it }
             }
-        }
-    }
-
-    private fun handlePhotoUploadingStart(callbacks: WeakReference<UploadPhotoServiceCallbacks>?, photo: TakenPhoto): File {
-        val rotatedPhotoFile = File.createTempFile("rotated_photo", ".tmp")
-        callbacks?.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadStart(photo))
-        return rotatedPhotoFile
     }
 
     private fun uploadPhoto(rotatedPhotoFile: File, location: LonLat, userId: String, isPublic: Boolean, callbacks: WeakReference<UploadPhotoServiceCallbacks>?, photo: TakenPhoto): Single<UploadPhotoResponse> {
@@ -122,8 +83,7 @@ class UploadPhotosUseCase(
         })
     }
 
-    private fun handlePhotoUploaded(photo: TakenPhoto, location: LonLat,
-                                    response: UploadPhotoResponse, callbacks: WeakReference<UploadPhotoServiceCallbacks>?): Boolean {
+    private fun handlePhotoUploaded(photo: TakenPhoto, location: LonLat, response: UploadPhotoResponse): UploadedPhoto {
         photo.photoName = response.photoName
 
         val dbResult = database.transactional {
@@ -134,26 +94,11 @@ class UploadPhotosUseCase(
             return@transactional updateResult1 && updateResult2
         }
 
-        if (dbResult) {
-            callbacks?.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUploaded(UploadedPhoto(photo.id, photo.photoName!!,
-                location.lon, location.lat, false, TimeUtils.getTimeFast())))
+        if (!dbResult) {
+            throw PhotoUploadingException.DatabaseException(photo)
         }
 
-        return dbResult
-    }
-
-    private fun handleFailedPhoto(photo: TakenPhoto, callbacks: WeakReference<UploadPhotoServiceCallbacks>?, errorCode: ErrorCode.UploadPhotoErrors) {
-        takenPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
-        photo.photoState = PhotoState.FAILED_TO_UPLOAD
-
-        callbacks?.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUpload(photo, errorCode))
-    }
-
-    private fun handleUnknownError(photo: TakenPhoto, callbacks: WeakReference<UploadPhotoServiceCallbacks>?, error: Throwable) {
-        takenPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
-        photo.photoState = PhotoState.FAILED_TO_UPLOAD
-
-        callbacks?.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError(error))
+        return UploadedPhoto(photo.id, photo.photoName!!, location.lon, location.lat, false, TimeUtils.getTimeFast())
     }
 
     interface PhotoUploadProgressCallback {

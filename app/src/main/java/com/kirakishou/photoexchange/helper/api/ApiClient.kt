@@ -12,7 +12,7 @@ import javax.inject.Inject
 /**
  * Created by kirakishou on 3/17/2018.
  */
-class ApiClient
+open class ApiClient
 @Inject constructor(
     private val apiService: ApiService,
     private val gson: Gson,

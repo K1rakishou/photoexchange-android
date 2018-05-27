@@ -15,26 +15,7 @@ abstract class BaseAdapter<T : BaseAdapterItem>(
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private val layoutInflater = LayoutInflater.from(context)
-    private var baseAdapterInfo = mutableListOf<BaseAdapterInfo>()
-    private var isInited = false
-
-    @CallSuper
-    open fun init() {
-        baseAdapterInfo = getBaseAdapterInfo()
-
-        isInited = true
-    }
-
-    @CallSuper
-    open fun cleanUp() {
-        baseAdapterInfo.clear()
-    }
-
-    protected fun checkInited() {
-        if (!isInited) {
-            throw IllegalStateException("Must call BaseAdapter.init() first!")
-        }
-    }
+    private val baseAdapterInfo by lazy { doGetBaseAdapterInfo() }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         for (adapterInfo in baseAdapterInfo) {
@@ -47,7 +28,7 @@ abstract class BaseAdapter<T : BaseAdapterItem>(
         throw IllegalStateException("viewType $viewType not found!")
     }
 
-    abstract fun getBaseAdapterInfo(): MutableList<BaseAdapterInfo>
+    abstract fun doGetBaseAdapterInfo(): MutableList<BaseAdapterInfo>
 
     inner class BaseAdapterInfo(val viewType: AdapterItemType,
                                 val layoutId: Int,

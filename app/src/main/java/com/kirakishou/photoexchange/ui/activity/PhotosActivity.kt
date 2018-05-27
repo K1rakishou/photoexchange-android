@@ -298,7 +298,11 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
             }
             is PhotosActivityEvent.FailedToUploadPhotoButtonClick -> {
                 compositeDisposable += handleUploadedPhotosFragmentAdapterButtonClicks(event.clickType)
-                    .subscribe({ }, { error ->
+                    .subscribe({ tryToReUpload ->
+                        if (tryToReUpload) {
+                            bindUploadingService(true)
+                        }
+                    }, { error ->
                         Timber.tag(TAG).e(error)
                     })
             }
@@ -324,6 +328,9 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
             is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotoReceived -> {
                 viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(
                     UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFoundPhotoAnswer(event.takenPhotoName))
+                viewModel.eventForwarder.sendReceivedPhotosFragmentEvent(
+                    ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotoReceived(event.receivedPhoto, event.takenPhotoName)
+                )
                 showPhotoAnswerFoundSnackbar()
             }
         }

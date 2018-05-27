@@ -85,7 +85,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), PHOTO_ADAPTER_VIEW_WIDTH)
 
         adapter = UploadedPhotosAdapter(requireContext(), imageLoader, failedToUploadPhotoButtonClicksSubject)
-        adapter.init()
 
         val layoutManager = GridLayoutManager(requireContext(), columnsCount)
         layoutManager.spanSizeLookup = UploadedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
@@ -117,16 +116,24 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         compositeDisposable += failedToUploadPhotoButtonClicksSubject
             .observeOn(AndroidSchedulers.mainThread())
             .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe({ })
+            .subscribe({ viewModel.eventForwarder.sendPhotoActivityEvent(PhotosActivityEvent.FailedToUploadPhotoButtonClick(it)) })
 
         compositeDisposable += loadMoreSubject
             .subscribeOn(AndroidSchedulers.mainThread())
-            .observeOn(Schedulers.io())
+            .doOnNext { onUiEvent(UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
             .concatMap { viewModel.loadNextPageOfUploadedPhotos(lastId, photosPerPage) }
             .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { photos -> addUploadedPhotosToAdapter(photos) }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe()
+            .doOnNext { onUiEvent(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
+            .subscribe({ photos ->
+                addUploadedPhotosToAdapter(photos)
+            }, { error ->
+                Timber.tag(TAG).e(error)
+                onUiEvent(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter())
+            })
+    }
+
+    private fun loadFirstPageOfUploadedPhotos() {
+        loadMoreSubject.onNext(0)
     }
 
     private fun loadNotYetUploadedPhotos() {
@@ -139,18 +146,15 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             .observeOn(Schedulers.io())
             .flatMap {
                 return@flatMap viewModel.checkHasPhotosToUpload()
-                    .flatMap { hasPhotosToUpload ->
+                    .doOnNext { hasPhotosToUpload ->
                         if (hasPhotosToUpload) {
                             viewModel.eventForwarder.sendPhotoActivityEvent(PhotosActivityEvent.StartUploadingService())
-                            return@flatMap Observable.empty<List<UploadedPhoto>>()
+                        } else {
+                            loadFirstPageOfUploadedPhotos()
                         }
-
-                        return@flatMap viewModel.loadNextPageOfUploadedPhotos(lastId, photosPerPage)
                     }
             }
-            .subscribe({ uploadedPhotosList ->
-                addUploadedPhotosToAdapter(uploadedPhotosList)
-            }, { error ->
+            .subscribe({ }, { error ->
                 Timber.tag(TAG).e(error)
             })
     }
@@ -178,12 +182,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             is UploadedPhotosFragmentEvent.UiEvents.ScrollToTop -> {
                 uploadedPhotosList.scrollToPosition(0)
             }
-            is UploadedPhotosFragmentEvent.UiEvents.ShowObtainCurrentLocationNotification -> {
-                adapter.showObtainCurrentLocationNotification()
-            }
-            is UploadedPhotosFragmentEvent.UiEvents.HideObtainCurrentLocationNotification -> {
-                adapter.hideObtainCurrentLocationNotification()
-            }
             is UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter -> {
                 addProgressFooter()
             }
@@ -207,15 +205,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
         uploadedPhotosList.post {
             when (event) {
-                is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnLocationUpdateStart -> {
-                    adapter.showObtainCurrentLocationNotification()
-                }
-                is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnLocationUpdateEnd -> {
-                    adapter.hideObtainCurrentLocationNotification()
-                }
-                is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPrepare -> {
-
-                }
                 is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadStart -> {
                     adapter.addTakenPhoto(event.photo.also { it.photoState = PhotoState.PHOTO_UPLOADING })
                 }
@@ -238,28 +227,22 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                 is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
                     viewModel.eventForwarder.sendPhotoActivityEvent(PhotosActivityEvent.StartReceivingService())
                 }
-
-                is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnCouldNotGetUserIdFromServerError,
                 is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError -> {
-                    handleErrorEvent(event)
+                    handleUnknownErrors(event.error)
                 }
                 else -> throw IllegalArgumentException("Unknown PhotoUploadEvent $event")
+            }
+
+            if (event is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd ||
+                event is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError) {
+                Timber.tag(TAG).d("Loading first page of uploaded photos, event = $event")
+                loadFirstPageOfUploadedPhotos()
             }
         }
     }
 
-    private fun handleErrorEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
-        when (event) {
-            is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnCouldNotGetUserIdFromServerError -> {
-                Timber.tag(TAG).e("Could not get user photoId from the server")
-                showToast("Could not get user photoId from the server")
-            }
-            is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError -> {
-                (requireActivity() as PhotosActivity).showUnknownErrorMessage(event.error)
-            }
-            else -> IllegalStateException("Unknown event $event")
-        }
-
+    private fun handleUnknownErrors(error: Throwable) {
+        (requireActivity() as PhotosActivity).showUnknownErrorMessage(error)
         adapter.updateAllPhotosState(PhotoState.FAILED_TO_UPLOAD)
     }
 

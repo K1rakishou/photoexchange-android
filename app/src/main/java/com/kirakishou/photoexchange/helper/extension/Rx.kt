@@ -1,6 +1,8 @@
 package com.kirakishou.photoexchange.helper.extension
 
 import com.kirakishou.photoexchange.helper.Either
+import com.kirakishou.photoexchange.mvp.model.exception.ErrorCodeException
+import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -21,6 +23,16 @@ fun <T> Observable<Pair<Class<*>, T>>.filterErrorCodes(clazz: Class<*>): Observa
     return this
         .filter { it.first == clazz }
         .map { it.second }
+}
+
+fun <V> Observable<Either<ErrorCode, V>>.mapEither(): Observable<V> {
+    return this.map {
+        if (it is Either.Error) {
+            throw ErrorCodeException(it.error)
+        }
+
+        return@map (it as Either.Value).value
+    }
 }
 
 inline fun <E, V, reified R : Either.Value<V>> Observable<Either<E, V>>.drainErrorCodesTo(
