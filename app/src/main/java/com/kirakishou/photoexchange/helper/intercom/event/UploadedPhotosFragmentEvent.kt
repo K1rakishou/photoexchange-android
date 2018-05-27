@@ -14,10 +14,9 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
     }
 
     sealed class PhotoUploadEvent : UploadedPhotosFragmentEvent() {
-        class OnFailedToUpload(val photo: TakenPhoto, val errorCode: ErrorCode.UploadPhotoErrors) : PhotoUploadEvent()
+        class OnFailedToUpload(val photo: TakenPhoto,
+                               val errorCode: ErrorCode.UploadPhotoErrors) : PhotoUploadEvent()
         class OnUnknownError(val error: Throwable) : PhotoUploadEvent()
-        class OnCouldNotGetUserIdFromServerError(val errorCode: ErrorCode.UploadPhotoErrors) : PhotoUploadEvent()
-        class OnPrepare : PhotoUploadEvent()
         class OnPhotoUploadStart(val photo: TakenPhoto) : PhotoUploadEvent()
         class OnProgress(val photo: TakenPhoto, val progress: Int) : PhotoUploadEvent()
         class OnUploaded(val photo: UploadedPhoto) : PhotoUploadEvent()

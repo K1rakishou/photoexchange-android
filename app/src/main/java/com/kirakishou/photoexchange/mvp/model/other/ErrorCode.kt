@@ -41,6 +41,7 @@ sealed class ErrorCode(private val _value: Int) {
         class LocalInterrupted : UploadPhotoErrors(28)
         class LocalDatabaseError : UploadPhotoErrors(29)
         class LocalCouldNotGetUserId : UploadPhotoErrors(30)
+        class CouldNotRotatePhoto : UploadPhotoErrors(31)
 
         companion object {
             fun fromInt(value: Int): UploadPhotoErrors {

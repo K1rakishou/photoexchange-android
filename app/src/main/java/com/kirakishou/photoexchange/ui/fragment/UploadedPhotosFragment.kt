@@ -202,9 +202,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
         uploadedPhotosList.post {
             when (event) {
-                is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPrepare -> {
-
-                }
                 is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadStart -> {
                     adapter.addTakenPhoto(event.photo.also { it.photoState = PhotoState.PHOTO_UPLOADING })
                 }
@@ -227,10 +224,8 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                 is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
                     viewModel.eventForwarder.sendPhotoActivityEvent(PhotosActivityEvent.StartReceivingService())
                 }
-
-                is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnCouldNotGetUserIdFromServerError,
                 is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError -> {
-                    handleErrorEvent(event)
+                    handleUnknownErrors(event.error)
                 }
                 else -> throw IllegalArgumentException("Unknown PhotoUploadEvent $event")
             }
@@ -243,18 +238,8 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         }
     }
 
-    private fun handleErrorEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
-        when (event) {
-            is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnCouldNotGetUserIdFromServerError -> {
-                Timber.tag(TAG).e("Could not get user photoId from the server")
-                showToast("Could not get user photoId from the server")
-            }
-            is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError -> {
-                (requireActivity() as PhotosActivity).showUnknownErrorMessage(event.error)
-            }
-            else -> IllegalStateException("Unknown event $event")
-        }
-
+    private fun handleUnknownErrors(error: Throwable) {
+        (requireActivity() as PhotosActivity).showUnknownErrorMessage(error)
         adapter.updateAllPhotosState(PhotoState.FAILED_TO_UPLOAD)
     }
 

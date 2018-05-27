@@ -309,6 +309,30 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
         viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(event)
 
         when (event) {
+            is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUpload -> {
+
+            }
+            is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError -> {
+
+            }
+            is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadStart -> {
+
+            }
+            is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress -> {
+
+            }
+            is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUploaded -> {
+
+            }
+            is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFoundPhotoAnswer -> {
+
+            }
+            is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
+
+            }
+        }
+
+        when (event) {
             is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
                 if (ReceivePhotosService.isRunning(this)) {
                     bindReceivingService(false)
