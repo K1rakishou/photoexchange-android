@@ -116,7 +116,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         compositeDisposable += failedToUploadPhotoButtonClicksSubject
             .observeOn(AndroidSchedulers.mainThread())
             .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe({ })
+            .subscribe({ viewModel.eventForwarder.sendPhotoActivityEvent(PhotosActivityEvent.FailedToUploadPhotoButtonClick(it)) })
 
         compositeDisposable += loadMoreSubject
             .subscribeOn(AndroidSchedulers.mainThread())
@@ -124,9 +124,12 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             .concatMap { viewModel.loadNextPageOfUploadedPhotos(lastId, photosPerPage) }
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { onUiEvent(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
-            .doOnNext { photos -> addUploadedPhotosToAdapter(photos) }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe()
+            .subscribe({ photos ->
+                addUploadedPhotosToAdapter(photos)
+            }, { error ->
+                Timber.tag(TAG).e(error)
+                onUiEvent(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter())
+            })
     }
 
     private fun loadFirstPageOfUploadedPhotos() {

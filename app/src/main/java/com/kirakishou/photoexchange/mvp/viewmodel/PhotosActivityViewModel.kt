@@ -1,15 +1,18 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
+import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.extension.drainErrorCodesTo
+import com.kirakishou.photoexchange.helper.extension.mapEither
 import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelStateEventForwarder
 import com.kirakishou.photoexchange.interactors.*
 import com.kirakishou.photoexchange.mvp.model.*
+import com.kirakishou.photoexchange.mvp.model.exception.ErrorCodeException
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
@@ -91,8 +94,7 @@ class PhotosActivityViewModel(
                             .toObservable()
                     }
                     .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-                    .drainErrorCodesTo(errorCodesSubject, UploadedPhotosFragment::class.java)
-                    .doOnError { Timber.tag(TAG).e(it) }
+                    .mapEither()
             }
     }
 

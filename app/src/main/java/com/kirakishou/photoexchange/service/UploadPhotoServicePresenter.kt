@@ -10,6 +10,8 @@ import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
+import com.kirakishou.photoexchange.mvp.model.exception.CouldNotGetUserIdException
+import com.kirakishou.photoexchange.mvp.model.exception.PhotoUploadingException
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import io.reactivex.Observable
@@ -82,9 +84,9 @@ class UploadPhotoServicePresenter(
         if (error is PhotoUploadingException) {
             val errorCode = when (error) {
                 is PhotoUploadingException.RemoteServerException -> error.remoteErrorCode
-                is UploadPhotoServicePresenter.PhotoUploadingException.PhotoDoesNotExistOnDisk -> ErrorCode.UploadPhotoErrors.LocalNoPhotoFileOnDisk()
-                is UploadPhotoServicePresenter.PhotoUploadingException.CouldNotRotatePhoto -> ErrorCode.UploadPhotoErrors.LocalDatabaseError()
-                is UploadPhotoServicePresenter.PhotoUploadingException.DatabaseException -> ErrorCode.UploadPhotoErrors.CouldNotRotatePhoto()
+                is PhotoUploadingException.PhotoDoesNotExistOnDisk -> ErrorCode.UploadPhotoErrors.LocalNoPhotoFileOnDisk()
+                is PhotoUploadingException.CouldNotRotatePhoto -> ErrorCode.UploadPhotoErrors.LocalDatabaseError()
+                is PhotoUploadingException.DatabaseException -> ErrorCode.UploadPhotoErrors.CouldNotRotatePhoto()
             }
 
             sendEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUpload(takenPhoto, errorCode))
@@ -98,13 +100,15 @@ class UploadPhotoServicePresenter(
 
         when (error) {
             is PhotoUploadingException.RemoteServerException,
-            is UploadPhotoServicePresenter.PhotoUploadingException.PhotoDoesNotExistOnDisk,
-            is UploadPhotoServicePresenter.PhotoUploadingException.CouldNotRotatePhoto,
-            is UploadPhotoServicePresenter.PhotoUploadingException.DatabaseException -> {
+            is PhotoUploadingException.PhotoDoesNotExistOnDisk,
+            is PhotoUploadingException.CouldNotRotatePhoto,
+            is PhotoUploadingException.DatabaseException -> {
                 //already handled upstream
             }
 
-            else -> callbacks.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError(error))
+            else -> {
+                callbacks.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError(error))
+            }
         }
 
         callbacks.get()?.onError(error)
@@ -157,15 +161,5 @@ class UploadPhotoServicePresenter(
 
     private fun sendEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
         callbacks.get()?.onUploadingEvent(event)
-    }
-
-    class CouldNotGetUserIdException : Exception()
-
-    sealed class PhotoUploadingException(val takenPhoto: TakenPhoto) : Exception() {
-        class PhotoDoesNotExistOnDisk(takenPhoto: TakenPhoto) : PhotoUploadingException(takenPhoto)
-        class CouldNotRotatePhoto(takenPhoto: TakenPhoto) : PhotoUploadingException(takenPhoto)
-        class DatabaseException(takenPhoto: TakenPhoto) : PhotoUploadingException(takenPhoto)
-        class RemoteServerException(val remoteErrorCode: ErrorCode.UploadPhotoErrors,
-                                    takenPhoto: TakenPhoto) : PhotoUploadingException(takenPhoto)
     }
 }

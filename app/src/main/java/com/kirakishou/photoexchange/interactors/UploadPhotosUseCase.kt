@@ -11,6 +11,7 @@ import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
+import com.kirakishou.photoexchange.mvp.model.exception.PhotoUploadingException
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
@@ -36,7 +37,7 @@ class UploadPhotosUseCase(
                 if (photo.photoTempFile == null || !photo.photoTempFile!!.exists()) {
                     Timber.tag(TAG).e("Photo does not exists on disk! ${photo.photoTempFile?.absoluteFile
                         ?: "(No photoTempFile)"}")
-                    throw UploadPhotoServicePresenter.PhotoUploadingException.PhotoDoesNotExistOnDisk(photo)
+                    throw PhotoUploadingException.PhotoDoesNotExistOnDisk(photo)
                 }
 
                 return@concatMap Observable.fromCallable { File.createTempFile("rotated_photo", ".tmp") }
@@ -45,7 +46,7 @@ class UploadPhotosUseCase(
                             takenPhotosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_UPLOADING)
 
                             if (!BitmapUtils.rotatePhoto(photo.photoTempFile!!, photoFile)) {
-                                throw UploadPhotoServicePresenter.PhotoUploadingException.CouldNotRotatePhoto(photo)
+                                throw PhotoUploadingException.CouldNotRotatePhoto(photo)
                             }
 
                             return@fromCallable photoFile
@@ -63,7 +64,7 @@ class UploadPhotosUseCase(
 
                                         else -> {
                                             Timber.tag(TAG).d("Could not upload photo with photoId ${photo.id}")
-                                            throw UploadPhotoServicePresenter.PhotoUploadingException.RemoteServerException(errorCode, photo)
+                                            throw PhotoUploadingException.RemoteServerException(errorCode, photo)
                                         }
                                     }
                                 }
@@ -94,7 +95,7 @@ class UploadPhotosUseCase(
         }
 
         if (!dbResult) {
-            throw UploadPhotoServicePresenter.PhotoUploadingException.DatabaseException(photo)
+            throw PhotoUploadingException.DatabaseException(photo)
         }
 
         return UploadedPhoto(photo.id, photo.photoName!!, location.lon, location.lat, false, TimeUtils.getTimeFast())

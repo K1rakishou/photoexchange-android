@@ -5,12 +5,10 @@ import android.content.Context
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.mvp.view.TakePhotoActivityView
 import com.kirakishou.photoexchange.tests.AbstractTest
 import org.junit.After
 import org.junit.Before
 import org.junit.runner.RunWith
-import org.mockito.Mockito
 import java.io.File
 
 /**
@@ -20,7 +18,6 @@ import java.io.File
 @RunWith(AndroidJUnit4::class)
 class TakePhotoActivityViewModelTests : AbstractTest() {
 
-    lateinit var mockedView: TakePhotoActivityView
     lateinit var appContext: Context
     lateinit var targetContext: Context
     lateinit var database: MyDatabase
@@ -31,7 +28,6 @@ class TakePhotoActivityViewModelTests : AbstractTest() {
         appContext = InstrumentationRegistry.getContext()
         targetContext = InstrumentationRegistry.getTargetContext()
 
-        mockedView = Mockito.mock(TakePhotoActivityView::class.java)
         database = Room.inMemoryDatabaseBuilder(appContext, MyDatabase::class.java).build()
         tempFilesDir = targetContext.getDir("test_temp_files", Context.MODE_PRIVATE).absolutePath
     }
