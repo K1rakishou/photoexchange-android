@@ -38,7 +38,7 @@ class ReceivedPhotosAdapter(
 
     override fun getItemCount(): Int = items.size
 
-    override fun getBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
+    override fun doGetBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
         return arrayListOf(
             BaseAdapterInfo(AdapterItemType.VIEW_RECEIVED_PHOTO, R.layout.adapter_item_photo_answer, PhotoAnswerViewHolder::class.java)
         )

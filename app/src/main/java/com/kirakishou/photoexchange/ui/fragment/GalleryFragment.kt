@@ -59,7 +59,6 @@ class GalleryFragment : BaseFragment() {
     }
 
     override fun onFragmentViewDestroy() {
-        adapter.cleanUp()
     }
 
     private fun loadFirstPage() {
@@ -118,7 +117,6 @@ class GalleryFragment : BaseFragment() {
         val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), GALLERY_PHOTO_ADAPTER_VIEW_WIDTH)
 
         adapter = GalleryPhotosAdapter(requireContext(), imageLoader, adapterButtonClickSubject)
-        adapter.init()
 
         val layoutManager = GridLayoutManager(requireContext(), columnsCount)
         layoutManager.spanSizeLookup = GalleryPhotosAdapterSpanSizeLookup(adapter, columnsCount)

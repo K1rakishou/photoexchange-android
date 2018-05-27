@@ -94,7 +94,6 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
         val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), PHOTO_ADAPTER_VIEW_WIDTH)
 
         adapter = ReceivedPhotosAdapter(requireContext(), imageLoader)
-        adapter.init()
 
         val layoutManager = GridLayoutManager(requireContext(), columnsCount)
         layoutManager.spanSizeLookup = ReceivedPhotosAdapterSpanSizeLookup(adapter, columnsCount)

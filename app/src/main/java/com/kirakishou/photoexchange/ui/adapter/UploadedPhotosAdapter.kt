@@ -75,8 +75,6 @@ class UploadedPhotosAdapter(
     }
 
     fun updatePhotoProgress(photoId: Long, newProgress: Int) {
-        checkInited()
-
         if (!isPhotoAlreadyAdded(photoId)) {
             return
         }
@@ -389,7 +387,7 @@ class UploadedPhotosAdapter(
         return headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size + uploadedWithReceiverInfoItems.size + footerItems.size
     }
 
-    override fun getBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
+    override fun doGetBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
         return mutableListOf(
             BaseAdapterInfo(AdapterItemType.EMPTY, R.layout.adapter_item_empty, EmptyViewHolder::class.java),
             BaseAdapterInfo(AdapterItemType.VIEW_TAKEN_PHOTO, R.layout.adapter_item_taken_photo, TakenPhotoViewHolder::class.java),

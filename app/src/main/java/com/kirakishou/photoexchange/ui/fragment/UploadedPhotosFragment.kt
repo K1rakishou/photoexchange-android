@@ -85,7 +85,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), PHOTO_ADAPTER_VIEW_WIDTH)
 
         adapter = UploadedPhotosAdapter(requireContext(), imageLoader, failedToUploadPhotoButtonClicksSubject)
-        adapter.init()
 
         val layoutManager = GridLayoutManager(requireContext(), columnsCount)
         layoutManager.spanSizeLookup = UploadedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
