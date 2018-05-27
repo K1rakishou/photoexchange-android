@@ -25,7 +25,6 @@ class UploadedPhotosAdapter(
     private val adapterButtonsClickSubject: Subject<UploadedPhotosAdapterButtonClick>
 ) : BaseAdapter<UploadedPhotosAdapterItem>(context) {
 
-    private val HEADER_OBTAIN_CURRENT_LOCATION_NOTIFICATION_INDEX = 0
     private val FOOTER_PROGRESS_INDICATOR_INDEX = 0
 
     private val headerItems = arrayListOf<UploadedPhotosAdapterItem>()
@@ -39,7 +38,6 @@ class UploadedPhotosAdapter(
     private val photosProgressMap = hashMapOf<Long, Int>()
 
     init {
-        headerItems.add(HEADER_OBTAIN_CURRENT_LOCATION_NOTIFICATION_INDEX, UploadedPhotosAdapterItem.EmptyItem())
         footerItems.add(FOOTER_PROGRESS_INDICATOR_INDEX, UploadedPhotosAdapterItem.EmptyItem())
     }
 
@@ -83,24 +81,6 @@ class UploadedPhotosAdapter(
 
         photosProgressMap[photoId] = newProgress
         notifyItemChanged(photoIndex)
-    }
-
-    fun showObtainCurrentLocationNotification() {
-        if (headerItems[HEADER_OBTAIN_CURRENT_LOCATION_NOTIFICATION_INDEX] is UploadedPhotosAdapterItem.ObtainCurrentLocationItem) {
-            return
-        }
-
-        headerItems[HEADER_OBTAIN_CURRENT_LOCATION_NOTIFICATION_INDEX] = UploadedPhotosAdapterItem.ObtainCurrentLocationItem()
-        notifyItemChanged(HEADER_OBTAIN_CURRENT_LOCATION_NOTIFICATION_INDEX)
-    }
-
-    fun hideObtainCurrentLocationNotification() {
-        if (headerItems[HEADER_OBTAIN_CURRENT_LOCATION_NOTIFICATION_INDEX] is UploadedPhotosAdapterItem.EmptyItem) {
-            return
-        }
-
-        headerItems[HEADER_OBTAIN_CURRENT_LOCATION_NOTIFICATION_INDEX] = UploadedPhotosAdapterItem.EmptyItem()
-        notifyItemChanged(HEADER_OBTAIN_CURRENT_LOCATION_NOTIFICATION_INDEX)
     }
 
     fun showProgressFooter() {
@@ -368,8 +348,6 @@ class UploadedPhotosAdapter(
     }
 
     fun clear() {
-        hideObtainCurrentLocationNotification()
-
         queuedUpItems.clear()
         failedToUploadItems.clear()
         uploadedItems.clear()
@@ -393,8 +371,6 @@ class UploadedPhotosAdapter(
             BaseAdapterInfo(AdapterItemType.VIEW_TAKEN_PHOTO, R.layout.adapter_item_taken_photo, TakenPhotoViewHolder::class.java),
             BaseAdapterInfo(AdapterItemType.VIEW_UPLOADED_PHOTO, R.layout.adapter_item_uploaded_photo, UploadedPhotoViewHolder::class.java),
             BaseAdapterInfo(AdapterItemType.VIEW_PROGRESS, R.layout.adapter_item_progress, ProgressViewHolder::class.java),
-            BaseAdapterInfo(AdapterItemType.VIEW_OBTAIN_CURRENT_LOCATION_NOTIFICATION,
-                R.layout.adapter_item_obtain_current_location, ObtainCurrentLocationViewHolder::class.java),
             BaseAdapterInfo(AdapterItemType.VIEW_FAILED_TO_UPLOAD,
                 R.layout.adapter_failed_to_upload_photo, FailedToUploadPhotoViewHolder::class.java)
         )
@@ -482,16 +458,11 @@ class UploadedPhotosAdapter(
             is EmptyViewHolder -> {
                 //Do nothing
             }
-            is ObtainCurrentLocationViewHolder -> {
-                //Do nothing
-            }
             else -> IllegalArgumentException("Unknown viewHolder: ${holder::class.java.simpleName}")
         }
     }
 
     class EmptyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
-
-    class ObtainCurrentLocationViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 
     class ProgressViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val progressBar = itemView.findViewById<ProgressBar>(R.id.progressbar)

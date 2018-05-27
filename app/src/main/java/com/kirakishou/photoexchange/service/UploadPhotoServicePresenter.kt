@@ -109,13 +109,11 @@ class UploadPhotoServicePresenter(
 
         val gpsGranted = gpsPermissionGrantedObservable
             .filter { permissionGranted -> permissionGranted }
-            .doOnNext { callbacks.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnLocationUpdateStart()) }
             .doOnNext { Timber.tag(TAG).d("Gps permission is granted") }
             .flatMap {
                 callbacks.get()?.getCurrentLocation()?.toObservable()
                     ?: Observable.just(LonLat.empty())
             }
-            .doOnNext { callbacks.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnLocationUpdateEnd()) }
 
         val gpsNotGranted = gpsPermissionGrantedObservable
             .filter { permissionGranted -> !permissionGranted }

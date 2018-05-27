@@ -128,6 +128,10 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             .subscribe()
     }
 
+    private fun loadFirstPageOfUploadedPhotos() {
+        loadMoreSubject.onNext(0)
+    }
+
     private fun loadNotYetUploadedPhotos() {
         compositeDisposable += viewModel.loadMyPhotos()
             .flatMapObservable { takenPhotos ->
@@ -177,12 +181,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             is UploadedPhotosFragmentEvent.UiEvents.ScrollToTop -> {
                 uploadedPhotosList.scrollToPosition(0)
             }
-            is UploadedPhotosFragmentEvent.UiEvents.ShowObtainCurrentLocationNotification -> {
-                adapter.showObtainCurrentLocationNotification()
-            }
-            is UploadedPhotosFragmentEvent.UiEvents.HideObtainCurrentLocationNotification -> {
-                adapter.hideObtainCurrentLocationNotification()
-            }
             is UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter -> {
                 addProgressFooter()
             }
@@ -206,12 +204,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
         uploadedPhotosList.post {
             when (event) {
-                is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnLocationUpdateStart -> {
-                    adapter.showObtainCurrentLocationNotification()
-                }
-                is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnLocationUpdateEnd -> {
-                    adapter.hideObtainCurrentLocationNotification()
-                }
                 is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPrepare -> {
 
                 }
@@ -243,6 +235,12 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                     handleErrorEvent(event)
                 }
                 else -> throw IllegalArgumentException("Unknown PhotoUploadEvent $event")
+            }
+
+            if (event is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd ||
+                event is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError) {
+                Timber.tag(TAG).d("Loading first page of uploaded photos, event = $event")
+                loadFirstPageOfUploadedPhotos()
             }
         }
     }

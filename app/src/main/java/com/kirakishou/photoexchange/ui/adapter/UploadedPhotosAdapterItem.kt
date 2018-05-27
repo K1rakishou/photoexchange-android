@@ -11,7 +11,6 @@ sealed class UploadedPhotosAdapterItem : BaseAdapterItem() {
             is TakenPhotoItem -> AdapterItemType.VIEW_TAKEN_PHOTO
             is UploadedPhotoItem -> AdapterItemType.VIEW_UPLOADED_PHOTO
             is ProgressItem -> AdapterItemType.VIEW_PROGRESS
-            is ObtainCurrentLocationItem -> AdapterItemType.VIEW_OBTAIN_CURRENT_LOCATION_NOTIFICATION
             is FailedToUploadItem -> AdapterItemType.VIEW_FAILED_TO_UPLOAD
         }
     }
@@ -21,5 +20,4 @@ sealed class UploadedPhotosAdapterItem : BaseAdapterItem() {
     class UploadedPhotoItem(val uploadedPhoto: UploadedPhoto) : UploadedPhotosAdapterItem()
     class ProgressItem : UploadedPhotosAdapterItem()
     class FailedToUploadItem(val failedToUploadPhoto: TakenPhoto) : UploadedPhotosAdapterItem()
-    class ObtainCurrentLocationItem : UploadedPhotosAdapterItem()
 }

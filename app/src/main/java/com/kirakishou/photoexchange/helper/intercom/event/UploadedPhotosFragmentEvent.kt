@@ -6,8 +6,6 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 
 sealed class UploadedPhotosFragmentEvent : BaseEvent {
     sealed class UiEvents : UploadedPhotosFragmentEvent() {
-        class ShowObtainCurrentLocationNotification : UiEvents()
-        class HideObtainCurrentLocationNotification : UiEvents()
         class ShowProgressFooter : UiEvents()
         class HideProgressFooter : UiEvents()
         class RemovePhoto(val photo: TakenPhoto) : UiEvents()
@@ -16,8 +14,6 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
     }
 
     sealed class PhotoUploadEvent : UploadedPhotosFragmentEvent() {
-        class OnLocationUpdateStart : PhotoUploadEvent()
-        class OnLocationUpdateEnd : PhotoUploadEvent()
         class OnFailedToUpload(val photo: TakenPhoto, val errorCode: ErrorCode.UploadPhotoErrors) : PhotoUploadEvent()
         class OnUnknownError(val error: Throwable) : PhotoUploadEvent()
         class OnCouldNotGetUserIdFromServerError(val errorCode: ErrorCode.UploadPhotoErrors) : PhotoUploadEvent()
