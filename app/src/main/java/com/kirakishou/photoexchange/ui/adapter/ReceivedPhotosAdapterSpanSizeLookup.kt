@@ -12,7 +12,7 @@ class ReceivedPhotosAdapterSpanSizeLookup(
 
         return when (type) {
             AdapterItemType.VIEW_RECEIVED_PHOTO.type -> 1
-
+            AdapterItemType.VIEW_PROGRESS.type -> columnsCount
             else -> throw RuntimeException("Unknown item view type: $type")
         }
     }

@@ -19,6 +19,7 @@ import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapterSpanSizeLookup
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
@@ -74,17 +75,22 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
 
         compositeDisposable += loadMoreSubject
             .subscribeOn(AndroidSchedulers.mainThread())
-            .observeOn(Schedulers.io())
+            .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
             .concatMap { viewModel.loadNextPageOfReceivedPhotos(lastId, photosPerPage) }
             .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
             .doOnNext { photos -> addReceivedPhotosToAdapter(photos) }
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
     }
 
     private fun loadFirstPage() {
-        compositeDisposable += viewModel.loadNextPageOfReceivedPhotos(lastId, photosPerPage)
+        compositeDisposable += Observable.just(Unit)
+            .subscribeOn(Schedulers.io())
+            .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
+            .concatMap { viewModel.loadNextPageOfReceivedPhotos(lastId, photosPerPage) }
             .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
             .doOnNext { photos -> addReceivedPhotosToAdapter(photos) }
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
@@ -125,9 +131,17 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     }
 
     private fun onUiEvent(event: ReceivedPhotosFragmentEvent.UiEvents) {
-        when (event) {
-            is ReceivedPhotosFragmentEvent.UiEvents.ScrollToTop -> {
-                receivedPhotosList.scrollToPosition(0)
+        receivedPhotosList.post {
+            when (event) {
+                is ReceivedPhotosFragmentEvent.UiEvents.ScrollToTop -> {
+                    receivedPhotosList.scrollToPosition(0)
+                }
+                is ReceivedPhotosFragmentEvent.UiEvents.ShowProgressFooter -> {
+                    addProgressFooter()
+                }
+                is ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter -> {
+                    hideProgressFooter()
+                }
             }
         }
     }
@@ -166,6 +180,18 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
             if (receivedPhotos.size < photosPerPage) {
                 endlessScrollListener.reachedEnd()
             }
+        }
+    }
+
+    private fun addProgressFooter() {
+        receivedPhotosList.post {
+            adapter.showProgressFooter()
+        }
+    }
+
+    private fun hideProgressFooter() {
+        receivedPhotosList.post {
+            adapter.hideProgressFooter()
         }
     }
 

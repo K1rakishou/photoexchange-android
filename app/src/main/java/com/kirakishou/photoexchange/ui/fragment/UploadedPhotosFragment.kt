@@ -120,9 +120,10 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
         compositeDisposable += loadMoreSubject
             .subscribeOn(AndroidSchedulers.mainThread())
-            .observeOn(Schedulers.io())
+            .doOnNext { onUiEvent(UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
             .concatMap { viewModel.loadNextPageOfUploadedPhotos(lastId, photosPerPage) }
             .observeOn(AndroidSchedulers.mainThread())
+            .doOnNext { onUiEvent(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
             .doOnNext { photos -> addUploadedPhotosToAdapter(photos) }
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
@@ -142,18 +143,15 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             .observeOn(Schedulers.io())
             .flatMap {
                 return@flatMap viewModel.checkHasPhotosToUpload()
-                    .flatMap { hasPhotosToUpload ->
+                    .doOnNext { hasPhotosToUpload ->
                         if (hasPhotosToUpload) {
                             viewModel.eventForwarder.sendPhotoActivityEvent(PhotosActivityEvent.StartUploadingService())
-                            return@flatMap Observable.empty<List<UploadedPhoto>>()
+                        } else {
+                            loadFirstPageOfUploadedPhotos()
                         }
-
-                        return@flatMap viewModel.loadNextPageOfUploadedPhotos(lastId, photosPerPage)
                     }
             }
-            .subscribe({ uploadedPhotosList ->
-                addUploadedPhotosToAdapter(uploadedPhotosList)
-            }, { error ->
+            .subscribe({ }, { error ->
                 Timber.tag(TAG).e(error)
             })
     }

@@ -7,8 +7,10 @@ sealed class ReceivedPhotosAdapterItem : BaseAdapterItem() {
     override fun getType(): AdapterItemType {
         return when (this) {
             is ReceivedPhotoItem -> AdapterItemType.VIEW_RECEIVED_PHOTO
+            is ReceivedPhotosAdapterItem.ProgressItem -> AdapterItemType.VIEW_PROGRESS
         }
     }
 
     class ReceivedPhotoItem(val receivedPhoto: ReceivedPhoto) : ReceivedPhotosAdapterItem()
+    class ProgressItem : ReceivedPhotosAdapterItem()
 }

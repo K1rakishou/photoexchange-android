@@ -324,6 +324,9 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
             is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotoReceived -> {
                 viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(
                     UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFoundPhotoAnswer(event.takenPhotoName))
+                viewModel.eventForwarder.sendReceivedPhotosFragmentEvent(
+                    ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotoReceived(event.receivedPhoto, event.takenPhotoName)
+                )
                 showPhotoAnswerFoundSnackbar()
             }
         }
