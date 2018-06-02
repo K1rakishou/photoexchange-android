@@ -9,7 +9,6 @@ import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
-import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.exception.CouldNotGetUserIdException
 import com.kirakishou.photoexchange.mvp.model.exception.PhotoUploadingException
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
@@ -47,7 +46,10 @@ class UploadPhotoServicePresenter(
                 val currentLocationObservable = getCurrentLocation()
                 val userIdObservable = getUserId()
 
-                return@concatMap Observables.zip(currentLocationObservable, userIdObservable)
+                return@concatMap Observable.fromCallable {
+                    updateServiceNotification(ServiceNotification.Uploading())
+                }
+                    .flatMap { Observables.zip(currentLocationObservable, userIdObservable) }
                     .concatMap { (currentLocation, userId) ->
                         return@concatMap Observable.fromCallable { takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP) }
                             .concatMapSingle { queuedUpPhotos ->
@@ -70,8 +72,14 @@ class UploadPhotoServicePresenter(
                                     .onErrorReturnItem(false)
                             }
                     }
-                    .doOnNext { allUploaded -> sendEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd(allUploaded)) }
-                    .doOnError { error -> handleUnknownErrors(error) }
+                    .doOnNext { allUploaded ->
+                        updateServiceNotification(ServiceNotification.Success("All photos has been successfully uploaded"))
+                        sendEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd(allUploaded))
+                    }
+                    .doOnError { error ->
+                        updateServiceNotification(ServiceNotification.Error("Could not upload one or more photos"))
+                        handleUnknownErrors(error)
+                    }
                     .map { Unit }
                     .onErrorReturnItem(Unit)
             }
@@ -86,6 +94,20 @@ class UploadPhotoServicePresenter(
     fun uploadPhotos() {
         Timber.tag(TAG).d("uploadPhotos called")
         uploadPhotosSubject.onNext(Unit)
+    }
+
+    fun updateServiceNotification(serviceNotification: ServiceNotification) {
+        when (serviceNotification) {
+            is UploadPhotoServicePresenter.ServiceNotification.Uploading -> {
+                callbacks.get()?.updateUploadingNotificationShowUploading()
+            }
+            is UploadPhotoServicePresenter.ServiceNotification.Success -> {
+                callbacks.get()?.updateUploadingNotificationShowSuccess(serviceNotification.message)
+            }
+            is UploadPhotoServicePresenter.ServiceNotification.Error -> {
+                callbacks.get()?.updateUploadingNotificationShowError(serviceNotification.errorMessage)
+            }
+        }
     }
 
     fun handleRemoteErrors(takenPhoto: TakenPhoto, error: Throwable) {
@@ -176,5 +198,11 @@ class UploadPhotoServicePresenter(
 
     fun sendEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
         callbacks.get()?.onUploadingEvent(event)
+    }
+
+    sealed class ServiceNotification() {
+        class Uploading : ServiceNotification()
+        class Success(val message: String) : ServiceNotification()
+        class Error(val errorMessage: String) : ServiceNotification()
     }
 }
