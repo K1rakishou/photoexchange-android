@@ -6,6 +6,7 @@ import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.extension.filterErrorCodes
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
@@ -59,13 +60,6 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     }
 
     private fun initRx() {
-        compositeDisposable += viewModel.errorCodesSubject
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .filterErrorCodes(ReceivedPhotosFragment::class.java)
-            .filter { isVisible }
-            .doOnNext { handleError(it) }
-            .subscribe()
-
         compositeDisposable += viewModel.eventForwarder.getReceivedPhotosFragmentEventsStream()
             .observeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -79,9 +73,14 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
             .concatMap { viewModel.loadNextPageOfReceivedPhotos(lastId, photosPerPage) }
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
-            .doOnNext { photos -> addReceivedPhotosToAdapter(photos) }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe()
+            .subscribe({ result ->
+                when (result) {
+                    is Either.Value -> addReceivedPhotosToAdapter(result.value)
+                    is Either.Error -> handleError(result.error)
+                }
+            }, {
+                Timber.tag(TAG).e(it)
+            })
     }
 
     private fun loadFirstPage() {
@@ -91,9 +90,14 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
             .concatMap { viewModel.loadNextPageOfReceivedPhotos(lastId, photosPerPage) }
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
-            .doOnNext { photos -> addReceivedPhotosToAdapter(photos) }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe()
+            .subscribe({ result ->
+                when (result) {
+                    is Either.Value -> addReceivedPhotosToAdapter(result.value)
+                    is Either.Error -> handleError(result.error)
+                }
+            }, {
+                Timber.tag(TAG).e(it)
+            })
     }
 
     private fun initRecyclerView() {

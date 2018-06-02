@@ -6,8 +6,8 @@ import android.support.v7.widget.RecyclerView
 import android.widget.Toast
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.helper.extension.filterErrorCodes
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
@@ -99,13 +99,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
     }
 
     private fun initRx() {
-        compositeDisposable += viewModel.errorCodesSubject
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .filterErrorCodes(UploadedPhotosFragment::class.java)
-            .filter { isVisible }
-            .doOnNext { handleError(it) }
-            .subscribe()
-
         compositeDisposable += viewModel.eventForwarder.getUploadedPhotosFragmentEventsStream()
             .observeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -124,8 +117,11 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             .concatMap { viewModel.loadNextPageOfUploadedPhotos(lastId, photosPerPage) }
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { onUiEvent(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
-            .subscribe({ photos ->
-                addUploadedPhotosToAdapter(photos)
+            .subscribe({ result ->
+                when (result) {
+                    is Either.Value -> addUploadedPhotosToAdapter(result.value)
+                    is Either.Error -> handleError(result.error)
+                }
             }, { error ->
                 Timber.tag(TAG).e(error)
                 onUiEvent(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter())
@@ -198,6 +194,11 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             is UploadedPhotosFragmentEvent.UiEvents.AddPhoto -> {
                 adapter.addTakenPhoto(event.photo)
             }
+            is UploadedPhotosFragmentEvent.UiEvents.LoadFirstPageOfPhotos -> {
+                if (adapter.getFailedPhotosCount() == 0) {
+                    loadFirstPageOfUploadedPhotos()
+                }
+            }
             else -> throw IllegalArgumentException("Unknown UploadedPhotosFragmentEvent $event")
         }
     }
@@ -268,6 +269,10 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             if (uploadedPhotos.isNotEmpty()) {
                 lastId = uploadedPhotos.last().photoId
                 adapter.addUploadedPhotos(uploadedPhotos)
+            }
+
+            if (adapter.getUploadedPhotosCount() == 0) {
+                showToast(getString(R.string.uploaded_photos_fragment_nothing_found_msg))
             }
 
             if (uploadedPhotos.size < photosPerPage) {

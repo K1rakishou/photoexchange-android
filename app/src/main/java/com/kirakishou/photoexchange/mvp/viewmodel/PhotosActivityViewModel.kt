@@ -6,21 +6,15 @@ import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRep
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
-import com.kirakishou.photoexchange.helper.extension.drainErrorCodesTo
-import com.kirakishou.photoexchange.helper.extension.mapEither
 import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelStateEventForwarder
 import com.kirakishou.photoexchange.interactors.*
 import com.kirakishou.photoexchange.mvp.model.*
-import com.kirakishou.photoexchange.mvp.model.exception.ErrorCodeException
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
-import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
 import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
-import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
@@ -44,7 +38,6 @@ class PhotosActivityViewModel(
     private val ADAPTER_LOAD_MORE_ITEMS_DELAY_MS = 1.seconds()
 
     val eventForwarder = PhotosActivityViewModelStateEventForwarder()
-    val errorCodesSubject = PublishSubject.create<Pair<Class<*>, ErrorCode>>().toSerialized()
 
     override fun onCleared() {
         Timber.tag(TAG).d("onCleared()")
@@ -52,23 +45,19 @@ class PhotosActivityViewModel(
         super.onCleared()
     }
 
-    fun reportPhoto(photoName: String): Observable<Boolean> {
+    fun reportPhoto(photoName: String): Observable<Either<ErrorCode, Boolean>> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .concatMap { userId -> reportPhotoUseCase.reportPhoto(userId, photoName) }
-            .drainErrorCodesTo(errorCodesSubject, GalleryFragment::class.java)
-            .doOnError { Timber.tag(TAG).e(it) }
     }
 
-    fun favouritePhoto(photoName: String): Observable<FavouritePhotoUseCase.FavouritePhotoResult> {
+    fun favouritePhoto(photoName: String): Observable<Either<ErrorCode, FavouritePhotoUseCase.FavouritePhotoResult>> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .concatMap { userId -> favouritePhotoUseCase.favouritePhoto(userId, photoName) }
-            .drainErrorCodesTo(errorCodesSubject, GalleryFragment::class.java)
-            .doOnError { Timber.tag(TAG).e(it) }
     }
 
-    fun loadNextPageOfGalleryPhotos(lastId: Long, photosPerPage: Int): Observable<List<GalleryPhoto>> {
+    fun loadNextPageOfGalleryPhotos(lastId: Long, photosPerPage: Int): Observable<Either<ErrorCode, List<GalleryPhoto>>> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .concatMap { userId ->
@@ -76,16 +65,14 @@ class PhotosActivityViewModel(
                     .toObservable()
             }
             .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-            .drainErrorCodesTo(errorCodesSubject, GalleryFragment::class.java)
-            .doOnError { Timber.tag(TAG).e(it) }
     }
 
-    fun loadNextPageOfUploadedPhotos(lastId: Long, photosPerPage: Int): Observable<List<UploadedPhoto>> {
+    fun loadNextPageOfUploadedPhotos(lastId: Long, photosPerPage: Int): Observable<Either<ErrorCode, List<UploadedPhoto>>> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .flatMap { _userId ->
                 if (_userId.isEmpty()) {
-                    return@flatMap Observable.just<List<UploadedPhoto>>(emptyList())
+                    return@flatMap Observable.just<Either<ErrorCode, List<UploadedPhoto>>>(Either.Value(emptyList()))
                 }
 
                 return@flatMap Observable.just(_userId)
@@ -93,12 +80,11 @@ class PhotosActivityViewModel(
                         getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
                             .toObservable()
                     }
-                    .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-                    .mapEither()
             }
+            .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
     }
 
-    fun loadNextPageOfReceivedPhotos(lastId: Long, photosPerPage: Int): Observable<List<ReceivedPhoto>> {
+    fun loadNextPageOfReceivedPhotos(lastId: Long, photosPerPage: Int): Observable<Either<ErrorCode, List<ReceivedPhoto>>> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .filter { userId -> userId.isNotEmpty() }
@@ -107,8 +93,6 @@ class PhotosActivityViewModel(
                     .toObservable()
             }
             .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-            .drainErrorCodesTo(errorCodesSubject, UploadedPhotosFragment::class.java)
-            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun checkHasPhotosToUpload(): Observable<Boolean> {

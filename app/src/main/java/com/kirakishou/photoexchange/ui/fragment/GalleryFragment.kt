@@ -7,6 +7,7 @@ import android.support.v7.widget.RecyclerView
 import android.widget.Toast
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.extension.filterErrorCodes
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
@@ -70,19 +71,17 @@ class GalleryFragment : BaseFragment() {
             .flatMap { viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage) }
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { removeProgressFooter() }
-            .doOnNext { photos -> addPhotoToAdapter(photos) }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe()
+            .subscribe({ result ->
+                when (result) {
+                    is Either.Value -> addPhotoToAdapter(result.value)
+                    is Either.Error -> handleError(result.error)
+                }
+            }, {
+                Timber.tag(TAG).e(it)
+            })
     }
 
     private fun initRx() {
-        compositeDisposable += viewModel.errorCodesSubject
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .filterErrorCodes(GalleryFragment::class.java)
-            .filter { isVisible }
-            .doOnNext { handleError(it) }
-            .subscribe()
-
         compositeDisposable += loadMoreSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .doOnNext { addProgressFooter() }
@@ -90,27 +89,48 @@ class GalleryFragment : BaseFragment() {
             .concatMap { viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage) }
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { removeProgressFooter() }
-            .doOnNext { photos -> addPhotoToAdapter(photos) }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe()
+            .subscribe({ result ->
+                when (result) {
+                    is Either.Value -> addPhotoToAdapter(result.value)
+                    is Either.Error -> handleError(result.error)
+                }
+            }, {
+                Timber.tag(TAG).e(it)
+            })
 
         compositeDisposable += adapterButtonClickSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .filter { buttonClicked -> buttonClicked is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.FavouriteClicked }
             .cast(GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.FavouriteClicked::class.java)
             .concatMap { viewModel.favouritePhoto(it.photoName).zipWith(Observable.just(it.photoName)) }
-            .doOnNext { (response, photoName) -> favouritePhoto(photoName, response.isFavourited, response.favouritesCount) }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe()
+            .subscribe({ resultPair ->
+                val result = resultPair.first
+                val photoName = resultPair.second
+
+                when (result) {
+                    is Either.Value -> favouritePhoto(photoName, result.value.isFavourited, result.value.favouritesCount)
+                    is Either.Error -> handleError(result.error)
+                }
+            }, {
+                Timber.tag(TAG).e(it)
+            })
 
         compositeDisposable += adapterButtonClickSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .filter { buttonClicked -> buttonClicked is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.ReportClicked }
             .cast(GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.ReportClicked::class.java)
             .concatMap { viewModel.reportPhoto(it.photoName).zipWith(Observable.just(it.photoName)) }
-            .doOnNext { (isReported, photoName) -> reportPhoto(photoName, isReported) }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe()
+            .subscribe({ resultPair ->
+                val result = resultPair.first
+                val photoName = resultPair.second
+
+                when (result) {
+                    is Either.Value -> reportPhoto(photoName, result.value)
+                    is Either.Error -> handleError(result.error)
+                }
+            }, {
+                Timber.tag(TAG).e(it)
+            })
     }
 
     private fun initRecyclerView() {

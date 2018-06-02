@@ -11,6 +11,7 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
         class RemovePhoto(val photo: TakenPhoto) : UiEvents()
         class AddPhoto(val photo: TakenPhoto) : UiEvents()
         class ScrollToTop : UiEvents()
+        class LoadFirstPageOfPhotos : UiEvents()
     }
 
     sealed class PhotoUploadEvent : UploadedPhotosFragmentEvent() {

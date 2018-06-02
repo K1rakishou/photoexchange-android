@@ -375,8 +375,12 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
             }
             .zipWith(Single.timer(PHOTO_DELETE_DELAY, TimeUnit.MILLISECONDS))
             .flatMap { viewModel.deletePhotoById(photo.id).toSingleDefault(Unit) }
-            .doOnError { Timber.e(it) }
-            .subscribe()
+            .subscribe({
+                viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(
+                    UploadedPhotosFragmentEvent.UiEvents.LoadFirstPageOfPhotos())
+            }, {
+                Timber.e(it)
+            })
 
         compositeDisposable += disposable
 

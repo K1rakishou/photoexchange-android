@@ -41,6 +41,14 @@ class UploadedPhotosAdapter(
         footerItems.add(FOOTER_PROGRESS_INDICATOR_INDEX, UploadedPhotosAdapterItem.EmptyItem())
     }
 
+    fun getFailedPhotosCount(): Int {
+        return failedToUploadItems.size
+    }
+
+    fun getUploadedPhotosCount(): Int {
+        return uploadedItems.size + uploadedWithReceiverInfoItems.size
+    }
+
     fun updateUploadedPhotoSetReceiverInfo(takenPhotoName: String) {
         val uploadedItemIndex = uploadedItems.indexOfFirst { (it as UploadedPhotosAdapterItem.UploadedPhotoItem).uploadedPhoto.photoName == takenPhotoName }
         if (uploadedItemIndex == -1) {
