@@ -4,7 +4,6 @@ import android.content.Context
 import android.support.v4.content.ContextCompat
 import com.afollestad.materialdialogs.MaterialDialog
 import com.kirakishou.fixmypc.photoexchange.R
-import java.lang.ref.WeakReference
 
 /**
  * Created by kirakishou on 1/26/2018.

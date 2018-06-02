@@ -11,16 +11,34 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
         class RemovePhoto(val photo: TakenPhoto) : UiEvents()
         class AddPhoto(val photo: TakenPhoto) : UiEvents()
         class ScrollToTop : UiEvents()
+        class OnPhotoRemoved : UiEvents()
+        class LoadTakenPhotos : UiEvents()
     }
 
     sealed class PhotoUploadEvent : UploadedPhotosFragmentEvent() {
         class OnFailedToUpload(val photo: TakenPhoto,
                                val errorCode: ErrorCode.UploadPhotoErrors) : PhotoUploadEvent()
-        class OnUnknownError(val error: Throwable) : PhotoUploadEvent()
+        class OnError(val error: UploadingError) : PhotoUploadEvent()
         class OnPhotoUploadStart(val photo: TakenPhoto) : PhotoUploadEvent()
         class OnProgress(val photo: TakenPhoto, val progress: Int) : PhotoUploadEvent()
-        class OnUploaded(val photo: UploadedPhoto) : PhotoUploadEvent()
+        class OnUploaded(val takenPhoto: TakenPhoto,
+                         val uploadedPhoto: UploadedPhoto) : PhotoUploadEvent()
         class OnFoundPhotoAnswer(val takenPhotoName: String) : PhotoUploadEvent()
         class OnEnd(val allUploaded: Boolean) : PhotoUploadEvent()
+    }
+
+    companion object {
+        fun unknownError(error: Throwable): PhotoUploadEvent.OnError {
+            return PhotoUploadEvent.OnError(UploadingError.UnknownError(error))
+        }
+
+        fun knownError(errorCode: ErrorCode.UploadPhotoErrors): PhotoUploadEvent.OnError {
+            return PhotoUploadEvent.OnError(UploadingError.KnownError(errorCode))
+        }
+    }
+
+    sealed class UploadingError {
+        data class KnownError(val errorCode: ErrorCode.UploadPhotoErrors) : UploadingError()
+        data class UnknownError(val error: Throwable) : UploadingError()
     }
 }

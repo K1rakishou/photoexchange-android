@@ -64,7 +64,7 @@ class OnApiErrorSingle<T : StatusResponse>(
         val errorCode = when (clazz) {
             UploadPhotoResponse::class -> ErrorCode.UploadPhotoErrors.LocalBadServerResponse()
             ReceivedPhotosResponse::class -> ErrorCode.ReceivePhotosErrors.LocalBadServerResponse()
-            GalleryPhotoIdsResponse::class -> ErrorCode.GalleryPhotosErrors.LocalBadServerResponse()
+            GalleryPhotoIdsResponse::class -> ErrorCode.GetGalleryPhotosErrors.LocalBadServerResponse()
             FavouritePhotoResponse::class -> ErrorCode.FavouritePhotoErrors.LocalBadServerResponse()
             ReportPhotoResponse::class -> ErrorCode.ReportPhotoErrors.LocalBadServerResponse()
             GetUserIdResponse::class -> ErrorCode.GetUserIdError.LocalBadServerResponse()

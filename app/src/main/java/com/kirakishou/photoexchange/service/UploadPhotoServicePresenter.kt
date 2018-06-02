@@ -9,19 +9,18 @@ import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
-import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.exception.CouldNotGetUserIdException
 import com.kirakishou.photoexchange.mvp.model.exception.PhotoUploadingException
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import io.reactivex.Observable
-import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import java.lang.ref.WeakReference
+import java.util.concurrent.TimeUnit
 
 /**
  * Created by kirakishou on 3/17/2018.
@@ -35,8 +34,9 @@ class UploadPhotoServicePresenter(
     private val getUserIdUseCase: GetUserIdUseCase
 ) {
     private val TAG = "UploadPhotoServicePresenter"
-    private val uploadPhotosSubject = PublishSubject.create<Unit>().toSerialized()
     private val compositeDisposable = CompositeDisposable()
+
+    val uploadPhotosSubject = PublishSubject.create<Unit>().toSerialized()
 
     init {
         compositeDisposable += uploadPhotosSubject
@@ -46,29 +46,50 @@ class UploadPhotoServicePresenter(
                 val currentLocationObservable = getCurrentLocation()
                 val userIdObservable = getUserId()
 
-                return@concatMap Observables.zip(currentLocationObservable, userIdObservable)
+                return@concatMap Observable.fromCallable {
+                    updateServiceNotification(ServiceNotification.Uploading())
+                }
+                    .flatMap { Observables.zip(currentLocationObservable, userIdObservable) }
                     .concatMap { (currentLocation, userId) ->
-                        Observable.fromCallable { takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP) }
-                            .flatMapSingle { queuedUpPhotos ->
-                                return@flatMapSingle Observable.fromIterable(queuedUpPhotos)
+                        return@concatMap Observable.fromCallable { takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP) }
+                            .concatMapSingle { queuedUpPhotos ->
+                                return@concatMapSingle Observable.fromIterable(queuedUpPhotos)
                                     .concatMap { photo ->
                                         return@concatMap Observable.just(Unit)
                                             .doOnNext { sendEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadStart(photo)) }
-                                            .concatMap { uploadPhotosUseCase.uploadPhoto(photo, userId, currentLocation, callbacks) }
-                                            .doOnNext { uploadedPhoto -> sendEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUploaded(uploadedPhoto)) }
+                                            .concatMap {
+                                                return@concatMap Observable.create<UploadedPhotosFragmentEvent.PhotoUploadEvent> { emitter ->
+                                                    uploadPhotosUseCase.uploadPhoto(photo, userId, currentLocation, emitter)
+                                                }
+                                            }
+                                            .doOnNext { event -> sendEvent(event) }
                                             .doOnError { error -> handleRemoteErrors(photo, error) }
                                     }
-                                    .toList()
-                                    .map { uploadedPhotos -> uploadedPhotos.size == queuedUpPhotos.size }
+                                    .lastOrError()
+                                    //1 second delay before starting to upload the next photo
+                                    .delay(1, TimeUnit.SECONDS)
+                                    .map { true }
                             }
                     }
-                    .doOnNext { allUploaded -> sendEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd(allUploaded)) }
-                    .doOnError { error -> handleUnknownErrors(error) }
+                    .doOnNext { allUploaded ->
+                        updateServiceNotification(ServiceNotification.Success("All photos has been successfully uploaded"))
+                        sendEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd(allUploaded))
+                    }
+                    .doOnError { error ->
+                        updatePhotosStates()
+                        updateServiceNotification(ServiceNotification.Error("Could not upload one or more photos"))
+                        handleUnknownErrors(error)
+                    }
                     .map { Unit }
                     .onErrorReturnItem(Unit)
             }
             .doOnEach { stopService() }
             .subscribe()
+    }
+
+    private fun updatePhotosStates() {
+        takenPhotosRepository.updateStates(PhotoState.PHOTO_QUEUED_UP, PhotoState.FAILED_TO_UPLOAD)
+        takenPhotosRepository.updateStates(PhotoState.PHOTO_UPLOADING, PhotoState.FAILED_TO_UPLOAD)
     }
 
     fun onDetach() {
@@ -80,7 +101,21 @@ class UploadPhotoServicePresenter(
         uploadPhotosSubject.onNext(Unit)
     }
 
-    private fun handleRemoteErrors(takenPhoto: TakenPhoto, error: Throwable) {
+    fun updateServiceNotification(serviceNotification: ServiceNotification) {
+        when (serviceNotification) {
+            is UploadPhotoServicePresenter.ServiceNotification.Uploading -> {
+                callbacks.get()?.updateUploadingNotificationShowUploading()
+            }
+            is UploadPhotoServicePresenter.ServiceNotification.Success -> {
+                callbacks.get()?.updateUploadingNotificationShowSuccess(serviceNotification.message)
+            }
+            is UploadPhotoServicePresenter.ServiceNotification.Error -> {
+                callbacks.get()?.updateUploadingNotificationShowError(serviceNotification.errorMessage)
+            }
+        }
+    }
+
+    fun handleRemoteErrors(takenPhoto: TakenPhoto, error: Throwable) {
         if (error is PhotoUploadingException) {
             val errorCode = when (error) {
                 is PhotoUploadingException.RemoteServerException -> error.remoteErrorCode
@@ -95,7 +130,7 @@ class UploadPhotoServicePresenter(
         takenPhotosRepository.updatePhotoState(takenPhoto.id, PhotoState.FAILED_TO_UPLOAD)
     }
 
-    private fun handleUnknownErrors(error: Throwable) {
+    fun handleUnknownErrors(error: Throwable) {
         Timber.tag(TAG).d("onUploadingEvent(PhotoUploadEvent.OnEnd())")
 
         when (error) {
@@ -103,18 +138,25 @@ class UploadPhotoServicePresenter(
             is PhotoUploadingException.PhotoDoesNotExistOnDisk,
             is PhotoUploadingException.CouldNotRotatePhoto,
             is PhotoUploadingException.DatabaseException -> {
-                //already handled upstream
+                //already handled by upstream
+            }
+
+            is CouldNotGetUserIdException -> {
+                val cause = when (error.errorCode) {
+                    is ErrorCode.GetUserIdError.LocalTimeout -> ErrorCode.UploadPhotoErrors.LocalTimeout()
+                    else -> ErrorCode.UploadPhotoErrors.UnknownError()
+                }
+
+                callbacks.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.knownError(cause))
             }
 
             else -> {
-                callbacks.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError(error))
+                callbacks.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.unknownError(error))
             }
         }
-
-        callbacks.get()?.onError(error)
     }
 
-    private fun getUserId(): Observable<String> {
+    fun getUserId(): Observable<String> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .concatMap { userId ->
                 if (userId.isEmpty()) {
@@ -122,7 +164,7 @@ class UploadPhotoServicePresenter(
                         .toObservable()
                         .map { result ->
                             if (result is Either.Error) {
-                                throw CouldNotGetUserIdException()
+                                throw CouldNotGetUserIdException(result.error)
                             }
 
                             return@map (result as Either.Value).value
@@ -134,7 +176,7 @@ class UploadPhotoServicePresenter(
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
-    private fun getCurrentLocation(): Observable<LonLat> {
+    fun getCurrentLocation(): Observable<LonLat> {
         val gpsPermissionGrantedObservable = Observable.fromCallable {
             settingsRepository.isGpsPermissionGranted()
         }
@@ -155,11 +197,17 @@ class UploadPhotoServicePresenter(
         return Observable.merge(gpsGranted, gpsNotGranted)
     }
 
-    private fun stopService() {
+    fun stopService() {
         callbacks.get()?.stopService()
     }
 
-    private fun sendEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
+    fun sendEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
         callbacks.get()?.onUploadingEvent(event)
+    }
+
+    sealed class ServiceNotification() {
+        class Uploading : ServiceNotification()
+        class Success(val message: String) : ServiceNotification()
+        class Error(val errorMessage: String) : ServiceNotification()
     }
 }

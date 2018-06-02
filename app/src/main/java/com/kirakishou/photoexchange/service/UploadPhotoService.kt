@@ -41,7 +41,6 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     private val binder = UploadPhotosBinder()
     private val compositeDisposable = CompositeDisposable()
 
-    private val GPS_DELAY_MS = 1.seconds()
     private val GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS = 15.seconds()
     private var callback = WeakReference<PhotoUploadingCallback>(null)
     private val NOTIFICATION_ID = 1
@@ -53,12 +52,13 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
         Timber.tag(tag).d("UploadPhotoService started")
 
         resolveDaggerDependency()
-        startForeground(NOTIFICATION_ID, createNotificationUploading())
+        startForeground(NOTIFICATION_ID, createInitialNotification())
     }
 
     override fun onDestroy() {
         super.onDestroy()
 
+        removeNotification()
         presenter.onDetach()
         detachCallback()
         compositeDisposable.clear()
@@ -78,26 +78,15 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
 
     fun startPhotosUploading() {
         requireNotNull(callback.get())
-
-        updateUploadingNotificationShowUploading()
         presenter.uploadPhotos()
     }
 
     override fun onUploadingEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
         callback.get()?.onUploadPhotosEvent(event)
-
-        if (event is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd) {
-            if (event.allUploaded) {
-                updateUploadingNotificationShowSuccess("All photos has been successfully uploaded")
-            } else {
-                updateUploadingNotificationShowError("Could not upload one or more photos")
-            }
-        }
     }
 
     override fun onError(error: Throwable) {
         Timber.e(error)
-        updateUploadingNotificationShowError(error.message ?: "Could not upload photos. Unknown error.")
     }
 
     override fun stopService() {
@@ -120,21 +109,24 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
                     .timeout(GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS, TimeUnit.MILLISECONDS)
                     .onErrorReturnItem(LonLat.empty())
             }
-            .delay(GPS_DELAY_MS, TimeUnit.MILLISECONDS)
     }
 
     //notifications
-    private fun updateUploadingNotificationShowUploading() {
+    private fun removeNotification() {
+        getNotificationManager().cancel(NOTIFICATION_ID)
+    }
+
+    override fun updateUploadingNotificationShowUploading() {
         val newNotification = createNotificationUploading()
         getNotificationManager().notify(NOTIFICATION_ID, newNotification)
     }
 
-    private fun updateUploadingNotificationShowSuccess(message: String) {
+    override fun updateUploadingNotificationShowSuccess(message: String) {
         val newNotification = createNotificationSuccess(message)
         getNotificationManager().notify(NOTIFICATION_ID, newNotification)
     }
 
-    private fun updateUploadingNotificationShowError(message: String) {
+    override fun updateUploadingNotificationShowError(message: String) {
         val newNotification = createNotificationError(message)
         getNotificationManager().notify(NOTIFICATION_ID, newNotification)
     }
@@ -205,6 +197,30 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
                 .setContentTitle("Please wait")
                 .setContentText("Uploading photo...")
                 .setSmallIcon(android.R.drawable.stat_sys_upload)
+                .setWhen(System.currentTimeMillis())
+                .setContentIntent(getNotificationIntent())
+                .setAutoCancel(false)
+                .setOngoing(true)
+                .build()
+        }
+    }
+
+    private fun createInitialNotification(): Notification {
+        if (AndroidUtils.isOreoOrHigher()) {
+            createNotificationChannelIfNotExists()
+
+            return NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("Please wait")
+                .setContentText("Uploading photo...")
+                .setWhen(System.currentTimeMillis())
+                .setContentIntent(getNotificationIntent())
+                .setAutoCancel(false)
+                .setOngoing(true)
+                .build()
+        } else {
+            return NotificationCompat.Builder(this)
+                .setContentTitle("Please wait")
+                .setContentText("Uploading photo...")
                 .setWhen(System.currentTimeMillis())
                 .setContentIntent(getNotificationIntent())
                 .setAutoCancel(false)

@@ -40,7 +40,6 @@ sealed class ErrorCode(private val _value: Int) {
         class LocalTimeout : UploadPhotoErrors(27)
         class LocalInterrupted : UploadPhotoErrors(28)
         class LocalDatabaseError : UploadPhotoErrors(29)
-        class LocalCouldNotGetUserId : UploadPhotoErrors(30)
         class CouldNotRotatePhoto : UploadPhotoErrors(31)
 
         companion object {
@@ -52,11 +51,10 @@ sealed class ErrorCode(private val _value: Int) {
                     53 -> DatabaseError()
 
                     75 -> LocalBadServerResponse()
-                    66 -> LocalNoPhotoFileOnDisk()
+                    76 -> LocalNoPhotoFileOnDisk()
                     77 -> LocalTimeout()
                     78 -> LocalInterrupted()
                     79 -> LocalDatabaseError()
-                    800 -> LocalCouldNotGetUserId()
                     else -> throw IllegalArgumentException("Unknown value $value")
                 }
             }
@@ -98,20 +96,20 @@ sealed class ErrorCode(private val _value: Int) {
         }
     }
 
-    sealed class GalleryPhotosErrors(value: Int) : ErrorCode(value) {
+    sealed class GetGalleryPhotosErrors(value: Int) : ErrorCode(value) {
         override fun offset(): Int = 150
 
-        class UnknownError : GalleryPhotosErrors(0)
-        class Ok : GalleryPhotosErrors(1)
-        class BadRequest : GalleryPhotosErrors(2)
-        class NoPhotosInRequest : GalleryPhotosErrors(3)
+        class UnknownError : GetGalleryPhotosErrors(0)
+        class Ok : GetGalleryPhotosErrors(1)
+        class BadRequest : GetGalleryPhotosErrors(2)
+        class NoPhotosInRequest : GetGalleryPhotosErrors(3)
 
-        class LocalBadServerResponse : GalleryPhotosErrors(25)
-        class LocalTimeout : GalleryPhotosErrors(26)
-        class LocalDatabaseError : GalleryPhotosErrors(27)
+        class LocalBadServerResponse : GetGalleryPhotosErrors(25)
+        class LocalTimeout : GetGalleryPhotosErrors(26)
+        class LocalDatabaseError : GetGalleryPhotosErrors(27)
 
         companion object {
-            fun fromInt(value: Int): GalleryPhotosErrors {
+            fun fromInt(value: Int): GetGalleryPhotosErrors {
                 return when (value) {
                     150 -> UnknownError()
                     151 -> Ok()
@@ -271,7 +269,7 @@ sealed class ErrorCode(private val _value: Int) {
             return when (clazz) {
                 UploadPhotoErrors::class -> UploadPhotoErrors.fromInt(errorCodeInt)
                 ReceivePhotosErrors::class -> ReceivePhotosErrors.fromInt(errorCodeInt)
-                GalleryPhotosErrors::class -> GalleryPhotosErrors.fromInt(errorCodeInt)
+                GetGalleryPhotosErrors::class -> GetGalleryPhotosErrors.fromInt(errorCodeInt)
                 FavouritePhotoErrors::class -> FavouritePhotoErrors.fromInt(errorCodeInt)
                 ReportPhotoErrors::class -> ReportPhotoErrors.fromInt(errorCodeInt)
                 GetUserIdError::class -> GetUserIdError.fromInt(errorCodeInt)

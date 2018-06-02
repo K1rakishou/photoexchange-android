@@ -12,4 +12,8 @@ interface UploadPhotoServiceCallbacks {
     fun onUploadingEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent)
     fun onError(error: Throwable)
     fun stopService()
+
+    fun updateUploadingNotificationShowUploading()
+    fun updateUploadingNotificationShowSuccess(message: String)
+    fun updateUploadingNotificationShowError(message: String)
 }

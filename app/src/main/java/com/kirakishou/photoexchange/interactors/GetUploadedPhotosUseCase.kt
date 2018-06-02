@@ -20,13 +20,13 @@ class GetUploadedPhotosUseCase(
 
     private val TAG = "GetUploadedPhotosUseCase"
 
-    fun loadPageOfPhotos(userId: String, lastId: Long, count: Int): Single<Either<ErrorCode, List<UploadedPhoto>>> {
+    fun loadPageOfPhotos(userId: String, lastId: Long, count: Int): Single<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>> {
         return rxSingle {
             try {
                 Timber.tag(TAG).d("sending loadPageOfPhotos request...")
 
                 val response = apiClient.getUploadedPhotoIds(userId, lastId, count).await()
-                val errorCode = response.errorCode
+                val errorCode = response.errorCode as ErrorCode.GetUploadedPhotosErrors
 
                 if (errorCode !is ErrorCode.GetUploadedPhotosErrors.Ok) {
                     return@rxSingle Either.Error(errorCode)
@@ -64,14 +64,18 @@ class GetUploadedPhotosUseCase(
         }
     }
 
-    private suspend fun getFreshPhotosFromServer(userId: String, photoIds: List<Long>): Either<ErrorCode, List<UploadedPhoto>> {
+    private suspend fun getFreshPhotosFromServer(userId: String, photoIds: List<Long>): Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>> {
         val photoIdsToBeRequested = photoIds.joinToString(Constants.PHOTOS_DELIMITER)
 
         val response = apiClient.getUploadedPhotos(userId, photoIdsToBeRequested).await()
-        val errorCode = response.errorCode
+        val errorCode = response.errorCode as ErrorCode.GetUploadedPhotosErrors
 
         if (errorCode !is ErrorCode.GetUploadedPhotosErrors.Ok) {
             return Either.Error(errorCode)
+        }
+
+        if (response.uploadedPhotos.isEmpty()) {
+            return Either.Value(listOf())
         }
 
         if (!uploadedPhotosRepository.saveMany(response.uploadedPhotos)) {

@@ -4,7 +4,6 @@ import android.arch.persistence.room.ColumnInfo
 import android.arch.persistence.room.Entity
 import android.arch.persistence.room.PrimaryKey
 import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity.Companion.TABLE_NAME
-import com.kirakishou.photoexchange.helper.util.TimeUtils
 
 @Entity(tableName = TABLE_NAME)
 class UploadedPhotoEntity(
@@ -13,11 +12,8 @@ class UploadedPhotoEntity(
     @ColumnInfo(name = PHOTO_NAME_COLUMN)
     var photoName: String = "",
 
-    @ColumnInfo(name = LOCAL_PHOTO_ID_COLUMN, index = true)
-    var localPhotoId: Long? = null,
-
-    @ColumnInfo(name = REMOTE_PHOTO_ID_COLUMN, index = true)
-    var remotePhotoId: Long? = null,
+    @ColumnInfo(name = PHOTO_ID_COLUMN, index = true)
+    var photoId: Long? = null,
 
     @ColumnInfo(name = UPLOADER_LON_COLUMN)
     var uploaderLon: Double = 0.0,
@@ -42,14 +38,13 @@ class UploadedPhotoEntity(
             return UploadedPhotoEntity()
         }
 
-        fun create(photoName: String, localPhotoId: Long, lon: Double, lat: Double, hasReceiverInfo: Boolean, uploadedOn: Long): UploadedPhotoEntity {
-            return UploadedPhotoEntity(photoName, localPhotoId, null, lon, lat, hasReceiverInfo, uploadedOn)
+        fun create(photoName: String, takenPhotoId: Long, lon: Double, lat: Double, hasReceiverInfo: Boolean, uploadedOn: Long): UploadedPhotoEntity {
+            return UploadedPhotoEntity(photoName, takenPhotoId, lon, lat, hasReceiverInfo, uploadedOn)
         }
 
         const val TABLE_NAME = "UPLOADED_PHOTO"
 
-        const val LOCAL_PHOTO_ID_COLUMN = "LOCAL_PHOTO_ID"
-        const val REMOTE_PHOTO_ID_COLUMN = "REMOTE_PHOTO_ID"
+        const val PHOTO_ID_COLUMN = "PHOTO_ID"
         const val PHOTO_NAME_COLUMN = "PHOTO_NAME"
         const val UPLOADER_LON_COLUMN = "UPLOADER_LON"
         const val UPLOADER_LAT_COLUMN = "UPLOADER_LAT"

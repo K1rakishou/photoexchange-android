@@ -15,10 +15,10 @@ class FavouritePhotoUseCase(
 ) {
     private val TAG = "FavouritePhotoUseCase"
 
-    fun favouritePhoto(userId: String, photoName: String): Observable<Either<ErrorCode, FavouritePhotoResult>> {
+    fun favouritePhoto(userId: String, photoName: String): Observable<Either<ErrorCode.FavouritePhotoErrors, FavouritePhotoResult>> {
         return apiClient.favouritePhoto(userId, photoName)
             .map { response ->
-                val errorCode = response.errorCode
+                val errorCode = response.errorCode as ErrorCode.FavouritePhotoErrors
                 if (errorCode !is ErrorCode.FavouritePhotoErrors.Ok) {
                     return@map Either.Error(errorCode)
                 }

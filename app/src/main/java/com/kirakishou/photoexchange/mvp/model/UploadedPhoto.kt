@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.mvp.model
 
 data class UploadedPhoto(
-    val photoId: Long,
+    var photoId: Long,
     val photoName: String,
     val uploaderLon: Double,
     val uploaderLat: Double,

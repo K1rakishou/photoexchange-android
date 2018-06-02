@@ -16,6 +16,7 @@ import com.kirakishou.photoexchange.di.module.SchedulerProviderModule
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import io.fabric.sdk.android.Fabric
 import com.crashlytics.android.core.CrashlyticsCore
+import com.facebook.stetho.Stetho
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
 
 
@@ -48,6 +49,8 @@ open class PhotoExchangeApplication : Application() {
     }
 
     open fun init() {
+        Stetho.initializeWithDefaults(this);
+
         initCrashlytics()
         initTimber()
         initLeakCanary()

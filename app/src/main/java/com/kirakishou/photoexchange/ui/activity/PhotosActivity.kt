@@ -199,9 +199,8 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
             }
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext {
-                if (UploadPhotoService.isRunning(this)) {
-                    bindUploadingService(false)
-                }
+                viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(
+                    UploadedPhotosFragmentEvent.UiEvents.LoadTakenPhotos())
             }
             .subscribe()
     }
@@ -311,14 +310,6 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
 
     override fun onUploadPhotosEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
         viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(event)
-
-        when (event) {
-            is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
-                if (ReceivePhotosService.isRunning(this)) {
-                    bindReceivingService(false)
-                }
-            }
-        }
     }
 
     override fun onPhotoFindEvent(event: ReceivedPhotosFragmentEvent.ReceivePhotosEvent) {
@@ -375,8 +366,12 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
             }
             .zipWith(Single.timer(PHOTO_DELETE_DELAY, TimeUnit.MILLISECONDS))
             .flatMap { viewModel.deletePhotoById(photo.id).toSingleDefault(Unit) }
-            .doOnError { Timber.e(it) }
-            .subscribe()
+            .subscribe({
+                viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(
+                    UploadedPhotosFragmentEvent.UiEvents.OnPhotoRemoved())
+            }, {
+                Timber.e(it)
+            })
 
         compositeDisposable += disposable
 
@@ -450,7 +445,7 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
         }
     }
 
-    fun showUploadPhotoErrorMessage(errorCode: ErrorCode) {
+    fun showKnownErrorMessage(errorCode: ErrorCode) {
         showErrorCodeToast(errorCode)
     }
 

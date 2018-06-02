@@ -2,8 +2,10 @@ package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.util.Utils
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
@@ -14,19 +16,21 @@ import kotlinx.coroutines.experimental.rx2.rxSingle
 import timber.log.Timber
 
 class GetReceivedPhotosUseCase(
+    private val database: MyDatabase,
     private val receivedPhotosRepository: ReceivedPhotosRepository,
+    private val uploadedPhotosRepository: UploadedPhotosRepository,
     private val apiClient: ApiClient
 ) {
 
     private val TAG = "GetReceivedPhotosUseCase"
 
-    fun loadPageOfPhotos(userId: String, lastId: Long, count: Int): Single<Either<ErrorCode, List<ReceivedPhoto>>> {
+    fun loadPageOfPhotos(userId: String, lastId: Long, count: Int): Single<Either<ErrorCode.GetReceivedPhotosErrors, List<ReceivedPhoto>>> {
         return rxSingle {
             try {
                 Timber.tag(TAG).d("sending loadPageOfPhotos request...")
 
                 val response = apiClient.getReceivedPhotoIds(userId, lastId, count).await()
-                val errorCode = response.errorCode
+                val errorCode = response.errorCode as ErrorCode.GetReceivedPhotosErrors
 
                 if (errorCode !is ErrorCode.GetReceivedPhotosErrors.Ok) {
                     return@rxSingle Either.Error(errorCode)
@@ -64,11 +68,11 @@ class GetReceivedPhotosUseCase(
         }
     }
 
-    private suspend fun getFreshPhotosFromServer(userId: String, photoIds: List<Long>): Either<ErrorCode, List<ReceivedPhoto>> {
+    private suspend fun getFreshPhotosFromServer(userId: String, photoIds: List<Long>): Either<ErrorCode.GetReceivedPhotosErrors, List<ReceivedPhoto>> {
         val photoIdsToBeRequested = photoIds.joinToString(Constants.PHOTOS_DELIMITER)
 
         val response = apiClient.getReceivedPhotos(userId, photoIdsToBeRequested).await()
-        val errorCode = response.errorCode
+        val errorCode = response.errorCode as ErrorCode.GetReceivedPhotosErrors
 
         if (errorCode !is ErrorCode.GetReceivedPhotosErrors.Ok) {
             return Either.Error(errorCode)
@@ -78,7 +82,21 @@ class GetReceivedPhotosUseCase(
             return Either.Value(emptyList())
         }
 
-        if (!receivedPhotosRepository.saveMany(response.receivedPhotos)) {
+        val transactionResult = database.transactional {
+            for (receivedPhoto in response.receivedPhotos) {
+                if (!uploadedPhotosRepository.updateReceiverInfo(receivedPhoto.uploadedPhotoName)) {
+                    return@transactional false
+                }
+            }
+
+            if (!receivedPhotosRepository.saveMany(response.receivedPhotos)) {
+                return@transactional false
+            }
+
+            return@transactional true
+        }
+
+        if (!transactionResult) {
             return Either.Error(ErrorCode.GetReceivedPhotosErrors.DatabaseError())
         }
 

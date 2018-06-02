@@ -15,38 +15,30 @@ class GetUserIdUseCase(
 ) {
     private val TAG = "GetUserIdUseCase"
 
-    fun getUserId(): Single<Either<ErrorCode, String>> {
-        return rxSingle {
-            try {
-                val userId = settingsRepository.getUserId()
+    fun getUserId(): Single<Either<ErrorCode.GetUserIdError, String>> {
+        return Single.fromCallable { settingsRepository.getUserId() }
+            .flatMap { userId ->
                 if (userId.isNotEmpty()) {
-                    return@rxSingle Either.Value(userId)
+                    return@flatMap Single.just(Either.Value(userId))
                 }
 
-                val response = try {
-                    apiClient.getUserId().await()
-                } catch (error: RuntimeException) {
-                    if (error.cause == null && error.cause !is InterruptedException) {
-                        throw error
+                return@flatMap apiClient.getUserId()
+                    .map { response ->
+                        val errorCode = response.errorCode as ErrorCode.GetUserIdError
+                        if (errorCode !is ErrorCode.GetUserIdError.Ok) {
+                            return@map Either.Error(errorCode)
+                        }
+
+                        if (!settingsRepository.saveUserId(response.userId)) {
+                            return@map Either.Error(ErrorCode.GetUserIdError.LocalDatabaseError())
+                        }
+
+                        return@map Either.Value(response.userId)
                     }
-
-                    return@rxSingle Either.Error(ErrorCode.UploadPhotoErrors.LocalInterrupted())
-                }
-
-                val errorCode = response.errorCode
-                if (errorCode !is ErrorCode.GetUserIdError.Ok) {
-                    return@rxSingle Either.Error(ErrorCode.UploadPhotoErrors.LocalCouldNotGetUserId())
-                }
-
-                if (!settingsRepository.saveUserId(response.userId)) {
-                    return@rxSingle Either.Error(ErrorCode.UploadPhotoErrors.LocalDatabaseError())
-                }
-
-                return@rxSingle Either.Value(response.userId)
-            } catch (error: Throwable) {
-                Timber.tag(TAG).e(error)
-                return@rxSingle Either.Error(ErrorCode.GetUserIdError.UnknownError())
             }
-        }
+            .onErrorReturn { error ->
+                Timber.tag(TAG).e(error)
+                return@onErrorReturn Either.Error(ErrorCode.GetUserIdError.UnknownError())
+            }
     }
 }
