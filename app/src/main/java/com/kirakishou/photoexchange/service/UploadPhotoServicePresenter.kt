@@ -77,6 +77,7 @@ class UploadPhotoServicePresenter(
                         sendEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd(allUploaded))
                     }
                     .doOnError { error ->
+                        updatePhotosStates()
                         updateServiceNotification(ServiceNotification.Error("Could not upload one or more photos"))
                         handleUnknownErrors(error)
                     }
@@ -85,6 +86,11 @@ class UploadPhotoServicePresenter(
             }
             .doOnEach { stopService() }
             .subscribe()
+    }
+
+    private fun updatePhotosStates() {
+        takenPhotosRepository.updateStates(PhotoState.PHOTO_QUEUED_UP, PhotoState.FAILED_TO_UPLOAD)
+        takenPhotosRepository.updateStates(PhotoState.PHOTO_UPLOADING, PhotoState.FAILED_TO_UPLOAD)
     }
 
     fun onDetach() {

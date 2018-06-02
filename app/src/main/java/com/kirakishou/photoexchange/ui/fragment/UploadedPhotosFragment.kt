@@ -144,13 +144,17 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                     .doOnNext { photos -> addTakenPhotosToAdapter(photos) }
             }
             .observeOn(Schedulers.io())
-            .flatMap {
+            .flatMap { takenPhotos ->
+                val hasFailedToUploadPhotos = takenPhotos.any { it.photoState == PhotoState.FAILED_TO_UPLOAD }
+
                 return@flatMap viewModel.checkHasPhotosToUpload()
                     .doOnNext { hasPhotosToUpload ->
                         if (hasPhotosToUpload) {
                             viewModel.eventForwarder.sendPhotoActivityEvent(PhotosActivityEvent.StartUploadingService())
                         } else {
-                            loadFirstPageOfUploadedPhotos()
+                            if (!hasFailedToUploadPhotos) {
+                                loadFirstPageOfUploadedPhotos()
+                            }
                         }
                     }
             }

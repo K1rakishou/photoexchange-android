@@ -66,6 +66,7 @@ class UploadPhotosUseCase(
                     emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUploaded(uploadedPhoto))
                     emitter.onComplete()
                 }, { error ->
+                    takenPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
                     emitter.onNext(UploadedPhotosFragmentEvent.unknownError(error))
                 })
         } catch (error: Throwable) {
