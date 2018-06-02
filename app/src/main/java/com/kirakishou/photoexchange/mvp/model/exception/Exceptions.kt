@@ -6,7 +6,7 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 class ErrorCodeException(val errorCode: ErrorCode) : Exception()
 
 class ApiException(val errorCode: ErrorCode) : Exception()
-class CouldNotGetUserIdException : Exception()
+class CouldNotGetUserIdException(val errorCode: ErrorCode.GetUserIdError) : Exception()
 
 sealed class PhotoUploadingException(val takenPhoto: TakenPhoto) : Exception() {
     class PhotoDoesNotExistOnDisk(takenPhoto: TakenPhoto) : PhotoUploadingException(takenPhoto)

@@ -40,7 +40,6 @@ sealed class ErrorCode(private val _value: Int) {
         class LocalTimeout : UploadPhotoErrors(27)
         class LocalInterrupted : UploadPhotoErrors(28)
         class LocalDatabaseError : UploadPhotoErrors(29)
-        class LocalCouldNotGetUserId : UploadPhotoErrors(30)
         class CouldNotRotatePhoto : UploadPhotoErrors(31)
 
         companion object {
@@ -52,11 +51,10 @@ sealed class ErrorCode(private val _value: Int) {
                     53 -> DatabaseError()
 
                     75 -> LocalBadServerResponse()
-                    66 -> LocalNoPhotoFileOnDisk()
+                    76 -> LocalNoPhotoFileOnDisk()
                     77 -> LocalTimeout()
                     78 -> LocalInterrupted()
                     79 -> LocalDatabaseError()
-                    800 -> LocalCouldNotGetUserId()
                     else -> throw IllegalArgumentException("Unknown value $value")
                 }
             }

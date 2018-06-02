@@ -450,7 +450,7 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
         }
     }
 
-    fun showUploadPhotoErrorMessage(errorCode: ErrorCode) {
+    fun showKnownErrorMessage(errorCode: ErrorCode) {
         showErrorCodeToast(errorCode)
     }
 

@@ -41,7 +41,6 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     private val binder = UploadPhotosBinder()
     private val compositeDisposable = CompositeDisposable()
 
-    private val GPS_DELAY_MS = 1.seconds()
     private val GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS = 15.seconds()
     private var callback = WeakReference<PhotoUploadingCallback>(null)
     private val NOTIFICATION_ID = 1
@@ -59,6 +58,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     override fun onDestroy() {
         super.onDestroy()
 
+        removeNotification()
         presenter.onDetach()
         detachCallback()
         compositeDisposable.clear()
@@ -120,10 +120,13 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
                     .timeout(GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS, TimeUnit.MILLISECONDS)
                     .onErrorReturnItem(LonLat.empty())
             }
-            .delay(GPS_DELAY_MS, TimeUnit.MILLISECONDS)
     }
 
     //notifications
+    private fun removeNotification() {
+        getNotificationManager().cancel(NOTIFICATION_ID)
+    }
+
     private fun updateUploadingNotificationShowUploading() {
         val newNotification = createNotificationUploading()
         getNotificationManager().notify(NOTIFICATION_ID, newNotification)

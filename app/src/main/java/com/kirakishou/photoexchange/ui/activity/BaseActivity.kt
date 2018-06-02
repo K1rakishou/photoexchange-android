@@ -186,7 +186,6 @@ abstract class BaseActivity : AppCompatActivity() {
 
             is ErrorCode.UploadPhotoErrors.LocalNoPhotoFileOnDisk -> "No photo on disk"
             is ErrorCode.UploadPhotoErrors.LocalInterrupted -> "Interrupted by user"
-            is ErrorCode.UploadPhotoErrors.LocalCouldNotGetUserId -> "Could not get user photoId from the server"
             is ErrorCode.ReceivePhotosErrors.NoPhotosToSendBack -> "Server has no available photos"
             is ErrorCode.ReceivePhotosErrors.LocalTooManyPhotosRequested -> "Too many photos in one request"
             is ErrorCode.ReceivePhotosErrors.LocalNotEnoughPhotosUploaded -> "Upload more photos first"

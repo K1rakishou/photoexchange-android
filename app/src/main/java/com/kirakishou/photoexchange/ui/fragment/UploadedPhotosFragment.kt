@@ -219,26 +219,33 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                 is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUpload -> {
                     adapter.removePhotoById(event.photo.id)
                     adapter.addTakenPhoto(event.photo.also { it.photoState = PhotoState.FAILED_TO_UPLOAD })
-                    (requireActivity() as PhotosActivity).showUploadPhotoErrorMessage(event.errorCode)
+                    (requireActivity() as PhotosActivity).showKnownErrorMessage(event.errorCode)
                 }
                 is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFoundPhotoAnswer -> {
                     adapter.updateUploadedPhotoSetReceiverInfo(event.takenPhotoName)
                 }
                 is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
                     viewModel.eventForwarder.sendPhotoActivityEvent(PhotosActivityEvent.StartReceivingService())
+                    loadFirstPageOfUploadedPhotos()
                 }
-                is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError -> {
-                    handleUnknownErrors(event.error)
+                is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnError -> {
+                    when (event.error) {
+                        is UploadedPhotosFragmentEvent.UploadingError.KnownError -> {
+                            handleKnownErrors(event.error.errorCode)
+                        }
+                        is UploadedPhotosFragmentEvent.UploadingError.UnknownError -> {
+                            handleUnknownErrors(event.error.error)
+                        }
+                    }
                 }
                 else -> throw IllegalArgumentException("Unknown PhotoUploadEvent $event")
             }
-
-            if (event is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd ||
-                event is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError) {
-                Timber.tag(TAG).d("Loading first page of uploaded photos, event = $event")
-                loadFirstPageOfUploadedPhotos()
-            }
         }
+    }
+
+    private fun handleKnownErrors(errorCode: ErrorCode.UploadPhotoErrors) {
+        (requireActivity() as PhotosActivity).showKnownErrorMessage(errorCode)
+        adapter.updateAllPhotosState(PhotoState.FAILED_TO_UPLOAD)
     }
 
     private fun handleUnknownErrors(error: Throwable) {
