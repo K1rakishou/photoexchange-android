@@ -47,7 +47,7 @@ object UploadedPhotosMapper {
         object ToObject {
             fun toUploadedPhoto(uploadedPhotoEntity: UploadedPhotoEntity): UploadedPhoto {
                 return UploadedPhoto(
-                    uploadedPhotoEntity.localPhotoId!!,
+                    uploadedPhotoEntity.photoId!!,
                     uploadedPhotoEntity.photoName,
                     uploadedPhotoEntity.uploaderLon,
                     uploadedPhotoEntity.uploaderLat,
@@ -64,10 +64,10 @@ object UploadedPhotosMapper {
 
     object FromObject {
         object ToEntity {
-            fun toUploadedPhotoEntity(takenPhoto: TakenPhoto, lon: Double, lat: Double, uploadedOn: Long): UploadedPhotoEntity {
+            fun toUploadedPhotoEntity(photoId: Long, photoName: String, lon: Double, lat: Double, uploadedOn: Long): UploadedPhotoEntity {
                 return UploadedPhotoEntity.create(
-                    takenPhoto.photoName!!,
-                    takenPhoto.id,
+                    photoName,
+                    photoId,
                     lon,
                     lat,
                     false,

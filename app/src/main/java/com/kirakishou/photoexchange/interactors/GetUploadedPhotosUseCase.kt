@@ -74,6 +74,10 @@ class GetUploadedPhotosUseCase(
             return Either.Error(errorCode)
         }
 
+        if (response.uploadedPhotos.isEmpty()) {
+            return Either.Value(listOf())
+        }
+
         if (!uploadedPhotosRepository.saveMany(response.uploadedPhotos)) {
             return Either.Error(ErrorCode.GetUploadedPhotosErrors.DatabaseError())
         }

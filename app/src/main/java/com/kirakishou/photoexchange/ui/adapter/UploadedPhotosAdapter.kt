@@ -153,11 +153,11 @@ class UploadedPhotosAdapter(
         duplicatesCheckerSet.add(photo.photoId)
 
         if (!photo.hasReceiverInfo) {
-            uploadedItems.add(0, UploadedPhotosAdapterItem.UploadedPhotoItem(photo))
-            notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size)
-        } else {
-            uploadedWithReceiverInfoItems.add(0, UploadedPhotosAdapterItem.UploadedPhotoItem(photo))
+            uploadedItems.add(UploadedPhotosAdapterItem.UploadedPhotoItem(photo))
             notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size)
+        } else {
+            uploadedWithReceiverInfoItems.add(UploadedPhotosAdapterItem.UploadedPhotoItem(photo))
+            notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size + uploadedItems.size)
         }
     }
 
@@ -311,38 +311,6 @@ class UploadedPhotosAdapter(
         }
     }
 
-//    private fun updateAdapterItemById(photoId: Long, updateFunction: (photo: TakenPhoto) -> TakenPhoto) {
-//        var currentIndex = headerItems.size
-//
-//        if (!isPhotoAlreadyAdded(photoId)) {
-//            return
-//        }
-//
-//        for ((localIndex, adapterItem) in queuedUpItems.withIndex()) {
-//            adapterItem as UploadedPhotosAdapterItem.TakenPhotoItem
-//            if (adapterItem.takenPhoto.photoId == photoId) {
-//                val updatedAdapterItem = updateFunction(adapterItem.takenPhoto)
-//                queuedUpItems[localIndex] = UploadedPhotosAdapterItem.TakenPhotoItem(updatedAdapterItem)
-//                notifyItemChanged(currentIndex)
-//                return
-//            }
-//
-//            ++currentIndex
-//        }
-//
-//        for ((localIndex, adapterItem) in failedToUploadItems.withIndex()) {
-//            adapterItem as UploadedPhotosAdapterItem.FailedToUploadItem
-//            if (adapterItem.failedToUploadPhoto.photoId == photoId) {
-//                val updatedAdapterItem = updateFunction(adapterItem.failedToUploadPhoto)
-//                failedToUploadItems[localIndex] = UploadedPhotosAdapterItem.FailedToUploadItem(updatedAdapterItem)
-//                notifyItemChanged(currentIndex)
-//                return
-//            }
-//
-//            ++currentIndex
-//        }
-//    }
-
     private fun isPhotoAlreadyAdded(photoId: Long): Boolean {
         return duplicatesCheckerSet.contains(photoId)
     }
@@ -417,7 +385,7 @@ class UploadedPhotosAdapter(
                         }
                     }
                     PhotoState.PHOTO_TAKEN -> {
-                        throw IllegalStateException("photo with state PHOTO_TAKEN should not be here!")
+                        throw IllegalStateException("uploadedPhoto with state PHOTO_TAKEN should not be here!")
                     }
                 }
             }

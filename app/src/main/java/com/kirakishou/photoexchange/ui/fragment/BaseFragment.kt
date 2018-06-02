@@ -1,6 +1,5 @@
 package com.kirakishou.photoexchange.ui.fragment
 
-import android.arch.lifecycle.LifecycleRegistry
 import android.content.Context
 import android.os.Bundle
 import android.support.v4.app.Fragment
@@ -10,8 +9,8 @@ import android.view.ViewGroup
 import butterknife.ButterKnife
 import butterknife.Unbinder
 import com.kirakishou.photoexchange.PhotoExchangeApplication
+import com.kirakishou.photoexchange.helper.RxLifecycle
 import io.reactivex.disposables.CompositeDisposable
-import timber.log.Timber
 
 /**
  * Created by kirakishou on 11/7/2017.
@@ -19,21 +18,19 @@ import timber.log.Timber
 
 abstract class BaseFragment : Fragment() {
 
-    protected val registry by lazy {
-        LifecycleRegistry(this)
-    }
-
-    override fun getLifecycle(): LifecycleRegistry = registry
-
     protected val compositeDisposable = CompositeDisposable()
+    protected lateinit var lifecycle: RxLifecycle
     private lateinit var unBinder: Unbinder
 
     override fun onAttach(context: Context?) {
         super.onAttach(context)
+
+        lifecycle = RxLifecycle()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        lifecycle.onCreate()
         retainInstance = false
     }
 
@@ -48,6 +45,11 @@ abstract class BaseFragment : Fragment() {
         return root
     }
 
+    override fun onStart() {
+        super.onStart()
+        lifecycle.onStart()
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -55,11 +57,31 @@ abstract class BaseFragment : Fragment() {
         onFragmentViewCreated(savedInstanceState)
     }
 
+    override fun onResume() {
+        super.onResume()
+        lifecycle.onResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        lifecycle.onPause()
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
 
         onFragmentViewDestroy()
         unBinder.unbind()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        lifecycle.onStop()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        lifecycle.onDestroy()
     }
 
     override fun onDetach() {

@@ -69,7 +69,6 @@ class UploadPhotoServicePresenter(
                                     //1 second delay before starting to upload the next photo
                                     .delay(1, TimeUnit.SECONDS)
                                     .map { true }
-                                    .onErrorReturnItem(false)
                             }
                     }
                     .doOnNext { allUploaded ->

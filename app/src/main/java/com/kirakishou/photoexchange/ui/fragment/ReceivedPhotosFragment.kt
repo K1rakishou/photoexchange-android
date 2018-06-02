@@ -9,8 +9,9 @@ import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.helper.extension.filterErrorCodes
+import com.kirakishou.photoexchange.helper.RxLifecycle
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
+import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
@@ -19,10 +20,10 @@ import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapterSpanSizeLookup
-import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
@@ -54,7 +55,6 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRx()
         initRecyclerView()
-        loadFirstPage()
     }
 
     override fun onFragmentViewDestroy() {
@@ -68,11 +68,11 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
 
-        compositeDisposable += loadMoreSubject
-            .subscribeOn(AndroidSchedulers.mainThread())
+        compositeDisposable += lifecycle.getLifecycle()
+            .filter { it.isAtLeast(RxLifecycle.FragmentState.Resumed) }
+            .take(1)
             .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
             .concatMap { viewModel.loadNextPageOfReceivedPhotos(lastId, photosPerPage) }
-            .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
             .subscribe({ result ->
                 when (result) {
@@ -82,14 +82,15 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
             }, {
                 Timber.tag(TAG).e(it)
             })
-    }
 
-    private fun loadFirstPage() {
-        compositeDisposable += Observable.just(Unit)
-            .subscribeOn(Schedulers.io())
+        compositeDisposable += Observables.combineLatest(loadMoreSubject, lifecycle.getLifecycle())
+            .concatMap { (nextPage, lifecycle) ->
+                return@concatMap Observable.just(lifecycle)
+                    .filter { _lifecycle -> _lifecycle.isAtLeast(RxLifecycle.FragmentState.Resumed) }
+                    .map { nextPage }
+            }
             .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
             .concatMap { viewModel.loadNextPageOfReceivedPhotos(lastId, photosPerPage) }
-            .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
             .subscribe({ result ->
                 when (result) {
@@ -110,7 +111,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
         layoutManager.spanSizeLookup = ReceivedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
 
         photosPerPage = Constants.RECEIVED_PHOTOS_PER_ROW * layoutManager.spanCount
-        endlessScrollListener = EndlessRecyclerOnScrollListener(layoutManager, photosPerPage, loadMoreSubject)
+        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, loadMoreSubject, 1)
 
         receivedPhotosList.layoutManager = layoutManager
         receivedPhotosList.adapter = adapter

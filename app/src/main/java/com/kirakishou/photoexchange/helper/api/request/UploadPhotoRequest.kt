@@ -52,12 +52,10 @@ class UploadPhotoRequest<T>(
             .observeOn(schedulerProvider.IO())
             .flatMap { body ->
                 return@flatMap apiService.uploadPhoto(body.part(0), body.part(1))
-                    .doOnSubscribe { Timber.tag(tag).d("calling apiService.uploadPhoto") }
-                    .doOnSuccess { Timber.tag(tag).d("after apiService.uploadPhoto") }
                     .lift(OnApiErrorSingle<UploadPhotoResponse>(gson, UploadPhotoResponse::class))
                     .map { response ->
                         if (ErrorCode.UploadPhotoErrors.fromInt(response.serverErrorCode!!) is ErrorCode.UploadPhotoErrors.Ok) {
-                            return@map UploadPhotoResponse.success(response.photoName)
+                            return@map UploadPhotoResponse.success(response.photoId, response.photoName)
                         } else {
                             return@map UploadPhotoResponse.error(ErrorCode.fromInt(ErrorCode.UploadPhotoErrors::class, response.serverErrorCode!!))
                         }

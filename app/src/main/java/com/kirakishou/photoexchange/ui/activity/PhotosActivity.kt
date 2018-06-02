@@ -199,9 +199,8 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
             }
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext {
-                if (UploadPhotoService.isRunning(this)) {
-                    bindUploadingService(false)
-                }
+                viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(
+                    UploadedPhotosFragmentEvent.UiEvents.LoadTakenPhotos())
             }
             .subscribe()
     }
@@ -311,14 +310,6 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
 
     override fun onUploadPhotosEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
         viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(event)
-
-        when (event) {
-            is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
-                if (ReceivePhotosService.isRunning(this)) {
-                    bindReceivingService(false)
-                }
-            }
-        }
     }
 
     override fun onPhotoFindEvent(event: ReceivedPhotosFragmentEvent.ReceivePhotosEvent) {
@@ -377,7 +368,7 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
             .flatMap { viewModel.deletePhotoById(photo.id).toSingleDefault(Unit) }
             .subscribe({
                 viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(
-                    UploadedPhotosFragmentEvent.UiEvents.LoadFirstPageOfPhotos())
+                    UploadedPhotosFragmentEvent.UiEvents.OnPhotoRemoved())
             }, {
                 Timber.e(it)
             })

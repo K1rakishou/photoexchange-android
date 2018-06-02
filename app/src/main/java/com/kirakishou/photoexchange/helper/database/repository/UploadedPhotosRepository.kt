@@ -4,7 +4,6 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
 import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
-import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.net.response.GetUploadedPhotosResponse
 
@@ -16,7 +15,7 @@ open class UploadedPhotosRepository(
     private fun save(uploadedPhotoEntity: UploadedPhotoEntity): Boolean {
         val cachedPhoto = uploadedPhotoDao.findByPhotoName(uploadedPhotoEntity.photoName)
         if (cachedPhoto != null) {
-            uploadedPhotoEntity.localPhotoId = cachedPhoto.localPhotoId
+            uploadedPhotoEntity.photoId = cachedPhoto.photoId
         }
 
         return uploadedPhotoDao.save(uploadedPhotoEntity).isSuccess()
@@ -35,12 +34,12 @@ open class UploadedPhotosRepository(
         }
     }
 
-    fun findMany(uploadedPhotoIds: List<Long>): List<UploadedPhoto> {
-        return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.findMany(uploadedPhotoIds))
+    fun findMany(photoIds: List<Long>): List<UploadedPhoto> {
+        return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.findMany(photoIds))
     }
 
-    fun save(photo: TakenPhoto, lon: Double, lat: Double, uploadedOn: Long): Boolean {
-        val uploadedPhotoEntity = UploadedPhotosMapper.FromObject.ToEntity.toUploadedPhotoEntity(photo, lon, lat, uploadedOn)
+    fun save(photoId: Long, photoName: String, lon: Double, lat: Double, uploadedOn: Long): Boolean {
+        val uploadedPhotoEntity = UploadedPhotosMapper.FromObject.ToEntity.toUploadedPhotoEntity(photoId, photoName, lon, lat, uploadedOn)
         return uploadedPhotoDao.save(uploadedPhotoEntity).isSuccess()
     }
 

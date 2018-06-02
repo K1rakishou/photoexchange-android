@@ -63,7 +63,7 @@ class UploadPhotosUseCase(
                 .doOnEvent { _, _ -> FileUtils.deleteFile(photoFile) }
                 //since we subscribe in a singleton - we don't really need to care about disposing the disposable
                 .subscribe({ uploadedPhoto ->
-                    emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUploaded(uploadedPhoto))
+                    emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUploaded(photo, uploadedPhoto))
                     emitter.onComplete()
                 }, { error ->
                     takenPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
@@ -85,11 +85,12 @@ class UploadPhotosUseCase(
     }
 
     private fun handlePhotoUploaded(photo: TakenPhoto, location: LonLat, response: UploadPhotoResponse): UploadedPhoto {
-        photo.photoName = response.photoName
+        val photoId = response.photoId
+        val photoName = response.photoName
 
         val dbResult = database.transactional {
             val updateResult1 = takenPhotosRepository.deletePhotoById(photo.id)
-            val updateResult2 = uploadedPhotosRepository.save(photo, location.lon, location.lat, TimeUtils.getTimeFast())
+            val updateResult2 = uploadedPhotosRepository.save(photoId, photoName, location.lon, location.lat, TimeUtils.getTimeFast())
 
             Timber.tag(TAG).d("updateResult1 = $updateResult1, updateResult2 = $updateResult2")
             return@transactional updateResult1 && updateResult2
@@ -99,7 +100,7 @@ class UploadPhotosUseCase(
             throw PhotoUploadingException.DatabaseException(photo)
         }
 
-        return UploadedPhoto(photo.id, photo.photoName!!, location.lon, location.lat, false, TimeUtils.getTimeFast())
+        return UploadedPhoto(photoId, photoName, location.lon, location.lat, false, TimeUtils.getTimeFast())
     }
 
     interface PhotoUploadProgressCallback {

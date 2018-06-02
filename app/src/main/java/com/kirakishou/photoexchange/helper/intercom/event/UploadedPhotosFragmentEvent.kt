@@ -11,7 +11,8 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
         class RemovePhoto(val photo: TakenPhoto) : UiEvents()
         class AddPhoto(val photo: TakenPhoto) : UiEvents()
         class ScrollToTop : UiEvents()
-        class LoadFirstPageOfPhotos : UiEvents()
+        class OnPhotoRemoved : UiEvents()
+        class LoadTakenPhotos : UiEvents()
     }
 
     sealed class PhotoUploadEvent : UploadedPhotosFragmentEvent() {
@@ -20,7 +21,8 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
         class OnError(val error: UploadingError) : PhotoUploadEvent()
         class OnPhotoUploadStart(val photo: TakenPhoto) : PhotoUploadEvent()
         class OnProgress(val photo: TakenPhoto, val progress: Int) : PhotoUploadEvent()
-        class OnUploaded(val photo: UploadedPhoto) : PhotoUploadEvent()
+        class OnUploaded(val takenPhoto: TakenPhoto,
+                         val uploadedPhoto: UploadedPhoto) : PhotoUploadEvent()
         class OnFoundPhotoAnswer(val takenPhotoName: String) : PhotoUploadEvent()
         class OnEnd(val allUploaded: Boolean) : PhotoUploadEvent()
     }

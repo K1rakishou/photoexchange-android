@@ -21,16 +21,8 @@ abstract class UploadedPhotoDao {
     abstract fun findByPhotoName(photoName: String): UploadedPhotoEntity?
 
     @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
-        "WHERE ${UploadedPhotoEntity.REMOTE_PHOTO_ID_COLUMN} IN (:uploadedPhotoIds)")
-    abstract fun findMany(uploadedPhotoIds: List<Long>): List<UploadedPhotoEntity>
-
-    @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
-        "WHERE ${UploadedPhotoEntity.PHOTO_NAME_COLUMN} IN (:photoNames)")
-    abstract fun findManyByPhotoName(photoNames: List<String>): List<UploadedPhotoEntity>
-
-    @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
-        "WHERE ${UploadedPhotoEntity.REMOTE_PHOTO_ID_COLUMN} IN (:photoIds)")
-    abstract fun findManyByRemotePhotoId(photoIds: List<Long>): List<UploadedPhotoEntity>
+        "WHERE ${UploadedPhotoEntity.PHOTO_ID_COLUMN} IN (:photoIds)")
+    abstract fun findMany(photoIds: List<Long>): List<UploadedPhotoEntity>
 
     @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
         "WHERE ${UploadedPhotoEntity.HAS_RECEIVER_INFO_COLUMN} = ${MyDatabase.SQLITE_TRUE}")
