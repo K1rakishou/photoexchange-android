@@ -121,7 +121,7 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.TakePhotoErrors.Ok,
             is ErrorCode.UploadPhotoErrors.Ok,
             is ErrorCode.ReceivePhotosErrors.Ok,
-            is ErrorCode.GalleryPhotosErrors.Ok,
+            is ErrorCode.GetGalleryPhotosErrors.Ok,
             is ErrorCode.FavouritePhotoErrors.Ok,
             is ErrorCode.ReportPhotoErrors.Ok,
             is ErrorCode.GetUserIdError.Ok,
@@ -131,7 +131,7 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.TakePhotoErrors.UnknownError,
             is ErrorCode.UploadPhotoErrors.UnknownError,
             is ErrorCode.ReceivePhotosErrors.UnknownError,
-            is ErrorCode.GalleryPhotosErrors.UnknownError,
+            is ErrorCode.GetGalleryPhotosErrors.UnknownError,
             is ErrorCode.FavouritePhotoErrors.UnknownError,
             is ErrorCode.ReportPhotoErrors.UnknownError,
             is ErrorCode.GetUserIdError.UnknownError,
@@ -140,14 +140,14 @@ abstract class BaseActivity : AppCompatActivity() {
 
             is ErrorCode.UploadPhotoErrors.BadRequest,
             is ErrorCode.ReceivePhotosErrors.BadRequest,
-            is ErrorCode.GalleryPhotosErrors.BadRequest,
+            is ErrorCode.GetGalleryPhotosErrors.BadRequest,
             is ErrorCode.FavouritePhotoErrors.BadRequest,
             is ErrorCode.ReportPhotoErrors.BadRequest,
             is ErrorCode.GetUploadedPhotosErrors.BadRequest,
             is ErrorCode.GetReceivedPhotosErrors.BadRequest -> "Bad request error"
 
             is ErrorCode.ReceivePhotosErrors.NoPhotosInRequest,
-            is ErrorCode.GalleryPhotosErrors.NoPhotosInRequest,
+            is ErrorCode.GetGalleryPhotosErrors.NoPhotosInRequest,
             is ErrorCode.GetUploadedPhotosErrors.NoPhotosInRequest,
             is ErrorCode.GetReceivedPhotosErrors.NoPhotosInRequest -> "Bad request error (no photos in request)"
 
@@ -157,7 +157,7 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.GetUploadedPhotosErrors.DatabaseError,
             is ErrorCode.GetReceivedPhotosErrors.DatabaseError -> "Server database error"
 
-            is ErrorCode.GalleryPhotosErrors.LocalBadServerResponse,
+            is ErrorCode.GetGalleryPhotosErrors.LocalBadServerResponse,
             is ErrorCode.UploadPhotoErrors.LocalBadServerResponse,
             is ErrorCode.ReceivePhotosErrors.LocalBadServerResponse,
             is ErrorCode.FavouritePhotoErrors.LocalBadServerResponse,
@@ -168,7 +168,7 @@ abstract class BaseActivity : AppCompatActivity() {
 
             is ErrorCode.UploadPhotoErrors.LocalTimeout,
             is ErrorCode.ReceivePhotosErrors.LocalTimeout,
-            is ErrorCode.GalleryPhotosErrors.LocalTimeout,
+            is ErrorCode.GetGalleryPhotosErrors.LocalTimeout,
             is ErrorCode.FavouritePhotoErrors.LocalTimeout,
             is ErrorCode.ReportPhotoErrors.LocalTimeout,
             is ErrorCode.GetUserIdError.LocalTimeout,
@@ -177,7 +177,7 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.TakePhotoErrors.TimeoutException -> "Operation timeout error"
 
             is ErrorCode.ReceivePhotosErrors.LocalDatabaseError,
-            is ErrorCode.GalleryPhotosErrors.LocalDatabaseError,
+            is ErrorCode.GetGalleryPhotosErrors.LocalDatabaseError,
             is ErrorCode.UploadPhotoErrors.LocalDatabaseError,
             is ErrorCode.GetUserIdError.LocalDatabaseError -> "Couldn't store data from the server on the disk"
 

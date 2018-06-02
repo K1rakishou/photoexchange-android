@@ -9,9 +9,6 @@ import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.helper.extension.filterErrorCodes
-import com.kirakishou.photoexchange.helper.intercom.StateEventListener
-import com.kirakishou.photoexchange.helper.intercom.event.BaseEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
@@ -70,11 +67,11 @@ class GalleryFragment : BaseFragment() {
             .observeOn(Schedulers.io())
             .flatMap { viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage) }
             .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { removeProgressFooter() }
+            .doOnNext { hideProgressFooter() }
             .subscribe({ result ->
                 when (result) {
                     is Either.Value -> addPhotoToAdapter(result.value)
-                    is Either.Error -> handleError(result.error)
+                    is Either.Error -> handleGetGalleryPhotosError(result.error)
                 }
             }, {
                 Timber.tag(TAG).e(it)
@@ -88,11 +85,11 @@ class GalleryFragment : BaseFragment() {
             .observeOn(Schedulers.io())
             .concatMap { viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage) }
             .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { removeProgressFooter() }
+            .doOnNext { hideProgressFooter() }
             .subscribe({ result ->
                 when (result) {
                     is Either.Value -> addPhotoToAdapter(result.value)
-                    is Either.Error -> handleError(result.error)
+                    is Either.Error -> handleGetGalleryPhotosError(result.error)
                 }
             }, {
                 Timber.tag(TAG).e(it)
@@ -109,7 +106,7 @@ class GalleryFragment : BaseFragment() {
 
                 when (result) {
                     is Either.Value -> favouritePhoto(photoName, result.value.isFavourited, result.value.favouritesCount)
-                    is Either.Error -> handleError(result.error)
+                    is Either.Error -> handleFavouritePhotoError(result.error)
                 }
             }, {
                 Timber.tag(TAG).e(it)
@@ -126,7 +123,7 @@ class GalleryFragment : BaseFragment() {
 
                 when (result) {
                     is Either.Value -> reportPhoto(photoName, result.value)
-                    is Either.Error -> handleError(result.error)
+                    is Either.Error -> handleReportPhotoError(result.error)
                 }
             }, {
                 Timber.tag(TAG).e(it)
@@ -178,7 +175,7 @@ class GalleryFragment : BaseFragment() {
         }
     }
 
-    private fun removeProgressFooter() {
+    private fun hideProgressFooter() {
         galleryPhotosList.post {
             adapter.removeProgressFooter()
         }
@@ -203,12 +200,66 @@ class GalleryFragment : BaseFragment() {
         }
     }
 
-    private fun handleError(errorCode: ErrorCode) {
-        galleryPhotosList.post {
-            adapter.removeProgressFooter()
+    private fun handleReportPhotoError(errorCode: ErrorCode.ReportPhotoErrors) {
+        if (!isVisible) {
+            return
         }
 
-        (requireActivity() as PhotosActivity).showErrorCodeToast(errorCode)
+        val message = when (errorCode) {
+            is ErrorCode.ReportPhotoErrors.Ok -> null
+            is ErrorCode.ReportPhotoErrors.UnknownError -> "Unknown error"
+            is ErrorCode.ReportPhotoErrors.BadRequest -> "Bad request error"
+            is ErrorCode.ReportPhotoErrors.LocalBadServerResponse -> "Bad server response error"
+            is ErrorCode.ReportPhotoErrors.LocalTimeout -> "Operation timeout error"
+        }
+
+        if (message != null) {
+            showToast(message)
+        }
+    }
+
+    private fun handleFavouritePhotoError(errorCode: ErrorCode.FavouritePhotoErrors) {
+        if (!isVisible) {
+            return
+        }
+
+        val message = when (errorCode) {
+            is ErrorCode.FavouritePhotoErrors.Ok -> null
+            is ErrorCode.FavouritePhotoErrors.UnknownError -> "Unknown error"
+            is ErrorCode.FavouritePhotoErrors.BadRequest -> "Bad request error"
+            is ErrorCode.FavouritePhotoErrors.LocalBadServerResponse -> "Bad server response error"
+            is ErrorCode.FavouritePhotoErrors.LocalTimeout -> "Operation timeout error"
+        }
+
+        if (message != null) {
+            showToast(message)
+        }
+    }
+
+    private fun handleGetGalleryPhotosError(errorCode: ErrorCode.GetGalleryPhotosErrors) {
+        hideProgressFooter()
+
+        if (!isVisible) {
+            return
+        }
+
+        val message = when (errorCode) {
+            is ErrorCode.GetGalleryPhotosErrors.Ok -> null
+            is ErrorCode.GetGalleryPhotosErrors.UnknownError -> "Unknown error"
+            is ErrorCode.GetGalleryPhotosErrors.BadRequest -> "Bad request error"
+            is ErrorCode.GetGalleryPhotosErrors.NoPhotosInRequest -> "Bad request error (no photos in request)"
+            is ErrorCode.GetGalleryPhotosErrors.LocalBadServerResponse -> "Bad server response error"
+            is ErrorCode.GetGalleryPhotosErrors.LocalTimeout -> "Operation timeout error"
+            is ErrorCode.GetGalleryPhotosErrors.LocalDatabaseError -> "Operation timeout error"
+        }
+
+        if (message != null) {
+            showToast(message)
+        }
+    }
+
+    private fun showToast(message: String, duration: Int = Toast.LENGTH_LONG) {
+        (requireActivity() as PhotosActivity).showToast(message, duration)
     }
 
     override fun resolveDaggerDependency() {

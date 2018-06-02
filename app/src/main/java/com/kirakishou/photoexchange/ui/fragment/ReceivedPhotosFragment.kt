@@ -4,6 +4,7 @@ package com.kirakishou.photoexchange.ui.fragment
 import android.os.Bundle
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.widget.Toast
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.Either
@@ -199,8 +200,31 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
         }
     }
 
-    private fun handleError(errorCode: ErrorCode) {
-        (requireActivity() as PhotosActivity).showErrorCodeToast(errorCode)
+    private fun handleError(errorCode: ErrorCode.GetReceivedPhotosErrors) {
+        hideProgressFooter()
+
+        if (!isVisible) {
+            return
+        }
+
+        val message = when (errorCode) {
+            is ErrorCode.GetReceivedPhotosErrors.Ok,
+            is ErrorCode.GetReceivedPhotosErrors.LocalUserIdIsEmpty -> null
+            is ErrorCode.GetReceivedPhotosErrors.UnknownError -> "Unknown error"
+            is ErrorCode.GetReceivedPhotosErrors.DatabaseError -> "Server database error"
+            is ErrorCode.GetReceivedPhotosErrors.BadRequest -> "Bad request error"
+            is ErrorCode.GetReceivedPhotosErrors.NoPhotosInRequest -> "Bad request error (no photos in request)"
+            is ErrorCode.GetReceivedPhotosErrors.LocalBadServerResponse -> "Bad server response error"
+            is ErrorCode.GetReceivedPhotosErrors.LocalTimeout -> "Operation timeout error"
+        }
+
+        if (message != null) {
+            showToast(message)
+        }
+    }
+
+    private fun showToast(message: String, duration: Int = Toast.LENGTH_LONG) {
+        (requireActivity() as PhotosActivity).showToast(message, duration)
     }
 
     override fun resolveDaggerDependency() {

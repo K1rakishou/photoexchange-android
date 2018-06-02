@@ -16,7 +16,7 @@ private constructor(
 
     companion object {
         fun success(galleryPhotos: List<GalleryPhotoResponseData>): GalleryPhotosResponse {
-            return GalleryPhotosResponse(galleryPhotos, ErrorCode.GalleryPhotosErrors.Ok())
+            return GalleryPhotosResponse(galleryPhotos, ErrorCode.GetGalleryPhotosErrors.Ok())
         }
 
         fun fail(errorCode: ErrorCode): GalleryPhotosResponse {

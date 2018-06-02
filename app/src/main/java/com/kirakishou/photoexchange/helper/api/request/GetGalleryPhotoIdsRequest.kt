@@ -26,10 +26,10 @@ class GetGalleryPhotoIdsRequest<T>(
             .observeOn(schedulerProvider.IO())
             .lift(OnApiErrorSingle<GalleryPhotoIdsResponse>(gson, GalleryPhotoIdsResponse::class))
             .map { response ->
-                if (ErrorCode.GalleryPhotosErrors.fromInt(response.serverErrorCode!!) is ErrorCode.GalleryPhotosErrors.Ok) {
+                if (ErrorCode.GetGalleryPhotosErrors.fromInt(response.serverErrorCode!!) is ErrorCode.GetGalleryPhotosErrors.Ok) {
                     return@map GalleryPhotoIdsResponse.success(response.galleryPhotoIds)
                 } else {
-                    return@map GalleryPhotoIdsResponse.error(ErrorCode.fromInt(ErrorCode.GalleryPhotosErrors::class, response.serverErrorCode!!))
+                    return@map GalleryPhotoIdsResponse.error(ErrorCode.fromInt(ErrorCode.GetGalleryPhotosErrors::class, response.serverErrorCode!!))
                 }
             }
             .onErrorReturn(this::extractError) as Single<T>
@@ -37,10 +37,10 @@ class GetGalleryPhotoIdsRequest<T>(
 
     private fun extractError(error: Throwable): GalleryPhotoIdsResponse {
         return when (error) {
-            is ApiException -> GalleryPhotoIdsResponse.error(error.errorCode as ErrorCode.GalleryPhotosErrors)
+            is ApiException -> GalleryPhotoIdsResponse.error(error.errorCode as ErrorCode.GetGalleryPhotosErrors)
             is SocketTimeoutException,
-            is TimeoutException -> GalleryPhotoIdsResponse.error(ErrorCode.GalleryPhotosErrors.LocalTimeout())
-            else -> GalleryPhotoIdsResponse.error(ErrorCode.GalleryPhotosErrors.UnknownError())
+            is TimeoutException -> GalleryPhotoIdsResponse.error(ErrorCode.GetGalleryPhotosErrors.LocalTimeout())
+            else -> GalleryPhotoIdsResponse.error(ErrorCode.GetGalleryPhotosErrors.UnknownError())
         }
     }
 }

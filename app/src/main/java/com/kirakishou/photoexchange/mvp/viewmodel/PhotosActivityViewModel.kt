@@ -45,19 +45,19 @@ class PhotosActivityViewModel(
         super.onCleared()
     }
 
-    fun reportPhoto(photoName: String): Observable<Either<ErrorCode, Boolean>> {
+    fun reportPhoto(photoName: String): Observable<Either<ErrorCode.ReportPhotoErrors, Boolean>> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .concatMap { userId -> reportPhotoUseCase.reportPhoto(userId, photoName) }
     }
 
-    fun favouritePhoto(photoName: String): Observable<Either<ErrorCode, FavouritePhotoUseCase.FavouritePhotoResult>> {
+    fun favouritePhoto(photoName: String): Observable<Either<ErrorCode.FavouritePhotoErrors, FavouritePhotoUseCase.FavouritePhotoResult>> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .concatMap { userId -> favouritePhotoUseCase.favouritePhoto(userId, photoName) }
     }
 
-    fun loadNextPageOfGalleryPhotos(lastId: Long, photosPerPage: Int): Observable<Either<ErrorCode, List<GalleryPhoto>>> {
+    fun loadNextPageOfGalleryPhotos(lastId: Long, photosPerPage: Int): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .concatMap { userId ->
@@ -67,12 +67,12 @@ class PhotosActivityViewModel(
             .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
     }
 
-    fun loadNextPageOfUploadedPhotos(lastId: Long, photosPerPage: Int): Observable<Either<ErrorCode, List<UploadedPhoto>>> {
+    fun loadNextPageOfUploadedPhotos(lastId: Long, photosPerPage: Int): Observable<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .flatMap { _userId ->
                 if (_userId.isEmpty()) {
-                    return@flatMap Observable.just<Either<ErrorCode, List<UploadedPhoto>>>(Either.Value(emptyList()))
+                    return@flatMap Observable.just<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>>(Either.Value(emptyList()))
                 }
 
                 return@flatMap Observable.just(_userId)
@@ -84,11 +84,14 @@ class PhotosActivityViewModel(
             .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
     }
 
-    fun loadNextPageOfReceivedPhotos(lastId: Long, photosPerPage: Int): Observable<Either<ErrorCode, List<ReceivedPhoto>>> {
+    fun loadNextPageOfReceivedPhotos(lastId: Long, photosPerPage: Int): Observable<Either<ErrorCode.GetReceivedPhotosErrors, List<ReceivedPhoto>>> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
-            .filter { userId -> userId.isNotEmpty() }
             .flatMap { userId ->
+                if (userId.isEmpty()) {
+                    return@flatMap Observable.just(Either.Error(ErrorCode.GetReceivedPhotosErrors.LocalUserIdIsEmpty()))
+                }
+
                 getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
                     .toObservable()
             }

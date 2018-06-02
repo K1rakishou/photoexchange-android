@@ -13,10 +13,10 @@ class ReportPhotoUseCase(
 ) {
     private val TAG = "ReportPhotoUseCase"
 
-    fun reportPhoto(userId: String, photoName: String): Observable<Either<ErrorCode, Boolean>> {
+    fun reportPhoto(userId: String, photoName: String): Observable<Either<ErrorCode.ReportPhotoErrors, Boolean>> {
         return apiClient.reportPhoto(userId, photoName)
             .map { response ->
-                val errorCode = response.errorCode
+                val errorCode = response.errorCode as ErrorCode.ReportPhotoErrors
                 if (errorCode !is ErrorCode.ReportPhotoErrors.Ok) {
                     return@map Either.Error(errorCode)
                 }

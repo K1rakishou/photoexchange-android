@@ -186,7 +186,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                 addProgressFooter()
             }
             is UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter -> {
-                removeProgressFooter()
+                hideProgressFooter()
             }
             is UploadedPhotosFragmentEvent.UiEvents.RemovePhoto -> {
                 adapter.removePhotoById(event.photo.id)
@@ -302,20 +302,33 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         }
     }
 
-    private fun removeProgressFooter() {
+    private fun hideProgressFooter() {
         uploadedPhotosList.post {
             adapter.hideProgressFooter()
         }
     }
 
-    private fun handleError(errorCode: ErrorCode) {
-        when (errorCode) {
-            is ErrorCode.GetUploadedPhotosErrors.LocalUserIdIsEmpty -> {
-                removeProgressFooter()
-            }
+    private fun handleError(errorCode: ErrorCode.GetUploadedPhotosErrors) {
+        hideProgressFooter()
+
+        if (!isVisible) {
+            return
         }
 
-        (requireActivity() as PhotosActivity).showErrorCodeToast(errorCode)
+        val message = when (errorCode) {
+            is ErrorCode.GetUploadedPhotosErrors.Ok -> null
+            is ErrorCode.GetUploadedPhotosErrors.LocalUserIdIsEmpty -> null
+            is ErrorCode.GetUploadedPhotosErrors.UnknownError -> "Unknown error"
+            is ErrorCode.GetUploadedPhotosErrors.DatabaseError -> "Server database error"
+            is ErrorCode.GetUploadedPhotosErrors.BadRequest -> "Bad request error"
+            is ErrorCode.GetUploadedPhotosErrors.NoPhotosInRequest -> "Bad request error (no photos in request)"
+            is ErrorCode.GetUploadedPhotosErrors.LocalBadServerResponse -> "Bad server response error"
+            is ErrorCode.GetUploadedPhotosErrors.LocalTimeout -> "Operation timeout error"
+        }
+
+        if (message != null) {
+            showToast(message)
+        }
     }
 
     private fun showToast(message: String, duration: Int = Toast.LENGTH_LONG) {
