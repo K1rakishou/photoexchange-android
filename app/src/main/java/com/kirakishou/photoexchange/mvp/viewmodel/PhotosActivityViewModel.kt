@@ -98,8 +98,8 @@ class PhotosActivityViewModel(
             .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
     }
 
-    fun checkHasPhotosToUpload(): Single<Boolean> {
-        return Single.fromCallable {
+    fun checkHasPhotosToUpload(): Observable<Boolean> {
+        return Observable.fromCallable {
             takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
         }.subscribeOn(schedulerProvider.IO())
     }

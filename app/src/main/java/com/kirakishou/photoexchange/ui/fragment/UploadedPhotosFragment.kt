@@ -11,9 +11,10 @@ import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.RxLifecycle
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
+import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
@@ -22,8 +23,8 @@ import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapterSpanSizeLookup
 import com.kirakishou.photoexchange.ui.viewstate.UploadedPhotosFragmentViewState
-import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.plusAssign
@@ -31,6 +32,7 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 
@@ -51,7 +53,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
     private val TAG = "UploadedPhotosFragment"
     private val PHOTO_ADAPTER_VIEW_WIDTH = 288
     private val failedToUploadPhotoButtonClicksSubject = PublishSubject.create<UploadedPhotosAdapter.UploadedPhotosAdapterButtonClick>().toSerialized()
-    private val onPhotosUploadedSubject = BehaviorSubject.createDefault(false)
+    private val onPhotosUploadedSubject = BehaviorSubject.createDefault(false).toSerialized()
     private var viewState = UploadedPhotosFragmentViewState()
     private val loadMoreSubject = PublishSubject.create<Int>()
     private var photosPerPage = 0
@@ -114,13 +116,30 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe({ viewModel.eventForwarder.sendPhotoActivityEvent(PhotosActivityEvent.FailedToUploadPhotoButtonClick(it)) })
 
+        compositeDisposable += lifecycle.getLifecycle()
+            .filter { lifecycle -> lifecycle.isAtLeast(RxLifecycle.FragmentState.Resumed) }
+            .concatMap { viewModel.checkHasPhotosToUpload() }
+            .filter { hasPhotosToUpload -> !hasPhotosToUpload }
+            .subscribe({
+                photosUploaded()
+                loadFirstPageOfUploadedPhotos()
+            })
+
+        compositeDisposable += lifecycle.getLifecycle()
+            .filter { lifecycle -> lifecycle.isAtLeast(RxLifecycle.FragmentState.Resumed) }
+            .concatMap { viewModel.checkHasPhotosToReceive() }
+            .filter { hasPhotosToReceive -> hasPhotosToReceive }
+            .concatMap { viewModel.checkHasPhotosToUpload() }
+            .filter { hasPhotosToUpload -> !hasPhotosToUpload }
+            .subscribe({
+                viewModel.eventForwarder.sendPhotoActivityEvent(PhotosActivityEvent.StartReceivingService())
+            })
+
         compositeDisposable += Observables.combineLatest(loadMoreSubject, onPhotosUploadedSubject)
             .filter { it.second }
             .map { it.first }
             .concatMap { nextPage ->
-                return@concatMap lifecycle.getLifecycle()
-                    .filter { lifecycle -> lifecycle.isAtLeast(RxLifecycle.FragmentState.Resumed) }
-                    .map { nextPage }
+                return@concatMap Observable.just(1)
                     .doOnNext { onUiEvent(UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
                     .concatMap { viewModel.loadNextPageOfUploadedPhotos(lastId, photosPerPage) }
                     .doOnNext { onUiEvent(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
@@ -129,6 +148,9 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                             viewModel.eventForwarder.sendPhotoActivityEvent(PhotosActivityEvent.StartReceivingService())
                         }
                     }
+                    //add slight delay to ensure progressbar is removed from recyclerview before adding other elements
+                    //otherwise it will scroll the recyclerview to the bottom
+                    .delay(500, TimeUnit.MILLISECONDS)
             }
             .subscribe({ result ->
                 when (result) {
@@ -146,13 +168,11 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnSuccess { photos -> addTakenPhotosToAdapter(photos) }
-            .flatMap { _ ->
-                return@flatMap viewModel.checkHasPhotosToUpload()
-                    .doOnSuccess { hasPhotosToUpload ->
+            .flatMapObservable { _ ->
+                return@flatMapObservable viewModel.checkHasPhotosToUpload()
+                    .doOnNext { hasPhotosToUpload ->
                         if (hasPhotosToUpload) {
                             viewModel.eventForwarder.sendPhotoActivityEvent(PhotosActivityEvent.StartUploadingService())
-                        } else {
-                            photosUploaded()
                         }
                     }
             }
@@ -186,31 +206,33 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
     }
 
     private fun onUiEvent(event: UploadedPhotosFragmentEvent.UiEvents) {
-        when (event) {
-            is UploadedPhotosFragmentEvent.UiEvents.ScrollToTop -> {
-                uploadedPhotosList.scrollToPosition(0)
-            }
-            is UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter -> {
-                addProgressFooter()
-            }
-            is UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter -> {
-                hideProgressFooter()
-            }
-            is UploadedPhotosFragmentEvent.UiEvents.RemovePhoto -> {
-                adapter.removePhotoById(event.photo.id)
-            }
-            is UploadedPhotosFragmentEvent.UiEvents.AddPhoto -> {
-                adapter.addTakenPhoto(event.photo)
-            }
-            is UploadedPhotosFragmentEvent.UiEvents.OnPhotoRemoved -> {
-                if (adapter.getFailedPhotosCount() == 0) {
-                    loadFirstPageOfUploadedPhotos()
+        uploadedPhotosList.post {
+            when (event) {
+                is UploadedPhotosFragmentEvent.UiEvents.ScrollToTop -> {
+                    uploadedPhotosList.scrollToPosition(0)
                 }
+                is UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter -> {
+                    addProgressFooter()
+                }
+                is UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter -> {
+                    hideProgressFooter()
+                }
+                is UploadedPhotosFragmentEvent.UiEvents.RemovePhoto -> {
+                    adapter.removePhotoById(event.photo.id)
+                }
+                is UploadedPhotosFragmentEvent.UiEvents.AddPhoto -> {
+                    adapter.addTakenPhoto(event.photo)
+                }
+                is UploadedPhotosFragmentEvent.UiEvents.OnPhotoRemoved -> {
+                    if (adapter.getFailedPhotosCount() == 0) {
+                        loadFirstPageOfUploadedPhotos()
+                    }
+                }
+                is UploadedPhotosFragmentEvent.UiEvents.LoadTakenPhotos -> {
+                    loadTakenPhotos()
+                }
+                else -> throw IllegalArgumentException("Unknown UploadedPhotosFragmentEvent $event")
             }
-            is UploadedPhotosFragmentEvent.UiEvents.LoadTakenPhotos -> {
-                loadTakenPhotos()
-            }
-            else -> throw IllegalArgumentException("Unknown UploadedPhotosFragmentEvent $event")
         }
     }
 

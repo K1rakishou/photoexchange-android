@@ -55,7 +55,7 @@ class GetUploadedPhotosUseCase(
                     photosResultList += result.value
                 }
 
-                photosResultList.sortBy { it.photoId }
+                photosResultList.sortByDescending { it.photoId }
                 return@rxSingle Either.Value(photosResultList)
             } catch (error: Throwable) {
                 Timber.tag(TAG).e(error)
