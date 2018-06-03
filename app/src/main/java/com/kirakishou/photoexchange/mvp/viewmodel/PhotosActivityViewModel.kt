@@ -84,7 +84,7 @@ class PhotosActivityViewModel(
             .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
     }
 
-    fun loadNextPageOfReceivedPhotos(lastId: Long, photosPerPage: Int): Observable<Either<ErrorCode.GetReceivedPhotosErrors, List<ReceivedPhoto>>> {
+    fun loadNextPageOfReceivedPhotos(lastId: Long, photosPerPage: Int): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .flatMap { userId ->
@@ -92,8 +92,7 @@ class PhotosActivityViewModel(
                     return@flatMap Observable.just(Either.Error(ErrorCode.GetReceivedPhotosErrors.LocalUserIdIsEmpty()))
                 }
 
-                getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
-                    .toObservable()
+                return@flatMap getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
             }
             .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
     }

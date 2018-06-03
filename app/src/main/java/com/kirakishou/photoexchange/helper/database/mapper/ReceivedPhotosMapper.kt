@@ -18,8 +18,8 @@ object ReceivedPhotosMapper {
             )
         }
 
-        fun toReceivedPhotos(receivedPhotoEntityList: List<ReceivedPhotoEntity>): List<ReceivedPhoto> {
-            return receivedPhotoEntityList.map { toReceivedPhoto(it) }
+        fun toReceivedPhotos(receivedPhotoEntityList: List<ReceivedPhotoEntity>): MutableList<ReceivedPhoto> {
+            return receivedPhotoEntityList.map { toReceivedPhoto(it) } as MutableList<ReceivedPhoto>
         }
     }
 
@@ -65,8 +65,8 @@ object ReceivedPhotosMapper {
                 )
             }
 
-            fun toReceivedPhotos(receivedPhotosResponseList: List<GetReceivedPhotosResponse.ReceivedPhoto>): List<ReceivedPhoto> {
-                return receivedPhotosResponseList.map { toReceivedPhoto(it) }
+            fun toReceivedPhotos(receivedPhotosResponseList: List<GetReceivedPhotosResponse.ReceivedPhoto>): MutableList<ReceivedPhoto> {
+                return receivedPhotosResponseList.map { toReceivedPhoto(it) } as MutableList<ReceivedPhoto>
             }
 
             fun toReceivedPhotoEntity(receivedPhotosResponse: GetReceivedPhotosResponse.ReceivedPhoto): ReceivedPhotoEntity {

@@ -124,21 +124,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                 photosUploaded()
                 loadFirstPageOfUploadedPhotos()
             })
-
-        compositeDisposable += lifecycle.getLifecycle()
-            .filter { lifecycle -> lifecycle.isAtLeast(RxLifecycle.FragmentState.Resumed) }
-            .concatMap { viewModel.checkHasPhotosToReceive() }
-            .filter { hasPhotosToReceive -> hasPhotosToReceive }
-            .concatMap { viewModel.checkHasPhotosToUpload() }
-            .filter { hasPhotosToUpload -> !hasPhotosToUpload }
-            .subscribe({
-                viewModel.eventForwarder.sendPhotoActivityEvent(
-                    PhotosActivityEvent.StartReceivingService(
-                        UploadedPhotosFragment::class.java,
-                        "Starting the service after onResume event when there photos to receive and no photos to upload"
-                    ))
-            })
-
+        
         compositeDisposable += Observables.combineLatest(loadMoreSubject, onPhotosUploadedSubject)
             .filter { it.second }
             .map { it.first }
@@ -147,22 +133,21 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                     .doOnNext { onUiEvent(UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
                     .concatMap { viewModel.loadNextPageOfUploadedPhotos(lastId, photosPerPage) }
                     .doOnNext { onUiEvent(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
-                    .doOnNext {
-                        if (nextPage == 0) {
-                            viewModel.eventForwarder.sendPhotoActivityEvent(
-                                PhotosActivityEvent.StartReceivingService(
-                                    UploadedPhotosFragment::class.java,
-                                    "Starting the service after first page of uploaded photos was loaded"
-                                ))
-                        }
-                    }
                     //add slight delay to ensure progressbar is removed from recyclerview before adding other elements
                     //otherwise it will scroll the recyclerview to the bottom
                     .delay(500, TimeUnit.MILLISECONDS)
             }
             .subscribe({ result ->
                 when (result) {
-                    is Either.Value -> addUploadedPhotosToAdapter(result.value)
+                    is Either.Value -> {
+                        addUploadedPhotosToAdapter(result.value)
+
+                        viewModel.eventForwarder.sendPhotoActivityEvent(
+                            PhotosActivityEvent.StartReceivingService(
+                                UploadedPhotosFragment::class.java,
+                                "Starting the service after first page of uploaded photos was loaded"
+                            ))
+                    }
                     is Either.Error -> handleError(result.error)
                 }
             }, { error ->

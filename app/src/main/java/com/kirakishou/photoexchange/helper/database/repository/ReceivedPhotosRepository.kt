@@ -34,7 +34,7 @@ open class ReceivedPhotosRepository(
         return ReceivedPhotosMapper.FromEntity.toReceivedPhotos(receivedPhotosDao.findAll())
     }
 
-    fun findMany(receivedPhotoIds: List<Long>): List<ReceivedPhoto> {
-        return ReceivedPhotosMapper.FromEntity.toReceivedPhotos( receivedPhotosDao.findMany(receivedPhotoIds))
+    fun findMany(receivedPhotoIds: List<Long>): MutableList<ReceivedPhoto> {
+        return ReceivedPhotosMapper.FromEntity.toReceivedPhotos(receivedPhotosDao.findMany(receivedPhotoIds))
     }
 }

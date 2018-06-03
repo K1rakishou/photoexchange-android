@@ -26,3 +26,7 @@ sealed class PhotoUploadingException(val takenPhoto: TakenPhoto) : Exception() {
     class RemoteServerException(val remoteErrorCode: ErrorCode.UploadPhotoErrors,
                                 takenPhoto: TakenPhoto) : PhotoUploadingException(takenPhoto)
 }
+
+sealed class GetReceivedPhotosException : Exception() {
+    class OnKnownError(val errorCode: ErrorCode.GetReceivedPhotosErrors) : GetReceivedPhotosException()
+}
