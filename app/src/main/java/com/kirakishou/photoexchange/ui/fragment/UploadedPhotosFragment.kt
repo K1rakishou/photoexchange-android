@@ -95,7 +95,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         layoutManager.spanSizeLookup = UploadedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
         photosPerPage = Constants.UPLOADED_PHOTOS_PER_ROW * layoutManager.spanCount
 
-        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, loadMoreSubject, 0)
+        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, loadMoreSubject, 1)
 
         uploadedPhotosList.layoutManager = layoutManager
         uploadedPhotosList.adapter = adapter
@@ -147,6 +147,15 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                     .doOnNext { onUiEvent(UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
                     .concatMap { viewModel.loadNextPageOfUploadedPhotos(lastId, photosPerPage) }
                     .doOnNext { onUiEvent(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
+                    .doOnNext {
+                        if (nextPage == 0) {
+                            viewModel.eventForwarder.sendPhotoActivityEvent(
+                                PhotosActivityEvent.StartReceivingService(
+                                    UploadedPhotosFragment::class.java,
+                                    "Starting the service after first page of uploaded photos was loaded"
+                                ))
+                        }
+                    }
                     //add slight delay to ensure progressbar is removed from recyclerview before adding other elements
                     //otherwise it will scroll the recyclerview to the bottom
                     .delay(500, TimeUnit.MILLISECONDS)
