@@ -27,7 +27,7 @@ private constructor(
     class GalleryPhotoResponseData(
 
         @Expose
-        @SerializedName("photoId")
+        @SerializedName("id")
         val id: Long,
 
         @Expose

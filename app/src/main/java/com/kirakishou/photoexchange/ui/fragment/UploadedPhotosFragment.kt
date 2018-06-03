@@ -124,7 +124,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                 photosUploaded()
                 loadFirstPageOfUploadedPhotos()
             })
-        
+
         compositeDisposable += Observables.combineLatest(loadMoreSubject, onPhotosUploadedSubject)
             .filter { it.second }
             .map { it.first }
