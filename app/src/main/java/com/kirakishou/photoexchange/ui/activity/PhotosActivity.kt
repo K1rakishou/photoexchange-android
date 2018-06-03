@@ -288,18 +288,18 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
             is PhotosActivityEvent.StartUploadingService -> {
                 compositeDisposable += viewModel.checkHasPhotosToUpload()
                     .filter { hasPhotoToUpload -> hasPhotoToUpload }
-                    .subscribe({ bindUploadingService(true) })
+                    .subscribe({ bindUploadingService(event.callerClass, event.reason, true) })
             }
             is PhotosActivityEvent.StartReceivingService -> {
                 compositeDisposable += viewModel.checkHasPhotosToReceive()
                     .filter { hasPhotosToReceive -> hasPhotosToReceive }
-                    .subscribe({ bindReceivingService(true) })
+                    .subscribe({ bindReceivingService(event.callerClass, event.reason, true) })
             }
             is PhotosActivityEvent.FailedToUploadPhotoButtonClick -> {
                 compositeDisposable += handleUploadedPhotosFragmentAdapterButtonClicks(event.clickType)
                     .subscribe({ tryToReUpload ->
                         if (tryToReUpload) {
-                            bindUploadingService(true)
+                            bindUploadingService(PhotosActivity::class.java, "Handling of FailedToUploadPhotoButtonClick", true)
                         }
                     }, { error ->
                         Timber.tag(TAG).e(error)
@@ -413,9 +413,9 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
         permissionManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
-    private fun bindReceivingService(start: Boolean = true) {
+    private fun bindReceivingService(callerClass: Class<*>, reason: String, start: Boolean = true) {
         if (!receivePhotosServiceConnection.isConnected()) {
-            Timber.tag(TAG).d("bindReceivingService, start = $start")
+            Timber.tag(TAG).d("(callerClass = $callerClass, reason = $reason) bindReceivingService, start = $start")
 
             val serviceIntent = Intent(applicationContext, ReceivePhotosService::class.java)
             if (start) {
@@ -424,14 +424,14 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
 
             bindService(serviceIntent, receivePhotosServiceConnection, Context.BIND_AUTO_CREATE)
         } else {
-            Timber.tag(TAG).d("Already connected, force startPhotosReceiving")
+            Timber.tag(TAG).d("(callerClass = $callerClass, reason = $reason) Already connected, force startPhotosReceiving")
             receivePhotosServiceConnection.startPhotosReceiving()
         }
     }
 
-    private fun bindUploadingService(start: Boolean = true) {
+    private fun bindUploadingService(callerClass: Class<*>, reason: String, start: Boolean = true) {
         if (!uploadPhotosServiceConnection.isConnected()) {
-            Timber.tag(TAG).d("bindUploadingService, start = $start")
+            Timber.tag(TAG).d("(callerClass = $callerClass, reason = $reason) bindUploadingService, start = $start")
 
             val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
             if (start) {
@@ -440,7 +440,7 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
 
             bindService(serviceIntent, uploadPhotosServiceConnection, Context.BIND_AUTO_CREATE)
         } else {
-            Timber.tag(TAG).d("Already connected, force startPhotosUploading")
+            Timber.tag(TAG).d("(callerClass = $callerClass, reason = $reason) Already connected, force startPhotosUploading")
             uploadPhotosServiceConnection.startPhotosUploading()
         }
     }

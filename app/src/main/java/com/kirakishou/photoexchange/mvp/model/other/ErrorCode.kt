@@ -68,13 +68,14 @@ sealed class ErrorCode(private val _value: Int) {
         class Ok : ReceivePhotosErrors(1)
         class BadRequest : ReceivePhotosErrors(2)
         class NoPhotosInRequest : ReceivePhotosErrors(3)
-        class NoPhotosToSendBack : ReceivePhotosErrors(4)
+        class NotEnoughPhotosOnServer : ReceivePhotosErrors(4)
 
         class LocalDatabaseError : ReceivePhotosErrors(25)
         class LocalTooManyPhotosRequested : ReceivePhotosErrors(26)
         class LocalNotEnoughPhotosUploaded : ReceivePhotosErrors(27)
         class LocalBadServerResponse : ReceivePhotosErrors(28)
         class LocalTimeout : ReceivePhotosErrors(29)
+        class LocalCouldNotGetUserId : ReceivePhotosErrors(30)
 
         companion object {
             fun fromInt(value: Int): ReceivePhotosErrors {
@@ -83,13 +84,14 @@ sealed class ErrorCode(private val _value: Int) {
                     101 -> Ok()
                     102 -> BadRequest()
                     103 -> NoPhotosInRequest()
-                    104 -> NoPhotosToSendBack()
+                    104 -> NotEnoughPhotosOnServer()
 
                     125 -> LocalDatabaseError()
                     126 -> LocalTooManyPhotosRequested()
                     127 -> LocalNotEnoughPhotosUploaded()
                     128 -> LocalBadServerResponse()
                     129 -> LocalTimeout()
+                    130 -> LocalCouldNotGetUserId()
                     else -> throw IllegalArgumentException("Unknown value $value")
                 }
             }

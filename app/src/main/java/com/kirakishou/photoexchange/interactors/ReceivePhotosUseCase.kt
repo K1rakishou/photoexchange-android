@@ -2,24 +2,22 @@ package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.isFail
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.mvp.model.FindPhotosData
+import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
+import com.kirakishou.photoexchange.mvp.model.exception.ReceivePhotosServiceException
 import com.kirakishou.photoexchange.mvp.model.net.response.ReceivedPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import com.kirakishou.photoexchange.service.ReceivePhotosServiceCallbacks
-import io.reactivex.Single
+import com.kirakishou.photoexchange.service.ReceivePhotosServicePresenter
+import io.reactivex.ObservableEmitter
 import timber.log.Timber
-import java.lang.ref.WeakReference
 
 class ReceivePhotosUseCase(
     private val database: MyDatabase,
     private val takenPhotosRepository: TakenPhotosRepository,
-    private val settingsRepository: SettingsRepository,
     private val receivedPhotosRepository: ReceivedPhotosRepository,
     private val uploadedPhotosRepository: UploadedPhotosRepository,
     private val apiClient: ApiClient
@@ -27,31 +25,39 @@ class ReceivePhotosUseCase(
 
     private val TAG = "ReceivePhotosUseCase"
 
-    fun receivePhotos(data: FindPhotosData, callbacks: WeakReference<ReceivePhotosServiceCallbacks>): Single<Unit> {
-        return Single.just(data)
-            .flatMap { _data ->
-                Timber.tag(TAG).d("Send receivePhotos request")
-                apiClient.receivePhotos(_data.photoNames, _data.userId!!)
-            }
+    fun receivePhotos(data: FindPhotosData, emitter: ObservableEmitter<ReceivePhotosServicePresenter.ReceivePhotoEvent>) {
+        apiClient.receivePhotos(data.photoNames, data.userId!!)
             .map { response ->
                 val errorCode = response.errorCode as ErrorCode.ReceivePhotosErrors
                 Timber.tag(TAG).d("Got response, errorCode = $errorCode")
 
                 when (errorCode) {
-                    is ErrorCode.ReceivePhotosErrors.Ok -> handleSuccessResult(response, callbacks)
-                    is ErrorCode.ReceivePhotosErrors.NoPhotosToSendBack -> callbacks.get()?.stopService()
-                    else -> callbacks.get()?.onFailed(errorCode)
+                    is ErrorCode.ReceivePhotosErrors.Ok -> {
+                        return@map handleSuccessResult(response)
+                    }
+                    is ErrorCode.ReceivePhotosErrors.NotEnoughPhotosOnServer -> {
+                        throw ReceivePhotosServiceException.NoPhotosToSendBack()
+                    }
+                    else -> {
+                        throw ReceivePhotosServiceException.OnKnownError(errorCode)
+                    }
+                }
+            }
+            .subscribe({ receivedPhotos ->
+                receivedPhotos.forEach {
+                    emitter.onNext(ReceivePhotosServicePresenter.ReceivePhotoEvent.OnReceivedPhoto(it.first, it.second))
                 }
 
-                Unit
-            }
-            .doOnError { error ->
+                emitter.onComplete()
+            }, { error ->
                 Timber.tag(TAG).e(error)
-                callbacks.get()?.onError(error)
-            }
+                emitter.onError(error)
+            })
     }
 
-    private fun handleSuccessResult(response: ReceivedPhotosResponse, callbacks: WeakReference<ReceivePhotosServiceCallbacks>) {
+    private fun handleSuccessResult(response: ReceivedPhotosResponse): MutableList<Pair<ReceivedPhoto, String>> {
+        val results = mutableListOf<Pair<ReceivedPhoto, String>>()
+
         for (receivedPhoto in response.receivedPhotos) {
             val result = database.transactional {
                 if (!receivedPhotosRepository.save(receivedPhoto)) {
@@ -69,8 +75,10 @@ class ReceivePhotosUseCase(
 
             if (result) {
                 val photoAnswer = ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhoto(receivedPhoto)
-                callbacks.get()?.onPhotoReceived(photoAnswer, photoAnswer.uploadedPhotoName)
+                results += Pair(photoAnswer, photoAnswer.uploadedPhotoName)
             }
         }
+
+        return results
     }
 }

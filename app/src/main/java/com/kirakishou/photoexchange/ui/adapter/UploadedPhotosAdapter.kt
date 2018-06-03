@@ -37,10 +37,6 @@ class UploadedPhotosAdapter(
     private val duplicatesCheckerSet = hashSetOf<Long>()
     private val photosProgressMap = hashMapOf<Long, Int>()
 
-    init {
-        footerItems.add(FOOTER_PROGRESS_INDICATOR_INDEX, UploadedPhotosAdapterItem.EmptyItem())
-    }
-
     fun getFailedPhotosCount(): Int {
         return failedToUploadItems.size
     }
@@ -92,21 +88,23 @@ class UploadedPhotosAdapter(
     }
 
     fun showProgressFooter() {
-        if (footerItems[FOOTER_PROGRESS_INDICATOR_INDEX] is UploadedPhotosAdapterItem.ProgressItem) {
+        if (footerItems.isNotEmpty() && footerItems.last() is UploadedPhotosAdapterItem.ProgressItem) {
             return
         }
 
-        footerItems[FOOTER_PROGRESS_INDICATOR_INDEX] = UploadedPhotosAdapterItem.ProgressItem()
-        notifyItemChanged(FOOTER_PROGRESS_INDICATOR_INDEX)
+        footerItems.add(UploadedPhotosAdapterItem.ProgressItem())
+        notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size +
+            uploadedItems.size + uploadedWithReceiverInfoItems.size + FOOTER_PROGRESS_INDICATOR_INDEX)
     }
 
     fun hideProgressFooter() {
-        if (footerItems[FOOTER_PROGRESS_INDICATOR_INDEX] is UploadedPhotosAdapterItem.EmptyItem) {
+        if (footerItems.isEmpty() || footerItems.last() !is UploadedPhotosAdapterItem.ProgressItem) {
             return
         }
 
-        footerItems[FOOTER_PROGRESS_INDICATOR_INDEX] = UploadedPhotosAdapterItem.EmptyItem()
-        notifyItemChanged(FOOTER_PROGRESS_INDICATOR_INDEX)
+        footerItems.removeAt(footerItems.lastIndex)
+        notifyItemRemoved(headerItems.size + queuedUpItems.size + failedToUploadItems.size +
+            uploadedItems.size + uploadedWithReceiverInfoItems.size + FOOTER_PROGRESS_INDICATOR_INDEX)
     }
 
     fun addTakenPhotos(photos: List<TakenPhoto>) {
@@ -154,10 +152,10 @@ class UploadedPhotosAdapter(
 
         if (!photo.hasReceiverInfo) {
             uploadedItems.add(UploadedPhotosAdapterItem.UploadedPhotoItem(photo))
-            notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size)
+            notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.lastIndex)
         } else {
             uploadedWithReceiverInfoItems.add(UploadedPhotosAdapterItem.UploadedPhotoItem(photo))
-            notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size + uploadedItems.size)
+            notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size + uploadedItems.lastIndex)
         }
     }
 

@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.helper.concurrency.rx.operator
 
 import com.google.gson.Gson
-import com.kirakishou.photoexchange.mvp.model.exception.ApiException
+import com.kirakishou.photoexchange.mvp.model.exception.GeneralException
 import com.kirakishou.photoexchange.mvp.model.net.response.*
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.SingleObserver
@@ -41,9 +41,9 @@ class OnApiErrorSingle<T : StatusResponse>(
 
                         //may happen in some rare cases (like when client and server have endpoints with different parameters)
                         if (error?.serverErrorCode == null) {
-                            observer.onError(ApiException(getBadErrorCodeByClass(clazz)))
+                            observer.onError(GeneralException.ApiException(getBadErrorCodeByClass(clazz)))
                         } else {
-                            observer.onError(ApiException(getErrorCode(error.serverErrorCode!!)))
+                            observer.onError(GeneralException.ApiException(getErrorCode(error.serverErrorCode!!)))
                         }
                     } catch (e: Exception) {
                         observer.onError(e)

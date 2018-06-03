@@ -118,6 +118,7 @@ abstract class BaseActivity : AppCompatActivity() {
 
     fun showErrorCodeToast(errorCode: ErrorCode) {
         val errorMessage = when (errorCode) {
+            is ErrorCode.ReceivePhotosErrors.NotEnoughPhotosOnServer,
             is ErrorCode.TakePhotoErrors.Ok,
             is ErrorCode.UploadPhotoErrors.Ok,
             is ErrorCode.ReceivePhotosErrors.Ok,
@@ -182,11 +183,11 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.GetUserIdError.LocalDatabaseError -> "Couldn't store data from the server on the disk"
 
             is ErrorCode.GetReceivedPhotosErrors.LocalUserIdIsEmpty,
+            is ErrorCode.ReceivePhotosErrors.LocalCouldNotGetUserId,
             is ErrorCode.GetUploadedPhotosErrors.LocalUserIdIsEmpty -> "This operation cannot be done without user photoId"
 
             is ErrorCode.UploadPhotoErrors.LocalNoPhotoFileOnDisk -> "No photo on disk"
             is ErrorCode.UploadPhotoErrors.LocalInterrupted -> "Interrupted by user"
-            is ErrorCode.ReceivePhotosErrors.NoPhotosToSendBack -> "Server has no available photos"
             is ErrorCode.ReceivePhotosErrors.LocalTooManyPhotosRequested -> "Too many photos in one request"
             is ErrorCode.ReceivePhotosErrors.LocalNotEnoughPhotosUploaded -> "Upload more photos first"
             is ErrorCode.TakePhotoErrors.CameraIsNotAvailable -> "Camera is not available on this phone"

@@ -34,7 +34,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     @Inject
     lateinit var presenter: UploadPhotoServicePresenter
 
-    private val tag = "UploadPhotoService"
+    private val TAG = "UploadPhotoService"
 
     private val locationManager by lazy { MyLocationManager(applicationContext) }
     private var notificationManager: NotificationManager? = null
@@ -49,7 +49,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
 
     override fun onCreate() {
         super.onCreate()
-        Timber.tag(tag).d("UploadPhotoService started")
+        Timber.tag(TAG).d("UploadPhotoService started")
 
         resolveDaggerDependency()
         startForeground(NOTIFICATION_ID, createInitialNotification())
@@ -63,16 +63,16 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
         detachCallback()
         compositeDisposable.clear()
 
-        Timber.tag(tag).d("UploadPhotoService destroyed")
+        Timber.tag(TAG).d("UploadPhotoService destroyed")
     }
 
     fun attachCallback(_callback: WeakReference<PhotoUploadingCallback>) {
-        Timber.tag(tag).d("attachCallback")
+        Timber.tag(TAG).d("attachCallback")
         callback = _callback
     }
 
     fun detachCallback() {
-        Timber.tag(tag).d("detachCallback")
+        Timber.tag(TAG).d("detachCallback")
         callback = WeakReference<PhotoUploadingCallback>(null)
     }
 
@@ -90,7 +90,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     }
 
     override fun stopService() {
-        Timber.tag(tag).d("Stopping service")
+        Timber.tag(TAG).d("Stopping service")
 
         stopForeground(true)
         stopSelf()
@@ -284,6 +284,7 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
     }
 
     companion object {
+        //TODO: probably delete
         fun isRunning(context: Context): Boolean {
             val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
             for (service in manager!!.getRunningServices(Integer.MAX_VALUE)) {
