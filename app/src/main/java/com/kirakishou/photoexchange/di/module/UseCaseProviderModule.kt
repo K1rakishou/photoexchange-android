@@ -24,11 +24,10 @@ class UseCaseProviderModule {
     @Provides
     fun provideFindPhotoAnswersUseCase(database: MyDatabase,
                                        takenPhotosRepository: TakenPhotosRepository,
-                                       settingsRepository: SettingsRepository,
                                        receivedPhotosRepository: ReceivedPhotosRepository,
                                        uploadedPhotosRepository: UploadedPhotosRepository,
                                        apiClient: ApiClient): ReceivePhotosUseCase {
-        return ReceivePhotosUseCase(database, takenPhotosRepository, settingsRepository,
+        return ReceivePhotosUseCase(database, takenPhotosRepository,
             receivedPhotosRepository, uploadedPhotosRepository, apiClient)
     }
 

@@ -4,7 +4,7 @@ import com.google.gson.Gson
 import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.mvp.model.exception.ApiException
+import com.kirakishou.photoexchange.mvp.model.exception.GeneralException
 import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotoIdsResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
@@ -37,7 +37,7 @@ class GetGalleryPhotoIdsRequest<T>(
 
     private fun extractError(error: Throwable): GalleryPhotoIdsResponse {
         return when (error) {
-            is ApiException -> GalleryPhotoIdsResponse.error(error.errorCode as ErrorCode.GetGalleryPhotosErrors)
+            is GeneralException.ApiException -> GalleryPhotoIdsResponse.error(error.errorCode as ErrorCode.GetGalleryPhotosErrors)
             is SocketTimeoutException,
             is TimeoutException -> GalleryPhotoIdsResponse.error(ErrorCode.GetGalleryPhotosErrors.LocalTimeout())
             else -> GalleryPhotoIdsResponse.error(ErrorCode.GetGalleryPhotosErrors.UnknownError())

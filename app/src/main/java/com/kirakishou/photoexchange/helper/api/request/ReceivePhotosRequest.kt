@@ -4,7 +4,7 @@ import com.google.gson.Gson
 import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.mvp.model.exception.ApiException
+import com.kirakishou.photoexchange.mvp.model.exception.GeneralException
 import com.kirakishou.photoexchange.mvp.model.net.response.ReceivedPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
@@ -37,7 +37,7 @@ class ReceivePhotosRequest<T>(
 
     private fun extractError(error: Throwable): ReceivedPhotosResponse {
         return when (error) {
-            is ApiException -> ReceivedPhotosResponse.error(error.errorCode)
+            is GeneralException.ApiException -> ReceivedPhotosResponse.error(error.errorCode)
             is SocketTimeoutException,
             is TimeoutException -> ReceivedPhotosResponse.error(ErrorCode.ReceivePhotosErrors.LocalTimeout())
             else -> ReceivedPhotosResponse.error(ErrorCode.ReceivePhotosErrors.UnknownError())

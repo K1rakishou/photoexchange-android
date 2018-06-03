@@ -9,8 +9,8 @@ import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
-import com.kirakishou.photoexchange.mvp.model.exception.CouldNotGetUserIdException
 import com.kirakishou.photoexchange.mvp.model.exception.PhotoUploadingException
+import com.kirakishou.photoexchange.mvp.model.exception.UploadPhotoServiceException
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import io.reactivex.Observable
@@ -141,7 +141,7 @@ class UploadPhotoServicePresenter(
                 //already handled by upstream
             }
 
-            is CouldNotGetUserIdException -> {
+            is UploadPhotoServiceException.CouldNotGetUserIdException -> {
                 val cause = when (error.errorCode) {
                     is ErrorCode.GetUserIdError.LocalTimeout -> ErrorCode.UploadPhotoErrors.LocalTimeout()
                     else -> ErrorCode.UploadPhotoErrors.UnknownError()
@@ -164,7 +164,7 @@ class UploadPhotoServicePresenter(
                         .toObservable()
                         .map { result ->
                             if (result is Either.Error) {
-                                throw CouldNotGetUserIdException(result.error)
+                                throw UploadPhotoServiceException.CouldNotGetUserIdException(result.error)
                             }
 
                             return@map (result as Either.Value).value

@@ -4,7 +4,7 @@ import com.google.gson.Gson
 import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.mvp.model.exception.ApiException
+import com.kirakishou.photoexchange.mvp.model.exception.GeneralException
 import com.kirakishou.photoexchange.mvp.model.net.response.GetUserIdResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
@@ -34,7 +34,7 @@ class GetUserIdRequest<T>(
 
     private fun extractError(error: Throwable): GetUserIdResponse {
         return when (error) {
-            is ApiException -> GetUserIdResponse.error(error.errorCode as ErrorCode.GetUserIdError)
+            is GeneralException.ApiException -> GetUserIdResponse.error(error.errorCode as ErrorCode.GetUserIdError)
             is SocketTimeoutException,
             is TimeoutException -> GetUserIdResponse.error(ErrorCode.GetUserIdError.LocalTimeout())
             else -> GetUserIdResponse.error(ErrorCode.GetUserIdError.UnknownError())

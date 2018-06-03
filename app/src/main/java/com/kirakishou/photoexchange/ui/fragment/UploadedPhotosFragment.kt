@@ -132,7 +132,11 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             .concatMap { viewModel.checkHasPhotosToUpload() }
             .filter { hasPhotosToUpload -> !hasPhotosToUpload }
             .subscribe({
-                viewModel.eventForwarder.sendPhotoActivityEvent(PhotosActivityEvent.StartReceivingService())
+                viewModel.eventForwarder.sendPhotoActivityEvent(
+                    PhotosActivityEvent.StartReceivingService(
+                        UploadedPhotosFragment::class.java,
+                        "Starting the service after onResume event when there photos to receive and no photos to upload"
+                    ))
             })
 
         compositeDisposable += Observables.combineLatest(loadMoreSubject, onPhotosUploadedSubject)
@@ -143,11 +147,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                     .doOnNext { onUiEvent(UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
                     .concatMap { viewModel.loadNextPageOfUploadedPhotos(lastId, photosPerPage) }
                     .doOnNext { onUiEvent(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
-                    .doOnNext {
-                        if (nextPage == 0) {
-                            viewModel.eventForwarder.sendPhotoActivityEvent(PhotosActivityEvent.StartReceivingService())
-                        }
-                    }
                     //add slight delay to ensure progressbar is removed from recyclerview before adding other elements
                     //otherwise it will scroll the recyclerview to the bottom
                     .delay(500, TimeUnit.MILLISECONDS)
@@ -172,7 +171,10 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                 return@flatMapObservable viewModel.checkHasPhotosToUpload()
                     .doOnNext { hasPhotosToUpload ->
                         if (hasPhotosToUpload) {
-                            viewModel.eventForwarder.sendPhotoActivityEvent(PhotosActivityEvent.StartUploadingService())
+                            viewModel.eventForwarder.sendPhotoActivityEvent(PhotosActivityEvent
+                                .StartUploadingService(UploadedPhotosFragment::class.java,
+                                    "Starting the service after taken photos were loaded")
+                            )
                         }
                     }
             }

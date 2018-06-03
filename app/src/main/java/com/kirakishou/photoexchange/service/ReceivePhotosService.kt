@@ -11,8 +11,6 @@ import android.support.v4.app.NotificationCompat
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.ReceivePhotosServiceModule
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.callback.ReceivePhotosServiceCallback
 import io.reactivex.disposables.CompositeDisposable
@@ -21,13 +19,14 @@ import java.lang.ref.WeakReference
 import javax.inject.Inject
 import android.app.ActivityManager
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
+import io.reactivex.rxkotlin.plusAssign
 
-class ReceivePhotosService : Service(), ReceivePhotosServiceCallbacks {
+class ReceivePhotosService : Service() {
 
     @Inject
     lateinit var presenter: ReceivePhotosServicePresenter
 
-    private val tag = "ReceivePhotosService"
+    private val TAG = "ReceivePhotosService"
     private val compositeDisposable = CompositeDisposable()
     private var notificationManager: NotificationManager? = null
     private val binder = ReceivePhotosBinder()
@@ -38,17 +37,22 @@ class ReceivePhotosService : Service(), ReceivePhotosServiceCallbacks {
 
     override fun onCreate() {
         super.onCreate()
-        Timber.tag(tag).d("ReceivePhotosService started")
+        Timber.tag(TAG).d("ReceivePhotosService started")
 
         resolveDaggerDependency()
-        startForeground(NOTIFICATION_ID, createNotificationDownloading())
+        startForeground(NOTIFICATION_ID, createInitialNotification())
+
+        compositeDisposable += presenter.observeResults()
+            .subscribe(this::onReceivePhotoResult)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        Timber.tag(tag).d("ReceivePhotosService destroyed")
+        Timber.tag(TAG).d("ReceivePhotosService destroyed")
 
+        removeNotification()
         presenter.onDetach()
+        detachCallback()
         compositeDisposable.clear()
     }
 
@@ -61,43 +65,63 @@ class ReceivePhotosService : Service(), ReceivePhotosServiceCallbacks {
     }
 
     fun startPhotosReceiving() {
-        updateUploadingNotificationShowDownloading()
         presenter.startPhotosReceiving()
     }
 
-    override fun onPhotoReceived(receivedPhoto: ReceivedPhoto, takenPhotoName: String) {
-        updateDownloadingNotificationShowSuccess()
-        callback.get()?.onPhotoFindEvent(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotoReceived(receivedPhoto, takenPhotoName))
+    private fun onReceivePhotoResult(event: ReceivePhotosServicePresenter.ReceivePhotoEvent) {
+        when (event) {
+            is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnReceivedPhoto -> {
+                callback.get()?.onPhotoFindEvent(ReceivedPhotosFragmentEvent.ReceivePhotosEvent
+                    .OnPhotoReceived(event.receivedPhoto, event.takenPhotoName))
+            }
+            is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnFailed -> {
+                if (event.errorCode != null) {
+                    callback.get()?.onPhotoFindEvent(ReceivedPhotosFragmentEvent.ReceivePhotosEvent
+                        .OnFailed(event.errorCode))
+                }
+            }
+            is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnError -> {
+                callback.get()?.onPhotoFindEvent(ReceivedPhotosFragmentEvent.ReceivePhotosEvent
+                    .OnUnknownError(event.error))
+            }
+            is ReceivePhotosServicePresenter.ReceivePhotoEvent.StopService -> {
+                stopService()
+            }
+            is ReceivePhotosServicePresenter.ReceivePhotoEvent.RemoveNotification -> {
+                removeNotification()
+            }
+            is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnNewNotificationShowDownloading -> {
+                when (event.type) {
+                    is ReceivePhotosServicePresenter.NotificationType.Progress -> updateNotificationShowProgress()
+                    is ReceivePhotosServicePresenter.NotificationType.Success -> updateNotificationShowSuccess()
+                    is ReceivePhotosServicePresenter.NotificationType.Error -> updateNotificationShowError()
+                }
+            }
+        }
     }
 
-    override fun onFailed(errorCode: ErrorCode.ReceivePhotosErrors) {
-        updateUploadingNotificationShowError()
-        callback.get()?.onPhotoFindEvent(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed(errorCode))
-    }
-
-    override fun onError(error: Throwable) {
-        updateUploadingNotificationShowError()
-        callback.get()?.onPhotoFindEvent(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnUnknownError(error))
-    }
-
-    override fun stopService() {
-        Timber.tag(tag).d("Stopping service")
+    private fun stopService() {
+        Timber.tag(TAG).d("Stopping service")
 
         stopForeground(true)
         stopSelf()
     }
 
-    private fun updateUploadingNotificationShowDownloading() {
+    private fun removeNotification() {
+        getNotificationManager().cancel(NOTIFICATION_ID)
+    }
+
+    private fun updateNotificationShowProgress() {
         val newNotification = createNotificationDownloading()
         getNotificationManager().notify(NOTIFICATION_ID, newNotification)
     }
 
-    private fun updateDownloadingNotificationShowSuccess() {
+    private fun updateNotificationShowSuccess() {
         val newNotification = createNotificationSuccess()
         getNotificationManager().notify(NOTIFICATION_ID, newNotification)
     }
 
-    private fun updateUploadingNotificationShowError() {
+    private fun updateNotificationShowError() {
         val newNotification = createNotificationError()
         getNotificationManager().notify(NOTIFICATION_ID, newNotification)
     }
@@ -176,6 +200,30 @@ class ReceivePhotosService : Service(), ReceivePhotosServiceCallbacks {
         }
     }
 
+    private fun createInitialNotification(): Notification {
+        if (AndroidUtils.isOreoOrHigher()) {
+            createNotificationChannelIfNotExists()
+
+            return NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("Please wait")
+                .setContentText("Looking for photo answer...")
+                .setWhen(System.currentTimeMillis())
+                .setContentIntent(getNotificationIntent())
+                .setAutoCancel(false)
+                .setOngoing(true)
+                .build()
+        } else {
+            return NotificationCompat.Builder(this)
+                .setContentTitle("Please wait")
+                .setContentText("Looking for photo answer...")
+                .setWhen(System.currentTimeMillis())
+                .setContentIntent(getNotificationIntent())
+                .setAutoCancel(false)
+                .setOngoing(true)
+                .build()
+        }
+    }
+
     @RequiresApi(Build.VERSION_CODES.O)
     private fun createNotificationChannelIfNotExists() {
         if (getNotificationManager().getNotificationChannel(CHANNEL_ID) == null) {
@@ -212,7 +260,7 @@ class ReceivePhotosService : Service(), ReceivePhotosServiceCallbacks {
 
     private fun resolveDaggerDependency() {
         (application as PhotoExchangeApplication).applicationComponent
-            .plus(ReceivePhotosServiceModule(this))
+            .plus(ReceivePhotosServiceModule())
             .inject(this)
     }
 
@@ -231,6 +279,7 @@ class ReceivePhotosService : Service(), ReceivePhotosServiceCallbacks {
     }
 
     companion object {
+        //TODO: probably delete
         fun isRunning(context: Context): Boolean {
             val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
             for (service in manager!!.getRunningServices(Integer.MAX_VALUE)) {
