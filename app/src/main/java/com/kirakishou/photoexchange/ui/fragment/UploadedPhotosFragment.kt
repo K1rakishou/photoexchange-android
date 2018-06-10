@@ -55,10 +55,10 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
     private val PHOTO_ADAPTER_VIEW_WIDTH = 288
     private val failedToUploadPhotoButtonClicksSubject = PublishSubject.create<UploadedPhotosAdapter.UploadedPhotosAdapterButtonClick>().toSerialized()
     private val onPhotosUploadedSubject = BehaviorSubject.createDefault(false).toSerialized()
+    private var isFragmentFreshlyCreated = true
     private var viewState = UploadedPhotosFragmentViewState()
     private val loadMoreSubject = PublishSubject.create<Int>()
     private var photosPerPage = 0
-    private var lastId = Long.MAX_VALUE
 
     override fun getContentView(): Int = R.layout.fragment_uploaded_photos
 
@@ -67,10 +67,10 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         initRx()
         initRecyclerView()
 
+        isFragmentFreshlyCreated = savedInstanceState == null
+
         if (savedInstanceState != null) {
             restoreFragmentFromViewState(savedInstanceState)
-        } else {
-
         }
     }
 
@@ -132,7 +132,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             .concatMap { nextPage ->
                 return@concatMap Observable.just(1)
                     .doOnNext { onUiEvent(UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
-                    .concatMap { viewModel.loadNextPageOfUploadedPhotos(lastId, photosPerPage) }
+                    .concatMap { viewModel.loadNextPageOfUploadedPhotos(viewState.lastId, photosPerPage, isFragmentFreshlyCreated) }
                     .doOnNext { onUiEvent(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
                     //add slight delay to ensure progressbar is removed from recyclerview before adding other elements
                     //otherwise it will scroll the recyclerview to the bottom
@@ -300,7 +300,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             endlessScrollListener.pageLoaded()
 
             if (uploadedPhotos.isNotEmpty()) {
-                lastId = uploadedPhotos.last().photoId
+                viewState.updateLastId(uploadedPhotos.last().photoId)
                 adapter.addUploadedPhotos(uploadedPhotos)
             }
 

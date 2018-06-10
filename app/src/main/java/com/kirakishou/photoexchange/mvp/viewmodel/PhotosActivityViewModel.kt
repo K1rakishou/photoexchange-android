@@ -38,6 +38,8 @@ class PhotosActivityViewModel(
     private val TAG = "PhotosActivityViewModel"
     private val ADAPTER_LOAD_MORE_ITEMS_DELAY_MS = 1.seconds()
 
+    private val cachedUploadedPhotoIds = mutableListOf<Long>()
+
     val eventForwarder = PhotosActivityViewModelStateEventForwarder()
 
     override fun onCleared() {
@@ -68,7 +70,12 @@ class PhotosActivityViewModel(
             .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
     }
 
-    fun loadNextPageOfUploadedPhotos(lastId: Long, photosPerPage: Int): Observable<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>> {
+    fun loadNextPageOfUploadedPhotos(
+        lastId: Long,
+        photosPerPage: Int,
+        isFragmentFreshlyCreated: Boolean
+    ): Observable<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>> {
+
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .flatMap { _userId ->
@@ -76,10 +83,23 @@ class PhotosActivityViewModel(
                     return@flatMap Observable.just<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>>(Either.Value(emptyList()))
                 }
 
-                return@flatMap Observable.just(_userId)
-                    .flatMap { userId -> getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage) }
+                if (isFragmentFreshlyCreated) {
+                    return@flatMap Observable.just(_userId)
+                        .flatMap { userId ->
+                            getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
+                                .doOnNext { result ->
+                                    if (result is Either.Value) {
+                                        cachedUploadedPhotoIds += result.value.map { it.photoId }
+                                    }
+                                }
+                        }
+                        .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
+                } else {
+                    return@flatMap Observable.fromCallable {
+                        Either.Value(uploadedPhotosRepository.findMany(cachedUploadedPhotoIds))
+                    }
+                }
             }
-            .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
     }
 
     fun loadNextPageOfReceivedPhotos(lastId: Long, photosPerPage: Int): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
