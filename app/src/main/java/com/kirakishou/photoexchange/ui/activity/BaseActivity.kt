@@ -106,7 +106,7 @@ abstract class BaseActivity : AppCompatActivity() {
         }
     }
 
-    open fun runActivityWithArgs(clazz: Class<*>, args: Bundle, finishCurrentActivity: Boolean) {
+    open fun runActivityWithArgs(clazz: Class<*>, args: Bundle, finishCurrentActivity: Boolean = false) {
         val intent = Intent(this, clazz)
         intent.putExtras(args)
         startActivity(intent)

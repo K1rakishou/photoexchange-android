@@ -10,6 +10,7 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.RxLifecycle
+import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
@@ -17,6 +18,7 @@ import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
+import com.kirakishou.photoexchange.ui.activity.MapActivity
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapterSpanSizeLookup
@@ -48,6 +50,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     private val TAG = "ReceivedPhotosFragment"
     private val PHOTO_ADAPTER_VIEW_WIDTH = 288
     private val loadMoreSubject = PublishSubject.create<Int>()
+    private val adapterClicksSubject = PublishSubject.create<ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent>()
     private var isFragmentFreshlyCreated = true
     private val viewState = ReceivedPhotosFragmentViewState()
     private var photosPerPage = 0
@@ -104,12 +107,16 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
             }, {
                 Timber.tag(TAG).e(it)
             })
+
+        compositeDisposable += adapterClicksSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .subscribe({ click -> handleAdapterClick(click) })
     }
 
     private fun initRecyclerView() {
         val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = ReceivedPhotosAdapter(requireContext(), imageLoader)
+        adapter = ReceivedPhotosAdapter(requireContext(), imageLoader, adapterClicksSubject)
 
         val layoutManager = GridLayoutManager(requireContext(), columnsCount)
         layoutManager.spanSizeLookup = ReceivedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
@@ -121,6 +128,22 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
         receivedPhotosList.adapter = adapter
         receivedPhotosList.clearOnScrollListeners()
         receivedPhotosList.addOnScrollListener(endlessScrollListener)
+    }
+
+    private fun handleAdapterClick(click: ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent) {
+        when (click) {
+            is ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent.ShowPhoto -> {
+                TODO()
+            }
+            is ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent.ShowMap -> {
+                val args = Bundle().apply {
+                    this.putDouble(MapActivity.LON_PARAM, click.location.lon)
+                    this.putDouble(MapActivity.LAT_PARAM, click.location.lat)
+                }
+
+                (requireActivity() as PhotosActivity).runActivityWithArgs(MapActivity::class.java, args)
+            }
+        }.safe
     }
 
     override fun onStateEvent(event: ReceivedPhotosFragmentEvent) {

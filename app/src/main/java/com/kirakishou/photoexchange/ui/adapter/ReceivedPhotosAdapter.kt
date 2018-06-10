@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.ui.adapter
 
 import android.content.Context
+import android.support.constraint.ConstraintLayout
 import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.widget.ImageView
@@ -9,10 +10,13 @@ import android.widget.TextView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
+import com.kirakishou.photoexchange.mvp.model.other.LonLat
+import io.reactivex.subjects.PublishSubject
 
 class ReceivedPhotosAdapter(
     private val context: Context,
-    private val imageLoader: ImageLoader
+    private val imageLoader: ImageLoader,
+    private val clicksSubject: PublishSubject<ReceivedPhotosAdapterClickEvent>
 ) : BaseAdapter<ReceivedPhotosAdapterItem>(context) {
 
     val items = arrayListOf<ReceivedPhotosAdapterItem>()
@@ -71,11 +75,20 @@ class ReceivedPhotosAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
             is PhotoAnswerViewHolder -> {
-                val photoAnswer = (items[position] as? ReceivedPhotosAdapterItem.ReceivedPhotoItem)?.receivedPhoto
+                val receivedPhoto = (items[position] as? ReceivedPhotosAdapterItem.ReceivedPhotoItem)?.receivedPhoto
                     ?: return
 
-                imageLoader.loadImageFromNetInto(photoAnswer.receivedPhotoName, ImageLoader.PhotoSize.Small, holder.photoView)
-                holder.photoIdTextView.text = photoAnswer.photoId.toString()
+                holder.clickView.setOnClickListener {
+                    clicksSubject.onNext(ReceivedPhotosAdapterClickEvent.ShowMap(LonLat(receivedPhoto.lon, receivedPhoto.lat)))
+                }
+
+                holder.clickView.setOnLongClickListener {
+                    clicksSubject.onNext(ReceivedPhotosAdapterClickEvent.ShowPhoto(receivedPhoto.receivedPhotoName))
+                    return@setOnLongClickListener true
+                }
+
+                imageLoader.loadImageFromNetInto(receivedPhoto.receivedPhotoName, ImageLoader.PhotoSize.Small, holder.photoView)
+                holder.photoIdTextView.text = receivedPhoto.photoId.toString()
             }
             is ProgressViewHolder -> {
                 //do nothing
@@ -91,5 +104,11 @@ class ReceivedPhotosAdapter(
     class PhotoAnswerViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val photoView = itemView.findViewById<ImageView>(R.id.photo_view)
         val photoIdTextView = itemView.findViewById<TextView>(R.id.photo_id_text_view)
+        val clickView = itemView.findViewById<ConstraintLayout>(R.id.click_view)
+    }
+
+    sealed class ReceivedPhotosAdapterClickEvent {
+        class ShowPhoto(val photoName: String) : ReceivedPhotosAdapterClickEvent()
+        class ShowMap(val location: LonLat) : ReceivedPhotosAdapterClickEvent()
     }
 }
