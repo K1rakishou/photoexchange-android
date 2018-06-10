@@ -39,6 +39,7 @@ class PhotosActivityViewModel(
     private val ADAPTER_LOAD_MORE_ITEMS_DELAY_MS = 1.seconds()
 
     private val cachedUploadedPhotoIds = mutableListOf<Long>()
+    private val cachedReceivedPhotoIds = mutableListOf<Long>()
 
     val eventForwarder = PhotosActivityViewModelStateEventForwarder()
 
@@ -78,31 +79,33 @@ class PhotosActivityViewModel(
 
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
-            .flatMap { _userId ->
-                if (_userId.isEmpty()) {
+            .flatMap { userId ->
+                if (userId.isEmpty()) {
                     return@flatMap Observable.just<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>>(Either.Value(emptyList()))
                 }
 
                 if (isFragmentFreshlyCreated) {
-                    return@flatMap Observable.just(_userId)
-                        .flatMap { userId ->
-                            getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
-                                .doOnNext { result ->
-                                    if (result is Either.Value) {
-                                        cachedUploadedPhotoIds += result.value.map { it.photoId }
-                                    }
-                                }
+                    return@flatMap getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
+                        .doOnNext { result ->
+                            if (result is Either.Value) {
+                                cachedUploadedPhotoIds += result.value.map { it.photoId }
+                            }
                         }
                         .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
                 } else {
                     return@flatMap Observable.fromCallable {
-                        Either.Value(uploadedPhotosRepository.findMany(cachedUploadedPhotoIds))
+                        return@fromCallable Either.Value(uploadedPhotosRepository.findMany(cachedUploadedPhotoIds))
                     }
                 }
             }
     }
 
-    fun loadNextPageOfReceivedPhotos(lastId: Long, photosPerPage: Int): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
+    fun loadNextPageOfReceivedPhotos(
+        lastId: Long,
+        photosPerPage: Int,
+        isFragmentFreshlyCreated: Boolean
+    ): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
+
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .flatMap { userId ->
@@ -110,12 +113,23 @@ class PhotosActivityViewModel(
                     return@flatMap Observable.just(Either.Error(ErrorCode.GetReceivedPhotosErrors.LocalUserIdIsEmpty()))
                 }
 
-                return@flatMap getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
-            }
-            .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-            .doOnNext { result ->
-                if (result is Either.Value) {
-                    updateUploadedPhotosReceiverInfo(result.value)
+                if (isFragmentFreshlyCreated) {
+                    return@flatMap getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
+                        .doOnNext { result ->
+                            if (result is Either.Value) {
+                                cachedReceivedPhotoIds += result.value.map { it.photoId }
+                            }
+                        }
+                        .doOnNext { result ->
+                            if (result is Either.Value) {
+                                updateUploadedPhotosReceiverInfo(result.value)
+                            }
+                        }
+                        .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
+                } else {
+                    return@flatMap Observable.fromCallable {
+                        return@fromCallable Either.Value(receivedPhotosRepository.findMany(cachedReceivedPhotoIds))
+                    }
                 }
             }
     }

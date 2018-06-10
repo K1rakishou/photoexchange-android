@@ -20,6 +20,7 @@ import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapterSpanSizeLookup
+import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewState
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -47,14 +48,17 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     private val TAG = "ReceivedPhotosFragment"
     private val PHOTO_ADAPTER_VIEW_WIDTH = 288
     private val loadMoreSubject = PublishSubject.create<Int>()
+    private var isFragmentFreshlyCreated = true
+    private val viewState = ReceivedPhotosFragmentViewState()
     private var photosPerPage = 0
-    private var lastId = Long.MAX_VALUE
 
     override fun getContentView(): Int = R.layout.fragment_received_photos
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
         initRx()
         initRecyclerView()
+
+        isFragmentFreshlyCreated = savedInstanceState == null
     }
 
     override fun onFragmentViewDestroy() {
@@ -72,7 +76,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
             .filter { it.isAtLeast(RxLifecycle.FragmentState.Resumed) }
             .take(1)
             .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
-            .concatMap { viewModel.loadNextPageOfReceivedPhotos(lastId, photosPerPage) }
+            .concatMap { viewModel.loadNextPageOfReceivedPhotos(viewState.lastId, photosPerPage, isFragmentFreshlyCreated) }
             .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
             .subscribe({ result ->
                 when (result) {
@@ -90,7 +94,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
                     .map { nextPage }
             }
             .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
-            .concatMap { viewModel.loadNextPageOfReceivedPhotos(lastId, photosPerPage) }
+            .concatMap { viewModel.loadNextPageOfReceivedPhotos(viewState.lastId, photosPerPage, isFragmentFreshlyCreated) }
             .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
             .subscribe({ result ->
                 when (result) {
@@ -179,7 +183,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
             endlessScrollListener.pageLoaded()
 
             if (receivedPhotos.isNotEmpty()) {
-                lastId = receivedPhotos.last().photoId
+                viewState.updateLastId(receivedPhotos.last().photoId)
                 adapter.addReceivedPhotos(receivedPhotos)
             }
 
