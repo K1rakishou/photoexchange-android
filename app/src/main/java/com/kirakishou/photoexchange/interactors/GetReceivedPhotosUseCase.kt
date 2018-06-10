@@ -24,7 +24,11 @@ class GetReceivedPhotosUseCase(
 
     private val TAG = "GetReceivedPhotosUseCase"
 
-    fun loadPageOfPhotos(userId: String, lastId: Long, count: Int): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
+    fun loadPageOfPhotos(
+        userId: String,
+        lastId: Long,
+        count: Int
+    ): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
         Timber.tag(TAG).d("sending loadPageOfPhotos request...")
 
         return apiClient.getReceivedPhotoIds(userId, lastId, count).toObservable()

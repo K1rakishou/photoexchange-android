@@ -90,7 +90,7 @@ class ReceivePhotosService : Service() {
             is ReceivePhotosServicePresenter.ReceivePhotoEvent.RemoveNotification -> {
                 removeNotification()
             }
-            is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnNewNotificationShowDownloading -> {
+            is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnNewNotification -> {
                 when (event.type) {
                     is ReceivePhotosServicePresenter.NotificationType.Progress -> updateNotificationShowProgress()
                     is ReceivePhotosServicePresenter.NotificationType.Success -> updateNotificationShowSuccess()

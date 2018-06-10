@@ -76,10 +76,7 @@ class PhotosActivityViewModel(
                 }
 
                 return@flatMap Observable.just(_userId)
-                    .flatMap { userId ->
-                        getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
-                            .toObservable()
-                    }
+                    .flatMap { userId -> getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage) }
             }
             .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
     }
