@@ -70,6 +70,8 @@ class TakePhotoActivity : BaseActivity() {
 
     override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
         initViews()
+
+        runActivity(MapActivity::class.java)
     }
 
     override fun onActivityStart() {
