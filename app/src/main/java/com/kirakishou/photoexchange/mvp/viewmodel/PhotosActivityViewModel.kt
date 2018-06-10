@@ -8,6 +8,7 @@ import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosReposi
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelStateEventForwarder
+import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.*
 import com.kirakishou.photoexchange.mvp.model.*
 import com.kirakishou.photoexchange.mvp.model.other.Constants
@@ -92,6 +93,15 @@ class PhotosActivityViewModel(
                 return@flatMap getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
             }
             .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
+            .doOnNext { result ->
+                if (result is Either.Value) {
+                    updateUploadedPhotosReceiverInfo(result.value)
+                }
+            }
+    }
+
+    private fun updateUploadedPhotosReceiverInfo(receivedPhotos: MutableList<ReceivedPhoto>) {
+        eventForwarder.sendUploadedPhotosFragmentEvent(UploadedPhotosFragmentEvent.UiEvents.UpdateReceiverInfo(receivedPhotos))
     }
 
     fun checkHasPhotosToUpload(): Observable<Boolean> {

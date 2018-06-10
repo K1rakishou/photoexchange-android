@@ -65,11 +65,7 @@ class ReceivePhotosUseCase(
                     return@transactional false
                 }
 
-                if (!uploadedPhotosRepository.updateReceiverInfo(receivedPhoto.uploadedPhotoName)) {
-                    Timber.tag(TAG).w("Could not update receiver name for photo ${receivedPhoto.uploadedPhotoName}")
-                    return@transactional false
-                }
-
+                uploadedPhotosRepository.updateReceiverInfo(receivedPhoto.uploadedPhotoName)
                 return@transactional takenPhotosRepository.deletePhotoByName(receivedPhoto.uploadedPhotoName)
             }
 

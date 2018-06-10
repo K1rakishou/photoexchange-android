@@ -61,7 +61,7 @@ open class UploadedPhotosRepository(
         return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(entities)
     }
 
-    fun updateReceiverInfo(uploadedPhotoName: String): Boolean {
-        return uploadedPhotoDao.updateReceiverInfo(uploadedPhotoName) == 1
+    fun updateReceiverInfo(uploadedPhotoName: String) {
+        uploadedPhotoDao.updateReceiverInfo(uploadedPhotoName)
     }
 }

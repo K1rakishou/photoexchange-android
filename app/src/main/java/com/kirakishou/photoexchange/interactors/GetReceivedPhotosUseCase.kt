@@ -94,7 +94,6 @@ class GetReceivedPhotosUseCase(
             .concatMapSingle { photoIdsToBeRequested -> apiClient.getReceivedPhotos(userId, photoIdsToBeRequested) }
             .map { response ->
                 val errorCode = response.errorCode as ErrorCode.GetReceivedPhotosErrors
-
                 if (errorCode !is ErrorCode.GetReceivedPhotosErrors.Ok) {
                     return@map Either.Error(errorCode)
                 }
@@ -105,9 +104,7 @@ class GetReceivedPhotosUseCase(
 
                 val transactionResult = database.transactional {
                     for (receivedPhoto in response.receivedPhotos) {
-                        if (!uploadedPhotosRepository.updateReceiverInfo(receivedPhoto.uploadedPhotoName)) {
-                            return@transactional false
-                        }
+                        uploadedPhotosRepository.updateReceiverInfo(receivedPhoto.uploadedPhotoName)
                     }
 
                     if (!receivedPhotosRepository.saveMany(response.receivedPhotos)) {

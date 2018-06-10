@@ -9,6 +9,7 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.RxLifecycle
+import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
@@ -222,13 +223,19 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                 is UploadedPhotosFragmentEvent.UiEvents.OnPhotoRemoved -> {
                     if (adapter.getFailedPhotosCount() == 0) {
                         loadFirstPageOfUploadedPhotos()
+                    } else {
+                        //do nothing
                     }
                 }
                 is UploadedPhotosFragmentEvent.UiEvents.LoadTakenPhotos -> {
                     loadTakenPhotos()
                 }
-                else -> throw IllegalArgumentException("Unknown UploadedPhotosFragmentEvent $event")
-            }
+                is UploadedPhotosFragmentEvent.UiEvents.UpdateReceiverInfo -> {
+                    event.receivedPhotos.forEach {
+                        adapter.updateUploadedPhotoSetReceiverInfo(it.uploadedPhotoName)
+                    }
+                }
+            }.safe
         }
     }
 
@@ -270,8 +277,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                         }
                     }
                 }
-                else -> throw IllegalArgumentException("Unknown PhotoUploadEvent $event")
-            }
+            }.safe
         }
     }
 
