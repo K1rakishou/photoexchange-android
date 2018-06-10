@@ -122,4 +122,17 @@ class TempFileRepositoryTests {
 
         assertEquals(2, repository.findAll().size)
     }
+
+    @Test
+    fun should_remove_empty_temp_files() {
+        repository.create()
+        repository.create()
+        repository.create()
+        repository.create()
+
+        assertEquals(4, repository.findAll().size)
+        repository.deleteEmptyTempFiles()
+
+        assertEquals(0, repository.findAll().size)
+    }
 }
