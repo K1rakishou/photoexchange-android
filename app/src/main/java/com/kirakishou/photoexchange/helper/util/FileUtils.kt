@@ -20,4 +20,20 @@ object FileUtils {
     fun deleteFile(filePath: String) {
         deleteFile(File(filePath))
     }
+
+    fun deleteAllFiles(directory: File) {
+        val files = directory.listFiles()
+
+        if (files.isNotEmpty()) {
+            files.forEach {
+                if (it.isDirectory) {
+                    deleteAllFiles(it)
+                }
+
+                if (it.exists()) {
+                    it.delete()
+                }
+            }
+        }
+    }
 }

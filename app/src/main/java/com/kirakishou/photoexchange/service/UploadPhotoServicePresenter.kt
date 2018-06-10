@@ -37,6 +37,7 @@ class UploadPhotoServicePresenter(
     private val compositeDisposable = CompositeDisposable()
 
     val uploadPhotosSubject = PublishSubject.create<Unit>().toSerialized()
+    val resultEventsSubject = PublishSubject.create<UploadPhotoEvent>().toSerialized()
 
     init {
         compositeDisposable += uploadPhotosSubject
@@ -47,22 +48,28 @@ class UploadPhotoServicePresenter(
                 val userIdObservable = getUserId()
 
                 return@concatMap Observable.fromCallable {
-                    updateServiceNotification(ServiceNotification.Uploading())
+                    updateServiceNotification(NotificationType.Uploading())
                 }
                     .flatMap { Observables.zip(currentLocationObservable, userIdObservable) }
                     .concatMap { (currentLocation, userId) ->
+                        takenPhotosRepository.updateAllPhotosLocation(currentLocation)
+
                         return@concatMap Observable.fromCallable { takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP) }
                             .concatMapSingle { queuedUpPhotos ->
                                 return@concatMapSingle Observable.fromIterable(queuedUpPhotos)
                                     .concatMap { photo ->
                                         return@concatMap Observable.just(Unit)
-                                            .doOnNext { sendEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadStart(photo)) }
+                                            .doOnNext {
+                                                sendEvent(UploadPhotoEvent.UploadingEvent(
+                                                    UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadStart(photo))
+                                                )
+                                            }
                                             .concatMap {
                                                 return@concatMap Observable.create<UploadedPhotosFragmentEvent.PhotoUploadEvent> { emitter ->
                                                     uploadPhotosUseCase.uploadPhoto(photo, userId, currentLocation, emitter)
                                                 }
                                             }
-                                            .doOnNext { event -> sendEvent(event) }
+                                            .doOnNext { event -> sendEvent(UploadPhotoEvent.UploadingEvent(event)) }
                                             .doOnError { error -> handleRemoteErrors(photo, error) }
                                     }
                                     .lastOrError()
@@ -72,19 +79,25 @@ class UploadPhotoServicePresenter(
                             }
                     }
                     .doOnNext { allUploaded ->
-                        updateServiceNotification(ServiceNotification.Success("All photos has been successfully uploaded"))
-                        sendEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd(allUploaded))
+                        updateServiceNotification(NotificationType.Success("All photos has been successfully uploaded"))
+                        sendEvent(UploadPhotoEvent.UploadingEvent(
+                            UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd(allUploaded))
+                        )
                     }
                     .doOnError { error ->
                         updatePhotosStates()
-                        updateServiceNotification(ServiceNotification.Error("Could not upload one or more photos"))
+                        updateServiceNotification(NotificationType.Error("Could not upload one or more photos"))
                         handleUnknownErrors(error)
                     }
                     .map { Unit }
                     .onErrorReturnItem(Unit)
             }
-            .doOnEach { stopService() }
+            .doOnEach { sendEvent(UploadPhotoEvent.StopService()) }
             .subscribe()
+    }
+
+    private fun sendEvent(event: UploadPhotoEvent) {
+        resultEventsSubject.onNext(event)
     }
 
     private fun updatePhotosStates() {
@@ -92,30 +105,21 @@ class UploadPhotoServicePresenter(
         takenPhotosRepository.updateStates(PhotoState.PHOTO_UPLOADING, PhotoState.FAILED_TO_UPLOAD)
     }
 
-    fun onDetach() {
-        this.compositeDisposable.clear()
-    }
-
-    fun uploadPhotos() {
-        Timber.tag(TAG).d("uploadPhotos called")
-        uploadPhotosSubject.onNext(Unit)
-    }
-
-    fun updateServiceNotification(serviceNotification: ServiceNotification) {
+    private fun updateServiceNotification(serviceNotification: NotificationType) {
         when (serviceNotification) {
-            is UploadPhotoServicePresenter.ServiceNotification.Uploading -> {
-                callbacks.get()?.updateUploadingNotificationShowUploading()
+            is UploadPhotoServicePresenter.NotificationType.Uploading -> {
+                sendEvent(UploadPhotoEvent.OnNewNotification(NotificationType.Uploading()))
             }
-            is UploadPhotoServicePresenter.ServiceNotification.Success -> {
-                callbacks.get()?.updateUploadingNotificationShowSuccess(serviceNotification.message)
+            is UploadPhotoServicePresenter.NotificationType.Success -> {
+                sendEvent(UploadPhotoEvent.OnNewNotification(NotificationType.Success(serviceNotification.message)))
             }
-            is UploadPhotoServicePresenter.ServiceNotification.Error -> {
-                callbacks.get()?.updateUploadingNotificationShowError(serviceNotification.errorMessage)
+            is UploadPhotoServicePresenter.NotificationType.Error -> {
+                sendEvent(UploadPhotoEvent.OnNewNotification(NotificationType.Error(serviceNotification.errorMessage)))
             }
         }
     }
 
-    fun handleRemoteErrors(takenPhoto: TakenPhoto, error: Throwable) {
+    private fun handleRemoteErrors(takenPhoto: TakenPhoto, error: Throwable) {
         if (error is PhotoUploadingException) {
             val errorCode = when (error) {
                 is PhotoUploadingException.RemoteServerException -> error.remoteErrorCode
@@ -124,13 +128,15 @@ class UploadPhotoServicePresenter(
                 is PhotoUploadingException.DatabaseException -> ErrorCode.UploadPhotoErrors.CouldNotRotatePhoto()
             }
 
-            sendEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUpload(takenPhoto, errorCode))
+            sendEvent(UploadPhotoEvent.UploadingEvent(
+                UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUpload(takenPhoto, errorCode))
+            )
         }
 
         takenPhotosRepository.updatePhotoState(takenPhoto.id, PhotoState.FAILED_TO_UPLOAD)
     }
 
-    fun handleUnknownErrors(error: Throwable) {
+    private fun handleUnknownErrors(error: Throwable) {
         Timber.tag(TAG).d("onUploadingEvent(PhotoUploadEvent.OnEnd())")
 
         when (error) {
@@ -147,11 +153,11 @@ class UploadPhotoServicePresenter(
                     else -> ErrorCode.UploadPhotoErrors.UnknownError()
                 }
 
-                callbacks.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.knownError(cause))
+                sendEvent(UploadPhotoEvent.UploadingEvent(UploadedPhotosFragmentEvent.knownError(cause)))
             }
 
             else -> {
-                callbacks.get()?.onUploadingEvent(UploadedPhotosFragmentEvent.unknownError(error))
+                sendEvent(UploadPhotoEvent.UploadingEvent(UploadedPhotosFragmentEvent.unknownError(error)))
             }
         }
     }
@@ -176,10 +182,14 @@ class UploadPhotoServicePresenter(
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
-    fun getCurrentLocation(): Observable<LonLat> {
+    private fun getCurrentLocation(): Observable<LonLat> {
+        if (!takenPhotosRepository.hasPhotosWithEmptyLocation()) {
+            return Observable.just(LonLat.empty())
+        }
+
         val gpsPermissionGrantedObservable = Observable.fromCallable {
             settingsRepository.isGpsPermissionGranted()
-        }
+        }.publish().autoConnect(2)
 
         val gpsGranted = gpsPermissionGrantedObservable
             .filter { permissionGranted -> permissionGranted }
@@ -188,6 +198,7 @@ class UploadPhotoServicePresenter(
                 callbacks.get()?.getCurrentLocation()?.toObservable()
                     ?: Observable.just(LonLat.empty())
             }
+            .doOnNext { updateCurrentLocationForAllPhotosWithEmptyLocation(it) }
 
         val gpsNotGranted = gpsPermissionGrantedObservable
             .filter { permissionGranted -> !permissionGranted }
@@ -197,17 +208,37 @@ class UploadPhotoServicePresenter(
         return Observable.merge(gpsGranted, gpsNotGranted)
     }
 
-    fun stopService() {
-        callbacks.get()?.stopService()
+    private fun updateCurrentLocationForAllPhotosWithEmptyLocation(location: LonLat) {
+        try {
+            takenPhotosRepository.updateAllPhotosLocation(location)
+        } catch (error: Throwable) {
+            Timber.tag(TAG).e(error)
+        }
     }
 
-    fun sendEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
-        callbacks.get()?.onUploadingEvent(event)
+    fun onDetach() {
+        this.compositeDisposable.clear()
     }
 
-    sealed class ServiceNotification() {
-        class Uploading : ServiceNotification()
-        class Success(val message: String) : ServiceNotification()
-        class Error(val errorMessage: String) : ServiceNotification()
+    fun observeResults(): Observable<UploadPhotoEvent> {
+        return resultEventsSubject
+    }
+
+    fun uploadPhotos() {
+        Timber.tag(TAG).d("uploadPhotos called")
+        uploadPhotosSubject.onNext(Unit)
+    }
+
+    sealed class UploadPhotoEvent {
+        class UploadingEvent(val nestedEvent: UploadedPhotosFragmentEvent.PhotoUploadEvent) : UploadPhotoEvent()
+        class OnNewNotification(val type: NotificationType) : UploadPhotoEvent()
+        class RemoveNotification : UploadPhotoEvent()
+        class StopService : UploadPhotoEvent()
+    }
+
+    sealed class NotificationType {
+        class Uploading : NotificationType()
+        class Success(val message: String) : NotificationType()
+        class Error(val errorMessage: String) : NotificationType()
     }
 }

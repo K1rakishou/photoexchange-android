@@ -4,8 +4,10 @@ import android.arch.persistence.room.Room
 import android.content.Context
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.*
+import com.kirakishou.photoexchange.helper.util.TimeUtils
 import dagger.Module
 import dagger.Provides
+import javax.inject.Named
 import javax.inject.Singleton
 
 /**
@@ -23,13 +25,27 @@ open class DatabaseModule(
         return Room.databaseBuilder(context, MyDatabase::class.java, dbName).build()
     }
 
+    @Singleton
+    @Provides
+    @Named("files_directory")
+    fun provideFilesDirectoryPath(context: Context): String {
+        return context.filesDir.absolutePath
+    }
 
     @Singleton
     @Provides
-    open fun provideTakenPhotoRepository(context: Context,
-                                         database: MyDatabase): TakenPhotosRepository {
-        val filesDir = context.filesDir.absolutePath
-        return TakenPhotosRepository(filesDir, database)
+    fun provideTempFilesRepository(@Named("files_directory") filesDir: String,
+                                   database: MyDatabase,
+                                   timeUtils: TimeUtils): TempFileRepository {
+        return TempFileRepository(filesDir, database, timeUtils)
+    }
+
+    @Singleton
+    @Provides
+    open fun provideTakenPhotoRepository(database: MyDatabase,
+                                         timeUtils: TimeUtils,
+                                         tempFileRepository: TempFileRepository): TakenPhotosRepository {
+        return TakenPhotosRepository(timeUtils, database, tempFileRepository)
     }
 
     @Singleton
@@ -46,8 +62,8 @@ open class DatabaseModule(
 
     @Singleton
     @Provides
-    open fun provideGalleryPhotoRepository(database: MyDatabase): GalleryPhotoRepository {
-        return GalleryPhotoRepository(database)
+    open fun provideGalleryPhotoRepository(database: MyDatabase, timeUtils: TimeUtils): GalleryPhotoRepository {
+        return GalleryPhotoRepository(database, timeUtils)
     }
 
     @Singleton

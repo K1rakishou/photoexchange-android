@@ -2,12 +2,10 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelStateEventForwarder
+import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.*
 import com.kirakishou.photoexchange.mvp.model.*
 import com.kirakishou.photoexchange.mvp.model.other.Constants
@@ -24,6 +22,7 @@ import java.util.concurrent.TimeUnit
 class PhotosActivityViewModel(
     private val takenPhotosRepository: TakenPhotosRepository,
     private val uploadedPhotosRepository: UploadedPhotosRepository,
+    private val galleryPhotoRepository: GalleryPhotoRepository,
     private val settingsRepository: SettingsRepository,
     private val receivedPhotosRepository: ReceivedPhotosRepository,
     private val getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
@@ -36,6 +35,10 @@ class PhotosActivityViewModel(
 
     private val TAG = "PhotosActivityViewModel"
     private val ADAPTER_LOAD_MORE_ITEMS_DELAY_MS = 1.seconds()
+
+    private val cachedUploadedPhotoIds = mutableListOf<Long>()
+    private val cachedReceivedPhotoIds = mutableListOf<Long>()
+    private val cachedGalleryPhotoIds = mutableListOf<Long>()
 
     val eventForwarder = PhotosActivityViewModelStateEventForwarder()
 
@@ -57,34 +60,66 @@ class PhotosActivityViewModel(
             .concatMap { userId -> favouritePhotoUseCase.favouritePhoto(userId, photoName) }
     }
 
-    fun loadNextPageOfGalleryPhotos(lastId: Long, photosPerPage: Int): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
+    fun loadNextPageOfGalleryPhotos(
+        lastId: Long,
+        photosPerPage: Int,
+        isFragmentFreshlyCreated: Boolean
+    ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .concatMap { userId ->
-                getGalleryPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
-                    .toObservable()
+                if (isFragmentFreshlyCreated) {
+                    return@concatMap getGalleryPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
+                        .toObservable()
+                        .doOnNext { result ->
+                            if (result is Either.Value) {
+                                cachedGalleryPhotoIds += result.value.map { it.galleryPhotoId }
+                            }
+                        }
+                        .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
+                } else {
+                    return@concatMap Observable.fromCallable {
+                        return@fromCallable Either.Value(galleryPhotoRepository.findMany(cachedGalleryPhotoIds))
+                    }
+                }
             }
-            .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
     }
 
-    fun loadNextPageOfUploadedPhotos(lastId: Long, photosPerPage: Int): Observable<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>> {
+    fun loadNextPageOfUploadedPhotos(
+        lastId: Long,
+        photosPerPage: Int,
+        isFragmentFreshlyCreated: Boolean
+    ): Observable<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>> {
+
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
-            .flatMap { _userId ->
-                if (_userId.isEmpty()) {
+            .flatMap { userId ->
+                if (userId.isEmpty()) {
                     return@flatMap Observable.just<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>>(Either.Value(emptyList()))
                 }
 
-                return@flatMap Observable.just(_userId)
-                    .flatMap { userId ->
-                        getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
-                            .toObservable()
+                if (isFragmentFreshlyCreated) {
+                    return@flatMap getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
+                        .doOnNext { result ->
+                            if (result is Either.Value) {
+                                cachedUploadedPhotoIds += result.value.map { it.photoId }
+                            }
+                        }
+                        .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
+                } else {
+                    return@flatMap Observable.fromCallable {
+                        return@fromCallable Either.Value(uploadedPhotosRepository.findMany(cachedUploadedPhotoIds))
                     }
+                }
             }
-            .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
     }
 
-    fun loadNextPageOfReceivedPhotos(lastId: Long, photosPerPage: Int): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
+    fun loadNextPageOfReceivedPhotos(
+        lastId: Long,
+        photosPerPage: Int,
+        isFragmentFreshlyCreated: Boolean
+    ): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
+
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .flatMap { userId ->
@@ -92,9 +127,29 @@ class PhotosActivityViewModel(
                     return@flatMap Observable.just(Either.Error(ErrorCode.GetReceivedPhotosErrors.LocalUserIdIsEmpty()))
                 }
 
-                return@flatMap getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
+                if (isFragmentFreshlyCreated) {
+                    return@flatMap getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
+                        .doOnNext { result ->
+                            if (result is Either.Value) {
+                                cachedReceivedPhotoIds += result.value.map { it.photoId }
+                            }
+                        }
+                        .doOnNext { result ->
+                            if (result is Either.Value) {
+                                updateUploadedPhotosReceiverInfo(result.value)
+                            }
+                        }
+                        .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
+                } else {
+                    return@flatMap Observable.fromCallable {
+                        return@fromCallable Either.Value(receivedPhotosRepository.findMany(cachedReceivedPhotoIds))
+                    }
+                }
             }
-            .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
+    }
+
+    private fun updateUploadedPhotosReceiverInfo(receivedPhotos: MutableList<ReceivedPhoto>) {
+        eventForwarder.sendUploadedPhotosFragmentEvent(UploadedPhotosFragmentEvent.UiEvents.UpdateReceiverInfo(receivedPhotos))
     }
 
     fun checkHasPhotosToUpload(): Observable<Boolean> {

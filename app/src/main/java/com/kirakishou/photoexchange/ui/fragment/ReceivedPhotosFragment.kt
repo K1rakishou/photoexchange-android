@@ -10,6 +10,7 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.RxLifecycle
+import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
@@ -17,9 +18,11 @@ import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
+import com.kirakishou.photoexchange.ui.activity.MapActivity
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapterSpanSizeLookup
+import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewState
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -47,12 +50,16 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     private val TAG = "ReceivedPhotosFragment"
     private val PHOTO_ADAPTER_VIEW_WIDTH = 288
     private val loadMoreSubject = PublishSubject.create<Int>()
+    private val adapterClicksSubject = PublishSubject.create<ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent>()
+    private var isFragmentFreshlyCreated = true
+    private val viewState = ReceivedPhotosFragmentViewState()
     private var photosPerPage = 0
-    private var lastId = Long.MAX_VALUE
 
     override fun getContentView(): Int = R.layout.fragment_received_photos
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
+        isFragmentFreshlyCreated = savedInstanceState == null
+
         initRx()
         initRecyclerView()
     }
@@ -72,7 +79,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
             .filter { it.isAtLeast(RxLifecycle.FragmentState.Resumed) }
             .take(1)
             .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
-            .concatMap { viewModel.loadNextPageOfReceivedPhotos(lastId, photosPerPage) }
+            .concatMap { viewModel.loadNextPageOfReceivedPhotos(viewState.lastId, photosPerPage, isFragmentFreshlyCreated) }
             .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
             .subscribe({ result ->
                 when (result) {
@@ -90,7 +97,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
                     .map { nextPage }
             }
             .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
-            .concatMap { viewModel.loadNextPageOfReceivedPhotos(lastId, photosPerPage) }
+            .concatMap { viewModel.loadNextPageOfReceivedPhotos(viewState.lastId, photosPerPage, isFragmentFreshlyCreated) }
             .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
             .subscribe({ result ->
                 when (result) {
@@ -100,12 +107,16 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
             }, {
                 Timber.tag(TAG).e(it)
             })
+
+        compositeDisposable += adapterClicksSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .subscribe({ click -> handleAdapterClick(click) })
     }
 
     private fun initRecyclerView() {
         val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = ReceivedPhotosAdapter(requireContext(), imageLoader)
+        adapter = ReceivedPhotosAdapter(requireContext(), imageLoader, adapterClicksSubject)
 
         val layoutManager = GridLayoutManager(requireContext(), columnsCount)
         layoutManager.spanSizeLookup = ReceivedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
@@ -117,6 +128,22 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
         receivedPhotosList.adapter = adapter
         receivedPhotosList.clearOnScrollListeners()
         receivedPhotosList.addOnScrollListener(endlessScrollListener)
+    }
+
+    private fun handleAdapterClick(click: ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent) {
+        when (click) {
+            is ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent.ShowPhoto -> {
+                TODO()
+            }
+            is ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent.ShowMap -> {
+                val args = Bundle().apply {
+                    this.putDouble(MapActivity.LON_PARAM, click.location.lon)
+                    this.putDouble(MapActivity.LAT_PARAM, click.location.lat)
+                }
+
+                (requireActivity() as PhotosActivity).runActivityWithArgs(MapActivity::class.java, args)
+            }
+        }.safe
     }
 
     override fun onStateEvent(event: ReceivedPhotosFragmentEvent) {
@@ -179,7 +206,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
             endlessScrollListener.pageLoaded()
 
             if (receivedPhotos.isNotEmpty()) {
-                lastId = receivedPhotos.last().photoId
+                viewState.updateLastId(receivedPhotos.last().photoId)
                 adapter.addReceivedPhotos(receivedPhotos)
             }
 

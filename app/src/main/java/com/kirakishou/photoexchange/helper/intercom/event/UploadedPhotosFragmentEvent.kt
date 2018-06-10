@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.helper.intercom.event
 
+import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
@@ -13,6 +14,7 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
         class ScrollToTop : UiEvents()
         class OnPhotoRemoved : UiEvents()
         class LoadTakenPhotos : UiEvents()
+        class UpdateReceiverInfo(val receivedPhotos: MutableList<ReceivedPhoto>) : UiEvents()
     }
 
     sealed class PhotoUploadEvent : UploadedPhotosFragmentEvent() {

@@ -26,20 +26,20 @@ object GalleryPhotosMapper {
     }
 
     object FromObject {
-        fun toGalleryPhotoEntity(galleryPhoto: GalleryPhoto): GalleryPhotoEntity {
+        fun toGalleryPhotoEntity(time: Long, galleryPhoto: GalleryPhoto): GalleryPhotoEntity {
             return GalleryPhotoEntity.create(
                 galleryPhoto.galleryPhotoId,
                 galleryPhoto.photoName,
                 galleryPhoto.lon,
                 galleryPhoto.lat,
                 galleryPhoto.uploadedOn,
-                TimeUtils.getTimeFast(),
+                time,
                 galleryPhoto.favouritesCount
             )
         }
 
-        fun toGalleryPhotoEntities(galleryPhotoList: List<GalleryPhoto>): List<GalleryPhotoEntity> {
-            return galleryPhotoList.map { toGalleryPhotoEntity(it) }
+        fun toGalleryPhotoEntities(time: Long, galleryPhotoList: List<GalleryPhoto>): List<GalleryPhotoEntity> {
+            return galleryPhotoList.map { toGalleryPhotoEntity(time, it) }
         }
     }
 
@@ -62,21 +62,21 @@ object GalleryPhotosMapper {
         }
 
         object ToEntity {
-            fun toGalleryPhotoEntity(galleryPhotoResponseData: GalleryPhotosResponse.GalleryPhotoResponseData): GalleryPhotoEntity {
+            fun toGalleryPhotoEntity(time: Long, galleryPhotoResponseData: GalleryPhotosResponse.GalleryPhotoResponseData): GalleryPhotoEntity {
                 return GalleryPhotoEntity.create(
                     galleryPhotoResponseData.id,
                     galleryPhotoResponseData.photoName,
                     galleryPhotoResponseData.lon,
                     galleryPhotoResponseData.lat,
                     galleryPhotoResponseData.uploadedOn,
-                    TimeUtils.getTimeFast(),
+                    time,
                     galleryPhotoResponseData.favouritesCount
                 )
             }
 
 
-            fun toGalleryPhotoEntitiesList(galleryPhotoResponseDataList: List<GalleryPhotosResponse.GalleryPhotoResponseData>): List<GalleryPhotoEntity> {
-                return galleryPhotoResponseDataList.map { toGalleryPhotoEntity(it) }
+            fun toGalleryPhotoEntitiesList(time: Long, galleryPhotoResponseDataList: List<GalleryPhotosResponse.GalleryPhotoResponseData>): List<GalleryPhotoEntity> {
+                return galleryPhotoResponseDataList.map { toGalleryPhotoEntity(time, it) }
             }
         }
     }

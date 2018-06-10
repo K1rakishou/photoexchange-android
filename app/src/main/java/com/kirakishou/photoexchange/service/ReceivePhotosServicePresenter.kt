@@ -34,7 +34,7 @@ class ReceivePhotosServicePresenter(
             .delay(1, TimeUnit.SECONDS)
             .concatMap {
                 return@concatMap Observable.just(1)
-                    .doOnNext { sendEvent(ReceivePhotoEvent.OnNewNotificationShowDownloading(NotificationType.Progress())) }
+                    .doOnNext { sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Progress())) }
                     .concatMap {
                         val uploadedPhotos = uploadedPhotosRepository.findAll(false)
                         val photoNames = uploadedPhotos.joinToString(",") { it.photoName }
@@ -58,12 +58,12 @@ class ReceivePhotosServicePresenter(
                             .doOnNext { event -> handlePhotoReceivedEvent(event) }
                             .lastOrError()
                     }
-                    .doOnNext { sendEvent(ReceivePhotoEvent.OnNewNotificationShowDownloading(NotificationType.Success())) }
+                    .doOnNext { sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Success())) }
                     .doOnError { error ->
                         Timber.tag(TAG).e(error)
 
                         if (handleErrors(error)) {
-                            sendEvent(ReceivePhotoEvent.OnNewNotificationShowDownloading(NotificationType.Error()))
+                            sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Error()))
                         } else {
                             sendEvent(ReceivePhotoEvent.RemoveNotification())
                         }
@@ -123,7 +123,7 @@ class ReceivePhotosServicePresenter(
                               val takenPhotoName: String) : ReceivePhotoEvent()
         class OnFailed(val errorCode: ErrorCode.ReceivePhotosErrors?) : ReceivePhotoEvent()
         class OnError(val error: Throwable) : ReceivePhotoEvent()
-        class OnNewNotificationShowDownloading(val type: NotificationType) : ReceivePhotoEvent()
+        class OnNewNotification(val type: NotificationType) : ReceivePhotoEvent()
         class RemoveNotification : ReceivePhotoEvent()
         class StopService : ReceivePhotoEvent()
     }

@@ -197,7 +197,7 @@ class TakePhotoActivity : BaseActivity() {
 
     private fun onPhotoTaken(takenPhoto: TakenPhoto) {
         runActivityWithArgs(ViewTakenPhotoActivity::class.java,
-            takenPhoto.toBundle(), false)
+            takenPhoto.toBundle())
     }
 
     private fun animateAppear() {

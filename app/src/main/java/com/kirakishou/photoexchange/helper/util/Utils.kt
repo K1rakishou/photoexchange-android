@@ -28,7 +28,7 @@ object Utils {
         return generateRandomString(64, numericAlphabetic) + "_photoexchange"
     }
 
-    fun filterListAlreadyContaning(listOne: List<Long>, listTwo: List<Long>): List<Long> {
+    fun filterListAlreadyContaining(listOne: List<Long>, listTwo: List<Long>): List<Long> {
         val setOne = listOne.toSet()
         val setTwo = listTwo.toSet()
         val resultList = mutableListOf<Long>()

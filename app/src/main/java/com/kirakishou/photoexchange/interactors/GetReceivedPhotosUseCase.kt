@@ -24,7 +24,11 @@ class GetReceivedPhotosUseCase(
 
     private val TAG = "GetReceivedPhotosUseCase"
 
-    fun loadPageOfPhotos(userId: String, lastId: Long, count: Int): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
+    fun loadPageOfPhotos(
+        userId: String,
+        lastId: Long,
+        count: Int
+    ): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
         Timber.tag(TAG).d("sending loadPageOfPhotos request...")
 
         return apiClient.getReceivedPhotoIds(userId, lastId, count).toObservable()
@@ -37,7 +41,7 @@ class GetReceivedPhotosUseCase(
                 return@concatMap Observable.just(response.receivedPhotoIds)
                     .concatMap { receivedPhotoIds ->
                         val receivedPhotosFromDb = receivedPhotosRepository.findMany(receivedPhotoIds)
-                        val photoIdsToGetFromServer = Utils.filterListAlreadyContaning(receivedPhotoIds, receivedPhotosFromDb.map { it.photoId })
+                        val photoIdsToGetFromServer = Utils.filterListAlreadyContaining(receivedPhotoIds, receivedPhotosFromDb.map { it.photoId })
 
                         return@concatMap Observable.just(photoIdsToGetFromServer)
                             .concatMap { photoIds ->
@@ -90,7 +94,6 @@ class GetReceivedPhotosUseCase(
             .concatMapSingle { photoIdsToBeRequested -> apiClient.getReceivedPhotos(userId, photoIdsToBeRequested) }
             .map { response ->
                 val errorCode = response.errorCode as ErrorCode.GetReceivedPhotosErrors
-
                 if (errorCode !is ErrorCode.GetReceivedPhotosErrors.Ok) {
                     return@map Either.Error(errorCode)
                 }
@@ -101,9 +104,7 @@ class GetReceivedPhotosUseCase(
 
                 val transactionResult = database.transactional {
                     for (receivedPhoto in response.receivedPhotos) {
-                        if (!uploadedPhotosRepository.updateReceiverInfo(receivedPhoto.uploadedPhotoName)) {
-                            return@transactional false
-                        }
+                        uploadedPhotosRepository.updateReceiverInfo(receivedPhoto.uploadedPhotoName)
                     }
 
                     if (!receivedPhotosRepository.saveMany(response.receivedPhotos)) {

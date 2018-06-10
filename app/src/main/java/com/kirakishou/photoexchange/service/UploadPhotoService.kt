@@ -10,8 +10,8 @@ import android.support.annotation.RequiresApi
 import android.support.v4.app.NotificationCompat
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.*
+import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.extension.seconds
-import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.location.MyLocationManager
 import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
@@ -20,6 +20,7 @@ import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.lang.ref.WeakReference
@@ -53,6 +54,9 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
 
         resolveDaggerDependency()
         startForeground(NOTIFICATION_ID, createInitialNotification())
+
+        compositeDisposable += presenter.observeResults()
+            .subscribe(this::onUploadingPhotoResult)
     }
 
     override fun onDestroy() {
@@ -81,15 +85,28 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
         presenter.uploadPhotos()
     }
 
-    override fun onUploadingEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
-        callback.get()?.onUploadPhotosEvent(event)
+    private fun onUploadingPhotoResult(event: UploadPhotoServicePresenter.UploadPhotoEvent) {
+        when (event) {
+            is UploadPhotoServicePresenter.UploadPhotoEvent.UploadingEvent -> {
+                callback.get()?.onUploadPhotosEvent(event.nestedEvent)
+            }
+            is UploadPhotoServicePresenter.UploadPhotoEvent.RemoveNotification -> {
+                removeNotification()
+            }
+            is UploadPhotoServicePresenter.UploadPhotoEvent.StopService -> {
+                stopService()
+            }
+            is UploadPhotoServicePresenter.UploadPhotoEvent.OnNewNotification -> {
+                when (event.type) {
+                    is UploadPhotoServicePresenter.NotificationType.Uploading -> updateNotificationShowProgress()
+                    is UploadPhotoServicePresenter.NotificationType.Success -> updateNotificationShowSuccess(event.type.message)
+                    is UploadPhotoServicePresenter.NotificationType.Error -> updateNotificationShowError(event.type.errorMessage)
+                }.safe
+            }
+        }.safe
     }
 
-    override fun onError(error: Throwable) {
-        Timber.e(error)
-    }
-
-    override fun stopService() {
+    private fun stopService() {
         Timber.tag(TAG).d("Stopping service")
 
         stopForeground(true)
@@ -116,17 +133,17 @@ class UploadPhotoService : Service(), UploadPhotoServiceCallbacks {
         getNotificationManager().cancel(NOTIFICATION_ID)
     }
 
-    override fun updateUploadingNotificationShowUploading() {
+    private fun updateNotificationShowProgress() {
         val newNotification = createNotificationUploading()
         getNotificationManager().notify(NOTIFICATION_ID, newNotification)
     }
 
-    override fun updateUploadingNotificationShowSuccess(message: String) {
+    private fun updateNotificationShowSuccess(message: String) {
         val newNotification = createNotificationSuccess(message)
         getNotificationManager().notify(NOTIFICATION_ID, newNotification)
     }
 
-    override fun updateUploadingNotificationShowError(message: String) {
+    private fun updateNotificationShowError(message: String) {
         val newNotification = createNotificationError(message)
         getNotificationManager().notify(NOTIFICATION_ID, newNotification)
     }

@@ -46,7 +46,7 @@ class GetGalleryPhotosUseCase(
 
                 //get photos by the ids from the database
                 val galleryPhotosFromDb = galleryPhotoRepository.findMany(galleryPhotoIds)
-                val photoIdsToGetFromServer = Utils.filterListAlreadyContaning(galleryPhotoIds, galleryPhotosFromDb.map { it.galleryPhotoId })
+                val photoIdsToGetFromServer = Utils.filterListAlreadyContaining(galleryPhotoIds, galleryPhotosFromDb.map { it.galleryPhotoId })
                 photosResultList.addAll(galleryPhotosFromDb)
 
                 //if we got photo ids that are not cached in the DB yet - get the fresh photos
@@ -69,7 +69,7 @@ class GetGalleryPhotosUseCase(
 
                     //get photos' info by the ids from the database
                     val galleryPhotoInfoFromDb = galleryPhotoRepository.findManyInfo(galleryPhotoIds, INTERVAL_TO_REFRESH_PHOTOS_FROM_SERVER)
-                    val photoInfoIdsToGetFromServer = Utils.filterListAlreadyContaning(galleryPhotoIds, galleryPhotoInfoFromDb.map { it.galleryPhotoId })
+                    val photoInfoIdsToGetFromServer = Utils.filterListAlreadyContaining(galleryPhotoIds, galleryPhotoInfoFromDb.map { it.galleryPhotoId })
                     updateGalleryPhotoInfo(photosResultList, galleryPhotoInfoFromDb)
 
                     Timber.tag(TAG).d("Cached gallery photo info ids = ${galleryPhotoInfoFromDb.map { it.galleryPhotoId }}")
