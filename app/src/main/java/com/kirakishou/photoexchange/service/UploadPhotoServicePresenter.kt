@@ -52,6 +52,8 @@ class UploadPhotoServicePresenter(
                 }
                     .flatMap { Observables.zip(currentLocationObservable, userIdObservable) }
                     .concatMap { (currentLocation, userId) ->
+                        takenPhotosRepository.updateAllPhotosLocation(currentLocation)
+
                         return@concatMap Observable.fromCallable { takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP) }
                             .concatMapSingle { queuedUpPhotos ->
                                 return@concatMapSingle Observable.fromIterable(queuedUpPhotos)
@@ -181,9 +183,13 @@ class UploadPhotoServicePresenter(
     }
 
     private fun getCurrentLocation(): Observable<LonLat> {
+        if (!takenPhotosRepository.hasPhotosWithEmptyLocation()) {
+            return Observable.just(LonLat.empty())
+        }
+
         val gpsPermissionGrantedObservable = Observable.fromCallable {
             settingsRepository.isGpsPermissionGranted()
-        }
+        }.publish().autoConnect(2)
 
         val gpsGranted = gpsPermissionGrantedObservable
             .filter { permissionGranted -> permissionGranted }
@@ -192,6 +198,7 @@ class UploadPhotoServicePresenter(
                 callbacks.get()?.getCurrentLocation()?.toObservable()
                     ?: Observable.just(LonLat.empty())
             }
+            .doOnNext { updateCurrentLocationForAllPhotosWithEmptyLocation(it) }
 
         val gpsNotGranted = gpsPermissionGrantedObservable
             .filter { permissionGranted -> !permissionGranted }
@@ -199,6 +206,14 @@ class UploadPhotoServicePresenter(
             .map { LonLat.empty() }
 
         return Observable.merge(gpsGranted, gpsNotGranted)
+    }
+
+    private fun updateCurrentLocationForAllPhotosWithEmptyLocation(location: LonLat) {
+        try {
+            takenPhotosRepository.updateAllPhotosLocation(location)
+        } catch (error: Throwable) {
+            Timber.tag(TAG).e(error)
+        }
     }
 
     fun onDetach() {

@@ -36,9 +36,9 @@ abstract class TakenPhotoDao {
     abstract fun findOnePhotoWithState(photoState: PhotoState): MutableList<TakenPhotoEntity>
 
     @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} " +
-            "WHERE " +
+        "WHERE " +
         "${TakenPhotoEntity.ID_COLUMN} = :photoId " +
-            " AND " +
+        " AND " +
         "${TakenPhotoEntity.PHOTO_STATE_COLUMN} = :photoState")
     @TypeConverters(PhotoStateConverter::class)
     abstract fun findByIdAndState(photoId: Long, photoState: PhotoState): TakenPhotoEntity?
@@ -53,6 +53,13 @@ abstract class TakenPhotoDao {
 
     @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME}")
     abstract fun findAll(): List<TakenPhotoEntity>
+
+    @Query("SELECT * FROM ${TakenPhotoEntity.TABLE_NAME} " +
+        " WHERE " +
+        "${TakenPhotoEntity.LON_COLUMN} = 0.0 " +
+        " AND " +
+        "${TakenPhotoEntity.LAT_COLUMN} = 0.0")
+    abstract fun findAllWithEmptyLocation(): List<TakenPhotoEntity>
 
     @Query("SELECT COUNT(*) FROM ${TakenPhotoEntity.TABLE_NAME} " +
         "WHERE ${TakenPhotoEntity.PHOTO_STATE_COLUMN} = :photoState")
@@ -90,6 +97,14 @@ abstract class TakenPhotoDao {
         "SET ${TakenPhotoEntity.IS_PUBLIC_COLUMN} = ${MyDatabase.SQLITE_TRUE} " +
         "WHERE ${TakenPhotoEntity.ID_COLUMN} = :photoId")
     abstract fun updateSetPhotoPublic(photoId: Long): Int
+
+    @Query("UPDATE ${TakenPhotoEntity.TABLE_NAME} " +
+        "SET " +
+        " ${TakenPhotoEntity.LON_COLUMN} = :lon, " +
+        " ${TakenPhotoEntity.LAT_COLUMN} = :lat " +
+        "WHERE " +
+        " ${TakenPhotoEntity.ID_COLUMN} = :takenPhotoId")
+    abstract fun updatePhotoLocation(takenPhotoId: Long, lon: Double, lat: Double): Int
 
     @Query("DELETE FROM ${TakenPhotoEntity.TABLE_NAME} " +
         "WHERE ${TakenPhotoEntity.ID_COLUMN} = :photoId")

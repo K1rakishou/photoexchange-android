@@ -7,14 +7,17 @@ import android.support.test.runner.AndroidJUnit4
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.TempFileRepository
+import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtilsImpl
+import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito
+import java.io.File
 
 /**
  * Created by kirakishou on 3/10/2018.
@@ -47,6 +50,8 @@ class TakenPhotosRepositoryTests {
 
     @After
     fun tearDown() {
+        FileUtils.deleteAllFiles(File(tempFilesDir))
+
         database.close()
     }
 
@@ -74,6 +79,27 @@ class TakenPhotosRepositoryTests {
         tempFilesRepository.deleteOld(Long.MAX_VALUE)
         assertEquals(true, tempFilesRepository.findDeletedOld(Long.MAX_VALUE).isEmpty())
         assertEquals(false, tempFile.asFile().exists())
+    }
+
+    @Test
+    fun should_update_location_for_all_photos_with_empty_location() {
+        val tempFile1 = tempFilesRepository.create()
+        takenPhotosRepository.saveTakenPhoto(tempFile1)
+
+        val tempFile2 = tempFilesRepository.create()
+        takenPhotosRepository.saveTakenPhoto(tempFile2)
+
+        val tempFile3 = tempFilesRepository.create()
+        takenPhotosRepository.saveTakenPhoto(tempFile3)
+
+        val tempFile4 = tempFilesRepository.create()
+        takenPhotosRepository.saveTakenPhoto(tempFile4)
+
+        assertEquals(true, takenPhotosRepository.hasPhotosWithEmptyLocation())
+
+        takenPhotosRepository.updateAllPhotosLocation(LonLat(11.1, 12.2))
+
+        assertEquals(false, takenPhotosRepository.hasPhotosWithEmptyLocation())
     }
 }
 

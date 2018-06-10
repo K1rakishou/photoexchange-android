@@ -9,6 +9,7 @@ import com.kirakishou.photoexchange.helper.database.mapper.TakenPhotosMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import java.util.concurrent.TimeUnit
 
 /**
@@ -57,6 +58,31 @@ open class TakenPhotosRepository(
 
     fun updateMakePhotoPublic(takenPhotoId: Long): Boolean {
         return takenPhotoDao.updateSetPhotoPublic(takenPhotoId) == 1
+    }
+
+    fun updateAllPhotosLocation(location: LonLat) {
+        if (location.isEmpty()) {
+            return
+        }
+
+        val allPhotosWithEmptyLocation = takenPhotoDao.findAllWithEmptyLocation()
+        if (allPhotosWithEmptyLocation.isEmpty()) {
+            return
+        }
+
+        database.transactional {
+            for (photo in allPhotosWithEmptyLocation) {
+                if (takenPhotoDao.updatePhotoLocation(photo.id!!, location.lon, location.lat) != 1) {
+                    return@transactional false
+                }
+            }
+
+            return@transactional true
+        }
+    }
+
+    fun hasPhotosWithEmptyLocation(): Boolean {
+        return takenPhotoDao.findAllWithEmptyLocation().isNotEmpty()
     }
 
     fun findById(id: Long): TakenPhoto {
