@@ -24,7 +24,8 @@ class UploadPhotosUseCase(
     private val database: MyDatabase,
     private val takenPhotosRepository: TakenPhotosRepository,
     private val uploadedPhotosRepository: UploadedPhotosRepository,
-    private val apiClient: ApiClient
+    private val apiClient: ApiClient,
+    private val timeUtils: TimeUtils
 ) {
     private val TAG = "UploadPhotosUseCase"
 
@@ -90,7 +91,7 @@ class UploadPhotosUseCase(
 
         val dbResult = database.transactional {
             val updateResult1 = takenPhotosRepository.deletePhotoById(photo.id)
-            val updateResult2 = uploadedPhotosRepository.save(photoId, photoName, location.lon, location.lat, TimeUtils.getTimeFast())
+            val updateResult2 = uploadedPhotosRepository.save(photoId, photoName, location.lon, location.lat, timeUtils.getTimeFast())
 
             Timber.tag(TAG).d("updateResult1 = $updateResult1, updateResult2 = $updateResult2")
             return@transactional updateResult1 && updateResult2
@@ -100,7 +101,7 @@ class UploadPhotosUseCase(
             throw PhotoUploadingException.DatabaseException(photo)
         }
 
-        return UploadedPhoto(photoId, photoName, location.lon, location.lat, false, TimeUtils.getTimeFast())
+        return UploadedPhoto(photoId, photoName, location.lon, location.lat, false, timeUtils.getTimeFast())
     }
 
     interface PhotoUploadProgressCallback {

@@ -19,7 +19,10 @@ class TempFileEntity(
     var id: Long? = null,
 
     @ColumnInfo(name = FILE_PATH_COLUMN)
-    var filePath: String
+    var filePath: String,
+
+    @ColumnInfo(name = DELETED_ON_COLUMN, index = true)
+    var deletedOn: Long = 0L
 
 ) {
 
@@ -45,5 +48,6 @@ class TempFileEntity(
 
         const val ID_COLUMN = "ID"
         const val FILE_PATH_COLUMN = "FILE_PATH"
+        const val DELETED_ON_COLUMN = "DELETED_ON"
     }
 }

@@ -4,6 +4,7 @@ import android.arch.persistence.room.Room
 import android.content.Context
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.*
+import com.kirakishou.photoexchange.helper.util.TimeUtils
 import dagger.Module
 import dagger.Provides
 import javax.inject.Singleton
@@ -27,9 +28,10 @@ open class DatabaseModule(
     @Singleton
     @Provides
     open fun provideTakenPhotoRepository(context: Context,
-                                         database: MyDatabase): TakenPhotosRepository {
+                                         database: MyDatabase,
+                                         timeUtils: TimeUtils): TakenPhotosRepository {
         val filesDir = context.filesDir.absolutePath
-        return TakenPhotosRepository(filesDir, database)
+        return TakenPhotosRepository(filesDir, database, timeUtils)
     }
 
     @Singleton
@@ -46,8 +48,8 @@ open class DatabaseModule(
 
     @Singleton
     @Provides
-    open fun provideGalleryPhotoRepository(database: MyDatabase): GalleryPhotoRepository {
-        return GalleryPhotoRepository(database)
+    open fun provideGalleryPhotoRepository(database: MyDatabase, timeUtils: TimeUtils): GalleryPhotoRepository {
+        return GalleryPhotoRepository(database, timeUtils)
     }
 
     @Singleton

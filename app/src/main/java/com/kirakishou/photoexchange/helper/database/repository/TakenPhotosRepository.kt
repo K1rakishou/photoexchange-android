@@ -5,6 +5,7 @@ import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
 import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
 import com.kirakishou.photoexchange.helper.database.isFail
 import com.kirakishou.photoexchange.helper.database.mapper.TakenPhotosMapper
+import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import timber.log.Timber
@@ -15,7 +16,8 @@ import java.io.File
  */
 open class TakenPhotosRepository(
     private val filesDir: String,
-    private val database: MyDatabase
+    private val database: MyDatabase,
+    private val timeUtils: TimeUtils
 ) {
     private val tag = "TakenPhotosRepository"
     private val takenPhotoDao = database.takenPhotoDao()
@@ -36,7 +38,7 @@ open class TakenPhotosRepository(
                 return@transactional false
             }
 
-            val myPhotoEntity = TakenPhotoEntity.create(tempFileId, false)
+            val myPhotoEntity = TakenPhotoEntity.create(tempFileId, false, timeUtils.getTimeFast())
             val myPhotoId = takenPhotoDao.insert(myPhotoEntity)
 
             myPhotoEntity.id = myPhotoId
@@ -264,7 +266,8 @@ open class TakenPhotosRepository(
             val tempFileEntity = tempFileDao.findById(id)
                 ?: return@transactional true
 
-            if (tempFileDao.deleteById(id).isFail()) {
+            //TODO
+            if (tempFileDao.markDeletedById(id, timeUtils.getTimeFast()).isFail()) {
                 return@transactional false
             }
 

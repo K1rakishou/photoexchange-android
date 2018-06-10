@@ -149,9 +149,7 @@ class GalleryFragment : BaseFragment() {
 
     private fun favouritePhoto(photoName: String, isFavourited: Boolean, favouritesCount: Long) {
         galleryPhotosList.post {
-            if (!adapter.favouritePhoto(photoName, isFavourited, favouritesCount)) {
-                return@post
-            }
+            adapter.favouritePhoto(photoName, isFavourited, favouritesCount)
         }
     }
 

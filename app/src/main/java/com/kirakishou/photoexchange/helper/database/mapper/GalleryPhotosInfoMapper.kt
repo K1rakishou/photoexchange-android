@@ -8,16 +8,20 @@ object GalleryPhotosInfoMapper {
 
     object FromResponse {
         object ToEntity {
-            fun toGalleryPhotoInfoEntity(galleryPhotoInfoResponseData: GalleryPhotoInfoResponse.GalleryPhotosInfoData): GalleryPhotoInfoEntity {
+            fun toGalleryPhotoInfoEntity(time: Long, galleryPhotoInfoResponseData: GalleryPhotoInfoResponse.GalleryPhotosInfoData): GalleryPhotoInfoEntity {
                 return GalleryPhotoInfoEntity.create(
                     galleryPhotoInfoResponseData.id,
                     galleryPhotoInfoResponseData.isFavourited,
-                    galleryPhotoInfoResponseData.isReported
+                    galleryPhotoInfoResponseData.isReported,
+                    time
                 )
             }
 
-            fun toGalleryPhotoInfoEntityList(galleryPhotoInfoResponseDataList: List<GalleryPhotoInfoResponse.GalleryPhotosInfoData>): List<GalleryPhotoInfoEntity> {
-                return galleryPhotoInfoResponseDataList.map { toGalleryPhotoInfoEntity(it) }
+            fun toGalleryPhotoInfoEntityList(
+                time: Long,
+                galleryPhotoInfoResponseDataList: List<GalleryPhotoInfoResponse.GalleryPhotosInfoData>
+            ): List<GalleryPhotoInfoEntity> {
+                return galleryPhotoInfoResponseDataList.map { toGalleryPhotoInfoEntity(time, it) }
             }
         }
 
@@ -30,7 +34,9 @@ object GalleryPhotosInfoMapper {
                 )
             }
 
-            fun toGalleryPhotoInfoList(galleryPhotoInfoResponseDataList: List<GalleryPhotoInfoResponse.GalleryPhotosInfoData>): List<GalleryPhotoInfo> {
+            fun toGalleryPhotoInfoList(
+                galleryPhotoInfoResponseDataList: List<GalleryPhotoInfoResponse.GalleryPhotosInfoData>
+            ): List<GalleryPhotoInfo> {
                 return galleryPhotoInfoResponseDataList.map { toGalleryPhotoInfo(it) }
             }
         }

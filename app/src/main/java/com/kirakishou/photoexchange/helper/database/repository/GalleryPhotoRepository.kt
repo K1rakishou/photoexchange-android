@@ -12,22 +12,27 @@ import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotoInfoRespo
 import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
 
 class GalleryPhotoRepository(
-    private val database: MyDatabase
+    private val database: MyDatabase,
+    private val timeUtils: TimeUtils
 ) {
     private val galleryPhotoDao = database.galleryPhotoDao()
     private val galleryPhotoInfoDao = database.galleryPhotoInfoDao()
 
     fun saveManyInfo(galleryPhotoInfoList: List<GalleryPhotoInfoResponse.GalleryPhotosInfoData>): Boolean {
-        val galleryPhotoInfoEntityList = GalleryPhotosInfoMapper.FromResponse.ToEntity.toGalleryPhotoInfoEntityList(galleryPhotoInfoList)
+        val galleryPhotoInfoEntityList = GalleryPhotosInfoMapper.FromResponse.ToEntity
+            .toGalleryPhotoInfoEntityList(timeUtils.getTimeFast(), galleryPhotoInfoList)
+
         return galleryPhotoInfoDao.saveMany(galleryPhotoInfoEntityList).size == galleryPhotoInfoList.size
     }
 
     fun saveMany(galleryPhotos: List<GalleryPhotosResponse.GalleryPhotoResponseData>): Boolean {
-        return galleryPhotoDao.saveMany(GalleryPhotosMapper.FromResponse.ToEntity.toGalleryPhotoEntitiesList(galleryPhotos)).size == galleryPhotos.size
+        val now = timeUtils.getTimeFast()
+        return galleryPhotoDao.saveMany(GalleryPhotosMapper.FromResponse.ToEntity
+            .toGalleryPhotoEntitiesList(now, galleryPhotos)).size == galleryPhotos.size
     }
 
     fun findManyInfo(galleryPhotoIds: List<Long>, timeDelta: Long): List<GalleryPhotoInfo> {
-        val time = TimeUtils.getTimeFast() - timeDelta
+        val time = timeUtils.getTimeFast() - timeDelta
         return GalleryPhotosInfoMapper.ToObject.toGalleryPhotoInfoList(galleryPhotoInfoDao.findMany(galleryPhotoIds, time))
     }
 
@@ -56,7 +61,7 @@ class GalleryPhotoRepository(
     fun favouritePhoto(galleryPhotoId: Long): Boolean {
         var galleryPhotoInfoEntity = galleryPhotoInfoDao.find(galleryPhotoId)
         if (galleryPhotoInfoEntity == null) {
-            galleryPhotoInfoEntity = GalleryPhotoInfoEntity.create(galleryPhotoId, true, false)
+            galleryPhotoInfoEntity = GalleryPhotoInfoEntity.create(galleryPhotoId, true, false, timeUtils.getTimeFast())
         } else {
             galleryPhotoInfoEntity.isFavourited = !galleryPhotoInfoEntity.isFavourited
         }
@@ -67,7 +72,7 @@ class GalleryPhotoRepository(
     fun reportPhoto(photoId: Long): Boolean {
         var galleryPhotoInfoEntity = galleryPhotoInfoDao.find(photoId)
         if (galleryPhotoInfoEntity == null) {
-            galleryPhotoInfoEntity = GalleryPhotoInfoEntity.create(photoId, false, true)
+            galleryPhotoInfoEntity = GalleryPhotoInfoEntity.create(photoId, false, true, timeUtils.getTimeFast())
         } else {
             galleryPhotoInfoEntity.isReported = !galleryPhotoInfoEntity.isReported
         }

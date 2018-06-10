@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.di.module
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.*
+import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.interactors.*
 import dagger.Module
 import dagger.Provides
@@ -16,8 +17,9 @@ class UseCaseProviderModule {
     fun provideUploadPhotosUseCase(database: MyDatabase,
                                    takenPhotosRepository: TakenPhotosRepository,
                                    uploadedPhotosRepository: UploadedPhotosRepository,
-                                   apiClient: ApiClient): UploadPhotosUseCase {
-        return UploadPhotosUseCase(database, takenPhotosRepository, uploadedPhotosRepository, apiClient)
+                                   apiClient: ApiClient,
+                                   timeUtils: TimeUtils): UploadPhotosUseCase {
+        return UploadPhotosUseCase(database, takenPhotosRepository, uploadedPhotosRepository, apiClient, timeUtils)
     }
 
     @Singleton

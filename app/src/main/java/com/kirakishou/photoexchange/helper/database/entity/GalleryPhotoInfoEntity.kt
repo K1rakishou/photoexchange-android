@@ -33,8 +33,8 @@ class GalleryPhotoInfoEntity(
             return GalleryPhotoInfoEntity(-1L)
         }
 
-        fun create(id: Long, isFavourited: Boolean, isReported: Boolean): GalleryPhotoInfoEntity {
-            return GalleryPhotoInfoEntity(id, isFavourited, isReported, TimeUtils.getTimeFast())
+        fun create(id: Long, isFavourited: Boolean, isReported: Boolean, time: Long): GalleryPhotoInfoEntity {
+            return GalleryPhotoInfoEntity(id, isFavourited, isReported, time)
         }
 
         const val TABLE_NAME = "GALLERY_PHOTO_INFO"

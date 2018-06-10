@@ -23,14 +23,27 @@ abstract class TempFileDao {
     abstract fun findAll(): List<TempFileEntity>
 
     @Query("SELECT * FROM ${TempFileEntity.TABLE_NAME} " +
+        "WHERE " +
+        "${TempFileEntity.DELETED_ON_COLUMN} > 0 " +
+        " AND " +
+        "${TempFileEntity.DELETED_ON_COLUMN} < :time")
+    abstract fun findDeletedOld(time: Long): List<TempFileEntity>
+
+    @Query("SELECT * FROM ${TempFileEntity.TABLE_NAME} " +
         "WHERE ${TempFileEntity.FILE_PATH_COLUMN} = :filePath")
     abstract fun findByFilePath(filePath: String): TempFileEntity?
 
-    @Query("DELETE FROM ${TempFileEntity.TABLE_NAME} " +
+    @Query("UPDATE ${TempFileEntity.TABLE_NAME} " +
+        "SET ${TempFileEntity.DELETED_ON_COLUMN} = :time " +
         "WHERE ${TempFileEntity.FILE_PATH_COLUMN} = :path")
-    abstract fun deleteByFilePath(path: String): Int
+    abstract fun markDeletedByFilePath(path: String, time: Long): Int
+
+    @Query("UPDATE ${TempFileEntity.TABLE_NAME} " +
+        "SET ${TempFileEntity.DELETED_ON_COLUMN} = :time " +
+        "WHERE ${TempFileEntity.ID_COLUMN} = :id")
+    abstract fun markDeletedById(id: Long, time: Long): Int
 
     @Query("DELETE FROM ${TempFileEntity.TABLE_NAME} " +
         "WHERE ${TempFileEntity.ID_COLUMN} = :id")
-    abstract fun deleteById(id: Long): Int
+    abstract fun deleteForReal(id: Long): Int
 }
