@@ -8,9 +8,8 @@ import com.kirakishou.photoexchange.helper.util.Utils
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import io.reactivex.Single
-import kotlinx.coroutines.experimental.rx2.await
-import kotlinx.coroutines.experimental.rx2.rxSingle
+import io.reactivex.Observable
+import io.reactivex.rxkotlin.Observables
 import timber.log.Timber
 
 class GetUploadedPhotosUseCase(
@@ -20,68 +19,81 @@ class GetUploadedPhotosUseCase(
 
     private val TAG = "GetUploadedPhotosUseCase"
 
-    fun loadPageOfPhotos(userId: String, lastId: Long, count: Int): Single<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>> {
-        return rxSingle {
-            try {
-                Timber.tag(TAG).d("sending loadPageOfPhotos request...")
+    fun loadPageOfPhotos(userId: String, lastId: Long, count: Int): Observable<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>> {
+        Timber.tag(TAG).d("sending loadPageOfPhotos request...")
 
-                val response = apiClient.getUploadedPhotoIds(userId, lastId, count).await()
+        return apiClient.getUploadedPhotoIds(userId, lastId, count).toObservable()
+            .concatMap { response ->
                 val errorCode = response.errorCode as ErrorCode.GetUploadedPhotosErrors
 
                 if (errorCode !is ErrorCode.GetUploadedPhotosErrors.Ok) {
-                    return@rxSingle Either.Error(errorCode)
+                    return@concatMap Observable.just(Either.Error(errorCode))
                 }
 
                 val photosResultList = mutableListOf<UploadedPhoto>()
                 val uploadedPhotoIds = response.uploadedPhotoIds
                 if (uploadedPhotoIds.isEmpty()) {
-                    return@rxSingle Either.Value(photosResultList)
+                    return@concatMap Observable.just(Either.Value(photosResultList))
                 }
 
                 val uploadedPhotosFromDb = uploadedPhotosRepository.findMany(uploadedPhotoIds)
-                val photoIdsToGetFromServer = Utils.filterListAlreadyContaning(uploadedPhotoIds, uploadedPhotosFromDb.map { it.photoId })
+                val photoIdsToGetFromServer = Utils.filterListAlreadyContaining(uploadedPhotoIds, uploadedPhotosFromDb.map { it.photoId })
                 photosResultList += uploadedPhotosFromDb
 
-                if (photoIdsToGetFromServer.isNotEmpty()) {
-                    val result = getFreshPhotosFromServer(userId, photoIdsToGetFromServer)
-                    if (result is Either.Error) {
-                        Timber.tag(TAG).w("Could not get fresh photos from the server, errorCode = ${result.error}")
-                        return@rxSingle Either.Error(result.error)
+                return@concatMap Observable.just(photoIdsToGetFromServer)
+                    .concatMap { photoIds ->
+                        if (photoIds.isNotEmpty()) {
+                            return@concatMap getFreshPhotosAndConcatWithCached(userId, photoIds, uploadedPhotosFromDb)
+                        }
+
+                        return@concatMap Observable.just(Either.Value(uploadedPhotosFromDb))
                     }
-
-                    (result as Either.Value)
-
-                    Timber.tag(TAG).d("Fresh gallery photo ids = ${result.value.map { it.photoId }}")
-                    photosResultList += result.value
-                }
-
-                photosResultList.sortByDescending { it.photoId }
-                return@rxSingle Either.Value(photosResultList)
-            } catch (error: Throwable) {
-                Timber.tag(TAG).e(error)
-                return@rxSingle Either.Error(ErrorCode.GetUploadedPhotosErrors.UnknownError())
             }
-        }
     }
 
-    private suspend fun getFreshPhotosFromServer(userId: String, photoIds: List<Long>): Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>> {
-        val photoIdsToBeRequested = photoIds.joinToString(Constants.PHOTOS_DELIMITER)
+    private fun getFreshPhotosAndConcatWithCached(
+        userId: String,
+        photoIds: List<Long>,
+        uploadedPhotosFromDb: List<UploadedPhoto>
+    ): Observable<Either<ErrorCode.GetUploadedPhotosErrors, MutableList<UploadedPhoto>>> {
+        return getFreshPhotosFromServer(userId, photoIds)
+            .concatMap { result ->
+                if (result is Either.Value) {
+                    return@concatMap Observables.zip(Observable.just(uploadedPhotosFromDb), Observable.just(result.value), { fromDatabase, fromServer ->
+                        val list = mutableListOf<UploadedPhoto>()
+                        list += fromDatabase
+                        list += fromServer
 
-        val response = apiClient.getUploadedPhotos(userId, photoIdsToBeRequested).await()
-        val errorCode = response.errorCode as ErrorCode.GetUploadedPhotosErrors
+                        return@zip Either.Value(list)
+                    })
+                }
 
-        if (errorCode !is ErrorCode.GetUploadedPhotosErrors.Ok) {
-            return Either.Error(errorCode)
-        }
+                return@concatMap Observable.just(Either.Error((result as Either.Error).error))
+            }
+    }
 
-        if (response.uploadedPhotos.isEmpty()) {
-            return Either.Value(listOf())
-        }
+    private fun getFreshPhotosFromServer(
+        userId: String,
+        photoIds: List<Long>
+    ): Observable<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>> {
+        return Observable.fromCallable { photoIds.joinToString(Constants.PHOTOS_DELIMITER) }
+            .concatMapSingle { photoIdsToBeRequested -> apiClient.getUploadedPhotos(userId, photoIdsToBeRequested) }
+            .map { response ->
+                val errorCode = response.errorCode as ErrorCode.GetUploadedPhotosErrors
 
-        if (!uploadedPhotosRepository.saveMany(response.uploadedPhotos)) {
-            return Either.Error(ErrorCode.GetUploadedPhotosErrors.DatabaseError())
-        }
+                if (errorCode !is ErrorCode.GetUploadedPhotosErrors.Ok) {
+                    return@map Either.Error(errorCode)
+                }
 
-        return Either.Value(UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhotos(response.uploadedPhotos))
+                if (response.uploadedPhotos.isEmpty()) {
+                    return@map Either.Value(listOf<UploadedPhoto>())
+                }
+
+                if (!uploadedPhotosRepository.saveMany(response.uploadedPhotos)) {
+                    return@map Either.Error(ErrorCode.GetUploadedPhotosErrors.DatabaseError())
+                }
+
+                return@map Either.Value(UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhotos(response.uploadedPhotos))
+            }
     }
 }
