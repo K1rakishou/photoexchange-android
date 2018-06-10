@@ -18,7 +18,7 @@ class TempFileEntity(
     var id: Long? = null,
 
     @ColumnInfo(name = TAKEN_PHOTO_ID_COLUMN, index = true)
-    var takenPhotoId: Long? = null,
+    var takenPhotoId: Long = DEFAULT_TAKEN_PHOTO_ID,
 
     @ColumnInfo(name = FILE_PATH_COLUMN)
     var filePath: String,
@@ -41,6 +41,8 @@ class TempFileEntity(
     }
 
     companion object {
+
+        const val DEFAULT_TAKEN_PHOTO_ID = -1L
 
         fun empty(): TempFileEntity {
             return TempFileEntity()

@@ -95,11 +95,29 @@ open class TempFileRepository(
         }
 
         filesOnDisk.forEach { fileOnDisk ->
-            if (fileOnDisk.exists()) {
-                if (!fileOnDisk.delete()) {
-                    Timber.tag(TAG).w("Could not delete file ${fileOnDisk.absoluteFile}")
-                }
+            deleteFileFromDisk(fileOnDisk)
+        }
+    }
+
+    fun deleteEmptyTempFiles() {
+        val allEmptyFiles = tempFilesDao.findAllEmpty()
+
+        allEmptyFiles.forEach {
+            //do not delete file record from the database if we could not delete the file from the disk first
+            if (deleteFileFromDisk(it.asFile())) {
+                tempFilesDao.deleteForReal(it.id!!)
             }
         }
+    }
+
+    private fun deleteFileFromDisk(fileOnDisk: File): Boolean {
+        if (fileOnDisk.exists()) {
+            if (!fileOnDisk.delete()) {
+                Timber.tag(TAG).w("Could not delete file ${fileOnDisk.absoluteFile}")
+                return false
+            }
+        }
+
+        return true
     }
 }

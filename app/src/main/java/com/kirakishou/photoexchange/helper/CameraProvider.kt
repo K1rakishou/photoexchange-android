@@ -10,21 +10,13 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.fotoapparat.Fotoapparat
 import io.fotoapparat.configuration.CameraConfiguration
 import io.fotoapparat.selector.back
+import io.fotoapparat.selector.exactFixedFps
 import io.fotoapparat.selector.highestResolution
 import io.fotoapparat.selector.manualJpegQuality
 import io.fotoapparat.view.CameraView
-import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
-import kotlinx.coroutines.experimental.CommonPool
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.rx2.asSingle
-import kotlinx.coroutines.experimental.rx2.await
-import kotlinx.coroutines.experimental.rx2.rxObservable
-import kotlinx.coroutines.experimental.rx2.rxSingle
 import timber.log.Timber
-import java.io.File
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -41,16 +33,22 @@ open class CameraProvider(
     private val isStarted = AtomicBoolean(false)
     private var camera: Fotoapparat? = null
     private val tag = "[${this::class.java.simpleName}]: "
+    private val NORMAL_FPS = 30f
+
+    private fun createConfiguration(fps: Float): CameraConfiguration {
+        return CameraConfiguration(
+            previewResolution = highestResolution(),
+            previewFpsRange = exactFixedFps(fps),
+            jpegQuality = manualJpegQuality(100)
+        )
+    }
 
     fun provideCamera(cameraView: CameraView) {
         if (camera != null) {
             return
         }
 
-        val configuration = CameraConfiguration(
-            previewResolution = highestResolution(),
-            jpegQuality = manualJpegQuality(100)
-        )
+        val configuration = createConfiguration(NORMAL_FPS)
 
         camera = Fotoapparat(
             context = context,
@@ -116,35 +114,37 @@ open class CameraProvider(
     }
 
     fun takePhoto(): Single<ErrorCode.TakePhotoErrors> {
-        return rxSingle {
-            var takenPhoto: TakenPhoto = TakenPhoto.empty()
-
-            try {
+        return Single.just(Unit)
+            .flatMap {
                 takenPhotosRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN)
                 takenPhotosRepository.deleteOldPhotoFiles()
+                tempFilesRepository.deleteEmptyTempFiles()
 
                 val tempFile = tempFilesRepository.create()
-                val takePhotoStatus = doTakePhoto(tempFile).await()
 
-                if (!takePhotoStatus) {
-                    deletePhotoFile(tempFile)
-                    return@rxSingle ErrorCode.TakePhotoErrors.CouldNotTakePhoto()
-                }
+                return@flatMap doTakePhoto(tempFile)
+                    .flatMap { takePhotoStatus ->
+                        if (!takePhotoStatus) {
+                            deletePhotoFile(tempFile)
+                            return@flatMap Single.just(ErrorCode.TakePhotoErrors.CouldNotTakePhoto())
+                        }
 
-                takenPhoto = takenPhotosRepository.saveTakenPhoto(tempFile)
-                if (takenPhoto.isEmpty()) {
-                    cleanUp(takenPhoto)
-                    return@rxSingle ErrorCode.TakePhotoErrors.DatabaseError()
-                }
+                        return@flatMap Single.just(takenPhotosRepository.saveTakenPhoto(tempFile))
+                            .map { takenPhoto ->
+                                if (takenPhoto.isEmpty()) {
+                                    cleanUp(takenPhoto)
+                                    return@map ErrorCode.TakePhotoErrors.DatabaseError()
+                                }
 
-                return@rxSingle ErrorCode.TakePhotoErrors.Ok(takenPhoto)
-            } catch (error: Exception) {
-                Timber.tag(TAG).e(error)
-
-                cleanUp(takenPhoto)
-                return@rxSingle handleException(error)
+                                return@map ErrorCode.TakePhotoErrors.Ok(takenPhoto)
+                            }
+                    }
+                    .onErrorReturn { error ->
+                        Timber.tag(TAG).e(error)
+                        return@onErrorReturn handleException(error)
+                    }
             }
-        }
+
     }
 
     private fun deletePhotoFile(tempFile: TempFileEntity) {
@@ -155,7 +155,7 @@ open class CameraProvider(
         takenPhotosRepository.deleteMyPhoto(photo)
     }
 
-    private fun handleException(error: Exception): ErrorCode.TakePhotoErrors {
+    private fun handleException(error: Throwable): ErrorCode.TakePhotoErrors {
         return when (error.cause) {
             null -> ErrorCode.TakePhotoErrors.DatabaseError()
 
