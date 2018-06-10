@@ -17,6 +17,7 @@ import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.GalleryPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.GalleryPhotosAdapterSpanSizeLookup
+import com.kirakishou.photoexchange.ui.viewstate.GalleryFragmentViewState
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -42,8 +43,9 @@ class GalleryFragment : BaseFragment() {
     private val GALLERY_PHOTO_ADAPTER_VIEW_WIDTH = 288
     private val loadMoreSubject = PublishSubject.create<Int>()
     private val adapterButtonClickSubject = PublishSubject.create<GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent>()
+    private var isFragmentFreshlyCreated = true
+    private val viewState = GalleryFragmentViewState()
     private var photosPerPage = 0
-    private var lastId = Long.MAX_VALUE
 
     lateinit var adapter: GalleryPhotosAdapter
     lateinit var endlessScrollListener: EndlessRecyclerOnScrollListener
@@ -51,6 +53,8 @@ class GalleryFragment : BaseFragment() {
     override fun getContentView(): Int = R.layout.fragment_gallery
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
+        isFragmentFreshlyCreated = savedInstanceState == null
+
         initRx()
         initRecyclerView()
         loadFirstPage()
@@ -65,7 +69,7 @@ class GalleryFragment : BaseFragment() {
             .doOnNext { endlessScrollListener.pageLoading() }
             .doOnNext { addProgressFooter() }
             .observeOn(Schedulers.io())
-            .flatMap { viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage) }
+            .flatMap { viewModel.loadNextPageOfGalleryPhotos(viewState.lastId, photosPerPage, isFragmentFreshlyCreated) }
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { hideProgressFooter() }
             .subscribe({ result ->
@@ -83,7 +87,7 @@ class GalleryFragment : BaseFragment() {
             .subscribeOn(AndroidSchedulers.mainThread())
             .doOnNext { addProgressFooter() }
             .observeOn(Schedulers.io())
-            .concatMap { viewModel.loadNextPageOfGalleryPhotos(lastId, photosPerPage) }
+            .concatMap { viewModel.loadNextPageOfGalleryPhotos(viewState.lastId, photosPerPage, isFragmentFreshlyCreated) }
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { hideProgressFooter() }
             .subscribe({ result ->
@@ -188,7 +192,7 @@ class GalleryFragment : BaseFragment() {
             endlessScrollListener.pageLoaded()
 
             if (galleryPhotos.isNotEmpty()) {
-                lastId = galleryPhotos.last().galleryPhotoId
+                viewState.updateLastId(galleryPhotos.last().galleryPhotoId)
                 adapter.addAll(galleryPhotos)
             }
 

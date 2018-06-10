@@ -55,10 +55,10 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     override fun getContentView(): Int = R.layout.fragment_received_photos
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
+        isFragmentFreshlyCreated = savedInstanceState == null
+
         initRx()
         initRecyclerView()
-
-        isFragmentFreshlyCreated = savedInstanceState == null
     }
 
     override fun onFragmentViewDestroy() {

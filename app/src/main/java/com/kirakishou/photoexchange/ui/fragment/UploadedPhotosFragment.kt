@@ -62,12 +62,11 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
     override fun getContentView(): Int = R.layout.fragment_uploaded_photos
 
-    //TODO fix photos not loading when changing from this fragment to gallery fragment and then back
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
+        isFragmentFreshlyCreated = savedInstanceState == null
+
         initRx()
         initRecyclerView()
-
-        isFragmentFreshlyCreated = savedInstanceState == null
 
         if (savedInstanceState != null) {
             restoreFragmentFromViewState(savedInstanceState)

@@ -51,7 +51,14 @@ class GalleryPhotoRepository(
     }
 
     fun findMany(galleryPhotoIds: List<Long>): List<GalleryPhoto> {
-        return GalleryPhotosMapper.FromEntity.toGalleryPhotos(galleryPhotoDao.findMany(galleryPhotoIds))
+        val galleryPhotos = GalleryPhotosMapper.FromEntity.toGalleryPhotos(galleryPhotoDao.findMany(galleryPhotoIds))
+
+        for (galleryPhoto in galleryPhotos) {
+            val galleryPhotoInfo = galleryPhotoInfoDao.find(galleryPhoto.galleryPhotoId)
+            galleryPhoto.galleryPhotoInfo = GalleryPhotosInfoMapper.ToObject.toGalleryPhotoInfo(galleryPhotoInfo)
+        }
+
+        return galleryPhotos
     }
 
     fun updateFavouritesCount(photoName: String, favouritesCount: Long): Boolean {
