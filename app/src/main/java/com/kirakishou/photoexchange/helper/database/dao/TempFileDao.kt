@@ -43,6 +43,11 @@ abstract class TempFileDao {
         "WHERE ${TempFileEntity.ID_COLUMN} = :id")
     abstract fun markDeletedById(id: Long, time: Long): Int
 
+    @Query("UPDATE ${TempFileEntity.TABLE_NAME} " +
+        "SET ${TempFileEntity.TAKEN_PHOTO_ID_COLUMN} = :takenPhotoId " +
+        "WHERE ${TempFileEntity.ID_COLUMN} = :id")
+    abstract fun updateTakenPhotoId(id: Long, takenPhotoId: Long): Int
+
     @Query("DELETE FROM ${TempFileEntity.TABLE_NAME} " +
         "WHERE ${TempFileEntity.ID_COLUMN} = :id")
     abstract fun deleteForReal(id: Long): Int

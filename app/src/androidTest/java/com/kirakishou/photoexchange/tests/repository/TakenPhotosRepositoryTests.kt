@@ -1,10 +1,20 @@
 package com.kirakishou.photoexchange.tests.repository
 
+import android.arch.persistence.room.Room
 import android.content.Context
+import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.TempFileRepository
+import com.kirakishou.photoexchange.helper.util.TimeUtils
+import com.kirakishou.photoexchange.helper.util.TimeUtilsImpl
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Before
+import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito
 
 /**
  * Created by kirakishou on 3/10/2018.
@@ -17,74 +27,75 @@ class TakenPhotosRepositoryTests {
     lateinit var appContext: Context
     lateinit var targetContext: Context
     lateinit var database: MyDatabase
+    lateinit var timeUtils: TimeUtils
+    lateinit var tempFilesDir: String
 
-    lateinit var myTakenPhotosRepository: TakenPhotosRepository
+    lateinit var tempFilesRepository: TempFileRepository
+    lateinit var takenPhotosRepository: TakenPhotosRepository
 
-//    @Before
-//    fun init() {
-//        appContext = InstrumentationRegistry.getContext()
-//        targetContext = InstrumentationRegistry.getTargetContext()
-//        database = Room.inMemoryDatabaseBuilder(appContext, MyDatabase::class.java).execute()
-//        val tempFilesDir = targetContext.getDir("test_temp_files", Context.MODE_PRIVATE).absolutePath
-//
-//        val tempFilesRepository = TempFileRepository(tempFilesDir, database)
-//        myTakenPhotosRepository = TakenPhotosRepository(database, tempFilesRepository)
-//    }
-//
-//    @After
-//    fun tearDown() {
-//        database.close()
-//    }
-//
-//    @Test
-//    fun should_delete_after_insert() {
-//        runBlocking {
-//            myTakenPhotosRepository.init()
-//
-//            val myPhoto = myTakenPhotosRepository.save(TakenPhotoEntity.create())
-//            val myPhoto2 = myTakenPhotosRepository.save(TakenPhotoEntity.create())
-//
-//            assertEquals(1, myPhoto.id)
-//            assertEquals(2, myPhoto2.id)
-//
-//            assertEquals(true, myTakenPhotosRepository.delete(myPhoto))
-//            assertEquals(true, myTakenPhotosRepository.delete(myPhoto2))
-//            assertEquals(true, myTakenPhotosRepository.findAll().isEmpty())
-//        }
-//    }
-//
-//    @Test
-//    fun should_delete_all_with_photo_state() {
-//        runBlocking {
-//            myTakenPhotosRepository.init()
-//
-//            myTakenPhotosRepository.save(TakenPhotoEntity.create(PhotoState.PHOTO_TAKEN))
-//            myTakenPhotosRepository.save(TakenPhotoEntity.create(PhotoState.PHOTO_UPLOADING))
-//            myTakenPhotosRepository.save(TakenPhotoEntity.create(PhotoState.PHOTO_UPLOADING))
-//            myTakenPhotosRepository.save(TakenPhotoEntity.create(PhotoState.PHOTO_UPLOADED))
-//            myTakenPhotosRepository.save(TakenPhotoEntity.create(PhotoState.PHOTO_UPLOADED))
-//            myTakenPhotosRepository.save(TakenPhotoEntity.create(PhotoState.PHOTO_UPLOADED))
-//
-//            assertEquals(true, myTakenPhotosRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN))
-//            myTakenPhotosRepository.findAll().let { allPhotos ->
-//                assertEquals(5, allPhotos.size)
-//
-//                val noPhotoTakenPhotos = allPhotos.none { it.photoState == PhotoState.PHOTO_TAKEN }
-//                assertEquals(true, noPhotoTakenPhotos)
-//            }
-//
-//            assertEquals(true, myTakenPhotosRepository.deleteAllWithState(PhotoState.PHOTO_UPLOADING))
-//            myTakenPhotosRepository.findAll().let { allPhotos ->
-//                assertEquals(3, allPhotos.size)
-//
-//                val noPhotoTakenPhotos = allPhotos.none { it.photoState == PhotoState.PHOTO_UPLOADING }
-//                assertEquals(true, noPhotoTakenPhotos)
-//            }
-//
-//            assertEquals(true, myTakenPhotosRepository.deleteAllWithState(PhotoState.PHOTO_UPLOADED))
-//            myTakenPhotosRepository.findAll().let { allPhotos ->
-//                assertEquals(0, allPhotos.size)
-//            }
-//        }
-//    }
+    @Before
+    fun init() {
+        appContext = InstrumentationRegistry.getContext()
+        targetContext = InstrumentationRegistry.getTargetContext()
+        database = Room.inMemoryDatabaseBuilder(appContext, MyDatabase::class.java).build()
+        timeUtils = Mockito.spy(TimeUtilsImpl())
+        tempFilesDir = targetContext.getDir("test_temp_files", Context.MODE_PRIVATE).absolutePath
+
+        tempFilesRepository = Mockito.spy(TempFileRepository(tempFilesDir, database, timeUtils))
+        takenPhotosRepository = TakenPhotosRepository(timeUtils, database, tempFilesRepository)
+    }
+
+    @After
+    fun tearDown() {
+        database.close()
+    }
+
+    @Test
+    fun should_save_taken_photo_should_be_able_to_find_photo_file_by_id() {
+        val photoFile = tempFilesRepository.create()
+        val takenPhoto = takenPhotosRepository.saveTakenPhoto(photoFile)
+        val tempFile = takenPhotosRepository.findTempFile(takenPhoto.id)
+
+        assertEquals(false, tempFile.isEmpty())
+    }
+
+    @Test
+    fun should_delete_photo_file_from_disk_when_could_not_save_temp_file_info_in_the_database() {
+        val tempFile = tempFilesRepository.create()
+        Mockito.`when`(tempFilesRepository.updateTakenPhotoId(tempFile, 1)).thenReturn(-1)
+        val takenPhoto = takenPhotosRepository.saveTakenPhoto(tempFile)
+
+        assertEquals(true, tempFile.fileExists())
+        assertEquals(true, takenPhoto.isEmpty())
+
+        val deletedFiles = tempFilesRepository.findDeletedOld(Long.MAX_VALUE)
+        assertEquals(1, deletedFiles.size)
+
+        tempFilesRepository.deleteOld(Long.MAX_VALUE)
+        assertEquals(true, tempFilesRepository.findDeletedOld(Long.MAX_VALUE).isEmpty())
+        assertEquals(false, tempFile.asFile().exists())
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

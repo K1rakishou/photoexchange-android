@@ -6,7 +6,7 @@ import java.util.*
 /**
  * Created by kirakishou on 9/12/2017.
  */
-class TimeUtilsImpl : TimeUtils {
+open class TimeUtilsImpl : TimeUtils {
 
     override fun getTimeFast(): Long = System.currentTimeMillis()
 

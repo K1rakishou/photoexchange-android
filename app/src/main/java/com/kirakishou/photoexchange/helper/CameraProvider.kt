@@ -1,7 +1,9 @@
 package com.kirakishou.photoexchange.helper
 
 import android.content.Context
+import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.TempFileRepository
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
@@ -31,7 +33,8 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 open class CameraProvider(
     val context: Context,
-    private val takenPhotosRepository: TakenPhotosRepository
+    private val takenPhotosRepository: TakenPhotosRepository,
+    private val tempFilesRepository: TempFileRepository
 ) {
 
     private val TAG = "CameraProvider"
@@ -78,7 +81,7 @@ open class CameraProvider(
     fun isStarted(): Boolean = isStarted.get()
     fun isAvailable(): Boolean = camera?.isAvailable(back()) ?: false
 
-    private fun doTakePhoto(file: File): Single<Boolean> {
+    private fun doTakePhoto(tempFile: TempFileEntity): Single<Boolean> {
         val single = Single.create<Boolean> { emitter ->
             if (!isAvailable()) {
                 emitter.onError(CameraIsNotAvailable("Camera is not supported by this device"))
@@ -93,6 +96,8 @@ open class CameraProvider(
             Timber.tag(tag).d("Taking photo...")
 
             try {
+                val file = tempFile.asFile()
+
                 camera!!.takePicture()
                     .saveToFile(file)
                     .whenAvailable {
@@ -113,23 +118,22 @@ open class CameraProvider(
     fun takePhoto(): Single<ErrorCode.TakePhotoErrors> {
         return rxSingle {
             var takenPhoto: TakenPhoto = TakenPhoto.empty()
-            var file: File? = null
 
             try {
                 takenPhotosRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN)
-                takenPhotosRepository.cleanFilesDirectory()
+                takenPhotosRepository.deleteOldPhotoFiles()
 
-                file = takenPhotosRepository.createFile()
+                val tempFile = tempFilesRepository.create()
+                val takePhotoStatus = doTakePhoto(tempFile).await()
 
-                val takePhotoStatus = doTakePhoto(file).await()
                 if (!takePhotoStatus) {
-                    cleanUp(file, null)
+                    deletePhotoFile(tempFile)
                     return@rxSingle ErrorCode.TakePhotoErrors.CouldNotTakePhoto()
                 }
 
-                takenPhoto = takenPhotosRepository.saveTakenPhoto(file)
+                takenPhoto = takenPhotosRepository.saveTakenPhoto(tempFile)
                 if (takenPhoto.isEmpty()) {
-                    cleanUp(file, takenPhoto)
+                    cleanUp(takenPhoto)
                     return@rxSingle ErrorCode.TakePhotoErrors.DatabaseError()
                 }
 
@@ -137,14 +141,17 @@ open class CameraProvider(
             } catch (error: Exception) {
                 Timber.tag(TAG).e(error)
 
-                cleanUp(file, takenPhoto)
+                cleanUp(takenPhoto)
                 return@rxSingle handleException(error)
             }
         }
     }
 
-    private fun cleanUp(file: File?, photo: TakenPhoto?) {
-        takenPhotosRepository.deleteFileIfExists(file)
+    private fun deletePhotoFile(tempFile: TempFileEntity) {
+        tempFilesRepository.markDeletedById(tempFile)
+    }
+
+    private fun cleanUp(photo: TakenPhoto?) {
         takenPhotosRepository.deleteMyPhoto(photo)
     }
 

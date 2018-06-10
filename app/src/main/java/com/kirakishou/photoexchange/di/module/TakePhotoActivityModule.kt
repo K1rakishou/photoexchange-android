@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.helper.CameraProvider
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.TempFileRepository
 import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.TakePhotoActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
@@ -37,7 +38,8 @@ open class TakePhotoActivityModule(
     @PerActivity
     @Provides
     open fun provideCameraProvider(context: Context,
-                                   takenPhotosRepository: TakenPhotosRepository): CameraProvider {
-        return CameraProvider(context, takenPhotosRepository)
+                                   takenPhotosRepository: TakenPhotosRepository,
+                                   tempFilesRepository: TempFileRepository): CameraProvider {
+        return CameraProvider(context, takenPhotosRepository, tempFilesRepository)
     }
 }

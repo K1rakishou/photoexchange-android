@@ -32,7 +32,11 @@ open class TempFileRepository(
         val fullPathFile = File(filesDir)
         val file = File.createTempFile("file_", ".tmp", fullPathFile)
 
-        val entity = TempFileEntity.create(file.absolutePath)
+        return createInternal(file)
+    }
+
+    private fun createInternal(file: File): TempFileEntity {
+        val entity = TempFileEntity.createEmpty(file.absolutePath)
         val insertedId = tempFilesDao.insert(entity)
 
         if (insertedId.isFail()) {
@@ -42,28 +46,33 @@ open class TempFileRepository(
         return entity.apply { this.id = insertedId }
     }
 
-    fun findById(id: Long): TempFileEntity? {
-        return tempFilesDao.findById(id)
+    fun findById(id: Long): TempFileEntity {
+        return tempFilesDao.findById(id) ?: TempFileEntity.empty()
     }
 
     fun findAll(): List<TempFileEntity> {
         return tempFilesDao.findAll()
     }
 
-    fun findByFilePath(filePath: String): TempFileEntity? {
-        return tempFilesDao.findByFilePath(filePath)
-    }
-
-    fun markDeletedByFilePath(filePath: String) {
-        tempFilesDao.markDeletedByFilePath(filePath, timeUtils.getTimeFast())
+    fun findByFilePath(filePath: String): TempFileEntity {
+        return tempFilesDao.findByFilePath(filePath) ?: TempFileEntity.empty()
     }
 
     fun findDeletedOld(time: Long): List<TempFileEntity> {
         return tempFilesDao.findDeletedOld(time)
     }
 
-    fun markDeletedById(id: Long) {
-        tempFilesDao.markDeletedById(id, timeUtils.getTimeFast())
+    fun markDeletedById(tempFile: TempFileEntity): Int {
+        return markDeletedById(tempFile.id!!)
+    }
+
+    fun markDeletedById(id: Long): Int {
+        val time = timeUtils.getTimeFast()
+        return tempFilesDao.markDeletedById(id, time)
+    }
+
+    open fun updateTakenPhotoId(tempFileEntity: TempFileEntity, takenPhotoId: Long): Int {
+        return tempFilesDao.updateTakenPhotoId(tempFileEntity.id!!, takenPhotoId)
     }
 
     fun deleteOld(time: Long) {

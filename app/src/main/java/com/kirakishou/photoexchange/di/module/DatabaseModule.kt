@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import dagger.Module
 import dagger.Provides
+import javax.inject.Named
 import javax.inject.Singleton
 
 /**
@@ -24,14 +25,27 @@ open class DatabaseModule(
         return Room.databaseBuilder(context, MyDatabase::class.java, dbName).build()
     }
 
+    @Singleton
+    @Provides
+    @Named("files_directory")
+    fun provideFilesDirectoryPath(context: Context): String {
+        return context.filesDir.absolutePath
+    }
 
     @Singleton
     @Provides
-    open fun provideTakenPhotoRepository(context: Context,
-                                         database: MyDatabase,
-                                         timeUtils: TimeUtils): TakenPhotosRepository {
-        val filesDir = context.filesDir.absolutePath
-        return TakenPhotosRepository(filesDir, database, timeUtils)
+    fun provideTempFilesRepository(@Named("files_directory") filesDir: String,
+                                   database: MyDatabase,
+                                   timeUtils: TimeUtils): TempFileRepository {
+        return TempFileRepository(filesDir, database, timeUtils)
+    }
+
+    @Singleton
+    @Provides
+    open fun provideTakenPhotoRepository(database: MyDatabase,
+                                         timeUtils: TimeUtils,
+                                         tempFileRepository: TempFileRepository): TakenPhotosRepository {
+        return TakenPhotosRepository(timeUtils, database, tempFileRepository)
     }
 
     @Singleton
