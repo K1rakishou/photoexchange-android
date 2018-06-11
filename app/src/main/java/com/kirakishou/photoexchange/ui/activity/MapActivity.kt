@@ -26,7 +26,7 @@ class MapActivity : BaseActivity() {
     lateinit var permissionManager: PermissionManager
 
     private val TAG = "MapActivity"
-    private val DEFAULT_MAP_ZOOM = 12.0
+    private val DEFAULT_MAP_ZOOM = 14.0
     private var lonLat = LonLat.empty()
 
     override fun getContentView(): Int = R.layout.activity_map
@@ -80,6 +80,7 @@ class MapActivity : BaseActivity() {
     private fun initMap() {
         mapView.isClickable = true
         mapView.setBuiltInZoomControls(true)
+        mapView.setMultiTouchControls(false)
 
         mapView.controller.setCenter(GeoPoint(lonLat.lat, lonLat.lon))
         mapView.controller.setZoom(DEFAULT_MAP_ZOOM)

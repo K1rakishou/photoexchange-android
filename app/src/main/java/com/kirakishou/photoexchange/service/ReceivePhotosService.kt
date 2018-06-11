@@ -18,6 +18,7 @@ import timber.log.Timber
 import java.lang.ref.WeakReference
 import javax.inject.Inject
 import android.app.ActivityManager
+import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import io.reactivex.rxkotlin.plusAssign
 
@@ -78,6 +79,8 @@ class ReceivePhotosService : Service() {
                 if (event.errorCode != null) {
                     callback.get()?.onPhotoFindEvent(ReceivedPhotosFragmentEvent.ReceivePhotosEvent
                         .OnFailed(event.errorCode))
+                } else {
+                    //do nothing
                 }
             }
             is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnError -> {
@@ -95,9 +98,9 @@ class ReceivePhotosService : Service() {
                     is ReceivePhotosServicePresenter.NotificationType.Progress -> updateNotificationShowProgress()
                     is ReceivePhotosServicePresenter.NotificationType.Success -> updateNotificationShowSuccess()
                     is ReceivePhotosServicePresenter.NotificationType.Error -> updateNotificationShowError()
-                }
+                }.safe
             }
-        }
+        }.safe
     }
 
     private fun stopService() {

@@ -114,6 +114,7 @@ open class CameraProvider(
 
     fun takePhoto(): Single<ErrorCode.TakePhotoErrors> {
         return Single.just(Unit)
+            .subscribeOn(Schedulers.computation())
             .doOnSuccess {
                 //we need to delete all photos with state PHOTO_TAKEN because at this step they are being considered corrupted
                 takenPhotosRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN)
@@ -138,7 +139,8 @@ open class CameraProvider(
                             return@flatMap Single.just(ErrorCode.TakePhotoErrors.CouldNotTakePhoto())
                         }
 
-                        return@flatMap Single.just(takenPhotosRepository.saveTakenPhoto(tempFile))
+                        return@flatMap Single.fromCallable { takenPhotosRepository.saveTakenPhoto(tempFile) }
+                            .subscribeOn(Schedulers.computation())
                             .map { takenPhoto ->
                                 if (takenPhoto.isEmpty()) {
                                     cleanUp(takenPhoto)
@@ -153,7 +155,6 @@ open class CameraProvider(
                         return@onErrorReturn handleException(error)
                     }
             }
-            .subscribeOn(Schedulers.computation())
 
     }
 

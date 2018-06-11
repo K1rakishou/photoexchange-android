@@ -159,7 +159,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
                 is ReceivedPhotosFragmentEvent.ReceivePhotosEvent -> {
                     onReceivePhotosEvent(event)
                 }
-            }
+            }.safe
         }
     }
 
@@ -179,7 +179,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
                 is ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter -> {
                     hideProgressFooter()
                 }
-            }
+            }.safe
         }
     }
 
@@ -197,7 +197,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
                 is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnUnknownError -> {
                     //do nothing here
                 }
-            }
+            }.safe
         }
     }
 

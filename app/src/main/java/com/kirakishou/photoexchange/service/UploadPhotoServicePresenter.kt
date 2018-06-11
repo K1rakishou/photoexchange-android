@@ -4,6 +4,7 @@ import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
@@ -116,7 +117,7 @@ class UploadPhotoServicePresenter(
             is UploadPhotoServicePresenter.NotificationType.Error -> {
                 sendEvent(UploadPhotoEvent.OnNewNotification(NotificationType.Error(serviceNotification.errorMessage)))
             }
-        }
+        }.safe
     }
 
     private fun handleRemoteErrors(takenPhoto: TakenPhoto, error: Throwable) {
@@ -159,7 +160,7 @@ class UploadPhotoServicePresenter(
             else -> {
                 sendEvent(UploadPhotoEvent.UploadingEvent(UploadedPhotosFragmentEvent.unknownError(error)))
             }
-        }
+        }.safe
     }
 
     fun getUserId(): Observable<String> {

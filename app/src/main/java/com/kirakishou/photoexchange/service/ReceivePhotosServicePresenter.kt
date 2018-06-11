@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.service
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
+import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.interactors.ReceivePhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.FindPhotosData
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
@@ -102,7 +103,8 @@ class ReceivePhotosServicePresenter(
             is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnReceivedPhoto -> {
                 sendEvent(ReceivePhotoEvent.OnReceivedPhoto(event.receivedPhoto, event.takenPhotoName))
             }
-        }
+            else -> throw IllegalStateException("Should not happen")
+        }.safe
     }
 
     fun onDetach() {

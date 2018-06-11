@@ -74,7 +74,7 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
             .subscribeOn(AndroidSchedulers.mainThread())
             .debounceClicks()
             .flatMap {
-                Observable.just(1)
+                return@flatMap Observable.just(1)
                     .flatMap { viewModel.queueUpTakenPhoto(takenPhoto.id) }
                     .flatMap { viewModel.getMakePublicFlag() }
                     .doOnNext { makePublicFlag ->

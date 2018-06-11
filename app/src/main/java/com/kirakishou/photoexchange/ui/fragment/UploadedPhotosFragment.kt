@@ -197,7 +197,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                 is UploadedPhotosFragmentEvent.PhotoUploadEvent -> {
                     onUploadingEvent(event)
                 }
-            }
+            }.safe
         }
     }
 
@@ -278,7 +278,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                         is UploadedPhotosFragmentEvent.UploadingError.UnknownError -> {
                             handleUnknownErrors(event.error.error)
                         }
-                    }
+                    }.safe
                 }
             }.safe
         }
