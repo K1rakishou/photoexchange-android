@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.helper.util
 
-import com.kirakishou.photoexchange.mvp.model.other.Constants
+import timber.log.Timber
 import java.io.File
 
 /**
@@ -8,11 +8,14 @@ import java.io.File
  */
 object FileUtils {
 
+    const val TAG = "FileUtils"
+
     fun deleteFile(file: File) {
         if (file.exists()) {
             val wasDeleted = file.delete()
-            if (Constants.isDebugBuild) {
-                check(wasDeleted, { "Could not delete file: ${file.absolutePath}" })
+
+            if (!wasDeleted) {
+                Timber.tag(TAG).w("Could not delete file: ${file.absolutePath}")
             }
         }
     }
@@ -23,7 +26,6 @@ object FileUtils {
 
     fun deleteAllFiles(directory: File) {
         val files = directory.listFiles()
-
         if (files.isNotEmpty()) {
             files.forEach {
                 if (it.isDirectory) {
@@ -31,9 +33,26 @@ object FileUtils {
                 }
 
                 if (it.exists()) {
-                    it.delete()
+                    deleteFile(it)
                 }
             }
         }
+    }
+
+    fun calculateTotalDirectorySize(directory: File): Long {
+        var totalSize = 0L
+        val files = directory.listFiles()
+
+        if (files.isNotEmpty()) {
+            files.forEach {
+                if (it.isDirectory) {
+                    totalSize += calculateTotalDirectorySize(it)
+                }
+
+                totalSize += it.length()
+            }
+        }
+
+        return totalSize
     }
 }

@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.helper.database.repository
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
 import com.kirakishou.photoexchange.helper.database.isFail
+import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import timber.log.Timber
 import java.io.File
@@ -62,6 +63,10 @@ open class TempFileRepository(
         return tempFilesDao.findDeletedOld(time)
     }
 
+    fun findOldest(count: Int): List<TempFileEntity> {
+        return tempFilesDao.findOldest(count)
+    }
+
     fun markDeletedById(tempFile: TempFileEntity): Int {
         return markDeletedById(tempFile.id!!)
     }
@@ -76,22 +81,17 @@ open class TempFileRepository(
     }
 
     fun deleteOld(time: Long) {
+        val oldFiles = tempFilesDao.findDeletedOld(time)
+        deleteMany(oldFiles)
+    }
+
+    fun deleteMany(tempFiles: List<TempFileEntity>) {
         val filesOnDisk = mutableListOf<File>()
 
-        val transactionResult = database.transactional {
-            val oldFiles = tempFilesDao.findDeletedOld(time)
-
-            oldFiles.forEach { oldFile ->
+        tempFiles.forEach { oldFile ->
+            if (tempFilesDao.deleteForReal(oldFile.id!!).isSuccess()) {
                 filesOnDisk += oldFile.asFile()
-                tempFilesDao.deleteForReal(oldFile.id!!)
             }
-
-            return@transactional true
-        }
-
-        if (!transactionResult) {
-            Timber.tag(TAG).w("Could not delete from the DB one of the records")
-            return
         }
 
         filesOnDisk.forEach { fileOnDisk ->
