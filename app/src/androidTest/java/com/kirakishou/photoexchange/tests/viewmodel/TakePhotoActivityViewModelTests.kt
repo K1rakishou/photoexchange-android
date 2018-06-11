@@ -43,56 +43,6 @@ class TakePhotoActivityViewModelTests : AbstractTest() {
             deleteDir(File(tempFilesDir))
         }
     }
-
-//    @Test
-//    fun should_take_photo_and_store_photo_info_in_the_database() {
-//        runBlocking {
-//            val realTempFilesRepository = TempFileRepository(tempFilesDir, database)
-//            val realMyPhotosRepository = TakenPhotosRepository(database, realTempFilesRepository)
-//            val viewModel = TakePhotoActivityViewModel(mockedView, coroutinesPool, realMyPhotosRepository)
-//
-//            whenever(mockedView.takePhoto(any())).thenReturn(Single.just(true))
-//
-//            viewModel.attach()
-//            viewModel.takePhoto()
-//
-//            verify(mockedView).hideControls()
-//            verify(mockedView, never()).showControls()
-//
-//            argumentCaptor<TakenPhoto>().apply {
-//                verify(mockedView).onPhotoTaken(capture())
-//
-//                val takenPhoto = realMyPhotosRepository.findAll().first()
-//
-//                assertEquals(1L, firstValue.id)
-//                assertEquals(PhotoState.PHOTO_TAKEN, firstValue.photoState)
-//                assertEquals(true, firstValue.photoTempFile!!.absolutePath.isNotEmpty())
-//
-//                assertEquals(firstValue.photoId, takenPhoto.photoId)
-//                assertEquals(firstValue.photoState, takenPhoto.photoState)
-//                assertEquals(firstValue.photoTempFile!!.absolutePath, takenPhoto.photoTempFile!!.absolutePath)
-//            }
-//        }
-//    }
-//
-//    @Test
-//    fun should_cleanup_and_show_toast_if_repository_insert_fails() {
-//        runBlocking {
-//            val realTempFilesRepository = TempFileRepository(tempFilesDir, database)
-//            val spyMyPhotosRepository = Mockito.spy(TakenPhotosRepository(database, realTempFilesRepository))
-//
-//            val result = async(Unconfined) { TakenPhoto.empty() }
-//            doReturn(result).`when`(spyMyPhotosRepository).save(any())
-//
-//            val viewModel = TakePhotoActivityViewModel(mockedView, coroutinesPool, spyMyPhotosRepository)
-//
-//            viewModel.attach()
-//            viewModel.takePhoto()
-//
-//            verify(mockedView).showToast(anyString(), anyInt())
-//            verify(mockedView).showControls()
-//        }
-//    }
 }
 
 

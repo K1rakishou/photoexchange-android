@@ -134,16 +134,16 @@ class PhotosActivityViewModel(
                                 cachedReceivedPhotoIds += result.value.map { it.photoId }
                             }
                         }
-                        .doOnNext { result ->
-                            if (result is Either.Value) {
-                                updateUploadedPhotosReceiverInfo(result.value)
-                            }
-                        }
                         .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
                 } else {
                     return@flatMap Observable.fromCallable {
                         return@fromCallable Either.Value(receivedPhotosRepository.findMany(cachedReceivedPhotoIds))
                     }
+                }
+            }
+            .doOnNext { result ->
+                if (result is Either.Value) {
+                    updateUploadedPhotosReceiverInfo(result.value)
                 }
             }
     }
