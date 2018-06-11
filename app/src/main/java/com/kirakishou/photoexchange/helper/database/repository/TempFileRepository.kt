@@ -4,6 +4,9 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
 import com.kirakishou.photoexchange.helper.database.isFail
 import com.kirakishou.photoexchange.helper.database.isSuccess
+import com.kirakishou.photoexchange.helper.extension.hours
+import com.kirakishou.photoexchange.helper.extension.mb
+import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import timber.log.Timber
 import java.io.File
@@ -15,6 +18,9 @@ open class TempFileRepository(
 ) {
     val TAG = "TempFileRepository"
     val tempFilesDao = database.tempFileDao()
+    val MAX_CACHE_SIZE = 50.mb()
+    val OLD_PHOTO_TIME_THRESHOLD = 1.hours()
+    val FILES_TO_DELETE_AT_A_TIME = 7
 
     fun init() {
         createTempFilesDirIfNotExists()
@@ -80,9 +86,25 @@ open class TempFileRepository(
         return tempFilesDao.updateTakenPhotoId(tempFileEntity.id!!, takenPhotoId)
     }
 
-    fun deleteOld(time: Long) {
-        val oldFiles = tempFilesDao.findDeletedOld(time)
+    fun deleteOld() {
+        deleteOld(OLD_PHOTO_TIME_THRESHOLD)
+    }
+
+    fun deleteOld(oldPhotoThreshold: Long) {
+        val oldFiles = tempFilesDao.findDeletedOld(oldPhotoThreshold)
         deleteMany(oldFiles)
+    }
+
+    fun deleteOldIfCacheSizeIsTooBig() {
+        val totalTempFilesCacheSize = FileUtils.calculateTotalDirectorySize(File(filesDir))
+        if (totalTempFilesCacheSize > MAX_CACHE_SIZE) {
+            val filesToDelete = tempFilesDao.findOldest(FILES_TO_DELETE_AT_A_TIME)
+            if (filesToDelete.isEmpty()) {
+                return
+            }
+
+            deleteMany(filesToDelete)
+        }
     }
 
     fun deleteMany(tempFiles: List<TempFileEntity>) {
@@ -103,7 +125,8 @@ open class TempFileRepository(
         val allEmptyFiles = tempFilesDao.findAllEmpty()
 
         allEmptyFiles.forEach {
-            //do not delete file record from the database if we could not delete the file from the disk first
+            // do not delete a file record from the database if we could
+            // not delete the file from the disk first
             if (deleteFileFromDisk(it.asFile())) {
                 tempFilesDao.deleteForReal(it.id!!)
             }

@@ -109,17 +109,26 @@ open class CameraProvider(
         }
 
         return single
-            .subscribeOn(Schedulers.io())
-            .observeOn(Schedulers.io())
+            .subscribeOn(Schedulers.computation())
     }
 
     fun takePhoto(): Single<ErrorCode.TakePhotoErrors> {
         return Single.just(Unit)
-            .flatMap {
+            .doOnSuccess {
+                //we need to delete all photos with state PHOTO_TAKEN because at this step they are being considered corrupted
                 takenPhotosRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN)
-                takenPhotosRepository.deleteOldPhotoFiles()
+
+                //delete photo files that were marked as deleted earlier than (CURRENT_TIME - OLD_PHOTO_TIME_THRESHOLD)
+                tempFilesRepository.deleteOld()
+
+                //delete photo files that have no takenPhotoId
                 tempFilesRepository.deleteEmptyTempFiles()
 
+                //in case the user takes photos way too often and they weight a lot (like 3-4 mb per photo)
+                //we need to consider this as well so we delete them when total files size exceeds MAX_CACHE_SIZE
+                tempFilesRepository.deleteOldIfCacheSizeIsTooBig()
+            }
+            .flatMap {
                 val tempFile = tempFilesRepository.create()
 
                 return@flatMap doTakePhoto(tempFile)
@@ -144,6 +153,7 @@ open class CameraProvider(
                         return@onErrorReturn handleException(error)
                     }
             }
+            .subscribeOn(Schedulers.computation())
 
     }
 

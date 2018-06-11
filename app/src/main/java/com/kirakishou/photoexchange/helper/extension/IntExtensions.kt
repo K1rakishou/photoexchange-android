@@ -15,3 +15,11 @@ fun Int.hours(): Long {
 fun Int.days(): Long {
     return this.hours() * 24L
 }
+
+fun Int.kb(): Long {
+    return this * 1024L
+}
+
+fun Int.mb(): Long {
+    return this.kb() * 1024L
+}

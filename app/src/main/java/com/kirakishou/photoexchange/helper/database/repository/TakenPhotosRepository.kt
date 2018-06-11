@@ -201,13 +201,6 @@ open class TakenPhotosRepository(
         return tempFileRepository.findById(id)
     }
 
-    fun deleteOldPhotoFiles() {
-        val now = timeUtils.getTimeFast()
-        val oldPhotoThreshold = now - TimeUnit.HOURS.toMillis(1)
-
-        tempFileRepository.deleteOld(oldPhotoThreshold)
-    }
-
     fun findTempFile(id: Long): TempFileEntity {
         return tempFileRepository.findById(id)
     }

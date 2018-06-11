@@ -192,7 +192,9 @@ class TakePhotoActivity : BaseActivity() {
     }
 
     private fun takePhoto(): Observable<ErrorCode.TakePhotoErrors> {
-        return cameraProvider.takePhoto().toObservable()
+        return cameraProvider.takePhoto()
+            .subscribeOn(Schedulers.computation())
+            .toObservable()
     }
 
     private fun onPhotoTaken(takenPhoto: TakenPhoto) {
