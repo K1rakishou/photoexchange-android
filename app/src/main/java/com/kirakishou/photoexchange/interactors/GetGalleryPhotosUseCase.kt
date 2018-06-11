@@ -22,10 +22,7 @@ class GetGalleryPhotosUseCase(
 ) {
     private val TAG = "GetGalleryPhotosUseCase"
 
-    //interval to update photos in the db with fresh information
-    private val INTERVAL_TO_REFRESH_PHOTOS_FROM_SERVER = 30.minutes()
-
-    fun loadPageOfPhotos(userId: String, lastId: Long, photosPerPage: Int): Single<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
+    fun loadPageOfPhotos(lastId: Long, photosPerPage: Int): Single<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
         return rxSingle {
             try {
                 Timber.tag(TAG).d("sending loadPageOfPhotos request...")
@@ -62,33 +59,6 @@ class GetGalleryPhotosUseCase(
                     photosResultList += result.value
                 }
 
-                //if the user has received userId - get photos' additional info
-                //(like whether the user has the photo favourited or reported already)
-                if (userId.isNotEmpty()) {
-                    photosResultList.forEach { it.galleryPhotoInfo = GalleryPhotoInfo.empty() }
-
-                    //get photos' info by the ids from the database
-                    val galleryPhotoInfoFromDb = galleryPhotoRepository.findManyInfo(galleryPhotoIds, INTERVAL_TO_REFRESH_PHOTOS_FROM_SERVER)
-                    val photoInfoIdsToGetFromServer = Utils.filterListAlreadyContaining(galleryPhotoIds, galleryPhotoInfoFromDb.map { it.galleryPhotoId })
-                    updateGalleryPhotoInfo(photosResultList, galleryPhotoInfoFromDb)
-
-                    Timber.tag(TAG).d("Cached gallery photo info ids = ${galleryPhotoInfoFromDb.map { it.galleryPhotoId }}")
-
-                    //get the rest from the server
-                    if (photoInfoIdsToGetFromServer.isNotEmpty()) {
-                        val result = getFreshPhotoInfosFromServer(userId, photoInfoIdsToGetFromServer)
-                        if (result is Either.Error) {
-                            Timber.tag(TAG).w("Could not get fresh photo info from the server, errorCode = ${result.error}")
-                            return@rxSingle Either.Error(result.error)
-                        }
-
-                        (result as Either.Value)
-
-                        val galleryPhotoInfoList = result.value
-                        updateGalleryPhotoInfo(photosResultList, galleryPhotoInfoList)
-                    }
-                }
-
                 photosResultList.sortByDescending { it.galleryPhotoId }
                 return@rxSingle Either.Value(photosResultList)
             } catch (error: Throwable) {
@@ -96,37 +66,6 @@ class GetGalleryPhotosUseCase(
                 return@rxSingle Either.Error(ErrorCode.GetGalleryPhotosErrors.UnknownError())
             }
         }
-    }
-
-    private fun updateGalleryPhotoInfo(photosResultList: MutableList<GalleryPhoto>, galleryPhotoInfoList: List<GalleryPhotoInfo>) {
-        photosResultList.forEach { galleryPhoto ->
-            val galleryPhotoInfo = galleryPhotoInfoList.firstOrNull { galleryPhotoInfo ->
-                galleryPhotoInfo.galleryPhotoId == galleryPhoto.galleryPhotoId
-            }
-
-            if (galleryPhotoInfo == null) {
-                return@forEach
-            }
-
-            galleryPhoto.galleryPhotoInfo = galleryPhotoInfo
-        }
-    }
-
-    private suspend fun getFreshPhotoInfosFromServer(userId: String, photoIds: List<Long>): Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhotoInfo>> {
-        val photoIdsToBeRequested = photoIds.joinToString(Constants.PHOTOS_DELIMITER)
-
-        val response = apiClient.getGalleryPhotoInfo(userId, photoIdsToBeRequested).await()
-        val errorCode = response.errorCode as ErrorCode.GetGalleryPhotosErrors
-
-        if (errorCode !is ErrorCode.GetGalleryPhotosErrors.Ok) {
-            return Either.Error(errorCode)
-        }
-
-        if (!galleryPhotoRepository.saveManyInfo(response.galleryPhotosInfo)) {
-            return Either.Error(ErrorCode.GetGalleryPhotosErrors.LocalDatabaseError())
-        }
-
-        return Either.Value(GalleryPhotosInfoMapper.FromResponse.ToObject.toGalleryPhotoInfoList(response.galleryPhotosInfo))
     }
 
     private suspend fun getFreshPhotosFromServer(photoIds: List<Long>): Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>> {

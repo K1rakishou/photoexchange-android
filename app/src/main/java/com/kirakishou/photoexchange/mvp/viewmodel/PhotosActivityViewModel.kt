@@ -26,6 +26,7 @@ class PhotosActivityViewModel(
     private val settingsRepository: SettingsRepository,
     private val receivedPhotosRepository: ReceivedPhotosRepository,
     private val getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
+    private val getGalleryPhotosInfoUseCase: GetGalleryPhotosInfoUseCase,
     private val getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
     private val getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
     private val favouritePhotoUseCase: FavouritePhotoUseCase,
@@ -65,11 +66,11 @@ class PhotosActivityViewModel(
         photosPerPage: Int,
         isFragmentFreshlyCreated: Boolean
     ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
-        return Observable.fromCallable { settingsRepository.getUserId() }
+        return Observable.just(Unit)
             .subscribeOn(schedulerProvider.IO())
-            .concatMap { userId ->
+            .concatMap {
                 if (isFragmentFreshlyCreated) {
-                    return@concatMap getGalleryPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
+                    return@concatMap getGalleryPhotosUseCase.loadPageOfPhotos(lastId, photosPerPage)
                         .toObservable()
                         .doOnNext { result ->
                             if (result is Either.Value) {
@@ -82,6 +83,15 @@ class PhotosActivityViewModel(
                         return@fromCallable Either.Value(galleryPhotoRepository.findMany(cachedGalleryPhotoIds))
                     }
                 }
+            }
+            .concatMap { result ->
+                if (result !is Either.Value) {
+                    return@concatMap Observable.just(result)
+                }
+
+                val userId = settingsRepository.getUserId()
+                return@concatMap getGalleryPhotosInfoUseCase.loadGalleryPhotosInfo(userId, result.value)
+                    .toObservable()
             }
             .doOnError { Timber.tag(TAG).e(it) }
     }
