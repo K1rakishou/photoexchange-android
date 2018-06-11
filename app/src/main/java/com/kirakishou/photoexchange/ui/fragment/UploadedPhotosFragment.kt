@@ -202,6 +202,10 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
     }
 
     private fun onUiEvent(event: UploadedPhotosFragmentEvent.UiEvents) {
+        if (!isAdded) {
+            return
+        }
+
         uploadedPhotosList.post {
             when (event) {
                 is UploadedPhotosFragmentEvent.UiEvents.ScrollToTop -> {
@@ -329,12 +333,20 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
     }
 
     private fun addProgressFooter() {
+        if (!isAdded) {
+            return
+        }
+
         uploadedPhotosList.post {
             adapter.showProgressFooter()
         }
     }
 
     private fun hideProgressFooter() {
+        if (!isAdded) {
+            return
+        }
+
         uploadedPhotosList.post {
             adapter.hideProgressFooter()
         }

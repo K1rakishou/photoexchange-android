@@ -152,12 +152,20 @@ class GalleryFragment : BaseFragment() {
     }
 
     private fun favouritePhoto(photoName: String, isFavourited: Boolean, favouritesCount: Long) {
+        if (!isAdded) {
+            return
+        }
+
         galleryPhotosList.post {
             adapter.favouritePhoto(photoName, isFavourited, favouritesCount)
         }
     }
 
     private fun reportPhoto(photoName: String, isReported: Boolean) {
+        if (!isAdded) {
+            return
+        }
+
         galleryPhotosList.post {
             if (!adapter.reportPhoto(photoName, isReported)) {
                 return@post
@@ -172,12 +180,20 @@ class GalleryFragment : BaseFragment() {
     }
 
     private fun addProgressFooter() {
+        if (!isAdded) {
+            return
+        }
+
         galleryPhotosList.post {
             adapter.addProgressFooter()
         }
     }
 
     private fun hideProgressFooter() {
+        if (!isAdded) {
+            return
+        }
+
         galleryPhotosList.post {
             adapter.removeProgressFooter()
         }

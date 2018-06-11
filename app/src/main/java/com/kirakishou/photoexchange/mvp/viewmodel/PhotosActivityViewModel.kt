@@ -83,6 +83,7 @@ class PhotosActivityViewModel(
                     }
                 }
             }
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun loadNextPageOfUploadedPhotos(
@@ -112,6 +113,7 @@ class PhotosActivityViewModel(
                     }
                 }
             }
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun loadNextPageOfReceivedPhotos(
@@ -146,6 +148,7 @@ class PhotosActivityViewModel(
                     updateUploadedPhotosReceiverInfo(result.value)
                 }
             }
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     private fun updateUploadedPhotosReceiverInfo(receivedPhotos: MutableList<ReceivedPhoto>) {
@@ -156,6 +159,7 @@ class PhotosActivityViewModel(
         return Observable.fromCallable {
             takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
         }.subscribeOn(schedulerProvider.IO())
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun checkHasPhotosToReceive(): Observable<Boolean> {
@@ -165,6 +169,7 @@ class PhotosActivityViewModel(
 
             return@fromCallable uploadedPhotosCount > receivedPhotosCount
         }.subscribeOn(schedulerProvider.IO())
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun loadMyPhotos(): Single<MutableList<TakenPhoto>> {

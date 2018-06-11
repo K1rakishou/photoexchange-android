@@ -49,6 +49,7 @@ class GetUploadedPhotosUseCase(
                         return@concatMap Observable.just(Either.Value(uploadedPhotosFromDb))
                     }
             }
+            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     private fun getFreshPhotosAndConcatWithCached(
