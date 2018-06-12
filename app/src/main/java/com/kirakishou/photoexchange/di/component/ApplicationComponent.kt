@@ -31,5 +31,4 @@ interface ApplicationComponent {
     fun plus(uploadPhotoServiceModule: UploadPhotoServiceModule): UploadPhotoServiceComponent
     fun plus(receivePhotosServiceModule: ReceivePhotosServiceModule): ReceivePhotosServiceComponent
     fun plus(settingsActivityModule: SettingsActivityModule): SettingsActivityComponent
-    fun plus(mapActivityModule: MapActivityModule): MapActivityComponent
 }

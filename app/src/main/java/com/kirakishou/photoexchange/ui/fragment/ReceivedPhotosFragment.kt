@@ -18,7 +18,6 @@ import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
-import com.kirakishou.photoexchange.ui.activity.MapActivity
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapterSpanSizeLookup
@@ -136,12 +135,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
                 TODO()
             }
             is ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent.ShowMap -> {
-                val args = Bundle().apply {
-                    this.putDouble(MapActivity.LON_PARAM, click.location.lon)
-                    this.putDouble(MapActivity.LAT_PARAM, click.location.lat)
-                }
-
-                (requireActivity() as PhotosActivity).runActivityWithArgs(MapActivity::class.java, args)
+                TODO()
             }
         }.safe
     }

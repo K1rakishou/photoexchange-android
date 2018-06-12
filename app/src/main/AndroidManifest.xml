@@ -25,7 +25,6 @@
         <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity" />
         <activity android:name="com.kirakishou.photoexchange.ui.activity.PhotosActivity" />
         <activity android:name="com.kirakishou.photoexchange.ui.activity.SettingsActivity" />
-        <activity android:name="com.kirakishou.photoexchange.ui.activity.MapActivity" />
 
         <meta-data
             android:name="io.fabric.ApiKey"
