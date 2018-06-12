@@ -22,6 +22,7 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.PhotosActivityModule
 import com.kirakishou.photoexchange.helper.extension.debounceClicks
+import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
@@ -40,6 +41,8 @@ import com.kirakishou.photoexchange.ui.viewstate.PhotosActivityViewState
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
+import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
+import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -55,7 +58,7 @@ import javax.inject.Inject
 
 class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
     ViewPager.OnPageChangeListener, PhotoUploadingCallback, ReceivePhotosServiceCallback,
-    PopupMenu.OnMenuItemClickListener, StateEventListener<PhotosActivityEvent> {
+    PopupMenu.OnMenuItemClickListener, StateEventListener<PhotosActivityEvent>, IntercomListener {
 
     @BindView(R.id.root_layout)
     lateinit var rootLayout: CoordinatorLayout
@@ -147,7 +150,7 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
             .doOnError { Timber.e(it) }
             .subscribe()
 
-        compositeDisposable += viewModel.eventForwarder.getPhotoActivityEventsStream()
+        compositeDisposable += viewModel.intercom.photosActivityEvents.listen()
             .subscribeOn(AndroidSchedulers.mainThread())
             .doOnNext { onStateEvent(it) }
             .doOnError { Timber.e(it) }
@@ -199,8 +202,8 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
             }
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext {
-                viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(
-                    UploadedPhotosFragmentEvent.UiEvents.LoadTakenPhotos())
+                viewModel.intercom.tell<UploadedPhotosFragment>()
+                    .to(UploadedPhotosFragmentEvent.UiEvents.LoadTakenPhotos())
             }
             .subscribe()
     }
@@ -295,11 +298,11 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
                     .filter { hasPhotosToReceive -> hasPhotosToReceive }
                     .subscribe({ bindReceivingService(event.callerClass, event.reason, true) })
             }
-            is PhotosActivityEvent.FailedToUploadPhotoButtonClick -> {
+            is PhotosActivityEvent.FailedToUploadPhotoButtonClicked -> {
                 compositeDisposable += handleUploadedPhotosFragmentAdapterButtonClicks(event.clickType)
                     .subscribe({ tryToReUpload ->
                         if (tryToReUpload) {
-                            bindUploadingService(PhotosActivity::class.java, "Handling of FailedToUploadPhotoButtonClick", true)
+                            bindUploadingService(PhotosActivity::class.java, "Handling of FailedToUploadPhotoButtonClicked", true)
                         }
                     }, { error ->
                         Timber.tag(TAG).e(error)
@@ -309,19 +312,18 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
     }
 
     override fun onUploadPhotosEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
-        viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(event)
+        viewModel.intercom.tell<UploadedPhotosFragment>().to(event)
     }
 
     override fun onPhotoFindEvent(event: ReceivedPhotosFragmentEvent.ReceivePhotosEvent) {
-        viewModel.eventForwarder.sendReceivedPhotosFragmentEvent(event)
+        viewModel.intercom.tell<ReceivedPhotosFragment>().to(event)
 
         when (event) {
-            is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotoReceived -> {
-                viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(
-                    UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFoundPhotoAnswer(event.takenPhotoName))
-                viewModel.eventForwarder.sendReceivedPhotosFragmentEvent(
-                    ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotoReceived(event.receivedPhoto, event.takenPhotoName)
-                )
+            is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotoReceived -> {
+                viewModel.intercom.tell<UploadedPhotosFragment>()
+                    .that(UploadedPhotosFragmentEvent.PhotoUploadEvent.PhotoAnswerFound(event.takenPhotoName))
+                viewModel.intercom.tell<ReceivedPhotosFragment>()
+                    .that(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotoReceived(event.receivedPhoto, event.takenPhotoName))
                 showPhotoAnswerFoundSnackbar()
             }
         }
@@ -347,10 +349,10 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
                         val photo = adapterButtonsClick.photo
                         photo.photoState = PhotoState.PHOTO_QUEUED_UP
 
-                        viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(
-                            UploadedPhotosFragmentEvent.UiEvents.RemovePhoto(photo))
-                        viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(
-                            UploadedPhotosFragmentEvent.UiEvents.AddPhoto(photo))
+                        viewModel.intercom.tell<UploadedPhotosFragment>()
+                            .to(UploadedPhotosFragmentEvent.UiEvents.RemovePhoto(photo))
+                        viewModel.intercom.tell<UploadedPhotosFragment>()
+                            .to(UploadedPhotosFragmentEvent.UiEvents.AddPhoto(photo))
                     }.map { true }
                     .doOnError { Timber.e(it) }
             }
@@ -361,14 +363,14 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
         val disposable = Single.just(1)
             .observeOn(Schedulers.io())
             .doOnSuccess {
-                viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(
-                    UploadedPhotosFragmentEvent.UiEvents.RemovePhoto(photo))
+                viewModel.intercom.tell<UploadedPhotosFragment>()
+                    .to(UploadedPhotosFragmentEvent.UiEvents.RemovePhoto(photo))
             }
             .zipWith(Single.timer(PHOTO_DELETE_DELAY, TimeUnit.MILLISECONDS))
             .flatMap { viewModel.deletePhotoById(photo.id).toSingleDefault(Unit) }
             .subscribe({
-                viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(
-                    UploadedPhotosFragmentEvent.UiEvents.OnPhotoRemoved())
+                viewModel.intercom.tell<UploadedPhotosFragment>()
+                    .that(UploadedPhotosFragmentEvent.UiEvents.PhotoRemoved())
             }, {
                 Timber.e(it)
             })
@@ -378,8 +380,8 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
         Snackbar.make(rootLayout, getString(R.string.photo_has_been_deleted_snackbar_text), Snackbar.LENGTH_LONG)
             .setDuration(PHOTO_DELETE_DELAY.toInt())
             .setAction(getString(R.string.cancel_snackbar_action_text), {
-                viewModel.eventForwarder.sendUploadedPhotosFragmentEvent(
-                    UploadedPhotosFragmentEvent.UiEvents.AddPhoto(photo))
+                viewModel.intercom.tell<UploadedPhotosFragment>()
+                    .to(UploadedPhotosFragmentEvent.UiEvents.AddPhoto(photo))
                 disposable.dispose()
             })
             .show()
@@ -396,8 +398,8 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .doOnSuccess {
-                        viewModel.eventForwarder.sendReceivedPhotosFragmentEvent(
-                            ReceivedPhotosFragmentEvent.UiEvents.ScrollToTop())
+                        viewModel.intercom.tell<ReceivedPhotosFragment>()
+                            .to(ReceivedPhotosFragmentEvent.UiEvents.ScrollToTop())
                     }
                     .doOnError { Timber.e(it) }
                     .subscribe()

@@ -10,6 +10,7 @@ import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.RxLifecycle
 import com.kirakishou.photoexchange.helper.extension.safe
+import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
@@ -37,7 +38,7 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 
-class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotosFragmentEvent> {
+class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotosFragmentEvent>, IntercomListener {
 
     @BindView(R.id.my_photos_list)
     lateinit var uploadedPhotosList: RecyclerView
@@ -104,7 +105,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
     }
 
     private fun initRx() {
-        compositeDisposable += viewModel.eventForwarder.getUploadedPhotosFragmentEventsStream()
+        compositeDisposable += viewModel.intercom.uploadedPhotosFragmentEvents.listen()
             .observeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { viewState -> onStateEvent(viewState) }
@@ -114,7 +115,10 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         compositeDisposable += failedToUploadPhotoButtonClicksSubject
             .observeOn(AndroidSchedulers.mainThread())
             .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe({ viewModel.eventForwarder.sendPhotoActivityEvent(PhotosActivityEvent.FailedToUploadPhotoButtonClick(it)) })
+            .subscribe({
+                viewModel.intercom.tell<PhotosActivity>()
+                    .that(PhotosActivityEvent.FailedToUploadPhotoButtonClicked(it))
+            })
 
         compositeDisposable += lifecycle.getLifecycle()
             .filter { lifecycle -> lifecycle.isAtLeast(RxLifecycle.FragmentState.Resumed) }
@@ -142,11 +146,11 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                     is Either.Value -> {
                         addUploadedPhotosToAdapter(result.value)
 
-                        viewModel.eventForwarder.sendPhotoActivityEvent(
-                            PhotosActivityEvent.StartReceivingService(
+                        viewModel.intercom.tell<PhotosActivity>()
+                            .to(PhotosActivityEvent.StartReceivingService(
                                 UploadedPhotosFragment::class.java,
-                                "Starting the service after first page of uploaded photos was loaded"
-                            ))
+                                "Starting the service after first page of uploaded photos was loaded")
+                            )
                     }
                     is Either.Error -> handleError(result.error)
                 }
@@ -165,10 +169,11 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                 return@flatMapObservable viewModel.checkHasPhotosToUpload()
                     .doOnNext { hasPhotosToUpload ->
                         if (hasPhotosToUpload) {
-                            viewModel.eventForwarder.sendPhotoActivityEvent(PhotosActivityEvent
-                                .StartUploadingService(UploadedPhotosFragment::class.java,
-                                    "Starting the service after taken photos were loaded")
-                            )
+                            viewModel.intercom.tell<PhotosActivity>()
+                                .to(PhotosActivityEvent.StartUploadingService(
+                                    UploadedPhotosFragment::class.java,
+                                        "Starting the service after taken photos were loaded")
+                                )
                         }
                     }
             }
@@ -223,7 +228,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                 is UploadedPhotosFragmentEvent.UiEvents.AddPhoto -> {
                     adapter.addTakenPhoto(event.photo)
                 }
-                is UploadedPhotosFragmentEvent.UiEvents.OnPhotoRemoved -> {
+                is UploadedPhotosFragmentEvent.UiEvents.PhotoRemoved -> {
                     if (adapter.getFailedPhotosCount() == 0) {
                         loadFirstPageOfUploadedPhotos()
                     } else {
@@ -264,7 +269,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                     adapter.addTakenPhoto(event.photo.also { it.photoState = PhotoState.FAILED_TO_UPLOAD })
                     (requireActivity() as PhotosActivity).showKnownErrorMessage(event.errorCode)
                 }
-                is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFoundPhotoAnswer -> {
+                is UploadedPhotosFragmentEvent.PhotoUploadEvent.PhotoAnswerFound -> {
                     adapter.updateUploadedPhotoSetReceiverInfo(event.takenPhotoName)
                 }
                 is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {

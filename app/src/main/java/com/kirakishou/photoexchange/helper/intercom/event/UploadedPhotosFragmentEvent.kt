@@ -12,7 +12,7 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
         class RemovePhoto(val photo: TakenPhoto) : UiEvents()
         class AddPhoto(val photo: TakenPhoto) : UiEvents()
         class ScrollToTop : UiEvents()
-        class OnPhotoRemoved : UiEvents()
+        class PhotoRemoved : UiEvents()
         class LoadTakenPhotos : UiEvents()
         class UpdateReceiverInfo(val receivedPhotos: MutableList<ReceivedPhoto>) : UiEvents()
     }
@@ -25,7 +25,7 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
         class OnProgress(val photo: TakenPhoto, val progress: Int) : PhotoUploadEvent()
         class OnUploaded(val takenPhoto: TakenPhoto,
                          val uploadedPhoto: UploadedPhoto) : PhotoUploadEvent()
-        class OnFoundPhotoAnswer(val takenPhotoName: String) : PhotoUploadEvent()
+        class PhotoAnswerFound(val takenPhotoName: String) : PhotoUploadEvent()
         class OnEnd(val allUploaded: Boolean) : PhotoUploadEvent()
     }
 

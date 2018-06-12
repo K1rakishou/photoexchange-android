@@ -11,6 +11,7 @@ import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.RxLifecycle
 import com.kirakishou.photoexchange.helper.extension.safe
+import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
@@ -32,7 +33,7 @@ import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import javax.inject.Inject
 
-class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotosFragmentEvent> {
+class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotosFragmentEvent>, IntercomListener {
 
     @BindView(R.id.received_photos_list)
     lateinit var receivedPhotosList: RecyclerView
@@ -67,7 +68,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     }
 
     private fun initRx() {
-        compositeDisposable += viewModel.eventForwarder.getReceivedPhotosFragmentEventsStream()
+        compositeDisposable += viewModel.intercom.receivedPhotosFragmentEvents.listen()
             .observeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { viewState -> onStateEvent(viewState) }
@@ -184,7 +185,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
 
         receivedPhotosList.post {
             when (event) {
-                is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotoReceived -> {
+                is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotoReceived -> {
                     adapter.addReceivedPhoto(event.receivedPhoto)
                 }
                 is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed,

@@ -4,12 +4,13 @@ import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.helper.extension.seconds
-import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelStateEventForwarder
+import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.*
 import com.kirakishou.photoexchange.mvp.model.*
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
+import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
 import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -41,7 +42,7 @@ class PhotosActivityViewModel(
     private val cachedReceivedPhotoIds = mutableListOf<Long>()
     private val cachedGalleryPhotoIds = mutableListOf<Long>()
 
-    val eventForwarder = PhotosActivityViewModelStateEventForwarder()
+    val intercom = PhotosActivityViewModelIntercom()
 
     override fun onCleared() {
         Timber.tag(TAG).d("onCleared()")
@@ -155,14 +156,11 @@ class PhotosActivityViewModel(
             }
             .doOnNext { result ->
                 if (result is Either.Value) {
-                    updateUploadedPhotosReceiverInfo(result.value)
+                    intercom.tell<UploadedPhotosFragment>()
+                        .to(UploadedPhotosFragmentEvent.UiEvents.UpdateReceiverInfo(result.value))
                 }
             }
             .doOnError { Timber.tag(TAG).e(it) }
-    }
-
-    private fun updateUploadedPhotosReceiverInfo(receivedPhotos: MutableList<ReceivedPhoto>) {
-        eventForwarder.sendUploadedPhotosFragmentEvent(UploadedPhotosFragmentEvent.UiEvents.UpdateReceiverInfo(receivedPhotos))
     }
 
     fun checkHasPhotosToUpload(): Observable<Boolean> {
