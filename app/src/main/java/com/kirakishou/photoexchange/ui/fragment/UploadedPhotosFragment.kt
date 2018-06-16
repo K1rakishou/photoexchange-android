@@ -34,7 +34,6 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 
@@ -89,8 +88,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
     private fun initRx() {
         compositeDisposable += viewModel.intercom.uploadedPhotosFragmentEvents.listen()
-            .observeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { viewState -> onStateEvent(viewState) }
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
@@ -118,12 +115,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             .concatMap { nextPage ->
                 return@concatMap Observable.just(1)
                     .doOnNext { endlessScrollListener.pageLoading() }
-                    .doOnNext { onUiEvent(UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
                     .concatMap { viewModel.loadNextPageOfUploadedPhotos(viewState.lastId, photosPerPage, isFragmentFreshlyCreated) }
-                    .doOnNext { onUiEvent(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
-                    //add slight delay to ensure progressbar is removed from recyclerview before adding other elements
-                    //otherwise it will scroll the recyclerview to the bottom
-                    .delay(500, TimeUnit.MILLISECONDS)
             }
             .subscribe({ result ->
                 when (result) {
@@ -218,7 +210,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                     uploadedPhotosList.scrollToPosition(0)
                 }
                 is UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter -> {
-                    addProgressFooter()
+                    showProgressFooter()
                 }
                 is UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter -> {
                     hideProgressFooter()
@@ -338,7 +330,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         }
     }
 
-    private fun addProgressFooter() {
+    private fun showProgressFooter() {
         if (!isAdded) {
             return
         }

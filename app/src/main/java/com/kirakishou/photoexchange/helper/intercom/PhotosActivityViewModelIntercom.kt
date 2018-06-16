@@ -1,10 +1,8 @@
 package com.kirakishou.photoexchange.helper.intercom
 
-import com.kirakishou.photoexchange.helper.intercom.event.BaseEvent
-import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
-import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
-import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
+import com.kirakishou.photoexchange.helper.intercom.event.*
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
+import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
 import io.reactivex.Observable
@@ -15,12 +13,14 @@ class PhotosActivityViewModelIntercom {
     val photosActivityEvents = PhotosActivityEvents()
     val uploadedPhotosFragmentEvents = UploadedPhotosFragmentEvents()
     val receivedPhotosFragmentEvents = ReceivedPhotosFragmentEvents()
+    val galleryFragmentEvents = GalleryFragmentEvents()
 
     inline fun <reified T : IntercomListener> tell(): AbstractIntercom<BaseEvent> {
         return when (T::class.java) {
             PhotosActivity::class.java -> photosActivityEvents as AbstractIntercom<BaseEvent>
             UploadedPhotosFragment::class.java -> uploadedPhotosFragmentEvents as AbstractIntercom<BaseEvent>
             ReceivedPhotosFragment::class.java -> receivedPhotosFragmentEvents as AbstractIntercom<BaseEvent>
+            GalleryFragment::class.java -> galleryFragmentEvents as AbstractIntercom<BaseEvent>
             else -> throw IllegalArgumentException("Unknown type class ${T::class.java}")
         }
     }
@@ -70,6 +70,22 @@ class PhotosActivityViewModelIntercom {
 
         override fun to(event: ReceivedPhotosFragmentEvent) {
             receivedPhotosFragmentViewStateSubject.onNext(event)
+        }
+    }
+
+    class GalleryFragmentEvents : AbstractIntercom<GalleryFragmentEvent> {
+        private val galleryFragmentViewStateSubject = PublishSubject.create<GalleryFragmentEvent>().toSerialized()
+
+        override fun listen(): Observable<GalleryFragmentEvent> {
+            return galleryFragmentViewStateSubject
+        }
+
+        override fun that(event: GalleryFragmentEvent) {
+            to(event)
+        }
+
+        override fun to(event: GalleryFragmentEvent) {
+            galleryFragmentViewStateSubject.onNext(event)
         }
     }
 }

@@ -9,6 +9,10 @@ import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.ImageLoader
+import com.kirakishou.photoexchange.helper.extension.safe
+import com.kirakishou.photoexchange.helper.intercom.IntercomListener
+import com.kirakishou.photoexchange.helper.intercom.StateEventListener
+import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
@@ -28,7 +32,7 @@ import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import javax.inject.Inject
 
-class GalleryFragment : BaseFragment() {
+class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>, IntercomListener {
 
     @BindView(R.id.gallery_photos_list)
     lateinit var galleryPhotosList: RecyclerView
@@ -65,14 +69,17 @@ class GalleryFragment : BaseFragment() {
     }
 
     private fun initRx() {
+        compositeDisposable += viewModel.intercom.galleryFragmentEvents.listen()
+            .doOnNext { viewState -> onStateEvent(viewState) }
+            .doOnError { Timber.tag(TAG).e(it) }
+            .subscribe()
+
         compositeDisposable += loadMoreSubject
             .doOnNext { endlessScrollListener.pageLoading() }
-            .doOnNext { addProgressFooter() }
             .concatMap {
                 return@concatMap viewModel.loadNextPageOfGalleryPhotos(viewState.lastId, photosPerPage, isFragmentFreshlyCreated)
                     .flatMap(this::preloadPhotos)
             }
-            .doOnNext { hideProgressFooter() }
             .subscribe({ result ->
                 when (result) {
                     is Either.Value -> addPhotoToAdapter(result.value)
@@ -189,7 +196,38 @@ class GalleryFragment : BaseFragment() {
         }
     }
 
-    private fun addProgressFooter() {
+    override fun onStateEvent(event: GalleryFragmentEvent) {
+        if (!isAdded) {
+            return
+        }
+
+        requireActivity().runOnUiThread {
+            when (event) {
+                is GalleryFragmentEvent.UiEvents -> {
+                    onUiEvent(event)
+                }
+            }.safe
+        }
+    }
+
+    private fun onUiEvent(event: GalleryFragmentEvent.UiEvents) {
+        if (!isAdded) {
+            return
+        }
+
+        galleryPhotosList.post {
+            when (event) {
+                is GalleryFragmentEvent.UiEvents.ShowProgressFooter -> {
+                    showProgressFooter()
+                }
+                is GalleryFragmentEvent.UiEvents.HideProgressFooter -> {
+                    hideProgressFooter()
+                }
+            }.safe
+        }
+    }
+
+    private fun showProgressFooter() {
         if (!isAdded) {
             return
         }

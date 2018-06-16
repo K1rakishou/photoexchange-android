@@ -28,10 +28,8 @@ import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotosFragmentEvent>, IntercomListener {
@@ -71,8 +69,6 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
 
     private fun initRx() {
         compositeDisposable += viewModel.intercom.receivedPhotosFragmentEvents.listen()
-            .observeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
             .doOnNext { viewState -> onStateEvent(viewState) }
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
@@ -84,10 +80,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
                     .map { nextPage }
             }
             .doOnNext { endlessScrollListener.pageLoading() }
-            .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
             .concatMap { viewModel.loadNextPageOfReceivedPhotos(viewState.lastId, photosPerPage, isFragmentFreshlyCreated) }
-            .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
-            .delay(500, TimeUnit.MILLISECONDS)
             .subscribe({ result ->
                 when (result) {
                     is Either.Value -> addReceivedPhotosToAdapter(result.value)
@@ -166,7 +159,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
                     receivedPhotosList.scrollToPosition(0)
                 }
                 is ReceivedPhotosFragmentEvent.UiEvents.ShowProgressFooter -> {
-                    addProgressFooter()
+                    showProgressFooter()
                 }
                 is ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter -> {
                     hideProgressFooter()
@@ -212,7 +205,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
         }
     }
 
-    private fun addProgressFooter() {
+    private fun showProgressFooter() {
         if (!isAdded) {
             return
         }
