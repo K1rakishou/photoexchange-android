@@ -17,6 +17,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
+import com.kirakishou.photoexchange.mvp.model.other.Constants.DEFAULT_ADAPTER_ITEM_WIDTH
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
@@ -47,7 +48,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     lateinit var endlessScrollListener: EndlessRecyclerOnScrollListener
 
     private val TAG = "ReceivedPhotosFragment"
-    private val PHOTO_ADAPTER_VIEW_WIDTH = 288
+    private val PHOTO_ADAPTER_VIEW_WIDTH = DEFAULT_ADAPTER_ITEM_WIDTH
     private val loadMoreSubject = PublishSubject.create<Int>()
     private val adapterClicksSubject = PublishSubject.create<ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent>()
     private var isFragmentFreshlyCreated = true

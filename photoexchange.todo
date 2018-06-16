@@ -53,9 +53,9 @@
    ✔ ReceivedPhotosFragment @done (18-06-16 19:25)
    ✔ GalleryFragment @done (18-06-16 19:00)
 
- ☐ Есть подозрения, что когда в receivePhotosUseCase.receivePhotos происходит ошибка это вызывает другую ошибку в операторе lastOrError @high @analytics
+ ☐ Есть подозрения, что когда в receivePhotosUseCase.receivePhotos происходит ошибка это вызывает другую ошибку (NoSuchElementException) в операторе lastOrError @high @analytics
 
- ☐ Есть подозрения, что когда в uploadPhotosUseCase.uploadPhoto происходит ошибка это вызывает другую ошибку в операторе lastOrError @high @analytics
+ ☐ Есть подозрения, что когда в uploadPhotosUseCase.uploadPhoto происходит ошибка это вызывает другую ошибку (NoSuchElementException) в операторе lastOrError @high @analytics
 
  ☐ Сохранять позицию в ресайклервью для всех фрагментов и восстанавливать при повороте экрана @low
 

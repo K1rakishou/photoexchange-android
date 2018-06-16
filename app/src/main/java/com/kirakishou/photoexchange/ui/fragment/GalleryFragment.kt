@@ -16,6 +16,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
+import com.kirakishou.photoexchange.mvp.model.other.Constants.DEFAULT_ADAPTER_ITEM_WIDTH
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
@@ -44,7 +45,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     lateinit var viewModel: PhotosActivityViewModel
 
     private val TAG = "GalleryFragment"
-    private val GALLERY_PHOTO_ADAPTER_VIEW_WIDTH = 288
+    private val GALLERY_PHOTO_ADAPTER_VIEW_WIDTH = DEFAULT_ADAPTER_ITEM_WIDTH
     private val loadMoreSubject = PublishSubject.create<Int>()
     private val adapterButtonClickSubject = PublishSubject.create<GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent>()
     private var isFragmentFreshlyCreated = true

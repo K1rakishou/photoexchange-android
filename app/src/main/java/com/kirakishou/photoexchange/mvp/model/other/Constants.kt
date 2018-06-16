@@ -17,4 +17,6 @@ object Constants {
     val GALLERY_PHOTOS_PER_ROW = 15
     val UPLOADED_PHOTOS_PER_ROW = 15
     val RECEIVED_PHOTOS_PER_ROW = 15
+
+    val DEFAULT_ADAPTER_ITEM_WIDTH = 288
 }
