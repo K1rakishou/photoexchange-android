@@ -31,6 +31,7 @@ import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotosFragmentEvent>, IntercomListener {
@@ -82,9 +83,11 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
                     .filter { _lifecycle -> _lifecycle.isAtLeast(RxLifecycle.FragmentState.Resumed) }
                     .map { nextPage }
             }
+            .doOnNext { endlessScrollListener.pageLoading() }
             .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
             .concatMap { viewModel.loadNextPageOfReceivedPhotos(viewState.lastId, photosPerPage, isFragmentFreshlyCreated) }
             .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
+            .delay(500, TimeUnit.MILLISECONDS)
             .subscribe({ result ->
                 when (result) {
                     is Either.Value -> addReceivedPhotosToAdapter(result.value)

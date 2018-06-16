@@ -70,7 +70,7 @@ class PhotosActivityViewModel(
         return Observable.just(Unit)
             .subscribeOn(schedulerProvider.IO())
             .concatMap {
-                if (isFragmentFreshlyCreated) {
+                if (isFragmentFreshlyCreated || cachedReceivedPhotoIds.isEmpty()) {
                     return@concatMap getGalleryPhotosUseCase.loadPageOfPhotos(lastId, photosPerPage)
                         .toObservable()
                         .doOnNext { result ->
@@ -110,7 +110,7 @@ class PhotosActivityViewModel(
                     return@flatMap Observable.just<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>>(Either.Value(emptyList()))
                 }
 
-                if (isFragmentFreshlyCreated) {
+                if (isFragmentFreshlyCreated || cachedReceivedPhotoIds.isEmpty()) {
                     return@flatMap getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
                         .doOnNext { result ->
                             if (result is Either.Value) {
@@ -140,7 +140,7 @@ class PhotosActivityViewModel(
                     return@flatMap Observable.just(Either.Error(ErrorCode.GetReceivedPhotosErrors.LocalUserIdIsEmpty()))
                 }
 
-                if (isFragmentFreshlyCreated) {
+                if (isFragmentFreshlyCreated || cachedReceivedPhotoIds.isEmpty()) {
                     return@flatMap getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
                         .doOnNext { result ->
                             if (result is Either.Value) {

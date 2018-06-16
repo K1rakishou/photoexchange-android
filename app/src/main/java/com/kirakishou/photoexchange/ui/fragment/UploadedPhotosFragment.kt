@@ -117,6 +117,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             .map { it.first }
             .concatMap { nextPage ->
                 return@concatMap Observable.just(1)
+                    .doOnNext { endlessScrollListener.pageLoading() }
                     .doOnNext { onUiEvent(UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
                     .concatMap { viewModel.loadNextPageOfUploadedPhotos(viewState.lastId, photosPerPage, isFragmentFreshlyCreated) }
                     .doOnNext { onUiEvent(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
