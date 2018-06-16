@@ -46,6 +46,7 @@ class GalleryFragment : BaseFragment() {
     private var isFragmentFreshlyCreated = true
     private val viewState = GalleryFragmentViewState()
     private var photosPerPage = 0
+    private val ADAPTER_PHOTO_SIZE = ImageLoader.PhotoSize.Small
 
     lateinit var adapter: GalleryPhotosAdapter
     lateinit var endlessScrollListener: EndlessRecyclerOnScrollListener
@@ -64,31 +65,17 @@ class GalleryFragment : BaseFragment() {
     }
 
     private fun loadFirstPage() {
-        compositeDisposable += Observable.just(1)
-            .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { endlessScrollListener.pageLoading() }
-            .doOnNext { addProgressFooter() }
-            .observeOn(Schedulers.io())
-            .flatMap { viewModel.loadNextPageOfGalleryPhotos(viewState.lastId, photosPerPage, isFragmentFreshlyCreated) }
-            .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { hideProgressFooter() }
-            .subscribe({ result ->
-                when (result) {
-                    is Either.Value -> addPhotoToAdapter(result.value)
-                    is Either.Error -> handleGetGalleryPhotosError(result.error)
-                }
-            }, {
-                Timber.tag(TAG).e(it)
-            })
+        loadMoreSubject.onNext(0)
     }
 
     private fun initRx() {
         compositeDisposable += loadMoreSubject
-            .subscribeOn(AndroidSchedulers.mainThread())
+            .doOnNext { endlessScrollListener.pageLoading() }
             .doOnNext { addProgressFooter() }
-            .observeOn(Schedulers.io())
-            .concatMap { viewModel.loadNextPageOfGalleryPhotos(viewState.lastId, photosPerPage, isFragmentFreshlyCreated) }
-            .observeOn(AndroidSchedulers.mainThread())
+            .concatMap {
+                return@concatMap viewModel.loadNextPageOfGalleryPhotos(viewState.lastId, photosPerPage, isFragmentFreshlyCreated)
+                    .flatMap(this::preloadPhotos)
+            }
             .doOnNext { hideProgressFooter() }
             .subscribe({ result ->
                 when (result) {
@@ -137,18 +124,41 @@ class GalleryFragment : BaseFragment() {
     private fun initRecyclerView() {
         val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), GALLERY_PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = GalleryPhotosAdapter(requireContext(), imageLoader, adapterButtonClickSubject)
+        adapter = GalleryPhotosAdapter(requireContext(), imageLoader, ADAPTER_PHOTO_SIZE, adapterButtonClickSubject)
 
         val layoutManager = GridLayoutManager(requireContext(), columnsCount)
         layoutManager.spanSizeLookup = GalleryPhotosAdapterSpanSizeLookup(adapter, columnsCount)
 
         photosPerPage = Constants.GALLERY_PHOTOS_PER_ROW * layoutManager.spanCount
-        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, loadMoreSubject, 0)
+        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, loadMoreSubject, 1)
 
         galleryPhotosList.layoutManager = layoutManager
         galleryPhotosList.adapter = adapter
         galleryPhotosList.clearOnScrollListeners()
         galleryPhotosList.addOnScrollListener(endlessScrollListener)
+    }
+
+    private fun preloadPhotos(
+        result: Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>
+    ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
+        if (result is Either.Error) {
+            return Observable.just(result)
+        }
+
+        return Observable.fromIterable((result as Either.Value).value)
+            .subscribeOn(Schedulers.io())
+            .flatMapSingle { galleryPhoto ->
+                return@flatMapSingle imageLoader.preloadImageFromNetAsync(galleryPhoto.photoName, ADAPTER_PHOTO_SIZE)
+                    .subscribeOn(AndroidSchedulers.mainThread())
+                    .doOnSuccess { result ->
+                        if (!result) {
+                            Timber.tag(TAG).w("Could not pre-load photo ${galleryPhoto.photoName}")
+                        }
+                    }
+            }
+            .toList()
+            .toObservable()
+            .map { result }
     }
 
     private fun favouritePhoto(photoName: String, isFavourited: Boolean, favouritesCount: Long) {

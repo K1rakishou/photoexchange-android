@@ -15,6 +15,7 @@ import io.reactivex.subjects.PublishSubject
 class GalleryPhotosAdapter(
     private val context: Context,
     private val imageLoader: ImageLoader,
+    private val photoSize: ImageLoader.PhotoSize,
     private val adapterButtonClickSubject: PublishSubject<GalleryPhotosAdapterButtonClickEvent>
 ) : BaseAdapter<GalleryPhotosAdapterItem>(context) {
 
@@ -153,8 +154,7 @@ class GalleryPhotosAdapter(
 
                 holder.favouritesCount.text = item.photo.favouritesCount.toString()
 
-                //TODO: optimize so it won't ddos the server when user scrolls recyclerview very fast
-                imageLoader.loadImageFromNetInto(item.photo.photoName, ImageLoader.PhotoSize.Small, holder.photoView)
+                imageLoader.loadImageFromNetInto(item.photo.photoName, photoSize, holder.photoView)
             }
             is ProgressViewHolder -> {
                 holder.progressBar.isIndeterminate = true
