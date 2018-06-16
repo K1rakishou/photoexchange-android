@@ -49,13 +49,13 @@ class UploadPhotoServicePresenter(
                 val userIdObservable = getUserId()
 
                 return@concatMap Observable.fromCallable {
-                    updateServiceNotification(NotificationType.Uploading())
+                    return@fromCallable updateServiceNotification(NotificationType.Uploading())
                 }
                     .flatMap { Observables.zip(currentLocationObservable, userIdObservable) }
                     .concatMap { (currentLocation, userId) ->
-                        takenPhotosRepository.updateAllPhotosLocation(currentLocation)
-
-                        return@concatMap Observable.fromCallable { takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP) }
+                        return@concatMap Observable.fromCallable {
+                            return@fromCallable takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP)
+                        }
                             .concatMapSingle { queuedUpPhotos ->
                                 return@concatMapSingle Observable.fromIterable(queuedUpPhotos)
                                     .concatMap { photo ->
@@ -167,7 +167,7 @@ class UploadPhotoServicePresenter(
         return Observable.fromCallable { settingsRepository.getUserId() }
             .concatMap { userId ->
                 if (userId.isEmpty()) {
-                    getUserIdUseCase.getUserId()
+                    return@concatMap getUserIdUseCase.getUserId()
                         .toObservable()
                         .map { result ->
                             if (result is Either.Error) {
@@ -176,9 +176,9 @@ class UploadPhotoServicePresenter(
 
                             return@map (result as Either.Value).value
                         }
-                } else {
-                    Observable.just(userId)
                 }
+
+                return@concatMap Observable.just(userId)
             }
             .doOnError { Timber.tag(TAG).e(it) }
     }

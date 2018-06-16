@@ -53,6 +53,10 @@
    ☐ ReceivedPhotosFragment
    ✔ GalleryFragment @done (18-06-16 19:00)
 
+ ☐ Есть подозрения, что когда в receivePhotosUseCase.receivePhotos происходит ошибка это вызывает другую ошибку в операторе lastOrError @high @analytics
+
+ ☐ Есть подозрения, что когда в uploadPhotosUseCase.uploadPhoto происходит ошибка это вызывает другую ошибку в операторе lastOrError @high @analytics
+
 Сервер
 
  ✔ Рефакторинг PhotoInfoDao и PhotoInfoRepository @done (18-06-12 15:21)
