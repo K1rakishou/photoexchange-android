@@ -131,12 +131,16 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     }
 
     private fun handleAdapterClick(click: ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent) {
+        if (!isAdded) {
+            return
+        }
+
         when (click) {
-            is ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent.ShowPhoto -> {
+            is ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent.ShowFullPhoto -> {
                 TODO()
             }
-            is ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent.ShowMap -> {
-                TODO()
+            is ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent.SwitchShowMapOrPhoto -> {
+                switchShowMapOrPhoto(click.photoName)
             }
         }.safe
     }
@@ -232,6 +236,16 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
 
         receivedPhotosList.post {
             adapter.hideProgressFooter()
+        }
+    }
+
+    private fun switchShowMapOrPhoto(photoName: String) {
+        if (!isAdded) {
+            return
+        }
+
+        receivedPhotosList.post {
+            adapter.switchShowMapOrPhoto(photoName)
         }
     }
 

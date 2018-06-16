@@ -87,23 +87,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
     override fun onFragmentViewDestroy() {
     }
 
-    private fun initRecyclerView() {
-        val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), PHOTO_ADAPTER_VIEW_WIDTH)
-
-        adapter = UploadedPhotosAdapter(requireContext(), imageLoader, failedToUploadPhotoButtonClicksSubject)
-
-        val layoutManager = GridLayoutManager(requireContext(), columnsCount)
-        layoutManager.spanSizeLookup = UploadedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
-        photosPerPage = Constants.UPLOADED_PHOTOS_PER_ROW * layoutManager.spanCount
-
-        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, loadMoreSubject, 1)
-
-        uploadedPhotosList.layoutManager = layoutManager
-        uploadedPhotosList.adapter = adapter
-        uploadedPhotosList.clearOnScrollListeners()
-        uploadedPhotosList.addOnScrollListener(endlessScrollListener)
-    }
-
     private fun initRx() {
         compositeDisposable += viewModel.intercom.uploadedPhotosFragmentEvents.listen()
             .observeOn(Schedulers.io())
@@ -158,6 +141,23 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                 Timber.tag(TAG).e(error)
                 onUiEvent(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter())
             })
+    }
+
+    private fun initRecyclerView() {
+        val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), PHOTO_ADAPTER_VIEW_WIDTH)
+
+        adapter = UploadedPhotosAdapter(requireContext(), imageLoader, failedToUploadPhotoButtonClicksSubject)
+
+        val layoutManager = GridLayoutManager(requireContext(), columnsCount)
+        layoutManager.spanSizeLookup = UploadedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
+        photosPerPage = Constants.UPLOADED_PHOTOS_PER_ROW * layoutManager.spanCount
+
+        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, loadMoreSubject, 1)
+
+        uploadedPhotosList.layoutManager = layoutManager
+        uploadedPhotosList.adapter = adapter
+        uploadedPhotosList.clearOnScrollListeners()
+        uploadedPhotosList.addOnScrollListener(endlessScrollListener)
     }
 
     private fun loadTakenPhotos() {

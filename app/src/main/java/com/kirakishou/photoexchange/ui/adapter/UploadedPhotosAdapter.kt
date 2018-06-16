@@ -371,7 +371,7 @@ class UploadedPhotosAdapter(
                         holder.uploadingMessageHolderView.visibility = View.VISIBLE
 
                         takenPhoto.photoTempFile?.let { photoFile ->
-                            imageLoader.loadImageFromDiskInto(photoFile, holder.photoView)
+                            imageLoader.loadPhotoFromDiskInto(photoFile, holder.photoView)
                         }
 
                         if (photosProgressMap.containsKey(takenPhoto.id)) {
@@ -403,7 +403,7 @@ class UploadedPhotosAdapter(
                 holder.receivedIconImageView.visibility = View.VISIBLE
 
                 uploadedPhoto.photoName.let { photoName ->
-                    imageLoader.loadImageFromNetInto(photoName, ImageLoader.PhotoSize.Small, holder.photoView)
+                    imageLoader.loadPhotoFromNetInto(photoName, ImageLoader.PhotoSize.Small, holder.photoView)
                 }
 
                 photosProgressMap.remove(uploadedPhoto.photoId)
@@ -415,7 +415,7 @@ class UploadedPhotosAdapter(
                 require(failedPhoto.photoState == PhotoState.FAILED_TO_UPLOAD)
 
                 failedPhoto.photoTempFile?.let { photoFile ->
-                    imageLoader.loadImageFromDiskInto(photoFile, holder.photoView)
+                    imageLoader.loadPhotoFromDiskInto(photoFile, holder.photoView)
                 }
 
                 holder.deleteFailedToUploadPhotoButton.setOnClickListener {

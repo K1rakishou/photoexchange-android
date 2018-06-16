@@ -97,7 +97,7 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
     }
 
     private fun initViews() {
-        imageLoader.loadImageFromDiskInto(takenPhoto.getFile(), ivPhotoView)
+        imageLoader.loadPhotoFromDiskInto(takenPhoto.getFile(), ivPhotoView)
 
         fabCloseActivity.scaleX = 0f
         fabCloseActivity.scaleY = 0f

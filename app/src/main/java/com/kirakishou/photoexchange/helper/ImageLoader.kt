@@ -23,8 +23,9 @@ class ImageLoader
     private val context: Context
 ) {
     private val basePhotosUrl = "${PhotoExchangeApplication.baseUrl}v1/api/get_photo"
+    private val baseStaticMapUrl = "${PhotoExchangeApplication.baseUrl}v1/api/get_static_map"
 
-    fun loadImageFromDiskInto(imageFile: File, view: ImageView) {
+    fun loadPhotoFromDiskInto(imageFile: File, view: ImageView) {
         GlideApp.with(context)
             //we do not need to cache this image
             .applyDefaultRequestOptions(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.NONE))
@@ -37,8 +38,18 @@ class ImageLoader
      * We are pre-loading photos requested by this method in advance, so generally this method should load them from disk.
      * But in some rare cases (when photo could not be pre-loaded for some reason) this method will make a request to the server
      * */
-    fun loadImageFromNetInto(photoName: String, photoSize: PhotoSize, view: ImageView) {
+    fun loadPhotoFromNetInto(photoName: String, photoSize: PhotoSize, view: ImageView) {
         val fullUrl = "$basePhotosUrl/$photoName/${photoSize.value}"
+
+        GlideApp.with(context)
+            .load(fullUrl)
+            .diskCacheStrategy(DiskCacheStrategy.DATA)
+            .apply(RequestOptions().centerCrop())
+            .into(view)
+    }
+
+    fun loadStaticMapImageFromNetInto(photoName: String, view: ImageView) {
+        val fullUrl = "$baseStaticMapUrl/$photoName"
 
         GlideApp.with(context)
             .load(fullUrl)

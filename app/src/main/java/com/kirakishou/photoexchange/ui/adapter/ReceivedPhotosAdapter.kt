@@ -5,7 +5,6 @@ import android.support.constraint.ConstraintLayout
 import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.widget.ImageView
-import android.widget.ProgressBar
 import android.widget.TextView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
@@ -33,8 +32,26 @@ class ReceivedPhotosAdapter(
            return
        }
 
-        items.add(0, ReceivedPhotosAdapterItem.ReceivedPhotoItem(receivedPhoto))
+        items.add(0, ReceivedPhotosAdapterItem.ReceivedPhotoItem(receivedPhoto, true))
         notifyItemInserted(0)
+    }
+
+    fun switchShowMapOrPhoto(photoName: String) {
+        val itemIndex = items.indexOfFirst {
+            if (it !is ReceivedPhotosAdapterItem.ReceivedPhotoItem) {
+                return@indexOfFirst false
+            }
+
+            return@indexOfFirst it.receivedPhoto.receivedPhotoName == photoName
+        }
+
+        if (itemIndex == -1) {
+            return
+        }
+
+        val previous = (items[itemIndex] as ReceivedPhotosAdapterItem.ReceivedPhotoItem).showPhoto
+        (items[itemIndex] as ReceivedPhotosAdapterItem.ReceivedPhotoItem).showPhoto = !previous
+        notifyItemChanged(itemIndex)
     }
 
     fun showProgressFooter() {
@@ -77,18 +94,27 @@ class ReceivedPhotosAdapter(
             is PhotoAnswerViewHolder -> {
                 val receivedPhoto = (items[position] as? ReceivedPhotosAdapterItem.ReceivedPhotoItem)?.receivedPhoto
                     ?: return
+                val showPhoto = (items[position] as? ReceivedPhotosAdapterItem.ReceivedPhotoItem)?.showPhoto
+                    ?: return
 
                 holder.clickView.setOnClickListener {
-                    clicksSubject.onNext(ReceivedPhotosAdapterClickEvent.ShowMap(LonLat(receivedPhoto.lon, receivedPhoto.lat)))
+                    clicksSubject.onNext(ReceivedPhotosAdapterClickEvent.SwitchShowMapOrPhoto(receivedPhoto.receivedPhotoName))
                 }
 
                 holder.clickView.setOnLongClickListener {
-                    clicksSubject.onNext(ReceivedPhotosAdapterClickEvent.ShowPhoto(receivedPhoto.receivedPhotoName))
+                    clicksSubject.onNext(ReceivedPhotosAdapterClickEvent.ShowFullPhoto(receivedPhoto.receivedPhotoName))
                     return@setOnLongClickListener true
                 }
 
-                imageLoader.loadImageFromNetInto(receivedPhoto.receivedPhotoName, ImageLoader.PhotoSize.Small, holder.photoView)
                 holder.photoIdTextView.text = receivedPhoto.photoId.toString()
+
+                if (showPhoto) {
+                    holder.showPhotoHideMap()
+                    imageLoader.loadPhotoFromNetInto(receivedPhoto.receivedPhotoName, ImageLoader.PhotoSize.Small, holder.photoView)
+                } else {
+                    holder.showMapHidePhoto()
+                    imageLoader.loadStaticMapImageFromNetInto(receivedPhoto.receivedPhotoName, holder.staticMapView)
+                }
             }
             is ProgressViewHolder -> {
                 //do nothing
@@ -97,18 +123,27 @@ class ReceivedPhotosAdapter(
         }
     }
 
-    class ProgressViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val progressBar = itemView.findViewById<ProgressBar>(R.id.progressbar)
-    }
+    class ProgressViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
 
     class PhotoAnswerViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val photoView = itemView.findViewById<ImageView>(R.id.photo_view)
+        val staticMapView = itemView.findViewById<ImageView>(R.id.static_map_view)
         val photoIdTextView = itemView.findViewById<TextView>(R.id.photo_id_text_view)
         val clickView = itemView.findViewById<ConstraintLayout>(R.id.click_view)
+
+        fun showPhotoHideMap() {
+            staticMapView.visibility = View.GONE
+            photoView.visibility = View.VISIBLE
+        }
+
+        fun showMapHidePhoto() {
+            staticMapView.visibility = View.VISIBLE
+            photoView.visibility = View.GONE
+        }
     }
 
     sealed class ReceivedPhotosAdapterClickEvent {
-        class ShowPhoto(val photoName: String) : ReceivedPhotosAdapterClickEvent()
-        class ShowMap(val location: LonLat) : ReceivedPhotosAdapterClickEvent()
+        class ShowFullPhoto(val photoName: String) : ReceivedPhotosAdapterClickEvent()
+        class SwitchShowMapOrPhoto(val photoName: String) : ReceivedPhotosAdapterClickEvent()
     }
 }

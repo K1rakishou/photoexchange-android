@@ -11,6 +11,7 @@ sealed class ReceivedPhotosAdapterItem : BaseAdapterItem() {
         }
     }
 
-    class ReceivedPhotoItem(val receivedPhoto: ReceivedPhoto) : ReceivedPhotosAdapterItem()
+    class ReceivedPhotoItem(val receivedPhoto: ReceivedPhoto,
+                            var showPhoto: Boolean) : ReceivedPhotosAdapterItem()
     class ProgressItem : ReceivedPhotosAdapterItem()
 }

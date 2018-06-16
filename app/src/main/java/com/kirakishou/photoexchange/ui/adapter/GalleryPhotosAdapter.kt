@@ -154,7 +154,7 @@ class GalleryPhotosAdapter(
 
                 holder.favouritesCount.text = item.photo.favouritesCount.toString()
 
-                imageLoader.loadImageFromNetInto(item.photo.photoName, photoSize, holder.photoView)
+                imageLoader.loadPhotoFromNetInto(item.photo.photoName, photoSize, holder.photoView)
             }
             is ProgressViewHolder -> {
                 holder.progressBar.isIndeterminate = true
