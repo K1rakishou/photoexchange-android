@@ -87,7 +87,7 @@ class PhotosActivityViewModel(
                             }
                         }
                         .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-                        .doOnNext { intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.UiEvents.HideProgressFooter()) }
+                        .doOnEach { intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.UiEvents.HideProgressFooter()) }
                         .delay(PROGRESS_FOOTER_REMOVE_DELAY_MS, TimeUnit.MILLISECONDS)
                 } else {
                     return@concatMap Observable.fromCallable {
@@ -130,7 +130,7 @@ class PhotosActivityViewModel(
                             }
                         }
                         .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-                        .doOnNext { intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
+                        .doOnEach { intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
                         .delay(PROGRESS_FOOTER_REMOVE_DELAY_MS, TimeUnit.MILLISECONDS)
                 } else {
                     return@flatMap Observable.fromCallable {
@@ -164,7 +164,7 @@ class PhotosActivityViewModel(
                             }
                         }
                         .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-                        .doOnNext { intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
+                        .doOnEach { intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
                         .delay(PROGRESS_FOOTER_REMOVE_DELAY_MS, TimeUnit.MILLISECONDS)
                 } else {
                     return@flatMap Observable.fromCallable {

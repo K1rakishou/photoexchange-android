@@ -95,11 +95,10 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
         compositeDisposable += failedToUploadPhotoButtonClicksSubject
             .observeOn(AndroidSchedulers.mainThread())
-            .doOnError { Timber.tag(TAG).e(it) }
             .subscribe({
                 viewModel.intercom.tell<PhotosActivity>()
                     .that(PhotosActivityEvent.FailedToUploadPhotoButtonClicked(it))
-            })
+            }, { Timber.tag(TAG).e(it) })
 
         compositeDisposable += lifecycle.getLifecycle()
             .filter { lifecycle -> lifecycle.isAtLeast(RxLifecycle.FragmentState.Resumed) }
@@ -108,7 +107,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             .subscribe({
                 photosUploaded()
                 loadFirstPageOfUploadedPhotos()
-            })
+            }, { Timber.tag(TAG).e(it) })
 
         compositeDisposable += Observables.combineLatest(loadMoreSubject, onPhotosUploadedSubject)
             .filter { it.second }
@@ -171,7 +170,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                         }
                     }
             }
-            .subscribe()
+            .subscribe({ }, { Timber.tag(TAG).e(it) })
     }
 
     private fun loadFirstPageOfUploadedPhotos() {

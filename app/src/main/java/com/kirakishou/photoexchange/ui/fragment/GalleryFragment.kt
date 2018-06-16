@@ -72,8 +72,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     private fun initRx() {
         compositeDisposable += viewModel.intercom.galleryFragmentEvents.listen()
             .doOnNext { viewState -> onStateEvent(viewState) }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe()
+            .subscribe({ }, { Timber.tag(TAG).e(it) })
 
         compositeDisposable += loadMoreSubject
             .doOnNext { endlessScrollListener.pageLoading() }
@@ -86,9 +85,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
                     is Either.Value -> addPhotoToAdapter(result.value)
                     is Either.Error -> handleGetGalleryPhotosError(result.error)
                 }
-            }, {
-                Timber.tag(TAG).e(it)
-            })
+            }, { Timber.tag(TAG).e(it) })
 
         compositeDisposable += adapterButtonClickSubject
             .subscribeOn(AndroidSchedulers.mainThread())
@@ -103,9 +100,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
                     is Either.Value -> favouritePhoto(photoName, result.value.isFavourited, result.value.favouritesCount)
                     is Either.Error -> handleFavouritePhotoError(result.error)
                 }
-            }, {
-                Timber.tag(TAG).e(it)
-            })
+            }, { Timber.tag(TAG).e(it) })
 
         compositeDisposable += adapterButtonClickSubject
             .subscribeOn(AndroidSchedulers.mainThread())
@@ -120,9 +115,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
                     is Either.Value -> reportPhoto(photoName, result.value)
                     is Either.Error -> handleReportPhotoError(result.error)
                 }
-            }, {
-                Timber.tag(TAG).e(it)
-            })
+            }, { Timber.tag(TAG).e(it) })
     }
 
     private fun initRecyclerView() {

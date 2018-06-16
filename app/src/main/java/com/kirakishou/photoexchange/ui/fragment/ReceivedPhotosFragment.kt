@@ -71,8 +71,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     private fun initRx() {
         compositeDisposable += viewModel.intercom.receivedPhotosFragmentEvents.listen()
             .doOnNext { viewState -> onStateEvent(viewState) }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe()
+            .subscribe({ }, { Timber.tag(TAG).e(it) })
 
         compositeDisposable += Observables.combineLatest(loadMoreSubject, lifecycle.getLifecycle())
             .concatMap { (nextPage, lifecycle) ->
@@ -87,13 +86,11 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
                     is Either.Value -> addReceivedPhotosToAdapter(result.value)
                     is Either.Error -> handleError(result.error)
                 }
-            }, {
-                Timber.tag(TAG).e(it)
-            })
+            }, { Timber.tag(TAG).e(it) })
 
         compositeDisposable += adapterClicksSubject
             .subscribeOn(AndroidSchedulers.mainThread())
-            .subscribe({ click -> handleAdapterClick(click) })
+            .subscribe({ click -> handleAdapterClick(click) }, { Timber.tag(TAG).e(it) })
     }
 
     private fun initRecyclerView() {
