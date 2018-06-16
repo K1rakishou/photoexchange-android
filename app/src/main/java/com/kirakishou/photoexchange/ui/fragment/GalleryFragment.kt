@@ -64,10 +64,6 @@ class GalleryFragment : BaseFragment() {
     override fun onFragmentViewDestroy() {
     }
 
-    private fun loadFirstPage() {
-        loadMoreSubject.onNext(0)
-    }
-
     private fun initRx() {
         compositeDisposable += loadMoreSubject
             .doOnNext { endlessScrollListener.pageLoading() }
@@ -136,6 +132,10 @@ class GalleryFragment : BaseFragment() {
         galleryPhotosList.adapter = adapter
         galleryPhotosList.clearOnScrollListeners()
         galleryPhotosList.addOnScrollListener(endlessScrollListener)
+    }
+
+    private fun loadFirstPage() {
+        loadMoreSubject.onNext(0)
     }
 
     private fun preloadPhotos(

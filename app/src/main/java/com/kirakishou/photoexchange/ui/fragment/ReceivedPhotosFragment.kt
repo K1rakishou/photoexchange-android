@@ -62,6 +62,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
 
         initRx()
         initRecyclerView()
+        loadFirstPage()
     }
 
     override fun onFragmentViewDestroy() {
@@ -74,21 +75,6 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
             .doOnNext { viewState -> onStateEvent(viewState) }
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
-
-        compositeDisposable += lifecycle.getLifecycle()
-            .filter { it.isAtLeast(RxLifecycle.FragmentState.Resumed) }
-            .take(1)
-            .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
-            .concatMap { viewModel.loadNextPageOfReceivedPhotos(viewState.lastId, photosPerPage, isFragmentFreshlyCreated) }
-            .doOnNext { onUiEvent(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
-            .subscribe({ result ->
-                when (result) {
-                    is Either.Value -> addReceivedPhotosToAdapter(result.value)
-                    is Either.Error -> handleError(result.error)
-                }
-            }, {
-                Timber.tag(TAG).e(it)
-            })
 
         compositeDisposable += Observables.combineLatest(loadMoreSubject, lifecycle.getLifecycle())
             .concatMap { (nextPage, lifecycle) ->
@@ -128,6 +114,10 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
         receivedPhotosList.adapter = adapter
         receivedPhotosList.clearOnScrollListeners()
         receivedPhotosList.addOnScrollListener(endlessScrollListener)
+    }
+
+    private fun loadFirstPage() {
+        loadMoreSubject.onNext(0)
     }
 
     private fun handleAdapterClick(click: ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent) {
