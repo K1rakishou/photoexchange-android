@@ -56,8 +56,8 @@ class ReceivePhotosServicePresenter(
                         return@concatMapSingle Observable.create<ReceivePhotoEvent> { emitter ->
                             receivePhotosUseCase.receivePhotos(photoData, emitter)
                         }
-                            .doOnNext { event -> handlePhotoReceivedEvent(event) }
-                            .lastOrError()
+                        .doOnNext { event -> handlePhotoReceivedEvent(event) }
+                        .lastOrError()
                     }
                     .doOnNext { sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Success())) }
                     .doOnError { error ->

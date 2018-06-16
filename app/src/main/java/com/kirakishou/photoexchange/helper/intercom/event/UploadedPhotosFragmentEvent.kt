@@ -26,7 +26,7 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
         class OnUploaded(val takenPhoto: TakenPhoto,
                          val uploadedPhoto: UploadedPhoto) : PhotoUploadEvent()
         class PhotoAnswerFound(val takenPhotoName: String) : PhotoUploadEvent()
-        class OnEnd(val allUploaded: Boolean) : PhotoUploadEvent()
+        class OnEnd : PhotoUploadEvent()
     }
 
     companion object {

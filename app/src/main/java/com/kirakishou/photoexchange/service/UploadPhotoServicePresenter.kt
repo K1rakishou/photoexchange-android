@@ -51,47 +51,46 @@ class UploadPhotoServicePresenter(
                 return@concatMap Observable.fromCallable {
                     return@fromCallable updateServiceNotification(NotificationType.Uploading())
                 }
-                    .flatMap { Observables.zip(currentLocationObservable, userIdObservable) }
-                    .concatMap { (currentLocation, userId) ->
-                        return@concatMap Observable.fromCallable {
-                            return@fromCallable takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP)
-                        }
-                            .concatMapSingle { queuedUpPhotos ->
-                                return@concatMapSingle Observable.fromIterable(queuedUpPhotos)
-                                    .concatMap { photo ->
-                                        return@concatMap Observable.just(Unit)
-                                            .doOnNext {
-                                                sendEvent(UploadPhotoEvent.UploadingEvent(
-                                                    UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadStart(photo))
-                                                )
-                                            }
-                                            .concatMap {
-                                                return@concatMap Observable.create<UploadedPhotosFragmentEvent.PhotoUploadEvent> { emitter ->
-                                                    uploadPhotosUseCase.uploadPhoto(photo, userId, currentLocation, emitter)
-                                                }
-                                            }
-                                            .doOnNext { event -> sendEvent(UploadPhotoEvent.UploadingEvent(event)) }
-                                            .doOnError { error -> handleRemoteErrors(photo, error) }
+                .concatMap { Observables.zip(currentLocationObservable, userIdObservable) }
+                .concatMap { (currentLocation, userId) ->
+                    return@concatMap Observable.fromCallable {
+                        return@fromCallable takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP)
+                    }
+                    .concatMapSingle { queuedUpPhotos ->
+                        return@concatMapSingle Observable.fromIterable(queuedUpPhotos)
+                            .concatMap { photo ->
+                                return@concatMap Observable.just(Unit)
+                                    .doOnNext {
+                                        sendEvent(UploadPhotoEvent.UploadingEvent(
+                                            UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadStart(photo))
+                                        )
                                     }
-                                    .lastOrError()
-                                    //1 second delay before starting to upload the next photo
-                                    .delay(1, TimeUnit.SECONDS)
-                                    .map { true }
+                                    .concatMap {
+                                        return@concatMap Observable.create<UploadedPhotosFragmentEvent.PhotoUploadEvent> { emitter ->
+                                            uploadPhotosUseCase.uploadPhoto(photo, userId, currentLocation, emitter)
+                                        }
+                                    }
+                                    .doOnNext { event -> sendEvent(UploadPhotoEvent.UploadingEvent(event)) }
+                                    .doOnError { error -> handleRemoteErrors(photo, error) }
                             }
+                            .lastOrError()
+                            //1 second delay before starting to upload the next photo
+                            .delay(1, TimeUnit.SECONDS)
+                            .map { Unit }
                     }
-                    .doOnNext { allUploaded ->
-                        updateServiceNotification(NotificationType.Success("All photos has been successfully uploaded"))
-                        sendEvent(UploadPhotoEvent.UploadingEvent(
-                            UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd(allUploaded))
-                        )
-                    }
-                    .doOnError { error ->
-                        updatePhotosStates()
-                        updateServiceNotification(NotificationType.Error("Could not upload one or more photos"))
-                        handleUnknownErrors(error)
-                    }
-                    .map { Unit }
-                    .onErrorReturnItem(Unit)
+                }
+                .doOnNext {
+                    updateServiceNotification(NotificationType.Success("All photos has been successfully uploaded"))
+                    sendEvent(UploadPhotoEvent.UploadingEvent(
+                        UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd())
+                    )
+                }
+                .doOnError { error ->
+                    updatePhotosStates()
+                    updateServiceNotification(NotificationType.Error("Could not upload one or more photos"))
+                    handleUnknownErrors(error)
+                }
+                .onErrorReturnItem(Unit)
             }
             .doOnEach { sendEvent(UploadPhotoEvent.StopService()) }
             .subscribe()
