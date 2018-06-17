@@ -71,4 +71,10 @@ open class DatabaseModule(
     open fun provideUploadedPhotoRepository(database: MyDatabase): UploadedPhotosRepository {
         return UploadedPhotosRepository(database)
     }
+
+    @Singleton
+    @Provides
+    open fun provideCachedPhotoIdRepository(database: MyDatabase): CachedPhotoIdRepository {
+        return CachedPhotoIdRepository(database)
+    }
 }

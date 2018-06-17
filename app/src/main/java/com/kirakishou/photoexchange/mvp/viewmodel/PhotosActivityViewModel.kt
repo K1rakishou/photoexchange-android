@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.helper.database.entity.CachedPhotoIdEntity
 import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
 import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
@@ -29,6 +30,7 @@ class PhotosActivityViewModel(
     private val galleryPhotoRepository: GalleryPhotoRepository,
     private val settingsRepository: SettingsRepository,
     private val receivedPhotosRepository: ReceivedPhotosRepository,
+    private val cachedPhotoIdRepository: CachedPhotoIdRepository,
     private val getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
     private val getGalleryPhotosInfoUseCase: GetGalleryPhotosInfoUseCase,
     private val getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
@@ -41,10 +43,6 @@ class PhotosActivityViewModel(
     private val TAG = "PhotosActivityViewModel"
     private val ADAPTER_LOAD_MORE_ITEMS_DELAY_MS = 800L
     private val PROGRESS_FOOTER_REMOVE_DELAY_MS = 200L
-
-    private val cachedUploadedPhotoIds = mutableListOf<Long>()
-    private val cachedReceivedPhotoIds = mutableListOf<Long>()
-    private val cachedGalleryPhotoIds = mutableListOf<Long>()
 
     val intercom = PhotosActivityViewModelIntercom()
 
@@ -73,28 +71,8 @@ class PhotosActivityViewModel(
     ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
         return Observable.just(Unit)
             .subscribeOn(schedulerProvider.IO())
-            .concatMap {
-                if (isFragmentFreshlyCreated || cachedGalleryPhotoIds.isEmpty()) {
-                    return@concatMap Observable.just(Unit)
-                        .doOnNext { intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.UiEvents.ShowProgressFooter()) }
-                        .flatMap {
-                            return@flatMap getGalleryPhotosUseCase.loadPageOfPhotos(lastId, photosPerPage)
-                                .toObservable()
-                        }
-                        .doOnNext { result ->
-                            if (result is Either.Value) {
-                                cachedGalleryPhotoIds += result.value.map { it.galleryPhotoId }
-                            }
-                        }
-                        .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-                        .doOnEach { intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.UiEvents.HideProgressFooter()) }
-                        .delay(PROGRESS_FOOTER_REMOVE_DELAY_MS, TimeUnit.MILLISECONDS)
-                } else {
-                    return@concatMap Observable.fromCallable {
-                        return@fromCallable Either.Value(galleryPhotoRepository.findMany(cachedGalleryPhotoIds))
-                    }
-                }
-            }
+            .concatMap { clearPhotoIdsCache(isFragmentFreshlyCreated) }
+            .concatMap { loadPageOfGalleryPhotos(isFragmentFreshlyCreated, lastId, photosPerPage) }
             .concatMap { result ->
                 if (result !is Either.Value) {
                     return@concatMap Observable.just(result)
@@ -112,32 +90,11 @@ class PhotosActivityViewModel(
         photosPerPage: Int,
         isFragmentFreshlyCreated: Boolean
     ): Observable<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>> {
-
-        return Observable.fromCallable { settingsRepository.getUserId() }
+        return Observable.just(Unit)
+            .concatMap { clearPhotoIdsCache(isFragmentFreshlyCreated) }
+            .concatMap { Observable.fromCallable { settingsRepository.getUserId() } }
             .subscribeOn(schedulerProvider.IO())
-            .flatMap { userId ->
-                if (userId.isEmpty()) {
-                    return@flatMap Observable.just<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>>(Either.Value(emptyList()))
-                }
-
-                if (isFragmentFreshlyCreated || cachedUploadedPhotoIds.isEmpty()) {
-                    return@flatMap Observable.just(Unit)
-                        .doOnNext { intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
-                        .flatMap { getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage) }
-                        .doOnNext { result ->
-                            if (result is Either.Value) {
-                                cachedUploadedPhotoIds += result.value.map { it.photoId }
-                            }
-                        }
-                        .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-                        .doOnEach { intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
-                        .delay(PROGRESS_FOOTER_REMOVE_DELAY_MS, TimeUnit.MILLISECONDS)
-                } else {
-                    return@flatMap Observable.fromCallable {
-                        return@fromCallable Either.Value(uploadedPhotosRepository.findMany(cachedUploadedPhotoIds))
-                    }
-                }
-            }
+            .concatMap { userId -> loadPageOfUploadedPhotos(userId, isFragmentFreshlyCreated, lastId, photosPerPage) }
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
@@ -146,32 +103,11 @@ class PhotosActivityViewModel(
         photosPerPage: Int,
         isFragmentFreshlyCreated: Boolean
     ): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
-
-        return Observable.fromCallable { settingsRepository.getUserId() }
+        return Observable.just(Unit)
+            .concatMap { clearPhotoIdsCache(isFragmentFreshlyCreated) }
+            .concatMap { Observable.fromCallable { settingsRepository.getUserId() } }
             .subscribeOn(schedulerProvider.IO())
-            .flatMap { userId ->
-                if (userId.isEmpty()) {
-                    return@flatMap Observable.just(Either.Error(ErrorCode.GetReceivedPhotosErrors.LocalUserIdIsEmpty()))
-                }
-
-                if (isFragmentFreshlyCreated || cachedReceivedPhotoIds.isEmpty()) {
-                    return@flatMap Observable.just(Unit)
-                        .flatMap { getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage) }
-                        .doOnNext { intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
-                        .doOnNext { result ->
-                            if (result is Either.Value) {
-                                cachedReceivedPhotoIds += result.value.map { it.photoId }
-                            }
-                        }
-                        .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-                        .doOnEach { intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
-                        .delay(PROGRESS_FOOTER_REMOVE_DELAY_MS, TimeUnit.MILLISECONDS)
-                } else {
-                    return@flatMap Observable.fromCallable {
-                        return@fromCallable Either.Value(receivedPhotosRepository.findMany(cachedReceivedPhotoIds))
-                    }
-                }
-            }
+            .concatMap { userId -> loadPageOfReceivedPhotos(userId, isFragmentFreshlyCreated, lastId, photosPerPage) }
             .doOnNext { result ->
                 if (result is Either.Value) {
                     intercom.tell<UploadedPhotosFragment>()
@@ -179,6 +115,97 @@ class PhotosActivityViewModel(
                 }
             }
             .doOnError { Timber.tag(TAG).e(it) }
+    }
+
+    private fun loadPageOfGalleryPhotos(
+        isFragmentFreshlyCreated: Boolean,
+        lastId: Long,
+        photosPerPage: Int
+    ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>>? {
+        if (isFragmentFreshlyCreated || cachedPhotoIdRepository.isEmpty(CachedPhotoIdEntity.PhotoType.GalleryPhoto)) {
+            return Observable.just(Unit)
+                .doOnNext { intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.UiEvents.ShowProgressFooter()) }
+                .flatMap {
+                    return@flatMap getGalleryPhotosUseCase.loadPageOfPhotos(lastId, photosPerPage)
+                        .toObservable()
+                }
+                .doOnNext { result ->
+                    if (result is Either.Value) {
+                        val idsToCache = result.value.map { it.galleryPhotoId }
+                        cachedPhotoIdRepository.insertMany(idsToCache, CachedPhotoIdEntity.PhotoType.GalleryPhoto)
+                    }
+                }
+                .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
+                .doOnEach { intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.UiEvents.HideProgressFooter()) }
+                .delay(PROGRESS_FOOTER_REMOVE_DELAY_MS, TimeUnit.MILLISECONDS)
+        } else {
+            return Observable.fromCallable {
+                val cachedGalleryPhotoIds = cachedPhotoIdRepository.findAll(CachedPhotoIdEntity.PhotoType.GalleryPhoto)
+                return@fromCallable Either.Value(galleryPhotoRepository.findMany(cachedGalleryPhotoIds))
+            }
+        }
+    }
+
+    private fun loadPageOfUploadedPhotos(
+        userId: String,
+        isFragmentFreshlyCreated: Boolean,
+        lastId: Long,
+        photosPerPage: Int
+    ): Observable<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>>? {
+        if (userId.isEmpty()) {
+            return Observable.just<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>>(Either.Value(emptyList()))
+        }
+
+        if (isFragmentFreshlyCreated || cachedPhotoIdRepository.isEmpty(CachedPhotoIdEntity.PhotoType.UploadedPhoto)) {
+            return Observable.just(Unit)
+                .doOnNext { intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
+                .flatMap { getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage) }
+                .doOnNext { result ->
+                    if (result is Either.Value) {
+                        val idsToCache = result.value.map { it.photoId }
+                        cachedPhotoIdRepository.insertMany(idsToCache, CachedPhotoIdEntity.PhotoType.UploadedPhoto)
+                    }
+                }
+                .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
+                .doOnEach { intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
+                .delay(PROGRESS_FOOTER_REMOVE_DELAY_MS, TimeUnit.MILLISECONDS)
+        } else {
+            return Observable.fromCallable {
+                val cachedUploadedPhotoIds = cachedPhotoIdRepository.findAll(CachedPhotoIdEntity.PhotoType.UploadedPhoto)
+                return@fromCallable Either.Value(uploadedPhotosRepository.findMany(cachedUploadedPhotoIds))
+            }
+        }
+    }
+
+    private fun loadPageOfReceivedPhotos(
+        userId: String,
+        isFragmentFreshlyCreated: Boolean,
+        lastId: Long,
+        photosPerPage: Int
+    ): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>>? {
+        if (userId.isEmpty()) {
+            return Observable.just(Either.Error(ErrorCode.GetReceivedPhotosErrors.LocalUserIdIsEmpty()))
+        }
+
+        if (isFragmentFreshlyCreated || cachedPhotoIdRepository.isEmpty(CachedPhotoIdEntity.PhotoType.ReceivedPhoto)) {
+            return Observable.just(Unit)
+                .flatMap { getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage) }
+                .doOnNext { intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
+                .doOnNext { result ->
+                    if (result is Either.Value) {
+                        val idsToCache = result.value.map { it.photoId }
+                        cachedPhotoIdRepository.insertMany(idsToCache, CachedPhotoIdEntity.PhotoType.ReceivedPhoto)
+                    }
+                }
+                .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
+                .doOnEach { intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
+                .delay(PROGRESS_FOOTER_REMOVE_DELAY_MS, TimeUnit.MILLISECONDS)
+        } else {
+            return Observable.fromCallable {
+                val cachedReceivedPhotoIds = cachedPhotoIdRepository.findAll(CachedPhotoIdEntity.PhotoType.ReceivedPhoto)
+                return@fromCallable Either.Value(receivedPhotosRepository.findMany(cachedReceivedPhotoIds))
+            }
+        }
     }
 
     fun checkHasPhotosToUpload(): Observable<Boolean> {
@@ -235,6 +262,16 @@ class PhotosActivityViewModel(
     fun updateGpsPermissionGranted(granted: Boolean): Completable {
         return Completable.fromAction {
             settingsRepository.updateGpsPermissionGranted(granted)
+        }
+    }
+
+    private fun clearPhotoIdsCache(shouldClear: Boolean): Observable<Unit> {
+        if (!shouldClear) {
+            return Observable.just(Unit)
+        }
+
+        return Observable.fromCallable {
+            cachedPhotoIdRepository.deleteAll()
         }
     }
 }

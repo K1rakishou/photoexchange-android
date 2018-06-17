@@ -34,6 +34,17 @@ abstract class CachedPhotoIdDao {
         "ORDER BY ${CachedPhotoIdEntity.PHOTO_ID_COLUMN} DESC")
     abstract fun findAll(): List<CachedPhotoIdEntity>
 
+    @Query("SELECT * FROM ${CachedPhotoIdEntity.TABLE_NAME} " +
+        "WHERE ${CachedPhotoIdEntity.PHOTO_TYPE_COLUMN} = :photoType " +
+        "ORDER BY ${CachedPhotoIdEntity.PHOTO_ID_COLUMN} DESC")
+    @TypeConverters(CachedPhotoIdEntity.CachedPhotoIdTypeConverter::class)
+    abstract fun findAll(photoType: CachedPhotoIdEntity.PhotoType): List<CachedPhotoIdEntity>
+
+    @Query("SELECT COUNT(*) FROM ${CachedPhotoIdEntity.TABLE_NAME} " +
+        "WHERE ${CachedPhotoIdEntity.PHOTO_TYPE_COLUMN} = :photoType")
+    @TypeConverters(CachedPhotoIdEntity.CachedPhotoIdTypeConverter::class)
+    abstract fun count(photoType: CachedPhotoIdEntity.PhotoType): Long
+
     @Query("DELETE FROM ${CachedPhotoIdEntity.TABLE_NAME}")
     abstract fun deleteAll()
 }

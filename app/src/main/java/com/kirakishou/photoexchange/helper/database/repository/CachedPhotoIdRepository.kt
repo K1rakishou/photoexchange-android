@@ -44,8 +44,17 @@ class CachedPhotoIdRepository(
             .map { it.photoId }
     }
 
+    fun findAll(photoType: CachedPhotoIdEntity.PhotoType): List<Long> {
+        return cachedPhotoIdDao.findAll(photoType)
+            .map { it.photoId }
+    }
+
     fun findAll(): List<CachedPhotoIdEntity> {
         return cachedPhotoIdDao.findAll()
+    }
+
+    fun isEmpty(photoType: CachedPhotoIdEntity.PhotoType): Boolean {
+        return cachedPhotoIdDao.count(photoType) == 0L
     }
 
     fun deleteAll() {

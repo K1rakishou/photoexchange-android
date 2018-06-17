@@ -17,18 +17,15 @@ class UploadedPhotosFragmentViewState(
         }
 
         bundle.putBoolean(SHOW_OBTAIN_CURRENT_LOCATION_NOTIFICATION, showObtainCurrentLocationNotification)
-        bundle.putLong(LAST_ID, lastId)
     }
 
     override fun loadFromBundle(bundle: Bundle?) {
         if (bundle != null) {
             showObtainCurrentLocationNotification = bundle.getBoolean(SHOW_OBTAIN_CURRENT_LOCATION_NOTIFICATION, false)
-            lastId = bundle.getLong(LAST_ID, Long.MAX_VALUE)
         }
     }
 
     companion object {
         const val SHOW_OBTAIN_CURRENT_LOCATION_NOTIFICATION = "show_obtain_current_location_notification"
-        const val LAST_ID = "last_id"
     }
 }

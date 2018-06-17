@@ -12,17 +12,14 @@ class ReceivedPhotosFragmentViewState(
 
     override fun saveToBundle(bundle: Bundle?) {
         if (bundle != null) {
-            bundle.putLong(LAST_ID, lastId)
         }
     }
 
     override fun loadFromBundle(bundle: Bundle?) {
         if (bundle != null) {
-            lastId = bundle.getLong(LAST_ID, Long.MAX_VALUE)
         }
     }
 
     companion object {
-        const val LAST_ID = "last_id"
     }
 }
