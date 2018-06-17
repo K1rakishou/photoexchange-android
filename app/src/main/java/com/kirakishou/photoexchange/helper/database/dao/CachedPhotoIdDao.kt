@@ -47,4 +47,9 @@ abstract class CachedPhotoIdDao {
 
     @Query("DELETE FROM ${CachedPhotoIdEntity.TABLE_NAME}")
     abstract fun deleteAll()
+
+    @Query("DELETE FROM ${CachedPhotoIdEntity.TABLE_NAME} " +
+        "WHERE ${CachedPhotoIdEntity.PHOTO_TYPE_COLUMN} = :photoType")
+    @TypeConverters(CachedPhotoIdEntity.CachedPhotoIdTypeConverter::class)
+    abstract fun deleteAll(photoType: CachedPhotoIdEntity.PhotoType)
 }

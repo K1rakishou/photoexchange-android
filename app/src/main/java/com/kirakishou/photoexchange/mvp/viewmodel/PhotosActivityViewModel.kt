@@ -72,6 +72,7 @@ class PhotosActivityViewModel(
         return Observable.just(Unit)
             .subscribeOn(schedulerProvider.IO())
             .concatMap { clearPhotoIdsCache(isFragmentFreshlyCreated) }
+            .concatMap { clearGalleryPhotoIdsCache() }
             .concatMap { loadPageOfGalleryPhotos(isFragmentFreshlyCreated, lastId, photosPerPage) }
             .concatMap { result ->
                 if (result !is Either.Value) {
@@ -121,7 +122,7 @@ class PhotosActivityViewModel(
         isFragmentFreshlyCreated: Boolean,
         lastId: Long,
         photosPerPage: Int
-    ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>>? {
+    ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
         if (isFragmentFreshlyCreated || cachedPhotoIdRepository.isEmpty(CachedPhotoIdEntity.PhotoType.GalleryPhoto)) {
             return Observable.just(Unit)
                 .doOnNext { intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.UiEvents.ShowProgressFooter()) }
@@ -151,7 +152,7 @@ class PhotosActivityViewModel(
         isFragmentFreshlyCreated: Boolean,
         lastId: Long,
         photosPerPage: Int
-    ): Observable<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>>? {
+    ): Observable<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>> {
         if (userId.isEmpty()) {
             return Observable.just<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>>(Either.Value(emptyList()))
         }
@@ -182,7 +183,7 @@ class PhotosActivityViewModel(
         isFragmentFreshlyCreated: Boolean,
         lastId: Long,
         photosPerPage: Int
-    ): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>>? {
+    ): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
         if (userId.isEmpty()) {
             return Observable.just(Either.Error(ErrorCode.GetReceivedPhotosErrors.LocalUserIdIsEmpty()))
         }
@@ -218,7 +219,7 @@ class PhotosActivityViewModel(
     fun checkHasPhotosToReceive(): Observable<Boolean> {
         return Observable.fromCallable {
             val uploadedPhotosCount = uploadedPhotosRepository.count()
-            val receivedPhotosCount = receivedPhotosRepository.countAll()
+            val receivedPhotosCount = receivedPhotosRepository.count()
 
             return@fromCallable uploadedPhotosCount > receivedPhotosCount
         }.subscribeOn(schedulerProvider.IO())
@@ -265,8 +266,27 @@ class PhotosActivityViewModel(
         }
     }
 
-    private fun clearPhotoIdsCache(shouldClear: Boolean): Observable<Unit> {
-        if (!shouldClear) {
+    private fun shouldClearGalleryPhotoIdsCache(): Boolean {
+        val cachedGalleryPhotoIdsCount = cachedPhotoIdRepository.count(CachedPhotoIdEntity.PhotoType.GalleryPhoto)
+
+        val uploadedPhotosCount = uploadedPhotosRepository.count()
+        val receivedPhotosCount = receivedPhotosRepository.count()
+
+        return (uploadedPhotosCount + receivedPhotosCount) > cachedGalleryPhotoIdsCount
+    }
+
+    private fun clearGalleryPhotoIdsCache(): Observable<Unit> {
+        if (!shouldClearGalleryPhotoIdsCache()) {
+            return Observable.just(Unit)
+        }
+
+        return Observable.fromCallable {
+            cachedPhotoIdRepository.deleteAll(CachedPhotoIdEntity.PhotoType.GalleryPhoto)
+        }
+    }
+
+    private fun clearPhotoIdsCache(isFragmentFreshlyCreated: Boolean): Observable<Unit> {
+        if (!isFragmentFreshlyCreated) {
             return Observable.just(Unit)
         }
 

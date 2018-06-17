@@ -26,7 +26,7 @@ open class ReceivedPhotosRepository(
             .size == receivedPhotos.size
     }
 
-    fun countAll(): Int {
+    fun count(): Int {
         return receivedPhotosDao.countAll().toInt()
     }
 

@@ -57,7 +57,15 @@ class CachedPhotoIdRepository(
         return cachedPhotoIdDao.count(photoType) == 0L
     }
 
+    fun count(photoType: CachedPhotoIdEntity.PhotoType): Int {
+        return cachedPhotoIdDao.count(photoType).toInt()
+    }
+
     fun deleteAll() {
         cachedPhotoIdDao.deleteAll()
+    }
+
+    fun deleteAll(photoType: CachedPhotoIdEntity.PhotoType) {
+        cachedPhotoIdDao.deleteAll(photoType)
     }
 }
