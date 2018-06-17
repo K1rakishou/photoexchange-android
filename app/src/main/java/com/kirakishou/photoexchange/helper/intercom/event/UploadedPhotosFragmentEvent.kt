@@ -13,7 +13,7 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
         class AddPhoto(val photo: TakenPhoto) : UiEvents()
         class ScrollToTop : UiEvents()
         class PhotoRemoved : UiEvents()
-        class LoadTakenPhotos : UiEvents()
+        class LoadPhotos : UiEvents()
         class UpdateReceiverInfo(val receivedPhotos: MutableList<ReceivedPhoto>) : UiEvents()
     }
 

@@ -28,6 +28,7 @@ import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapterSpanSizeLook
 import com.kirakishou.photoexchange.ui.viewstate.UploadedPhotosFragmentViewState
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
 import io.reactivex.Observable
+import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.plusAssign
@@ -102,6 +103,8 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
         compositeDisposable += lifecycle.getLifecycle()
             .filter { lifecycle -> lifecycle.isAtLeast(RxLifecycle.FragmentState.Resumed) }
+            .concatMap { viewModel.checkHasFailedToUploadPhotos() }
+            .filter { hasFailedToUploadPhotos -> !hasFailedToUploadPhotos }
             .concatMap { viewModel.checkHasPhotosToUpload() }
             .filter { hasPhotosToUpload -> !hasPhotosToUpload }
             .subscribe({
@@ -153,19 +156,28 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         uploadedPhotosList.addOnScrollListener(endlessScrollListener)
     }
 
-    private fun loadTakenPhotos() {
-        compositeDisposable += viewModel.loadMyPhotos()
+    private fun loadPhotos() {
+        compositeDisposable += viewModel.loadFailedToUploadPhotos()
+            .flatMap { failedToUploadPhotos ->
+                if (failedToUploadPhotos.isNotEmpty()) {
+                    return@flatMap Single.just(failedToUploadPhotos)
+                }
+
+                return@flatMap viewModel.loadQueuedUpPhotos()
+            }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnSuccess { photos -> addTakenPhotosToAdapter(photos) }
-            .flatMapObservable { _ ->
-                return@flatMapObservable viewModel.checkHasPhotosToUpload()
+            .flatMapObservable { viewModel.checkHasFailedToUploadPhotos() }
+            .filter { hasFailedToUploadPhotos -> !hasFailedToUploadPhotos }
+            .flatMap { _ ->
+                return@flatMap viewModel.checkHasPhotosToUpload()
                     .doOnNext { hasPhotosToUpload ->
                         if (hasPhotosToUpload) {
                             viewModel.intercom.tell<PhotosActivity>()
                                 .to(PhotosActivityEvent.StartUploadingService(
                                     UploadedPhotosFragment::class.java,
-                                        "Starting the service after taken photos were loaded")
+                                    "Starting the service after taken photos were loaded")
                                 )
                         }
                     }
@@ -228,8 +240,8 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                         //do nothing
                     }
                 }
-                is UploadedPhotosFragmentEvent.UiEvents.LoadTakenPhotos -> {
-                    loadTakenPhotos()
+                is UploadedPhotosFragmentEvent.UiEvents.LoadPhotos -> {
+                    loadPhotos()
                 }
                 is UploadedPhotosFragmentEvent.UiEvents.UpdateReceiverInfo -> {
                     event.receivedPhotos.forEach {

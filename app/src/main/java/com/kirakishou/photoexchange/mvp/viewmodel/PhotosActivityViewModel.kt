@@ -209,9 +209,16 @@ class PhotosActivityViewModel(
         }
     }
 
+    fun checkHasFailedToUploadPhotos(): Observable<Boolean> {
+        return Observable.fromCallable {
+            return@fromCallable takenPhotosRepository.countAllByState(PhotoState.FAILED_TO_UPLOAD) > 0
+        }.subscribeOn(schedulerProvider.IO())
+            .doOnError { Timber.tag(TAG).e(it) }
+    }
+
     fun checkHasPhotosToUpload(): Observable<Boolean> {
         return Observable.fromCallable {
-            takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
+            return@fromCallable takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
         }.subscribeOn(schedulerProvider.IO())
             .doOnError { Timber.tag(TAG).e(it) }
     }
@@ -226,20 +233,18 @@ class PhotosActivityViewModel(
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
-    fun loadMyPhotos(): Single<MutableList<TakenPhoto>> {
+    fun loadFailedToUploadPhotos(): Single<List<TakenPhoto>> {
         return Single.fromCallable {
-            val photos = mutableListOf<TakenPhoto>()
+            return@fromCallable  takenPhotosRepository.findAllByState(PhotoState.FAILED_TO_UPLOAD)
+                .sortedBy { it.id }
+        }.subscribeOn(schedulerProvider.IO())
+            .doOnError { Timber.tag(TAG).e(it) }
+    }
 
-            val uploadingPhotos = takenPhotosRepository.findAllByState(PhotoState.PHOTO_UPLOADING)
-            photos += uploadingPhotos.sortedBy { it.id }
-
-            val queuedUpPhotos = takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP)
-            photos += queuedUpPhotos.sortedBy { it.id }
-
-            val failedPhotos = takenPhotosRepository.findAllByState(PhotoState.FAILED_TO_UPLOAD)
-            photos += failedPhotos.sortedBy { it.id }
-
-            return@fromCallable photos
+    fun loadQueuedUpPhotos(): Single<List<TakenPhoto>> {
+        return Single.fromCallable {
+            return@fromCallable takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP)
+                .sortedBy { it.id }
         }.subscribeOn(schedulerProvider.IO())
             .doOnError { Timber.tag(TAG).e(it) }
     }

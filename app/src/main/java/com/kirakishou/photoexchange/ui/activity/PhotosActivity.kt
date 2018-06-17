@@ -203,7 +203,7 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext {
                 viewModel.intercom.tell<UploadedPhotosFragment>()
-                    .to(UploadedPhotosFragmentEvent.UiEvents.LoadTakenPhotos())
+                    .to(UploadedPhotosFragmentEvent.UiEvents.LoadPhotos())
             }
             .subscribe()
     }
