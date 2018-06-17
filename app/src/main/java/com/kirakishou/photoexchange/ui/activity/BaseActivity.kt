@@ -193,7 +193,8 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.TakePhotoErrors.CameraIsNotAvailable -> "Camera is not available on this phone"
             is ErrorCode.TakePhotoErrors.CameraIsNotStartedException -> "Camera is not started"
             is ErrorCode.TakePhotoErrors.CouldNotTakePhoto -> "Could not take a photo"
-            is ErrorCode.UploadPhotoErrors.CouldNotRotatePhoto -> "Could not rotate a photo"
+            is ErrorCode.UploadPhotoErrors.LocalCouldNotRotatePhoto -> "Could not rotate a photo"
+            is ErrorCode.UploadPhotoErrors.CouldNotGetUserId -> "Could not get user id from the server"
         }
 
         if (errorMessage != null) {

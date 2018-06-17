@@ -1,6 +1,5 @@
 package com.kirakishou.photoexchange.mvp.model.exception
 
-import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 
 sealed class GeneralException : Exception() {
@@ -19,12 +18,11 @@ sealed class ReceivePhotosServiceException : Exception() {
     class OnKnownError(val errorCode: ErrorCode.ReceivePhotosErrors) : ReceivePhotosServiceException()
 }
 
-sealed class PhotoUploadingException(val takenPhoto: TakenPhoto) : Exception() {
-    class PhotoDoesNotExistOnDisk(takenPhoto: TakenPhoto) : PhotoUploadingException(takenPhoto)
-    class CouldNotRotatePhoto(takenPhoto: TakenPhoto) : PhotoUploadingException(takenPhoto)
-    class DatabaseException(takenPhoto: TakenPhoto) : PhotoUploadingException(takenPhoto)
-    class RemoteServerException(val remoteErrorCode: ErrorCode.UploadPhotoErrors,
-                                takenPhoto: TakenPhoto) : PhotoUploadingException(takenPhoto)
+sealed class PhotoUploadingException : Exception() {
+    class PhotoDoesNotExistOnDisk : PhotoUploadingException()
+    class CouldNotRotatePhoto : PhotoUploadingException()
+    class DatabaseException : PhotoUploadingException()
+    class ApiException(val remoteErrorCode: ErrorCode.UploadPhotoErrors) : PhotoUploadingException()
 }
 
 sealed class GetReceivedPhotosException : Exception() {

@@ -20,27 +20,12 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
     sealed class PhotoUploadEvent : UploadedPhotosFragmentEvent() {
         class OnFailedToUpload(val photo: TakenPhoto,
                                val errorCode: ErrorCode.UploadPhotoErrors) : PhotoUploadEvent()
-        class OnError(val error: UploadingError) : PhotoUploadEvent()
+        class OnKnownError(val errorCode: ErrorCode.UploadPhotoErrors) : PhotoUploadEvent()
+        class OnUnknownError(val error: Throwable) : PhotoUploadEvent()
         class OnPhotoUploadStart(val photo: TakenPhoto) : PhotoUploadEvent()
         class OnProgress(val photo: TakenPhoto, val progress: Int) : PhotoUploadEvent()
-        class OnUploaded(val takenPhoto: TakenPhoto,
-                         val uploadedPhoto: UploadedPhoto) : PhotoUploadEvent()
+        class OnUploaded(val takenPhoto: TakenPhoto) : PhotoUploadEvent()
         class PhotoAnswerFound(val takenPhotoName: String) : PhotoUploadEvent()
         class OnEnd : PhotoUploadEvent()
-    }
-
-    companion object {
-        fun unknownError(error: Throwable): PhotoUploadEvent.OnError {
-            return PhotoUploadEvent.OnError(UploadingError.UnknownError(error))
-        }
-
-        fun knownError(errorCode: ErrorCode.UploadPhotoErrors): PhotoUploadEvent.OnError {
-            return PhotoUploadEvent.OnError(UploadingError.KnownError(errorCode))
-        }
-    }
-
-    sealed class UploadingError {
-        data class KnownError(val errorCode: ErrorCode.UploadPhotoErrors) : UploadingError()
-        data class UnknownError(val error: Throwable) : UploadingError()
     }
 }

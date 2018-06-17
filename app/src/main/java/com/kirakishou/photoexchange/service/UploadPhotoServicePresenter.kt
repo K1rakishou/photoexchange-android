@@ -70,37 +70,100 @@ class UploadPhotoServicePresenter(
                                             uploadPhotosUseCase.uploadPhoto(photo, userId, currentLocation, emitter)
                                         }
                                     }
-                                    .doOnNext { event -> sendEvent(UploadPhotoEvent.UploadingEvent(event)) }
-                                    .doOnError { error -> handleRemoteErrors(photo, error) }
+                                    .doOnNext { event -> handleEvents(photo, event) }
+                                    .toList()
+                                    .map(this::hasErrorEvents)
+                                    .toObservable()
                             }
-                            .lastOrError()
+                            .toList()
+                            .map { results -> results.none { !it } }
                             //1 second delay before starting to upload the next photo
                             .delay(1, TimeUnit.SECONDS)
-                            .map { Unit }
                     }
                 }
-                .doOnNext {
-                    updateServiceNotification(NotificationType.Success("All photos has been successfully uploaded"))
-                    sendEvent(UploadPhotoEvent.UploadingEvent(
-                        UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd())
-                    )
+                .doOnNext { hasErrors ->
+                    if (!hasErrors) {
+                        updateServiceNotification(NotificationType.Success("All photos has been successfully uploaded"))
+                        sendEvent(UploadPhotoEvent.UploadingEvent(
+                            UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd())
+                        )
+                    } else {
+                        markAllPhotosAsFailed()
+                        updateServiceNotification(NotificationType.Error("Could not upload one or more photos"))
+                    }
                 }
                 .doOnError { error ->
-                    updatePhotosStates()
+                    markAllPhotosAsFailed()
                     updateServiceNotification(NotificationType.Error("Could not upload one or more photos"))
-                    handleUnknownErrors(error)
+                    handleErrors(error)
                 }
+                .map { Unit }
                 .onErrorReturnItem(Unit)
             }
             .doOnEach { sendEvent(UploadPhotoEvent.StopService()) }
             .subscribe()
     }
 
+    private fun hasErrorEvents(eventsList: List<UploadedPhotosFragmentEvent.PhotoUploadEvent>): Boolean {
+        return eventsList.any {
+            return@any (it is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError) ||
+                (it is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError)
+        }
+    }
+
+    private fun handleEvents(takenPhoto: TakenPhoto, event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
+        if (event !is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError &&
+            event !is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError) {
+            sendEvent(UploadPhotoEvent.UploadingEvent(event))
+            return
+        }
+
+        when (event) {
+            is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError -> {
+                markPhotoAsFailed(takenPhoto)
+                sendEvent(UploadPhotoEvent.UploadingEvent(
+                    UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUpload(takenPhoto, event.errorCode))
+                )
+            }
+            is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError -> {
+                throw event.error
+            }
+            else -> throw IllegalArgumentException("Unknown event ${event::class.java}")
+        }
+    }
+
+    private fun handleErrors(error: Throwable) {
+        Timber.tag(TAG).d("onUploadingEvent(PhotoUploadEvent.OnEnd())")
+
+        when (error) {
+            is PhotoUploadingException.ApiException,
+            is PhotoUploadingException.PhotoDoesNotExistOnDisk,
+            is PhotoUploadingException.CouldNotRotatePhoto,
+            is PhotoUploadingException.DatabaseException -> {
+                //already handled by upstream
+            }
+
+            is UploadPhotoServiceException.CouldNotGetUserIdException -> {
+                sendEvent(UploadPhotoEvent.UploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent
+                    .OnKnownError(ErrorCode.UploadPhotoErrors.CouldNotGetUserId())))
+            }
+
+            else -> {
+                sendEvent(UploadPhotoEvent.UploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent
+                    .OnUnknownError(error)))
+            }
+        }.safe
+    }
+
     private fun sendEvent(event: UploadPhotoEvent) {
         resultEventsSubject.onNext(event)
     }
 
-    private fun updatePhotosStates() {
+    private fun markPhotoAsFailed(takenPhoto: TakenPhoto) {
+        takenPhotosRepository.updatePhotoState(takenPhoto.id, PhotoState.FAILED_TO_UPLOAD)
+    }
+
+    private fun markAllPhotosAsFailed() {
         takenPhotosRepository.updateStates(PhotoState.PHOTO_QUEUED_UP, PhotoState.FAILED_TO_UPLOAD)
         takenPhotosRepository.updateStates(PhotoState.PHOTO_UPLOADING, PhotoState.FAILED_TO_UPLOAD)
     }
@@ -115,49 +178,6 @@ class UploadPhotoServicePresenter(
             }
             is UploadPhotoServicePresenter.NotificationType.Error -> {
                 sendEvent(UploadPhotoEvent.OnNewNotification(NotificationType.Error(serviceNotification.errorMessage)))
-            }
-        }.safe
-    }
-
-    private fun handleRemoteErrors(takenPhoto: TakenPhoto, error: Throwable) {
-        if (error is PhotoUploadingException) {
-            val errorCode = when (error) {
-                is PhotoUploadingException.RemoteServerException -> error.remoteErrorCode
-                is PhotoUploadingException.PhotoDoesNotExistOnDisk -> ErrorCode.UploadPhotoErrors.LocalNoPhotoFileOnDisk()
-                is PhotoUploadingException.CouldNotRotatePhoto -> ErrorCode.UploadPhotoErrors.LocalDatabaseError()
-                is PhotoUploadingException.DatabaseException -> ErrorCode.UploadPhotoErrors.CouldNotRotatePhoto()
-            }
-
-            sendEvent(UploadPhotoEvent.UploadingEvent(
-                UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUpload(takenPhoto, errorCode))
-            )
-        }
-
-        takenPhotosRepository.updatePhotoState(takenPhoto.id, PhotoState.FAILED_TO_UPLOAD)
-    }
-
-    private fun handleUnknownErrors(error: Throwable) {
-        Timber.tag(TAG).d("onUploadingEvent(PhotoUploadEvent.OnEnd())")
-
-        when (error) {
-            is PhotoUploadingException.RemoteServerException,
-            is PhotoUploadingException.PhotoDoesNotExistOnDisk,
-            is PhotoUploadingException.CouldNotRotatePhoto,
-            is PhotoUploadingException.DatabaseException -> {
-                //already handled by upstream
-            }
-
-            is UploadPhotoServiceException.CouldNotGetUserIdException -> {
-                val cause = when (error.errorCode) {
-                    is ErrorCode.GetUserIdError.LocalTimeout -> ErrorCode.UploadPhotoErrors.LocalTimeout()
-                    else -> ErrorCode.UploadPhotoErrors.UnknownError()
-                }
-
-                sendEvent(UploadPhotoEvent.UploadingEvent(UploadedPhotosFragmentEvent.knownError(cause)))
-            }
-
-            else -> {
-                sendEvent(UploadPhotoEvent.UploadingEvent(UploadedPhotosFragmentEvent.unknownError(error)))
             }
         }.safe
     }

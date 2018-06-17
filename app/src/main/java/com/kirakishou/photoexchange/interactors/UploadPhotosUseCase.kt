@@ -4,6 +4,7 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
+import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.BitmapUtils
 import com.kirakishou.photoexchange.helper.util.FileUtils
@@ -11,10 +12,12 @@ import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
+import com.kirakishou.photoexchange.mvp.model.exception.GeneralException
 import com.kirakishou.photoexchange.mvp.model.exception.PhotoUploadingException
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
+import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
 import io.reactivex.Single
 import timber.log.Timber
@@ -35,15 +38,14 @@ class UploadPhotosUseCase(
                 Timber.tag(TAG).e("Photo does not exists on disk! ${photo.photoTempFile?.absoluteFile
                     ?: "(No photoTempFile)"}")
 
-                emitter.onError(PhotoUploadingException.PhotoDoesNotExistOnDisk(photo))
-                return
+                throw PhotoUploadingException.PhotoDoesNotExistOnDisk()
             }
 
             val photoFile = File.createTempFile("rotated_photo", ".tmp")
             takenPhotosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_UPLOADING)
 
             if (!BitmapUtils.rotatePhoto(photo.photoTempFile!!, photoFile)) {
-                emitter.onError(PhotoUploadingException.CouldNotRotatePhoto(photo))
+                throw PhotoUploadingException.CouldNotRotatePhoto()
             }
 
             uploadPhoto(photoFile, location, userId, photo.isPublic, photo, emitter)
@@ -57,22 +59,45 @@ class UploadPhotosUseCase(
 
                         else -> {
                             Timber.tag(TAG).d("Could not upload photo with photoId ${photo.id}")
-                            throw PhotoUploadingException.RemoteServerException(errorCode, photo)
+                            emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError(errorCode))
+                            return@map false
                         }
                     }
                 }
                 .doOnEvent { _, _ -> FileUtils.deleteFile(photoFile) }
                 //since we subscribe in a singleton - we don't really need to care about disposing the disposable
-                .subscribe({ uploadedPhoto ->
-                    emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUploaded(photo, uploadedPhoto))
+                .subscribe({ uploaded ->
+                    if (uploaded) {
+                        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUploaded(photo))
+                    }
+
                     emitter.onComplete()
                 }, { error ->
                     takenPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
-                    emitter.onNext(UploadedPhotosFragmentEvent.unknownError(error))
+                    emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError(error))
                 })
         } catch (error: Throwable) {
             Timber.tag(TAG).e(error)
-            emitter.onNext(UploadedPhotosFragmentEvent.unknownError(error))
+
+            if (error is PhotoUploadingException) {
+                when (error) {
+                    is PhotoUploadingException.PhotoDoesNotExistOnDisk,
+                    is PhotoUploadingException.CouldNotRotatePhoto,
+                    is PhotoUploadingException.DatabaseException,
+                    is PhotoUploadingException.ApiException -> {
+                        val errorCode = when (error) {
+                            is PhotoUploadingException.PhotoDoesNotExistOnDisk -> ErrorCode.UploadPhotoErrors.LocalNoPhotoFileOnDisk()
+                            is PhotoUploadingException.CouldNotRotatePhoto -> ErrorCode.UploadPhotoErrors.LocalCouldNotRotatePhoto()
+                            is PhotoUploadingException.DatabaseException -> ErrorCode.UploadPhotoErrors.LocalDatabaseError()
+                            is PhotoUploadingException.ApiException -> error.remoteErrorCode
+                        }
+
+                        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError(errorCode))
+                    }
+                }
+            }
+
+            emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError(error))
         }
     }
 
@@ -85,7 +110,7 @@ class UploadPhotosUseCase(
         })
     }
 
-    private fun handlePhotoUploaded(photo: TakenPhoto, location: LonLat, response: UploadPhotoResponse): UploadedPhoto {
+    private fun handlePhotoUploaded(photo: TakenPhoto, location: LonLat, response: UploadPhotoResponse): Boolean {
         val photoId = response.photoId
         val photoName = response.photoName
 
@@ -98,10 +123,10 @@ class UploadPhotosUseCase(
         }
 
         if (!dbResult) {
-            throw PhotoUploadingException.DatabaseException(photo)
+            throw PhotoUploadingException.DatabaseException()
         }
 
-        return UploadedPhoto(photoId, photoName, location.lon, location.lat, false, timeUtils.getTimeFast())
+        return true
     }
 
     interface PhotoUploadProgressCallback {
