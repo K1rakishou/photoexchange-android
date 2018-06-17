@@ -18,7 +18,8 @@ import kotlin.concurrent.withLock
     ReceivedPhotoEntity::class,
     GalleryPhotoEntity::class,
     GalleryPhotoInfoEntity::class,
-    UploadedPhotoEntity::class
+    UploadedPhotoEntity::class,
+    CachedPhotoIdEntity::class
 ], version = 1)
 abstract class MyDatabase : RoomDatabase() {
 
@@ -31,6 +32,7 @@ abstract class MyDatabase : RoomDatabase() {
     abstract fun galleryPhotoDao(): GalleryPhotoDao
     abstract fun galleryPhotoInfoDao(): GalleryPhotoInfoDao
     abstract fun uploadedPhotoDao(): UploadedPhotoDao
+    abstract fun cachedPhotoIdDao(): CachedPhotoIdDao
 
     inline fun transactional(func: () -> Boolean): Boolean {
         dbLock.withLock {
