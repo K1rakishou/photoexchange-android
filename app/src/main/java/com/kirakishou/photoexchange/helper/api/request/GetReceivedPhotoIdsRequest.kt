@@ -39,8 +39,8 @@ class GetReceivedPhotoIdsRequest<T>(
         return when (error) {
             is GeneralException.ApiException -> GetReceivedPhotoIdsResponse.fail(error.errorCode)
             is SocketTimeoutException,
-            is TimeoutException -> GetReceivedPhotoIdsResponse.fail(ErrorCode.GetUploadedPhotosErrors.LocalTimeout())
-            else -> GetReceivedPhotoIdsResponse.fail(ErrorCode.GetUploadedPhotosErrors.UnknownError())
+            is TimeoutException -> GetReceivedPhotoIdsResponse.fail(ErrorCode.GetReceivedPhotosErrors.LocalTimeout())
+            else -> GetReceivedPhotoIdsResponse.fail(ErrorCode.GetReceivedPhotosErrors.UnknownError())
         }
     }
 }

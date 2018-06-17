@@ -32,9 +32,9 @@ class NetworkModule(private val baseUrl: String) {
     fun provideOkHttpClient(): OkHttpClient {
         return if (Constants.isDebugBuild) {
             OkHttpClient.Builder()
-                .connectTimeout(50000, TimeUnit.SECONDS)
-                .writeTimeout(50000, TimeUnit.SECONDS)
-                .readTimeout(50000, TimeUnit.SECONDS)
+                .connectTimeout(5, TimeUnit.SECONDS)
+                .writeTimeout(5, TimeUnit.SECONDS)
+                .readTimeout(5, TimeUnit.SECONDS)
                 .build()
         } else {
             OkHttpClient.Builder()

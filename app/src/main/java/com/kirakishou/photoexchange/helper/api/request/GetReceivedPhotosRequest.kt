@@ -28,7 +28,7 @@ class GetReceivedPhotosRequest<T>(
                 if (ErrorCode.GetReceivedPhotosErrors.fromInt(response.serverErrorCode!!) is ErrorCode.GetReceivedPhotosErrors.Ok) {
                     return@map GetReceivedPhotosResponse.success(response.receivedPhotos)
                 } else {
-                    return@map GetReceivedPhotosResponse.fail(ErrorCode.fromInt(ErrorCode.GetUploadedPhotosErrors::class, response.serverErrorCode!!))
+                    return@map GetReceivedPhotosResponse.fail(ErrorCode.fromInt(ErrorCode.GetReceivedPhotosErrors::class, response.serverErrorCode!!))
                 }
             }
             .onErrorReturn(this::extractError) as Single<T>
@@ -38,8 +38,8 @@ class GetReceivedPhotosRequest<T>(
         return when (error) {
             is GeneralException.ApiException -> GetReceivedPhotosResponse.fail(error.errorCode)
             is SocketTimeoutException,
-            is TimeoutException -> GetReceivedPhotosResponse.fail(ErrorCode.GetUploadedPhotosErrors.LocalTimeout())
-            else -> GetReceivedPhotosResponse.fail(ErrorCode.GetUploadedPhotosErrors.UnknownError())
+            is TimeoutException -> GetReceivedPhotosResponse.fail(ErrorCode.GetReceivedPhotosErrors.LocalTimeout())
+            else -> GetReceivedPhotosResponse.fail(ErrorCode.GetReceivedPhotosErrors.UnknownError())
         }
     }
 }
