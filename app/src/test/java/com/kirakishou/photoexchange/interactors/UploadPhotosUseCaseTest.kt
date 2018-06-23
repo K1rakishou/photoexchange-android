@@ -26,7 +26,7 @@ import java.io.IOException
 
 class UploadPhotosUseCaseTest {
 
-    lateinit var dabatase: MyDatabase
+    lateinit var database: MyDatabase
     lateinit var takenPhotosRepository: TakenPhotosRepository
     lateinit var uploadedPhotosRepository: UploadedPhotosRepository
     lateinit var apiClient: ApiClient
@@ -39,7 +39,7 @@ class UploadPhotosUseCaseTest {
 
     @Before
     fun setUp() {
-        dabatase = Mockito.mock(MyDatabase::class.java)
+        database = Mockito.mock(MyDatabase::class.java)
         timeUtils = Mockito.mock(TimeUtils::class.java)
         bitmapUtils = Mockito.mock(BitmapUtils::class.java)
         fileUtils = Mockito.mock(FileUtils::class.java)
@@ -50,7 +50,7 @@ class UploadPhotosUseCaseTest {
         uploadedPhotosRepository = Mockito.mock(UploadedPhotosRepository::class.java)
 
         uploadPhotosUseCase = UploadPhotosUseCase(
-            dabatase,
+            database,
             takenPhotosRepository,
             uploadedPhotosRepository,
             apiClient,
@@ -79,6 +79,7 @@ class UploadPhotosUseCaseTest {
             .assertValueAt(0) { value ->
                 (value as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError).errorCode is ErrorCode.UploadPhotoErrors.LocalNoPhotoFileOnDisk
             }
+            .assertTerminated()
             .awaitTerminalEvent()
 
         Mockito.verify(takenPhotosRepository, Mockito.times(1))
@@ -102,6 +103,7 @@ class UploadPhotosUseCaseTest {
             .assertValueAt(0) { value ->
                 (value as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError).errorCode is ErrorCode.UploadPhotoErrors.LocalNoPhotoFileOnDisk
             }
+            .assertTerminated()
             .awaitTerminalEvent()
 
         Mockito.verify(takenPhotosRepository, Mockito.times(1))
@@ -128,6 +130,7 @@ class UploadPhotosUseCaseTest {
             .assertValueAt(0) { value ->
                 (value as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError).errorCode is ErrorCode.UploadPhotoErrors.LocalCouldNotUpdatePhotoState
             }
+            .assertTerminated()
             .awaitTerminalEvent()
 
         Mockito.verify(fileUtils, Mockito.times(1)).deleteFile(rotatedPhotoFileMock)
@@ -156,6 +159,7 @@ class UploadPhotosUseCaseTest {
             .assertValueAt(0) { value ->
                 (value as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError).errorCode is ErrorCode.UploadPhotoErrors.LocalCouldNotRotatePhoto
             }
+            .assertTerminated()
             .awaitTerminalEvent()
 
         Mockito.verify(fileUtils, Mockito.times(1)).deleteFile(rotatedPhotoFileMock)
@@ -203,12 +207,13 @@ class UploadPhotosUseCaseTest {
             .thenReturn(filePath)
         Mockito.`when`(gson.toJson(any()))
             .thenReturn("{ \"test\": \"123\" }")
-        Mockito.`when`(dabatase.transactional(any()))
+        Mockito.`when`(database.transactional(any()))
             .thenReturn(false)
 
         val events = uploadPhotosUseCase.uploadPhoto(takenPhoto, userId, location)
             .test()
             .assertNoErrors()
+            .assertTerminated()
             .values()
 
         assertEquals(13, events.size)
@@ -263,7 +268,7 @@ class UploadPhotosUseCaseTest {
             .thenReturn(filePath)
         Mockito.`when`(gson.toJson(any()))
             .thenReturn("{ \"test\": \"123\" }")
-        Mockito.`when`(dabatase.transactional(any()))
+        Mockito.`when`(database.transactional(any()))
             .thenReturn(true)
         Mockito.`when`(timeUtils.getTimeFast())
             .thenReturn(time)
@@ -271,6 +276,7 @@ class UploadPhotosUseCaseTest {
         val events = uploadPhotosUseCase.uploadPhoto(takenPhoto, userId, location)
             .test()
             .assertNoErrors()
+            .assertTerminated()
             .values()
 
         assertEquals(13, events.size)
@@ -314,19 +320,21 @@ class UploadPhotosUseCaseTest {
             .thenReturn(filePath)
         Mockito.`when`(gson.toJson(any()))
             .thenReturn("{ \"test\": \"123\" }")
-        Mockito.`when`(dabatase.transactional(any()))
+        Mockito.`when`(database.transactional(any()))
             .thenReturn(true)
         Mockito.`when`(timeUtils.getTimeFast())
             .thenReturn(time)
 
         uploadPhotosUseCase.uploadPhoto(takenPhoto, userId, location)
             .test()
+            .assertNoErrors()
             .assertValueAt(0) { value ->
                 value is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError
             }
             .assertValueAt(0) { value ->
                 (value as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError).error is IOException
             }
+            .assertTerminated()
 
         Mockito.verify(fileUtils, Mockito.times(1)).deleteFile(rotatedPhotoFileMock)
     }
@@ -372,7 +380,7 @@ class UploadPhotosUseCaseTest {
             .thenReturn(filePath)
         Mockito.`when`(gson.toJson(any()))
             .thenReturn("{ \"test\": \"123\" }")
-        Mockito.`when`(dabatase.transactional(any()))
+        Mockito.`when`(database.transactional(any()))
             .thenReturn(true)
         Mockito.`when`(timeUtils.getTimeFast())
             .thenReturn(time)
@@ -380,6 +388,7 @@ class UploadPhotosUseCaseTest {
         val events = uploadPhotosUseCase.uploadPhoto(takenPhoto, userId, location)
             .test()
             .assertNoErrors()
+            .assertTerminated()
             .values()
 
         assertEquals(13, events.size)

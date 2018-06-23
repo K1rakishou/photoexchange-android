@@ -184,11 +184,11 @@ abstract class BaseActivity : AppCompatActivity() {
 
             is ErrorCode.GetReceivedPhotosErrors.LocalUserIdIsEmpty,
             is ErrorCode.ReceivePhotosErrors.LocalCouldNotGetUserId,
+            is ErrorCode.ReceivePhotosErrors.LocalUserIdIsEmpty,
             is ErrorCode.GetUploadedPhotosErrors.LocalUserIdIsEmpty -> "This operation cannot be done without user photoId"
 
             is ErrorCode.UploadPhotoErrors.LocalNoPhotoFileOnDisk -> "No photo on disk"
             is ErrorCode.UploadPhotoErrors.LocalInterrupted -> "Interrupted by user"
-            is ErrorCode.ReceivePhotosErrors.LocalTooManyPhotosRequested -> "Too many photos in one request"
             is ErrorCode.ReceivePhotosErrors.LocalNotEnoughPhotosUploaded -> "Upload more photos first"
             is ErrorCode.TakePhotoErrors.CameraIsNotAvailable -> "Camera is not available on this phone"
             is ErrorCode.TakePhotoErrors.CameraIsNotStartedException -> "Camera is not started"
@@ -196,6 +196,7 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.UploadPhotoErrors.LocalCouldNotRotatePhoto -> "Could not rotate a photo"
             is ErrorCode.UploadPhotoErrors.LocalCouldNotGetUserId -> "Could not get user id from the server"
             is ErrorCode.UploadPhotoErrors.LocalCouldNotUpdatePhotoState -> "Could not update photo state"
+            is ErrorCode.ReceivePhotosErrors.LocalPhotoNamesAreEmpty -> "There are no photos in the request"
         }
 
         if (errorMessage != null) {

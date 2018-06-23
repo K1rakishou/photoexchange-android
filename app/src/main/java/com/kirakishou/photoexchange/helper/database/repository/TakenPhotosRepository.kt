@@ -10,7 +10,6 @@ import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
-import java.util.concurrent.TimeUnit
 
 /**
  * Created by kirakishou on 3/3/2018.
@@ -153,6 +152,7 @@ open class TakenPhotosRepository(
     fun deletePhotoByName(photoName: String): Boolean {
         val photoId = takenPhotoDao.findPhotoIdByName(photoName)
         if (photoId == null) {
+            //already deleted
             return true
         }
 
@@ -165,7 +165,7 @@ open class TakenPhotosRepository(
                 return@transactional false
             }
 
-            return@transactional deleteTempFileById(photoId)
+            return@transactional markTempFileDeleted(photoId)
         }
     }
 
@@ -183,7 +183,7 @@ open class TakenPhotosRepository(
         }
     }
 
-    private fun deleteTempFileById(id: Long): Boolean {
+    private fun markTempFileDeleted(id: Long): Boolean {
         val tempFileEntity = tempFileRepository.findById(id)
         if (tempFileEntity.isEmpty()) {
             //has already been deleted

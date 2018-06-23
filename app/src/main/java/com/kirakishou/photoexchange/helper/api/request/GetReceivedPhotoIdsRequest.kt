@@ -38,7 +38,7 @@ class GetReceivedPhotoIdsRequest<T>(
 
     private fun extractError(error: Throwable): GetReceivedPhotoIdsResponse {
         return when (error) {
-            is GeneralException.ApiException -> GetReceivedPhotoIdsResponse.fail(error.errorCode)
+            is GeneralException.ApiException -> GetReceivedPhotoIdsResponse.fail(error.errorCode as ErrorCode.GetReceivedPhotosErrors)
             is SocketTimeoutException,
             is TimeoutException -> GetReceivedPhotoIdsResponse.fail(ErrorCode.GetReceivedPhotosErrors.LocalTimeout())
             else -> GetReceivedPhotoIdsResponse.fail(ErrorCode.GetReceivedPhotosErrors.UnknownError())

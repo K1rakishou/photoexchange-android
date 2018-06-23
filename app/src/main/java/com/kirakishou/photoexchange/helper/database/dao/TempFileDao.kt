@@ -16,7 +16,10 @@ abstract class TempFileDao {
     abstract fun insert(tempFileEntity: TempFileEntity): Long
 
     @Query("SELECT * FROM ${TempFileEntity.TABLE_NAME} " +
-        "WHERE ${TempFileEntity.ID_COLUMN} = :id")
+        "WHERE " +
+        " ${TempFileEntity.ID_COLUMN} = :id " +
+        "AND " +
+        " ${TempFileEntity.DELETED_ON_COLUMN} > 0")
     abstract fun findById(id: Long): TempFileEntity?
 
     @Query("SELECT * FROM ${TempFileEntity.TABLE_NAME}")

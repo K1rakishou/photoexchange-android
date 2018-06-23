@@ -73,8 +73,8 @@
 
  ☐ Тесты
    ✔ UploadPhotosUseCase @today @done (18-06-23 17:35)
-   ☐ ReceivePhotosUseCase @today
-   ☐ GetReceivedPhotosUseCase @today
+   ✔ ReceivePhotosUseCase @today @done (18-06-23 19:35)
+   ☐ GetReceivedPhotosUseCase @high
    ☐ FavouritePhotoUseCase @high
    ☐ GetGalleryPhotosInfoUseCase @high
    ☐ GetGalleryPhotosUseCase @high

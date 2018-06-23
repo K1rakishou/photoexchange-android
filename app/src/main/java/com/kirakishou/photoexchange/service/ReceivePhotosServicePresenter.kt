@@ -43,19 +43,8 @@ class ReceivePhotosServicePresenter(
 
                         return@concatMap Observable.just(FindPhotosData(userId, photoNames))
                     }
-                    .doOnNext { photoData ->
-                        if (photoData.isPhotoNamesEmpty()) {
-                            throw ReceivePhotosServiceException.NoUploadedPhotos()
-                        }
-
-                        if (photoData.isUserIdEmpty()) {
-                            throw ReceivePhotosServiceException.CouldNotGetUserId()
-                        }
-                    }
                     .concatMapSingle { photoData ->
-                        return@concatMapSingle Observable.create<ReceivePhotoEvent> { emitter ->
-                            receivePhotosUseCase.receivePhotos(photoData, emitter)
-                        }
+                        return@concatMapSingle receivePhotosUseCase.receivePhotos(photoData)
                         .doOnNext { event -> handlePhotoReceivedEvent(event) }
                         .lastOrError()
                     }
@@ -84,17 +73,16 @@ class ReceivePhotosServicePresenter(
     private fun handleErrors(error: Throwable): Boolean {
         if (error is ReceivePhotosServiceException) {
             val errorCode = when (error) {
-                is ReceivePhotosServiceException.OnKnownError -> error.errorCode
                 is ReceivePhotosServiceException.CouldNotGetUserId -> ErrorCode.ReceivePhotosErrors.LocalCouldNotGetUserId()
-                is ReceivePhotosServiceException.NoUploadedPhotos -> null
-                is ReceivePhotosServiceException.NoPhotosToSendBack -> null
+                is ReceivePhotosServiceException.ApiException -> error.remoteErrorCode
+                is ReceivePhotosServiceException.PhotoNamesAreEmpty -> null
             }
 
-            sendEvent(ReceivePhotoEvent.OnFailed(errorCode))
+            sendEvent(ReceivePhotoEvent.OnKnownError(errorCode))
             return errorCode != null
         }
 
-        sendEvent(ReceivePhotoEvent.OnError(error))
+        sendEvent(ReceivePhotoEvent.OnUnknownError(error))
         return true
     }
 
@@ -123,8 +111,8 @@ class ReceivePhotosServicePresenter(
     sealed class ReceivePhotoEvent {
         class OnReceivedPhoto(val receivedPhoto: ReceivedPhoto,
                               val takenPhotoName: String) : ReceivePhotoEvent()
-        class OnFailed(val errorCode: ErrorCode.ReceivePhotosErrors?) : ReceivePhotoEvent()
-        class OnError(val error: Throwable) : ReceivePhotoEvent()
+        class OnKnownError(val errorCode: ErrorCode.ReceivePhotosErrors?) : ReceivePhotoEvent()
+        class OnUnknownError(val error: Throwable) : ReceivePhotoEvent()
         class OnNewNotification(val type: NotificationType) : ReceivePhotoEvent()
         class RemoveNotification : ReceivePhotoEvent()
         class StopService : ReceivePhotoEvent()

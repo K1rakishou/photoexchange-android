@@ -76,11 +76,12 @@ sealed class ErrorCode(private val _value: Int) {
         class NotEnoughPhotosOnServer : ReceivePhotosErrors(4)
 
         class LocalDatabaseError : ReceivePhotosErrors(25)
-        class LocalTooManyPhotosRequested : ReceivePhotosErrors(26)
-        class LocalNotEnoughPhotosUploaded : ReceivePhotosErrors(27)
-        class LocalBadServerResponse : ReceivePhotosErrors(28)
-        class LocalTimeout : ReceivePhotosErrors(29)
-        class LocalCouldNotGetUserId : ReceivePhotosErrors(30)
+        class LocalNotEnoughPhotosUploaded : ReceivePhotosErrors(26)
+        class LocalBadServerResponse : ReceivePhotosErrors(27)
+        class LocalTimeout : ReceivePhotosErrors(28)
+        class LocalCouldNotGetUserId : ReceivePhotosErrors(29)
+        class LocalUserIdIsEmpty : ReceivePhotosErrors(30)
+        class LocalPhotoNamesAreEmpty : ReceivePhotosErrors(31)
 
         companion object {
             fun fromInt(value: Int): ReceivePhotosErrors {
@@ -92,11 +93,12 @@ sealed class ErrorCode(private val _value: Int) {
                     104 -> NotEnoughPhotosOnServer()
 
                     125 -> LocalDatabaseError()
-                    126 -> LocalTooManyPhotosRequested()
-                    127 -> LocalNotEnoughPhotosUploaded()
-                    128 -> LocalBadServerResponse()
-                    129 -> LocalTimeout()
-                    130 -> LocalCouldNotGetUserId()
+                    126 -> LocalNotEnoughPhotosUploaded()
+                    127 -> LocalBadServerResponse()
+                    128 -> LocalTimeout()
+                    129 -> LocalCouldNotGetUserId()
+                    130 -> LocalUserIdIsEmpty()
+                    131 -> LocalPhotoNamesAreEmpty()
                     else -> throw IllegalArgumentException("Unknown value $value")
                 }
             }
@@ -272,8 +274,8 @@ sealed class ErrorCode(private val _value: Int) {
     }
 
     companion object {
-        fun fromInt(clazz: KClass<*>, errorCodeInt: Int): ErrorCode {
-            return when (clazz) {
+        fun <T : ErrorCode> fromInt(clazz: KClass<*>, errorCodeInt: Int): T {
+            val errorCode = when (clazz) {
                 UploadPhotoErrors::class -> UploadPhotoErrors.fromInt(errorCodeInt)
                 ReceivePhotosErrors::class -> ReceivePhotosErrors.fromInt(errorCodeInt)
                 GetGalleryPhotosErrors::class -> GetGalleryPhotosErrors.fromInt(errorCodeInt)
@@ -284,6 +286,8 @@ sealed class ErrorCode(private val _value: Int) {
                 GetReceivedPhotosErrors::class -> GetReceivedPhotosErrors.fromInt(errorCodeInt)
                 else -> throw IllegalArgumentException("Unknown class  $clazz")
             }
+
+            return errorCode as T
         }
     }
 }

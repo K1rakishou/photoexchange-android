@@ -74,12 +74,12 @@ class UploadPhotosUseCase(
                 throw error
             }
         } catch (error: Throwable) {
-            Timber.tag(TAG).e(error)
             handleOnError(photo, emitter, error)
         }
     }
 
     private fun handleOnError(photo: TakenPhoto, emitter: ObservableEmitter<UploadedPhotosFragmentEvent.PhotoUploadEvent>, error: Throwable) {
+        Timber.tag(TAG).e(error)
         takenPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
 
         val errorCode = tryToFigureOutExceptionErrorCode(error)
@@ -107,15 +107,15 @@ class UploadPhotosUseCase(
         emitter: ObservableEmitter<UploadedPhotosFragmentEvent.PhotoUploadEvent>
     ): Boolean {
         val errorCode = response.errorCode as ErrorCode.UploadPhotoErrors
-        return when (errorCode) {
+        when (errorCode) {
             is ErrorCode.UploadPhotoErrors.Ok -> {
-                handlePhotoUploaded(photo, location, response)
+                return handlePhotoUploaded(photo, location, response)
             }
 
             else -> {
                 Timber.tag(TAG).d("Could not upload photo with photoId ${photo.id}")
                 emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError(errorCode))
-                false
+                return false
             }
         }
     }

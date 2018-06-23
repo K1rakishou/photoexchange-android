@@ -1,6 +1,5 @@
 package com.kirakishou.photoexchange.helper.concurrency.rx.operator
 
-import com.google.gson.Gson
 import com.kirakishou.photoexchange.helper.gson.MyGson
 import com.kirakishou.photoexchange.mvp.model.exception.GeneralException
 import com.kirakishou.photoexchange.mvp.model.net.response.*
@@ -57,7 +56,7 @@ class OnApiErrorSingle<T : StatusResponse>(
     }
 
     private fun getErrorCode(errorCodeInt: Int): ErrorCode {
-        return ErrorCode.fromInt(clazz, errorCodeInt)!!
+        return ErrorCode.fromInt(clazz, errorCodeInt)
     }
 
     //TODO: don't forget to add errorCodes here

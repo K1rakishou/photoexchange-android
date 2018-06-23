@@ -11,7 +11,7 @@ private constructor(
     @SerializedName("received_photos")
     val receivedPhotos: List<ReceivedPhoto>,
 
-    errorCode: ErrorCode
+    errorCode: ErrorCode.ReceivePhotosErrors
 ) : StatusResponse(errorCode.getValue(), errorCode) {
 
     companion object {
@@ -19,13 +19,13 @@ private constructor(
             return ReceivedPhotosResponse(receivedPhotos, ErrorCode.ReceivePhotosErrors.Ok())
         }
 
-        fun error(errorCode: ErrorCode): ReceivedPhotosResponse {
+        fun error(errorCode: ErrorCode.ReceivePhotosErrors): ReceivedPhotosResponse {
             return ReceivedPhotosResponse(emptyList(), errorCode)
         }
     }
 
     //TODO: add photoId to the response on the server side as well
-    inner class ReceivedPhoto(
+    class ReceivedPhoto(
         @Expose
         @SerializedName("photo_id")
         val photoId: Long,

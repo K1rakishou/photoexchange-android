@@ -8,7 +8,7 @@ import io.reactivex.Single
 interface ApiClient {
     fun uploadPhoto(photoFilePath: String, location: LonLat, userId: String, isPublic: Boolean,
                     callback: UploadPhotosUseCase.PhotoUploadProgressCallback): Single<UploadPhotoResponse>
-    fun receivePhotos(photoNames: String, userId: String): Single<ReceivedPhotosResponse>
+    fun receivePhotos(userId: String, photoNames: String): Single<ReceivedPhotosResponse>
     fun getGalleryPhotoIds(lastId: Long, photosPerPage: Int): Single<GalleryPhotoIdsResponse>
     fun getGalleryPhotos(galleryPhotoIds: String): Single<GalleryPhotosResponse>
     fun getGalleryPhotoInfo(userId: String, galleryPhotoIds: String): Single<GalleryPhotoInfoResponse>

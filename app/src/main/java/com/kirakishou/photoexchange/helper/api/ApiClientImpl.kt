@@ -25,8 +25,8 @@ open class ApiClientImpl
             .execute()
     }
 
-    override fun receivePhotos(photoNames: String, userId: String): Single<ReceivedPhotosResponse> {
-        return ReceivePhotosRequest<ReceivedPhotosResponse>(photoNames, userId, apiService, schedulerProvider, gson)
+    override fun receivePhotos(userId: String, photoNames: String): Single<ReceivedPhotosResponse> {
+        return ReceivePhotosRequest<ReceivedPhotosResponse>(userId, photoNames, apiService, schedulerProvider, gson)
             .execute()
     }
 
