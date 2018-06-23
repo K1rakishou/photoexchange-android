@@ -123,27 +123,29 @@ class ReceivedPhotosAdapter(
         }
     }
 
-    class ProgressViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
-
-    class PhotoAnswerViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val photoView = itemView.findViewById<ImageView>(R.id.photo_view)
-        val staticMapView = itemView.findViewById<ImageView>(R.id.static_map_view)
-        val photoIdTextView = itemView.findViewById<TextView>(R.id.photo_id_text_view)
-        val clickView = itemView.findViewById<ConstraintLayout>(R.id.click_view)
-
-        fun showPhotoHideMap() {
-            staticMapView.visibility = View.GONE
-            photoView.visibility = View.VISIBLE
-        }
-
-        fun showMapHidePhoto() {
-            staticMapView.visibility = View.VISIBLE
-            photoView.visibility = View.GONE
-        }
-    }
-
     sealed class ReceivedPhotosAdapterClickEvent {
         class ShowFullPhoto(val photoName: String) : ReceivedPhotosAdapterClickEvent()
         class SwitchShowMapOrPhoto(val photoName: String) : ReceivedPhotosAdapterClickEvent()
+    }
+
+    companion object {
+        class ProgressViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
+
+        class PhotoAnswerViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            val photoView = itemView.findViewById<ImageView>(R.id.photo_view)
+            val staticMapView = itemView.findViewById<ImageView>(R.id.static_map_view)
+            val photoIdTextView = itemView.findViewById<TextView>(R.id.photo_id_text_view)
+            val clickView = itemView.findViewById<ConstraintLayout>(R.id.click_view)
+
+            fun showPhotoHideMap() {
+                staticMapView.visibility = View.GONE
+                photoView.visibility = View.VISIBLE
+            }
+
+            fun showMapHidePhoto() {
+                staticMapView.visibility = View.VISIBLE
+                photoView.visibility = View.GONE
+            }
+        }
     }
 }

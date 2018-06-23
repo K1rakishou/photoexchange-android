@@ -43,7 +43,7 @@ class ImageLoader
 
         GlideApp.with(context)
             .load(fullUrl)
-            .diskCacheStrategy(DiskCacheStrategy.DATA)
+            .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
             .apply(RequestOptions().centerCrop())
             .into(view)
     }
@@ -53,7 +53,7 @@ class ImageLoader
 
         GlideApp.with(context)
             .load(fullUrl)
-            .diskCacheStrategy(DiskCacheStrategy.DATA)
+            .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
             .apply(RequestOptions().centerCrop())
             .into(view)
     }

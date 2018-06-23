@@ -216,11 +216,21 @@ class TakePhotoActivity : BaseActivity() {
             set.setStartDelay(50)
             set.setDuration(200)
             set.addListener(onEnd = {
-                takePhotoButton.isClickable = true
-                showAllPhotosButton.isClickable = true
+                if (::takePhotoButton.isInitialized) {
+                    takePhotoButton.isClickable = true
+                }
+
+                if (::showAllPhotosButton.isInitialized) {
+                    showAllPhotosButton.isClickable = true
+                }
             }, onStart = {
-                takePhotoButton.visibility = View.VISIBLE
-                showAllPhotosButton.visibility = View.VISIBLE
+                if (::takePhotoButton.isInitialized) {
+                    takePhotoButton.visibility = View.VISIBLE
+                }
+
+                if (::showAllPhotosButton.isInitialized) {
+                    showAllPhotosButton.visibility = View.VISIBLE
+                }
             })
             set.start()
         }
@@ -239,11 +249,21 @@ class TakePhotoActivity : BaseActivity() {
             set.playTogether(animation1, animation2)
             set.setDuration(250)
             set.addListener(onStart = {
-                takePhotoButton.isClickable = false
-                showAllPhotosButton.isClickable = false
+                if (::takePhotoButton.isInitialized) {
+                    takePhotoButton.isClickable = false
+                }
+
+                if (::showAllPhotosButton.isInitialized) {
+                    showAllPhotosButton.isClickable = false
+                }
             }, onEnd = {
-                takePhotoButton.visibility = View.GONE
-                showAllPhotosButton.visibility = View.GONE
+                if (::takePhotoButton.isInitialized) {
+                    takePhotoButton.visibility = View.GONE
+                }
+
+                if (::showAllPhotosButton.isInitialized) {
+                    showAllPhotosButton.visibility = View.GONE
+                }
 
                 emitter.onComplete()
             })

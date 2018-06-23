@@ -19,7 +19,7 @@ abstract class TempFileDao {
         "WHERE " +
         " ${TempFileEntity.ID_COLUMN} = :id " +
         "AND " +
-        " ${TempFileEntity.DELETED_ON_COLUMN} > 0")
+        " ${TempFileEntity.DELETED_ON_COLUMN} = 0")
     abstract fun findById(id: Long): TempFileEntity?
 
     @Query("SELECT * FROM ${TempFileEntity.TABLE_NAME}")

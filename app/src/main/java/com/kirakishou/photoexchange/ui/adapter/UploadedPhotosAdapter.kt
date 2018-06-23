@@ -436,35 +436,37 @@ class UploadedPhotosAdapter(
         }
     }
 
-    class EmptyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
-
-    class ProgressViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val progressBar = itemView.findViewById<ProgressBar>(R.id.progressbar)
-    }
-
-    class FailedToUploadPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val photoView = itemView.findViewById<ImageView>(R.id.photo_view)
-        val deleteFailedToUploadPhotoButton = itemView.findViewById<AppCompatButton>(R.id.delete_failed_to_upload_photo)
-        val retryToUploadFailedPhoto = itemView.findViewById<AppCompatButton>(R.id.retry_to_upload_failed_photo)
-    }
-
-    class UploadedPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val photoidTextView = itemView.findViewById<TextView>(R.id.photo_id_text_view)
-        val photoView = itemView.findViewById<ImageView>(R.id.photo_view)
-        val photoUploadingStateIndicator = itemView.findViewById<View>(R.id.photo_uploading_state_indicator)
-        val receivedIconImageView = itemView.findViewById<ImageView>(R.id.received_icon_image_view)
-    }
-
-    class TakenPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val photoidTextView = itemView.findViewById<TextView>(R.id.photo_id_text_view)
-        val photoView = itemView.findViewById<ImageView>(R.id.photo_view)
-        val uploadingMessageHolderView = itemView.findViewById<CardView>(R.id.uploading_message_holder)
-        val loadingProgress = itemView.findViewById<ProgressBar>(R.id.loading_progress)
-        val photoUploadingStateIndicator = itemView.findViewById<View>(R.id.photo_uploading_state_indicator)
-    }
-
     sealed class UploadedPhotosAdapterButtonClick {
         class DeleteButtonClick(val photo: TakenPhoto) : UploadedPhotosAdapterButtonClick()
         class RetryButtonClick(val photo: TakenPhoto) : UploadedPhotosAdapterButtonClick()
+    }
+
+    companion object {
+        class EmptyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
+
+        class ProgressViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            val progressBar = itemView.findViewById<ProgressBar>(R.id.progressbar)
+        }
+
+        class FailedToUploadPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            val photoView = itemView.findViewById<ImageView>(R.id.photo_view)
+            val deleteFailedToUploadPhotoButton = itemView.findViewById<AppCompatButton>(R.id.delete_failed_to_upload_photo)
+            val retryToUploadFailedPhoto = itemView.findViewById<AppCompatButton>(R.id.retry_to_upload_failed_photo)
+        }
+
+        class UploadedPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            val photoidTextView = itemView.findViewById<TextView>(R.id.photo_id_text_view)
+            val photoView = itemView.findViewById<ImageView>(R.id.photo_view)
+            val photoUploadingStateIndicator = itemView.findViewById<View>(R.id.photo_uploading_state_indicator)
+            val receivedIconImageView = itemView.findViewById<ImageView>(R.id.received_icon_image_view)
+        }
+
+        class TakenPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            val photoidTextView = itemView.findViewById<TextView>(R.id.photo_id_text_view)
+            val photoView = itemView.findViewById<ImageView>(R.id.photo_view)
+            val uploadingMessageHolderView = itemView.findViewById<CardView>(R.id.uploading_message_holder)
+            val loadingProgress = itemView.findViewById<ProgressBar>(R.id.loading_progress)
+            val photoUploadingStateIndicator = itemView.findViewById<View>(R.id.photo_uploading_state_indicator)
+        }
     }
 }

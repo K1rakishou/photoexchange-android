@@ -163,22 +163,24 @@ class GalleryPhotosAdapter(
         }
     }
 
-    class ProgressViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val progressBar = itemView.findViewById<ProgressBar>(R.id.progressbar)
-    }
-
-    class GalleryPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val photoView = itemView.findViewById<ImageView>(R.id.photo_view)
-        val favouriteButton = itemView.findViewById<LinearLayout>(R.id.favourite_button)
-        val reportButton = itemView.findViewById<LinearLayout>(R.id.report_button)
-        val favouritesCount = itemView.findViewById<TextView>(R.id.favourites_count_text_view)
-        val photoButtonsHolder = itemView.findViewById<LinearLayout>(R.id.photo_buttons_holder)
-        val favouriteIcon = itemView.findViewById<ImageView>(R.id.favourite_icon)
-        val reportIcon = itemView.findViewById<ImageView>(R.id.report_icon)
-    }
-
     sealed class GalleryPhotosAdapterButtonClickEvent {
         class FavouriteClicked(val photoName: String) : GalleryPhotosAdapterButtonClickEvent()
         class ReportClicked(val photoName: String) : GalleryPhotosAdapterButtonClickEvent()
+    }
+
+    companion object {
+        class ProgressViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            val progressBar = itemView.findViewById<ProgressBar>(R.id.progressbar)
+        }
+
+        class GalleryPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            val photoView = itemView.findViewById<ImageView>(R.id.photo_view)
+            val favouriteButton = itemView.findViewById<LinearLayout>(R.id.favourite_button)
+            val reportButton = itemView.findViewById<LinearLayout>(R.id.report_button)
+            val favouritesCount = itemView.findViewById<TextView>(R.id.favourites_count_text_view)
+            val photoButtonsHolder = itemView.findViewById<LinearLayout>(R.id.photo_buttons_holder)
+            val favouriteIcon = itemView.findViewById<ImageView>(R.id.favourite_icon)
+            val reportIcon = itemView.findViewById<ImageView>(R.id.report_icon)
+        }
     }
 }
