@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.interactors
 
-import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.api.ApiClientImpl
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
@@ -20,7 +20,7 @@ class ReceivePhotosUseCase(
     private val takenPhotosRepository: TakenPhotosRepository,
     private val receivedPhotosRepository: ReceivedPhotosRepository,
     private val uploadedPhotosRepository: UploadedPhotosRepository,
-    private val apiClient: ApiClient
+    private val apiClient: ApiClientImpl
 ) {
 
     private val TAG = "ReceivePhotosUseCase"

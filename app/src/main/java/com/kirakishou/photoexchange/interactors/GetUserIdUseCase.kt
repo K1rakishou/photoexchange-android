@@ -1,17 +1,15 @@
 package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.api.ApiClientImpl
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
-import kotlinx.coroutines.experimental.rx2.await
-import kotlinx.coroutines.experimental.rx2.rxSingle
 import timber.log.Timber
 
 class GetUserIdUseCase(
     private val settingsRepository: SettingsRepository,
-    private val apiClient: ApiClient
+    private val apiClient: ApiClientImpl
 ) {
     private val TAG = "GetUserIdUseCase"
 

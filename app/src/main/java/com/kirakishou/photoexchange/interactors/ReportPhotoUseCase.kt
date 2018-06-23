@@ -1,14 +1,14 @@
 package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.api.ApiClientImpl
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepository
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Observable
 import timber.log.Timber
 
 class ReportPhotoUseCase(
-    private val apiClient: ApiClient,
+    private val apiClient: ApiClientImpl,
     private val galleryPhotoRepository: GalleryPhotoRepository
 ) {
     private val TAG = "ReportPhotoUseCase"

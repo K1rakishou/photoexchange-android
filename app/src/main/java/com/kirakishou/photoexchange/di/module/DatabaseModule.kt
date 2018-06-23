@@ -4,6 +4,7 @@ import android.arch.persistence.room.Room
 import android.content.Context
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.*
+import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import dagger.Module
 import dagger.Provides
@@ -36,8 +37,9 @@ open class DatabaseModule(
     @Provides
     fun provideTempFilesRepository(@Named("files_directory") filesDir: String,
                                    database: MyDatabase,
-                                   timeUtils: TimeUtils): TempFileRepository {
-        return TempFileRepository(filesDir, database, timeUtils)
+                                   timeUtils: TimeUtils,
+                                   fileUtils: FileUtils): TempFileRepository {
+        return TempFileRepository(filesDir, database, timeUtils, fileUtils)
     }
 
     @Singleton

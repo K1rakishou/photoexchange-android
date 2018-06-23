@@ -1,19 +1,18 @@
 package com.kirakishou.photoexchange.helper.api.request
 
-import com.google.gson.Gson
 import com.kirakishou.photoexchange.helper.ProgressRequestBody
 import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.helper.gson.MyGson
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.exception.GeneralException
 import com.kirakishou.photoexchange.mvp.model.net.packet.SendPhotoPacket
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
-import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
+import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import io.reactivex.Single
 import okhttp3.MultipartBody
-import timber.log.Timber
 import java.io.File
 import java.net.SocketTimeoutException
 import java.util.concurrent.TimeoutException
@@ -29,7 +28,7 @@ class UploadPhotoRequest<T>(
     private val callback: UploadPhotosUseCase.PhotoUploadProgressCallback,
     private val apiService: ApiService,
     private val schedulerProvider: SchedulerProvider,
-    private val gson: Gson
+    private val gson: MyGson
 ) : AbstractRequest<T>() {
 
     private val tag = "UploadPhotoRequest"
@@ -39,10 +38,6 @@ class UploadPhotoRequest<T>(
         val single = Single.fromCallable {
             val packet = SendPhotoPacket(location.lon, location.lat, userId, isPublic)
             val photoFile = File(photoFilePath)
-
-            if (!photoFile.isFile || !photoFile.exists()) {
-                throw NoPhotoFileOnDiskException()
-            }
 
             return@fromCallable getBody(photoFile, packet, callback)
         }
@@ -60,7 +55,6 @@ class UploadPhotoRequest<T>(
                             return@map UploadPhotoResponse.error(ErrorCode.fromInt(ErrorCode.UploadPhotoErrors::class, response.serverErrorCode!!))
                         }
                     }
-                    .doOnSuccess { Timber.tag(tag).d("after map") }
                     .onErrorReturn(this::extractError) as Single<T>
             }
     }
@@ -70,7 +64,6 @@ class UploadPhotoRequest<T>(
             is GeneralException.ApiException -> UploadPhotoResponse.error(error.errorCode)
             is SocketTimeoutException,
             is TimeoutException -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.LocalTimeout())
-            is NoPhotoFileOnDiskException -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.LocalNoPhotoFileOnDisk())
             else -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.UnknownError())
         }
     }
@@ -84,6 +77,4 @@ class UploadPhotoRequest<T>(
             .addFormDataPart("packet", packetJson)
             .build()
     }
-
-    class NoPhotoFileOnDiskException : Exception()
 }

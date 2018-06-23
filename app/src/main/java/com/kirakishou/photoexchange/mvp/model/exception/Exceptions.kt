@@ -22,6 +22,7 @@ sealed class PhotoUploadingException : Exception() {
     class PhotoDoesNotExistOnDisk : PhotoUploadingException()
     class CouldNotRotatePhoto : PhotoUploadingException()
     class DatabaseException : PhotoUploadingException()
+    class CouldNotUpdatePhotoState : PhotoUploadingException()
     class ApiException(val remoteErrorCode: ErrorCode.UploadPhotoErrors) : PhotoUploadingException()
 }
 

@@ -38,7 +38,7 @@ open class UploadedPhotosRepository(
         return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.findMany(photoIds))
     }
 
-    fun save(photoId: Long, photoName: String, lon: Double, lat: Double, uploadedOn: Long): Boolean {
+    open fun save(photoId: Long, photoName: String, lon: Double, lat: Double, uploadedOn: Long): Boolean {
         val uploadedPhotoEntity = UploadedPhotosMapper.FromObject.ToEntity.toUploadedPhotoEntity(photoId, photoName, lon, lat, uploadedOn)
         return uploadedPhotoDao.save(uploadedPhotoEntity).isSuccess()
     }

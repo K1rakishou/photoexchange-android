@@ -34,7 +34,7 @@ abstract class MyDatabase : RoomDatabase() {
     abstract fun uploadedPhotoDao(): UploadedPhotoDao
     abstract fun cachedPhotoIdDao(): CachedPhotoIdDao
 
-    inline fun transactional(func: () -> Boolean): Boolean {
+    open fun transactional(func: () -> Boolean): Boolean {
         dbLock.withLock {
             this.beginTransaction()
 

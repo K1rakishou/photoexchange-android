@@ -67,13 +67,37 @@
 
  ✔ Не пытаться получить фото от сервера, если имеются фото которые не удалось отправить @high @done (18-06-17 20:01)
 
+ ☐ Убрать короутины 
+   ☐ из GetGalleryPhotosUseCase @high
+   ☐ из GetGalleryPhotosInfoUseCase @high
+
+ ☐ Тесты
+   ✔ UploadPhotosUseCase @today @done (18-06-23 17:35)
+   ☐ ReceivePhotosUseCase @today
+   ☐ GetReceivedPhotosUseCase @today
+   ☐ FavouritePhotoUseCase @high
+   ☐ GetGalleryPhotosInfoUseCase @high
+   ☐ GetGalleryPhotosUseCase @high
+   ☐ GetUploadedPhotosUseCase @high
+   ☐ GetUserIdUseCase @high
+   ☐ ReportPhotoUseCase @high
+   ☐ ReceivePhotosServicePresenter @high
+   ☐ UploadPhotoServicePresenter @high
+
 Сервер
 
  ✔ Рефакторинг PhotoInfoDao и PhotoInfoRepository @done (18-06-12 15:21)
 
  ✔ Сделать сервис для получения статик карты от гуглов с точкой по заданным координатам (Пример - https://maps.googleapis.com/maps/api/staticmap?center=55.7111216,37.7307513&zoom=10&size=600x600&maptype=roadmap&key=**KEY**&markers=color:red%7C55.7111216,37.7307513 ) @done (18-06-12 18:12)
 
- ☐ Написать тесты для StaticMapDownloaderService @low
+ ☐ Написать тесты для StaticMapDownloaderService @high
 
- ☐ Добавить тест для UploadPhotoHandler с кейсом когда staticMapDownloaderService возвращает false (проверить, что загружаемое фото удаляется с диска и БД) @low
+ ☐ Добавить тест для UploadPhotoHandler с кейсом когда staticMapDownloaderService возвращает false (проверить, что загружаемое фото удаляется с диска и БД) @high
 
+ ☐ Перенести сервер на Spring Boot 2.1.0 (чтобы можно было получать айпи адрес из реквеста) @today
+
+ ☐ Добавить в LocationMap numOfTries поле и увеличивать его при каждой неудавшейся попытке получить карту от гуглов (если больше N, то ставить флаг, что нет карты (возможно придётся поменять флаг mapReady на mapState и сделать его enum, а не boolean)) @today
+
+ ☐ Добавить таблицу с банами (хеш от айпи адреса) @high
+   ☐ Чистить базу от старых записей (раз в 5-6 месяцев) @high
+   ☐ Чекать айпи в базе на каждый реквест (или может лучше только при загрузке фото) @high

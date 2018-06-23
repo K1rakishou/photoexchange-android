@@ -21,6 +21,10 @@ data class TakenPhoto(
         return photoTempFile!!
     }
 
+    fun fileExists(): Boolean {
+        return photoTempFile != null && photoTempFile!!.exists()
+    }
+
     fun toBundle(): Bundle {
         val outBundle = Bundle()
         outBundle.putLong("photoId", id)

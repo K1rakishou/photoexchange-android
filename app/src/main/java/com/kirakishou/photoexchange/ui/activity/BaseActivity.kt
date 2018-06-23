@@ -194,7 +194,8 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.TakePhotoErrors.CameraIsNotStartedException -> "Camera is not started"
             is ErrorCode.TakePhotoErrors.CouldNotTakePhoto -> "Could not take a photo"
             is ErrorCode.UploadPhotoErrors.LocalCouldNotRotatePhoto -> "Could not rotate a photo"
-            is ErrorCode.UploadPhotoErrors.CouldNotGetUserId -> "Could not get user id from the server"
+            is ErrorCode.UploadPhotoErrors.LocalCouldNotGetUserId -> "Could not get user id from the server"
+            is ErrorCode.UploadPhotoErrors.LocalCouldNotUpdatePhotoState -> "Could not update photo state"
         }
 
         if (errorMessage != null) {

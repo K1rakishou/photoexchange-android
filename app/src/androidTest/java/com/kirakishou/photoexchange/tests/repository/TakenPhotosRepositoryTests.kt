@@ -7,9 +7,7 @@ import android.support.test.runner.AndroidJUnit4
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.TempFileRepository
-import com.kirakishou.photoexchange.helper.util.FileUtils
-import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.helper.util.TimeUtilsImpl
+import com.kirakishou.photoexchange.helper.util.*
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -32,6 +30,7 @@ class TakenPhotosRepositoryTests {
     lateinit var database: MyDatabase
     lateinit var timeUtils: TimeUtils
     lateinit var tempFilesDir: String
+    lateinit var fileUtils: FileUtils
 
     lateinit var tempFilesRepository: TempFileRepository
     lateinit var takenPhotosRepository: TakenPhotosRepository
@@ -41,16 +40,17 @@ class TakenPhotosRepositoryTests {
         appContext = InstrumentationRegistry.getContext()
         targetContext = InstrumentationRegistry.getTargetContext()
         database = Room.inMemoryDatabaseBuilder(appContext, MyDatabase::class.java).build()
-        timeUtils = Mockito.spy(TimeUtilsImpl())
+        timeUtils = Mockito.spy(TimeUtils::class.java)
+        fileUtils = Mockito.spy(FileUtils::class.java)
         tempFilesDir = targetContext.getDir("test_temp_files", Context.MODE_PRIVATE).absolutePath
 
-        tempFilesRepository = Mockito.spy(TempFileRepository(tempFilesDir, database, timeUtils))
+        tempFilesRepository = Mockito.spy(TempFileRepository(tempFilesDir, database, timeUtils, fileUtils))
         takenPhotosRepository = TakenPhotosRepository(timeUtils, database, tempFilesRepository)
     }
 
     @After
     fun tearDown() {
-        FileUtils.deleteAllFiles(File(tempFilesDir))
+        FileUtilsImpl().deleteAllFiles(File(tempFilesDir))
 
         database.close()
     }
@@ -67,7 +67,9 @@ class TakenPhotosRepositoryTests {
     @Test
     fun should_delete_photo_file_from_disk_when_could_not_save_temp_file_info_in_the_database() {
         val tempFile = tempFilesRepository.create()
+        Mockito.`when`(timeUtils.getTimeFast()).thenReturn(444L)
         Mockito.`when`(tempFilesRepository.updateTakenPhotoId(tempFile, 1)).thenReturn(-1)
+
         val takenPhoto = takenPhotosRepository.saveTakenPhoto(tempFile)
 
         assertEquals(true, tempFile.fileExists())

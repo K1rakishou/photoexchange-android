@@ -7,6 +7,7 @@ import android.support.test.runner.AndroidJUnit4
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.TempFileRepository
 import com.kirakishou.photoexchange.helper.util.FileUtils
+import com.kirakishou.photoexchange.helper.util.FileUtilsImpl
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -24,6 +25,7 @@ class TempFileRepositoryTests {
     lateinit var timeUtils: TimeUtils
     lateinit var tempFilesDir: String
     lateinit var repository: TempFileRepository
+    lateinit var fileUtils: FileUtils
 
     @Before
     fun init() {
@@ -32,14 +34,15 @@ class TempFileRepositoryTests {
         database = Room.inMemoryDatabaseBuilder(appContext, MyDatabase::class.java).build()
         timeUtils = Mockito.mock(TimeUtils::class.java)
         tempFilesDir = targetContext.getDir("test_temp_files", Context.MODE_PRIVATE).absolutePath
+        fileUtils = Mockito.spy(FileUtils::class.java)
 
-        repository = TempFileRepository(tempFilesDir, database, timeUtils)
+        repository = TempFileRepository(tempFilesDir, database, timeUtils, fileUtils)
             .also { it.init() }
     }
 
     @After
     fun tearDown() {
-        FileUtils.deleteAllFiles(File(tempFilesDir))
+        FileUtilsImpl().deleteAllFiles(File(tempFilesDir))
 
         database.close()
     }
@@ -195,7 +198,7 @@ class TempFileRepositoryTests {
         val tempFile4 = repository.create()
         tempFile4.asFile().writeText("1234567890123456789012345678901234567890")
 
-        assertEquals(100, FileUtils.calculateTotalDirectorySize(File(tempFilesDir)))
+        assertEquals(100, FileUtilsImpl().calculateTotalDirectorySize(File(tempFilesDir)))
     }
 }
 

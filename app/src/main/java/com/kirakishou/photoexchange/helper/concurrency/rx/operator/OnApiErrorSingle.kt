@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.helper.concurrency.rx.operator
 
 import com.google.gson.Gson
+import com.kirakishou.photoexchange.helper.gson.MyGson
 import com.kirakishou.photoexchange.mvp.model.exception.GeneralException
 import com.kirakishou.photoexchange.mvp.model.net.response.*
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
@@ -19,7 +20,7 @@ import kotlin.reflect.KClass
  * Or ApiException with BadServerResponse and HttpStatus when server didn't return any errorCode in JSON
  * */
 class OnApiErrorSingle<T : StatusResponse>(
-    val gson: Gson,
+    val gson: MyGson,
     val clazz: KClass<*>
 ) : SingleOperator<T, Response<T>> {
 

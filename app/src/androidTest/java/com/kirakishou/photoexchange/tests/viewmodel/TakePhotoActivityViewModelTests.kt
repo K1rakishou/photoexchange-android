@@ -15,34 +15,34 @@ import java.io.File
  * Created by kirakishou on 3/8/2018.
  */
 
-@RunWith(AndroidJUnit4::class)
+//@RunWith(AndroidJUnit4::class)
 class TakePhotoActivityViewModelTests : AbstractTest() {
 
-    lateinit var appContext: Context
-    lateinit var targetContext: Context
-    lateinit var database: MyDatabase
-    lateinit var tempFilesDir: String
-
-    @Before
-    fun setup() {
-        appContext = InstrumentationRegistry.getContext()
-        targetContext = InstrumentationRegistry.getTargetContext()
-
-        database = Room.inMemoryDatabaseBuilder(appContext, MyDatabase::class.java).build()
-        tempFilesDir = targetContext.getDir("test_temp_files", Context.MODE_PRIVATE).absolutePath
-    }
-
-    @After
-    fun tearDown() {
-        //hack
-        if (::database.isInitialized) {
-            database.close()
-        }
-
-        if (::tempFilesDir.isInitialized) {
-            deleteDir(File(tempFilesDir))
-        }
-    }
+//    lateinit var appContext: Context
+//    lateinit var targetContext: Context
+//    lateinit var database: MyDatabase
+//    lateinit var tempFilesDir: String
+//
+//    @Before
+//    fun setup() {
+//        appContext = InstrumentationRegistry.getContext()
+//        targetContext = InstrumentationRegistry.getTargetContext()
+//
+//        database = Room.inMemoryDatabaseBuilder(appContext, MyDatabase::class.java).build()
+//        tempFilesDir = targetContext.getDir("test_temp_files", Context.MODE_PRIVATE).absolutePath
+//    }
+//
+//    @After
+//    fun tearDown() {
+//        //hack
+//        if (::database.isInitialized) {
+//            database.close()
+//        }
+//
+//        if (::tempFilesDir.isInitialized) {
+//            deleteDir(File(tempFilesDir))
+//        }
+//    }
 }
 
 

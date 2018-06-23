@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.extension.hours
 import com.kirakishou.photoexchange.helper.extension.mb
 import com.kirakishou.photoexchange.helper.util.FileUtils
+import com.kirakishou.photoexchange.helper.util.FileUtilsImpl
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import timber.log.Timber
 import java.io.File
@@ -14,7 +15,8 @@ import java.io.File
 open class TempFileRepository(
     private val filesDir: String,
     private val database: MyDatabase,
-    private val timeUtils: TimeUtils
+    private val timeUtils: TimeUtils,
+    private val fileUtils: FileUtils
 ) {
     val TAG = "TempFileRepository"
     val tempFilesDao = database.tempFileDao()
@@ -96,7 +98,7 @@ open class TempFileRepository(
     }
 
     fun deleteOldIfCacheSizeIsTooBig() {
-        val totalTempFilesCacheSize = FileUtils.calculateTotalDirectorySize(File(filesDir))
+        val totalTempFilesCacheSize = fileUtils.calculateTotalDirectorySize(File(filesDir))
         if (totalTempFilesCacheSize > MAX_CACHE_SIZE) {
             val filesToDelete = tempFilesDao.findOldest(FILES_TO_DELETE_AT_A_TIME)
             if (filesToDelete.isEmpty()) {

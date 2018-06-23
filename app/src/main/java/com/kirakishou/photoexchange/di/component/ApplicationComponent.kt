@@ -20,7 +20,7 @@ import javax.inject.Singleton
     ApiClientModule::class,
     ImageLoaderModule::class,
     UseCaseProviderModule::class,
-    TimeUtilsModule::class
+    UtilsModule::class
 ])
 interface ApplicationComponent {
     fun inject(application: PhotoExchangeApplication)

@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.api.ApiClientImpl
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.util.Utils
@@ -14,7 +14,7 @@ import timber.log.Timber
 
 class GetUploadedPhotosUseCase(
     private val uploadedPhotosRepository: UploadedPhotosRepository,
-    private val apiClient: ApiClient
+    private val apiClient: ApiClientImpl
 ) {
 
     private val TAG = "GetUploadedPhotosUseCase"

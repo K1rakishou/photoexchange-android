@@ -1,14 +1,11 @@
 package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.helper.api.ApiClient
-import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosInfoMapper
+import com.kirakishou.photoexchange.helper.api.ApiClientImpl
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosMapper
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepository
-import com.kirakishou.photoexchange.helper.extension.minutes
 import com.kirakishou.photoexchange.helper.util.Utils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
-import com.kirakishou.photoexchange.mvp.model.GalleryPhotoInfo
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
@@ -17,7 +14,7 @@ import kotlinx.coroutines.experimental.rx2.rxSingle
 import timber.log.Timber
 
 class GetGalleryPhotosUseCase(
-    private val apiClient: ApiClient,
+    private val apiClient: ApiClientImpl,
     private val galleryPhotoRepository: GalleryPhotoRepository
 ) {
     private val TAG = "GetGalleryPhotosUseCase"

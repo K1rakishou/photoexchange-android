@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.helper.gson.MyGson
 import com.kirakishou.photoexchange.mvp.model.exception.GeneralException
 import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
@@ -15,7 +16,7 @@ class GetGalleryPhotosRequest<T>(
     private val galleryPhotoIds: String,
     private val apiService: ApiService,
     private val schedulerProvider: SchedulerProvider,
-    private val gson: Gson
+    private val gson: MyGson
 ) : AbstractRequest<T>() {
 
     override fun execute(): Single<T> {

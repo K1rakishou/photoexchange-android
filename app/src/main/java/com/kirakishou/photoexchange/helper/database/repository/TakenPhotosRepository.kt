@@ -52,7 +52,7 @@ open class TakenPhotosRepository(
         return photo
     }
 
-    fun updatePhotoState(photoId: Long, newPhotoState: PhotoState): Boolean {
+    open fun updatePhotoState(photoId: Long, newPhotoState: PhotoState): Boolean {
         return takenPhotoDao.updateSetNewPhotoState(photoId, newPhotoState) == 1
     }
 
@@ -159,7 +159,7 @@ open class TakenPhotosRepository(
         return deletePhotoById(photoId)
     }
 
-    fun deletePhotoById(photoId: Long): Boolean {
+    open fun deletePhotoById(photoId: Long): Boolean {
         return database.transactional {
             if (takenPhotoDao.deleteById(photoId).isFail()) {
                 return@transactional false

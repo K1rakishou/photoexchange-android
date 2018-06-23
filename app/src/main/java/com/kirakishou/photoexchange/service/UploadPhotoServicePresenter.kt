@@ -65,11 +65,7 @@ class UploadPhotoServicePresenter(
                                             UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadStart(photo))
                                         )
                                     }
-                                    .concatMap {
-                                        return@concatMap Observable.create<UploadedPhotosFragmentEvent.PhotoUploadEvent> { emitter ->
-                                            uploadPhotosUseCase.uploadPhoto(photo, userId, currentLocation, emitter)
-                                        }
-                                    }
+                                    .concatMap { uploadPhotosUseCase.uploadPhoto(photo, userId, currentLocation) }
                                     .doOnNext { event -> handleEvents(photo, event) }
                                     .toList()
                                     .map(this::hasErrorEvents)
@@ -145,7 +141,7 @@ class UploadPhotoServicePresenter(
 
             is UploadPhotoServiceException.CouldNotGetUserIdException -> {
                 sendEvent(UploadPhotoEvent.UploadingEvent(UploadedPhotosFragmentEvent.PhotoUploadEvent
-                    .OnKnownError(ErrorCode.UploadPhotoErrors.CouldNotGetUserId())))
+                    .OnKnownError(ErrorCode.UploadPhotoErrors.LocalCouldNotGetUserId())))
             }
 
             else -> {
