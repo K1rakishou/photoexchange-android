@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.util.BitmapUtils
 import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.interactors.*
+import com.kirakishou.photoexchange.mvp.model.other.Constants.INTERVAL_TO_REFRESH_PHOTOS_FROM_SERVER
 import dagger.Module
 import dagger.Provides
 import javax.inject.Singleton
@@ -86,6 +87,6 @@ class UseCaseProviderModule {
     @Provides
     fun provideGetGalleryPhotosInfoUseCase(apiClient: ApiClient,
                                            galleryPhotoRepository: GalleryPhotoRepository): GetGalleryPhotosInfoUseCase {
-        return GetGalleryPhotosInfoUseCase(apiClient, galleryPhotoRepository)
+        return GetGalleryPhotosInfoUseCase(apiClient, galleryPhotoRepository, INTERVAL_TO_REFRESH_PHOTOS_FROM_SERVER)
     }
 }

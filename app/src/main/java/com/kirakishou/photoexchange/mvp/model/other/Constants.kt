@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.mvp.model.other
 
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
+import com.kirakishou.photoexchange.helper.extension.minutes
 
 /**
  * Created by kirakishou on 11/8/2017.
@@ -19,4 +20,7 @@ object Constants {
     val RECEIVED_PHOTOS_PER_ROW = 15
 
     val DEFAULT_ADAPTER_ITEM_WIDTH = 288
+
+    //interval to update photos in the db with fresh information
+    val INTERVAL_TO_REFRESH_PHOTOS_FROM_SERVER = 30.minutes()
 }

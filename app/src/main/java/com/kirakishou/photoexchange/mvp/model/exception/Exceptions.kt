@@ -32,3 +32,7 @@ sealed class GetReceivedPhotosException : Exception() {
 sealed class GetGalleryPhotosException : Exception() {
     class OnKnownError(val errorCode: ErrorCode.GetGalleryPhotosErrors) : GetGalleryPhotosException()
 }
+
+sealed class GetGalleryPhotosInfoException : Exception() {
+    class OnKnownError(val errorCode: ErrorCode.GetGalleryPhotosErrors) : GetGalleryPhotosInfoException()
+}
