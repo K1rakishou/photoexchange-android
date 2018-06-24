@@ -11,7 +11,7 @@ import com.kirakishou.photoexchange.mvp.model.GalleryPhotoInfo
 import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotoInfoResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
 
-class GalleryPhotoRepository(
+open class GalleryPhotoRepository(
     private val database: MyDatabase,
     private val timeUtils: TimeUtils
 ) {
@@ -25,7 +25,7 @@ class GalleryPhotoRepository(
         return galleryPhotoInfoDao.saveMany(galleryPhotoInfoEntityList).size == galleryPhotoInfoList.size
     }
 
-    fun saveMany(galleryPhotos: List<GalleryPhotosResponse.GalleryPhotoResponseData>): Boolean {
+    open fun saveMany(galleryPhotos: List<GalleryPhotosResponse.GalleryPhotoResponseData>): Boolean {
         val now = timeUtils.getTimeFast()
         return galleryPhotoDao.saveMany(GalleryPhotosMapper.FromResponse.ToEntity
             .toGalleryPhotoEntitiesList(now, galleryPhotos)).size == galleryPhotos.size
@@ -43,14 +43,13 @@ class GalleryPhotoRepository(
         }
 
         val galleryPhotoInfoEntity = galleryPhotoInfoDao.find(galleryPhotoEntity.galleryPhotoId)
-
         val galleryPhoto = GalleryPhotosMapper.FromEntity.toGalleryPhoto(galleryPhotoEntity)
         galleryPhoto.galleryPhotoInfo = GalleryPhotosInfoMapper.ToObject.toGalleryPhotoInfo(galleryPhotoInfoEntity)
 
         return galleryPhoto
     }
 
-    fun findMany(galleryPhotoIds: List<Long>): List<GalleryPhoto> {
+    open fun findMany(galleryPhotoIds: List<Long>): List<GalleryPhoto> {
         val galleryPhotos = GalleryPhotosMapper.FromEntity.toGalleryPhotos(galleryPhotoDao.findMany(galleryPhotoIds))
 
         for (galleryPhoto in galleryPhotos) {

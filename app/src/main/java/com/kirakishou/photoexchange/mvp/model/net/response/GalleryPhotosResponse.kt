@@ -11,7 +11,7 @@ private constructor(
     @SerializedName("gallery_photos")
     val galleryPhotos: List<GalleryPhotoResponseData>,
 
-    errorCode: ErrorCode
+    errorCode: ErrorCode.GetGalleryPhotosErrors
 ) : StatusResponse(errorCode.getValue(), errorCode) {
 
     companion object {
@@ -19,7 +19,7 @@ private constructor(
             return GalleryPhotosResponse(galleryPhotos, ErrorCode.GetGalleryPhotosErrors.Ok())
         }
 
-        fun fail(errorCode: ErrorCode): GalleryPhotosResponse {
+        fun fail(errorCode: ErrorCode.GetGalleryPhotosErrors): GalleryPhotosResponse {
             return GalleryPhotosResponse(emptyList(), errorCode)
         }
     }

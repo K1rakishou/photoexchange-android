@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepos
 import com.kirakishou.photoexchange.helper.util.Utils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.exception.GetGalleryPhotosException
+import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotoIdsResponse
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Observable
@@ -26,34 +27,27 @@ class GetGalleryPhotosUseCase(
         Timber.tag(TAG).d("sending loadPageOfPhotos request...")
 
         return apiClient.getGalleryPhotoIds(lastId, photosPerPage).toObservable()
-            .concatMap { response ->
-                val errorCode = response.errorCode as ErrorCode.GetGalleryPhotosErrors
-                if (errorCode !is ErrorCode.GetGalleryPhotosErrors.Ok) {
-                    throw GetGalleryPhotosException.OnKnownError(errorCode)
-                }
-
-                return@concatMap Observable.just(response.galleryPhotoIds)
-                    .concatMap { galleryPhotoIds ->
-                        val galleryPhotosFromDb = galleryPhotoRepository.findMany(galleryPhotoIds)
-                        val photoIdsToGetFromServer = Utils.filterListAlreadyContaining(
-                            galleryPhotoIds,
-                            galleryPhotosFromDb.map { it.galleryPhotoId }
-                        )
-
-                        return@concatMap Observable.just(photoIdsToGetFromServer)
-                            .concatMap { photoIds ->
-                                if (photoIds.isNotEmpty()) {
-                                    return@concatMap getFreshPhotosAndConcatWithCached(photoIdsToGetFromServer, galleryPhotosFromDb)
-                                }
-
-                                return@concatMap Observable.just(Either.Value(galleryPhotosFromDb))
-                            }
-                    }
-            }
+            .concatMap(this::handleResponse)
             .onErrorReturn { error ->
                 Timber.tag(TAG).e(error)
                 return@onErrorReturn handleErrors(error)
             }
+    }
+
+    private fun handleResponse(
+        response: GalleryPhotoIdsResponse
+    ): Observable<out Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
+        val errorCode = response.errorCode as ErrorCode.GetGalleryPhotosErrors
+        if (errorCode !is ErrorCode.GetGalleryPhotosErrors.Ok) {
+            throw GetGalleryPhotosException.OnKnownError(errorCode)
+        }
+
+        if (response.galleryPhotoIds.isEmpty()) {
+            return Observable.just(Either.Value(listOf()))
+        }
+
+        return Observable.just(response.galleryPhotoIds)
+            .concatMap(this::getPhotosFromDbOrFromServer)
     }
 
     private fun handleErrors(
@@ -68,21 +62,34 @@ class GetGalleryPhotosUseCase(
         return Either.Error(ErrorCode.GetGalleryPhotosErrors.UnknownError())
     }
 
-    private fun getFreshPhotosAndConcatWithCached(
-        photoIdsToGetFromServer: List<Long>,
-        galleryPhotosFromDb: List<GalleryPhoto>
+    private fun getPhotosFromDbOrFromServer(
+        galleryPhotoIds: List<Long>
     ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
-        return getFreshPhotosFromServer(photoIdsToGetFromServer)
-            .concatMap { result ->
-                if (result is Either.Value) {
-                    return@concatMap Observables.zip(
-                        Observable.just(galleryPhotosFromDb),
-                        Observable.just(result.value),
-                        this::combinePhotos
-                    )
+        val galleryPhotosFromDb = galleryPhotoRepository.findMany(galleryPhotoIds)
+        val photoIdsToGetFromServer = Utils.filterListAlreadyContaining(
+            galleryPhotoIds,
+            galleryPhotosFromDb.map { it.galleryPhotoId }
+        )
+
+        return Observable.just(photoIdsToGetFromServer)
+            .concatMap { photoIds ->
+                if (photoIds.isNotEmpty()) {
+                    return@concatMap getFreshPhotosFromServer(photoIdsToGetFromServer)
+                        .concatMap { result ->
+                            if (result is Either.Value) {
+                                return@concatMap Observables.zip(
+                                    Observable.just(galleryPhotosFromDb),
+                                    Observable.just(result.value),
+                                    this::combinePhotos
+                                )
+                            }
+
+                            //if we could not get fresh photos from server - return what we could find in the database
+                            return@concatMap Observable.just(Either.Value(galleryPhotosFromDb))
+                        }
                 }
 
-                return@concatMap Observable.just(Either.Error((result as Either.Error).error))
+                return@concatMap Observable.just(Either.Value(galleryPhotosFromDb))
             }
     }
 
