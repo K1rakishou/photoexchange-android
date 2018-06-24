@@ -28,3 +28,7 @@ sealed class PhotoUploadingException : Exception() {
 sealed class GetReceivedPhotosException : Exception() {
     class OnKnownError(val errorCode: ErrorCode.GetReceivedPhotosErrors) : GetReceivedPhotosException()
 }
+
+sealed class GetGalleryPhotosException : Exception() {
+    class OnKnownError(val errorCode: ErrorCode.GetGalleryPhotosErrors) : GetGalleryPhotosException()
+}

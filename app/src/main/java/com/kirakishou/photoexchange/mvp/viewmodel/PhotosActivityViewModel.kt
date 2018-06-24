@@ -92,9 +92,9 @@ class PhotosActivityViewModel(
         isFragmentFreshlyCreated: Boolean
     ): Observable<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>> {
         return Observable.just(Unit)
+            .subscribeOn(schedulerProvider.IO())
             .concatMap { clearPhotoIdsCache(isFragmentFreshlyCreated) }
             .concatMap { Observable.fromCallable { settingsRepository.getUserId() } }
-            .subscribeOn(schedulerProvider.IO())
             .concatMap { userId -> loadPageOfUploadedPhotos(userId, isFragmentFreshlyCreated, lastId, photosPerPage) }
             .doOnError { Timber.tag(TAG).e(it) }
     }
@@ -105,9 +105,9 @@ class PhotosActivityViewModel(
         isFragmentFreshlyCreated: Boolean
     ): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
         return Observable.just(Unit)
+            .subscribeOn(schedulerProvider.IO())
             .concatMap { clearPhotoIdsCache(isFragmentFreshlyCreated) }
             .concatMap { Observable.fromCallable { settingsRepository.getUserId() } }
-            .subscribeOn(schedulerProvider.IO())
             .concatMap { userId -> loadPageOfReceivedPhotos(userId, isFragmentFreshlyCreated, lastId, photosPerPage) }
             .doOnNext { result ->
                 if (result is Either.Value) {
@@ -126,10 +126,7 @@ class PhotosActivityViewModel(
         if (isFragmentFreshlyCreated || cachedPhotoIdRepository.isEmpty(CachedPhotoIdEntity.PhotoType.GalleryPhoto)) {
             return Observable.just(Unit)
                 .doOnNext { intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.UiEvents.ShowProgressFooter()) }
-                .flatMap {
-                    return@flatMap getGalleryPhotosUseCase.loadPageOfPhotos(lastId, photosPerPage)
-                        .toObservable()
-                }
+                .flatMap { getGalleryPhotosUseCase.loadPageOfPhotos(lastId, photosPerPage) }
                 .doOnNext { result ->
                     if (result is Either.Value) {
                         val idsToCache = result.value.map { it.galleryPhotoId }

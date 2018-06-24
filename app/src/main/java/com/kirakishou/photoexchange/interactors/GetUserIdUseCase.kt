@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.helper.api.ApiClientImpl
+import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
@@ -9,7 +9,7 @@ import timber.log.Timber
 
 class GetUserIdUseCase(
     private val settingsRepository: SettingsRepository,
-    private val apiClient: ApiClientImpl
+    private val apiClient: ApiClient
 ) {
     private val TAG = "GetUserIdUseCase"
 

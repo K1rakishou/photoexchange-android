@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.helper.api.ApiClientImpl
+import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
@@ -19,7 +19,7 @@ class GetReceivedPhotosUseCase(
     private val database: MyDatabase,
     private val receivedPhotosRepository: ReceivedPhotosRepository,
     private val uploadedPhotosRepository: UploadedPhotosRepository,
-    private val apiClient: ApiClientImpl
+    private val apiClient: ApiClient
 ) {
 
     private val TAG = "GetReceivedPhotosUseCase"
@@ -41,7 +41,10 @@ class GetReceivedPhotosUseCase(
                 return@concatMap Observable.just(response.receivedPhotoIds)
                     .concatMap { receivedPhotoIds ->
                         val receivedPhotosFromDb = receivedPhotosRepository.findMany(receivedPhotoIds)
-                        val photoIdsToGetFromServer = Utils.filterListAlreadyContaining(receivedPhotoIds, receivedPhotosFromDb.map { it.photoId })
+                        val photoIdsToGetFromServer = Utils.filterListAlreadyContaining(
+                            receivedPhotoIds,
+                            receivedPhotosFromDb.map { it.photoId }
+                        )
 
                         return@concatMap Observable.just(photoIdsToGetFromServer)
                             .concatMap { photoIds ->
@@ -59,7 +62,9 @@ class GetReceivedPhotosUseCase(
             }
     }
 
-    private fun handleErrors(error: Throwable): Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>> {
+    private fun handleErrors(
+        error: Throwable
+    ): Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>> {
         if (error is GetReceivedPhotosException) {
             return when (error) {
                 is GetReceivedPhotosException.OnKnownError -> Either.Error(error.errorCode)
@@ -76,20 +81,32 @@ class GetReceivedPhotosUseCase(
         return getFreshPhotosFromServer(userId, photoIds)
             .concatMap { result ->
                 if (result is Either.Value) {
-                    return@concatMap Observables.zip(Observable.just(receivedPhotosFromDb), Observable.just(result.value), { fromDatabase, fromServer ->
-                        val list = mutableListOf<ReceivedPhoto>()
-                        list += fromDatabase
-                        list += fromServer
-
-                        return@zip Either.Value(list)
-                    })
+                    return@concatMap Observables.zip(
+                        Observable.just(receivedPhotosFromDb),
+                        Observable.just(result.value),
+                        this::combinePhotos
+                    )
                 }
 
                 return@concatMap Observable.just(Either.Error((result as Either.Error).error))
             }
     }
 
-    private fun getFreshPhotosFromServer(userId: String, photoIds: List<Long>): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
+    private fun combinePhotos(
+        fromDatabase: List<ReceivedPhoto>,
+        fromServer: MutableList<ReceivedPhoto>
+    ): Either.Value<MutableList<ReceivedPhoto>> {
+        val list = mutableListOf<ReceivedPhoto>()
+        list += fromDatabase
+        list += fromServer
+
+        return Either.Value(list)
+    }
+
+    private fun getFreshPhotosFromServer(
+        userId: String,
+        photoIds: List<Long>
+    ): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
         return Observable.fromCallable { photoIds.joinToString(Constants.PHOTOS_DELIMITER) }
             .concatMapSingle { photoIdsToBeRequested -> apiClient.getReceivedPhotos(userId, photoIdsToBeRequested) }
             .map { response ->

@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.di.module
 
-import com.kirakishou.photoexchange.helper.api.ApiClientImpl
+import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.helper.util.BitmapUtils
@@ -19,7 +19,7 @@ class UseCaseProviderModule {
     fun provideUploadPhotosUseCase(database: MyDatabase,
                                    takenPhotosRepository: TakenPhotosRepository,
                                    uploadedPhotosRepository: UploadedPhotosRepository,
-                                   apiClient: ApiClientImpl,
+                                   apiClient: ApiClient,
                                    timeUtils: TimeUtils,
                                    bitmapUtils: BitmapUtils,
                                    fileUtils: FileUtils): UploadPhotosUseCase {
@@ -32,28 +32,28 @@ class UseCaseProviderModule {
                                        takenPhotosRepository: TakenPhotosRepository,
                                        receivedPhotosRepository: ReceivedPhotosRepository,
                                        uploadedPhotosRepository: UploadedPhotosRepository,
-                                       apiClient: ApiClientImpl): ReceivePhotosUseCase {
+                                       apiClient: ApiClient): ReceivePhotosUseCase {
         return ReceivePhotosUseCase(database, takenPhotosRepository,
             receivedPhotosRepository, uploadedPhotosRepository, apiClient)
     }
 
     @Singleton
     @Provides
-    fun provideGetGalleryPhotosUseCase(apiClient: ApiClientImpl,
+    fun provideGetGalleryPhotosUseCase(apiClient: ApiClient,
                                        galleryPhotoRepository: GalleryPhotoRepository): GetGalleryPhotosUseCase {
         return GetGalleryPhotosUseCase(apiClient, galleryPhotoRepository)
     }
 
     @Singleton
     @Provides
-    fun provideReportPhotoUseCase(apiClient: ApiClientImpl,
+    fun provideReportPhotoUseCase(apiClient: ApiClient,
                                   galleryPhotoRepository: GalleryPhotoRepository): ReportPhotoUseCase {
         return ReportPhotoUseCase(apiClient, galleryPhotoRepository)
     }
 
     @Singleton
     @Provides
-    fun provideFavouritePhotoUseCase(apiClient: ApiClientImpl,
+    fun provideFavouritePhotoUseCase(apiClient: ApiClient,
                                      database: MyDatabase,
                                      galleryPhotoRepository: GalleryPhotoRepository): FavouritePhotoUseCase {
         return FavouritePhotoUseCase(apiClient, database, galleryPhotoRepository)
@@ -62,14 +62,14 @@ class UseCaseProviderModule {
     @Singleton
     @Provides
     fun provideGetUserIdUseCase(settingsRepository: SettingsRepository,
-                                apiClient: ApiClientImpl): GetUserIdUseCase {
+                                apiClient: ApiClient): GetUserIdUseCase {
         return GetUserIdUseCase(settingsRepository, apiClient)
     }
 
     @Singleton
     @Provides
     fun provideGetUploadedPhotosUseCase(uploadedPhotosRepository: UploadedPhotosRepository,
-                                        apiClient: ApiClientImpl): GetUploadedPhotosUseCase {
+                                        apiClient: ApiClient): GetUploadedPhotosUseCase {
         return GetUploadedPhotosUseCase(uploadedPhotosRepository, apiClient)
     }
 
@@ -78,13 +78,13 @@ class UseCaseProviderModule {
     fun provideGetReceivedPhotosUseCase(database: MyDatabase,
                                         uploadedPhotosRepository: UploadedPhotosRepository,
                                         receivedPhotosRepository: ReceivedPhotosRepository,
-                                        apiClient: ApiClientImpl): GetReceivedPhotosUseCase {
+                                        apiClient: ApiClient): GetReceivedPhotosUseCase {
         return GetReceivedPhotosUseCase(database, receivedPhotosRepository, uploadedPhotosRepository, apiClient)
     }
 
     @Singleton
     @Provides
-    fun provideGetGalleryPhotosInfoUseCase(apiClient: ApiClientImpl,
+    fun provideGetGalleryPhotosInfoUseCase(apiClient: ApiClient,
                                            galleryPhotoRepository: GalleryPhotoRepository): GetGalleryPhotosInfoUseCase {
         return GetGalleryPhotosInfoUseCase(apiClient, galleryPhotoRepository)
     }

@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.helper.api.ApiClientImpl
+import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosInfoMapper
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepository
 import com.kirakishou.photoexchange.helper.extension.minutes
@@ -16,7 +16,7 @@ import kotlinx.coroutines.experimental.rx2.rxSingle
 import timber.log.Timber
 
 class GetGalleryPhotosInfoUseCase(
-    private val apiClient: ApiClientImpl,
+    private val apiClient: ApiClient,
     private val galleryPhotoRepository: GalleryPhotoRepository
 ) {
     private val TAG = "GetGalleryPhotosInfoUseCase"

@@ -1,84 +1,119 @@
 package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.helper.api.ApiClientImpl
+import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosMapper
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepository
 import com.kirakishou.photoexchange.helper.util.Utils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
+import com.kirakishou.photoexchange.mvp.model.exception.GetGalleryPhotosException
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import io.reactivex.Single
-import kotlinx.coroutines.experimental.rx2.await
-import kotlinx.coroutines.experimental.rx2.rxSingle
+import io.reactivex.Observable
+import io.reactivex.rxkotlin.Observables
 import timber.log.Timber
 
 class GetGalleryPhotosUseCase(
-    private val apiClient: ApiClientImpl,
+    private val apiClient: ApiClient,
     private val galleryPhotoRepository: GalleryPhotoRepository
 ) {
     private val TAG = "GetGalleryPhotosUseCase"
 
-    fun loadPageOfPhotos(lastId: Long, photosPerPage: Int): Single<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
-        return rxSingle {
-            try {
-                Timber.tag(TAG).d("sending loadPageOfPhotos request...")
+    fun loadPageOfPhotos(
+        lastId: Long,
+        photosPerPage: Int
+    ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
+        Timber.tag(TAG).d("sending loadPageOfPhotos request...")
 
-                //get fresh photo ids from the server
-                val getGalleryPhotoIdsResponse = apiClient.getGalleryPhotoIds(lastId, photosPerPage).await()
-                val getGalleryPhotoIdsErrorCode = getGalleryPhotoIdsResponse.errorCode as ErrorCode.GetGalleryPhotosErrors
-
-                if (getGalleryPhotoIdsErrorCode !is ErrorCode.GetGalleryPhotosErrors.Ok) {
-                    return@rxSingle Either.Error(getGalleryPhotoIdsErrorCode)
+        return apiClient.getGalleryPhotoIds(lastId, photosPerPage).toObservable()
+            .concatMap { response ->
+                val errorCode = response.errorCode as ErrorCode.GetGalleryPhotosErrors
+                if (errorCode !is ErrorCode.GetGalleryPhotosErrors.Ok) {
+                    throw GetGalleryPhotosException.OnKnownError(errorCode)
                 }
 
-                val photosResultList = mutableListOf<GalleryPhoto>()
-                val galleryPhotoIds = getGalleryPhotoIdsResponse.galleryPhotoIds
-                if (galleryPhotoIds.isEmpty()) {
-                    return@rxSingle Either.Value(photosResultList)
-                }
+                return@concatMap Observable.just(response.galleryPhotoIds)
+                    .concatMap { galleryPhotoIds ->
+                        val galleryPhotosFromDb = galleryPhotoRepository.findMany(galleryPhotoIds)
+                        val photoIdsToGetFromServer = Utils.filterListAlreadyContaining(
+                            galleryPhotoIds,
+                            galleryPhotosFromDb.map { it.galleryPhotoId }
+                        )
 
-                //get photos by the ids from the database
-                val galleryPhotosFromDb = galleryPhotoRepository.findMany(galleryPhotoIds)
-                val photoIdsToGetFromServer = Utils.filterListAlreadyContaining(galleryPhotoIds, galleryPhotosFromDb.map { it.galleryPhotoId })
-                photosResultList.addAll(galleryPhotosFromDb)
+                        return@concatMap Observable.just(photoIdsToGetFromServer)
+                            .concatMap { photoIds ->
+                                if (photoIds.isNotEmpty()) {
+                                    return@concatMap getFreshPhotosAndConcatWithCached(photoIdsToGetFromServer, galleryPhotosFromDb)
+                                }
 
-                //if we got photo ids that are not cached in the DB yet - get the fresh photos
-                //by these ids from the server and cache them in the DB
-                if (photoIdsToGetFromServer.isNotEmpty()) {
-                    val result = getFreshPhotosFromServer(photoIdsToGetFromServer)
-                    if (result is Either.Error) {
-                        Timber.tag(TAG).w("Could not get fresh photos from the server, errorCode = ${result.error}")
-                        return@rxSingle Either.Error(result.error)
+                                return@concatMap Observable.just(Either.Value(galleryPhotosFromDb))
+                            }
                     }
-
-                    (result as Either.Value)
-                    photosResultList += result.value
-                }
-
-                photosResultList.sortByDescending { it.galleryPhotoId }
-                return@rxSingle Either.Value(photosResultList)
-            } catch (error: Throwable) {
-                Timber.tag(TAG).e(error)
-                return@rxSingle Either.Error(ErrorCode.GetGalleryPhotosErrors.UnknownError())
             }
-        }
+            .onErrorReturn { error ->
+                Timber.tag(TAG).e(error)
+                return@onErrorReturn handleErrors(error)
+            }
     }
 
-    private suspend fun getFreshPhotosFromServer(photoIds: List<Long>): Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>> {
-        val photoIdsToBeRequested = photoIds.joinToString(Constants.PHOTOS_DELIMITER)
-
-        val response = apiClient.getGalleryPhotos(photoIdsToBeRequested).await()
-        val errorCode = response.errorCode as ErrorCode.GetGalleryPhotosErrors
-
-        if (errorCode !is ErrorCode.GetGalleryPhotosErrors.Ok) {
-            return Either.Error(errorCode)
+    private fun handleErrors(
+        error: Throwable
+    ): Either<ErrorCode.GetGalleryPhotosErrors, MutableList<GalleryPhoto>> {
+        if (error is GetGalleryPhotosException) {
+            return when (error) {
+                is GetGalleryPhotosException.OnKnownError -> Either.Error(error.errorCode)
+            }
         }
 
-        if (!galleryPhotoRepository.saveMany(response.galleryPhotos)) {
-            return Either.Error(ErrorCode.GetGalleryPhotosErrors.LocalDatabaseError())
-        }
+        return Either.Error(ErrorCode.GetGalleryPhotosErrors.UnknownError())
+    }
 
-        return Either.Value(GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(response.galleryPhotos))
+    private fun getFreshPhotosAndConcatWithCached(
+        photoIdsToGetFromServer: List<Long>,
+        galleryPhotosFromDb: List<GalleryPhoto>
+    ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
+        return getFreshPhotosFromServer(photoIdsToGetFromServer)
+            .concatMap { result ->
+                if (result is Either.Value) {
+                    return@concatMap Observables.zip(
+                        Observable.just(galleryPhotosFromDb),
+                        Observable.just(result.value),
+                        this::combinePhotos
+                    )
+                }
+
+                return@concatMap Observable.just(Either.Error((result as Either.Error).error))
+            }
+    }
+
+    private fun combinePhotos(
+        fromDatabase: List<GalleryPhoto>,
+        fromServer: List<GalleryPhoto>
+    ): Either.Value<MutableList<GalleryPhoto>> {
+        val list = mutableListOf<GalleryPhoto>()
+        list += fromDatabase
+        list += fromServer
+
+        return Either.Value(list)
+    }
+
+    private fun getFreshPhotosFromServer(
+        photoIds: List<Long>
+    ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
+        return Observable.fromCallable { photoIds.joinToString(Constants.PHOTOS_DELIMITER) }
+            .concatMapSingle { photoIdsToBeRequested -> apiClient.getGalleryPhotos(photoIdsToBeRequested) }
+            .map { response ->
+                val errorCode = response.errorCode as ErrorCode.GetGalleryPhotosErrors
+
+                if (errorCode !is ErrorCode.GetGalleryPhotosErrors.Ok) {
+                    return@map Either.Error(errorCode)
+                }
+
+                if (!galleryPhotoRepository.saveMany(response.galleryPhotos)) {
+                    return@map Either.Error(ErrorCode.GetGalleryPhotosErrors.LocalDatabaseError())
+                }
+
+                return@map Either.Value(GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(response.galleryPhotos))
+            }
     }
 }
