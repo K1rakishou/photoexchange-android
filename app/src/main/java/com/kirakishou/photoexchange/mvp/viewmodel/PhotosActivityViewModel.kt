@@ -81,7 +81,6 @@ class PhotosActivityViewModel(
 
                 val userId = settingsRepository.getUserId()
                 return@concatMap getGalleryPhotosInfoUseCase.loadGalleryPhotosInfo(userId, result.value)
-                    .toObservable()
             }
             .doOnError { Timber.tag(TAG).e(it) }
     }

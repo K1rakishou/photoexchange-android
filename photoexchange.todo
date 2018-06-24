@@ -70,7 +70,7 @@
 
  ☐ Убрать короутины 
    ✔ из GetGalleryPhotosUseCase @high @today @done (18-06-24 14:56)
-   ☐ из GetGalleryPhotosInfoUseCase @high @today
+   ✔ из GetGalleryPhotosInfoUseCase @high @today @done (18-06-24 15:13)
 
  ☐ Тесты
    ✔ UploadPhotosUseCase @today @done (18-06-23 17:35)
