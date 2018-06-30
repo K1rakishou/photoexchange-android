@@ -11,7 +11,8 @@ import dagger.Subcomponent
 
 @PerService
 @Subcomponent(modules = [
-    UploadPhotoServiceModule::class
+    UploadPhotoServiceModule::class,
+    LocationServiceModule::class
 ])
 interface UploadPhotoServiceComponent {
     fun inject(service: UploadPhotoService)

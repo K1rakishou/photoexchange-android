@@ -8,7 +8,7 @@ import com.kirakishou.photoexchange.mvp.model.other.LonLat
 /**
  * Created by kirakishou on 3/17/2018.
  */
-class SettingsRepository(
+open class SettingsRepository(
     private val database: MyDatabase
 ) {
     private val settingsDao = database.settingsDao()

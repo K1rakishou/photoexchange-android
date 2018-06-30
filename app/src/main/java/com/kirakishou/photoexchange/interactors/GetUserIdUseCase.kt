@@ -7,13 +7,13 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
 import timber.log.Timber
 
-class GetUserIdUseCase(
+open class GetUserIdUseCase(
     private val settingsRepository: SettingsRepository,
     private val apiClient: ApiClient
 ) {
     private val TAG = "GetUserIdUseCase"
 
-    fun getUserId(): Single<Either<ErrorCode.GetUserIdError, String>> {
+    open fun getUserId(): Single<Either<ErrorCode.GetUserIdError, String>> {
         return Single.fromCallable { settingsRepository.getUserId() }
             .flatMap { userId ->
                 if (userId.isNotEmpty()) {

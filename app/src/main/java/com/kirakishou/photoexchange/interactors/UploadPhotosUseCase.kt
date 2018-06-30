@@ -20,7 +20,7 @@ import io.reactivex.Single
 import timber.log.Timber
 import java.io.File
 
-class UploadPhotosUseCase(
+open class UploadPhotosUseCase(
     private val database: MyDatabase,
     private val takenPhotosRepository: TakenPhotosRepository,
     private val uploadedPhotosRepository: UploadedPhotosRepository,
@@ -31,7 +31,7 @@ class UploadPhotosUseCase(
 ) {
     private val TAG = "UploadPhotosUseCase"
 
-    fun uploadPhoto(photo: TakenPhoto, userId: String, location: LonLat): Observable<UploadedPhotosFragmentEvent.PhotoUploadEvent> {
+    open fun uploadPhoto(photo: TakenPhoto, userId: String, location: LonLat): Observable<UploadedPhotosFragmentEvent.PhotoUploadEvent> {
         return Observable.create { emitter -> doUpload(photo, location, userId, emitter) }
     }
 

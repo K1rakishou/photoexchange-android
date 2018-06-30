@@ -83,7 +83,7 @@
    ☐ FavouritePhotoUseCase @high
    ☐ GetGalleryPhotosInfoUseCase @high
    ☐ GetGalleryPhotosUseCase @high
-   ☐ GetUploadedPhotosUseCase @high
+   ✔ GetUploadedPhotosUseCase @high @done (18-06-30 14:07)
    ☐ GetUserIdUseCase @high
    ☐ ReportPhotoUseCase @high
    ☐ ReceivePhotosServicePresenter @high

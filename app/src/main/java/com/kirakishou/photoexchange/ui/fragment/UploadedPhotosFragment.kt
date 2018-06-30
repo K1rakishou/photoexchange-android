@@ -56,6 +56,11 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
     private val TAG = "UploadedPhotosFragment"
     private val PHOTO_ADAPTER_VIEW_WIDTH = DEFAULT_ADAPTER_ITEM_WIDTH
     private val failedToUploadPhotoButtonClicksSubject = PublishSubject.create<UploadedPhotosAdapter.UploadedPhotosAdapterButtonClick>().toSerialized()
+
+    /**
+     * Signals that all queued up photos has been successfully uploaded and that we should get the rest of the uploaded
+     * photos from the server. NOTE: should not be called when some error has happened while uploading
+     * */
     private val onPhotosUploadedSubject = BehaviorSubject.createDefault(false).toSerialized()
     private var isFragmentFreshlyCreated = true
     private var viewState = UploadedPhotosFragmentViewState()

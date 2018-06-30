@@ -116,11 +116,11 @@ open class TakenPhotosRepository(
         return takenPhotoDao.countAllByStates(states)
     }
 
-    fun updateStates(oldState: PhotoState, newState: PhotoState) {
+    open fun updateStates(oldState: PhotoState, newState: PhotoState) {
         takenPhotoDao.updateStates(oldState, newState)
     }
 
-    fun findAllByState(state: PhotoState): List<TakenPhoto> {
+    open fun findAllByState(state: PhotoState): List<TakenPhoto> {
         val resultList = mutableListOf<TakenPhoto>()
 
         database.transactional {
