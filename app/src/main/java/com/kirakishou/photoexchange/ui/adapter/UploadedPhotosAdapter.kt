@@ -397,9 +397,15 @@ class UploadedPhotosAdapter(
                     context.getDrawable(R.drawable.ic_done_all)
                 }
 
+                val color = if (!uploadedPhoto.hasReceiverInfo) {
+                    ColorDrawable(context.resources.getColor(R.color.photo_state_uploaded_color))
+                } else {
+                    ColorDrawable(context.resources.getColor(R.color.photo_state_exchanged_color))
+                }
+
                 holder.photoidTextView.text = uploadedPhoto.photoId.toString()
                 holder.receivedIconImageView.setImageDrawable(drawable)
-                holder.photoUploadingStateIndicator.background = ColorDrawable(context.resources.getColor(R.color.photo_state_uploaded_color))
+                holder.photoUploadingStateIndicator.background = color
                 holder.receivedIconImageView.visibility = View.VISIBLE
 
                 uploadedPhoto.photoName.let { photoName ->

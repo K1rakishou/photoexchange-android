@@ -10,4 +10,5 @@
     <color name="photo_state_failed_to_upload_color">#ffc83625</color>
     <color name="photo_state_uploading_color">#fff2e72b</color>
     <color name="photo_state_uploaded_color">#ff25c828</color>
+    <color name="photo_state_exchanged_color">#ff2825c8</color>
 </resources>
