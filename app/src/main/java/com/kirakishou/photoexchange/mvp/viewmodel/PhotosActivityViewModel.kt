@@ -229,9 +229,15 @@ class PhotosActivityViewModel(
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
+    fun tryToFixStalledPhotos(): Completable {
+        return Completable.fromAction {
+            takenPhotosRepository.tryToFixStalledPhotos()
+        }
+    }
+
     fun loadFailedToUploadPhotos(): Single<List<TakenPhoto>> {
         return Single.fromCallable {
-            return@fromCallable  takenPhotosRepository.findAllByState(PhotoState.FAILED_TO_UPLOAD)
+            return@fromCallable takenPhotosRepository.findAllByState(PhotoState.FAILED_TO_UPLOAD)
                 .sortedBy { it.id }
         }.subscribeOn(schedulerProvider.IO())
             .doOnError { Timber.tag(TAG).e(it) }

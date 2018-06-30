@@ -204,4 +204,17 @@ open class TakenPhotosRepository(
     fun findTempFile(id: Long): TempFileEntity {
         return tempFileRepository.findById(id)
     }
+
+    fun tryToFixStalledPhotos() {
+        val stillUploadingPhotos = findAllByState(PhotoState.PHOTO_UPLOADING)
+
+        for (photo in stillUploadingPhotos) {
+            if (!photo.fileExists()) {
+                deletePhotoById(photo.id)
+                continue
+            }
+
+            updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
+        }
+    }
 }

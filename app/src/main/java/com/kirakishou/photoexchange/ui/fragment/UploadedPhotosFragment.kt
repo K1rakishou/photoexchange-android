@@ -162,7 +162,8 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
     }
 
     private fun loadPhotos() {
-        compositeDisposable += viewModel.loadFailedToUploadPhotos()
+        compositeDisposable += viewModel.tryToFixStalledPhotos()
+            .andThen(viewModel.loadFailedToUploadPhotos())
             .flatMap { failedToUploadPhotos ->
                 if (failedToUploadPhotos.isNotEmpty()) {
                     return@flatMap Single.just(failedToUploadPhotos)
