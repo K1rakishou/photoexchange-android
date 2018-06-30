@@ -65,7 +65,7 @@ open class UploadPhotosUseCase(
                     .doOnEvent { _, _ -> fileUtils.deleteFile(photoFile) }
                     //since we subscribe in a singleton - we don't really need to care about disposing the disposable
                     .subscribe(
-                        { uploaded -> handleOnNext(uploaded, emitter, photo) },
+                        { _ -> emitter.onComplete() },
                         { error -> handleOnError(photo, emitter, error) }
                     )
             } catch (error: Throwable) {
@@ -86,14 +86,6 @@ open class UploadPhotosUseCase(
             emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError(errorCode))
         } else {
             emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError(error))
-        }
-
-        emitter.onComplete()
-    }
-
-    private fun handleOnNext(uploaded: Boolean, emitter: ObservableEmitter<UploadedPhotosFragmentEvent.PhotoUploadEvent>, photo: TakenPhoto) {
-        if (uploaded) {
-            emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUploaded(photo))
         }
 
         emitter.onComplete()

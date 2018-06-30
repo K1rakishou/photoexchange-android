@@ -2,7 +2,6 @@ package com.kirakishou.photoexchange.di.module
 
 import com.kirakishou.photoexchange.di.scope.PerService
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
@@ -20,11 +19,9 @@ class UploadPhotoServiceModule {
     @PerService
     @Provides
     fun provideUploadPhotoServicePresenter(myTakenPhotosRepository: TakenPhotosRepository,
-                                           settingsRepository: SettingsRepository,
                                            schedulerProvider: SchedulerProvider,
                                            uploadPhotosUseCase: UploadPhotosUseCase,
                                            getUserIdUseCase: GetUserIdUseCase): UploadPhotoServicePresenter {
-        return UploadPhotoServicePresenter(myTakenPhotosRepository,
-            settingsRepository, schedulerProvider, uploadPhotosUseCase, getUserIdUseCase)
+        return UploadPhotoServicePresenter(myTakenPhotosRepository, schedulerProvider, uploadPhotosUseCase, getUserIdUseCase)
     }
 }

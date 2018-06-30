@@ -3,7 +3,6 @@ package com.kirakishou.photoexchange.service
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
@@ -28,7 +27,6 @@ import java.util.concurrent.TimeUnit
  */
 open class UploadPhotoServicePresenter(
     private val takenPhotosRepository: TakenPhotosRepository,
-    private val settingsRepository: SettingsRepository,
     private val schedulerProvider: SchedulerProvider,
     private val uploadPhotosUseCase: UploadPhotosUseCase,
     private val getUserIdUseCase: GetUserIdUseCase
@@ -60,13 +58,12 @@ open class UploadPhotoServicePresenter(
                 val userIdObservable = getUserId()
 
                 return@concatMap Observables.zip(currentLocationObservable, userIdObservable)
-                    .concatMap { (currentLocation, userId) -> startUploading(userId, currentLocation) }
+                    .concatMap { (currentLocation, userId) -> doUploading(userId, currentLocation) }
             }
             .doOnNext { hasErrors ->
                 if (!hasErrors) {
                     updateServiceNotification(NotificationType.Success("All photos has been successfully uploaded"))
                 } else {
-                    markAllPhotosAsFailed()
                     updateServiceNotification(NotificationType.Error("Could not upload one or more photos"))
                 }
             }
@@ -79,7 +76,7 @@ open class UploadPhotoServicePresenter(
             .onErrorReturnItem(Unit)
     }
 
-    private fun startUploading(userId: String, currentLocation: LonLat): Observable<Boolean> {
+    private fun doUploading(userId: String, currentLocation: LonLat): Observable<Boolean> {
         val queuedUpPhotos = takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP)
         if (queuedUpPhotos.isEmpty()) {
             //should not really happen, since we make a check before starting the service
@@ -87,14 +84,7 @@ open class UploadPhotoServicePresenter(
         }
 
         return Observable.fromIterable(queuedUpPhotos)
-            .concatMap { photo ->
-                //send event on every photo
-                sendEvent(UploadPhotoEvent.UploadingEvent(
-                    UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadStart(photo))
-                )
-
-                return@concatMap uploadOnePhoto(photo, userId, currentLocation)
-            }
+            .concatMap { photo -> startUploadingInternal(photo, userId, currentLocation) }
             .toList()
             .map { results -> results.none { result -> !result } }
             //1 second delay before starting to upload the next photo
@@ -108,9 +98,28 @@ open class UploadPhotoServicePresenter(
             }
     }
 
+    private fun startUploadingInternal(photo: TakenPhoto, userId: String, currentLocation: LonLat): Observable<Boolean>? {
+        //send event on every photo
+        sendEvent(UploadPhotoEvent.UploadingEvent(
+            UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadStart(photo))
+        )
+
+        return uploadOnePhoto(photo, userId, currentLocation)
+            .doOnNext { hasErrors ->
+                if (!hasErrors) {
+                    sendEvent(UploadPhotoEvent.UploadingEvent(
+                        UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUploaded(photo))
+                    )
+                }
+            }
+    }
+
     private fun uploadOnePhoto(photo: TakenPhoto, userId: String, currentLocation: LonLat): Observable<Boolean> {
         return Observable.just(Unit)
-            .concatMap { uploadPhotosUseCase.uploadPhoto(photo, userId, currentLocation) }
+            .concatMap {
+                return@concatMap uploadPhotosUseCase.uploadPhoto(photo, userId, currentLocation)
+                    .onErrorReturn { error -> UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError(error) }
+            }
             .doOnNext { event -> handleEvents(photo, event) }
             .toList()
             .map(this::hasErrorEvents)
@@ -139,7 +148,12 @@ open class UploadPhotoServicePresenter(
                 )
             }
             is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError -> {
-                throw event.error
+                Timber.tag(TAG).e(event.error)
+
+                markPhotoAsFailed(takenPhoto)
+                sendEvent(UploadPhotoEvent.UploadingEvent(
+                    UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUpload(takenPhoto, ErrorCode.UploadPhotoErrors.UnknownError()))
+                )
             }
             else -> throw IllegalArgumentException("Unknown event ${event::class.java}")
         }
