@@ -87,7 +87,11 @@
    ☐ GetUserIdUseCase @high
    ☐ ReportPhotoUseCase @high
    ☐ ReceivePhotosServicePresenter @high
-   ☐ UploadPhotoServicePresenter @high
+   ✔ UploadPhotoServicePresenter @high @done (18-06-30 19:55)
+
+ ☐ Пофиксить попытку получить загруженные фото с сервера после неудачной попытки загрузки фото @high
+
+ ☐ Добавить метод для фикса фото зависших в состоянии UPLOADING @high
 
 Сервер
 

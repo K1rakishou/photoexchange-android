@@ -91,7 +91,10 @@ class ReceivePhotosServicePresenter(
             is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnReceivedPhoto -> {
                 sendEvent(ReceivePhotoEvent.OnReceivedPhoto(event.receivedPhoto, event.takenPhotoName))
             }
-            else -> throw IllegalStateException("Should not happen")
+            is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnKnownError -> {
+                //TODO
+            }
+            else -> throw IllegalStateException("Should not happen, event is ${event}")
         }.safe
     }
 

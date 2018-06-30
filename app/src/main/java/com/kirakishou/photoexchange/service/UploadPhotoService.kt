@@ -15,8 +15,10 @@ import com.kirakishou.photoexchange.helper.location.LocationService
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
+import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.lang.ref.WeakReference
 import javax.inject.Inject
@@ -78,7 +80,9 @@ class UploadPhotoService : Service() {
     fun startPhotosUploading() {
         requireNotNull(callback.get())
 
-        compositeDisposable += locationService.getCurrentLocation()
+        compositeDisposable += Observable.just(Unit)
+            .subscribeOn(Schedulers.io())
+            .concatMap { locationService.getCurrentLocation() }
             .subscribe({ location ->
                 presenter.uploadPhotos(location)
             }, { error ->
