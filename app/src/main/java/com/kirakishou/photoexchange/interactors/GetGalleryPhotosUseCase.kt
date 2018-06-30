@@ -8,6 +8,7 @@ import com.kirakishou.photoexchange.helper.util.Utils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.exception.GetGalleryPhotosException
 import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotoIdsResponse
+import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Observable
@@ -72,28 +73,34 @@ class GetGalleryPhotosUseCase(
         )
 
         return Observable.just(photoIdsToGetFromServer)
-            .concatMap { photoIds ->
-                if (photoIds.isNotEmpty()) {
-                    return@concatMap getFreshPhotosFromServer(photoIdsToGetFromServer)
-                        .concatMap { result ->
-                            if (result is Either.Value) {
-                                return@concatMap Observables.zip(
-                                    Observable.just(galleryPhotosFromDb),
-                                    Observable.just(result.value),
-                                    this::combinePhotos
-                                )
-                            }
-
-                            //if we could not get fresh photos from server - return what we could find in the database
-                            return@concatMap Observable.just(Either.Value(galleryPhotosFromDb))
-                        }
-                }
-
-                return@concatMap Observable.just(Either.Value(galleryPhotosFromDb))
-            }
+            .concatMap { photoIds -> combinePhotos(photoIds, photoIdsToGetFromServer, galleryPhotosFromDb) }
     }
 
     private fun combinePhotos(
+        photoIds: List<Long>,
+        photoIdsToGetFromServer: List<Long>,
+        galleryPhotosFromDb: List<GalleryPhoto>
+    ): Observable<Either.Value<List<GalleryPhoto>>> {
+        if (photoIds.isNotEmpty()) {
+            return getFreshPhotosFromServer(photoIdsToGetFromServer)
+                .concatMap { result ->
+                    if (result is Either.Value) {
+                        return@concatMap Observables.zip(
+                            Observable.just(galleryPhotosFromDb),
+                            Observable.just(result.value),
+                            this::combineFunction
+                        )
+                    }
+
+                    //if we could not get fresh photos from server - return what we could find in the database
+                    return@concatMap Observable.just(Either.Value(galleryPhotosFromDb))
+                }
+        }
+
+        return Observable.just(Either.Value(galleryPhotosFromDb))
+    }
+
+    private fun combineFunction(
         fromDatabase: List<GalleryPhoto>,
         fromServer: List<GalleryPhoto>
     ): Either.Value<MutableList<GalleryPhoto>> {
@@ -109,18 +116,20 @@ class GetGalleryPhotosUseCase(
     ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
         return Observable.fromCallable { photoIds.joinToString(Constants.PHOTOS_DELIMITER) }
             .concatMapSingle { photoIdsToBeRequested -> apiClient.getGalleryPhotos(photoIdsToBeRequested) }
-            .map { response ->
-                val errorCode = response.errorCode as ErrorCode.GetGalleryPhotosErrors
+            .map(this::cacheFreshPhotos)
+    }
 
-                if (errorCode !is ErrorCode.GetGalleryPhotosErrors.Ok) {
-                    return@map Either.Error(errorCode)
-                }
+    private fun cacheFreshPhotos(response: GalleryPhotosResponse): Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>> {
+        val errorCode = response.errorCode as ErrorCode.GetGalleryPhotosErrors
 
-                if (!galleryPhotoRepository.saveMany(response.galleryPhotos)) {
-                    return@map Either.Error(ErrorCode.GetGalleryPhotosErrors.LocalDatabaseError())
-                }
+        if (errorCode !is ErrorCode.GetGalleryPhotosErrors.Ok) {
+            return Either.Error(errorCode)
+        }
 
-                return@map Either.Value(GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(response.galleryPhotos))
-            }
+        if (!galleryPhotoRepository.saveMany(response.galleryPhotos)) {
+            return Either.Error(ErrorCode.GetGalleryPhotosErrors.LocalDatabaseError())
+        }
+
+        return Either.Value(GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(response.galleryPhotos))
     }
 }

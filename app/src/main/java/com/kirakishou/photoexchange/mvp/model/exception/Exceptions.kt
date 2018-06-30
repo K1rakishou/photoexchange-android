@@ -36,3 +36,7 @@ sealed class GetGalleryPhotosException : Exception() {
 sealed class GetGalleryPhotosInfoException : Exception() {
     class OnKnownError(val errorCode: ErrorCode.GetGalleryPhotosErrors) : GetGalleryPhotosInfoException()
 }
+
+sealed class GetUploadedPhotosException : Exception() {
+    class OnKnownError(val errorCode: ErrorCode.GetUploadedPhotosErrors) : GetUploadedPhotosException()
+}

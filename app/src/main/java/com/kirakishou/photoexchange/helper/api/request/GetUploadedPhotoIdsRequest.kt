@@ -1,6 +1,5 @@
 package com.kirakishou.photoexchange.helper.api.request
 
-import com.google.gson.Gson
 import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider

@@ -21,7 +21,7 @@ open class UploadedPhotosRepository(
         return uploadedPhotoDao.save(uploadedPhotoEntity).isSuccess()
     }
 
-    fun saveMany(uploadedPhotoDataList: List<GetUploadedPhotosResponse.UploadedPhotoData>): Boolean {
+    open fun saveMany(uploadedPhotoDataList: List<GetUploadedPhotosResponse.UploadedPhotoData>): Boolean {
         return database.transactional {
             for (uploadedPhotoData in uploadedPhotoDataList) {
                 val photo = UploadedPhotosMapper.FromResponse.ToEntity.toUploadedPhotoEntity(uploadedPhotoData)
@@ -34,7 +34,7 @@ open class UploadedPhotosRepository(
         }
     }
 
-    fun findMany(photoIds: List<Long>): List<UploadedPhoto> {
+    open fun findMany(photoIds: List<Long>): List<UploadedPhoto> {
         return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.findMany(photoIds))
     }
 
