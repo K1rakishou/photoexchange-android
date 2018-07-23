@@ -7,7 +7,7 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Observable
 import timber.log.Timber
 
-class ReportPhotoUseCase(
+open class ReportPhotoUseCase(
     private val apiClient: ApiClient,
     private val galleryPhotoRepository: GalleryPhotoRepository
 ) {

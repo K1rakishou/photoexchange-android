@@ -8,7 +8,7 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Observable
 import timber.log.Timber
 
-class FavouritePhotoUseCase(
+open class FavouritePhotoUseCase(
     private val apiClient: ApiClient,
     private val database: MyDatabase,
     private val galleryPhotoRepository: GalleryPhotoRepository

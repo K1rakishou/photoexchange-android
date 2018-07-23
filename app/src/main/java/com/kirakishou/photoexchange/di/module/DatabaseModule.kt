@@ -70,8 +70,8 @@ open class DatabaseModule(
 
     @Singleton
     @Provides
-    open fun provideUploadedPhotoRepository(database: MyDatabase): UploadedPhotosRepository {
-        return UploadedPhotosRepository(database)
+    open fun provideUploadedPhotoRepository(database: MyDatabase, timeUtils: TimeUtils): UploadedPhotosRepository {
+        return UploadedPhotosRepository(database, timeUtils)
     }
 
     @Singleton

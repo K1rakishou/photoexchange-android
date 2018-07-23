@@ -71,8 +71,7 @@ class PhotosActivityViewModel(
     ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
         return Observable.just(Unit)
             .subscribeOn(schedulerProvider.IO())
-            .concatMap { clearPhotoIdsCache(isFragmentFreshlyCreated) }
-            .concatMap { clearGalleryPhotoIdsCache() }
+            .concatMap { clearPhotoIdsCache(isFragmentFreshlyCreated, CachedPhotoIdEntity.PhotoType.GalleryPhoto) }
             .concatMap { loadPageOfGalleryPhotos(isFragmentFreshlyCreated, lastId, photosPerPage) }
             .concatMap { result ->
                 if (result !is Either.Value) {
@@ -92,7 +91,7 @@ class PhotosActivityViewModel(
     ): Observable<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>> {
         return Observable.just(Unit)
             .subscribeOn(schedulerProvider.IO())
-            .concatMap { clearPhotoIdsCache(isFragmentFreshlyCreated) }
+            .concatMap { clearPhotoIdsCache(isFragmentFreshlyCreated, CachedPhotoIdEntity.PhotoType.UploadedPhoto) }
             .concatMap { Observable.fromCallable { settingsRepository.getUserId() } }
             .concatMap { userId -> loadPageOfUploadedPhotos(userId, isFragmentFreshlyCreated, lastId, photosPerPage) }
             .doOnError { Timber.tag(TAG).e(it) }
@@ -105,7 +104,7 @@ class PhotosActivityViewModel(
     ): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
         return Observable.just(Unit)
             .subscribeOn(schedulerProvider.IO())
-            .concatMap { clearPhotoIdsCache(isFragmentFreshlyCreated) }
+            .concatMap { clearPhotoIdsCache(isFragmentFreshlyCreated, CachedPhotoIdEntity.PhotoType.ReceivedPhoto) }
             .concatMap { Observable.fromCallable { settingsRepository.getUserId() } }
             .concatMap { userId -> loadPageOfReceivedPhotos(userId, isFragmentFreshlyCreated, lastId, photosPerPage) }
             .doOnNext { result ->
@@ -133,7 +132,11 @@ class PhotosActivityViewModel(
                     }
                 }
                 .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-                .doOnEach { intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.UiEvents.HideProgressFooter()) }
+                .doOnEach { event ->
+                    if (event.isOnNext || event.isOnError) {
+                        intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.UiEvents.HideProgressFooter())
+                    }
+                }
                 .delay(PROGRESS_FOOTER_REMOVE_DELAY_MS, TimeUnit.MILLISECONDS)
         } else {
             return Observable.fromCallable {
@@ -164,7 +167,11 @@ class PhotosActivityViewModel(
                     }
                 }
                 .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-                .doOnEach { intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
+                .doOnEach { event ->
+                    if (event.isOnNext || event.isOnError) {
+                        intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter())
+                    }
+                }
                 .delay(PROGRESS_FOOTER_REMOVE_DELAY_MS, TimeUnit.MILLISECONDS)
         } else {
             return Observable.fromCallable {
@@ -195,7 +202,11 @@ class PhotosActivityViewModel(
                     }
                 }
                 .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
-                .doOnEach { intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter()) }
+                .doOnEach { event ->
+                    if (event.isOnNext || event.isOnError) {
+                        intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter())
+                    }
+                }
                 .delay(PROGRESS_FOOTER_REMOVE_DELAY_MS, TimeUnit.MILLISECONDS)
         } else {
             return Observable.fromCallable {
@@ -292,13 +303,14 @@ class PhotosActivityViewModel(
         }
     }
 
-    private fun clearPhotoIdsCache(isFragmentFreshlyCreated: Boolean): Observable<Unit> {
+    private fun clearPhotoIdsCache(isFragmentFreshlyCreated: Boolean,
+                                   photoType: CachedPhotoIdEntity.PhotoType): Observable<Unit> {
         if (!isFragmentFreshlyCreated) {
             return Observable.just(Unit)
         }
 
         return Observable.fromCallable {
-            cachedPhotoIdRepository.deleteAll()
+            cachedPhotoIdRepository.deleteAll(photoType)
         }
     }
 }

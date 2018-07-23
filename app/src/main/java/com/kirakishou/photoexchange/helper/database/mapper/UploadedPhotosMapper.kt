@@ -9,19 +9,20 @@ object UploadedPhotosMapper {
 
     object FromResponse {
         object ToEntity {
-            fun toUploadedPhotoEntity(uploadedPhotoData: GetUploadedPhotosResponse.UploadedPhotoData): UploadedPhotoEntity {
+            fun toUploadedPhotoEntity(time: Long, uploadedPhotoData: GetUploadedPhotosResponse.UploadedPhotoData): UploadedPhotoEntity {
                 return UploadedPhotoEntity.create(
                     uploadedPhotoData.photoName,
                     uploadedPhotoData.photoId,
                     uploadedPhotoData.uploaderLon,
                     uploadedPhotoData.uploaderLat,
                     uploadedPhotoData.hasReceivedInfo,
+                    time,
                     uploadedPhotoData.uploadedOn
                 )
             }
 
-            fun toUploadedPhotoEntities(uploadedPhotoDataList: List<GetUploadedPhotosResponse.UploadedPhotoData>): List<UploadedPhotoEntity> {
-                return uploadedPhotoDataList.map { toUploadedPhotoEntity(it) }
+            fun toUploadedPhotoEntities(time: Long, uploadedPhotoDataList: List<GetUploadedPhotosResponse.UploadedPhotoData>): List<UploadedPhotoEntity> {
+                return uploadedPhotoDataList.map { toUploadedPhotoEntity(time, it) }
             }
         }
 
@@ -64,13 +65,14 @@ object UploadedPhotosMapper {
 
     object FromObject {
         object ToEntity {
-            fun toUploadedPhotoEntity(photoId: Long, photoName: String, lon: Double, lat: Double, uploadedOn: Long): UploadedPhotoEntity {
+            fun toUploadedPhotoEntity(photoId: Long, photoName: String, lon: Double, lat: Double, time: Long, uploadedOn: Long): UploadedPhotoEntity {
                 return UploadedPhotoEntity.create(
                     photoName,
                     photoId,
                     lon,
                     lat,
                     false,
+                    time,
                     uploadedOn
                 )
             }

@@ -60,9 +60,9 @@ class GetUploadedPhotosUseCaseTest {
             .assertTerminated()
             .awaitTerminalEvent()
 
-        Mockito.verifyNoMoreInteractions(uploadedPhotosRepository)
-
         Mockito.verify(apiClient, Mockito.times(1)).getUploadedPhotoIds(userId, lastId, photosPerPage)
+
+        Mockito.verifyNoMoreInteractions(uploadedPhotosRepository)
         Mockito.verifyNoMoreInteractions(apiClient)
     }
 
@@ -85,9 +85,9 @@ class GetUploadedPhotosUseCaseTest {
                 (value as Either.Value).value.isEmpty()
             }
 
-        Mockito.verifyNoMoreInteractions(uploadedPhotosRepository)
-
         Mockito.verify(apiClient, Mockito.times(1)).getUploadedPhotoIds(userId, lastId, photosPerPage)
+
+        Mockito.verifyNoMoreInteractions(uploadedPhotosRepository)
         Mockito.verifyNoMoreInteractions(apiClient)
     }
 
@@ -109,6 +109,7 @@ class GetUploadedPhotosUseCaseTest {
             .thenReturn(Single.just(GetUploadedPhotoIdsResponse.success(photoIds)))
         Mockito.`when`(uploadedPhotosRepository.findMany(photoIds))
             .thenReturn(uploadedPhotos)
+        Mockito.doNothing().`when`(uploadedPhotosRepository).deleteOld()
 
         val events = getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
             .test()
@@ -129,9 +130,10 @@ class GetUploadedPhotosUseCaseTest {
         assertEquals(5L, values[4].photoId)
 
         Mockito.verify(uploadedPhotosRepository, Mockito.times(1)).findMany(photoIds)
-        Mockito.verifyNoMoreInteractions(uploadedPhotosRepository)
-
+        Mockito.verify(uploadedPhotosRepository, Mockito.times(1)).deleteOld()
         Mockito.verify(apiClient, Mockito.times(1)).getUploadedPhotoIds(userId, lastId, photosPerPage)
+
+        Mockito.verifyNoMoreInteractions(uploadedPhotosRepository)
         Mockito.verifyNoMoreInteractions(apiClient)
     }
 
@@ -167,6 +169,7 @@ class GetUploadedPhotosUseCaseTest {
             .thenReturn(uploadedPhotos1)
         Mockito.`when`(uploadedPhotosRepository.saveMany(uploadedPhotos2))
             .thenReturn(true)
+        Mockito.doNothing().`when`(uploadedPhotosRepository).deleteOld()
 
         val events = getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
             .test()
@@ -190,6 +193,15 @@ class GetUploadedPhotosUseCaseTest {
         assertEquals(8L, values[7].photoId)
         assertEquals(9L, values[8].photoId)
         assertEquals(10L, values[9].photoId)
+
+        Mockito.verify(apiClient, Mockito.times(1)).getUploadedPhotoIds(Mockito.anyString(), Mockito.anyLong(), Mockito.anyInt())
+        Mockito.verify(apiClient, Mockito.times(1)).getUploadedPhotos(Mockito.anyString(), Mockito.anyString())
+        Mockito.verify(uploadedPhotosRepository, Mockito.times(1)).findMany(Mockito.anyList())
+        Mockito.verify(uploadedPhotosRepository, Mockito.times(1)).saveMany(Mockito.anyList())
+        Mockito.verify(uploadedPhotosRepository, Mockito.times(1)).deleteOld()
+
+        Mockito.verifyNoMoreInteractions(apiClient)
+        Mockito.verifyNoMoreInteractions(uploadedPhotosRepository)
     }
 }
 

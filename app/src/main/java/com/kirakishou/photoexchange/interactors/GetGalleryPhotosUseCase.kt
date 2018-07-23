@@ -15,7 +15,7 @@ import io.reactivex.Observable
 import io.reactivex.rxkotlin.Observables
 import timber.log.Timber
 
-class GetGalleryPhotosUseCase(
+open class GetGalleryPhotosUseCase(
     private val apiClient: ApiClient,
     private val galleryPhotoRepository: GalleryPhotoRepository
 ) {

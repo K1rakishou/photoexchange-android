@@ -13,7 +13,7 @@ import io.reactivex.Observable
 import io.reactivex.rxkotlin.Observables
 import timber.log.Timber
 
-class GetGalleryPhotosInfoUseCase(
+open class GetGalleryPhotosInfoUseCase(
     private val apiClient: ApiClient,
     private val galleryPhotoRepository: GalleryPhotoRepository,
     private val intervalToRefreshPhotosFromServer: Long

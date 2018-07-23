@@ -15,7 +15,7 @@ import io.reactivex.Observable
 import io.reactivex.rxkotlin.Observables
 import timber.log.Timber
 
-class GetReceivedPhotosUseCase(
+open class GetReceivedPhotosUseCase(
     private val database: MyDatabase,
     private val receivedPhotosRepository: ReceivedPhotosRepository,
     private val uploadedPhotosRepository: UploadedPhotosRepository,

@@ -4,7 +4,7 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.CachedPhotoIdEntity
 import com.kirakishou.photoexchange.helper.database.isSuccess
 
-class CachedPhotoIdRepository(
+open class CachedPhotoIdRepository(
     private val database: MyDatabase
 ) {
     private val cachedPhotoIdDao = database.cachedPhotoIdDao()
@@ -21,7 +21,11 @@ class CachedPhotoIdRepository(
         return cachedPhotoIdDao.insert(cachedPhotoIdEntity).isSuccess()
     }
 
-    fun insertMany(photoIdList: List<Long>, photoType: CachedPhotoIdEntity.PhotoType): Boolean {
+    open fun insertMany(photoIdList: List<Long>, photoType: CachedPhotoIdEntity.PhotoType): Boolean {
+        if (photoIdList.isEmpty()) {
+            return true
+        }
+
         val entitiesToInsert = mutableListOf<CachedPhotoIdEntity>()
         val distinctPhotoIdList = photoIdList.distinct()
 
@@ -61,11 +65,11 @@ class CachedPhotoIdRepository(
         return cachedPhotoIdDao.count(photoType).toInt()
     }
 
-    fun deleteAll() {
+    open fun deleteAll() {
         cachedPhotoIdDao.deleteAll()
     }
 
-    fun deleteAll(photoType: CachedPhotoIdEntity.PhotoType) {
+    open fun deleteAll(photoType: CachedPhotoIdEntity.PhotoType) {
         cachedPhotoIdDao.deleteAll(photoType)
     }
 }

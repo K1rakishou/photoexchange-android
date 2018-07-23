@@ -15,14 +15,14 @@ import io.reactivex.Observable
 import io.reactivex.rxkotlin.Observables
 import timber.log.Timber
 
-class GetUploadedPhotosUseCase(
+open class GetUploadedPhotosUseCase(
     private val uploadedPhotosRepository: UploadedPhotosRepository,
     private val apiClient: ApiClient
 ) {
 
     private val TAG = "GetUploadedPhotosUseCase"
 
-    fun loadPageOfPhotos(userId: String, lastId: Long, count: Int): Observable<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>> {
+    open fun loadPageOfPhotos(userId: String, lastId: Long, count: Int): Observable<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>> {
         Timber.tag(TAG).d("sending loadPageOfPhotos request...")
 
         return apiClient.getUploadedPhotoIds(userId, lastId, count).toObservable()
@@ -49,6 +49,7 @@ class GetUploadedPhotosUseCase(
             return Observable.just(Either.Value(photosResultList))
         }
 
+        uploadedPhotosRepository.deleteOld()
         val uploadedPhotosFromDb = uploadedPhotosRepository.findMany(uploadedPhotoIds)
         val photoIdsToGetFromServer = Utils.filterListAlreadyContaining(uploadedPhotoIds, uploadedPhotosFromDb.map { it.photoId })
         photosResultList += uploadedPhotosFromDb

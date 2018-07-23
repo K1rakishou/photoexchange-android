@@ -25,7 +25,10 @@ class UploadedPhotoEntity(
     var hasReceiverInfo: Boolean = false,
 
     @ColumnInfo(name = UPLOADED_ON_COLUMN)
-    var uploadedOn: Long? = null
+    var uploadedOn: Long? = null,
+
+    @ColumnInfo(name = INSERTED_ON_COLUMN)
+    var insertedOn: Long? = null
 ) {
 
     fun isEmpty() : Boolean {
@@ -38,8 +41,9 @@ class UploadedPhotoEntity(
             return UploadedPhotoEntity()
         }
 
-        fun create(photoName: String, takenPhotoId: Long, lon: Double, lat: Double, hasReceiverInfo: Boolean, uploadedOn: Long): UploadedPhotoEntity {
-            return UploadedPhotoEntity(photoName, takenPhotoId, lon, lat, hasReceiverInfo, uploadedOn)
+        fun create(photoName: String, takenPhotoId: Long, lon: Double, lat: Double, hasReceiverInfo: Boolean,
+                   insertedOn: Long, uploadedOn: Long): UploadedPhotoEntity {
+            return UploadedPhotoEntity(photoName, takenPhotoId, lon, lat, hasReceiverInfo, insertedOn, uploadedOn)
         }
 
         const val TABLE_NAME = "UPLOADED_PHOTO"
@@ -50,5 +54,6 @@ class UploadedPhotoEntity(
         const val UPLOADER_LAT_COLUMN = "UPLOADER_LAT"
         const val HAS_RECEIVER_INFO_COLUMN = "HAS_RECEIVER_INFO"
         const val UPLOADED_ON_COLUMN = "UPLOADED_ON"
+        const val INSERTED_ON_COLUMN = "INSERTED_ON"
     }
 }
