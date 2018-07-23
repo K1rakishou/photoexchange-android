@@ -88,7 +88,7 @@
    ☐ ReportPhotosUseCase @high
    ✔ ReceivePhotosServicePresenter @today @done (18-07-23 13:56)
    ✔ UploadPhotoServicePresenter @high @done (18-06-30 19:55)
-   ☐ PhotosActivityViewModel @today
+   ✔ PhotosActivityViewModel @today @done (18-07-23 19:17)
    ☐ ViewTakenPhotoActivityViewModel @high
 
  ☐ Пофиксить попытку получить загруженные фото с сервера после неудачной попытки загрузки фото @high
