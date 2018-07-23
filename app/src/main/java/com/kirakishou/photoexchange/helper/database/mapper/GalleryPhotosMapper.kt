@@ -33,8 +33,8 @@ object GalleryPhotosMapper {
                 galleryPhoto.lon,
                 galleryPhoto.lat,
                 galleryPhoto.uploadedOn,
-                time,
-                galleryPhoto.favouritesCount
+                galleryPhoto.favouritesCount,
+                time
             )
         }
 
@@ -69,8 +69,8 @@ object GalleryPhotosMapper {
                     galleryPhotoResponseData.lon,
                     galleryPhotoResponseData.lat,
                     galleryPhotoResponseData.uploadedOn,
-                    time,
-                    galleryPhotoResponseData.favouritesCount
+                    galleryPhotoResponseData.favouritesCount,
+                    time
                 )
             }
 

@@ -21,7 +21,7 @@ open class GetGalleryPhotosUseCase(
 ) {
     private val TAG = "GetGalleryPhotosUseCase"
 
-    fun loadPageOfPhotos(
+    open fun loadPageOfPhotos(
         lastId: Long,
         photosPerPage: Int
     ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
@@ -66,6 +66,7 @@ open class GetGalleryPhotosUseCase(
     private fun getPhotosFromDbOrFromServer(
         galleryPhotoIds: List<Long>
     ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
+        galleryPhotoRepository.deleteOldPhotos()
         val galleryPhotosFromDb = galleryPhotoRepository.findMany(galleryPhotoIds)
         val photoIdsToGetFromServer = Utils.filterListAlreadyContaining(
             galleryPhotoIds,

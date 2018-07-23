@@ -78,6 +78,8 @@ class PhotosActivityViewModel(
                     return@concatMap Observable.just(result)
                 }
 
+                //TODO: probably should add a check here to retrieve galleryPhotosInfo from the
+                //server only when userId is not empty (user has uploaded at least one photo)
                 val userId = settingsRepository.getUserId()
                 return@concatMap getGalleryPhotosInfoUseCase.loadGalleryPhotosInfo(userId, result.value)
             }

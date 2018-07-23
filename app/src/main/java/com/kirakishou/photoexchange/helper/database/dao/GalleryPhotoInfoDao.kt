@@ -16,22 +16,18 @@ abstract class GalleryPhotoInfoDao {
     abstract fun saveMany(galleryPhotoInfoEntityList: List<GalleryPhotoInfoEntity>): Array<Long>
 
     @Query("SELECT * FROM ${GalleryPhotoInfoEntity.TABLE_NAME} " +
-        "WHERE ${GalleryPhotoInfoEntity.GALLERY_PHOTO_ID_COLUMN} = :galleryPhotoId " +
-        " AND " +
-        "${GalleryPhotoInfoEntity.INSERTED_ON} > :insertedOn")
-    abstract fun find(galleryPhotoId: Long, insertedOn: Long): GalleryPhotoInfoEntity?
+        "WHERE ${GalleryPhotoInfoEntity.GALLERY_PHOTO_ID_COLUMN} = :galleryPhotoId")
+    abstract fun find(galleryPhotoId: Long): GalleryPhotoInfoEntity?
 
     @Query("SELECT * FROM ${GalleryPhotoInfoEntity.TABLE_NAME} " +
         "WHERE " +
-        "${GalleryPhotoInfoEntity.GALLERY_PHOTO_ID_COLUMN} IN (:galleryPhotoIds) " +
-        " AND " +
-        "${GalleryPhotoInfoEntity.INSERTED_ON} > :insertedOn")
-    abstract fun findMany(galleryPhotoIds: List<Long>, insertedOn: Long): List<GalleryPhotoInfoEntity>
-
-    @Query("DELETE FROM ${GalleryPhotoInfoEntity.TABLE_NAME} " +
-        "WHERE ${GalleryPhotoInfoEntity.GALLERY_PHOTO_ID_COLUMN} = :galleryPhotoId")
-    abstract fun delete(galleryPhotoId: Long)
+        "${GalleryPhotoInfoEntity.GALLERY_PHOTO_ID_COLUMN} IN (:galleryPhotoIds)")
+    abstract fun findMany(galleryPhotoIds: List<Long>): List<GalleryPhotoInfoEntity>
 
     @Query("SELECT * FROM ${GalleryPhotoInfoEntity.TABLE_NAME}")
     abstract fun findAll(): List<GalleryPhotoInfoEntity>
+
+    @Query("DELETE FROM ${GalleryPhotoInfoEntity.TABLE_NAME} " +
+        "WHERE ${GalleryPhotoInfoEntity.INSERTED_ON_COLUMN} < :time")
+    abstract fun deleteOlderThan(time: Long)
 }

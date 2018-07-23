@@ -18,7 +18,7 @@ class GalleryPhotoInfoEntity(
     @ColumnInfo(name = IS_REPORTED_COLUMN)
     var isReported: Boolean = false,
 
-    @ColumnInfo(name = INSERTED_ON)
+    @ColumnInfo(name = INSERTED_ON_COLUMN)
     var insertedOn: Long = 0L
 ) {
 
@@ -32,8 +32,8 @@ class GalleryPhotoInfoEntity(
             return GalleryPhotoInfoEntity(-1L)
         }
 
-        fun create(id: Long, isFavourited: Boolean, isReported: Boolean, time: Long): GalleryPhotoInfoEntity {
-            return GalleryPhotoInfoEntity(id, isFavourited, isReported, time)
+        fun create(id: Long, isFavourited: Boolean, isReported: Boolean, insertedOn: Long): GalleryPhotoInfoEntity {
+            return GalleryPhotoInfoEntity(id, isFavourited, isReported, insertedOn)
         }
 
         const val TABLE_NAME = "GALLERY_PHOTO_INFO"
@@ -41,6 +41,6 @@ class GalleryPhotoInfoEntity(
         const val GALLERY_PHOTO_ID_COLUMN = "GALLERY_PHOTO_ID"
         const val IS_FAVOURITED_COLUMN = "IS_FAVOURITED"
         const val IS_REPORTED_COLUMN = "IS_REPORTED"
-        const val INSERTED_ON = "INSERTED_ON"
+        const val INSERTED_ON_COLUMN = "INSERTED_ON"
     }
 }

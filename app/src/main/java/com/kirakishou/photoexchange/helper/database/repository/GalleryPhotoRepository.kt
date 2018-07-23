@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
 import com.kirakishou.photoexchange.helper.database.MyDatabase
+import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoEntity
 import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoInfoEntity
 import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosInfoMapper
@@ -13,14 +14,17 @@ import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
 
 open class GalleryPhotoRepository(
     private val database: MyDatabase,
-    private val timeUtils: TimeUtils
+    private val timeUtils: TimeUtils,
+    private val galleryPhotoCacheMaxLiveTime: Long,
+    private val galleryPhotoInfoCacheMaxLiveTime: Long
 ) {
     private val galleryPhotoDao = database.galleryPhotoDao()
     private val galleryPhotoInfoDao = database.galleryPhotoInfoDao()
 
-    fun saveManyInfo(galleryPhotoInfoList: List<GalleryPhotoInfoResponse.GalleryPhotosInfoData>): Boolean {
+    open fun saveManyInfo(galleryPhotoInfoList: List<GalleryPhotoInfoResponse.GalleryPhotosInfoData>): Boolean {
+        val now = timeUtils.getTimeFast()
         val galleryPhotoInfoEntityList = GalleryPhotosInfoMapper.FromResponse.ToEntity
-            .toGalleryPhotoInfoEntityList(timeUtils.getTimeFast(), galleryPhotoInfoList)
+            .toGalleryPhotoInfoEntityList(now, galleryPhotoInfoList)
 
         return galleryPhotoInfoDao.saveMany(galleryPhotoInfoEntityList).size == galleryPhotoInfoList.size
     }
@@ -31,9 +35,8 @@ open class GalleryPhotoRepository(
             .toGalleryPhotoEntitiesList(now, galleryPhotos)).size == galleryPhotos.size
     }
 
-    fun findManyInfo(galleryPhotoIds: List<Long>, timeDelta: Long): List<GalleryPhotoInfo> {
-        val time = timeUtils.getTimeFast() - timeDelta
-        return GalleryPhotosInfoMapper.ToObject.toGalleryPhotoInfoList(galleryPhotoInfoDao.findMany(galleryPhotoIds, time))
+    fun findManyInfo(galleryPhotoIds: List<Long>): List<GalleryPhotoInfo> {
+        return GalleryPhotosInfoMapper.ToObject.toGalleryPhotoInfoList(galleryPhotoInfoDao.findMany(galleryPhotoIds))
     }
 
     fun findByPhotoName(photoName: String): GalleryPhoto? {
@@ -42,8 +45,7 @@ open class GalleryPhotoRepository(
             return null
         }
 
-        //TODO:
-        val galleryPhotoInfoEntity = galleryPhotoInfoDao.find(galleryPhotoEntity.galleryPhotoId, 0L)
+        val galleryPhotoInfoEntity = galleryPhotoInfoDao.find(galleryPhotoEntity.galleryPhotoId)
         val galleryPhoto = GalleryPhotosMapper.FromEntity.toGalleryPhoto(galleryPhotoEntity)
         galleryPhoto.galleryPhotoInfo = GalleryPhotosInfoMapper.ToObject.toGalleryPhotoInfo(galleryPhotoInfoEntity)
 
@@ -54,12 +56,19 @@ open class GalleryPhotoRepository(
         val galleryPhotos = GalleryPhotosMapper.FromEntity.toGalleryPhotos(galleryPhotoDao.findMany(galleryPhotoIds))
 
         for (galleryPhoto in galleryPhotos) {
-            //TODO:
-            val galleryPhotoInfo = galleryPhotoInfoDao.find(galleryPhoto.galleryPhotoId, 0L)
+            val galleryPhotoInfo = galleryPhotoInfoDao.find(galleryPhoto.galleryPhotoId)
             galleryPhoto.galleryPhotoInfo = GalleryPhotosInfoMapper.ToObject.toGalleryPhotoInfo(galleryPhotoInfo)
         }
 
         return galleryPhotos
+    }
+
+    fun findAllPhotosTest(): List<GalleryPhotoEntity> {
+        return galleryPhotoDao.findAll()
+    }
+
+    fun findAllPhotosInfoTest(): List<GalleryPhotoInfoEntity> {
+        return galleryPhotoInfoDao.findAll()
     }
 
     fun updateFavouritesCount(photoName: String, favouritesCount: Long): Boolean {
@@ -67,8 +76,7 @@ open class GalleryPhotoRepository(
     }
 
     fun favouritePhoto(galleryPhotoId: Long): Boolean {
-        //TODO:
-        var galleryPhotoInfoEntity = galleryPhotoInfoDao.find(galleryPhotoId, 0L)
+        var galleryPhotoInfoEntity = galleryPhotoInfoDao.find(galleryPhotoId)
         if (galleryPhotoInfoEntity == null) {
             galleryPhotoInfoEntity = GalleryPhotoInfoEntity.create(galleryPhotoId, true, false, timeUtils.getTimeFast())
         } else {
@@ -79,8 +87,7 @@ open class GalleryPhotoRepository(
     }
 
     fun reportPhoto(photoId: Long): Boolean {
-        //TODO:
-        var galleryPhotoInfoEntity = galleryPhotoInfoDao.find(photoId, 0L)
+        var galleryPhotoInfoEntity = galleryPhotoInfoDao.find(photoId)
         if (galleryPhotoInfoEntity == null) {
             galleryPhotoInfoEntity = GalleryPhotoInfoEntity.create(photoId, false, true, timeUtils.getTimeFast())
         } else {
@@ -90,4 +97,13 @@ open class GalleryPhotoRepository(
         return galleryPhotoInfoDao.save(galleryPhotoInfoEntity).isSuccess()
     }
 
+    fun deleteOldPhotos() {
+        val now = timeUtils.getTimeFast()
+        galleryPhotoDao.deleteOlderThan(now - galleryPhotoCacheMaxLiveTime)
+    }
+
+    fun deleteOldPhotosInfo() {
+        val now = timeUtils.getTimeFast()
+        galleryPhotoInfoDao.deleteOlderThan(now - galleryPhotoInfoCacheMaxLiveTime)
+    }
 }

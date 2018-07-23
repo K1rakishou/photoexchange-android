@@ -25,6 +25,7 @@ object Constants {
     const val PROGRESS_FOOTER_REMOVE_DELAY_MS = 200L
 
     //interval to update photos in the db with fresh information
+    val GALLERY_PHOTOS_CACHE_MAX_LIVE_TIME = 30.minutes()
     val GALLERY_PHOTOS_INFO_CACHE_MAX_LIVE_TIME = 30.minutes()
     val UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME = 30.minutes()
     val RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME = 30.minutes()

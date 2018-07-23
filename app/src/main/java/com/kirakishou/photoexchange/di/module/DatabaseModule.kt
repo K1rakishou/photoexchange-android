@@ -6,6 +6,8 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
+import com.kirakishou.photoexchange.mvp.model.other.Constants.GALLERY_PHOTOS_CACHE_MAX_LIVE_TIME
+import com.kirakishou.photoexchange.mvp.model.other.Constants.GALLERY_PHOTOS_INFO_CACHE_MAX_LIVE_TIME
 import com.kirakishou.photoexchange.mvp.model.other.Constants.RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME
 import com.kirakishou.photoexchange.mvp.model.other.Constants.UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME
 import dagger.Module
@@ -67,7 +69,7 @@ open class DatabaseModule(
     @Singleton
     @Provides
     open fun provideGalleryPhotoRepository(database: MyDatabase, timeUtils: TimeUtils): GalleryPhotoRepository {
-        return GalleryPhotoRepository(database, timeUtils)
+        return GalleryPhotoRepository(database, timeUtils, GALLERY_PHOTOS_CACHE_MAX_LIVE_TIME, GALLERY_PHOTOS_INFO_CACHE_MAX_LIVE_TIME)
     }
 
     @Singleton

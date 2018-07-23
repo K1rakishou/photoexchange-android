@@ -24,4 +24,11 @@ abstract class GalleryPhotoDao {
         "SET ${GalleryPhotoEntity.FAVOURITED_COUNT_COLUMN} = :favouritesCount " +
         "WHERE ${GalleryPhotoEntity.PHOTO_NAME_COLUMN} = :photoName")
     abstract fun updateFavouritesCount(photoName: String, favouritesCount: Long): Int
+
+    @Query("DELETE FROM ${GalleryPhotoEntity.TABLE_NAME} " +
+        "WHERE ${GalleryPhotoEntity.INSERTED_ON_COLUMN} < :time")
+    abstract fun deleteOlderThan(time: Long)
+
+    @Query("SELECT * FROM ${GalleryPhotoEntity.TABLE_NAME}")
+    abstract fun findAll(): List<GalleryPhotoEntity>
 }
