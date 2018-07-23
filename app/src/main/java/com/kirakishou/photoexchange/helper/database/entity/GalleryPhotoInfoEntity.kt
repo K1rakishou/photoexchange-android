@@ -4,7 +4,6 @@ import android.arch.persistence.room.ColumnInfo
 import android.arch.persistence.room.Entity
 import android.arch.persistence.room.PrimaryKey
 import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoInfoEntity.Companion.TABLE_NAME
-import com.kirakishou.photoexchange.helper.util.TimeUtils
 
 @Entity(tableName = TABLE_NAME)
 class GalleryPhotoInfoEntity(
@@ -19,8 +18,8 @@ class GalleryPhotoInfoEntity(
     @ColumnInfo(name = IS_REPORTED_COLUMN)
     var isReported: Boolean = false,
 
-    @ColumnInfo(name = LAST_UPDATE_TIME_COLUMN)
-    var lastUpdateTime: Long = 0L
+    @ColumnInfo(name = INSERTED_ON)
+    var insertedOn: Long = 0L
 ) {
 
     fun isEmpty(): Boolean {
@@ -42,6 +41,6 @@ class GalleryPhotoInfoEntity(
         const val GALLERY_PHOTO_ID_COLUMN = "GALLERY_PHOTO_ID"
         const val IS_FAVOURITED_COLUMN = "IS_FAVOURITED"
         const val IS_REPORTED_COLUMN = "IS_REPORTED"
-        const val LAST_UPDATE_TIME_COLUMN = "LAST_UPDATE_TIME"
+        const val INSERTED_ON = "INSERTED_ON"
     }
 }

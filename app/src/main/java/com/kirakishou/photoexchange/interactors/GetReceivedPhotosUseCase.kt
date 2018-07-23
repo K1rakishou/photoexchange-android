@@ -40,6 +40,7 @@ open class GetReceivedPhotosUseCase(
 
                 return@concatMap Observable.just(response.receivedPhotoIds)
                     .concatMap { receivedPhotoIds ->
+                        receivedPhotosRepository.deleteOld()
                         val receivedPhotosFromDb = receivedPhotosRepository.findMany(receivedPhotoIds)
                         val photoIdsToGetFromServer = Utils.filterListAlreadyContaining(
                             receivedPhotoIds,

@@ -5,6 +5,7 @@ import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.interactors.*
+import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.PhotosActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
@@ -48,7 +49,9 @@ open class PhotosActivityModule(
             reportPhotoUseCase,
             getUploadedPhotosUseCase,
             getReceivedPhotosUseCase,
-            schedulerProvider)
+            schedulerProvider,
+            Constants.ADAPTER_LOAD_MORE_ITEMS_DELAY_MS,
+            Constants.PROGRESS_FOOTER_REMOVE_DELAY_MS)
     }
 
     @PerActivity

@@ -37,12 +37,12 @@ class PhotosActivityViewModel(
     private val getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
     private val favouritePhotoUseCase: FavouritePhotoUseCase,
     private val reportPhotoUseCase: ReportPhotoUseCase,
-    private val schedulerProvider: SchedulerProvider
+    private val schedulerProvider: SchedulerProvider,
+    private val adapterLoadMoreItemsDelayMs: Long,
+    private val progressFooterRemoveDelayMs: Long
 ) : BaseViewModel() {
 
     private val TAG = "PhotosActivityViewModel"
-    private val ADAPTER_LOAD_MORE_ITEMS_DELAY_MS = 800L
-    private val PROGRESS_FOOTER_REMOVE_DELAY_MS = 200L
 
     val intercom = PhotosActivityViewModelIntercom()
 
@@ -131,13 +131,13 @@ class PhotosActivityViewModel(
                         cachedPhotoIdRepository.insertMany(idsToCache, CachedPhotoIdEntity.PhotoType.GalleryPhoto)
                     }
                 }
-                .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
+                .delay(adapterLoadMoreItemsDelayMs, TimeUnit.MILLISECONDS)
                 .doOnEach { event ->
                     if (event.isOnNext || event.isOnError) {
                         intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.UiEvents.HideProgressFooter())
                     }
                 }
-                .delay(PROGRESS_FOOTER_REMOVE_DELAY_MS, TimeUnit.MILLISECONDS)
+                .delay(progressFooterRemoveDelayMs, TimeUnit.MILLISECONDS)
         } else {
             return Observable.fromCallable {
                 val cachedGalleryPhotoIds = cachedPhotoIdRepository.findAll(CachedPhotoIdEntity.PhotoType.GalleryPhoto)
@@ -166,13 +166,13 @@ class PhotosActivityViewModel(
                         cachedPhotoIdRepository.insertMany(idsToCache, CachedPhotoIdEntity.PhotoType.UploadedPhoto)
                     }
                 }
-                .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
+                .delay(adapterLoadMoreItemsDelayMs, TimeUnit.MILLISECONDS)
                 .doOnEach { event ->
                     if (event.isOnNext || event.isOnError) {
                         intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter())
                     }
                 }
-                .delay(PROGRESS_FOOTER_REMOVE_DELAY_MS, TimeUnit.MILLISECONDS)
+                .delay(progressFooterRemoveDelayMs, TimeUnit.MILLISECONDS)
         } else {
             return Observable.fromCallable {
                 val cachedUploadedPhotoIds = cachedPhotoIdRepository.findAll(CachedPhotoIdEntity.PhotoType.UploadedPhoto)
@@ -201,13 +201,13 @@ class PhotosActivityViewModel(
                         cachedPhotoIdRepository.insertMany(idsToCache, CachedPhotoIdEntity.PhotoType.ReceivedPhoto)
                     }
                 }
-                .delay(ADAPTER_LOAD_MORE_ITEMS_DELAY_MS, TimeUnit.MILLISECONDS)
+                .delay(adapterLoadMoreItemsDelayMs, TimeUnit.MILLISECONDS)
                 .doOnEach { event ->
                     if (event.isOnNext || event.isOnError) {
                         intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter())
                     }
                 }
-                .delay(PROGRESS_FOOTER_REMOVE_DELAY_MS, TimeUnit.MILLISECONDS)
+                .delay(progressFooterRemoveDelayMs, TimeUnit.MILLISECONDS)
         } else {
             return Observable.fromCallable {
                 val cachedReceivedPhotoIds = cachedPhotoIdRepository.findAll(CachedPhotoIdEntity.PhotoType.ReceivedPhoto)

@@ -3,12 +3,15 @@ package com.kirakishou.photoexchange.helper.database.repository
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
+import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.net.response.GetReceivedPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.ReceivedPhotosResponse
 
 open class ReceivedPhotosRepository(
-    private val database: MyDatabase
+    private val database: MyDatabase,
+    private val timeUtils: TimeUtils,
+    private val receivedPhotoMaxCacheLiveTime: Long
 ) {
     private val receivedPhotosDao = database.receivedPhotoDao()
 
@@ -22,7 +25,8 @@ open class ReceivedPhotosRepository(
     }
 
     fun saveMany(receivedPhotos: List<GetReceivedPhotosResponse.ReceivedPhoto>): Boolean {
-        return receivedPhotosDao.saveMany(ReceivedPhotosMapper.FromResponse.GetReceivedPhotos.toReceivedPhotoEntities(receivedPhotos))
+        val time = timeUtils.getTimeFast()
+        return receivedPhotosDao.saveMany(ReceivedPhotosMapper.FromResponse.GetReceivedPhotos.toReceivedPhotoEntities(time, receivedPhotos))
             .size == receivedPhotos.size
     }
 
@@ -36,5 +40,10 @@ open class ReceivedPhotosRepository(
 
     fun findMany(receivedPhotoIds: List<Long>): MutableList<ReceivedPhoto> {
         return ReceivedPhotosMapper.FromEntity.toReceivedPhotos(receivedPhotosDao.findMany(receivedPhotoIds))
+    }
+
+    fun deleteOld() {
+        val now = timeUtils.getTimeFast()
+        receivedPhotosDao.deleteOlderThan(now - receivedPhotoMaxCacheLiveTime)
     }
 }

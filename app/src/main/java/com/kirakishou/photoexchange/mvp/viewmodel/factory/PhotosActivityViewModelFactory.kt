@@ -25,7 +25,9 @@ class PhotosActivityViewModelFactory
     val reportPhotoUseCase: ReportPhotoUseCase,
     val getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
     val getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
-    val schedulerProvider: SchedulerProvider
+    val schedulerProvider: SchedulerProvider,
+    val adapterLoadMoreItemsDelayMs: Long,
+    val progressFooterRemoveDelayMs: Long
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
@@ -43,7 +45,9 @@ class PhotosActivityViewModelFactory
             getReceivedPhotosUseCase,
             favouritePhotoUseCase,
             reportPhotoUseCase,
-            schedulerProvider
+            schedulerProvider,
+            adapterLoadMoreItemsDelayMs,
+            progressFooterRemoveDelayMs
         ) as T
     }
 }

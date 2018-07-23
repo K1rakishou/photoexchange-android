@@ -69,18 +69,19 @@ object ReceivedPhotosMapper {
                 return receivedPhotosResponseList.map { toReceivedPhoto(it) } as MutableList<ReceivedPhoto>
             }
 
-            fun toReceivedPhotoEntity(receivedPhotosResponse: GetReceivedPhotosResponse.ReceivedPhoto): ReceivedPhotoEntity {
+            fun toReceivedPhotoEntity(time: Long, receivedPhotosResponse: GetReceivedPhotosResponse.ReceivedPhoto): ReceivedPhotoEntity {
                 return ReceivedPhotoEntity.create(
                     receivedPhotosResponse.photoId,
                     receivedPhotosResponse.uploadedPhotoName,
                     receivedPhotosResponse.receivedPhotoName,
                     receivedPhotosResponse.receiverLon,
-                    receivedPhotosResponse.receiverLat
+                    receivedPhotosResponse.receiverLat,
+                    time
                 )
             }
 
-            fun toReceivedPhotoEntities(receivedPhotosResponseList: List<GetReceivedPhotosResponse.ReceivedPhoto>): List<ReceivedPhotoEntity> {
-                return receivedPhotosResponseList.map { toReceivedPhotoEntity(it) }
+            fun toReceivedPhotoEntities(time: Long, receivedPhotosResponseList: List<GetReceivedPhotosResponse.ReceivedPhoto>): List<ReceivedPhotoEntity> {
+                return receivedPhotosResponseList.map { toReceivedPhotoEntity(time, it) }
             }
         }
     }

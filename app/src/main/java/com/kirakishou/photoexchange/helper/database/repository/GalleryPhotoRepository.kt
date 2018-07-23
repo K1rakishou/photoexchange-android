@@ -42,7 +42,8 @@ open class GalleryPhotoRepository(
             return null
         }
 
-        val galleryPhotoInfoEntity = galleryPhotoInfoDao.find(galleryPhotoEntity.galleryPhotoId)
+        //TODO:
+        val galleryPhotoInfoEntity = galleryPhotoInfoDao.find(galleryPhotoEntity.galleryPhotoId, 0L)
         val galleryPhoto = GalleryPhotosMapper.FromEntity.toGalleryPhoto(galleryPhotoEntity)
         galleryPhoto.galleryPhotoInfo = GalleryPhotosInfoMapper.ToObject.toGalleryPhotoInfo(galleryPhotoInfoEntity)
 
@@ -53,7 +54,8 @@ open class GalleryPhotoRepository(
         val galleryPhotos = GalleryPhotosMapper.FromEntity.toGalleryPhotos(galleryPhotoDao.findMany(galleryPhotoIds))
 
         for (galleryPhoto in galleryPhotos) {
-            val galleryPhotoInfo = galleryPhotoInfoDao.find(galleryPhoto.galleryPhotoId)
+            //TODO:
+            val galleryPhotoInfo = galleryPhotoInfoDao.find(galleryPhoto.galleryPhotoId, 0L)
             galleryPhoto.galleryPhotoInfo = GalleryPhotosInfoMapper.ToObject.toGalleryPhotoInfo(galleryPhotoInfo)
         }
 
@@ -65,7 +67,8 @@ open class GalleryPhotoRepository(
     }
 
     fun favouritePhoto(galleryPhotoId: Long): Boolean {
-        var galleryPhotoInfoEntity = galleryPhotoInfoDao.find(galleryPhotoId)
+        //TODO:
+        var galleryPhotoInfoEntity = galleryPhotoInfoDao.find(galleryPhotoId, 0L)
         if (galleryPhotoInfoEntity == null) {
             galleryPhotoInfoEntity = GalleryPhotoInfoEntity.create(galleryPhotoId, true, false, timeUtils.getTimeFast())
         } else {
@@ -76,7 +79,8 @@ open class GalleryPhotoRepository(
     }
 
     fun reportPhoto(photoId: Long): Boolean {
-        var galleryPhotoInfoEntity = galleryPhotoInfoDao.find(photoId)
+        //TODO:
+        var galleryPhotoInfoEntity = galleryPhotoInfoDao.find(photoId, 0L)
         if (galleryPhotoInfoEntity == null) {
             galleryPhotoInfoEntity = GalleryPhotoInfoEntity.create(photoId, false, true, timeUtils.getTimeFast())
         } else {

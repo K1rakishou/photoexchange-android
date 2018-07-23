@@ -16,7 +16,7 @@ import timber.log.Timber
 open class GetGalleryPhotosInfoUseCase(
     private val apiClient: ApiClient,
     private val galleryPhotoRepository: GalleryPhotoRepository,
-    private val intervalToRefreshPhotosFromServer: Long
+    private val galleryPhotosInfoMaxCacheLiveTime: Long
 ) {
     private val TAG = "GetGalleryPhotosInfoUseCase"
 
@@ -39,8 +39,9 @@ open class GetGalleryPhotosInfoUseCase(
         //(like whether the user has the photo favourited or reported already)
         val galleryPhotoIds = galleryPhotos.map { it.galleryPhotoId }
 
+        //TODO: clear cache
         //get photos' info by the ids from the database
-        return Observable.fromCallable { galleryPhotoRepository.findManyInfo(galleryPhotoIds, intervalToRefreshPhotosFromServer) }
+        return Observable.fromCallable { galleryPhotoRepository.findManyInfo(galleryPhotoIds, galleryPhotosInfoMaxCacheLiveTime) }
             .concatMap { galleryPhotoInfoFromDb ->
                 val photoInfoIdsToGetFromServer = Utils.filterListAlreadyContaining(
                     galleryPhotoIds,

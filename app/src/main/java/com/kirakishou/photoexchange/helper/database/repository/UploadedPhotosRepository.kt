@@ -4,13 +4,15 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
 import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
+import com.kirakishou.photoexchange.helper.extension.minutes
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.net.response.GetUploadedPhotosResponse
 
 open class UploadedPhotosRepository(
     private val database: MyDatabase,
-    private val timeUtils: TimeUtils
+    private val timeUtils: TimeUtils,
+    private val uploadedPhotoMaxCacheLiveTime: Long
 ) {
     private val uploadedPhotoDao = database.uploadedPhotoDao()
 
@@ -56,6 +58,10 @@ open class UploadedPhotosRepository(
         return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.findAll())
     }
 
+    fun findAllTest(): List<UploadedPhotoEntity> {
+        return uploadedPhotoDao.findAll()
+    }
+
     fun findAllWithReceiverInfo(): List<UploadedPhoto> {
         val entities =  uploadedPhotoDao.findAllWithReceiverInfo()
         return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(entities)
@@ -72,6 +78,6 @@ open class UploadedPhotosRepository(
 
     open fun deleteOld() {
         val now = timeUtils.getTimeFast()
-        uploadedPhotoDao.deleteOlderThan(now)
+        uploadedPhotoDao.deleteOlderThan(now - uploadedPhotoMaxCacheLiveTime)
     }
 }
