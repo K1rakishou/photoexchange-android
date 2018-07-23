@@ -51,13 +51,13 @@ open class UploadedPhotosRepository(
         return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.findAll())
     }
 
-    fun findAll(withReceivedInfo: Boolean): List<UploadedPhoto> {
-        val entities = if (withReceivedInfo) {
-            uploadedPhotoDao.findAllWithReceiverInfo()
-        } else {
-            uploadedPhotoDao.findAllWithoutReceiverInfo()
-        }
+    fun findAllWithReceiverInfo(): List<UploadedPhoto> {
+        val entities =  uploadedPhotoDao.findAllWithReceiverInfo()
+        return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(entities)
+    }
 
+    open fun findAllWithoutReceiverInfo(): List<UploadedPhoto> {
+        val entities = uploadedPhotoDao.findAllWithoutReceiverInfo()
         return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(entities)
     }
 

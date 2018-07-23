@@ -391,7 +391,7 @@ class UploadPhotosUseCaseTest {
             .assertTerminated()
             .values()
 
-        assertEquals(13, events.size)
+        assertEquals(12, events.size)
 
         val progressList = listOf(0, 15, 30, 45, 60, 65, 72, 80, 90, 93, 99, 100)
 
@@ -400,10 +400,6 @@ class UploadPhotosUseCaseTest {
             assertEquals(progressList[index], (events[index] as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress).progress)
             assertEquals(takenPhoto, (events[index] as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress).photo)
         }
-
-        val lastEvent = events.last()
-        assertEquals(true, lastEvent is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUploaded)
-        assertEquals(takenPhoto, (lastEvent as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUploaded).takenPhoto)
 
         Mockito.verify(fileUtils, Mockito.times(1)).deleteFile(rotatedPhotoFileMock)
     }

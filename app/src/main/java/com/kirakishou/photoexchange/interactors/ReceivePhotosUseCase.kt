@@ -17,7 +17,7 @@ import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
 import timber.log.Timber
 
-class ReceivePhotosUseCase(
+open class ReceivePhotosUseCase(
     private val database: MyDatabase,
     private val takenPhotosRepository: TakenPhotosRepository,
     private val receivedPhotosRepository: ReceivedPhotosRepository,
@@ -27,7 +27,10 @@ class ReceivePhotosUseCase(
 
     private val TAG = "ReceivePhotosUseCase"
 
-    fun receivePhotos(photoData: FindPhotosData): Observable<ReceivePhotosServicePresenter.ReceivePhotoEvent> {
+    /**
+     * Returns separate observable for every receivedPhoto
+     * */
+    open fun receivePhotos(photoData: FindPhotosData): Observable<ReceivePhotosServicePresenter.ReceivePhotoEvent> {
         return Observable.create { emitter -> doReceivePhoto(photoData, emitter) }
     }
 

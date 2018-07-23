@@ -15,6 +15,7 @@ sealed class ReceivePhotosServiceException : Exception() {
     class PhotoNamesAreEmpty : ReceivePhotosServiceException()
     class CouldNotGetUserId : ReceivePhotosServiceException()
     class ApiException(val remoteErrorCode: ErrorCode.ReceivePhotosErrors) : ReceivePhotosServiceException()
+    class NoUploadedPhotosWithoutReceiverInfo() : ReceivePhotosServiceException()
 }
 
 sealed class PhotoUploadingException : Exception() {

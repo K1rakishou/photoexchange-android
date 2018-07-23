@@ -38,11 +38,7 @@ open class UploadPhotoServicePresenter(
     val resultEventsSubject = PublishSubject.create<UploadPhotoEvent>().toSerialized()
 
     init {
-        compositeDisposable += handleUploadPhotosEvent()
-    }
-
-    private fun handleUploadPhotosEvent(): Disposable {
-        return uploadPhotosSubject
+        compositeDisposable += uploadPhotosSubject
             .subscribeOn(schedulerProvider.IO())
             .concatMap { location -> prepareForUploading(location) }
             .doOnEach { sendEvent(UploadPhotoEvent.StopService()) }
@@ -160,7 +156,7 @@ open class UploadPhotoServicePresenter(
     }
 
     private fun handleErrors(error: Throwable) {
-        Timber.tag(TAG).d("onUploadingEvent(PhotoUploadEvent.OnEnd())")
+        Timber.tag(TAG).e(error)
 
         when (error) {
             is PhotoUploadingException.ApiException,

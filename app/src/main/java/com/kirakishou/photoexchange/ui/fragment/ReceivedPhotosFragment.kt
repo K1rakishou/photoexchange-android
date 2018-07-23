@@ -178,7 +178,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
                 }
                 is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed,
                 is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnUnknownError -> {
-                    //do nothing here
+                    //TODO: do nothing here???
                 }
             }.safe
         }

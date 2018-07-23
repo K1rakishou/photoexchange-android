@@ -76,12 +76,8 @@ class ReceivePhotosService : Service() {
                     .PhotoReceived(event.receivedPhoto, event.takenPhotoName))
             }
             is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnKnownError -> {
-                if (event.errorCode != null) {
-                    callback.get()?.onPhotoFindEvent(ReceivedPhotosFragmentEvent.ReceivePhotosEvent
-                        .OnFailed(event.errorCode))
-                } else {
-                    //do nothing
-                }
+                callback.get()?.onPhotoFindEvent(ReceivedPhotosFragmentEvent.ReceivePhotosEvent
+                    .OnFailed(event.errorCode))
             }
             is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnUnknownError -> {
                 callback.get()?.onPhotoFindEvent(ReceivedPhotosFragmentEvent.ReceivePhotosEvent

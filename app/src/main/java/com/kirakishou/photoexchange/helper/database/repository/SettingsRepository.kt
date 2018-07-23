@@ -17,7 +17,7 @@ open class SettingsRepository(
         return settingsDao.insert(SettingEntity(USER_ID_SETTING, userId)) > 0
     }
 
-    fun getUserId(): String {
+    open fun getUserId(): String {
         return settingsDao.findByName(USER_ID_SETTING)?.settingValue ?: ""
     }
 

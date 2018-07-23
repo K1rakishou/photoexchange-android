@@ -35,7 +35,6 @@ class UploadPhotoServicePresenterTests {
         takenPhotosRepository = Mockito.mock(TakenPhotosRepository::class.java)
         uploadPhotosUseCase = Mockito.mock(UploadPhotosUseCase::class.java)
         getUserIdUseCase = Mockito.mock(GetUserIdUseCase::class.java)
-
         schedulerProvider = TestSchedulers()
 
         presenter = Mockito.spy(

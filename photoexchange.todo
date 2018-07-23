@@ -85,9 +85,11 @@
    ☐ GetGalleryPhotosUseCase @high
    ✔ GetUploadedPhotosUseCase @high @done (18-06-30 14:07)
    ☐ GetUserIdUseCase @high
-   ☐ ReportPhotoUseCase @high
-   ☐ ReceivePhotosServicePresenter @high
+   ☐ ReportPhotosUseCase @high
+   ✔ ReceivePhotosServicePresenter @today @done (18-07-23 13:56)
    ✔ UploadPhotoServicePresenter @high @done (18-06-30 19:55)
+   ☐ PhotosActivityViewModel @high
+   ☐ ViewTakenPhotoActivityViewModel @high
 
  ☐ Пофиксить попытку получить загруженные фото с сервера после неудачной попытки загрузки фото @high
 
