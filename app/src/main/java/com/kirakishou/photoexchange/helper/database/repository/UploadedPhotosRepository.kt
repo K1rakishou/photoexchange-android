@@ -16,12 +16,9 @@ open class UploadedPhotosRepository(
 ) {
     private val uploadedPhotoDao = database.uploadedPhotoDao()
 
-    private fun save(uploadedPhotoEntity: UploadedPhotoEntity): Boolean {
-        val cachedPhoto = uploadedPhotoDao.findByPhotoName(uploadedPhotoEntity.photoName)
-        if (cachedPhoto != null) {
-            uploadedPhotoEntity.photoId = cachedPhoto.photoId
-        }
-
+    open fun save(photoId: Long, photoName: String, lon: Double, lat: Double, uploadedOn: Long): Boolean {
+        val uploadedPhotoEntity = UploadedPhotosMapper.FromObject.ToEntity.toUploadedPhotoEntity(photoId, photoName, lon,
+            lat, timeUtils.getTimeFast(), uploadedOn)
         return uploadedPhotoDao.save(uploadedPhotoEntity).isSuccess()
     }
 
@@ -40,9 +37,12 @@ open class UploadedPhotosRepository(
         }
     }
 
-    open fun save(photoId: Long, photoName: String, lon: Double, lat: Double, uploadedOn: Long): Boolean {
-        val uploadedPhotoEntity = UploadedPhotosMapper.FromObject.ToEntity.toUploadedPhotoEntity(photoId, photoName, lon,
-            lat, timeUtils.getTimeFast(), uploadedOn)
+    private fun save(uploadedPhotoEntity: UploadedPhotoEntity): Boolean {
+        val cachedPhoto = uploadedPhotoDao.findByPhotoName(uploadedPhotoEntity.photoName)
+        if (cachedPhoto != null) {
+            uploadedPhotoEntity.photoId = cachedPhoto.photoId
+        }
+
         return uploadedPhotoDao.save(uploadedPhotoEntity).isSuccess()
     }
 

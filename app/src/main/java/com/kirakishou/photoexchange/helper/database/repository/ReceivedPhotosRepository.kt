@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
 import com.kirakishou.photoexchange.helper.database.MyDatabase
+import com.kirakishou.photoexchange.helper.database.entity.ReceivedPhotoEntity
 import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
@@ -16,11 +17,13 @@ open class ReceivedPhotosRepository(
     private val receivedPhotosDao = database.receivedPhotoDao()
 
     fun save(receivedPhoto: GetReceivedPhotosResponse.ReceivedPhoto): Long {
-        return receivedPhotosDao.save(ReceivedPhotosMapper.FromObject.toPhotoAnswerEntity(receivedPhoto))
+        val now = timeUtils.getTimeFast()
+        return receivedPhotosDao.save(ReceivedPhotosMapper.FromObject.toReceivedPhotoEntity(now, receivedPhoto))
     }
 
     fun save(receivedPhoto: ReceivedPhotosResponse.ReceivedPhoto): Boolean {
-        return receivedPhotosDao.save(ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhotoEntity(receivedPhoto))
+        val now = timeUtils.getTimeFast()
+        return receivedPhotosDao.save(ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhotoEntity(now, receivedPhoto))
             .isSuccess()
     }
 
@@ -36,6 +39,10 @@ open class ReceivedPhotosRepository(
 
     fun findAll(): List<ReceivedPhoto> {
         return ReceivedPhotosMapper.FromEntity.toReceivedPhotos(receivedPhotosDao.findAll())
+    }
+
+    fun findAllTest(): List<ReceivedPhotoEntity> {
+        return receivedPhotosDao.findAll()
     }
 
     fun findMany(receivedPhotoIds: List<Long>): MutableList<ReceivedPhoto> {

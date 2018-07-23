@@ -38,6 +38,11 @@ class ReceivedPhotoEntity(
             return ReceivedPhotoEntity()
         }
 
+        fun create(uploadedPhotoName: String, receivedPhotoName: String,
+                   lon: Double = 0.0, lat: Double = 0.0, insertedOn: Long): ReceivedPhotoEntity {
+            return ReceivedPhotoEntity(null, uploadedPhotoName, receivedPhotoName, lon, lat, insertedOn)
+        }
+
         fun create(photoId: Long, uploadedPhotoName: String, receivedPhotoName: String,
                    lon: Double = 0.0, lat: Double = 0.0, insertedOn: Long): ReceivedPhotoEntity {
             return ReceivedPhotoEntity(photoId, uploadedPhotoName, receivedPhotoName, lon, lat, insertedOn)

@@ -16,8 +16,8 @@ object UploadedPhotosMapper {
                     uploadedPhotoData.uploaderLon,
                     uploadedPhotoData.uploaderLat,
                     uploadedPhotoData.hasReceivedInfo,
-                    time,
-                    uploadedPhotoData.uploadedOn
+                    uploadedPhotoData.uploadedOn,
+                    time
                 )
             }
 
@@ -72,8 +72,8 @@ object UploadedPhotosMapper {
                     lon,
                     lat,
                     false,
-                    time,
-                    uploadedOn
+                    uploadedOn,
+                    time
                 )
             }
         }

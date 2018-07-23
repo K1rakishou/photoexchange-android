@@ -42,8 +42,8 @@ class UploadedPhotoEntity(
         }
 
         fun create(photoName: String, takenPhotoId: Long, lon: Double, lat: Double, hasReceiverInfo: Boolean,
-                   insertedOn: Long, uploadedOn: Long): UploadedPhotoEntity {
-            return UploadedPhotoEntity(photoName, takenPhotoId, lon, lat, hasReceiverInfo, insertedOn, uploadedOn)
+                  uploadedOn: Long, insertedOn: Long): UploadedPhotoEntity {
+            return UploadedPhotoEntity(photoName, takenPhotoId, lon, lat, hasReceiverInfo, uploadedOn, insertedOn)
         }
 
         const val TABLE_NAME = "UPLOADED_PHOTO"

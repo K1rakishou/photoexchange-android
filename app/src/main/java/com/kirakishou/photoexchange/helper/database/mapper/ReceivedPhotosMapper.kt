@@ -39,18 +39,19 @@ object ReceivedPhotosMapper {
                 return receivedPhotosResponseList.map { toReceivedPhoto(it) }
             }
 
-            fun toReceivedPhotoEntity(receivedPhotosResponse: ReceivedPhotosResponse.ReceivedPhoto): ReceivedPhotoEntity {
-                return ReceivedPhotoEntity(
+            fun toReceivedPhotoEntity(time: Long, receivedPhotosResponse: ReceivedPhotosResponse.ReceivedPhoto): ReceivedPhotoEntity {
+                return ReceivedPhotoEntity.create(
                     receivedPhotosResponse.photoId,
                     receivedPhotosResponse.uploadedPhotoName,
                     receivedPhotosResponse.receivedPhotoName,
                     receivedPhotosResponse.lon,
-                    receivedPhotosResponse.lat
+                    receivedPhotosResponse.lat,
+                    time
                 )
             }
 
-            fun toReceivedPhotoEntities(receivedPhotosResponseList: List<ReceivedPhotosResponse.ReceivedPhoto>): List<ReceivedPhotoEntity> {
-                return receivedPhotosResponseList.map { toReceivedPhotoEntity(it) }
+            fun toReceivedPhotoEntities(time: Long, receivedPhotosResponseList: List<ReceivedPhotosResponse.ReceivedPhoto>): List<ReceivedPhotoEntity> {
+                return receivedPhotosResponseList.map { toReceivedPhotoEntity(time, it) }
             }
         }
 
@@ -87,13 +88,13 @@ object ReceivedPhotosMapper {
     }
 
     object FromObject {
-        fun toPhotoAnswerEntity(receivedPhotos: GetReceivedPhotosResponse.ReceivedPhoto): ReceivedPhotoEntity {
-            return ReceivedPhotoEntity(
-                null,
+        fun toReceivedPhotoEntity(time: Long, receivedPhotos: GetReceivedPhotosResponse.ReceivedPhoto): ReceivedPhotoEntity {
+            return ReceivedPhotoEntity.create(
                 receivedPhotos.uploadedPhotoName,
                 receivedPhotos.receivedPhotoName,
                 receivedPhotos.receiverLon,
-                receivedPhotos.receiverLat
+                receivedPhotos.receiverLat,
+                time
             )
         }
     }
