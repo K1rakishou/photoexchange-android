@@ -9,7 +9,6 @@ import android.widget.TextView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import io.reactivex.subjects.PublishSubject
 
 class ReceivedPhotosAdapter(
@@ -93,7 +92,7 @@ class ReceivedPhotosAdapter(
 
     override fun doGetBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
         return arrayListOf(
-            BaseAdapterInfo(AdapterItemType.VIEW_RECEIVED_PHOTO, R.layout.adapter_item_photo_answer, PhotoAnswerViewHolder::class.java),
+            BaseAdapterInfo(AdapterItemType.VIEW_RECEIVED_PHOTO, R.layout.adapter_item_received_photo, PhotoAnswerViewHolder::class.java),
             BaseAdapterInfo(AdapterItemType.VIEW_PROGRESS, R.layout.adapter_item_progress, ProgressViewHolder::class.java)
         )
     }
