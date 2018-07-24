@@ -29,7 +29,8 @@ open class UploadPhotoServicePresenter(
     private val takenPhotosRepository: TakenPhotosRepository,
     private val schedulerProvider: SchedulerProvider,
     private val uploadPhotosUseCase: UploadPhotosUseCase,
-    private val getUserIdUseCase: GetUserIdUseCase
+    private val getUserIdUseCase: GetUserIdUseCase,
+    private val uploadPhotosDelayMs: Long
 ) {
     private val TAG = "UploadPhotoServicePresenter"
     private val compositeDisposable = CompositeDisposable()
@@ -84,7 +85,7 @@ open class UploadPhotoServicePresenter(
             .toList()
             .map { results -> results.none { result -> !result } }
             //1 second delay before starting to upload the next photo
-            .delay(1, TimeUnit.SECONDS, schedulerProvider.CALC())
+            .delay(uploadPhotosDelayMs, TimeUnit.MILLISECONDS, schedulerProvider.CALC())
             .toObservable()
             //send event when all photos has been uploaded without errors
             .doOnNext {

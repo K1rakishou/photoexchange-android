@@ -61,9 +61,9 @@ class GetGalleryPhotosUseCaseTest {
             .assertTerminated()
             .awaitTerminalEvent()
 
-        Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
-
         Mockito.verify(apiClient, Mockito.times(1)).getGalleryPhotoIds(lastId, photosPerPage)
+
+        Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
         Mockito.verifyNoMoreInteractions(apiClient)
     }
 
@@ -88,9 +88,9 @@ class GetGalleryPhotosUseCaseTest {
             .assertTerminated()
             .awaitTerminalEvent()
 
-        Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
-
         Mockito.verify(apiClient, Mockito.times(1)).getGalleryPhotoIds(lastId, photosPerPage)
+
+        Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
         Mockito.verifyNoMoreInteractions(apiClient)
     }
 
@@ -111,6 +111,7 @@ class GetGalleryPhotosUseCaseTest {
             .thenReturn(Single.just(GalleryPhotoIdsResponse.success(galleryPhotoIds)))
         Mockito.`when`(galleryPhotoRepository.findMany(galleryPhotoIds))
             .thenReturn(galleryPhotos)
+        Mockito.doNothing().`when`(galleryPhotoRepository).deleteOldPhotos()
 
         val events = getGalleryPhotosUseCase.loadPageOfPhotos(lastId, photosPerPage)
             .test()
@@ -125,9 +126,10 @@ class GetGalleryPhotosUseCaseTest {
         assertEquals(5, values.size)
 
         Mockito.verify(galleryPhotoRepository, Mockito.times(1)).findMany(galleryPhotoIds)
-        Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
-
+        Mockito.verify(galleryPhotoRepository, Mockito.times(1)).deleteOldPhotos()
         Mockito.verify(apiClient, Mockito.times(1)).getGalleryPhotoIds(lastId, photosPerPage)
+
+        Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
         Mockito.verifyNoMoreInteractions(apiClient)
     }
 
@@ -164,6 +166,7 @@ class GetGalleryPhotosUseCaseTest {
             .thenReturn(galleryPhotosFromDb)
         Mockito.`when`(galleryPhotoRepository.saveMany(galleryPhotosFromServer))
             .thenReturn(true)
+        Mockito.doNothing().`when`(galleryPhotoRepository).deleteOldPhotos()
 
         val events = getGalleryPhotosUseCase.loadPageOfPhotos(lastId, photosPerPage)
             .test()
@@ -179,10 +182,11 @@ class GetGalleryPhotosUseCaseTest {
 
         Mockito.verify(galleryPhotoRepository, Mockito.times(1)).findMany(galleryPhotoIds)
         Mockito.verify(galleryPhotoRepository, Mockito.times(1)).saveMany(galleryPhotosFromServer)
-        Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
-
+        Mockito.verify(galleryPhotoRepository, Mockito.times(1)).deleteOldPhotos()
         Mockito.verify(apiClient, Mockito.times(1)).getGalleryPhotoIds(lastId, photosPerPage)
         Mockito.verify(apiClient, Mockito.times(1)).getGalleryPhotos(photoIdsJoined)
+
+        Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
         Mockito.verifyNoMoreInteractions(apiClient)
     }
 
@@ -219,6 +223,7 @@ class GetGalleryPhotosUseCaseTest {
             .thenReturn(galleryPhotosFromDb)
         Mockito.`when`(galleryPhotoRepository.saveMany(galleryPhotosFromServer))
             .thenReturn(true)
+        Mockito.doNothing().`when`(galleryPhotoRepository).deleteOldPhotos()
 
         val events = getGalleryPhotosUseCase.loadPageOfPhotos(lastId, photosPerPage)
             .test()
@@ -231,6 +236,15 @@ class GetGalleryPhotosUseCaseTest {
 
         val values = (events.first() as Either.Value).value
         assertEquals(5, values.size)
+
+        Mockito.verify(galleryPhotoRepository, Mockito.times(1)).findMany(galleryPhotoIds)
+        Mockito.verify(galleryPhotoRepository, Mockito.times(1)).saveMany(galleryPhotosFromServer)
+        Mockito.verify(galleryPhotoRepository, Mockito.times(1)).deleteOldPhotos()
+        Mockito.verify(apiClient, Mockito.times(1)).getGalleryPhotoIds(lastId, photosPerPage)
+        Mockito.verify(apiClient, Mockito.times(1)).getGalleryPhotos(photoIdsJoined)
+
+        Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
+        Mockito.verifyNoMoreInteractions(apiClient)
     }
 }
 

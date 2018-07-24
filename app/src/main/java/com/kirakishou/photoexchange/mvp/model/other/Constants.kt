@@ -23,6 +23,8 @@ object Constants {
 
     const val ADAPTER_LOAD_MORE_ITEMS_DELAY_MS = 800L
     const val PROGRESS_FOOTER_REMOVE_DELAY_MS = 200L
+    const val RECEIVE_PHOTOS_DELAY_MS = 1000L
+    const val UPLOAD_PHOTOS_DELAY_MS = 1000L
 
     //interval to update photos in the db with fresh information
     val GALLERY_PHOTOS_CACHE_MAX_LIVE_TIME = 30.minutes()

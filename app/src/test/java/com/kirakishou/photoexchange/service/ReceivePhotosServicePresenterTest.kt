@@ -38,7 +38,8 @@ class ReceivePhotosServicePresenterTest {
                 uploadedPhotosRepository,
                 settingsRepository,
                 schedulerProvider,
-                receivePhotosUseCase)
+                receivePhotosUseCase,
+                0L)
         )
     }
 

@@ -97,7 +97,7 @@ open class GalleryPhotoRepository(
         return galleryPhotoInfoDao.save(galleryPhotoInfoEntity).isSuccess()
     }
 
-    fun deleteOldPhotos() {
+    open fun deleteOldPhotos() {
         val now = timeUtils.getTimeFast()
         galleryPhotoDao.deleteOlderThan(now - galleryPhotoCacheMaxLiveTime)
     }

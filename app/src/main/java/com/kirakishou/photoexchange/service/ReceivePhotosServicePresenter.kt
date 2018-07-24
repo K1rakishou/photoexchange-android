@@ -20,7 +20,8 @@ open class ReceivePhotosServicePresenter(
     private val uploadedPhotosRepository: UploadedPhotosRepository,
     private val settingsRepository: SettingsRepository,
     private val schedulerProvider: SchedulerProvider,
-    private val receivePhotosUseCase: ReceivePhotosUseCase
+    private val receivePhotosUseCase: ReceivePhotosUseCase,
+    private val receivePhotosDelayMs: Long
 ) {
 
     private val TAG = "ReceivePhotosServicePresenter"
@@ -32,7 +33,7 @@ open class ReceivePhotosServicePresenter(
     init {
         compositeDisposable += findPhotosSubject
             .subscribeOn(schedulerProvider.IO())
-            .delay(1, TimeUnit.SECONDS, schedulerProvider.CALC())
+            .delay(receivePhotosDelayMs, TimeUnit.MILLISECONDS, schedulerProvider.CALC())
             .concatMap { receivePhotosInternal() }
             .doOnEach { sendEvent(ReceivePhotoEvent.StopService()) }
             .subscribe()
@@ -46,18 +47,45 @@ open class ReceivePhotosServicePresenter(
                 return@concatMapSingle receivePhotosUseCase.receivePhotos(photoData)
                     .doOnNext { event -> handlePhotoReceivedEvent(event) }
                     .toList()
-                    .map { hasErrorEvents(it) }
-                    .doOnSuccess { hasErrors ->
-                        if (!hasErrors) {
-                            sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Success()))
-                        } else {
-                            sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Error()))
-                        }
-                    }
+                    .doOnSuccess { eventList -> sendNotificationEvent(eventList) }
             }
             .doOnError { error -> onError(error) }
             .map { Unit }
             .onErrorReturnItem(Unit)
+    }
+
+    private fun sendNotificationEvent(eventList: MutableList<ReceivePhotoEvent>) {
+        val hasErrors = hasErrorEvents(eventList)
+        if (!hasErrors) {
+            sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Success()))
+        } else {
+            val errorEvent = getFirstErrorEvent(eventList)
+
+            val isFatal = when (errorEvent) {
+                is ReceivePhotoEvent.OnKnownError -> isErrorCodeFatal(errorEvent.errorCode)
+                is ReceivePhotoEvent.OnUnknownError -> true
+                else -> throw IllegalArgumentException("Not an error event $errorEvent")
+            }
+            if (isFatal) {
+                sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Error()))
+            } else {
+                sendEvent(ReceivePhotoEvent.RemoveNotification())
+            }
+        }
+    }
+
+    private fun isErrorCodeFatal(errorCode: ErrorCode.ReceivePhotosErrors?): Boolean {
+        return when (errorCode) {
+            null,
+            is ErrorCode.ReceivePhotosErrors.Ok,
+            is ErrorCode.ReceivePhotosErrors.NotEnoughPhotosOnServer -> false
+
+            else -> true
+        }
+    }
+
+    private fun getFirstErrorEvent(eventList: List<ReceivePhotoEvent>): ReceivePhotoEvent {
+        return eventList.first { it is ReceivePhotoEvent.OnKnownError || it is ReceivePhotoEvent.OnUnknownError }
     }
 
     private fun hasErrorEvents(eventList: List<ReceivePhotoEvent>): Boolean {

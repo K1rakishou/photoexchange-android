@@ -42,7 +42,8 @@ class UploadPhotoServicePresenterTests {
                 takenPhotosRepository,
                 schedulerProvider,
                 uploadPhotosUseCase,
-                getUserIdUseCase)
+                getUserIdUseCase,
+                0L)
         )
     }
 

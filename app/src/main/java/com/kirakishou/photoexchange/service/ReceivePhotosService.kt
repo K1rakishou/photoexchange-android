@@ -131,7 +131,7 @@ class ReceivePhotosService : Service() {
 
             return NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Error")
-                .setContentText("Could not upload photo")
+                .setContentText("Could not receive a photo")
                 .setSmallIcon(android.R.drawable.stat_notify_error)
                 .setWhen(System.currentTimeMillis())
                 .setContentIntent(getNotificationIntent())
@@ -140,7 +140,7 @@ class ReceivePhotosService : Service() {
         } else {
             return NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Error")
-                .setContentText("Could not upload photo")
+                .setContentText("Could not receive a  photo")
                 .setSmallIcon(android.R.drawable.stat_notify_error)
                 .setWhen(System.currentTimeMillis())
                 .setContentIntent(getNotificationIntent())

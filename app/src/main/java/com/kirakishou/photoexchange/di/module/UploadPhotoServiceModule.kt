@@ -5,6 +5,7 @@ import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerPro
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
+import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.service.UploadPhotoServicePresenter
 import dagger.Module
 import dagger.Provides
@@ -22,6 +23,7 @@ class UploadPhotoServiceModule {
                                            schedulerProvider: SchedulerProvider,
                                            uploadPhotosUseCase: UploadPhotosUseCase,
                                            getUserIdUseCase: GetUserIdUseCase): UploadPhotoServicePresenter {
-        return UploadPhotoServicePresenter(myTakenPhotosRepository, schedulerProvider, uploadPhotosUseCase, getUserIdUseCase)
+        return UploadPhotoServicePresenter(myTakenPhotosRepository, schedulerProvider,
+            uploadPhotosUseCase, getUserIdUseCase, Constants.UPLOAD_PHOTOS_DELAY_MS)
     }
 }

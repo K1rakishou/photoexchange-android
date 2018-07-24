@@ -95,6 +95,10 @@
 
  ✔ Добавить метод для фикса фото зависших в состоянии UPLOADING @high @done (18-06-30 20:34)
 
+ ☐ Создаётся вторая копия PhotosActivity при нажатии на notification @critical
+
+ ☐ Иногда выводится error notification с текстом could not upload photo даже если фото и не заливалось. (Судя по всему вызывается оно из ReceivePhotosService, т.е. ошибка при получении фоток) @high
+
 Сервер
 
  ✔ Рефакторинг PhotoInfoDao и PhotoInfoRepository @done (18-06-12 15:21)
