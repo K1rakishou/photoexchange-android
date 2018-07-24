@@ -4,6 +4,7 @@ import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.interactors.RestoreAccountUseCase
+import com.kirakishou.photoexchange.mvp.model.other.Constants.DOMAIN_NAME
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Completable
 import io.reactivex.Single
@@ -14,8 +15,8 @@ class SettingsActivityViewModel(
     private val schedulerProvider: SchedulerProvider,
     private val restoreAccountUseCase: RestoreAccountUseCase
 ) : BaseViewModel() {
-
     private val TAG = "SettingsActivityViewModel"
+
 
     fun resetMakePublicPhotoOption(): Completable {
         return Completable
@@ -30,6 +31,14 @@ class SettingsActivityViewModel(
     }
 
     fun restoreOldAccount(oldUserId: String): Single<Either<ErrorCode.CheckAccountExistsErrors, Boolean>> {
-        return restoreAccountUseCase.restoreAccount(oldUserId)
+        val suffix = "@${DOMAIN_NAME}"
+
+        val userId = if (!oldUserId.endsWith(suffix, true)) {
+            oldUserId + suffix
+        } else {
+            oldUserId
+        }
+
+        return restoreAccountUseCase.restoreAccount(userId)
     }
 }

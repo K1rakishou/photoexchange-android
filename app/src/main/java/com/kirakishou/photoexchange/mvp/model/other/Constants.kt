@@ -12,6 +12,7 @@ object Constants {
     val SHARED_PREFS_PREFIX = "${appid}_SHARED_PREF"
     const val BASE_URL = "http://kez1911.asuscomm.com:8080/"
     const val DATABASE_NAME = "photoexchange_db"
+    const val DOMAIN_NAME = "photoexchange.io"
 
     const val PHOTOS_DELIMITER = ","
 
