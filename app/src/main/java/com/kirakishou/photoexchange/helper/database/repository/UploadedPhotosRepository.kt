@@ -8,12 +8,14 @@ import com.kirakishou.photoexchange.helper.extension.minutes
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.net.response.GetUploadedPhotosResponse
+import timber.log.Timber
 
 open class UploadedPhotosRepository(
     private val database: MyDatabase,
     private val timeUtils: TimeUtils,
     private val uploadedPhotoMaxCacheLiveTime: Long
 ) {
+    private val TAG = "UploadedPhotosRepository"
     private val uploadedPhotoDao = database.uploadedPhotoDao()
 
     open fun save(photoId: Long, photoName: String, lon: Double, lat: Double, uploadedOn: Long): Boolean {
@@ -77,7 +79,13 @@ open class UploadedPhotosRepository(
     }
 
     open fun deleteOld() {
+        val oldCount = findAllTest().size
         val now = timeUtils.getTimeFast()
         uploadedPhotoDao.deleteOlderThan(now - uploadedPhotoMaxCacheLiveTime)
+
+        val newCount = findAllTest().size
+        if (newCount < oldCount) {
+            Timber.tag(TAG).d("Deleted ${newCount - oldCount} uploadedPhotos from the cache")
+        }
     }
 }

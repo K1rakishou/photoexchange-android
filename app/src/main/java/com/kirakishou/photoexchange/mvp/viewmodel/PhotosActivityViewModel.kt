@@ -72,6 +72,7 @@ class PhotosActivityViewModel(
         return Observable.just(Unit)
             .subscribeOn(schedulerProvider.IO())
             .concatMap { clearPhotoIdsCache(isFragmentFreshlyCreated, CachedPhotoIdEntity.PhotoType.GalleryPhoto) }
+            .concatMap { clearGalleryPhotoIdsCache() }
             .concatMap { loadPageOfGalleryPhotos(isFragmentFreshlyCreated, lastId, photosPerPage) }
             .concatMap { result ->
                 if (result !is Either.Value) {

@@ -97,7 +97,9 @@
 
  ☐ Создаётся вторая копия PhotosActivity при нажатии на notification @critical
 
- ☐ Иногда выводится error notification с текстом could not upload photo даже если фото и не заливалось. (Судя по всему вызывается оно из ReceivePhotosService, т.е. ошибка при получении фоток) @high
+ ✔ Иногда выводится error notification с текстом could not upload photo даже если фото и не заливалось. (Судя по всему вызывается оно из ReceivePhotosService, т.е. ошибка при получении фоток) @high @done (18-07-24 16:45)
+
+ ✔ GalleryPhotosInfo кешируется не всегда @high @done (18-07-24 17:16)
 
 Сервер
 

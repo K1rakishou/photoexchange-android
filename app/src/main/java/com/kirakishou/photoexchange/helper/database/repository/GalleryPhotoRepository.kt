@@ -11,6 +11,7 @@ import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.GalleryPhotoInfo
 import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotoInfoResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
+import timber.log.Timber
 
 open class GalleryPhotoRepository(
     private val database: MyDatabase,
@@ -18,6 +19,7 @@ open class GalleryPhotoRepository(
     private val galleryPhotoCacheMaxLiveTime: Long,
     private val galleryPhotoInfoCacheMaxLiveTime: Long
 ) {
+    private val TAG = "GalleryPhotoRepository"
     private val galleryPhotoDao = database.galleryPhotoDao()
     private val galleryPhotoInfoDao = database.galleryPhotoInfoDao()
 
@@ -98,12 +100,24 @@ open class GalleryPhotoRepository(
     }
 
     open fun deleteOldPhotos() {
+        val oldCount = findAllPhotosTest().size
         val now = timeUtils.getTimeFast()
         galleryPhotoDao.deleteOlderThan(now - galleryPhotoCacheMaxLiveTime)
+
+        val newCount = findAllPhotosTest().size
+        if (newCount < oldCount) {
+            Timber.tag(TAG).d("Deleted ${newCount - oldCount} galleryPhotos from the cache")
+        }
     }
 
     fun deleteOldPhotosInfo() {
+        val oldCount = findAllPhotosInfoTest().size
         val now = timeUtils.getTimeFast()
         galleryPhotoInfoDao.deleteOlderThan(now - galleryPhotoInfoCacheMaxLiveTime)
+
+        val newCount = findAllPhotosInfoTest().size
+        if (newCount < oldCount) {
+            Timber.tag(TAG).d("Deleted ${newCount - oldCount} galleryPhotosInfo from the cache")
+        }
     }
 }

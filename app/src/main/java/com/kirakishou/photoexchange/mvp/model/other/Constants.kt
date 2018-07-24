@@ -27,8 +27,9 @@ object Constants {
     const val UPLOAD_PHOTOS_DELAY_MS = 1000L
 
     //interval to update photos in the db with fresh information
-    val GALLERY_PHOTOS_CACHE_MAX_LIVE_TIME = 30.minutes()
-    val GALLERY_PHOTOS_INFO_CACHE_MAX_LIVE_TIME = 30.minutes()
-    val UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME = 30.minutes()
-    val RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME = 30.minutes()
+    //TODO: change this in production
+    val GALLERY_PHOTOS_CACHE_MAX_LIVE_TIME = 1.minutes()
+    val GALLERY_PHOTOS_INFO_CACHE_MAX_LIVE_TIME = 1.minutes()
+    val UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME = 1.minutes()
+    val RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME = 1.minutes()
 }
