@@ -21,7 +21,8 @@ abstract class GalleryPhotoInfoDao {
 
     @Query("SELECT * FROM ${GalleryPhotoInfoEntity.TABLE_NAME} " +
         "WHERE " +
-        "${GalleryPhotoInfoEntity.GALLERY_PHOTO_ID_COLUMN} IN (:galleryPhotoIds)")
+        "${GalleryPhotoInfoEntity.GALLERY_PHOTO_ID_COLUMN} IN (:galleryPhotoIds) " +
+        "ORDER BY ${GalleryPhotoInfoEntity.GALLERY_PHOTO_ID_COLUMN} DESC")
     abstract fun findMany(galleryPhotoIds: List<Long>): List<GalleryPhotoInfoEntity>
 
     @Query("SELECT * FROM ${GalleryPhotoInfoEntity.TABLE_NAME}")

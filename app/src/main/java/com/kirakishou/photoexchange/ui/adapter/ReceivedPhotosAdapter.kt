@@ -22,9 +22,18 @@ class ReceivedPhotosAdapter(
     val duplicatesChecked = hashSetOf<Long>()
 
     fun addReceivedPhotos(receivedPhotos: List<ReceivedPhoto>) {
-        for (receivedPhoto in receivedPhotos) {
-            addReceivedPhoto(receivedPhoto)
+        val filteredReceivedPhotos = receivedPhotos
+            .filter { photo -> duplicatesChecked.add(photo.photoId) }
+            .map { photo -> ReceivedPhotosAdapterItem.ReceivedPhotoItem(photo, true) }
+
+        val lastIndex = if (items.isNotEmpty()) {
+            items.lastIndex
+        } else {
+            0
         }
+
+        items.addAll(filteredReceivedPhotos)
+        notifyItemRangeInserted(lastIndex, filteredReceivedPhotos.size)
     }
 
     fun addReceivedPhoto(receivedPhoto: ReceivedPhoto) {

@@ -39,10 +39,6 @@ open class ReceivedPhotosRepository(
         return receivedPhotosDao.countAll().toInt()
     }
 
-    fun findAll(): List<ReceivedPhoto> {
-        return ReceivedPhotosMapper.FromEntity.toReceivedPhotos(receivedPhotosDao.findAll())
-    }
-
     fun findAllTest(): List<ReceivedPhotoEntity> {
         return receivedPhotosDao.findAll()
     }
