@@ -59,4 +59,7 @@ interface ApiService {
     @GET("/v1/api/get_received_photos/{user_id}/{photo_ids}")
     fun getReceivedPhotos(@Path("user_id") userId: String,
                           @Path("photo_ids") photoIds: String): Single<Response<GetReceivedPhotosResponse>>
+
+    @GET("/v1/api/check_account_exists/{user_id}")
+    fun checkAccountExists(@Path("user_id") userId: String): Single<Response<CheckAccountExistsResponse>>
 }

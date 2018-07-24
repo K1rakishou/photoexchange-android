@@ -28,4 +28,7 @@ abstract class ReceivedPhotoDao {
     @Query("DELETE FROM ${ReceivedPhotoEntity.TABLE_NAME} " +
         "WHERE ${ReceivedPhotoEntity.INSERTED_ON_COLUMN} < :time")
     abstract fun deleteOlderThan(time: Long)
+
+    @Query("DELETE FROM ${ReceivedPhotoEntity.TABLE_NAME}")
+    abstract fun deleteAll()
 }

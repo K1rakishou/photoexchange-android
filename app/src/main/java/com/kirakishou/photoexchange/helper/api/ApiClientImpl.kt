@@ -79,4 +79,9 @@ open class ApiClientImpl
         return GetReceivedPhotosRequest<GetReceivedPhotosResponse>(userId, photoIds, apiService, schedulerProvider, gson)
             .execute()
     }
+
+    override fun checkAccountExists(userId: String): Single<CheckAccountExistsResponse> {
+        return CheckAccountExistsRequest<CheckAccountExistsResponse>(userId, apiService, schedulerProvider, gson)
+            .execute()
+    }
 }

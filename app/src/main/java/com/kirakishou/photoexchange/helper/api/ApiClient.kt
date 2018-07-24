@@ -19,4 +19,5 @@ interface ApiClient {
     fun getUploadedPhotos(userId: String, photoIds: String): Single<GetUploadedPhotosResponse>
     fun getReceivedPhotoIds(userId: String, lastId: Long, count: Int): Single<GetReceivedPhotoIdsResponse>
     fun getReceivedPhotos(userId: String, photoIds: String): Single<GetReceivedPhotosResponse>
+    fun checkAccountExists(userId: String): Single<CheckAccountExistsResponse>
 }

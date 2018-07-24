@@ -6,10 +6,13 @@ import android.support.v7.widget.AppCompatButton
 import android.widget.TextView
 import android.widget.Toast
 import butterknife.BindView
+import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.SettingsActivityModule
+import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.mvp.viewmodel.SettingsActivityViewModel
+import com.kirakishou.photoexchange.ui.dialog.EnterOldUserIdDialog
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
@@ -20,6 +23,9 @@ class SettingsActivity : BaseActivity() {
 
     @BindView(R.id.reset_make_public_photo_option_button)
     lateinit var resetButton: AppCompatButton
+
+    @BindView(R.id.restore_from_old_user_id)
+    lateinit var restoreFromOldUserIdButton: AppCompatButton
 
     @BindView(R.id.user_id_text_view)
     lateinit var userIdTextView: TextView
@@ -51,6 +57,23 @@ class SettingsActivity : BaseActivity() {
                 } else {
                     userIdTextView.text = userId
                 }
+            })
+
+        compositeDisposable += RxView.clicks(restoreFromOldUserIdButton)
+            .concatMap { EnterOldUserIdDialog().show(this).toObservable() }
+            .filter { userId -> userId.isNotEmpty() }
+            .concatMap { userId -> viewModel.restoreOldAccount(userId).toObservable() }
+            .subscribe({ result ->
+                when (result) {
+                    is Either.Value -> {
+                        onShowToast("Successfully restored old account")
+                        finish()
+                    }
+                    is Either.Error -> showErrorCodeToast(result.error)
+                }
+            }, { error ->
+                Timber.tag(TAG).e(error)
+                onShowToast("Unknown error while trying to restore account: ${error.message ?: "empty error message"}")
             })
     }
 

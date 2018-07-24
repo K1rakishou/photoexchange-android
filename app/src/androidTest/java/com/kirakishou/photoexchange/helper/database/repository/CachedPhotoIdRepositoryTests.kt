@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.tests.repository
+package com.kirakishou.photoexchange.helper.database.repository
 
 import android.arch.persistence.room.Room
 import android.content.Context
@@ -6,7 +6,6 @@ import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.CachedPhotoIdEntity
-import com.kirakishou.photoexchange.helper.database.repository.CachedPhotoIdRepository
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before

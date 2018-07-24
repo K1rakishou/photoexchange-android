@@ -1,12 +1,10 @@
-package com.kirakishou.photoexchange.tests.repository
+package com.kirakishou.photoexchange.helper.database.repository
 
 import android.arch.persistence.room.Room
 import android.content.Context
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.TempFileRepository
 import com.kirakishou.photoexchange.helper.util.*
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import org.junit.After

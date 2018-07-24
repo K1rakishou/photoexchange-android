@@ -88,4 +88,8 @@ open class UploadedPhotosRepository(
             Timber.tag(TAG).d("Deleted ${newCount - oldCount} uploadedPhotos from the cache")
         }
     }
+
+    fun deleteAll() {
+        uploadedPhotoDao.deleteAll()
+    }
 }

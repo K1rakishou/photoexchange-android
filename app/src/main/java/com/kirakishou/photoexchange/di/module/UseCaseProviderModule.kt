@@ -88,4 +88,16 @@ class UseCaseProviderModule {
                                            galleryPhotoRepository: GalleryPhotoRepository): GetGalleryPhotosInfoUseCase {
         return GetGalleryPhotosInfoUseCase(apiClient, galleryPhotoRepository)
     }
+
+    @Singleton
+    @Provides
+    fun provideRestoreAccountUseCase(apiClient: ApiClient,
+                                     database: MyDatabase,
+                                     cachedPhotoIdRepository: CachedPhotoIdRepository,
+                                     settingsRepository: SettingsRepository,
+                                     uploadedPhotosRepository: UploadedPhotosRepository,
+                                     receivedPhotosRepository: ReceivedPhotosRepository): RestoreAccountUseCase {
+        return RestoreAccountUseCase(apiClient, database, cachedPhotoIdRepository, settingsRepository,
+            uploadedPhotosRepository, receivedPhotosRepository)
+    }
 }

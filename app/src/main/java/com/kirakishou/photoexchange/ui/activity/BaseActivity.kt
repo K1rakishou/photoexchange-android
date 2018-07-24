@@ -127,6 +127,7 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.ReportPhotoErrors.Ok,
             is ErrorCode.GetUserIdError.Ok,
             is ErrorCode.GetUploadedPhotosErrors.Ok,
+            is ErrorCode.CheckAccountExistsErrors.Ok,
             is ErrorCode.GetReceivedPhotosErrors.Ok -> null
 
             is ErrorCode.TakePhotoErrors.UnknownError,
@@ -137,6 +138,7 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.ReportPhotoErrors.UnknownError,
             is ErrorCode.GetUserIdError.UnknownError,
             is ErrorCode.GetUploadedPhotosErrors.UnknownError,
+            is ErrorCode.CheckAccountExistsErrors.UnknownError,
             is ErrorCode.GetReceivedPhotosErrors.UnknownError -> "Unknown error"
 
             is ErrorCode.UploadPhotoErrors.BadRequest,
@@ -175,6 +177,7 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.GetUserIdError.LocalTimeout,
             is ErrorCode.GetUploadedPhotosErrors.LocalTimeout,
             is ErrorCode.GetReceivedPhotosErrors.LocalTimeout,
+            is ErrorCode.CheckAccountExistsErrors.LocalTimeout,
             is ErrorCode.TakePhotoErrors.TimeoutException -> "Operation timeout error"
 
             is ErrorCode.ReceivePhotosErrors.LocalDatabaseError,
@@ -197,6 +200,7 @@ abstract class BaseActivity : AppCompatActivity() {
             is ErrorCode.UploadPhotoErrors.LocalCouldNotGetUserId -> "Could not get user id from the server"
             is ErrorCode.UploadPhotoErrors.LocalCouldNotUpdatePhotoState -> "Could not update photo state"
             is ErrorCode.ReceivePhotosErrors.LocalPhotoNamesAreEmpty -> "There are no photos in the request"
+            is ErrorCode.CheckAccountExistsErrors.LocalDatabaseError -> "Could not restore account, local database error"
         }
 
         if (errorMessage != null) {

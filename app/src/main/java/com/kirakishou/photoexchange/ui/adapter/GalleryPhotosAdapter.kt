@@ -152,6 +152,7 @@ class GalleryPhotosAdapter(
                     holder.reportButton.isClickable = false
                 }
 
+                holder.galleryPhotoId.text = item.photo.galleryPhotoId.toString()
                 holder.favouritesCount.text = item.photo.favouritesCount.toString()
 
                 imageLoader.loadPhotoFromNetInto(item.photo.photoName, photoSize, holder.photoView)
@@ -181,6 +182,7 @@ class GalleryPhotosAdapter(
             val photoButtonsHolder = itemView.findViewById<LinearLayout>(R.id.photo_buttons_holder)
             val favouriteIcon = itemView.findViewById<ImageView>(R.id.favourite_icon)
             val reportIcon = itemView.findViewById<ImageView>(R.id.report_icon)
+            val galleryPhotoId = itemView.findViewById<TextView>(R.id.gallery_photo_id)
         }
     }
 }

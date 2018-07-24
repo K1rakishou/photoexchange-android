@@ -273,6 +273,29 @@ sealed class ErrorCode(private val _value: Int) {
         }
     }
 
+    sealed class CheckAccountExistsErrors(value: Int) : ErrorCode(value) {
+        override fun offset(): Int = 450
+
+        class UnknownError : CheckAccountExistsErrors(0)
+        class Ok : CheckAccountExistsErrors(1)
+
+        class LocalDatabaseError : CheckAccountExistsErrors(25)
+        class LocalTimeout : CheckAccountExistsErrors(26)
+
+        companion object {
+            fun fromInt(value: Int): CheckAccountExistsErrors {
+                return when (value) {
+                    450 -> UnknownError()
+                    451 -> Ok()
+
+                    475 -> LocalDatabaseError()
+                    476 -> LocalTimeout()
+                    else -> throw IllegalArgumentException("Unknown value $value")
+                }
+            }
+        }
+    }
+
     companion object {
         fun <T : ErrorCode> fromInt(clazz: KClass<*>, errorCodeInt: Int): T {
             val errorCode = when (clazz) {

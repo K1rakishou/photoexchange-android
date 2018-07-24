@@ -30,4 +30,17 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/user_id_text_view" />
 
+    <android.support.v7.widget.AppCompatButton
+        android:id="@+id/restore_from_old_user_id"
+        android:layout_width="256dp"
+        android:layout_height="48dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="Restore old account"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/reset_make_public_photo_option_button" />
+
 </android.support.constraint.ConstraintLayout>
