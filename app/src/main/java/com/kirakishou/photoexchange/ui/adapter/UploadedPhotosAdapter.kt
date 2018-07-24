@@ -151,11 +151,11 @@ class UploadedPhotosAdapter(
         duplicatesCheckerSet.add(photo.photoId)
 
         if (!photo.hasReceiverInfo) {
-            uploadedItems.add(UploadedPhotosAdapterItem.UploadedPhotoItem(photo))
-            notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.lastIndex)
+            uploadedItems.add(0, UploadedPhotosAdapterItem.UploadedPhotoItem(photo))
+            notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size)
         } else {
-            uploadedWithReceiverInfoItems.add(UploadedPhotosAdapterItem.UploadedPhotoItem(photo))
-            notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size + uploadedItems.lastIndex)
+            uploadedWithReceiverInfoItems.add(0, UploadedPhotosAdapterItem.UploadedPhotoItem(photo))
+            notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size)
         }
     }
 

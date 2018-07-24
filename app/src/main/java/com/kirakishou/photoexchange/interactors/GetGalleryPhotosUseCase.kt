@@ -74,15 +74,14 @@ open class GetGalleryPhotosUseCase(
         )
 
         return Observable.just(photoIdsToGetFromServer)
-            .concatMap { photoIds -> combinePhotos(photoIds, photoIdsToGetFromServer, galleryPhotosFromDb) }
+            .concatMap { photoIds -> combinePhotos(photoIds, galleryPhotosFromDb) }
     }
 
     private fun combinePhotos(
-        photoIds: List<Long>,
         photoIdsToGetFromServer: List<Long>,
         galleryPhotosFromDb: List<GalleryPhoto>
     ): Observable<Either.Value<List<GalleryPhoto>>> {
-        if (photoIds.isNotEmpty()) {
+        if (photoIdsToGetFromServer.isNotEmpty()) {
             return getFreshPhotosFromServer(photoIdsToGetFromServer)
                 .concatMap { result ->
                     if (result is Either.Value) {

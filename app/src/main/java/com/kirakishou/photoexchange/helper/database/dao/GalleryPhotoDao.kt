@@ -13,7 +13,8 @@ abstract class GalleryPhotoDao {
     abstract fun saveMany(galleryPhotos: List<GalleryPhotoEntity>): Array<Long>
 
     @Query("SELECT * FROM ${GalleryPhotoEntity.TABLE_NAME} " +
-        "WHERE ${GalleryPhotoEntity.GALLERY_PHOTO_ID_COLUMN} IN (:galleryPhotoIds)")
+        "WHERE ${GalleryPhotoEntity.GALLERY_PHOTO_ID_COLUMN} IN (:galleryPhotoIds) " +
+        "ORDER BY ${GalleryPhotoEntity.GALLERY_PHOTO_ID_COLUMN} DESC")
     abstract fun findMany(galleryPhotoIds: List<Long>): List<GalleryPhotoEntity>
 
     @Query("SELECT * FROM ${GalleryPhotoEntity.TABLE_NAME} " +
