@@ -34,7 +34,7 @@ class UploadedPhotosAdapter(
     private val uploadedWithReceiverInfoItems = arrayListOf<UploadedPhotosAdapterItem>()
     private val footerItems = arrayListOf<UploadedPhotosAdapterItem>()
 
-    private val duplicatesCheckerSet = hashSetOf<Long>()
+    private val duplicatesChecker = hashSetOf<Long>()
     private val photosProgressMap = hashMapOf<Long, Int>()
 
     fun getFailedPhotosCount(): Int {
@@ -118,7 +118,7 @@ class UploadedPhotosAdapter(
             return
         }
 
-        duplicatesCheckerSet.add(photo.id)
+        duplicatesChecker.add(photo.id)
 
         when (photo.photoState) {
             PhotoState.PHOTO_QUEUED_UP,
@@ -138,9 +138,18 @@ class UploadedPhotosAdapter(
     }
 
     fun addUploadedPhotos(photos: List<UploadedPhoto>) {
-        for (photo in photos) {
-            addUploadedPhoto(photo)
-        }
+        val filteredReceivedPhotos = photos
+            .filter { photo -> duplicatesChecker.add(photo.photoId) }
+            .map { photo -> UploadedPhotosAdapterItem.UploadedPhotoItem(photo) }
+
+        val photosWithoutReceiverInfo = filteredReceivedPhotos.filter { !it.uploadedPhoto.hasReceiverInfo }
+        val photosWithReceiverInfo = filteredReceivedPhotos.filter { it.uploadedPhoto.hasReceiverInfo }
+
+        uploadedItems.addAll(photosWithoutReceiverInfo)
+        notifyItemRangeInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size, photosWithoutReceiverInfo.size)
+
+        uploadedWithReceiverInfoItems.addAll(photosWithReceiverInfo)
+        notifyItemRangeInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size, photosWithReceiverInfo.size)
     }
 
     fun addUploadedPhoto(photo: UploadedPhoto) {
@@ -148,7 +157,7 @@ class UploadedPhotosAdapter(
             return
         }
 
-        duplicatesCheckerSet.add(photo.photoId)
+        duplicatesChecker.add(photo.photoId)
 
         if (!photo.hasReceiverInfo) {
             uploadedItems.add(0, UploadedPhotosAdapterItem.UploadedPhotoItem(photo))
@@ -164,7 +173,7 @@ class UploadedPhotosAdapter(
             return
         }
 
-        duplicatesCheckerSet.remove(photoId)
+        duplicatesChecker.remove(photoId)
 
         var globalIndex = headerItems.size
         var localIndex = -1
@@ -310,7 +319,7 @@ class UploadedPhotosAdapter(
     }
 
     private fun isPhotoAlreadyAdded(photoId: Long): Boolean {
-        return duplicatesCheckerSet.contains(photoId)
+        return duplicatesChecker.contains(photoId)
     }
 
     private fun isPhotoAlreadyAdded(takenPhoto: TakenPhoto): Boolean {
@@ -329,7 +338,7 @@ class UploadedPhotosAdapter(
         uploadedWithReceiverInfoItems.clear()
         footerItems.clear()
 
-        duplicatesCheckerSet.clear()
+        duplicatesChecker.clear()
         photosProgressMap.clear()
 
         notifyDataSetChanged()

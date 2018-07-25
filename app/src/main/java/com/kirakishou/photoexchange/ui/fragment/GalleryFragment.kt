@@ -2,7 +2,6 @@ package com.kirakishou.photoexchange.ui.fragment
 
 
 import android.os.Bundle
-import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.widget.Toast
@@ -10,6 +9,7 @@ import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.ImageLoader
+import com.kirakishou.photoexchange.helper.database.entity.CachedPhotoIdEntity
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
@@ -128,7 +128,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
         layoutManager.spanSizeLookup = GalleryPhotosAdapterSpanSizeLookup(adapter, columnsCount)
 
         photosPerPage = Constants.GALLERY_PHOTOS_PER_ROW * layoutManager.spanCount
-        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, viewModel.uploadedPhotosFragmentLoadPhotosSubject, 1)
+        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, viewModel.uploadedPhotosFragmentLoadPhotosSubject)
 
         galleryPhotosList.layoutManager = layoutManager
         galleryPhotosList.adapter = adapter
@@ -198,28 +198,34 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
 
         requireActivity().runOnUiThread {
             when (event) {
-                is GalleryFragmentEvent.UiEvents -> {
+                is GalleryFragmentEvent.GeneralEvents -> {
                     onUiEvent(event)
                 }
             }.safe
         }
     }
 
-    private fun onUiEvent(event: GalleryFragmentEvent.UiEvents) {
+    private fun onUiEvent(event: GalleryFragmentEvent.GeneralEvents) {
         if (!isAdded) {
             return
         }
 
         galleryPhotosList.post {
             when (event) {
-                is GalleryFragmentEvent.UiEvents.ShowProgressFooter -> {
+                is GalleryFragmentEvent.GeneralEvents.ShowProgressFooter -> {
                     showProgressFooter()
                 }
-                is GalleryFragmentEvent.UiEvents.HideProgressFooter -> {
+                is GalleryFragmentEvent.GeneralEvents.HideProgressFooter -> {
                     hideProgressFooter()
                 }
+                is GalleryFragmentEvent.GeneralEvents.ClearCache -> clearIdsCache()
             }.safe
         }
+    }
+
+    private fun clearIdsCache() {
+        compositeDisposable += viewModel.clearPhotoIdsCache(CachedPhotoIdEntity.PhotoType.GalleryPhoto)
+            .subscribe()
     }
 
     private fun showProgressFooter() {

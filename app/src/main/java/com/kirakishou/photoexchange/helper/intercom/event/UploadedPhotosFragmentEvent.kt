@@ -6,23 +6,24 @@ import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 
 sealed class UploadedPhotosFragmentEvent : BaseEvent {
-    sealed class UiEvents : UploadedPhotosFragmentEvent() {
-        class ShowProgressFooter : UiEvents()
-        class HideProgressFooter : UiEvents()
-        class RemovePhoto(val photo: TakenPhoto) : UiEvents()
-        class AddPhoto(val photo: TakenPhoto) : UiEvents()
-        class AddFailedToUploadPhotos(val photos: List<TakenPhoto>) : UiEvents()
-        class AddQueuedUpPhotos(val photos: List<TakenPhoto>) : UiEvents()
-        class AddUploadedPhotos(val photos: List<UploadedPhoto>) : UiEvents()
-        class ScrollToTop : UiEvents()
-        class PhotoRemoved : UiEvents()
-        class AfterPermissionRequest : UiEvents()
-        class UpdateReceiverInfo(val receivedPhotos: MutableList<ReceivedPhoto>) : UiEvents()
-        class DisableEndlessScrolling : UiEvents()
-        class EnableEndlessScrolling : UiEvents()
-        class ClearAdapter : UiEvents()
-        class StartRefreshing : UiEvents()
-        class StopRefreshing : UiEvents()
+    sealed class GeneralEvents : UploadedPhotosFragmentEvent() {
+        class ShowProgressFooter : GeneralEvents()
+        class HideProgressFooter : GeneralEvents()
+        class RemovePhoto(val photo: TakenPhoto) : GeneralEvents()
+        class AddPhoto(val photo: TakenPhoto) : GeneralEvents()
+        class AddFailedToUploadPhotos(val photos: List<TakenPhoto>) : GeneralEvents()
+        class AddQueuedUpPhotos(val photos: List<TakenPhoto>) : GeneralEvents()
+        class AddUploadedPhotos(val photos: List<UploadedPhoto>) : GeneralEvents()
+        class ScrollToTop : GeneralEvents()
+        class PhotoRemoved : GeneralEvents()
+        class AfterPermissionRequest : GeneralEvents()
+        class UpdateReceiverInfo(val receivedPhotos: MutableList<ReceivedPhoto>) : GeneralEvents()
+        class DisableEndlessScrolling : GeneralEvents()
+        class EnableEndlessScrolling : GeneralEvents()
+        class ClearAdapter : GeneralEvents()
+        class StartRefreshing : GeneralEvents()
+        class StopRefreshing : GeneralEvents()
+        class ClearCache : GeneralEvents()
     }
 
     sealed class PhotoUploadEvent : UploadedPhotosFragmentEvent() {

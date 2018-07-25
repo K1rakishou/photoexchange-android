@@ -18,11 +18,11 @@ class ReceivedPhotosAdapter(
 ) : BaseAdapter<ReceivedPhotosAdapterItem>(context) {
 
     val items = arrayListOf<ReceivedPhotosAdapterItem>()
-    val duplicatesChecked = hashSetOf<Long>()
+    val duplicatesChecker = hashSetOf<Long>()
 
     fun addReceivedPhotos(receivedPhotos: List<ReceivedPhoto>) {
         val filteredReceivedPhotos = receivedPhotos
-            .filter { photo -> duplicatesChecked.add(photo.photoId) }
+            .filter { photo -> duplicatesChecker.add(photo.photoId) }
             .map { photo -> ReceivedPhotosAdapterItem.ReceivedPhotoItem(photo, true) }
 
         val lastIndex = if (items.isNotEmpty()) {
@@ -36,7 +36,7 @@ class ReceivedPhotosAdapter(
     }
 
     fun addReceivedPhoto(receivedPhoto: ReceivedPhoto) {
-       if (!duplicatesChecked.add(receivedPhoto.photoId)) {
+       if (!duplicatesChecker.add(receivedPhoto.photoId)) {
            return
        }
 
@@ -82,6 +82,13 @@ class ReceivedPhotosAdapter(
 
         items.removeAt(lastIndex)
         notifyItemRemoved(lastIndex)
+    }
+
+    fun clear() {
+        items.clear()
+        duplicatesChecker.clear()
+
+        notifyDataSetChanged()
     }
 
     override fun getItemViewType(position: Int): Int {

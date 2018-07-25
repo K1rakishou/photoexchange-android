@@ -4,10 +4,15 @@ import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 
 sealed class ReceivedPhotosFragmentEvent : BaseEvent {
-    sealed class UiEvents : ReceivedPhotosFragmentEvent() {
-        class ScrollToTop : UiEvents()
-        class ShowProgressFooter : UiEvents()
-        class HideProgressFooter : UiEvents()
+    sealed class GeneralEvents : ReceivedPhotosFragmentEvent() {
+        class ScrollToTop : GeneralEvents()
+        class ShowProgressFooter : GeneralEvents()
+        class HideProgressFooter : GeneralEvents()
+        class StartRefreshing : GeneralEvents()
+        class StopRefreshing : GeneralEvents()
+        class AddReceivedPhotos(val photos: List<ReceivedPhoto>) : GeneralEvents()
+        class ClearAdapter : GeneralEvents()
+        class ClearCache : GeneralEvents()
     }
 
     sealed class ReceivePhotosEvent : ReceivedPhotosFragmentEvent() {

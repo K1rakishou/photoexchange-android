@@ -1,8 +1,9 @@
 package com.kirakishou.photoexchange.helper.intercom.event
 
 sealed class GalleryFragmentEvent : BaseEvent {
-    sealed class UiEvents : GalleryFragmentEvent() {
-        class ShowProgressFooter : UiEvents()
-        class HideProgressFooter : UiEvents()
+    sealed class GeneralEvents : GalleryFragmentEvent() {
+        class ShowProgressFooter : GeneralEvents()
+        class HideProgressFooter : GeneralEvents()
+        class ClearCache : GeneralEvents()
     }
 }

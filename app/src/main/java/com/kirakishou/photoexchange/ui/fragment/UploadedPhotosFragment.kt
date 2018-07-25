@@ -7,6 +7,7 @@ import android.widget.Toast
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
+import com.kirakishou.photoexchange.helper.database.entity.CachedPhotoIdEntity
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
@@ -67,7 +68,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
     private fun initRx() {
         compositeDisposable += viewModel.uploadedPhotosFragmentErrorCodeSubject
-            .subscribe(this::handleError)
+            .subscribe({ handleKnownErrors(it) })
 
         compositeDisposable += viewModel.intercom.uploadedPhotosFragmentEvents.listen()
             .doOnNext { viewState -> onStateEvent(viewState) }
@@ -95,7 +96,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
         val photosPerPage = Constants.UPLOADED_PHOTOS_PER_ROW * layoutManager.spanCount
         viewModel.uploadedPhotosFragmentViewState.update(photosPerPage = photosPerPage)
-        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, viewModel.uploadedPhotosFragmentLoadPhotosSubject, 1)
+        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, viewModel.uploadedPhotosFragmentLoadPhotosSubject)
 
         uploadedPhotosList.layoutManager = layoutManager
         uploadedPhotosList.adapter = adapter
@@ -106,7 +107,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             endlessScrollListener.stopLoading()
             viewModel.uploadedPhotosFragmentReloadPhotos.onNext(Unit)
         }
-
     }
 
     private fun startLoadingFirstPageOfPhotos() {
@@ -126,66 +126,67 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
         uploadedPhotosList.post {
             when (event) {
-                is UploadedPhotosFragmentEvent.UiEvents -> {
-                    onUiEvent(event)
-                }
-
-                is UploadedPhotosFragmentEvent.PhotoUploadEvent -> {
-                    onUploadingEvent(event)
-                }
+                is UploadedPhotosFragmentEvent.GeneralEvents -> onUiEvent(event)
+                is UploadedPhotosFragmentEvent.PhotoUploadEvent -> onUploadingEvent(event)
             }.safe
         }
     }
 
-    private fun onUiEvent(event: UploadedPhotosFragmentEvent.UiEvents) {
+    private fun onUiEvent(event: UploadedPhotosFragmentEvent.GeneralEvents) {
         if (!isAdded) {
             return
         }
 
         uploadedPhotosList.post {
             when (event) {
-                is UploadedPhotosFragmentEvent.UiEvents.ScrollToTop -> {
+                is UploadedPhotosFragmentEvent.GeneralEvents.ScrollToTop -> {
                     uploadedPhotosList.scrollToPosition(0)
                 }
-                is UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter -> {
+                is UploadedPhotosFragmentEvent.GeneralEvents.ShowProgressFooter -> {
                     showProgressFooter()
                 }
-                is UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter -> {
+                is UploadedPhotosFragmentEvent.GeneralEvents.HideProgressFooter -> {
                     hideProgressFooter()
                 }
-                is UploadedPhotosFragmentEvent.UiEvents.RemovePhoto -> {
+                is UploadedPhotosFragmentEvent.GeneralEvents.RemovePhoto -> {
                     adapter.removePhotoById(event.photo.id)
                 }
-                is UploadedPhotosFragmentEvent.UiEvents.AddPhoto -> {
+                is UploadedPhotosFragmentEvent.GeneralEvents.AddPhoto -> {
                     adapter.addTakenPhoto(event.photo)
                 }
-                is UploadedPhotosFragmentEvent.UiEvents.AddFailedToUploadPhotos -> {
+                is UploadedPhotosFragmentEvent.GeneralEvents.AddFailedToUploadPhotos -> {
                     addTakenPhotosToAdapter(event.photos)
                 }
-                is UploadedPhotosFragmentEvent.UiEvents.AddQueuedUpPhotos -> {
+                is UploadedPhotosFragmentEvent.GeneralEvents.AddQueuedUpPhotos -> {
                     addTakenPhotosToAdapter(event.photos)
                 }
-                is UploadedPhotosFragmentEvent.UiEvents.AddUploadedPhotos -> {
+                is UploadedPhotosFragmentEvent.GeneralEvents.AddUploadedPhotos -> {
                     addUploadedPhotosToAdapter(event.photos)
                 }
-                is UploadedPhotosFragmentEvent.UiEvents.PhotoRemoved -> {
+                is UploadedPhotosFragmentEvent.GeneralEvents.PhotoRemoved -> {
                     startLoadingUploadedPhotosWhenPhotoWasDeleted()
                 }
-                is UploadedPhotosFragmentEvent.UiEvents.AfterPermissionRequest -> {
+                is UploadedPhotosFragmentEvent.GeneralEvents.AfterPermissionRequest -> {
                     startLoadingFirstPageOfPhotos()
                 }
-                is UploadedPhotosFragmentEvent.UiEvents.UpdateReceiverInfo -> {
+                is UploadedPhotosFragmentEvent.GeneralEvents.UpdateReceiverInfo -> {
                     event.receivedPhotos.forEach {
                         adapter.updateUploadedPhotoSetReceiverInfo(it.uploadedPhotoName)
                     }
                 }
-                is UploadedPhotosFragmentEvent.UiEvents.DisableEndlessScrolling -> endlessScrollListener.stopLoading()
-                is UploadedPhotosFragmentEvent.UiEvents.EnableEndlessScrolling -> endlessScrollListener.startLoading()
-                is UploadedPhotosFragmentEvent.UiEvents.ClearAdapter -> adapter.clear()
-                is UploadedPhotosFragmentEvent.UiEvents.StartRefreshing -> swipeToRefreshLayout.isRefreshing = true
-                is UploadedPhotosFragmentEvent.UiEvents.StopRefreshing -> swipeToRefreshLayout.isRefreshing = false
+                is UploadedPhotosFragmentEvent.GeneralEvents.DisableEndlessScrolling -> endlessScrollListener.stopLoading()
+                is UploadedPhotosFragmentEvent.GeneralEvents.EnableEndlessScrolling -> endlessScrollListener.startLoading()
+                is UploadedPhotosFragmentEvent.GeneralEvents.ClearAdapter -> adapter.clear()
+                is UploadedPhotosFragmentEvent.GeneralEvents.StartRefreshing -> swipeToRefreshLayout.isRefreshing = true
+                is UploadedPhotosFragmentEvent.GeneralEvents.StopRefreshing -> swipeToRefreshLayout.isRefreshing = false
+                is UploadedPhotosFragmentEvent.GeneralEvents.ClearCache -> clearIdsCache()
             }.safe
         }
+    }
+
+    private fun clearIdsCache() {
+        compositeDisposable += viewModel.clearPhotoIdsCache(CachedPhotoIdEntity.PhotoType.UploadedPhoto)
+            .subscribe()
     }
 
     private fun onUploadingEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
@@ -220,20 +221,11 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                     handleKnownErrors(event.errorCode)
                 }
                 is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError -> {
+                    adapter.updateAllPhotosState(PhotoState.FAILED_TO_UPLOAD)
                     handleUnknownErrors(event.error)
                 }
             }.safe
         }
-    }
-
-    private fun handleKnownErrors(errorCode: ErrorCode.UploadPhotoErrors) {
-        (requireActivity() as PhotosActivity).showKnownErrorMessage(errorCode)
-        adapter.updateAllPhotosState(PhotoState.FAILED_TO_UPLOAD)
-    }
-
-    private fun handleUnknownErrors(error: Throwable) {
-        (requireActivity() as PhotosActivity).showUnknownErrorMessage(error)
-        adapter.updateAllPhotosState(PhotoState.FAILED_TO_UPLOAD)
     }
 
     private fun addUploadedPhotosToAdapter(uploadedPhotos: List<UploadedPhoto>) {
@@ -242,8 +234,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         }
 
         uploadedPhotosList.post {
-            endlessScrollListener.pageLoaded()
-
             if (uploadedPhotos.isNotEmpty()) {
                 viewModel.uploadedPhotosFragmentViewState.update(newLastId = uploadedPhotos.last().photoId)
                 adapter.addUploadedPhotos(uploadedPhotos)
@@ -256,6 +246,8 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             if (uploadedPhotos.size < viewModel.uploadedPhotosFragmentViewState.photosPerPage) {
                 endlessScrollListener.stopLoading()
             }
+
+            endlessScrollListener.pageLoaded()
         }
     }
 
@@ -294,28 +286,45 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         }
     }
 
-    private fun handleError(errorCode: ErrorCode.GetUploadedPhotosErrors) {
+    private fun handleKnownErrors(errorCode: ErrorCode) {
+        fun handleGetUploadedPhotosErrors(errorCode: ErrorCode.GetUploadedPhotosErrors) {
+            hideProgressFooter()
+            swipeToRefreshLayout.isRefreshing = false
+
+            if (!isVisible) {
+                return
+            }
+
+            val message = when (errorCode) {
+                is ErrorCode.GetUploadedPhotosErrors.Ok -> null
+                is ErrorCode.GetUploadedPhotosErrors.LocalUserIdIsEmpty -> null
+                is ErrorCode.GetUploadedPhotosErrors.UnknownError -> "Unknown error"
+                is ErrorCode.GetUploadedPhotosErrors.DatabaseError -> "Server database error"
+                is ErrorCode.GetUploadedPhotosErrors.BadRequest -> "Bad request error"
+                is ErrorCode.GetUploadedPhotosErrors.NoPhotosInRequest -> "Bad request error (no photos in request)"
+                is ErrorCode.GetUploadedPhotosErrors.LocalBadServerResponse -> "Bad server response error"
+                is ErrorCode.GetUploadedPhotosErrors.LocalTimeout -> "Operation timeout error"
+            }
+
+            if (message != null) {
+                showToast(message)
+            }
+        }
+        fun handleUploadPhotoErrors(errorCode: ErrorCode.UploadPhotoErrors) {
+            (requireActivity() as PhotosActivity).showKnownErrorMessage(errorCode)
+            adapter.updateAllPhotosState(PhotoState.FAILED_TO_UPLOAD)
+        }
+
+        when (errorCode) {
+            is ErrorCode.GetUploadedPhotosErrors -> handleGetUploadedPhotosErrors(errorCode)
+            is ErrorCode.UploadPhotoErrors -> handleUploadPhotoErrors(errorCode)
+        }
+    }
+
+    private fun handleUnknownErrors(error: Throwable) {
+        (requireActivity() as PhotosActivity).showUnknownErrorMessage(error)
         hideProgressFooter()
         swipeToRefreshLayout.isRefreshing = false
-
-        if (!isVisible) {
-            return
-        }
-
-        val message = when (errorCode) {
-            is ErrorCode.GetUploadedPhotosErrors.Ok -> null
-            is ErrorCode.GetUploadedPhotosErrors.LocalUserIdIsEmpty -> null
-            is ErrorCode.GetUploadedPhotosErrors.UnknownError -> "Unknown error"
-            is ErrorCode.GetUploadedPhotosErrors.DatabaseError -> "Server database error"
-            is ErrorCode.GetUploadedPhotosErrors.BadRequest -> "Bad request error"
-            is ErrorCode.GetUploadedPhotosErrors.NoPhotosInRequest -> "Bad request error (no photos in request)"
-            is ErrorCode.GetUploadedPhotosErrors.LocalBadServerResponse -> "Bad server response error"
-            is ErrorCode.GetUploadedPhotosErrors.LocalTimeout -> "Operation timeout error"
-        }
-
-        if (message != null) {
-            showToast(message)
-        }
     }
 
     private fun showToast(message: String, duration: Int = Toast.LENGTH_LONG) {

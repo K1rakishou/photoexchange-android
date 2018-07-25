@@ -13,8 +13,7 @@ class EndlessRecyclerOnScrollListener(
     private val fragmentTag: String,
     private val gridLayoutManager: GridLayoutManager,
     private val visibleThreshold: Int,
-    private val uploadedPhotosFragmentPageToLoadSubject: Subject<Boolean>,
-    private val startWithPage: Int
+    private val uploadedPhotosFragmentPageToLoadSubject: Subject<Boolean>
 ) : RecyclerView.OnScrollListener() {
 
     private val tag = "EndlessRecyclerOnScrollListener_$fragmentTag"
@@ -22,7 +21,6 @@ class EndlessRecyclerOnScrollListener(
     private var lastVisibleItem = 0
     private var totalItemCount = 0
 
-    private val currentPage = AtomicInteger(startWithPage)
     private var keepLoading = false
 
     override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -37,7 +35,7 @@ class EndlessRecyclerOnScrollListener(
 
         if (totalItemCount <= (lastVisibleItem + visibleThreshold)) {
             if (loading.compareAndSet(false, true)) {
-                Timber.tag(tag).d("Loading new page ${currentPage.get()}")
+                Timber.tag(tag).d("Loading new page")
                 uploadedPhotosFragmentPageToLoadSubject.onNext(false)
             }
         }
@@ -48,7 +46,6 @@ class EndlessRecyclerOnScrollListener(
     }
 
     fun pageLoaded() {
-        currentPage.incrementAndGet()
         loading.set(false)
     }
 
@@ -64,13 +61,11 @@ class EndlessRecyclerOnScrollListener(
         loading.set(false)
         lastVisibleItem = 0
         totalItemCount = 0
-        currentPage.set(startWithPage)
         keepLoading = false
     }
 
     fun onSaveInstanceState(outState: Bundle) {
         outState.putBoolean("loading", loading.get())
-        outState.putInt("currentPage", currentPage.get())
         outState.putInt("lastVisibleItem", lastVisibleItem)
         outState.putInt("totalItemCount", totalItemCount)
         outState.putBoolean("keepLoading", keepLoading)
@@ -78,7 +73,6 @@ class EndlessRecyclerOnScrollListener(
 
     fun onRestoreInstanceState(savedInstanceState: Bundle) {
         loading.set(savedInstanceState.getBoolean("loading", false))
-        currentPage.set(savedInstanceState.getInt("currentPage", startWithPage))
         lastVisibleItem = savedInstanceState.getInt("lastVisibleItem", 0)
         totalItemCount = savedInstanceState.getInt("totalItemCount", 0)
         keepLoading = savedInstanceState.getBoolean("keepLoading", false)

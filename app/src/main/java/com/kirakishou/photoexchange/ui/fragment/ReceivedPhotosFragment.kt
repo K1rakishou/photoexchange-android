@@ -2,15 +2,13 @@ package com.kirakishou.photoexchange.ui.fragment
 
 
 import android.os.Bundle
-import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.widget.Toast
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
-import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.helper.RxLifecycle
+import com.kirakishou.photoexchange.helper.database.entity.CachedPhotoIdEntity
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
@@ -24,11 +22,9 @@ import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapterSpanSizeLookup
-import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewState
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
-import io.reactivex.Observable
+import com.kirakishou.photoexchange.ui.widget.SwipeToRefreshLayout
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
@@ -38,6 +34,9 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
 
     @BindView(R.id.received_photos_list)
     lateinit var receivedPhotosList: RecyclerView
+
+    @BindView(R.id.swipe_refresh_layout)
+    lateinit var swipeToRefreshLayout: SwipeToRefreshLayout
 
     @Inject
     lateinit var imageLoader: ImageLoader
@@ -50,19 +49,16 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
 
     private val TAG = "ReceivedPhotosFragment"
     private val PHOTO_ADAPTER_VIEW_WIDTH = DEFAULT_ADAPTER_ITEM_WIDTH
-    private val loadMoreSubject = PublishSubject.create<Int>()
     private val adapterClicksSubject = PublishSubject.create<ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent>()
-    private var isFragmentFreshlyCreated = true
-    private val viewState = ReceivedPhotosFragmentViewState()
     private var photosPerPage = 0
 
     override fun getContentView(): Int = R.layout.fragment_received_photos
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
-        isFragmentFreshlyCreated = savedInstanceState == null
+        viewModel.receivedPhotosFragmentIsFreshlyCreated.onNext(savedInstanceState == null)
 
         initRx()
-        initRecyclerView()
+        initViews()
         loadFirstPage()
     }
 
@@ -70,31 +66,22 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     }
 
     private fun initRx() {
+        compositeDisposable += viewModel.receivedPhotosFragmentErrorCodeSubject
+            .subscribe(this::handleKnownError)
+
         compositeDisposable += viewModel.intercom.receivedPhotosFragmentEvents.listen()
             .doOnNext { viewState -> onStateEvent(viewState) }
             .subscribe({ }, { Timber.tag(TAG).e(it) })
 
-        compositeDisposable += Observables.combineLatest(loadMoreSubject, lifecycle.getLifecycle())
-            .concatMap { (nextPage, lifecycle) ->
-                return@concatMap Observable.just(lifecycle)
-                    .filter { _lifecycle -> _lifecycle.isAtLeast(RxLifecycle.FragmentState.Resumed) }
-                    .map { nextPage }
-            }
-            .doOnNext { endlessScrollListener.pageLoading() }
-            .concatMap { viewModel.loadNextPageOfReceivedPhotos(viewState.lastId, photosPerPage, isFragmentFreshlyCreated) }
-            .subscribe({ result ->
-                when (result) {
-                    is Either.Value -> addReceivedPhotosToAdapter(result.value)
-                    is Either.Error -> handleError(result.error)
-                }
-            }, { Timber.tag(TAG).e(it) })
+        compositeDisposable += lifecycle.getLifecycle()
+            .subscribe(viewModel.receivedPhotosFragmentLifecycle::onNext)
 
         compositeDisposable += adapterClicksSubject
             .subscribeOn(AndroidSchedulers.mainThread())
             .subscribe({ click -> handleAdapterClick(click) }, { Timber.tag(TAG).e(it) })
     }
 
-    private fun initRecyclerView() {
+    private fun initViews() {
         val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), PHOTO_ADAPTER_VIEW_WIDTH)
 
         adapter = ReceivedPhotosAdapter(requireContext(), imageLoader, adapterClicksSubject)
@@ -103,16 +90,21 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
         layoutManager.spanSizeLookup = ReceivedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
 
         photosPerPage = Constants.RECEIVED_PHOTOS_PER_ROW * layoutManager.spanCount
-        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, viewModel.uploadedPhotosFragmentLoadPhotosSubject, 1)
+        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, viewModel.receivedPhotosFragmentLoadPhotosSubject)
 
         receivedPhotosList.layoutManager = layoutManager
         receivedPhotosList.adapter = adapter
         receivedPhotosList.clearOnScrollListeners()
         receivedPhotosList.addOnScrollListener(endlessScrollListener)
+
+        swipeToRefreshLayout.setOnRefreshListener {
+            endlessScrollListener.stopLoading()
+            viewModel.receivedPhotosFragmentReloadPhotos.onNext(Unit)
+        }
     }
 
     private fun loadFirstPage() {
-        loadMoreSubject.onNext(0)
+        viewModel.receivedPhotosFragmentLoadPhotosSubject.onNext(false)
     }
 
     private fun handleAdapterClick(click: ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent) {
@@ -137,7 +129,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
 
         requireActivity().runOnUiThread {
             when (event) {
-                is ReceivedPhotosFragmentEvent.UiEvents -> {
+                is ReceivedPhotosFragmentEvent.GeneralEvents -> {
                     onUiEvent(event)
                 }
                 is ReceivedPhotosFragmentEvent.ReceivePhotosEvent -> {
@@ -147,24 +139,28 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
         }
     }
 
-    private fun onUiEvent(event: ReceivedPhotosFragmentEvent.UiEvents) {
+    private fun onUiEvent(event: ReceivedPhotosFragmentEvent.GeneralEvents) {
         if (!isAdded) {
             return
         }
 
         receivedPhotosList.post {
             when (event) {
-                is ReceivedPhotosFragmentEvent.UiEvents.ScrollToTop -> {
-                    receivedPhotosList.scrollToPosition(0)
-                }
-                is ReceivedPhotosFragmentEvent.UiEvents.ShowProgressFooter -> {
-                    showProgressFooter()
-                }
-                is ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter -> {
-                    hideProgressFooter()
-                }
+                is ReceivedPhotosFragmentEvent.GeneralEvents.ScrollToTop -> receivedPhotosList.scrollToPosition(0)
+                is ReceivedPhotosFragmentEvent.GeneralEvents.ShowProgressFooter -> showProgressFooter()
+                is ReceivedPhotosFragmentEvent.GeneralEvents.HideProgressFooter -> hideProgressFooter()
+                is ReceivedPhotosFragmentEvent.GeneralEvents.StartRefreshing -> swipeToRefreshLayout.isRefreshing = true
+                is ReceivedPhotosFragmentEvent.GeneralEvents.StopRefreshing -> swipeToRefreshLayout.isRefreshing = false
+                is ReceivedPhotosFragmentEvent.GeneralEvents.AddReceivedPhotos -> addReceivedPhotosToAdapter(event.photos)
+                is ReceivedPhotosFragmentEvent.GeneralEvents.ClearAdapter -> adapter.clear()
+                is ReceivedPhotosFragmentEvent.GeneralEvents.ClearCache -> clearIdsCache()
             }.safe
         }
+    }
+
+    private fun clearIdsCache() {
+        compositeDisposable += viewModel.clearPhotoIdsCache(CachedPhotoIdEntity.PhotoType.ReceivedPhoto)
+            .subscribe()
     }
 
     private fun onReceivePhotosEvent(event: ReceivedPhotosFragmentEvent.ReceivePhotosEvent) {
@@ -191,16 +187,16 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
         }
 
         receivedPhotosList.post {
-            endlessScrollListener.pageLoaded()
-
             if (receivedPhotos.isNotEmpty()) {
-                viewState.updateLastId(receivedPhotos.last().photoId)
+                viewModel.receivedPhotosFragmentViewState.update(newLastId = receivedPhotos.last().photoId)
                 adapter.addReceivedPhotos(receivedPhotos)
             }
 
             if (receivedPhotos.size < photosPerPage) {
                 endlessScrollListener.stopLoading()
             }
+
+            endlessScrollListener.pageLoaded()
         }
     }
 
@@ -234,7 +230,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
         }
     }
 
-    private fun handleError(errorCode: ErrorCode.GetReceivedPhotosErrors) {
+    private fun handleKnownError(errorCode: ErrorCode.GetReceivedPhotosErrors) {
         hideProgressFooter()
 
         if (!isVisible) {

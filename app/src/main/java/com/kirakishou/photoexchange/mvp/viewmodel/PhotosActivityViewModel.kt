@@ -18,10 +18,12 @@ import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
+import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewState
 import com.kirakishou.photoexchange.ui.viewstate.UploadedPhotosFragmentViewState
 import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
+import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.rxkotlin.withLatestFrom
 import io.reactivex.rxkotlin.zipWith
@@ -55,6 +57,9 @@ class PhotosActivityViewModel(
 
     val intercom = PhotosActivityViewModelIntercom()
 
+    /**
+     * UploadedPhotosFragment
+     * */
     val uploadedPhotosFragmentViewState = UploadedPhotosFragmentViewState()
 
     val uploadedPhotosFragmentIsFreshlyCreated = BehaviorSubject.create<Boolean>().toSerialized()
@@ -65,10 +70,25 @@ class PhotosActivityViewModel(
     //false means that this is automatic refresh, so we need to show progressbar
     val uploadedPhotosFragmentLoadPhotosSubject = PublishSubject.create<Boolean>().toSerialized()
     val uploadedPhotosFragmentReloadPhotos = PublishSubject.create<Unit>().toSerialized()
-    val uploadedPhotosFragmentErrorCodeSubject = PublishSubject.create<ErrorCode.GetUploadedPhotosErrors>()
+    val uploadedPhotosFragmentErrorCodeSubject = PublishSubject.create<ErrorCode.GetUploadedPhotosErrors>().toSerialized()
+
+    /**
+     * ReceivedPhotosFragment
+     * */
+    val receivedPhotosFragmentViewState = ReceivedPhotosFragmentViewState()
+
+    val receivedPhotosFragmentIsFreshlyCreated = BehaviorSubject.create<Boolean>().toSerialized()
+    val receivedPhotosFragmentLifecycle = BehaviorSubject.create<RxLifecycle.FragmentLifecycle>().toSerialized()
+
+    //true means that this is a manual refresh, so we need to show swipeToRefresh progress
+    //false means that this is automatic refresh, so we need to show progressbar
+    val receivedPhotosFragmentLoadPhotosSubject = PublishSubject.create<Boolean>().toSerialized()
+    val receivedPhotosFragmentReloadPhotos = PublishSubject.create<Unit>().toSerialized()
+    val receivedPhotosFragmentErrorCodeSubject = PublishSubject.create<ErrorCode.GetReceivedPhotosErrors>().toSerialized()
 
     init {
-        setupUploadedPhotosFragmentLifecycleListener()
+        setupUploadedPhotosFragmentReactiveStreams()
+        setupReceivedPhotosFragmentReactiveStreams()
     }
 
     override fun onCleared() {
@@ -77,24 +97,24 @@ class PhotosActivityViewModel(
         super.onCleared()
     }
 
-    private fun setupUploadedPhotosFragmentLifecycleListener() {
+    private fun setupUploadedPhotosFragmentReactiveStreams() {
         fun showProgress(isManualLoad: Boolean) {
             if (isManualLoad) {
                 intercom.tell<UploadedPhotosFragment>()
-                    .to(UploadedPhotosFragmentEvent.UiEvents.StartRefreshing())
+                    .to(UploadedPhotosFragmentEvent.GeneralEvents.StartRefreshing())
             } else {
                 intercom.tell<UploadedPhotosFragment>()
-                    .to(UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter())
+                    .to(UploadedPhotosFragmentEvent.GeneralEvents.ShowProgressFooter())
             }
         }
 
         fun hideProgress(isManualLoad: Boolean) {
             if (isManualLoad) {
                 intercom.tell<UploadedPhotosFragment>()
-                    .to(UploadedPhotosFragmentEvent.UiEvents.StopRefreshing())
+                    .to(UploadedPhotosFragmentEvent.GeneralEvents.StopRefreshing())
             } else {
                 intercom.tell<UploadedPhotosFragment>()
-                    .to(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter())
+                    .to(UploadedPhotosFragmentEvent.GeneralEvents.HideProgressFooter())
             }
         }
 
@@ -104,10 +124,10 @@ class PhotosActivityViewModel(
                 when (photosToRefresh) {
                     PhotosActivityViewModel.PhotosToRefresh.QueuedUp,
                     PhotosActivityViewModel.PhotosToRefresh.FailedToUpload -> {
-                        intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.UiEvents.DisableEndlessScrolling())
+                        intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.GeneralEvents.DisableEndlessScrolling())
                     }
                     PhotosActivityViewModel.PhotosToRefresh.Uploaded -> {
-                        intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.UiEvents.EnableEndlessScrolling())
+                        intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.GeneralEvents.EnableEndlessScrolling())
                     }
                 }
             })
@@ -130,7 +150,7 @@ class PhotosActivityViewModel(
             }
             .subscribe({ failedToUploadPhotos ->
                 intercom.tell<UploadedPhotosFragment>()
-                    .to(UploadedPhotosFragmentEvent.UiEvents.AddFailedToUploadPhotos(failedToUploadPhotos))
+                    .to(UploadedPhotosFragmentEvent.GeneralEvents.AddFailedToUploadPhotos(failedToUploadPhotos))
             }, { error -> Timber.tag(TAG).e(error) })
 
         compositeDisposable += uploadedPhotosFragmentLoadPhotosSubject.withLatestFrom(onResumeObservable)
@@ -147,13 +167,13 @@ class PhotosActivityViewModel(
                     .doOnNext { hideProgress(isManualLoad) }
                     .doOnNext {
                         intercom.tell<PhotosActivity>().to(PhotosActivityEvent.StartUploadingService(
-                            PhotosActivityViewModel::class.java, "Manual refresh"
+                            PhotosActivityViewModel::class.java, "UploadingPhotosFragment Manual refresh"
                         ))
                     }
             }
             .subscribe({ queuedUpPhotos ->
                 intercom.tell<UploadedPhotosFragment>()
-                    .to(UploadedPhotosFragmentEvent.UiEvents.AddQueuedUpPhotos(queuedUpPhotos))
+                    .to(UploadedPhotosFragmentEvent.GeneralEvents.AddQueuedUpPhotos(queuedUpPhotos))
             }, { error -> Timber.tag(TAG).e(error) })
 
         compositeDisposable += uploadedPhotosFragmentLoadPhotosSubject.withLatestFrom(onResumeObservable)
@@ -177,7 +197,7 @@ class PhotosActivityViewModel(
                             .doOnNext { hideProgress(isManualLoad) }
                             .doOnNext {
                                 intercom.tell<PhotosActivity>().to(PhotosActivityEvent.StartReceivingService(
-                                    PhotosActivityViewModel::class.java, "Manual refresh"
+                                    PhotosActivityViewModel::class.java, "UploadingPhotosFragment Manual refresh"
                                 ))
                             }
                     }
@@ -187,7 +207,7 @@ class PhotosActivityViewModel(
                     is Either.Error -> uploadedPhotosFragmentErrorCodeSubject.onNext(result.error)
                     is Either.Value -> {
                         intercom.tell<UploadedPhotosFragment>()
-                            .to(UploadedPhotosFragmentEvent.UiEvents.AddUploadedPhotos(result.value))
+                            .to(UploadedPhotosFragmentEvent.GeneralEvents.AddUploadedPhotos(result.value))
                     }
                 }
             }, { error -> Timber.tag(TAG).e(error) })
@@ -198,20 +218,19 @@ class PhotosActivityViewModel(
             .subscribeOn(schedulerProvider.IO())
             .zipWith(uploadedPhotosFragmentPhotosTypeToRefresh)
             .map { (_, photosType) -> photosType }
-            .doOnNext { photosType -> Timber.tag(TAG).d("photos to refresh type changes, newType = $photosType") }
             .publish()
 
         compositeDisposable += photosToRefreshTypeObservable
             .subscribeOn(schedulerProvider.IO())
             .filter { photosType -> photosType == PhotosToRefresh.FailedToUpload }
-            .doOnNext { intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.UiEvents.ClearAdapter()) }
+            .doOnNext { intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.GeneralEvents.ClearAdapter()) }
             .doOnNext { uploadedPhotosFragmentLoadPhotosSubject.onNext(true) }
             .subscribe()
 
         compositeDisposable += photosToRefreshTypeObservable
             .subscribeOn(schedulerProvider.IO())
             .filter { photosType -> photosType == PhotosToRefresh.QueuedUp }
-            .doOnNext { intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.UiEvents.ClearAdapter()) }
+            .doOnNext { intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.GeneralEvents.ClearAdapter()) }
             .doOnNext { uploadedPhotosFragmentLoadPhotosSubject.onNext(true) }
             .subscribe()
 
@@ -220,13 +239,78 @@ class PhotosActivityViewModel(
             .filter { photosType -> photosType == PhotosToRefresh.Uploaded }
             .withLatestFrom(uploadedPhotosFragmentIsFreshlyCreated)
             .map { (_, isFragmentFreshlyCreated) -> isFragmentFreshlyCreated }
-            .doOnNext { isFragmentFreshlyCreated -> clearPhotoIdsCache(isFragmentFreshlyCreated, CachedPhotoIdEntity.PhotoType.UploadedPhoto) }
-            .doOnNext { intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.UiEvents.ClearAdapter()) }
+            .doOnNext { isFragmentFreshlyCreated -> clearPhotoIdsCacheMaybe(isFragmentFreshlyCreated, CachedPhotoIdEntity.PhotoType.UploadedPhoto) }
+            .doOnNext { intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.GeneralEvents.ClearAdapter()) }
             .doOnNext { uploadedPhotosFragmentViewState.reset() }
             .doOnNext { uploadedPhotosFragmentLoadPhotosSubject.onNext(true) }
             .subscribe()
 
         compositeDisposable += photosToRefreshTypeObservable.connect()
+    }
+
+    private fun setupReceivedPhotosFragmentReactiveStreams() {
+        fun showProgress(isManualLoad: Boolean) {
+            if (isManualLoad) {
+                intercom.tell<ReceivedPhotosFragment>()
+                    .to(ReceivedPhotosFragmentEvent.GeneralEvents.StartRefreshing())
+            } else {
+                intercom.tell<ReceivedPhotosFragment>()
+                    .to(ReceivedPhotosFragmentEvent.GeneralEvents.ShowProgressFooter())
+            }
+        }
+
+        fun hideProgress(isManualLoad: Boolean) {
+            if (isManualLoad) {
+                intercom.tell<ReceivedPhotosFragment>()
+                    .to(ReceivedPhotosFragmentEvent.GeneralEvents.StopRefreshing())
+            } else {
+                intercom.tell<ReceivedPhotosFragment>()
+                    .to(ReceivedPhotosFragmentEvent.GeneralEvents.HideProgressFooter())
+            }
+        }
+
+        val onResumeObservable = receivedPhotosFragmentLifecycle
+            .subscribeOn(schedulerProvider.IO())
+            .filter { lifecycle -> lifecycle.isAtLeast(RxLifecycle.FragmentState.Resumed) }
+            .publish()
+
+        compositeDisposable += Observables.combineLatest(receivedPhotosFragmentLoadPhotosSubject, onResumeObservable)
+            .subscribeOn(schedulerProvider.IO())
+            .concatMap { (isManualLoad, _) ->
+                return@concatMap Observable.just(isManualLoad)
+                    .withLatestFrom(receivedPhotosFragmentIsFreshlyCreated)
+                    .map { (_, isFragmentFreshlyCreated) -> isFragmentFreshlyCreated }
+                    .concatMap { isFragmentFreshlyCreated ->
+                        return@concatMap Observable.just(Unit)
+                            .doOnNext { showProgress(isManualLoad) }
+                            .concatMap {
+                                return@concatMap loadNextPageOfReceivedPhotos(receivedPhotosFragmentViewState.lastId,
+                                    receivedPhotosFragmentViewState.photosPerPage, isFragmentFreshlyCreated)
+                            }
+                            .doOnNext { hideProgress(isManualLoad) }
+                    }
+            }
+            .subscribe({ result ->
+                when (result) {
+                    is Either.Error -> receivedPhotosFragmentErrorCodeSubject.onNext(result.error)
+                    is Either.Value -> {
+                        intercom.tell<ReceivedPhotosFragment>()
+                            .to(ReceivedPhotosFragmentEvent.GeneralEvents.AddReceivedPhotos(result.value))
+                    }
+                }
+            }, { error -> Timber.tag(TAG).e(error) })
+
+        compositeDisposable += onResumeObservable.connect()
+
+        compositeDisposable += receivedPhotosFragmentReloadPhotos
+            .subscribeOn(schedulerProvider.IO())
+            .withLatestFrom(receivedPhotosFragmentIsFreshlyCreated)
+            .map { (_, isFragmentFreshlyCreated) -> isFragmentFreshlyCreated }
+            .doOnNext { isFragmentFreshlyCreated -> clearPhotoIdsCacheMaybe(isFragmentFreshlyCreated, CachedPhotoIdEntity.PhotoType.ReceivedPhoto) }
+            .doOnNext { intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.GeneralEvents.ClearAdapter()) }
+            .doOnNext { receivedPhotosFragmentViewState.reset() }
+            .doOnNext { receivedPhotosFragmentLoadPhotosSubject.onNext(true) }
+            .subscribe()
     }
 
     fun reportPhoto(photoName: String): Observable<Either<ErrorCode.ReportPhotoErrors, Boolean>> {
@@ -248,7 +332,7 @@ class PhotosActivityViewModel(
     ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
         return Observable.just(Unit)
             .subscribeOn(schedulerProvider.IO())
-            .concatMap { clearPhotoIdsCache(isFragmentFreshlyCreated, CachedPhotoIdEntity.PhotoType.GalleryPhoto) }
+            .concatMap { clearPhotoIdsCacheMaybe(isFragmentFreshlyCreated, CachedPhotoIdEntity.PhotoType.GalleryPhoto) }
             .concatMap { clearGalleryPhotoIdsCache() }
             .concatMap { loadPageOfGalleryPhotos(isFragmentFreshlyCreated, lastId, photosPerPage) }
             .concatMap { result ->
@@ -271,7 +355,7 @@ class PhotosActivityViewModel(
     ): Observable<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>> {
         return Observable.just(Unit)
             .subscribeOn(schedulerProvider.IO())
-            .concatMap { clearPhotoIdsCache(isFragmentFreshlyCreated, CachedPhotoIdEntity.PhotoType.UploadedPhoto) }
+            .concatMap { clearPhotoIdsCacheMaybe(isFragmentFreshlyCreated, CachedPhotoIdEntity.PhotoType.UploadedPhoto) }
             .concatMap { Observable.fromCallable { settingsRepository.getUserId() } }
             .concatMap { userId -> loadPageOfUploadedPhotos(userId, isFragmentFreshlyCreated, lastId, photosPerPage) }
             .doOnError { Timber.tag(TAG).e(it) }
@@ -284,13 +368,13 @@ class PhotosActivityViewModel(
     ): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
         return Observable.just(Unit)
             .subscribeOn(schedulerProvider.IO())
-            .concatMap { clearPhotoIdsCache(isFragmentFreshlyCreated, CachedPhotoIdEntity.PhotoType.ReceivedPhoto) }
+            .concatMap { clearPhotoIdsCacheMaybe(isFragmentFreshlyCreated, CachedPhotoIdEntity.PhotoType.ReceivedPhoto) }
             .concatMap { Observable.fromCallable { settingsRepository.getUserId() } }
             .concatMap { userId -> loadPageOfReceivedPhotos(userId, isFragmentFreshlyCreated, lastId, photosPerPage) }
             .doOnNext { result ->
                 if (result is Either.Value) {
                     intercom.tell<UploadedPhotosFragment>()
-                        .to(UploadedPhotosFragmentEvent.UiEvents.UpdateReceiverInfo(result.value))
+                        .to(UploadedPhotosFragmentEvent.GeneralEvents.UpdateReceiverInfo(result.value))
                 }
             }
             .doOnError { Timber.tag(TAG).e(it) }
@@ -303,7 +387,7 @@ class PhotosActivityViewModel(
     ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
         if (isFragmentFreshlyCreated || cachedPhotoIdRepository.isEmpty(CachedPhotoIdEntity.PhotoType.GalleryPhoto)) {
             return Observable.just(Unit)
-                .doOnNext { intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.UiEvents.ShowProgressFooter()) }
+                .doOnNext { intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.GeneralEvents.ShowProgressFooter()) }
                 .flatMap { getGalleryPhotosUseCase.loadPageOfPhotos(lastId, photosPerPage) }
                 .doOnNext { result ->
                     if (result is Either.Value) {
@@ -314,7 +398,7 @@ class PhotosActivityViewModel(
                 .delay(adapterLoadMoreItemsDelayMs, TimeUnit.MILLISECONDS)
                 .doOnEach { event ->
                     if (event.isOnNext || event.isOnError) {
-                        intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.UiEvents.HideProgressFooter())
+                        intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.GeneralEvents.HideProgressFooter())
                     }
                 }
                 .delay(progressFooterRemoveDelayMs, TimeUnit.MILLISECONDS)
@@ -366,20 +450,12 @@ class PhotosActivityViewModel(
         if (isFragmentFreshlyCreated || cachedPhotoIdRepository.isEmpty(CachedPhotoIdEntity.PhotoType.ReceivedPhoto)) {
             return Observable.just(Unit)
                 .flatMap { getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage) }
-                .doOnNext { intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
                 .doOnNext { result ->
                     if (result is Either.Value) {
                         val idsToCache = result.value.map { it.photoId }
                         cachedPhotoIdRepository.insertMany(idsToCache, CachedPhotoIdEntity.PhotoType.ReceivedPhoto)
                     }
                 }
-                .delay(adapterLoadMoreItemsDelayMs, TimeUnit.MILLISECONDS)
-                .doOnEach { event ->
-                    if (event.isOnNext || event.isOnError) {
-                        intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter())
-                    }
-                }
-                .delay(progressFooterRemoveDelayMs, TimeUnit.MILLISECONDS)
         } else {
             return Observable.fromCallable {
                 val cachedReceivedPhotoIds = cachedPhotoIdRepository.findAll(CachedPhotoIdEntity.PhotoType.ReceivedPhoto)
@@ -412,14 +488,9 @@ class PhotosActivityViewModel(
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
-    fun tryToFixStalledPhotos(): Completable {
-        return Completable.fromAction {
-            takenPhotosRepository.tryToFixStalledPhotos()
-        }
-    }
-
     fun loadFailedToUploadPhotos(): Single<List<TakenPhoto>> {
         return Single.fromCallable {
+            takenPhotosRepository.tryToFixStalledPhotos()
             return@fromCallable takenPhotosRepository.findAllByState(PhotoState.FAILED_TO_UPLOAD)
                 .sortedBy { it.id }
         }.subscribeOn(schedulerProvider.IO())
@@ -475,15 +546,19 @@ class PhotosActivityViewModel(
         }
     }
 
-    private fun clearPhotoIdsCache(isFragmentFreshlyCreated: Boolean,
-                                   photoType: CachedPhotoIdEntity.PhotoType): Observable<Unit> {
+    private fun clearPhotoIdsCacheMaybe(isFragmentFreshlyCreated: Boolean,
+                                photoType: CachedPhotoIdEntity.PhotoType): Observable<Unit> {
         if (!isFragmentFreshlyCreated) {
             return Observable.just(Unit)
         }
 
+        return clearPhotoIdsCache(photoType)
+    }
+
+    fun clearPhotoIdsCache(photoType: CachedPhotoIdEntity.PhotoType): Observable<Unit> {
         return Observable.fromCallable {
             cachedPhotoIdRepository.deleteAll(photoType)
-        }
+        }.subscribeOn(schedulerProvider.IO())
     }
 
     enum class PhotosToRefresh {
