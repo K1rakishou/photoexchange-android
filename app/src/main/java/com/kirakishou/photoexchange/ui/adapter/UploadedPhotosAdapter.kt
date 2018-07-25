@@ -322,11 +322,15 @@ class UploadedPhotosAdapter(
     }
 
     fun clear() {
+        headerItems.clear()
         queuedUpItems.clear()
         failedToUploadItems.clear()
         uploadedItems.clear()
         uploadedWithReceiverInfoItems.clear()
+        footerItems.clear()
+
         duplicatesCheckerSet.clear()
+        photosProgressMap.clear()
 
         notifyDataSetChanged()
     }

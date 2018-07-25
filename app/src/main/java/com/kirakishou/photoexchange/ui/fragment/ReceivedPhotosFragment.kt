@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.ui.fragment
 
 
 import android.os.Bundle
+import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.widget.Toast
@@ -102,7 +103,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
         layoutManager.spanSizeLookup = ReceivedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
 
         photosPerPage = Constants.RECEIVED_PHOTOS_PER_ROW * layoutManager.spanCount
-        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, loadMoreSubject, 1)
+        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, viewModel.uploadedPhotosFragmentLoadPhotosSubject, 1)
 
         receivedPhotosList.layoutManager = layoutManager
         receivedPhotosList.adapter = adapter
@@ -198,7 +199,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
             }
 
             if (receivedPhotos.size < photosPerPage) {
-                endlessScrollListener.reachedEnd()
+                endlessScrollListener.stopLoading()
             }
         }
     }

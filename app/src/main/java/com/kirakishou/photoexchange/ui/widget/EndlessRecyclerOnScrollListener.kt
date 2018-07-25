@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import io.reactivex.subjects.PublishSubject
+import io.reactivex.subjects.Subject
 import timber.log.Timber
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -12,7 +13,7 @@ class EndlessRecyclerOnScrollListener(
     private val fragmentTag: String,
     private val gridLayoutManager: GridLayoutManager,
     private val visibleThreshold: Int,
-    private val loadMoreSubject: PublishSubject<Int>,
+    private val uploadedPhotosFragmentPageToLoadSubject: Subject<Boolean>,
     private val startWithPage: Int
 ) : RecyclerView.OnScrollListener() {
 
@@ -22,12 +23,12 @@ class EndlessRecyclerOnScrollListener(
     private var totalItemCount = 0
 
     private val currentPage = AtomicInteger(startWithPage)
-    private var isEndReached = false
+    private var keepLoading = false
 
     override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
         super.onScrolled(recyclerView, dx, dy)
 
-        if (isEndReached) {
+        if (!keepLoading) {
             return
         }
 
@@ -37,7 +38,7 @@ class EndlessRecyclerOnScrollListener(
         if (totalItemCount <= (lastVisibleItem + visibleThreshold)) {
             if (loading.compareAndSet(false, true)) {
                 Timber.tag(tag).d("Loading new page ${currentPage.get()}")
-                loadMoreSubject.onNext(currentPage.get())
+                uploadedPhotosFragmentPageToLoadSubject.onNext(false)
             }
         }
     }
@@ -51,16 +52,20 @@ class EndlessRecyclerOnScrollListener(
         loading.set(false)
     }
 
-    fun reachedEnd() {
-        isEndReached = true
+    fun startLoading() {
+        keepLoading = true
+    }
+
+    fun stopLoading() {
+        keepLoading = false
     }
 
     fun reset() {
         loading.set(false)
         lastVisibleItem = 0
         totalItemCount = 0
-        currentPage.set(0)
-        isEndReached = false
+        currentPage.set(startWithPage)
+        keepLoading = false
     }
 
     fun onSaveInstanceState(outState: Bundle) {
@@ -68,14 +73,14 @@ class EndlessRecyclerOnScrollListener(
         outState.putInt("currentPage", currentPage.get())
         outState.putInt("lastVisibleItem", lastVisibleItem)
         outState.putInt("totalItemCount", totalItemCount)
-        outState.putBoolean("isEndReached", isEndReached)
+        outState.putBoolean("keepLoading", keepLoading)
     }
 
     fun onRestoreInstanceState(savedInstanceState: Bundle) {
         loading.set(savedInstanceState.getBoolean("loading", false))
-        currentPage.set(savedInstanceState.getInt("currentPage", 0))
+        currentPage.set(savedInstanceState.getInt("currentPage", startWithPage))
         lastVisibleItem = savedInstanceState.getInt("lastVisibleItem", 0)
         totalItemCount = savedInstanceState.getInt("totalItemCount", 0)
-        isEndReached = savedInstanceState.getBoolean("isEndReached", false)
+        keepLoading = savedInstanceState.getBoolean("keepLoading", false)
     }
 }

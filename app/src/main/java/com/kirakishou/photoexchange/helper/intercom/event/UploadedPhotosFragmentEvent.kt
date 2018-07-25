@@ -11,10 +11,18 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
         class HideProgressFooter : UiEvents()
         class RemovePhoto(val photo: TakenPhoto) : UiEvents()
         class AddPhoto(val photo: TakenPhoto) : UiEvents()
+        class AddFailedToUploadPhotos(val photos: List<TakenPhoto>) : UiEvents()
+        class AddQueuedUpPhotos(val photos: List<TakenPhoto>) : UiEvents()
+        class AddUploadedPhotos(val photos: List<UploadedPhoto>) : UiEvents()
         class ScrollToTop : UiEvents()
         class PhotoRemoved : UiEvents()
-        class LoadPhotos : UiEvents()
+        class AfterPermissionRequest : UiEvents()
         class UpdateReceiverInfo(val receivedPhotos: MutableList<ReceivedPhoto>) : UiEvents()
+        class DisableEndlessScrolling : UiEvents()
+        class EnableEndlessScrolling : UiEvents()
+        class ClearAdapter : UiEvents()
+        class StartRefreshing : UiEvents()
+        class StopRefreshing : UiEvents()
     }
 
     sealed class PhotoUploadEvent : UploadedPhotosFragmentEvent() {
