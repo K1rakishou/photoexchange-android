@@ -52,6 +52,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
     private val TAG = "UploadedPhotosFragment"
     private val PHOTO_ADAPTER_VIEW_WIDTH = DEFAULT_ADAPTER_ITEM_WIDTH
+    private val DISTANCE_TO_TRIGGER_SYNC = 256
     private val failedToUploadPhotoButtonClicksSubject = PublishSubject.create<UploadedPhotosAdapter.UploadedPhotosAdapterButtonClick>().toSerialized()
 
     override fun getContentView(): Int = R.layout.fragment_uploaded_photos
@@ -103,6 +104,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         uploadedPhotosList.clearOnScrollListeners()
         uploadedPhotosList.addOnScrollListener(endlessScrollListener)
 
+        swipeToRefreshLayout.setDistanceToTriggerSync(DISTANCE_TO_TRIGGER_SYNC)
         swipeToRefreshLayout.setOnRefreshListener {
             endlessScrollListener.stopLoading()
             viewModel.uploadedPhotosFragmentRefreshPhotos.onNext(Unit)

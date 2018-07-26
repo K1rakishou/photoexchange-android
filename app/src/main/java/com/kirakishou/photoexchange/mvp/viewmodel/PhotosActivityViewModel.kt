@@ -150,7 +150,7 @@ class PhotosActivityViewModel(
         compositeDisposable += uploadedPhotosFragmentPhotosTypeToRefresh
             .subscribeOn(schedulerProvider.IO())
             .subscribe({ photosToRefresh ->
-                when (photosToRefresh) {
+                when (photosToRefresh!!) {
                     PhotosActivityViewModel.PhotosToRefresh.QueuedUp,
                     PhotosActivityViewModel.PhotosToRefresh.FailedToUpload -> {
                         intercom.tell<UploadedPhotosFragment>()
@@ -185,14 +185,15 @@ class PhotosActivityViewModel(
                     .filter { hasQueuedUpPhotos -> hasQueuedUpPhotos }
                     .doOnNext { showProgress(isManualLoad) }
                     .doOnNext { uploadedPhotosFragmentPhotosTypeToRefresh.onNext(PhotosToRefresh.QueuedUp) }
+                    //TODO: test queueUpAllFailedToUploadPhotos
+                    .concatMapSingle { queueUpAllFailedToUploadPhotos() }
                     .concatMapSingle { loadQueuedUpPhotos() }
                     .doOnNext { hideProgress(isManualLoad) }
                     .doOnNext {
-                        if (isManualLoad) {
-                            intercom.tell<PhotosActivity>().to(PhotosActivityEvent.StartUploadingService(
-                                PhotosActivityViewModel::class.java, "UploadingPhotosFragment Manual refresh"
-                            ))
-                        }
+                        //TODO: test removed flag isManualLoad
+                        intercom.tell<PhotosActivity>().to(PhotosActivityEvent.StartUploadingService(
+                            PhotosActivityViewModel::class.java, "UploadingPhotosFragment Manual refresh"
+                        ))
                     }
             }
             .subscribe({ queuedUpPhotos ->
@@ -547,6 +548,12 @@ class PhotosActivityViewModel(
                 .sortedBy { it.id }
         }.subscribeOn(schedulerProvider.IO())
             .doOnError { Timber.tag(TAG).e(it) }
+    }
+
+    fun queueUpAllFailedToUploadPhotos(): Single<Unit> {
+        return Single.fromCallable {
+            return@fromCallable takenPhotosRepository.updateStates(PhotoState.FAILED_TO_UPLOAD, PhotoState.PHOTO_QUEUED_UP)
+        }
     }
 
     fun loadQueuedUpPhotos(): Single<List<TakenPhoto>> {
