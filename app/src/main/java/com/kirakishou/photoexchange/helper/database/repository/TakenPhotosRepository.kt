@@ -108,7 +108,7 @@ open class TakenPhotosRepository(
         return allMyPhotos
     }
 
-    fun countAllByState(state: PhotoState): Int {
+    open fun countAllByState(state: PhotoState): Int {
         return takenPhotoDao.countAllByState(state).toInt()
     }
 

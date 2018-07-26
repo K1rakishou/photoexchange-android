@@ -105,7 +105,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
         swipeToRefreshLayout.setOnRefreshListener {
             endlessScrollListener.stopLoading()
-            viewModel.uploadedPhotosFragmentReloadPhotos.onNext(Unit)
+            viewModel.uploadedPhotosFragmentRefreshPhotos.onNext(Unit)
         }
     }
 

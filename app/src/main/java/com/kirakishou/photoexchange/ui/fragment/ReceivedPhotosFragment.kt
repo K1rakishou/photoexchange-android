@@ -99,7 +99,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
 
         swipeToRefreshLayout.setOnRefreshListener {
             endlessScrollListener.stopLoading()
-            viewModel.receivedPhotosFragmentReloadPhotos.onNext(Unit)
+            viewModel.receivedPhotosFragmentRefreshPhotos.onNext(Unit)
         }
     }
 
