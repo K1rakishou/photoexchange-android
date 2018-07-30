@@ -21,7 +21,8 @@ abstract class UploadedPhotoDao {
     abstract fun findByPhotoName(photoName: String): UploadedPhotoEntity?
 
     @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
-        "WHERE ${UploadedPhotoEntity.PHOTO_ID_COLUMN} IN (:photoIds)")
+        "WHERE ${UploadedPhotoEntity.PHOTO_ID_COLUMN} IN (:photoIds) " +
+        "ORDER BY ${UploadedPhotoEntity.PHOTO_ID_COLUMN} DESC")
     abstract fun findMany(photoIds: List<Long>): List<UploadedPhotoEntity>
 
     @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +

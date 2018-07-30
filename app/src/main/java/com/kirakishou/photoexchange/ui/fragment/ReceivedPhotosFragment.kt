@@ -98,7 +98,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
         receivedPhotosList.addOnScrollListener(endlessScrollListener)
 
         swipeToRefreshLayout.setOnRefreshListener {
-            endlessScrollListener.stopLoading()
+            endlessScrollListener.pauseLoading()
             viewModel.receivedPhotosFragmentRefreshPhotos.onNext(Unit)
         }
     }
@@ -193,7 +193,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
             }
 
             if (receivedPhotos.size < photosPerPage) {
-                endlessScrollListener.stopLoading()
+                endlessScrollListener.pauseLoading()
             }
 
             endlessScrollListener.pageLoaded()

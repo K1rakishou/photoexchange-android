@@ -27,7 +27,6 @@ open class GetUploadedPhotosUseCase(
 
         return apiClient.getUploadedPhotoIds(userId, lastId, count).toObservable()
             .concatMap { response -> handleResponse(response, userId) }
-            .map(this::sortPhotos)
             .onErrorReturn { error ->
                 Timber.tag(TAG).e(error)
                 return@onErrorReturn handleErrors(error)
@@ -66,17 +65,6 @@ open class GetUploadedPhotosUseCase(
         }
 
         return Either.Error(ErrorCode.GetUploadedPhotosErrors.UnknownError())
-    }
-
-    private fun sortPhotos(
-        result: Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>
-    ): Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>> {
-        if (result !is Either.Value) {
-            return result
-        }
-
-        val sorted = result.value.sortedBy { it.photoId }
-        return Either.Value(sorted)
     }
 
     private fun getFreshPhotosAndConcatWithCached(

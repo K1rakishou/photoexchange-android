@@ -48,8 +48,8 @@ open class CachedPhotoIdRepository(
             .map { it.photoId }
     }
 
-    fun findAll(photoType: CachedPhotoIdEntity.PhotoType): List<Long> {
-        return cachedPhotoIdDao.findAll(photoType)
+    fun findAll(lastId: Long, photoType: CachedPhotoIdEntity.PhotoType): List<Long> {
+        return cachedPhotoIdDao.findAll(lastId, photoType)
             .map { it.photoId }
     }
 

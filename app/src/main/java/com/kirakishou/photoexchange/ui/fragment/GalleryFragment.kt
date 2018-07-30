@@ -76,7 +76,6 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
             .subscribe({ }, { Timber.tag(TAG).e(it) })
 
         compositeDisposable += loadMoreSubject
-            .doOnNext { endlessScrollListener.pageLoading() }
             .concatMap {
                 return@concatMap viewModel.loadNextPageOfGalleryPhotos(viewState.lastId, photosPerPage, isFragmentFreshlyCreated)
                     .flatMap(this::preloadPhotos)
@@ -262,7 +261,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
             }
 
             if (galleryPhotos.size < photosPerPage) {
-                endlessScrollListener.stopLoading()
+                endlessScrollListener.pauseLoading()
             }
         }
     }

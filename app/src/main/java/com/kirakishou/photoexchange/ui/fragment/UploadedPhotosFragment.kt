@@ -97,7 +97,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
         val photosPerPage = Constants.UPLOADED_PHOTOS_PER_ROW * layoutManager.spanCount
         viewModel.uploadedPhotosFragmentViewState.update(photosPerPage = photosPerPage)
-        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, viewModel.uploadedPhotosFragmentLoadPhotosSubject)
+        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, 1, viewModel.uploadedPhotosFragmentLoadPhotosSubject)
 
         uploadedPhotosList.layoutManager = layoutManager
         uploadedPhotosList.adapter = adapter
@@ -106,7 +106,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
         swipeToRefreshLayout.setDistanceToTriggerSync(DISTANCE_TO_TRIGGER_SYNC)
         swipeToRefreshLayout.setOnRefreshListener {
-            endlessScrollListener.stopLoading()
+            endlessScrollListener.pauseLoading()
             viewModel.uploadedPhotosFragmentRefreshPhotos.onNext(Unit)
         }
     }
@@ -176,17 +176,18 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                         adapter.updateUploadedPhotoSetReceiverInfo(it.uploadedPhotoName)
                     }
                 }
-                is UploadedPhotosFragmentEvent.GeneralEvents.DisableEndlessScrolling -> endlessScrollListener.stopLoading()
-                is UploadedPhotosFragmentEvent.GeneralEvents.EnableEndlessScrolling -> endlessScrollListener.startLoading()
+                is UploadedPhotosFragmentEvent.GeneralEvents.DisableEndlessScrolling -> endlessScrollListener.pauseLoading()
+                is UploadedPhotosFragmentEvent.GeneralEvents.EnableEndlessScrolling -> endlessScrollListener.resumeLoading()
                 is UploadedPhotosFragmentEvent.GeneralEvents.ClearAdapter -> adapter.clear()
                 is UploadedPhotosFragmentEvent.GeneralEvents.StartRefreshing -> swipeToRefreshLayout.isRefreshing = true
                 is UploadedPhotosFragmentEvent.GeneralEvents.StopRefreshing -> swipeToRefreshLayout.isRefreshing = false
-                is UploadedPhotosFragmentEvent.GeneralEvents.ClearCache -> clearIdsCache()
+                is UploadedPhotosFragmentEvent.GeneralEvents.OnTabClicked -> onTabClicked()
             }.safe
         }
     }
 
-    private fun clearIdsCache() {
+    private fun onTabClicked() {
+        viewModel.uploadedPhotosFragmentViewState.reset()
         compositeDisposable += viewModel.clearPhotoIdsCache(CachedPhotoIdEntity.PhotoType.UploadedPhoto)
             .subscribe()
     }
@@ -237,7 +238,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
         uploadedPhotosList.post {
             if (uploadedPhotos.isNotEmpty()) {
-                viewModel.uploadedPhotosFragmentViewState.update(newLastId = uploadedPhotos.last().photoId)
                 adapter.addUploadedPhotos(uploadedPhotos)
             }
 
@@ -246,7 +246,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             }
 
             if (uploadedPhotos.size < viewModel.uploadedPhotosFragmentViewState.photosPerPage) {
-                endlessScrollListener.stopLoading()
+                endlessScrollListener.lastPageReached()
             }
 
             endlessScrollListener.pageLoaded()

@@ -19,11 +19,13 @@ class UseCaseProviderModule {
     fun provideUploadPhotosUseCase(database: MyDatabase,
                                    takenPhotosRepository: TakenPhotosRepository,
                                    uploadedPhotosRepository: UploadedPhotosRepository,
+                                   cachedPhotoIdRepository: CachedPhotoIdRepository,
                                    apiClient: ApiClient,
                                    timeUtils: TimeUtils,
                                    bitmapUtils: BitmapUtils,
                                    fileUtils: FileUtils): UploadPhotosUseCase {
-        return UploadPhotosUseCase(database, takenPhotosRepository, uploadedPhotosRepository, apiClient, timeUtils, bitmapUtils, fileUtils)
+        return UploadPhotosUseCase(database, takenPhotosRepository, uploadedPhotosRepository,
+            cachedPhotoIdRepository, apiClient, timeUtils, bitmapUtils, fileUtils)
     }
 
     @Singleton

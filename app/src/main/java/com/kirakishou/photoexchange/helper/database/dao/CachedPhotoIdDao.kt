@@ -35,10 +35,13 @@ abstract class CachedPhotoIdDao {
     abstract fun findAll(): List<CachedPhotoIdEntity>
 
     @Query("SELECT * FROM ${CachedPhotoIdEntity.TABLE_NAME} " +
-        "WHERE ${CachedPhotoIdEntity.PHOTO_TYPE_COLUMN} = :photoType " +
+        "WHERE " +
+        " ${CachedPhotoIdEntity.PHOTO_ID_COLUMN} < :lastId " +
+        "AND " +
+        " ${CachedPhotoIdEntity.PHOTO_TYPE_COLUMN} = :photoType " +
         "ORDER BY ${CachedPhotoIdEntity.PHOTO_ID_COLUMN} DESC")
     @TypeConverters(CachedPhotoIdEntity.CachedPhotoIdTypeConverter::class)
-    abstract fun findAll(photoType: CachedPhotoIdEntity.PhotoType): List<CachedPhotoIdEntity>
+    abstract fun findAll(lastId: Long, photoType: CachedPhotoIdEntity.PhotoType): List<CachedPhotoIdEntity>
 
     @Query("SELECT COUNT(*) FROM ${CachedPhotoIdEntity.TABLE_NAME} " +
         "WHERE ${CachedPhotoIdEntity.PHOTO_TYPE_COLUMN} = :photoType")

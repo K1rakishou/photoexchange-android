@@ -250,18 +250,14 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
     }
 
     override fun onTabReselected(tab: TabLayout.Tab) {
-        if (viewPager.currentItem != tab.position) {
-            viewPager.currentItem = tab.position
-        }
+        viewPager.currentItem = tab.position
     }
 
     override fun onTabUnselected(tab: TabLayout.Tab) {
     }
 
     override fun onTabSelected(tab: TabLayout.Tab) {
-        if (viewPager.currentItem != tab.position) {
-            viewPager.currentItem = tab.position
-        }
+        viewPager.currentItem = tab.position
     }
 
     override fun onPageScrollStateChanged(state: Int) {
@@ -272,22 +268,20 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
     }
 
     override fun onPageSelected(position: Int) {
-        if (viewPager.currentItem != position) {
-            viewPager.currentItem = position
+        viewPager.currentItem = position
 
-            when (position) {
-                UPLOADED_PHOTOS_TAB_INDEX -> {
-                    viewModel.intercom.tell<UploadedPhotosFragment>()
-                        .to(UploadedPhotosFragmentEvent.GeneralEvents.ClearCache())
-                }
-                RECEIVED_PHOTOS_TAB_INDEX -> {
-                    viewModel.intercom.tell<ReceivedPhotosFragment>()
-                        .to(ReceivedPhotosFragmentEvent.GeneralEvents.ClearCache())
-                }
-                GALLERY_PHOTOS_TAB_INDEX -> {
-                    viewModel.intercom.tell<GalleryFragment>()
-                        .to(GalleryFragmentEvent.GeneralEvents.ClearCache())
-                }
+        when (position) {
+            UPLOADED_PHOTOS_TAB_INDEX -> {
+                viewModel.intercom.tell<UploadedPhotosFragment>()
+                    .to(UploadedPhotosFragmentEvent.GeneralEvents.OnTabClicked())
+            }
+            RECEIVED_PHOTOS_TAB_INDEX -> {
+                viewModel.intercom.tell<ReceivedPhotosFragment>()
+                    .to(ReceivedPhotosFragmentEvent.GeneralEvents.ClearCache())
+            }
+            GALLERY_PHOTOS_TAB_INDEX -> {
+                viewModel.intercom.tell<GalleryFragment>()
+                    .to(GalleryFragmentEvent.GeneralEvents.ClearCache())
             }
         }
     }

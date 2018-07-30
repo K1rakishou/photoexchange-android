@@ -177,7 +177,7 @@ class PhotosActivityViewModel(
          * */
 
         //load all queued up photos at once and show them in the recycler view
-        compositeDisposable += uploadedPhotosFragmentLoadPhotosSubject.withLatestFrom(onResumeObservable)
+        compositeDisposable += Observables.combineLatest(uploadedPhotosFragmentLoadPhotosSubject, onResumeObservable)
             .subscribeOn(schedulerProvider.IO())
             .concatMap { (isManualLoad, _) ->
                 return@concatMap Observable.just(isManualLoad)
@@ -202,7 +202,7 @@ class PhotosActivityViewModel(
             }, { error -> Timber.tag(TAG).e(error) })
 
         //load all failed to upload photos at once and show them in the recycler view
-        compositeDisposable += uploadedPhotosFragmentLoadPhotosSubject.withLatestFrom(onResumeObservable)
+        compositeDisposable += Observables.combineLatest(uploadedPhotosFragmentLoadPhotosSubject, onResumeObservable)
             .subscribeOn(schedulerProvider.IO())
             .concatMap { (isManualLoad, _) ->
                 return@concatMap Observable.just(isManualLoad)
@@ -221,7 +221,7 @@ class PhotosActivityViewModel(
             }, { error -> Timber.tag(TAG).e(error) })
 
         //start loading uploaded photos page by page
-        compositeDisposable += uploadedPhotosFragmentLoadPhotosSubject.withLatestFrom(onResumeObservable)
+        compositeDisposable += Observables.combineLatest(uploadedPhotosFragmentLoadPhotosSubject, onResumeObservable)
             .subscribeOn(schedulerProvider.IO())
             .concatMap { (isManualLoad, _) ->
                 return@concatMap Observable.just(isManualLoad)
@@ -292,7 +292,7 @@ class PhotosActivityViewModel(
             .filter { photosType -> photosType == PhotosToRefresh.Uploaded }
             .withLatestFrom(uploadedPhotosFragmentIsFreshlyCreated)
             .map { (_, isFragmentFreshlyCreated) -> isFragmentFreshlyCreated }
-            .doOnNext { isFragmentFreshlyCreated -> clearPhotoIdsCacheMaybe(isFragmentFreshlyCreated, CachedPhotoIdEntity.PhotoType.UploadedPhoto) }
+            .concatMap { _ -> clearPhotoIdsCache(CachedPhotoIdEntity.PhotoType.UploadedPhoto) }
             .doOnNext { intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.GeneralEvents.ClearAdapter()) }
             .doOnNext { uploadedPhotosFragmentViewState.reset() }
             .map { true }
@@ -457,7 +457,7 @@ class PhotosActivityViewModel(
                 .delay(progressFooterRemoveDelayMs, TimeUnit.MILLISECONDS)
         } else {
             return Observable.fromCallable {
-                val cachedGalleryPhotoIds = cachedPhotoIdRepository.findAll(CachedPhotoIdEntity.PhotoType.GalleryPhoto)
+                val cachedGalleryPhotoIds = cachedPhotoIdRepository.findAll(lastId, CachedPhotoIdEntity.PhotoType.GalleryPhoto)
                 return@fromCallable Either.Value(galleryPhotoRepository.findMany(cachedGalleryPhotoIds))
             }
         }
@@ -484,7 +484,7 @@ class PhotosActivityViewModel(
                 }
         } else {
             return Observable.fromCallable {
-                val cachedUploadedPhotoIds = cachedPhotoIdRepository.findAll(CachedPhotoIdEntity.PhotoType.UploadedPhoto)
+                val cachedUploadedPhotoIds = cachedPhotoIdRepository.findAll(lastId, CachedPhotoIdEntity.PhotoType.UploadedPhoto)
                 return@fromCallable Either.Value(uploadedPhotosRepository.findMany(cachedUploadedPhotoIds))
             }
         }
@@ -511,7 +511,7 @@ class PhotosActivityViewModel(
                 }
         } else {
             return Observable.fromCallable {
-                val cachedReceivedPhotoIds = cachedPhotoIdRepository.findAll(CachedPhotoIdEntity.PhotoType.ReceivedPhoto)
+                val cachedReceivedPhotoIds = cachedPhotoIdRepository.findAll(lastId, CachedPhotoIdEntity.PhotoType.ReceivedPhoto)
                 return@fromCallable Either.Value(receivedPhotosRepository.findMany(cachedReceivedPhotoIds))
             }
         }

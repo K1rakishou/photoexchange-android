@@ -23,7 +23,7 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
         class ClearAdapter : GeneralEvents()
         class StartRefreshing : GeneralEvents()
         class StopRefreshing : GeneralEvents()
-        class ClearCache : GeneralEvents()
+        class OnTabClicked : GeneralEvents()
     }
 
     sealed class PhotoUploadEvent : UploadedPhotosFragmentEvent() {
