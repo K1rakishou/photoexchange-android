@@ -8,7 +8,6 @@ import android.widget.Toast
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.helper.database.entity.CachedPhotoIdEntity
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
@@ -55,8 +54,6 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     override fun getContentView(): Int = R.layout.fragment_received_photos
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
-        viewModel.receivedPhotosFragmentIsFreshlyCreated.onNext(savedInstanceState == null)
-
         initRx()
         initViews()
         loadFirstPage()
@@ -159,8 +156,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     }
 
     private fun clearIdsCache() {
-        compositeDisposable += viewModel.clearPhotoIdsCache(CachedPhotoIdEntity.PhotoType.ReceivedPhoto)
-            .subscribe()
+        //TODO: remove
     }
 
     private fun onReceivePhotosEvent(event: ReceivedPhotosFragmentEvent.ReceivePhotosEvent) {

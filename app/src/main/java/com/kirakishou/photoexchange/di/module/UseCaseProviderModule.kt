@@ -19,13 +19,12 @@ class UseCaseProviderModule {
     fun provideUploadPhotosUseCase(database: MyDatabase,
                                    takenPhotosRepository: TakenPhotosRepository,
                                    uploadedPhotosRepository: UploadedPhotosRepository,
-                                   cachedPhotoIdRepository: CachedPhotoIdRepository,
                                    apiClient: ApiClient,
                                    timeUtils: TimeUtils,
                                    bitmapUtils: BitmapUtils,
                                    fileUtils: FileUtils): UploadPhotosUseCase {
         return UploadPhotosUseCase(database, takenPhotosRepository, uploadedPhotosRepository,
-            cachedPhotoIdRepository, apiClient, timeUtils, bitmapUtils, fileUtils)
+            apiClient, timeUtils, bitmapUtils, fileUtils)
     }
 
     @Singleton
@@ -95,11 +94,10 @@ class UseCaseProviderModule {
     @Provides
     fun provideRestoreAccountUseCase(apiClient: ApiClient,
                                      database: MyDatabase,
-                                     cachedPhotoIdRepository: CachedPhotoIdRepository,
                                      settingsRepository: SettingsRepository,
                                      uploadedPhotosRepository: UploadedPhotosRepository,
                                      receivedPhotosRepository: ReceivedPhotosRepository): RestoreAccountUseCase {
-        return RestoreAccountUseCase(apiClient, database, cachedPhotoIdRepository, settingsRepository,
+        return RestoreAccountUseCase(apiClient, database, settingsRepository,
             uploadedPhotosRepository, receivedPhotosRepository)
     }
 }

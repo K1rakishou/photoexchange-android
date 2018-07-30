@@ -2,7 +2,6 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 
 import android.support.test.runner.AndroidJUnit4
 import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.helper.database.entity.CachedPhotoIdEntity
 import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotoIdsResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotoInfoResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse

@@ -2,8 +2,6 @@ package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.entity.CachedPhotoIdEntity
-import com.kirakishou.photoexchange.helper.database.repository.CachedPhotoIdRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
@@ -26,7 +24,6 @@ open class UploadPhotosUseCase(
     private val database: MyDatabase,
     private val takenPhotosRepository: TakenPhotosRepository,
     private val uploadedPhotosRepository: UploadedPhotosRepository,
-    private val cachedPhotoIdRepository: CachedPhotoIdRepository,
     private val apiClient: ApiClient,
     private val timeUtils: TimeUtils,
     private val bitmapUtils: BitmapUtils,
@@ -157,7 +154,6 @@ open class UploadPhotosUseCase(
             val updateResult2 = uploadedPhotosRepository.save(photoId, photoName, location.lon,
                 location.lat, timeUtils.getTimeFast())
 
-            cachedPhotoIdRepository.deleteAll(CachedPhotoIdEntity.PhotoType.UploadedPhoto)
             return@transactional updateResult1 && updateResult2
         }
     }

@@ -3,7 +3,6 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 import android.support.test.runner.AndroidJUnit4
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.RxLifecycle
-import com.kirakishou.photoexchange.helper.database.entity.CachedPhotoIdEntity
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.mvp.model.PhotoState

@@ -77,10 +77,4 @@ open class DatabaseModule(
     open fun provideUploadedPhotoRepository(database: MyDatabase, timeUtils: TimeUtils): UploadedPhotosRepository {
         return UploadedPhotosRepository(database, timeUtils, UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME)
     }
-
-    @Singleton
-    @Provides
-    open fun provideCachedPhotoIdRepository(database: MyDatabase): CachedPhotoIdRepository {
-        return CachedPhotoIdRepository(database)
-    }
 }

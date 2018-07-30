@@ -9,7 +9,6 @@ import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.helper.database.entity.CachedPhotoIdEntity
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
@@ -77,7 +76,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
 
         compositeDisposable += loadMoreSubject
             .concatMap {
-                return@concatMap viewModel.loadNextPageOfGalleryPhotos(viewState.lastId, photosPerPage, isFragmentFreshlyCreated)
+                return@concatMap viewModel.loadNextPageOfGalleryPhotos(viewState.lastId, photosPerPage)
                     .flatMap(this::preloadPhotos)
             }
             .subscribe({ result ->
@@ -223,8 +222,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     }
 
     private fun clearIdsCache() {
-        compositeDisposable += viewModel.clearPhotoIdsCache(CachedPhotoIdEntity.PhotoType.GalleryPhoto)
-            .subscribe()
+        //TODO: remove
     }
 
     private fun showProgressFooter() {

@@ -7,7 +7,6 @@ import android.widget.Toast
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.helper.database.entity.CachedPhotoIdEntity
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
@@ -58,7 +57,9 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
     override fun getContentView(): Int = R.layout.fragment_uploaded_photos
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
-        viewModel.uploadedPhotosFragmentIsFreshlyCreated.onNext(savedInstanceState == null)
+        if (savedInstanceState != null) {
+            viewModel.uploadedPhotosFragmentViewState.reset()
+        }
 
         initRx()
         initViews()
@@ -106,7 +107,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
         swipeToRefreshLayout.setDistanceToTriggerSync(DISTANCE_TO_TRIGGER_SYNC)
         swipeToRefreshLayout.setOnRefreshListener {
-            endlessScrollListener.pauseLoading()
             viewModel.uploadedPhotosFragmentRefreshPhotos.onNext(Unit)
         }
     }
@@ -176,8 +176,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                         adapter.updateUploadedPhotoSetReceiverInfo(it.uploadedPhotoName)
                     }
                 }
-                is UploadedPhotosFragmentEvent.GeneralEvents.DisableEndlessScrolling -> endlessScrollListener.pauseLoading()
-                is UploadedPhotosFragmentEvent.GeneralEvents.EnableEndlessScrolling -> endlessScrollListener.resumeLoading()
                 is UploadedPhotosFragmentEvent.GeneralEvents.ClearAdapter -> adapter.clear()
                 is UploadedPhotosFragmentEvent.GeneralEvents.StartRefreshing -> swipeToRefreshLayout.isRefreshing = true
                 is UploadedPhotosFragmentEvent.GeneralEvents.StopRefreshing -> swipeToRefreshLayout.isRefreshing = false
@@ -187,9 +185,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
     }
 
     private fun onTabClicked() {
-        viewModel.uploadedPhotosFragmentViewState.reset()
-        compositeDisposable += viewModel.clearPhotoIdsCache(CachedPhotoIdEntity.PhotoType.UploadedPhoto)
-            .subscribe()
+        //TODO: remove
     }
 
     private fun onUploadingEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
@@ -239,10 +235,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         uploadedPhotosList.post {
             if (uploadedPhotos.isNotEmpty()) {
                 adapter.addUploadedPhotos(uploadedPhotos)
-            }
-
-            if (adapter.getUploadedPhotosCount() == 0) {
-                showToast(getString(R.string.uploaded_photos_fragment_nothing_found_msg))
+                viewModel.uploadedPhotosFragmentViewState.update(newLastId = uploadedPhotos.last().photoId)
             }
 
             if (uploadedPhotos.size < viewModel.uploadedPhotosFragmentViewState.photosPerPage) {

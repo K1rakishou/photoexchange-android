@@ -18,8 +18,6 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
         class PhotoRemoved : GeneralEvents()
         class AfterPermissionRequest : GeneralEvents()
         class UpdateReceiverInfo(val receivedPhotos: MutableList<ReceivedPhoto>) : GeneralEvents()
-        class DisableEndlessScrolling : GeneralEvents()
-        class EnableEndlessScrolling : GeneralEvents()
         class ClearAdapter : GeneralEvents()
         class StartRefreshing : GeneralEvents()
         class StopRefreshing : GeneralEvents()

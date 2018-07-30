@@ -3,8 +3,6 @@ package com.kirakishou.photoexchange.interactors
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.entity.CachedPhotoIdEntity
-import com.kirakishou.photoexchange.helper.database.repository.CachedPhotoIdRepository
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
@@ -14,7 +12,6 @@ import io.reactivex.Single
 open class RestoreAccountUseCase(
     private val apiClient: ApiClient,
     private val database: MyDatabase,
-    private val cachedPhotoIdRepository: CachedPhotoIdRepository,
     private val settingsRepository: SettingsRepository,
     private val uploadedPhotosRepository: UploadedPhotosRepository,
     private val receivedPhotosRepository: ReceivedPhotosRepository
@@ -38,8 +35,6 @@ open class RestoreAccountUseCase(
 
                     uploadedPhotosRepository.deleteAll()
                     receivedPhotosRepository.deleteAll()
-                    cachedPhotoIdRepository.deleteAll(CachedPhotoIdEntity.PhotoType.ReceivedPhoto)
-                    cachedPhotoIdRepository.deleteAll(CachedPhotoIdEntity.PhotoType.UploadedPhoto)
 
                     return@transactional true
                 }
