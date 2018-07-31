@@ -39,7 +39,7 @@ class EndlessRecyclerOnScrollListener(
                 Timber.tag(tag).d("Loading new page ${currentPage.get()}")
                 loadMoreSubject.onNext(currentPage.get())
             }
-        }
+        } 
     }
 
     fun pageLoading() {
