@@ -43,7 +43,7 @@ class EndlessRecyclerOnScrollListener(
                 Timber.tag(tag).d("Loading new page")
                 uploadedPhotosFragmentPageToLoadSubject.onNext(false)
             }
-        }
+        } 
     }
 
     fun pageLoaded() {
