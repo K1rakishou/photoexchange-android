@@ -116,16 +116,11 @@ class ReceivedPhotosAdapter(
                     clicksSubject.onNext(ReceivedPhotosAdapterClickEvent.SwitchShowMapOrPhoto(receivedPhoto.receivedPhotoName))
                 }
 
-                holder.clickView.setOnLongClickListener {
-                    clicksSubject.onNext(ReceivedPhotosAdapterClickEvent.ShowFullPhoto(receivedPhoto.receivedPhotoName))
-                    return@setOnLongClickListener true
-                }
-
                 holder.photoIdTextView.text = receivedPhoto.photoId.toString()
 
                 if (showPhoto) {
                     holder.showPhotoHideMap()
-                    imageLoader.loadPhotoFromNetInto(receivedPhoto.receivedPhotoName, ImageLoader.PhotoSize.Small, holder.photoView)
+                    imageLoader.loadPhotoFromNetInto(receivedPhoto.receivedPhotoName, holder.photoView)
                 } else {
                     holder.showMapHidePhoto()
                     imageLoader.loadStaticMapImageFromNetInto(receivedPhoto.receivedPhotoName, holder.staticMapView)
@@ -139,7 +134,6 @@ class ReceivedPhotosAdapter(
     }
 
     sealed class ReceivedPhotosAdapterClickEvent {
-        class ShowFullPhoto(val photoName: String) : ReceivedPhotosAdapterClickEvent()
         class SwitchShowMapOrPhoto(val photoName: String) : ReceivedPhotosAdapterClickEvent()
     }
 

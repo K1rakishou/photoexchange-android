@@ -50,7 +50,6 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     private val adapterButtonClickSubject = PublishSubject.create<GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent>()
     private val viewState = GalleryFragmentViewState()
     private var photosPerPage = 0
-    private val ADAPTER_PHOTO_SIZE = ImageLoader.PhotoSize.Small
 
     lateinit var adapter: GalleryPhotosAdapter
     lateinit var endlessScrollListener: EndlessRecyclerOnScrollListener
@@ -123,7 +122,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     private fun initRecyclerView() {
         val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), GALLERY_PHOTO_ADAPTER_VIEW_WIDTH)
 
-        adapter = GalleryPhotosAdapter(requireContext(), imageLoader, ADAPTER_PHOTO_SIZE, adapterButtonClickSubject)
+        adapter = GalleryPhotosAdapter(requireContext(), imageLoader, adapterButtonClickSubject)
 
         val layoutManager = GridLayoutManager(requireContext(), columnsCount)
         layoutManager.spanSizeLookup = GalleryPhotosAdapterSpanSizeLookup(adapter, columnsCount)
@@ -177,7 +176,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
         return Observable.fromIterable((result as Either.Value).value)
             .subscribeOn(Schedulers.io())
             .flatMapSingle { galleryPhoto ->
-                return@flatMapSingle imageLoader.preloadImageFromNetAsync(galleryPhoto.photoName, ADAPTER_PHOTO_SIZE)
+                return@flatMapSingle imageLoader.preloadImageFromNetAsync(galleryPhoto.photoName)
                     .subscribeOn(AndroidSchedulers.mainThread())
                     .doOnSuccess { result ->
                         if (!result) {

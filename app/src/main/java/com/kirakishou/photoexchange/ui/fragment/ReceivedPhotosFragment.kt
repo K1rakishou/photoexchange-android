@@ -117,9 +117,6 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
         }
 
         when (click) {
-            is ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent.ShowFullPhoto -> {
-                TODO()
-            }
             is ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent.SwitchShowMapOrPhoto -> {
                 switchShowMapOrPhoto(click.photoName)
             }

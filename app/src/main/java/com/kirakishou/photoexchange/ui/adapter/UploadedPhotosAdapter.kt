@@ -422,7 +422,7 @@ class UploadedPhotosAdapter(
                 holder.receivedIconImageView.visibility = View.VISIBLE
 
                 uploadedPhoto.photoName.let { photoName ->
-                    imageLoader.loadPhotoFromNetInto(photoName, ImageLoader.PhotoSize.Small, holder.photoView)
+                    imageLoader.loadPhotoFromNetInto(photoName, holder.photoView)
                 }
 
                 photosProgressMap.remove(uploadedPhoto.photoId)

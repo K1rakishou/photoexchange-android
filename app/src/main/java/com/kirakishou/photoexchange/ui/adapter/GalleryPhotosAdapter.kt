@@ -16,7 +16,6 @@ import io.reactivex.subjects.PublishSubject
 class GalleryPhotosAdapter(
     private val context: Context,
     private val imageLoader: ImageLoader,
-    private val photoSize: ImageLoader.PhotoSize,
     private val adapterButtonClickSubject: PublishSubject<GalleryPhotosAdapterButtonClickEvent>
 ) : BaseAdapter<GalleryPhotosAdapterItem>(context) {
 
@@ -187,7 +186,7 @@ class GalleryPhotosAdapter(
                 holder.galleryPhotoId.text = item.photo.galleryPhotoId.toString()
                 holder.favouritesCount.text = item.photo.favouritesCount.toString()
 
-                imageLoader.loadPhotoFromNetInto(item.photo.photoName, photoSize, holder.photoView)
+                imageLoader.loadPhotoFromNetInto(item.photo.photoName, holder.photoView)
             }
             is ProgressViewHolder -> {
                 holder.progressBar.isIndeterminate = true

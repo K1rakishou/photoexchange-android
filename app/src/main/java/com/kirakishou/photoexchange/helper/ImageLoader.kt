@@ -22,6 +22,18 @@ class ImageLoader
 @Inject constructor(
     private val context: Context
 ) {
+    private val photoSize by lazy {
+        val density = context.resources.displayMetrics.density
+
+        if (density < 2.0) {
+            return@lazy PhotoSize.Small
+        } else if (density >= 2.0 && density < 3.0) {
+            return@lazy PhotoSize.Medium
+        } else {
+            return@lazy PhotoSize.Big
+        }
+    }
+
     private val basePhotosUrl = "${PhotoExchangeApplication.baseUrl}v1/api/get_photo"
     private val baseStaticMapUrl = "${PhotoExchangeApplication.baseUrl}v1/api/get_static_map"
 
@@ -38,7 +50,7 @@ class ImageLoader
      * We are pre-loading photos requested by this method in advance, so generally this method should load them from disk.
      * But in some rare cases (when photo could not be pre-loaded for some reason) this method will make a request to the server
      * */
-    fun loadPhotoFromNetInto(photoName: String, photoSize: PhotoSize, view: ImageView) {
+    fun loadPhotoFromNetInto(photoName: String, view: ImageView) {
         val fullUrl = "$basePhotosUrl/$photoName/${photoSize.value}"
 
         GlideApp.with(context)
@@ -58,7 +70,7 @@ class ImageLoader
             .into(view)
     }
 
-    fun preloadImageFromNetAsync(photoName: String, photoSize: PhotoSize): Single<Boolean> {
+    fun preloadImageFromNetAsync(photoName: String): Single<Boolean> {
         return Single.create { emitter ->
             val fullUrl = "$basePhotosUrl/$photoName/${photoSize.value}"
 
@@ -81,6 +93,7 @@ class ImageLoader
 
     enum class PhotoSize(val value: String) {
         Big("b"),
+        Medium("m"),
         Small("s")
     }
 }
