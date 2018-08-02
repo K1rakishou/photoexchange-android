@@ -267,6 +267,7 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
         tabLayout.setScrollPosition(position, positionOffset, true)
     }
 
+    //TODO: use this callback to send event to all other fragments so they can reload photos
     override fun onPageSelected(position: Int) {
         viewPager.currentItem = position
 

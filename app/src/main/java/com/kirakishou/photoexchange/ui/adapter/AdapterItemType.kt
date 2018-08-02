@@ -10,7 +10,8 @@ enum class AdapterItemType(val type: Int) {
     VIEW_PROGRESS(3),
     VIEW_FAILED_TO_UPLOAD(4),
     VIEW_RECEIVED_PHOTO(5),
-    VIEW_GALLERY_PHOTO(6);
+    VIEW_GALLERY_PHOTO(6),
+    VIEW_MESSAGE(7);
 
     companion object {
         fun fromInt(type: Int): AdapterItemType {

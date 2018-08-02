@@ -12,6 +12,7 @@ sealed class UploadedPhotosAdapterItem : BaseAdapterItem() {
             is UploadedPhotoItem -> AdapterItemType.VIEW_UPLOADED_PHOTO
             is ProgressItem -> AdapterItemType.VIEW_PROGRESS
             is FailedToUploadItem -> AdapterItemType.VIEW_FAILED_TO_UPLOAD
+            is UploadedPhotosAdapterItem.MessageItem -> AdapterItemType.VIEW_MESSAGE
         }
     }
 
@@ -20,4 +21,5 @@ sealed class UploadedPhotosAdapterItem : BaseAdapterItem() {
     class UploadedPhotoItem(val uploadedPhoto: UploadedPhoto) : UploadedPhotosAdapterItem()
     class ProgressItem : UploadedPhotosAdapterItem()
     class FailedToUploadItem(val failedToUploadPhoto: TakenPhoto) : UploadedPhotosAdapterItem()
+    class MessageItem(val message: String) : UploadedPhotosAdapterItem()
 }

@@ -241,6 +241,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                 }
                 is UploadedPhotosFragmentEvent.UiEvents.PhotoRemoved -> {
                     if (adapter.getFailedPhotosCount() == 0) {
+                        photosUploaded()
                         loadFirstPageOfUploadedPhotos()
                     } else {
                         //do nothing
@@ -312,7 +313,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         }
 
         uploadedPhotosList.post {
-            endlessScrollListener.pageLoaded()
 
             if (uploadedPhotos.isNotEmpty()) {
                 viewState.updateLastId(uploadedPhotos.last().photoId)
@@ -320,12 +320,17 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             }
 
             if (adapter.getUploadedPhotosCount() == 0) {
-                showToast(getString(R.string.uploaded_photos_fragment_nothing_found_msg))
+                adapter.showMessageFooter(getString(R.string.uploaded_photos_fragment_nothing_found_msg))
+                endlessScrollListener.pageLoaded()
+                return@post
             }
 
             if (uploadedPhotos.size < photosPerPage) {
+                adapter.showMessageFooter("Bottom of the list reached")
                 endlessScrollListener.reachedEnd()
             }
+
+            endlessScrollListener.pageLoaded()
         }
     }
 
@@ -339,7 +344,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                 adapter.clear()
                 adapter.addTakenPhotos(takenPhotos)
             } else {
-                //TODO: show notification that no photos has been uploaded yet
+                adapter.showMessageFooter("You have not taken any photos yet")
             }
         }
     }
@@ -360,7 +365,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         }
 
         uploadedPhotosList.post {
-            adapter.hideProgressFooter()
+            adapter.clearFooter()
         }
     }
 

@@ -71,13 +71,14 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
             .subscribe({ }, { Timber.tag(TAG).e(it) })
 
         compositeDisposable += loadMoreSubject
+            .doOnNext { endlessScrollListener.pageLoading() }
             .concatMap {
                 return@concatMap viewModel.loadNextPageOfGalleryPhotos(viewState.lastId, photosPerPage)
                     .flatMap(this::preloadPhotos)
             }
             .subscribe({ result ->
                 when (result) {
-                    is Either.Value -> addPhotoToAdapter(result.value)
+                    is Either.Value -> addPhotosToAdapter(result.value)
                     is Either.Error -> handleGetGalleryPhotosError(result.error)
                 }
             }, { Timber.tag(TAG).e(it) })
@@ -128,7 +129,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
         layoutManager.spanSizeLookup = GalleryPhotosAdapterSpanSizeLookup(adapter, columnsCount)
 
         photosPerPage = Constants.GALLERY_PHOTOS_PER_ROW * layoutManager.spanCount
-        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, viewModel.uploadedPhotosFragmentLoadPhotosSubject)
+        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, loadMoreSubject, 1)
 
         galleryPhotosList.layoutManager = layoutManager
         galleryPhotosList.adapter = adapter
@@ -224,33 +225,28 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
 
         requireActivity().runOnUiThread {
             when (event) {
-                is GalleryFragmentEvent.GeneralEvents -> {
+                is GalleryFragmentEvent.UiEvents -> {
                     onUiEvent(event)
                 }
             }.safe
         }
     }
 
-    private fun onUiEvent(event: GalleryFragmentEvent.GeneralEvents) {
+    private fun onUiEvent(event: GalleryFragmentEvent.UiEvents) {
         if (!isAdded) {
             return
         }
 
         galleryPhotosList.post {
             when (event) {
-                is GalleryFragmentEvent.GeneralEvents.ShowProgressFooter -> {
+                is GalleryFragmentEvent.UiEvents.ShowProgressFooter -> {
                     showProgressFooter()
                 }
-                is GalleryFragmentEvent.GeneralEvents.HideProgressFooter -> {
+                is GalleryFragmentEvent.UiEvents.HideProgressFooter -> {
                     hideProgressFooter()
                 }
-                is GalleryFragmentEvent.GeneralEvents.ClearCache -> clearIdsCache()
             }.safe
         }
-    }
-
-    private fun clearIdsCache() {
-        //TODO: remove
     }
 
     private fun showProgressFooter() {
@@ -259,7 +255,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
         }
 
         galleryPhotosList.post {
-            adapter.addProgressFooter()
+            adapter.showProgressFooter()
         }
     }
 
@@ -269,25 +265,31 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
         }
 
         galleryPhotosList.post {
-            adapter.removeProgressFooter()
+            adapter.clearFooter()
         }
     }
 
-    private fun addPhotoToAdapter(galleryPhotos: List<GalleryPhoto>) {
+    private fun addPhotosToAdapter(galleryPhotos: List<GalleryPhoto>) {
         if (!isAdded) {
             return
         }
 
         galleryPhotosList.post {
-            endlessScrollListener.pageLoaded()
-
             if (galleryPhotos.isNotEmpty()) {
                 viewState.updateLastId(galleryPhotos.last().galleryPhotoId)
                 adapter.addAll(galleryPhotos)
             }
 
+            endlessScrollListener.pageLoaded()
+
+            if (adapter.itemCount == 0) {
+                adapter.showMessageFooter("You have not received any photos yet")
+                return@post
+            }
+
             if (galleryPhotos.size < photosPerPage) {
-                endlessScrollListener.pauseLoading()
+                endlessScrollListener.reachedEnd()
+                adapter.showMessageFooter("Bottom of the list reached")
             }
         }
     }

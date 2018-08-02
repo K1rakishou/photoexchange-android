@@ -18,7 +18,8 @@ class UploadedPhotosAdapterSpanSizeLookup(
             AdapterItemType.VIEW_FAILED_TO_UPLOAD.type -> 1
 
             AdapterItemType.EMPTY.type,
-            AdapterItemType.VIEW_PROGRESS.type -> columnsCount
+            AdapterItemType.VIEW_PROGRESS.type,
+            AdapterItemType.VIEW_MESSAGE.type -> columnsCount
 
             else -> throw RuntimeException("Unknown item view type: $type")
         }

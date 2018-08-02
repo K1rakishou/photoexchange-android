@@ -184,16 +184,23 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
         }
 
         receivedPhotosList.post {
-            endlessScrollListener.pageLoaded()
-
             if (receivedPhotos.isNotEmpty()) {
                 viewState.updateLastId(receivedPhotos.last().photoId)
                 adapter.addReceivedPhotos(receivedPhotos)
             }
 
+            if (adapter.itemCount == 0) {
+                adapter.showMessageFooter("You have not received any photos yet")
+                endlessScrollListener.pageLoaded()
+                return@post
+            }
+
             if (receivedPhotos.size < photosPerPage) {
+                adapter.showMessageFooter("Bottom of the list reached")
                 endlessScrollListener.reachedEnd()
             }
+
+            endlessScrollListener.pageLoaded()
         }
     }
 
@@ -213,7 +220,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
         }
 
         receivedPhotosList.post {
-            adapter.hideProgressFooter()
+            adapter.clearFooter()
         }
     }
 

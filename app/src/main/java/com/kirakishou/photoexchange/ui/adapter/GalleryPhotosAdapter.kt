@@ -21,7 +21,22 @@ class GalleryPhotosAdapter(
 
     private val items = arrayListOf<GalleryPhotosAdapterItem>()
 
-    fun addProgressFooter() {
+    fun clearFooter() {
+        if (items.isEmpty()) {
+            return
+        }
+
+        if (items.last().getType() != AdapterItemType.VIEW_MESSAGE && items.last().getType() != AdapterItemType.VIEW_PROGRESS) {
+            return
+        }
+
+        val lastIndex = items.lastIndex
+
+        items.removeAt(lastIndex)
+        notifyItemRemoved(lastIndex)
+    }
+
+    fun showProgressFooter() {
         if (items.isNotEmpty() && items.last().getType() == AdapterItemType.VIEW_PROGRESS) {
             return
         }
@@ -32,15 +47,16 @@ class GalleryPhotosAdapter(
         notifyItemInserted(lastIndex)
     }
 
-    fun removeProgressFooter() {
-        if (items.isEmpty() || items.last().getType() != AdapterItemType.VIEW_PROGRESS) {
+    fun showMessageFooter(message: String) {
+        if (items.isNotEmpty() && items.last().getType() == AdapterItemType.VIEW_MESSAGE) {
             return
         }
 
+        clearFooter()
         val lastIndex = items.lastIndex
 
-        items.removeAt(lastIndex)
-        notifyItemRemoved(lastIndex)
+        items.add(GalleryPhotosAdapterItem.MessageItem(message))
+        notifyItemInserted(lastIndex)
     }
 
     fun favouritePhoto(photoName: String, isFavourited: Boolean, favouritesCount: Long): Boolean {
@@ -131,7 +147,8 @@ class GalleryPhotosAdapter(
     override fun doGetBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
         return mutableListOf(
             BaseAdapterInfo(AdapterItemType.VIEW_GALLERY_PHOTO, R.layout.adapter_item_gallery_photo, GalleryPhotoViewHolder::class.java),
-            BaseAdapterInfo(AdapterItemType.VIEW_PROGRESS, R.layout.adapter_item_progress, ProgressViewHolder::class.java)
+            BaseAdapterInfo(AdapterItemType.VIEW_PROGRESS, R.layout.adapter_item_progress, ProgressViewHolder::class.java),
+            BaseAdapterInfo(AdapterItemType.VIEW_MESSAGE, R.layout.adapter_item_message, MessageViewHolder::class.java)
         )
     }
 
@@ -188,8 +205,14 @@ class GalleryPhotosAdapter(
 
                 imageLoader.loadPhotoFromNetInto(item.photo.photoName, holder.photoView)
             }
+            is MessageViewHolder -> {
+                val messageItem = (items[position] as? GalleryPhotosAdapterItem.MessageItem)
+                    ?: return
+
+                holder.message.text = messageItem.message
+            }
             is ProgressViewHolder -> {
-                holder.progressBar.isIndeterminate = true
+                holder.progressBar?.isIndeterminate = true
             }
             else -> IllegalArgumentException("Unknown viewHolder: ${holder::class.java.simpleName}")
         }
@@ -204,6 +227,10 @@ class GalleryPhotosAdapter(
     companion object {
         class ProgressViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             val progressBar = itemView.findViewById<ProgressBar>(R.id.progressbar)
+        }
+
+        class MessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            val message = itemView.findViewById<TextView>(R.id.message)
         }
 
         class GalleryPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

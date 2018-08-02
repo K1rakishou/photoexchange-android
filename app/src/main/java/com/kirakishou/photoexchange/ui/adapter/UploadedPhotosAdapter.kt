@@ -25,14 +25,13 @@ class UploadedPhotosAdapter(
     private val adapterButtonsClickSubject: Subject<UploadedPhotosAdapterButtonClick>
 ) : BaseAdapter<UploadedPhotosAdapterItem>(context) {
 
-    private val FOOTER_PROGRESS_INDICATOR_INDEX = 0
 
     private val headerItems = arrayListOf<UploadedPhotosAdapterItem>()
     private val queuedUpItems = arrayListOf<UploadedPhotosAdapterItem>()
     private val failedToUploadItems = arrayListOf<UploadedPhotosAdapterItem>()
     private val uploadedItems = arrayListOf<UploadedPhotosAdapterItem>()
     private val uploadedWithReceiverInfoItems = arrayListOf<UploadedPhotosAdapterItem>()
-    private val footerItems = arrayListOf<UploadedPhotosAdapterItem>()
+    private var footerItems = arrayListOf<UploadedPhotosAdapterItem>()
 
     private val duplicatesCheckerSet = hashSetOf<Long>()
     private val photosProgressMap = hashMapOf<Long, Int>()
@@ -87,24 +86,35 @@ class UploadedPhotosAdapter(
         notifyItemChanged(photoIndex)
     }
 
-    fun showProgressFooter() {
-        if (footerItems.isNotEmpty() && footerItems.last() is UploadedPhotosAdapterItem.ProgressItem) {
+    fun clearFooter() {
+        if (footerItems.isEmpty()) {
             return
+        }
+
+        footerItems.clear()
+
+        notifyItemRemoved(headerItems.size + queuedUpItems.size + failedToUploadItems.size +
+            uploadedItems.size + uploadedWithReceiverInfoItems.size)
+    }
+
+    fun showProgressFooter() {
+        if (footerItems.isNotEmpty()) {
+            clearFooter()
         }
 
         footerItems.add(UploadedPhotosAdapterItem.ProgressItem())
         notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size +
-            uploadedItems.size + uploadedWithReceiverInfoItems.size + FOOTER_PROGRESS_INDICATOR_INDEX)
+            uploadedItems.size + uploadedWithReceiverInfoItems.size + footerItems.size)
     }
 
-    fun hideProgressFooter() {
-        if (footerItems.isEmpty() || footerItems.last() !is UploadedPhotosAdapterItem.ProgressItem) {
-            return
+    fun showMessageFooter(message: String) {
+        if (footerItems.isNotEmpty()) {
+            clearFooter()
         }
 
-        footerItems.removeAt(footerItems.lastIndex)
-        notifyItemRemoved(headerItems.size + queuedUpItems.size + failedToUploadItems.size +
-            uploadedItems.size + uploadedWithReceiverInfoItems.size + FOOTER_PROGRESS_INDICATOR_INDEX)
+        footerItems.add(UploadedPhotosAdapterItem.MessageItem(message))
+        notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size +
+            uploadedItems.size + uploadedWithReceiverInfoItems.size + footerItems.size)
     }
 
     fun addTakenPhotos(photos: List<TakenPhoto>) {
@@ -351,8 +361,8 @@ class UploadedPhotosAdapter(
             BaseAdapterInfo(AdapterItemType.VIEW_TAKEN_PHOTO, R.layout.adapter_item_taken_photo, TakenPhotoViewHolder::class.java),
             BaseAdapterInfo(AdapterItemType.VIEW_UPLOADED_PHOTO, R.layout.adapter_item_uploaded_photo, UploadedPhotoViewHolder::class.java),
             BaseAdapterInfo(AdapterItemType.VIEW_PROGRESS, R.layout.adapter_item_progress, ProgressViewHolder::class.java),
-            BaseAdapterInfo(AdapterItemType.VIEW_FAILED_TO_UPLOAD,
-                R.layout.adapter_failed_to_upload_photo, FailedToUploadPhotoViewHolder::class.java)
+            BaseAdapterInfo(AdapterItemType.VIEW_FAILED_TO_UPLOAD, R.layout.adapter_failed_to_upload_photo, FailedToUploadPhotoViewHolder::class.java),
+            BaseAdapterInfo(AdapterItemType.VIEW_MESSAGE, R.layout.adapter_item_message, MessageViewHolder::class.java)
         )
     }
 
@@ -438,6 +448,12 @@ class UploadedPhotosAdapter(
                     adapterButtonsClickSubject.onNext(UploadedPhotosAdapterButtonClick.RetryButtonClick(failedPhoto))
                 }
             }
+            is MessageViewHolder -> {
+                val messageItem = (getAdapterItemByIndex(position) as? UploadedPhotosAdapterItem.MessageItem)
+                    ?: return
+
+                holder.message.text = messageItem.message
+            }
             is ProgressViewHolder -> {
                 //Do nothing
             }
@@ -458,6 +474,10 @@ class UploadedPhotosAdapter(
 
         class ProgressViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             val progressBar = itemView.findViewById<ProgressBar>(R.id.progressbar)
+        }
+
+        class MessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            val message = itemView.findViewById<TextView>(R.id.message)
         }
 
         class FailedToUploadPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

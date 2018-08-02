@@ -56,19 +56,12 @@ class ReceivedPhotosAdapter(
         notifyItemChanged(itemIndex)
     }
 
-    fun showProgressFooter() {
-        if (items.isNotEmpty() && items.last().getType() == AdapterItemType.VIEW_PROGRESS) {
+    fun clearFooter() {
+        if (items.isEmpty()) {
             return
         }
 
-        val lastIndex = items.lastIndex
-
-        items.add(ReceivedPhotosAdapterItem.ProgressItem())
-        notifyItemInserted(lastIndex)
-    }
-
-    fun hideProgressFooter() {
-        if (items.isEmpty() || items.last().getType() != AdapterItemType.VIEW_PROGRESS) {
+        if (items.last().getType() != AdapterItemType.VIEW_MESSAGE && items.last().getType() != AdapterItemType.VIEW_PROGRESS) {
             return
         }
 
@@ -76,6 +69,30 @@ class ReceivedPhotosAdapter(
 
         items.removeAt(lastIndex)
         notifyItemRemoved(lastIndex)
+    }
+
+    fun showProgressFooter() {
+        if (items.isNotEmpty() && items.last().getType() == AdapterItemType.VIEW_PROGRESS) {
+            return
+        }
+
+        clearFooter()
+        val lastIndex = items.lastIndex
+
+        items.add(ReceivedPhotosAdapterItem.ProgressItem())
+        notifyItemInserted(lastIndex)
+    }
+
+    fun showMessageFooter(message: String) {
+        if (items.isNotEmpty() && items.last().getType() == AdapterItemType.VIEW_MESSAGE) {
+            return
+        }
+
+        clearFooter()
+        val lastIndex = items.lastIndex
+
+        items.add(ReceivedPhotosAdapterItem.MessageItem(message))
+        notifyItemInserted(lastIndex)
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -87,7 +104,8 @@ class ReceivedPhotosAdapter(
     override fun doGetBaseAdapterInfo(): MutableList<BaseAdapterInfo> {
         return arrayListOf(
             BaseAdapterInfo(AdapterItemType.VIEW_RECEIVED_PHOTO, R.layout.adapter_item_received_photo, PhotoAnswerViewHolder::class.java),
-            BaseAdapterInfo(AdapterItemType.VIEW_PROGRESS, R.layout.adapter_item_progress, ProgressViewHolder::class.java)
+            BaseAdapterInfo(AdapterItemType.VIEW_PROGRESS, R.layout.adapter_item_progress, ProgressViewHolder::class.java),
+            BaseAdapterInfo(AdapterItemType.VIEW_MESSAGE, R.layout.adapter_item_message, MessageViewHolder::class.java)
         )
     }
 
@@ -113,6 +131,12 @@ class ReceivedPhotosAdapter(
                     imageLoader.loadStaticMapImageFromNetInto(receivedPhoto.receivedPhotoName, holder.staticMapView)
                 }
             }
+            is MessageViewHolder -> {
+                val messageItem = (items[position] as? ReceivedPhotosAdapterItem.MessageItem)
+                    ?: return
+
+                holder.message.text = messageItem.message
+            }
             is ProgressViewHolder -> {
                 //do nothing
             }
@@ -126,6 +150,10 @@ class ReceivedPhotosAdapter(
 
     companion object {
         class ProgressViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView)
+
+        class MessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            val message = itemView.findViewById<TextView>(R.id.message)
+        }
 
         class PhotoAnswerViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             val photoView = itemView.findViewById<ImageView>(R.id.photo_view)
