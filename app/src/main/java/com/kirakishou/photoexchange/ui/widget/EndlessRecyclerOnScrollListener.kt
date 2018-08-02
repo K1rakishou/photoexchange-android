@@ -13,6 +13,7 @@ class EndlessRecyclerOnScrollListener(
     private val gridLayoutManager: GridLayoutManager,
     private val visibleThreshold: Int,
     private val loadMoreSubject: PublishSubject<Int>,
+    private val scrollSubject: PublishSubject<Boolean>,
     private val startWithPage: Int
 ) : RecyclerView.OnScrollListener() {
 
@@ -27,6 +28,12 @@ class EndlessRecyclerOnScrollListener(
 
     override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
         super.onScrolled(recyclerView, dx, dy)
+
+        /**
+         * True means that we are scrolling down, false otherwise.
+         * When dy is greater than zero that means we are scrolling down
+         * */
+        scrollSubject.onNext(dy > 0)
 
         if (isEndReached) {
             return

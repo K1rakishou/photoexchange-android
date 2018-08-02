@@ -65,6 +65,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
     private var isFragmentFreshlyCreated = true
     private var viewState = UploadedPhotosFragmentViewState()
     private val loadMoreSubject = PublishSubject.create<Int>()
+    private val scrollSubject = PublishSubject.create<Boolean>()
     private var photosPerPage = 0
 
     override fun getContentView(): Int = R.layout.fragment_uploaded_photos
@@ -142,6 +143,14 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                 Timber.tag(TAG).e(error)
                 onUiEvent(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter())
             })
+
+        compositeDisposable += scrollSubject
+            .distinctUntilChanged()
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .subscribe({ isScrollingDown ->
+                viewModel.intercom.tell<PhotosActivity>()
+                    .that(PhotosActivityEvent.ScrollEvent(isScrollingDown))
+            })
     }
 
     private fun initRecyclerView() {
@@ -153,7 +162,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         layoutManager.spanSizeLookup = UploadedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
         photosPerPage = Constants.UPLOADED_PHOTOS_PER_ROW * layoutManager.spanCount
 
-        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, loadMoreSubject, 1)
+        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, loadMoreSubject, scrollSubject, 1)
 
         uploadedPhotosList.layoutManager = layoutManager
         uploadedPhotosList.adapter = adapter

@@ -13,6 +13,7 @@ import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
+import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
@@ -47,6 +48,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     private val TAG = "GalleryFragment"
     private val GALLERY_PHOTO_ADAPTER_VIEW_WIDTH = DEFAULT_ADAPTER_ITEM_WIDTH
     private val loadMoreSubject = PublishSubject.create<Int>()
+    private val scrollSubject = PublishSubject.create<Boolean>()
     private val adapterButtonClickSubject = PublishSubject.create<GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent>()
     private val viewState = GalleryFragmentViewState()
     private var photosPerPage = 0
@@ -118,6 +120,14 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
             .filter { buttonClicked -> buttonClicked is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.SwitchShowMapOrPhoto }
             .cast(GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.SwitchShowMapOrPhoto::class.java)
             .subscribe({ click -> handleAdapterClick(click) }, { Timber.tag(TAG).e(it) })
+
+        compositeDisposable += scrollSubject
+            .distinctUntilChanged()
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .subscribe({ isScrollingDown ->
+                viewModel.intercom.tell<PhotosActivity>()
+                    .that(PhotosActivityEvent.ScrollEvent(isScrollingDown))
+            })
     }
 
     private fun initRecyclerView() {
@@ -129,7 +139,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
         layoutManager.spanSizeLookup = GalleryPhotosAdapterSpanSizeLookup(adapter, columnsCount)
 
         photosPerPage = Constants.GALLERY_PHOTOS_PER_ROW * layoutManager.spanCount
-        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, loadMoreSubject, 1)
+        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, loadMoreSubject, scrollSubject, 1)
 
         galleryPhotosList.layoutManager = layoutManager
         galleryPhotosList.adapter = adapter

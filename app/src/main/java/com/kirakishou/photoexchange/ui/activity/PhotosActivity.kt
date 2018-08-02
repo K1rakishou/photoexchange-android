@@ -22,6 +22,7 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.PhotosActivityModule
 import com.kirakishou.photoexchange.helper.extension.debounceClicks
+import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
@@ -321,7 +322,14 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
                         Timber.tag(TAG).e(error)
                     })
             }
-        }
+            is PhotosActivityEvent.ScrollEvent -> {
+                if (event.isScrollingDown) {
+                    takePhotoButton.hide()
+                } else {
+                    takePhotoButton.show()
+                }
+            }
+        }.safe
     }
 
     override fun onUploadPhotosEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
