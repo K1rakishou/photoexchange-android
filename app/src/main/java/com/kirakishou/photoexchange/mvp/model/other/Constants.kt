@@ -17,8 +17,10 @@ object Constants {
     const val PHOTOS_DELIMITER = ","
 
     //TODO: change this in production
-    const  val GALLERY_PHOTOS_PER_ROW = 5
+    const val GALLERY_PHOTOS_PER_ROW = 5
+    //TODO: change this in production
     const val UPLOADED_PHOTOS_PER_ROW = 5
+    //TODO: change this in production
     const val RECEIVED_PHOTOS_PER_ROW = 5
 
     const val DEFAULT_ADAPTER_ITEM_WIDTH = 288

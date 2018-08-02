@@ -238,7 +238,6 @@ class GetGalleryPhotosUseCaseTest {
         assertEquals(5, values.size)
 
         Mockito.verify(galleryPhotoRepository, Mockito.times(1)).findMany(galleryPhotoIds)
-        Mockito.verify(galleryPhotoRepository, Mockito.times(1)).saveMany(galleryPhotosFromServer)
         Mockito.verify(galleryPhotoRepository, Mockito.times(1)).deleteOldPhotos()
         Mockito.verify(apiClient, Mockito.times(1)).getGalleryPhotoIds(lastId, photosPerPage)
         Mockito.verify(apiClient, Mockito.times(1)).getGalleryPhotos(photoIdsJoined)

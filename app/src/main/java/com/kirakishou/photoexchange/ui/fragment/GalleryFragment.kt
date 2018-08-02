@@ -48,7 +48,6 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     private val GALLERY_PHOTO_ADAPTER_VIEW_WIDTH = DEFAULT_ADAPTER_ITEM_WIDTH
     private val loadMoreSubject = PublishSubject.create<Int>()
     private val adapterButtonClickSubject = PublishSubject.create<GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent>()
-    private var isFragmentFreshlyCreated = true
     private val viewState = GalleryFragmentViewState()
     private var photosPerPage = 0
     private val ADAPTER_PHOTO_SIZE = ImageLoader.PhotoSize.Small
@@ -59,8 +58,6 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     override fun getContentView(): Int = R.layout.fragment_gallery
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
-        isFragmentFreshlyCreated = savedInstanceState == null
-
         initRx()
         initRecyclerView()
         loadFirstPage()
