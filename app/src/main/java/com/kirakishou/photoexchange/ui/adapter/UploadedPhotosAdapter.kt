@@ -34,7 +34,7 @@ class UploadedPhotosAdapter(
     private val uploadedWithReceiverInfoItems = arrayListOf<UploadedPhotosAdapterItem>()
     private val footerItems = arrayListOf<UploadedPhotosAdapterItem>()
 
-    private val duplicatesChecker = hashSetOf<Long>()
+    private val duplicatesCheckerSet = hashSetOf<Long>()
     private val photosProgressMap = hashMapOf<Long, Int>()
 
     fun getFailedPhotosCount(): Int {
@@ -118,7 +118,7 @@ class UploadedPhotosAdapter(
             return
         }
 
-        duplicatesChecker.add(photo.id)
+        duplicatesCheckerSet.add(photo.id)
 
         when (photo.photoState) {
             PhotoState.PHOTO_QUEUED_UP,
@@ -139,7 +139,6 @@ class UploadedPhotosAdapter(
 
     fun addUploadedPhotos(photos: List<UploadedPhoto>) {
         val filteredReceivedPhotos = photos
-            .filter { photo -> duplicatesChecker.add(photo.photoId) }
             .map { photo -> UploadedPhotosAdapterItem.UploadedPhotoItem(photo) }
 
         val photosWithoutReceiverInfo = filteredReceivedPhotos.filter { !it.uploadedPhoto.hasReceiverInfo }
@@ -153,12 +152,6 @@ class UploadedPhotosAdapter(
     }
 
     fun addUploadedPhoto(photo: UploadedPhoto) {
-        if (isPhotoAlreadyAdded(photo)) {
-            return
-        }
-
-        duplicatesChecker.add(photo.photoId)
-
         if (!photo.hasReceiverInfo) {
             uploadedItems.add(0, UploadedPhotosAdapterItem.UploadedPhotoItem(photo))
             notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size)
@@ -173,7 +166,7 @@ class UploadedPhotosAdapter(
             return
         }
 
-        duplicatesChecker.remove(photoId)
+        duplicatesCheckerSet.remove(photoId)
 
         var globalIndex = headerItems.size
         var localIndex = -1
@@ -319,7 +312,7 @@ class UploadedPhotosAdapter(
     }
 
     private fun isPhotoAlreadyAdded(photoId: Long): Boolean {
-        return duplicatesChecker.contains(photoId)
+        return duplicatesCheckerSet.contains(photoId)
     }
 
     private fun isPhotoAlreadyAdded(takenPhoto: TakenPhoto): Boolean {
@@ -338,7 +331,7 @@ class UploadedPhotosAdapter(
         uploadedWithReceiverInfoItems.clear()
         footerItems.clear()
 
-        duplicatesChecker.clear()
+        duplicatesCheckerSet.clear()
         photosProgressMap.clear()
 
         notifyDataSetChanged()

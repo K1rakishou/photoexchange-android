@@ -61,6 +61,14 @@ open class GetReceivedPhotosUseCase(
                 Timber.tag(TAG).e(error)
                 return@onErrorReturn handleErrors(error)
             }
+            .map { result ->
+                if (result !is Either.Value) {
+                    return@map result
+                }
+
+                result.value.sortByDescending { it.photoId }
+                return@map result
+            }
     }
 
     private fun handleErrors(

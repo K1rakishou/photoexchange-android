@@ -55,6 +55,14 @@ open class GetGalleryPhotosInfoUseCase(
                         getFreshPhotoInfosAndConcatWithCached(userId, galleryPhotos, photoInfoIds, galleryPhotoInfoFromDb)
                     }
             }
+            .map { result ->
+                if (result !is Either.Value) {
+                    return@map result
+                }
+
+                result.value.sortByDescending { it.galleryPhotoId }
+                return@map result
+            }
     }
 
     private fun getFreshPhotoInfosAndConcatWithCached(
