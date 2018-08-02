@@ -112,6 +112,12 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
                     is Either.Error -> handleReportPhotoError(result.error)
                 }
             }, { Timber.tag(TAG).e(it) })
+
+        compositeDisposable += adapterButtonClickSubject
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .filter { buttonClicked -> buttonClicked is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.SwitchShowMapOrPhoto }
+            .cast(GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.SwitchShowMapOrPhoto::class.java)
+            .subscribe({ click -> handleAdapterClick(click) }, { Timber.tag(TAG).e(it) })
     }
 
     private fun initRecyclerView() {
@@ -133,6 +139,32 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
 
     private fun loadFirstPage() {
         loadMoreSubject.onNext(0)
+    }
+
+    private fun handleAdapterClick(click: GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent) {
+        if (!isAdded) {
+            return
+        }
+
+        when (click) {
+            is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.SwitchShowMapOrPhoto -> {
+                switchShowMapOrPhoto(click.photoName)
+            }
+            is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.FavouriteClicked,
+            is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.ReportClicked -> {
+                throw IllegalStateException("Should not happen")
+            }
+        }.safe
+    }
+
+    private fun switchShowMapOrPhoto(photoName: String) {
+        if (!isAdded) {
+            return
+        }
+
+        galleryPhotosList.post {
+            adapter.switchShowMapOrPhoto(photoName)
+        }
     }
 
     private fun preloadPhotos(

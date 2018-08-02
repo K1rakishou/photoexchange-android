@@ -11,6 +11,7 @@ sealed class GalleryPhotosAdapterItem : BaseAdapterItem() {
         }
     }
 
-    class GalleryPhotoItem(val photo: GalleryPhoto) : GalleryPhotosAdapterItem()
+    class GalleryPhotoItem(val photo: GalleryPhoto,
+                           var showPhoto: Boolean) : GalleryPhotosAdapterItem()
     class ProgressItem : GalleryPhotosAdapterItem()
 }

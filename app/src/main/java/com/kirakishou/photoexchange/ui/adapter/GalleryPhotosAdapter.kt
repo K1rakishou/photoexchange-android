@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.ui.adapter
 
 import android.content.Context
+import android.support.constraint.ConstraintLayout
 import android.support.v7.widget.RecyclerView
 import android.view.View
 import android.widget.ImageView
@@ -100,8 +101,26 @@ class GalleryPhotosAdapter(
     fun addAll(photos: List<GalleryPhoto>) {
         val lastIndex = items.size
 
-        items.addAll(photos.map { galleryPhoto -> GalleryPhotosAdapterItem.GalleryPhotoItem(galleryPhoto) })
+        items.addAll(photos.map { galleryPhoto -> GalleryPhotosAdapterItem.GalleryPhotoItem(galleryPhoto, true) })
         notifyItemRangeInserted(lastIndex, photos.size)
+    }
+
+    fun switchShowMapOrPhoto(photoName: String) {
+        val itemIndex = items.indexOfFirst {
+            if (it !is GalleryPhotosAdapterItem.GalleryPhotoItem) {
+                return@indexOfFirst false
+            }
+
+            return@indexOfFirst it.photo.photoName == photoName
+        }
+
+        if (itemIndex == -1) {
+            return
+        }
+
+        val previous = (items[itemIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).showPhoto
+        (items[itemIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).showPhoto = !previous
+        notifyItemChanged(itemIndex)
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -121,35 +140,48 @@ class GalleryPhotosAdapter(
         when (holder) {
             is GalleryPhotoViewHolder -> {
                 val item = items[position] as GalleryPhotosAdapterItem.GalleryPhotoItem
+                val showPhoto = (items[position] as? GalleryPhotosAdapterItem.GalleryPhotoItem)?.showPhoto
+                    ?: return
 
-                if (item.photo.galleryPhotoInfo != null) {
-                    holder.photoButtonsHolder.visibility = View.VISIBLE
-                    holder.favouriteButton.isClickable = true
-                    holder.reportButton.isClickable = true
+                holder.clickView.setOnClickListener {
+                    adapterButtonClickSubject.onNext(GalleryPhotosAdapterButtonClickEvent.SwitchShowMapOrPhoto(item.photo.photoName))
+                }
 
-                    holder.favouriteButton.setOnClickListener {
-                        adapterButtonClickSubject.onNext(GalleryPhotosAdapterButtonClickEvent.FavouriteClicked(item.photo.photoName))
-                    }
+                if (showPhoto) {
+                    holder.showPhotoHideMap()
 
-                    holder.reportButton.setOnClickListener {
-                        adapterButtonClickSubject.onNext(GalleryPhotosAdapterButtonClickEvent.ReportClicked(item.photo.photoName))
-                    }
+                    if (item.photo.galleryPhotoInfo != null) {
+                        holder.photoButtonsHolder.visibility = View.VISIBLE
+                        holder.favouriteButton.isClickable = true
+                        holder.reportButton.isClickable = true
 
-                    if (item.photo.galleryPhotoInfo!!.isFavourited) {
-                        holder.favouriteIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_favorite))
+                        holder.favouriteButton.setOnClickListener {
+                            adapterButtonClickSubject.onNext(GalleryPhotosAdapterButtonClickEvent.FavouriteClicked(item.photo.photoName))
+                        }
+
+                        holder.reportButton.setOnClickListener {
+                            adapterButtonClickSubject.onNext(GalleryPhotosAdapterButtonClickEvent.ReportClicked(item.photo.photoName))
+                        }
+
+                        if (item.photo.galleryPhotoInfo!!.isFavourited) {
+                            holder.favouriteIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_favorite))
+                        } else {
+                            holder.favouriteIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_favorite_border))
+                        }
+
+                        if (item.photo.galleryPhotoInfo!!.isReported) {
+                            holder.reportIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_reported))
+                        } else {
+                            holder.reportIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_report_border))
+                        }
                     } else {
-                        holder.favouriteIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_favorite_border))
-                    }
-
-                    if (item.photo.galleryPhotoInfo!!.isReported) {
-                        holder.reportIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_reported))
-                    } else {
-                        holder.reportIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_report_border))
+                        holder.photoButtonsHolder.visibility = View.GONE
+                        holder.favouriteButton.isClickable = false
+                        holder.reportButton.isClickable = false
                     }
                 } else {
-                    holder.photoButtonsHolder.visibility = View.GONE
-                    holder.favouriteButton.isClickable = false
-                    holder.reportButton.isClickable = false
+                    holder.showMapHidePhoto()
+                    imageLoader.loadStaticMapImageFromNetInto(item.photo.photoName, holder.staticMapView)
                 }
 
                 holder.galleryPhotoId.text = item.photo.galleryPhotoId.toString()
@@ -167,6 +199,7 @@ class GalleryPhotosAdapter(
     sealed class GalleryPhotosAdapterButtonClickEvent {
         class FavouriteClicked(val photoName: String) : GalleryPhotosAdapterButtonClickEvent()
         class ReportClicked(val photoName: String) : GalleryPhotosAdapterButtonClickEvent()
+        class SwitchShowMapOrPhoto(val photoName: String) : GalleryPhotosAdapterButtonClickEvent()
     }
 
     companion object {
@@ -183,6 +216,18 @@ class GalleryPhotosAdapter(
             val favouriteIcon = itemView.findViewById<ImageView>(R.id.favourite_icon)
             val reportIcon = itemView.findViewById<ImageView>(R.id.report_icon)
             val galleryPhotoId = itemView.findViewById<TextView>(R.id.gallery_photo_id)
+            val staticMapView = itemView.findViewById<ImageView>(R.id.static_map_view)
+            val clickView = itemView.findViewById<ConstraintLayout>(R.id.click_view)
+
+            fun showPhotoHideMap() {
+                staticMapView.visibility = View.GONE
+                photoView.visibility = View.VISIBLE
+            }
+
+            fun showMapHidePhoto() {
+                staticMapView.visibility = View.VISIBLE
+                photoView.visibility = View.GONE
+            }
         }
     }
 }
