@@ -5,6 +5,7 @@ import android.os.Bundle
 class PhotosActivityViewState(
     var lastOpenedTab: Int = 0
 ) : BaseViewState {
+
     override fun saveToBundle(bundle: Bundle?) {
         if (bundle == null) {
             return

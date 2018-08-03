@@ -32,7 +32,6 @@ abstract class AbstractPhotosActivityViewModelTest {
     lateinit var galleryPhotoRepository: GalleryPhotoRepository
     lateinit var settingsRepository: SettingsRepository
     lateinit var receivedPhotosRepository: ReceivedPhotosRepository
-    lateinit var cachedPhotoIdRepository: CachedPhotoIdRepository
     lateinit var getGalleryPhotosUseCase: GetGalleryPhotosUseCase
     lateinit var getGalleryPhotosInfoUseCase: GetGalleryPhotosInfoUseCase
     lateinit var getUploadedPhotosUseCase: GetUploadedPhotosUseCase
@@ -90,10 +89,6 @@ abstract class AbstractPhotosActivityViewModelTest {
             maxPhotoCacheLiveTime
         )
 
-        cachedPhotoIdRepository = CachedPhotoIdRepository(
-            database
-        )
-
         getUploadedPhotosUseCase = GetUploadedPhotosUseCase(
             uploadedPhotosRepository,
             apiClient
@@ -127,7 +122,6 @@ abstract class AbstractPhotosActivityViewModelTest {
             galleryPhotoRepository,
             settingsRepository,
             receivedPhotosRepository,
-            cachedPhotoIdRepository,
             getGalleryPhotosUseCase,
             getGalleryPhotosInfoUseCase,
             getUploadedPhotosUseCase,

@@ -14,6 +14,8 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
+import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewState
+import com.kirakishou.photoexchange.ui.viewstate.UploadedPhotosFragmentViewState
 import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -104,7 +106,7 @@ class PhotosActivityViewModel(
             .doOnNext { result ->
                 if (result is Either.Value) {
                     intercom.tell<UploadedPhotosFragment>()
-                        .to(UploadedPhotosFragmentEvent.UiEvents.UpdateReceiverInfo(result.value))
+                        .to(UploadedPhotosFragmentEvent.GeneralEvents.UpdateReceiverInfo(result.value))
                 }
             }
             .doOnError { Timber.tag(TAG).e(it) }
@@ -115,12 +117,12 @@ class PhotosActivityViewModel(
         photosPerPage: Int
     ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
         return Observable.just(Unit)
-            .doOnNext { intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.UiEvents.ShowProgressFooter()) }
+            .doOnNext { intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.GeneralEvents.ShowProgressFooter()) }
             .flatMap { getGalleryPhotosUseCase.loadPageOfPhotos(lastId, photosPerPage) }
             .delay(adapterLoadMoreItemsDelayMs, TimeUnit.MILLISECONDS)
             .doOnEach { event ->
                 if (event.isOnNext || event.isOnError) {
-                    intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.UiEvents.HideProgressFooter())
+                    intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.GeneralEvents.HideProgressFooter())
                 }
             }
             .delay(progressFooterRemoveDelayMs, TimeUnit.MILLISECONDS)
@@ -136,12 +138,12 @@ class PhotosActivityViewModel(
         }
 
         return Observable.just(Unit)
-            .doOnNext { intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
+            .doOnNext { intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.GeneralEvents.ShowProgressFooter()) }
             .flatMap { getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage) }
             .delay(adapterLoadMoreItemsDelayMs, TimeUnit.MILLISECONDS)
             .doOnEach { event ->
                 if (event.isOnNext || event.isOnError) {
-                    intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter())
+                    intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.GeneralEvents.HideProgressFooter())
                 }
             }
             .delay(progressFooterRemoveDelayMs, TimeUnit.MILLISECONDS)
@@ -158,11 +160,11 @@ class PhotosActivityViewModel(
 
         return Observable.just(Unit)
             .flatMap { getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage) }
-            .doOnNext { intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.UiEvents.ShowProgressFooter()) }
+            .doOnNext { intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.GeneralEvents.ShowProgressFooter()) }
             .delay(adapterLoadMoreItemsDelayMs, TimeUnit.MILLISECONDS)
             .doOnEach { event ->
                 if (event.isOnNext || event.isOnError) {
-                    intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter())
+                    intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.GeneralEvents.HideProgressFooter())
                 }
             }
             .delay(progressFooterRemoveDelayMs, TimeUnit.MILLISECONDS)

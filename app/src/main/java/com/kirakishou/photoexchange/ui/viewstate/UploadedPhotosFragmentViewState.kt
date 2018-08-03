@@ -1,20 +1,20 @@
 package com.kirakishou.photoexchange.ui.viewstate
 
+import android.os.Bundle
+
 data class UploadedPhotosFragmentViewState(
     var lastId: Long = Long.MAX_VALUE,
     var photosPerPage: Int = 0
-) {
-    fun update(newLastId: Long? = null, photosPerPage: Int? = null) {
-        if (newLastId != null) {
-            this.lastId = newLastId
-        }
+) : BaseViewState {
 
-        if (photosPerPage != null) {
-            this.photosPerPage = photosPerPage
-        }
+    fun updateLastId(newLastId: Long) {
+        lastId = newLastId
     }
 
-    fun reset() {
-        lastId = Long.MAX_VALUE
+    override fun saveToBundle(bundle: Bundle?) {
     }
+
+    override fun loadFromBundle(bundle: Bundle?) {
+    }
+
 }

@@ -279,11 +279,11 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
             }
             RECEIVED_PHOTOS_TAB_INDEX -> {
                 viewModel.intercom.tell<ReceivedPhotosFragment>()
-                    .to(ReceivedPhotosFragmentEvent.GeneralEvents.ClearCache())
+                    .to(ReceivedPhotosFragmentEvent.GeneralEvents.OnTabClicked())
             }
             GALLERY_PHOTOS_TAB_INDEX -> {
                 viewModel.intercom.tell<GalleryFragment>()
-                    .to(GalleryFragmentEvent.GeneralEvents.ClearCache())
+                    .to(GalleryFragmentEvent.GeneralEvents.OnTabClicked())
             }
         }
     }
@@ -336,18 +336,22 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
         viewModel.intercom.tell<UploadedPhotosFragment>().to(event)
     }
 
-    override fun onPhotoFindEvent(event: ReceivedPhotosFragmentEvent.ReceivePhotosEvent) {
-        viewModel.intercom.tell<ReceivedPhotosFragment>().to(event)
-
+    override fun onReceivePhotoEvent(event: ReceivedPhotosFragmentEvent.ReceivePhotosEvent) {
         when (event) {
             is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotoReceived -> {
                 viewModel.intercom.tell<UploadedPhotosFragment>()
-                    .that(UploadedPhotosFragmentEvent.PhotoUploadEvent.PhotoAnswerFound(event.takenPhotoName))
+                    .that(UploadedPhotosFragmentEvent.PhotoUploadEvent.PhotoReceived(event.takenPhotoName))
                 viewModel.intercom.tell<ReceivedPhotosFragment>()
                     .that(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotoReceived(event.receivedPhoto, event.takenPhotoName))
                 showPhotoAnswerFoundSnackbar()
             }
-        }
+            is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
+                viewModel.intercom.tell<ReceivedPhotosFragment>().to(event)
+            }
+            is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnUnknownError -> {
+                viewModel.intercom.tell<ReceivedPhotosFragment>().to(event)
+            }
+        }.safe
     }
 
     private fun handleUploadedPhotosFragmentAdapterButtonClicks(

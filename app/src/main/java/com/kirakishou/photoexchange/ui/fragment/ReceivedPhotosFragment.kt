@@ -50,9 +50,11 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
 
     private val TAG = "ReceivedPhotosFragment"
     private val PHOTO_ADAPTER_VIEW_WIDTH = DEFAULT_ADAPTER_ITEM_WIDTH
+
     private val loadMoreSubject = PublishSubject.create<Int>()
     private val scrollSubject = PublishSubject.create<Boolean>()
     private val adapterClicksSubject = PublishSubject.create<ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent>()
+
     private val viewState = ReceivedPhotosFragmentViewState()
     private var photosPerPage = 0
 
@@ -140,7 +142,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
 
         requireActivity().runOnUiThread {
             when (event) {
-                is ReceivedPhotosFragmentEvent.UiEvents -> {
+                is ReceivedPhotosFragmentEvent.GeneralEvents -> {
                     onUiEvent(event)
                 }
                 is ReceivedPhotosFragmentEvent.ReceivePhotosEvent -> {
@@ -150,21 +152,24 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
         }
     }
 
-    private fun onUiEvent(event: ReceivedPhotosFragmentEvent.UiEvents) {
+    private fun onUiEvent(event: ReceivedPhotosFragmentEvent.GeneralEvents) {
         if (!isAdded) {
             return
         }
 
         receivedPhotosList.post {
             when (event) {
-                is ReceivedPhotosFragmentEvent.UiEvents.ScrollToTop -> {
+                is ReceivedPhotosFragmentEvent.GeneralEvents.ScrollToTop -> {
                     receivedPhotosList.scrollToPosition(0)
                 }
-                is ReceivedPhotosFragmentEvent.UiEvents.ShowProgressFooter -> {
+                is ReceivedPhotosFragmentEvent.GeneralEvents.ShowProgressFooter -> {
                     showProgressFooter()
                 }
-                is ReceivedPhotosFragmentEvent.UiEvents.HideProgressFooter -> {
+                is ReceivedPhotosFragmentEvent.GeneralEvents.HideProgressFooter -> {
                     hideProgressFooter()
+                }
+                is ReceivedPhotosFragmentEvent.GeneralEvents.OnTabClicked -> {
+                    //TODO
                 }
             }.safe
         }

@@ -3,16 +3,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.kirakishou.photoexchange.ui.widget.SwipeToRefreshLayout
-        android:id="@+id/swipe_refresh_layout"
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/received_photos_list"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <android.support.v7.widget.RecyclerView
-            android:id="@+id/received_photos_list"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-    </com.kirakishou.photoexchange.ui.widget.SwipeToRefreshLayout>
+        android:layout_height="match_parent" />
 
 </android.support.constraint.ConstraintLayout>

@@ -11,16 +11,10 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
         class HideProgressFooter : GeneralEvents()
         class RemovePhoto(val photo: TakenPhoto) : GeneralEvents()
         class AddPhoto(val photo: TakenPhoto) : GeneralEvents()
-        class AddFailedToUploadPhotos(val photos: List<TakenPhoto>) : GeneralEvents()
-        class AddQueuedUpPhotos(val photos: List<TakenPhoto>) : GeneralEvents()
-        class AddUploadedPhotos(val photos: List<UploadedPhoto>) : GeneralEvents()
         class ScrollToTop : GeneralEvents()
         class PhotoRemoved : GeneralEvents()
         class AfterPermissionRequest : GeneralEvents()
         class UpdateReceiverInfo(val receivedPhotos: MutableList<ReceivedPhoto>) : GeneralEvents()
-        class ClearAdapter : GeneralEvents()
-        class StartRefreshing : GeneralEvents()
-        class StopRefreshing : GeneralEvents()
         class OnTabClicked : GeneralEvents()
     }
 
@@ -32,7 +26,7 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
         class OnPhotoUploadStart(val photo: TakenPhoto) : PhotoUploadEvent()
         class OnProgress(val photo: TakenPhoto, val progress: Int) : PhotoUploadEvent()
         class OnUploaded(val takenPhoto: TakenPhoto) : PhotoUploadEvent()
-        class PhotoAnswerFound(val takenPhotoName: String) : PhotoUploadEvent()
+        class PhotoReceived(val takenPhotoName: String) : PhotoUploadEvent()
         class OnEnd : PhotoUploadEvent()
     }
 }

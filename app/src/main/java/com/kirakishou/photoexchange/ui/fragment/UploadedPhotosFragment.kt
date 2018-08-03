@@ -62,10 +62,11 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
      * photos from the server. NOTE: should not be called when some error has happened while uploading
      * */
     private val onPhotosUploadedSubject = BehaviorSubject.createDefault(false).toSerialized()
-    private var isFragmentFreshlyCreated = true
-    private var viewState = UploadedPhotosFragmentViewState()
     private val loadMoreSubject = PublishSubject.create<Int>()
     private val scrollSubject = PublishSubject.create<Boolean>()
+
+    private val viewState = UploadedPhotosFragmentViewState()
+    private var isFragmentFreshlyCreated = true
     private var photosPerPage = 0
 
     override fun getContentView(): Int = R.layout.fragment_uploaded_photos
@@ -75,20 +76,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
         initRx()
         initRecyclerView()
-
-        if (savedInstanceState != null) {
-            restoreFragmentFromViewState(savedInstanceState)
-        }
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        viewState.saveToBundle(outState)
-    }
-
-    private fun restoreFragmentFromViewState(savedInstanceState: Bundle?) {
-        viewState = UploadedPhotosFragmentViewState()
-            .also { it.loadFromBundle(savedInstanceState) }
     }
 
     override fun onFragmentViewDestroy() {
@@ -141,7 +128,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                 }
             }, { error ->
                 Timber.tag(TAG).e(error)
-                onUiEvent(UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter())
+                onUiEvent(UploadedPhotosFragmentEvent.GeneralEvents.HideProgressFooter())
             })
 
         compositeDisposable += scrollSubject
@@ -215,7 +202,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
         uploadedPhotosList.post {
             when (event) {
-                is UploadedPhotosFragmentEvent.UiEvents -> {
+                is UploadedPhotosFragmentEvent.GeneralEvents -> {
                     onUiEvent(event)
                 }
 
@@ -226,29 +213,29 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         }
     }
 
-    private fun onUiEvent(event: UploadedPhotosFragmentEvent.UiEvents) {
+    private fun onUiEvent(event: UploadedPhotosFragmentEvent.GeneralEvents) {
         if (!isAdded) {
             return
         }
 
         uploadedPhotosList.post {
             when (event) {
-                is UploadedPhotosFragmentEvent.UiEvents.ScrollToTop -> {
+                is UploadedPhotosFragmentEvent.GeneralEvents.ScrollToTop -> {
                     uploadedPhotosList.scrollToPosition(0)
                 }
-                is UploadedPhotosFragmentEvent.UiEvents.ShowProgressFooter -> {
+                is UploadedPhotosFragmentEvent.GeneralEvents.ShowProgressFooter -> {
                     showProgressFooter()
                 }
-                is UploadedPhotosFragmentEvent.UiEvents.HideProgressFooter -> {
+                is UploadedPhotosFragmentEvent.GeneralEvents.HideProgressFooter -> {
                     hideProgressFooter()
                 }
-                is UploadedPhotosFragmentEvent.UiEvents.RemovePhoto -> {
+                is UploadedPhotosFragmentEvent.GeneralEvents.RemovePhoto -> {
                     adapter.removePhotoById(event.photo.id)
                 }
-                is UploadedPhotosFragmentEvent.UiEvents.AddPhoto -> {
+                is UploadedPhotosFragmentEvent.GeneralEvents.AddPhoto -> {
                     adapter.addTakenPhoto(event.photo)
                 }
-                is UploadedPhotosFragmentEvent.UiEvents.PhotoRemoved -> {
+                is UploadedPhotosFragmentEvent.GeneralEvents.PhotoRemoved -> {
                     if (adapter.getFailedPhotosCount() == 0) {
                         photosUploaded()
                         loadFirstPageOfUploadedPhotos()
@@ -256,13 +243,16 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                         //do nothing
                     }
                 }
-                is UploadedPhotosFragmentEvent.UiEvents.LoadPhotos -> {
+                is UploadedPhotosFragmentEvent.GeneralEvents.AfterPermissionRequest -> {
                     loadPhotos()
                 }
-                is UploadedPhotosFragmentEvent.UiEvents.UpdateReceiverInfo -> {
+                is UploadedPhotosFragmentEvent.GeneralEvents.UpdateReceiverInfo -> {
                     event.receivedPhotos.forEach {
                         adapter.updateUploadedPhotoSetReceiverInfo(it.uploadedPhotoName)
                     }
+                }
+                is UploadedPhotosFragmentEvent.GeneralEvents.OnTabClicked -> {
+                    //TODO
                 }
             }.safe
         }
@@ -290,11 +280,12 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                     adapter.addTakenPhoto(event.photo.also { it.photoState = PhotoState.FAILED_TO_UPLOAD })
                     (requireActivity() as PhotosActivity).showKnownErrorMessage(event.errorCode)
                 }
-                is UploadedPhotosFragmentEvent.PhotoUploadEvent.PhotoAnswerFound -> {
+                is UploadedPhotosFragmentEvent.PhotoUploadEvent.PhotoReceived -> {
                     adapter.updateUploadedPhotoSetReceiverInfo(event.takenPhotoName)
                 }
                 is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
                     photosUploaded()
+                    loadFirstPageOfUploadedPhotos()
                 }
                 is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError -> {
                     handleKnownErrors(event.errorCode)
@@ -322,7 +313,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         }
 
         uploadedPhotosList.post {
-
             if (uploadedPhotos.isNotEmpty()) {
                 viewState.updateLastId(uploadedPhotos.last().photoId)
                 adapter.addUploadedPhotos(uploadedPhotos)

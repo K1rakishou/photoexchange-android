@@ -45,16 +45,19 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     @Inject
     lateinit var viewModel: PhotosActivityViewModel
 
+    lateinit var adapter: GalleryPhotosAdapter
+    lateinit var endlessScrollListener: EndlessRecyclerOnScrollListener
+
+
     private val TAG = "GalleryFragment"
     private val GALLERY_PHOTO_ADAPTER_VIEW_WIDTH = DEFAULT_ADAPTER_ITEM_WIDTH
+
     private val loadMoreSubject = PublishSubject.create<Int>()
     private val scrollSubject = PublishSubject.create<Boolean>()
     private val adapterButtonClickSubject = PublishSubject.create<GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent>()
+
     private val viewState = GalleryFragmentViewState()
     private var photosPerPage = 0
-
-    lateinit var adapter: GalleryPhotosAdapter
-    lateinit var endlessScrollListener: EndlessRecyclerOnScrollListener
 
     override fun getContentView(): Int = R.layout.fragment_gallery
 
@@ -235,25 +238,28 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
 
         requireActivity().runOnUiThread {
             when (event) {
-                is GalleryFragmentEvent.UiEvents -> {
+                is GalleryFragmentEvent.GeneralEvents -> {
                     onUiEvent(event)
                 }
             }.safe
         }
     }
 
-    private fun onUiEvent(event: GalleryFragmentEvent.UiEvents) {
+    private fun onUiEvent(event: GalleryFragmentEvent.GeneralEvents) {
         if (!isAdded) {
             return
         }
 
         galleryPhotosList.post {
             when (event) {
-                is GalleryFragmentEvent.UiEvents.ShowProgressFooter -> {
+                is GalleryFragmentEvent.GeneralEvents.ShowProgressFooter -> {
                     showProgressFooter()
                 }
-                is GalleryFragmentEvent.UiEvents.HideProgressFooter -> {
+                is GalleryFragmentEvent.GeneralEvents.HideProgressFooter -> {
                     hideProgressFooter()
+                }
+                is GalleryFragmentEvent.GeneralEvents.OnTabClicked -> {
+                    //TODO
                 }
             }.safe
         }

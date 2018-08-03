@@ -8,11 +8,7 @@ sealed class ReceivedPhotosFragmentEvent : BaseEvent {
         class ScrollToTop : GeneralEvents()
         class ShowProgressFooter : GeneralEvents()
         class HideProgressFooter : GeneralEvents()
-        class StartRefreshing : GeneralEvents()
-        class StopRefreshing : GeneralEvents()
-        class AddReceivedPhotos(val photos: List<ReceivedPhoto>) : GeneralEvents()
-        class ClearAdapter : GeneralEvents()
-        class ClearCache : GeneralEvents()
+        class OnTabClicked : GeneralEvents()
     }
 
     sealed class ReceivePhotosEvent : ReceivedPhotosFragmentEvent() {

@@ -22,5 +22,5 @@ class FragmentTabsPager(fm: FragmentManager) : FragmentStatePagerAdapter(fm) {
         }
     }
 
-    override fun getCount(): Int = 1
+    override fun getCount(): Int = 3
 }

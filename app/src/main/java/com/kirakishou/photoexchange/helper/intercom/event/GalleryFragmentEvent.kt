@@ -4,6 +4,6 @@ sealed class GalleryFragmentEvent : BaseEvent {
     sealed class GeneralEvents : GalleryFragmentEvent() {
         class ShowProgressFooter : GeneralEvents()
         class HideProgressFooter : GeneralEvents()
-        class ClearCache : GeneralEvents()
+        class OnTabClicked : GeneralEvents()
     }
 }

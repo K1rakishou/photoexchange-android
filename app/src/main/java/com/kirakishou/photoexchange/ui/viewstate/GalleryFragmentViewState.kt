@@ -19,7 +19,4 @@ class GalleryFragmentViewState(
         if (bundle != null) {
         }
     }
-
-    companion object {
-    }
 }
