@@ -252,7 +252,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             }
 
             if (uploadedPhotos.size < photosPerPage) {
-                adapter.showMessageFooter("Bottom of the list reached")
+                adapter.showMessageFooter("End of the list reached")
                 endlessScrollListener.reachedEnd()
             }
 

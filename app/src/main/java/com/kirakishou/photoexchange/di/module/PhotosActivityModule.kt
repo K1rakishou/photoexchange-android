@@ -7,7 +7,10 @@ import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerPro
 import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.interactors.*
 import com.kirakishou.photoexchange.mvp.model.other.Constants
+import com.kirakishou.photoexchange.mvp.viewmodel.GalleryFragmentViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
+import com.kirakishou.photoexchange.mvp.viewmodel.ReceivedPhotosFragmentViewModel
+import com.kirakishou.photoexchange.mvp.viewmodel.UploadedPhotosFragmentViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.PhotosActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import dagger.Module
@@ -24,35 +27,75 @@ open class PhotosActivityModule(
 
     @PerActivity
     @Provides
-    fun provideViewModelFactory(imageLoader: ImageLoader,
-                                schedulerProvider: SchedulerProvider,
-                                takenPhotosRepository: TakenPhotosRepository,
-                                uploadedPhotosRepository: UploadedPhotosRepository,
-                                galleryPhotoRepository: GalleryPhotoRepository,
-                                getGalleryPhotosInfoUseCase: GetGalleryPhotosInfoUseCase,
-                                receivedPhotosRepository: ReceivedPhotosRepository,
-                                settingsRepository: SettingsRepository,
-                                galleryPhotosUseCase: GetGalleryPhotosUseCase,
-                                favouritePhotoUseCase: FavouritePhotoUseCase,
-                                getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
-                                getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
-                                reportPhotoUseCase: ReportPhotoUseCase): PhotosActivityViewModelFactory {
-        return PhotosActivityViewModelFactory(
-            imageLoader,
+    fun provideUploadedPhotosFragmentViewModel(takenPhotosRepository: TakenPhotosRepository,
+                                               settingsRepository: SettingsRepository,
+                                               getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
+                                               schedulerProvider: SchedulerProvider): UploadedPhotosFragmentViewModel {
+        return UploadedPhotosFragmentViewModel(
             takenPhotosRepository,
-            uploadedPhotosRepository,
-            galleryPhotoRepository,
             settingsRepository,
-            receivedPhotosRepository,
-            galleryPhotosUseCase,
-            getGalleryPhotosInfoUseCase,
-            favouritePhotoUseCase,
-            reportPhotoUseCase,
             getUploadedPhotosUseCase,
+            schedulerProvider,
+            Constants.ADAPTER_LOAD_MORE_ITEMS_DELAY_MS,
+            Constants.PROGRESS_FOOTER_REMOVE_DELAY_MS
+        )
+    }
+
+    @PerActivity
+    @Provides
+    fun provideReceivedPhotosFragmentViewModel(settingsRepository: SettingsRepository,
+                                               getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
+                                               schedulerProvider: SchedulerProvider): ReceivedPhotosFragmentViewModel {
+        return ReceivedPhotosFragmentViewModel(
+            settingsRepository,
             getReceivedPhotosUseCase,
             schedulerProvider,
             Constants.ADAPTER_LOAD_MORE_ITEMS_DELAY_MS,
-            Constants.PROGRESS_FOOTER_REMOVE_DELAY_MS)
+            Constants.PROGRESS_FOOTER_REMOVE_DELAY_MS
+        )
+    }
+
+    @PerActivity
+    @Provides
+    fun provideGalleryFragmentViewModel(imageLoader: ImageLoader,
+                                        settingsRepository: SettingsRepository,
+                                        galleryPhotosUseCase: GetGalleryPhotosUseCase,
+                                        getGalleryPhotosInfoUseCase: GetGalleryPhotosInfoUseCase,
+                                        schedulerProvider: SchedulerProvider): GalleryFragmentViewModel {
+        return GalleryFragmentViewModel(
+            imageLoader,
+            settingsRepository,
+            galleryPhotosUseCase,
+            getGalleryPhotosInfoUseCase,
+            schedulerProvider,
+            Constants.ADAPTER_LOAD_MORE_ITEMS_DELAY_MS,
+            Constants.PROGRESS_FOOTER_REMOVE_DELAY_MS
+        )
+    }
+
+    @PerActivity
+    @Provides
+    fun provideViewModelFactory(settingsRepository: SettingsRepository,
+                                takenPhotosRepository: TakenPhotosRepository,
+                                uploadedPhotosRepository: UploadedPhotosRepository,
+                                receivedPhotosRepository: ReceivedPhotosRepository,
+                                uploadedPhotosFragmentViewModel: UploadedPhotosFragmentViewModel,
+                                receivedPhotosFragmentViewModel: ReceivedPhotosFragmentViewModel,
+                                galleryFragmentViewModel: GalleryFragmentViewModel,
+                                reportPhotoUseCase: ReportPhotoUseCase,
+                                favouritePhotoUseCase: FavouritePhotoUseCase,
+                                schedulerProvider: SchedulerProvider): PhotosActivityViewModelFactory {
+        return PhotosActivityViewModelFactory(
+            settingsRepository,
+            takenPhotosRepository,
+            uploadedPhotosRepository,
+            receivedPhotosRepository,
+            uploadedPhotosFragmentViewModel,
+            receivedPhotosFragmentViewModel,
+            galleryFragmentViewModel,
+            reportPhotoUseCase,
+            favouritePhotoUseCase,
+            schedulerProvider)
     }
 
     @PerActivity

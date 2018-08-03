@@ -26,56 +26,27 @@ import java.util.concurrent.TimeUnit
  * Created by kirakishou on 3/11/2018.
  */
 class PhotosActivityViewModel(
-    private val imageLoader: ImageLoader,
+    private val settingsRepository: SettingsRepository,
     private val takenPhotosRepository: TakenPhotosRepository,
     private val uploadedPhotosRepository: UploadedPhotosRepository,
-    private val galleryPhotoRepository: GalleryPhotoRepository,
-    private val settingsRepository: SettingsRepository,
     private val receivedPhotosRepository: ReceivedPhotosRepository,
-    private val getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
-    private val getGalleryPhotosInfoUseCase: GetGalleryPhotosInfoUseCase,
-    private val getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
-    private val getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
-    private val favouritePhotoUseCase: FavouritePhotoUseCase,
+    val uploadedPhotosFragmentViewModel: UploadedPhotosFragmentViewModel,
+    val receivedPhotosFragmentViewModel: ReceivedPhotosFragmentViewModel,
+    val galleryFragmentViewModel: GalleryFragmentViewModel,
     private val reportPhotoUseCase: ReportPhotoUseCase,
-    private val schedulerProvider: SchedulerProvider,
-    private val adapterLoadMoreItemsDelayMs: Long,
-    private val progressFooterRemoveDelayMs: Long
+    private val favouritePhotoUseCase: FavouritePhotoUseCase,
+    private val schedulerProvider: SchedulerProvider
 ) : BaseViewModel() {
 
     private val TAG = "PhotosActivityViewModel"
 
     val intercom = PhotosActivityViewModelIntercom()
 
-    val uploadedPhotosFragmentViewModel = UploadedPhotosFragmentViewModel(
-        takenPhotosRepository,
-        settingsRepository,
-        getUploadedPhotosUseCase,
-        schedulerProvider,
-        intercom,
-        adapterLoadMoreItemsDelayMs,
-        progressFooterRemoveDelayMs
-    )
-
-    val receivedPhotosFragmentViewModel = ReceivedPhotosFragmentViewModel(
-        settingsRepository,
-        getReceivedPhotosUseCase,
-        schedulerProvider,
-        intercom,
-        adapterLoadMoreItemsDelayMs,
-        progressFooterRemoveDelayMs
-    )
-
-    val galleryFragmentViewModel = GalleryFragmentViewModel(
-        imageLoader,
-        settingsRepository,
-        getGalleryPhotosUseCase,
-        getGalleryPhotosInfoUseCase,
-        schedulerProvider,
-        intercom,
-        adapterLoadMoreItemsDelayMs,
-        progressFooterRemoveDelayMs
-    )
+    init {
+        uploadedPhotosFragmentViewModel.intercom = intercom
+        receivedPhotosFragmentViewModel.intercom = intercom
+        galleryFragmentViewModel.intercom = intercom
+    }
 
     override fun onCleared() {
         Timber.tag(TAG).d("onCleared()")

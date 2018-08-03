@@ -31,11 +31,12 @@ class GalleryFragmentViewModel(
     private val getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
     private val getGalleryPhotosInfoUseCase: GetGalleryPhotosInfoUseCase,
     private val schedulerProvider: SchedulerProvider,
-    private val intercom: PhotosActivityViewModelIntercom,
     private val adapterLoadMoreItemsDelayMs: Long,
     private val progressFooterRemoveDelayMs: Long
 ) {
     private val TAG = "GalleryFragmentViewModel"
+
+    lateinit var intercom: PhotosActivityViewModelIntercom
 
     val viewState = GalleryFragmentViewState()
 
@@ -77,6 +78,10 @@ class GalleryFragmentViewModel(
             .concatMap {
                 return@concatMap loadPageOfGalleryPhotos(lastId, photosPerPage)
                     .observeOn(schedulerProvider.UI())
+                    /**
+                     * preloadPhotos method uses glide internally and glide requires all it's
+                     * operations to be run on the main thread
+                     * */
                     .flatMap(this::preloadPhotos)
             }
             .observeOn(schedulerProvider.IO())

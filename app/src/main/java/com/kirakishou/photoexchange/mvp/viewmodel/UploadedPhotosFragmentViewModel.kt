@@ -32,11 +32,12 @@ class UploadedPhotosFragmentViewModel(
     private val settingsRepository: SettingsRepository,
     private val getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
     private val schedulerProvider: SchedulerProvider,
-    private val intercom: PhotosActivityViewModelIntercom,
     private val adapterLoadMoreItemsDelayMs: Long,
     private val progressFooterRemoveDelayMs: Long
 ) {
     private val TAG = "UploadedPhotosFragmentViewModel"
+
+    lateinit var intercom: PhotosActivityViewModelIntercom
 
     val viewState = UploadedPhotosFragmentViewState()
 

@@ -6,7 +6,11 @@ import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.interactors.*
+import com.kirakishou.photoexchange.mvp.model.other.Constants
+import com.kirakishou.photoexchange.mvp.viewmodel.GalleryFragmentViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
+import com.kirakishou.photoexchange.mvp.viewmodel.ReceivedPhotosFragmentViewModel
+import com.kirakishou.photoexchange.mvp.viewmodel.UploadedPhotosFragmentViewModel
 import javax.inject.Inject
 
 /**
@@ -14,41 +18,31 @@ import javax.inject.Inject
  */
 class PhotosActivityViewModelFactory
 @Inject constructor(
-    val imageLoader: ImageLoader,
+    val settingsRepository: SettingsRepository,
     val takenPhotosRepository: TakenPhotosRepository,
     val uploadedPhotosRepository: UploadedPhotosRepository,
-    val galleryPhotoRepository: GalleryPhotoRepository,
-    val settingsRepository: SettingsRepository,
     val receivedPhotosRepository: ReceivedPhotosRepository,
-    val galleryPhotosUseCase: GetGalleryPhotosUseCase,
-    val getGalleryPhotosInfoUseCase: GetGalleryPhotosInfoUseCase,
-    val favouritePhotoUseCase: FavouritePhotoUseCase,
+    val uploadedPhotosFragmentViewModel: UploadedPhotosFragmentViewModel,
+    val receivedPhotosFragmentViewModel: ReceivedPhotosFragmentViewModel,
+    val galleryFragmentViewModel: GalleryFragmentViewModel,
     val reportPhotoUseCase: ReportPhotoUseCase,
-    val getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
-    val getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
-    val schedulerProvider: SchedulerProvider,
-    val adapterLoadMoreItemsDelayMs: Long,
-    val progressFooterRemoveDelayMs: Long
+    val favouritePhotoUseCase: FavouritePhotoUseCase,
+    val schedulerProvider: SchedulerProvider
 ) : ViewModelProvider.Factory {
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
         return PhotosActivityViewModel(
-            imageLoader,
+            settingsRepository,
             takenPhotosRepository,
             uploadedPhotosRepository,
-            galleryPhotoRepository,
-            settingsRepository,
             receivedPhotosRepository,
-            galleryPhotosUseCase,
-            getGalleryPhotosInfoUseCase,
-            getUploadedPhotosUseCase,
-            getReceivedPhotosUseCase,
-            favouritePhotoUseCase,
+            uploadedPhotosFragmentViewModel,
+            receivedPhotosFragmentViewModel,
+            galleryFragmentViewModel,
             reportPhotoUseCase,
-            schedulerProvider,
-            adapterLoadMoreItemsDelayMs,
-            progressFooterRemoveDelayMs
+            favouritePhotoUseCase,
+            schedulerProvider
         ) as T
     }
 }

@@ -288,7 +288,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
 
             if (galleryPhotos.size < viewModel.galleryFragmentViewModel.viewState.photosPerPage) {
                 endlessScrollListener.reachedEnd()
-                adapter.showMessageFooter("Bottom of the list reached")
+                adapter.showMessageFooter("End of the list reached")
             }
         }
     }

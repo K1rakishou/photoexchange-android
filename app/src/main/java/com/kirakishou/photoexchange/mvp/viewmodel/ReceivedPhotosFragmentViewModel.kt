@@ -26,11 +26,12 @@ class ReceivedPhotosFragmentViewModel(
     private val settingsRepository: SettingsRepository,
     private val getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
     private val schedulerProvider: SchedulerProvider,
-    private val intercom: PhotosActivityViewModelIntercom,
     private val adapterLoadMoreItemsDelayMs: Long,
     private val progressFooterRemoveDelayMs: Long
 ) {
     private val TAG = "ReceivedPhotosFragmentViewModel"
+
+    lateinit var intercom: PhotosActivityViewModelIntercom
 
     val viewState = ReceivedPhotosFragmentViewState()
 
