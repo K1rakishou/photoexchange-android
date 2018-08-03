@@ -52,7 +52,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     private val TAG = "GalleryFragment"
     private val GALLERY_PHOTO_ADAPTER_VIEW_WIDTH = DEFAULT_ADAPTER_ITEM_WIDTH
 
-    private val loadMoreSubject = PublishSubject.create<Int>()
+    private val loadMoreSubject = PublishSubject.create<Unit>()
     private val scrollSubject = PublishSubject.create<Boolean>()
     private val adapterButtonClickSubject = PublishSubject.create<GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent>()
 
@@ -144,7 +144,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
         photosPerPage = Constants.GALLERY_PHOTOS_PER_ROW * layoutManager.spanCount
 
         //TODO: visible threshold should be less than photosPerPage count
-        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, 2, loadMoreSubject, scrollSubject, 1)
+        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, 2, loadMoreSubject, scrollSubject)
 
         galleryPhotosList.layoutManager = layoutManager
         galleryPhotosList.adapter = adapter
@@ -153,7 +153,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     }
 
     private fun loadFirstPage() {
-        loadMoreSubject.onNext(0)
+        loadMoreSubject.onNext(Unit)
     }
 
     private fun handleAdapterClick(click: GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent) {

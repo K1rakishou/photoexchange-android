@@ -12,9 +12,8 @@ class EndlessRecyclerOnScrollListener(
     private val fragmentTag: String,
     private val gridLayoutManager: GridLayoutManager,
     private val visibleThreshold: Int,
-    private val loadMoreSubject: PublishSubject<Int>,
-    private val scrollSubject: PublishSubject<Boolean>,
-    private val startWithPage: Int
+    private val loadMoreSubject: PublishSubject<Unit>,
+    private val scrollSubject: PublishSubject<Boolean>
 ) : RecyclerView.OnScrollListener() {
 
     private val tag = "EndlessRecyclerOnScrollListener_$fragmentTag"
@@ -23,7 +22,6 @@ class EndlessRecyclerOnScrollListener(
     private var prevLastVisibleItem = lastVisibleItem
     private var totalItemCount = 0
 
-    private val currentPage = AtomicInteger(startWithPage)
     private var isEndReached = false
 
     override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -47,8 +45,8 @@ class EndlessRecyclerOnScrollListener(
                 prevLastVisibleItem = lastVisibleItem
 
                 if (loading.compareAndSet(false, true)) {
-                    Timber.tag(tag).d("Loading new page ${currentPage.get()}")
-                    loadMoreSubject.onNext(currentPage.get())
+                    Timber.tag(tag).d("Loading new page")
+                    loadMoreSubject.onNext(Unit)
                 }
             }
         } 
@@ -59,7 +57,6 @@ class EndlessRecyclerOnScrollListener(
     }
 
     fun pageLoaded() {
-        currentPage.incrementAndGet()
         loading.set(false)
     }
 
@@ -68,17 +65,17 @@ class EndlessRecyclerOnScrollListener(
     }
 
     fun reset() {
-        loading.set(false)
-        lastVisibleItem = 0
-        prevLastVisibleItem = 0
-        totalItemCount = 0
-        currentPage.set(0)
-        isEndReached = false
+        if (isEndReached) {
+            loading.set(false)
+            lastVisibleItem = 0
+            prevLastVisibleItem = 0
+            totalItemCount = 0
+            isEndReached = false
+        }
     }
 
     fun onSaveInstanceState(outState: Bundle) {
         outState.putBoolean("loading", loading.get())
-        outState.putInt("currentPage", currentPage.get())
         outState.putInt("lastVisibleItem", lastVisibleItem)
         outState.putInt("prevLastVisibleItem", prevLastVisibleItem)
         outState.putInt("totalItemCount", totalItemCount)
@@ -87,7 +84,6 @@ class EndlessRecyclerOnScrollListener(
 
     fun onRestoreInstanceState(savedInstanceState: Bundle) {
         loading.set(savedInstanceState.getBoolean("loading", false))
-        currentPage.set(savedInstanceState.getInt("currentPage", 0))
         lastVisibleItem = savedInstanceState.getInt("lastVisibleItem", 0)
         prevLastVisibleItem = savedInstanceState.getInt("prevLastVisibleItem", 0)
         totalItemCount = savedInstanceState.getInt("totalItemCount", 0)

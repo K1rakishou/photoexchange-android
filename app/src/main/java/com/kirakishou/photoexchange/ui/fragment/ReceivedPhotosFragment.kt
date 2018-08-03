@@ -51,7 +51,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     private val TAG = "ReceivedPhotosFragment"
     private val PHOTO_ADAPTER_VIEW_WIDTH = DEFAULT_ADAPTER_ITEM_WIDTH
 
-    private val loadMoreSubject = PublishSubject.create<Int>()
+    private val loadMoreSubject = PublishSubject.create<Unit>()
     private val scrollSubject = PublishSubject.create<Boolean>()
     private val adapterClicksSubject = PublishSubject.create<ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent>()
 
@@ -112,7 +112,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
 
         photosPerPage = Constants.RECEIVED_PHOTOS_PER_ROW * layoutManager.spanCount
         //TODO: visible threshold should be less than photosPerPage count
-        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, 2, loadMoreSubject, scrollSubject, 1)
+        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, 2, loadMoreSubject, scrollSubject)
 
         receivedPhotosList.layoutManager = layoutManager
         receivedPhotosList.adapter = adapter
@@ -121,7 +121,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     }
 
     private fun loadFirstPage() {
-        loadMoreSubject.onNext(0)
+        loadMoreSubject.onNext(Unit)
     }
 
     private fun handleAdapterClick(click: ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent) {

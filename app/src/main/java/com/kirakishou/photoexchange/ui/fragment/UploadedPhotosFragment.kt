@@ -3,12 +3,9 @@ package com.kirakishou.photoexchange.ui.fragment
 import android.os.Bundle
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
-import android.widget.Toast
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
-import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.helper.RxLifecycle
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
@@ -25,15 +22,9 @@ import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapterSpanSizeLookup
-import com.kirakishou.photoexchange.ui.viewstate.UploadedPhotosFragmentViewState
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
-import io.reactivex.Observable
-import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.schedulers.Schedulers
-import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import javax.inject.Inject
@@ -57,15 +48,10 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
     private val PHOTO_ADAPTER_VIEW_WIDTH = DEFAULT_ADAPTER_ITEM_WIDTH
     private val failedToUploadPhotoButtonClicksSubject = PublishSubject.create<UploadedPhotosAdapter.UploadedPhotosAdapterButtonClick>().toSerialized()
 
-    /**
-     * Signals that all queued up photos has been successfully uploaded and that we should get the rest of the uploaded
-     * photos from the server. NOTE: should not be called when some error has happened while uploading
-     * */
-    private val onPhotosUploadedSubject = BehaviorSubject.createDefault(false).toSerialized()
-    private val loadMoreSubject = PublishSubject.create<Int>()
+    private val loadMoreSubject = PublishSubject.create<Unit>()
     private val scrollSubject = PublishSubject.create<Boolean>()
 
-    private val viewState = UploadedPhotosFragmentViewState()
+
     private var isFragmentFreshlyCreated = true
     private var photosPerPage = 0
 
@@ -87,6 +73,12 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             .doOnError { Timber.tag(TAG).e(it) }
             .subscribe()
 
+        compositeDisposable += viewModel.uploadedPhotosFragmentViewModel.uploadedPhotosFragmentKnownErrors
+            .subscribe({ errorCode -> handleKnownErrors(errorCode) })
+
+        compositeDisposable += viewModel.uploadedPhotosFragmentViewModel.uploadedPhotosFragmentUnknownErrors
+            .subscribe({ error -> handleUnknownErrors(error) })
+
         compositeDisposable += failedToUploadPhotoButtonClicksSubject
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
@@ -95,41 +87,10 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             }, { Timber.tag(TAG).e(it) })
 
         compositeDisposable += lifecycle.getLifecycle()
-            .filter { lifecycle -> lifecycle.isAtLeast(RxLifecycle.FragmentState.Resumed) }
-            .concatMap { viewModel.checkHasFailedToUploadPhotos() }
-            .filter { hasFailedToUploadPhotos -> !hasFailedToUploadPhotos }
-            .concatMap { viewModel.checkHasPhotosToUpload() }
-            .filter { hasPhotosToUpload -> !hasPhotosToUpload }
-            .subscribe({
-                photosUploaded()
-                loadFirstPageOfUploadedPhotos()
-            }, { Timber.tag(TAG).e(it) })
+            .subscribe(viewModel.uploadedPhotosFragmentViewModel.uploadedPhotosFragmentLifecycle::onNext)
 
-        compositeDisposable += Observables.combineLatest(loadMoreSubject, onPhotosUploadedSubject)
-            .filter { it.second }
-            .map { it.first }
-            .concatMap { nextPage ->
-                return@concatMap Observable.just(1)
-                    .doOnNext { endlessScrollListener.pageLoading() }
-                    .concatMap { viewModel.loadNextPageOfUploadedPhotos(viewState.lastId, photosPerPage) }
-            }
-            .subscribe({ result ->
-                when (result) {
-                    is Either.Value -> {
-                        addUploadedPhotosToAdapter(result.value)
-
-                        viewModel.intercom.tell<PhotosActivity>()
-                            .to(PhotosActivityEvent.StartReceivingService(
-                                UploadedPhotosFragment::class.java,
-                                "Starting the service after first page of uploaded photos was loaded")
-                            )
-                    }
-                    is Either.Error -> handleError(result.error)
-                }
-            }, { error ->
-                Timber.tag(TAG).e(error)
-                onUiEvent(UploadedPhotosFragmentEvent.GeneralEvents.HideProgressFooter())
-            })
+        compositeDisposable += loadMoreSubject
+            .subscribe(viewModel.uploadedPhotosFragmentViewModel.loadMoreEvent::onNext)
 
         compositeDisposable += scrollSubject
             .distinctUntilChanged()
@@ -150,7 +111,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         photosPerPage = Constants.UPLOADED_PHOTOS_PER_ROW * layoutManager.spanCount
 
         //TODO: visible threshold should be less than photosPerPage count
-        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, 2, loadMoreSubject, scrollSubject, 1)
+        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, 2, loadMoreSubject, scrollSubject)
 
         uploadedPhotosList.layoutManager = layoutManager
         uploadedPhotosList.adapter = adapter
@@ -158,42 +119,8 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         uploadedPhotosList.addOnScrollListener(endlessScrollListener)
     }
 
-    private fun loadPhotos() {
-        compositeDisposable += viewModel.tryToFixStalledPhotos()
-            .andThen(viewModel.loadFailedToUploadPhotos())
-            .flatMap { failedToUploadPhotos ->
-                if (failedToUploadPhotos.isNotEmpty()) {
-                    return@flatMap Single.just(failedToUploadPhotos)
-                }
-
-                return@flatMap viewModel.loadQueuedUpPhotos()
-            }
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .doOnSuccess { photos -> addTakenPhotosToAdapter(photos) }
-            .flatMapObservable { viewModel.checkHasFailedToUploadPhotos() }
-            .filter { hasFailedToUploadPhotos -> !hasFailedToUploadPhotos }
-            .flatMap { _ ->
-                return@flatMap viewModel.checkHasPhotosToUpload()
-                    .doOnNext { hasPhotosToUpload ->
-                        if (hasPhotosToUpload) {
-                            viewModel.intercom.tell<PhotosActivity>()
-                                .to(PhotosActivityEvent.StartUploadingService(
-                                    UploadedPhotosFragment::class.java,
-                                    "Starting the service after taken photos were loaded")
-                                )
-                        }
-                    }
-            }
-            .subscribe({ }, { Timber.tag(TAG).e(it) })
-    }
-
-    private fun loadFirstPageOfUploadedPhotos() {
-        loadMoreSubject.onNext(0)
-    }
-
-    private fun photosUploaded() {
-        onPhotosUploadedSubject.onNext(true)
+    private fun triggerPhotosLoading() {
+        loadMoreSubject.onNext(Unit)
     }
 
     override fun onStateEvent(event: UploadedPhotosFragmentEvent) {
@@ -237,15 +164,14 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                     adapter.addTakenPhoto(event.photo)
                 }
                 is UploadedPhotosFragmentEvent.GeneralEvents.PhotoRemoved -> {
-                    if (adapter.getFailedPhotosCount() == 0) {
-                        photosUploaded()
-                        loadFirstPageOfUploadedPhotos()
+                    if (adapter.getQueuedUpAndFailedPhotosCount() == 0) {
+                        triggerPhotosLoading()
                     } else {
                         //do nothing
                     }
                 }
                 is UploadedPhotosFragmentEvent.GeneralEvents.AfterPermissionRequest -> {
-                    loadPhotos()
+                    triggerPhotosLoading()
                 }
                 is UploadedPhotosFragmentEvent.GeneralEvents.UpdateReceiverInfo -> {
                     event.receivedPhotos.forEach {
@@ -253,7 +179,23 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                     }
                 }
                 is UploadedPhotosFragmentEvent.GeneralEvents.OnTabClicked -> {
-                    //TODO
+                    viewModel.uploadedPhotosFragmentViewModel.viewState.reset()
+                    triggerPhotosLoading()
+                }
+                is UploadedPhotosFragmentEvent.GeneralEvents.ShowTakenPhotos -> {
+                    addTakenPhotosToAdapter(event.takenPhotos)
+                }
+                is UploadedPhotosFragmentEvent.GeneralEvents.ShowUploadedPhotos -> {
+                    addUploadedPhotosToAdapter(event.uploadedPhotos)
+                }
+                is UploadedPhotosFragmentEvent.GeneralEvents.DisableEndlessScrolling -> {
+                    endlessScrollListener.reachedEnd()
+                }
+                is UploadedPhotosFragmentEvent.GeneralEvents.EnableEndlessScrolling -> {
+                    endlessScrollListener.reset()
+                }
+                is UploadedPhotosFragmentEvent.GeneralEvents.PageIsLoading -> {
+                    endlessScrollListener.pageLoading()
                 }
             }.safe
         }
@@ -285,8 +227,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                     adapter.updateUploadedPhotoSetReceiverInfo(event.takenPhotoName)
                 }
                 is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
-                    photosUploaded()
-                    loadFirstPageOfUploadedPhotos()
+                    loadMoreSubject.onNext(Unit)
                 }
                 is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError -> {
                     handleKnownErrors(event.errorCode)
@@ -298,16 +239,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         }
     }
 
-    private fun handleKnownErrors(errorCode: ErrorCode.UploadPhotoErrors) {
-        (requireActivity() as PhotosActivity).showKnownErrorMessage(errorCode)
-        adapter.updateAllPhotosState(PhotoState.FAILED_TO_UPLOAD)
-    }
-
-    private fun handleUnknownErrors(error: Throwable) {
-        (requireActivity() as PhotosActivity).showUnknownErrorMessage(error)
-        adapter.updateAllPhotosState(PhotoState.FAILED_TO_UPLOAD)
-    }
-
     private fun addUploadedPhotosToAdapter(uploadedPhotos: List<UploadedPhoto>) {
         if (!isAdded) {
             return
@@ -315,12 +246,12 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
         uploadedPhotosList.post {
             if (uploadedPhotos.isNotEmpty()) {
-                viewState.updateLastId(uploadedPhotos.last().photoId)
+                viewModel.uploadedPhotosFragmentViewModel.viewState.updateLastId(uploadedPhotos.last().photoId)
                 adapter.addUploadedPhotos(uploadedPhotos)
             }
 
             if (adapter.getUploadedPhotosCount() == 0) {
-                adapter.showMessageFooter(getString(R.string.uploaded_photos_fragment_nothing_found_msg))
+                adapter.showMessageFooter("You have no uploaded photos")
                 endlessScrollListener.pageLoaded()
                 return@post
             }
@@ -344,7 +275,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                 adapter.clear()
                 adapter.addTakenPhotos(takenPhotos)
             } else {
-                adapter.showMessageFooter("You have not taken any photos yet")
+                adapter.showMessageFooter("You have no taken photos")
             }
         }
     }
@@ -369,31 +300,24 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         }
     }
 
-    private fun handleError(errorCode: ErrorCode.GetUploadedPhotosErrors) {
-        hideProgressFooter()
-
-        if (!isVisible) {
-            return
+    private fun handleKnownErrors(errorCode: ErrorCode) {
+        when (errorCode) {
+            is ErrorCode.GetUploadedPhotosErrors -> {
+                hideProgressFooter()
+            }
+            is ErrorCode.UploadPhotoErrors -> {
+                adapter.updateAllPhotosState(PhotoState.FAILED_TO_UPLOAD)
+            }
         }
 
-        val message = when (errorCode) {
-            is ErrorCode.GetUploadedPhotosErrors.Ok -> null
-            is ErrorCode.GetUploadedPhotosErrors.LocalUserIdIsEmpty -> null
-            is ErrorCode.GetUploadedPhotosErrors.UnknownError -> "Unknown error"
-            is ErrorCode.GetUploadedPhotosErrors.DatabaseError -> "Server database error"
-            is ErrorCode.GetUploadedPhotosErrors.BadRequest -> "Bad request error"
-            is ErrorCode.GetUploadedPhotosErrors.NoPhotosInRequest -> "Bad request error (no photos in request)"
-            is ErrorCode.GetUploadedPhotosErrors.LocalBadServerResponse -> "Bad server response error"
-            is ErrorCode.GetUploadedPhotosErrors.LocalTimeout -> "Operation timeout error"
-        }
-
-        if (message != null) {
-            showToast(message)
-        }
+        (activity as? PhotosActivity)?.showKnownErrorMessage(errorCode)
     }
 
-    private fun showToast(message: String, duration: Int = Toast.LENGTH_LONG) {
-        (requireActivity() as PhotosActivity).showToast(message, duration)
+    private fun handleUnknownErrors(error: Throwable) {
+        adapter.updateAllPhotosState(PhotoState.FAILED_TO_UPLOAD)
+        (activity as? PhotosActivity)?.showUnknownErrorMessage(error)
+
+        Timber.tag(TAG).e(error)
     }
 
     override fun resolveDaggerDependency() {

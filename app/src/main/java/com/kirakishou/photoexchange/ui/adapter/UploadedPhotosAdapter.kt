@@ -36,8 +36,8 @@ class UploadedPhotosAdapter(
     private val duplicatesCheckerSet = hashSetOf<Long>()
     private val photosProgressMap = hashMapOf<Long, Int>()
 
-    fun getFailedPhotosCount(): Int {
-        return failedToUploadItems.size
+    fun getQueuedUpAndFailedPhotosCount(): Int {
+        return queuedUpItems.size + failedToUploadItems.size
     }
 
     fun getUploadedPhotosCount(): Int {

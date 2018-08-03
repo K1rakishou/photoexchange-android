@@ -8,17 +8,16 @@ import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.*
-import com.kirakishou.photoexchange.mvp.model.*
+import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
+import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
-import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewState
-import com.kirakishou.photoexchange.ui.viewstate.UploadedPhotosFragmentViewState
 import io.reactivex.Completable
 import io.reactivex.Observable
-import io.reactivex.Single
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
@@ -46,8 +45,20 @@ class PhotosActivityViewModel(
 
     val intercom = PhotosActivityViewModelIntercom()
 
+    val uploadedPhotosFragmentViewModel = UploadedPhotosFragmentViewModel(
+        takenPhotosRepository,
+        settingsRepository,
+        getUploadedPhotosUseCase,
+        schedulerProvider,
+        intercom,
+        adapterLoadMoreItemsDelayMs,
+        progressFooterRemoveDelayMs
+    )
+
     override fun onCleared() {
         Timber.tag(TAG).d("onCleared()")
+
+        uploadedPhotosFragmentViewModel.onCleared()
 
         super.onCleared()
     }
@@ -76,22 +87,9 @@ class PhotosActivityViewModel(
                     return@concatMap Observable.just(result)
                 }
 
-                //TODO: probably should add a check here to retrieve galleryPhotosInfo from the
-                //server only when userId is not empty (user has uploaded at least one photo)
                 val userId = settingsRepository.getUserId()
                 return@concatMap getGalleryPhotosInfoUseCase.loadGalleryPhotosInfo(userId, result.value)
             }
-            .doOnError { Timber.tag(TAG).e(it) }
-    }
-
-    fun loadNextPageOfUploadedPhotos(
-        lastId: Long,
-        photosPerPage: Int
-    ): Observable<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>> {
-        return Observable.just(Unit)
-            .subscribeOn(schedulerProvider.IO())
-            .concatMap { Observable.fromCallable { settingsRepository.getUserId() } }
-            .concatMap { userId -> loadPageOfUploadedPhotos(userId, lastId, photosPerPage) }
             .doOnError { Timber.tag(TAG).e(it) }
     }
 
@@ -123,27 +121,6 @@ class PhotosActivityViewModel(
             .doOnEach { event ->
                 if (event.isOnNext || event.isOnError) {
                     intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.GeneralEvents.HideProgressFooter())
-                }
-            }
-            .delay(progressFooterRemoveDelayMs, TimeUnit.MILLISECONDS)
-    }
-
-    private fun loadPageOfUploadedPhotos(
-        userId: String,
-        lastId: Long,
-        photosPerPage: Int
-    ): Observable<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>> {
-        if (userId.isEmpty()) {
-            return Observable.just<Either<ErrorCode.GetUploadedPhotosErrors, List<UploadedPhoto>>>(Either.Value(emptyList()))
-        }
-
-        return Observable.just(Unit)
-            .doOnNext { intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.GeneralEvents.ShowProgressFooter()) }
-            .flatMap { getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage) }
-            .delay(adapterLoadMoreItemsDelayMs, TimeUnit.MILLISECONDS)
-            .doOnEach { event ->
-                if (event.isOnNext || event.isOnError) {
-                    intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.GeneralEvents.HideProgressFooter())
                 }
             }
             .delay(progressFooterRemoveDelayMs, TimeUnit.MILLISECONDS)
@@ -190,28 +167,6 @@ class PhotosActivityViewModel(
             val receivedPhotosCount = receivedPhotosRepository.count()
 
             return@fromCallable uploadedPhotosCount > receivedPhotosCount
-        }.subscribeOn(schedulerProvider.IO())
-            .doOnError { Timber.tag(TAG).e(it) }
-    }
-
-    fun tryToFixStalledPhotos(): Completable {
-        return Completable.fromAction {
-            takenPhotosRepository.tryToFixStalledPhotos()
-        }
-    }
-
-    fun loadFailedToUploadPhotos(): Single<List<TakenPhoto>> {
-        return Single.fromCallable {
-            return@fromCallable takenPhotosRepository.findAllByState(PhotoState.FAILED_TO_UPLOAD)
-                .sortedBy { it.id }
-        }.subscribeOn(schedulerProvider.IO())
-            .doOnError { Timber.tag(TAG).e(it) }
-    }
-
-    fun loadQueuedUpPhotos(): Single<List<TakenPhoto>> {
-        return Single.fromCallable {
-            return@fromCallable takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP)
-                .sortedBy { it.id }
         }.subscribeOn(schedulerProvider.IO())
             .doOnError { Timber.tag(TAG).e(it) }
     }
