@@ -44,6 +44,7 @@ class ReceivedPhotosFragmentViewModel(
     init {
         compositeDisposable += Observables.combineLatest(fragmentLifecycle, loadMoreEvent)
             .filter { (lifecycle, _) -> lifecycle.isAtLeast(RxLifecycle.FragmentState.Resumed) }
+            .observeOn(schedulerProvider.IO())
             .doOnNext {
                 intercom.tell<ReceivedPhotosFragment>()
                     .to(ReceivedPhotosFragmentEvent.GeneralEvents.PageIsLoading())

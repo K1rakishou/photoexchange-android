@@ -29,7 +29,6 @@ import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.rxkotlin.zipWith
-import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 import javax.inject.Inject
@@ -57,14 +56,15 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     private val adapterButtonClickSubject = PublishSubject.create<GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent>()
 
     private val viewState = GalleryFragmentViewState()
-    private var photosPerPage = 0
 
     override fun getContentView(): Int = R.layout.fragment_gallery
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
+        viewModel.galleryFragmentViewModel.viewState.reset()
+
         initRx()
         initRecyclerView()
-        loadFirstPage()
+        triggerPhotosLoading()
     }
 
     override fun onFragmentViewDestroy() {
@@ -72,21 +72,19 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
 
     private fun initRx() {
         compositeDisposable += viewModel.intercom.galleryFragmentEvents.listen()
-            .doOnNext { viewState -> onStateEvent(viewState) }
-            .subscribe({ }, { Timber.tag(TAG).e(it) })
+            .subscribe({ viewState -> onStateEvent(viewState) }, { Timber.tag(TAG).e(it) })
+
+        compositeDisposable += viewModel.galleryFragmentViewModel.knownErrors
+            .subscribe({ errorCode -> handleKnownErrors(errorCode) })
+
+        compositeDisposable += viewModel.galleryFragmentViewModel.unknownErrors
+            .subscribe({ error -> handleUnknownErrors(error) })
+
+        compositeDisposable += lifecycle.getLifecycle()
+            .subscribe(viewModel.galleryFragmentViewModel.fragmentLifecycle::onNext)
 
         compositeDisposable += loadMoreSubject
-            .doOnNext { endlessScrollListener.pageLoading() }
-            .concatMap {
-                return@concatMap viewModel.loadNextPageOfGalleryPhotos(viewState.lastId, photosPerPage)
-                    .flatMap(this::preloadPhotos)
-            }
-            .subscribe({ result ->
-                when (result) {
-                    is Either.Value -> addPhotosToAdapter(result.value)
-                    is Either.Error -> handleGetGalleryPhotosError(result.error)
-                }
-            }, { Timber.tag(TAG).e(it) })
+            .subscribe(viewModel.galleryFragmentViewModel.loadMoreEvent::onNext)
 
         compositeDisposable += adapterButtonClickSubject
             .subscribeOn(AndroidSchedulers.mainThread())
@@ -99,7 +97,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
 
                 when (result) {
                     is Either.Value -> favouritePhoto(photoName, result.value.isFavourited, result.value.favouritesCount)
-                    is Either.Error -> handleFavouritePhotoError(result.error)
+                    is Either.Error -> handleKnownErrors(result.error)
                 }
             }, { Timber.tag(TAG).e(it) })
 
@@ -114,7 +112,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
 
                 when (result) {
                     is Either.Value -> reportPhoto(photoName, result.value)
-                    is Either.Error -> handleReportPhotoError(result.error)
+                    is Either.Error -> handleKnownErrors(result.error)
                 }
             }, { Timber.tag(TAG).e(it) })
 
@@ -141,7 +139,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
         val layoutManager = GridLayoutManager(requireContext(), columnsCount)
         layoutManager.spanSizeLookup = GalleryPhotosAdapterSpanSizeLookup(adapter, columnsCount)
 
-        photosPerPage = Constants.GALLERY_PHOTOS_PER_ROW * layoutManager.spanCount
+        viewModel.galleryFragmentViewModel.viewState.photosPerPage = Constants.GALLERY_PHOTOS_PER_ROW * layoutManager.spanCount
 
         //TODO: visible threshold should be less than photosPerPage count
         endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, 2, loadMoreSubject, scrollSubject)
@@ -152,7 +150,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
         galleryPhotosList.addOnScrollListener(endlessScrollListener)
     }
 
-    private fun loadFirstPage() {
+    private fun triggerPhotosLoading() {
         loadMoreSubject.onNext(Unit)
     }
 
@@ -180,29 +178,6 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
         galleryPhotosList.post {
             adapter.switchShowMapOrPhoto(photoName)
         }
-    }
-
-    private fun preloadPhotos(
-        result: Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>
-    ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
-        if (result is Either.Error) {
-            return Observable.just(result)
-        }
-
-        return Observable.fromIterable((result as Either.Value).value)
-            .subscribeOn(Schedulers.io())
-            .flatMapSingle { galleryPhoto ->
-                return@flatMapSingle imageLoader.preloadImageFromNetAsync(galleryPhoto.photoName)
-                    .subscribeOn(AndroidSchedulers.mainThread())
-                    .doOnSuccess { result ->
-                        if (!result) {
-                            Timber.tag(TAG).w("Could not pre-load photo ${galleryPhoto.photoName}")
-                        }
-                    }
-            }
-            .toList()
-            .toObservable()
-            .map { result }
     }
 
     private fun favouritePhoto(photoName: String, isFavourited: Boolean, favouritesCount: Long) {
@@ -261,7 +236,13 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
                     hideProgressFooter()
                 }
                 is GalleryFragmentEvent.GeneralEvents.OnPageSelected -> {
-                    //TODO
+                    viewModel.galleryFragmentViewModel.viewState.reset()
+                }
+                is GalleryFragmentEvent.GeneralEvents.PageIsLoading -> {
+                    endlessScrollListener.pageLoading()
+                }
+                is GalleryFragmentEvent.GeneralEvents.ShowGalleryPhotos -> {
+                    addPhotosToAdapter(event.photos)
                 }
             }.safe
         }
@@ -305,73 +286,32 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
                 return@post
             }
 
-            if (galleryPhotos.size < photosPerPage) {
+            if (galleryPhotos.size < viewModel.galleryFragmentViewModel.viewState.photosPerPage) {
                 endlessScrollListener.reachedEnd()
                 adapter.showMessageFooter("Bottom of the list reached")
             }
         }
     }
 
-    private fun handleReportPhotoError(errorCode: ErrorCode.ReportPhotoErrors) {
-        if (!isVisible) {
-            return
+    private fun handleKnownErrors(errorCode: ErrorCode) {
+        when (errorCode) {
+            is ErrorCode.ReportPhotoErrors -> {
+                hideProgressFooter()
+            }
+            is ErrorCode.FavouritePhotoErrors -> {
+                hideProgressFooter()
+            }
+            is ErrorCode.GetGalleryPhotosErrors -> {
+                hideProgressFooter()
+            }
         }
 
-        val message = when (errorCode) {
-            is ErrorCode.ReportPhotoErrors.Ok -> null
-            is ErrorCode.ReportPhotoErrors.UnknownError -> "Unknown error"
-            is ErrorCode.ReportPhotoErrors.BadRequest -> "Bad request error"
-            is ErrorCode.ReportPhotoErrors.LocalBadServerResponse -> "Bad server response error"
-            is ErrorCode.ReportPhotoErrors.LocalTimeout -> "Operation timeout error"
-        }
-
-        if (message != null) {
-            showToast(message)
-        }
+        (activity as? PhotosActivity)?.showKnownErrorMessage(errorCode)
     }
 
-    private fun handleFavouritePhotoError(errorCode: ErrorCode.FavouritePhotoErrors) {
-        if (!isVisible) {
-            return
-        }
-
-        val message = when (errorCode) {
-            is ErrorCode.FavouritePhotoErrors.Ok -> null
-            is ErrorCode.FavouritePhotoErrors.UnknownError -> "Unknown error"
-            is ErrorCode.FavouritePhotoErrors.BadRequest -> "Bad request error"
-            is ErrorCode.FavouritePhotoErrors.LocalBadServerResponse -> "Bad server response error"
-            is ErrorCode.FavouritePhotoErrors.LocalTimeout -> "Operation timeout error"
-        }
-
-        if (message != null) {
-            showToast(message)
-        }
-    }
-
-    private fun handleGetGalleryPhotosError(errorCode: ErrorCode.GetGalleryPhotosErrors) {
-        hideProgressFooter()
-
-        if (!isVisible) {
-            return
-        }
-
-        val message = when (errorCode) {
-            is ErrorCode.GetGalleryPhotosErrors.Ok -> null
-            is ErrorCode.GetGalleryPhotosErrors.UnknownError -> "Unknown error"
-            is ErrorCode.GetGalleryPhotosErrors.BadRequest -> "Bad request error"
-            is ErrorCode.GetGalleryPhotosErrors.NoPhotosInRequest -> "Bad request error (no photos in request)"
-            is ErrorCode.GetGalleryPhotosErrors.LocalBadServerResponse -> "Bad server response error"
-            is ErrorCode.GetGalleryPhotosErrors.LocalTimeout -> "Operation timeout error"
-            is ErrorCode.GetGalleryPhotosErrors.LocalDatabaseError -> "Operation timeout error"
-        }
-
-        if (message != null) {
-            showToast(message)
-        }
-    }
-
-    private fun showToast(message: String, duration: Int = Toast.LENGTH_LONG) {
-        (requireActivity() as PhotosActivity).showToast(message, duration)
+    private fun handleUnknownErrors(error: Throwable) {
+        (activity as? PhotosActivity)?.showUnknownErrorMessage(error)
+        Timber.tag(TAG).e(error)
     }
 
     override fun resolveDaggerDependency() {

@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.helper.Either
+import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
@@ -25,6 +26,7 @@ import java.util.concurrent.TimeUnit
  * Created by kirakishou on 3/11/2018.
  */
 class PhotosActivityViewModel(
+    private val imageLoader: ImageLoader,
     private val takenPhotosRepository: TakenPhotosRepository,
     private val uploadedPhotosRepository: UploadedPhotosRepository,
     private val galleryPhotoRepository: GalleryPhotoRepository,
@@ -64,11 +66,23 @@ class PhotosActivityViewModel(
         progressFooterRemoveDelayMs
     )
 
+    val galleryFragmentViewModel = GalleryFragmentViewModel(
+        imageLoader,
+        settingsRepository,
+        getGalleryPhotosUseCase,
+        getGalleryPhotosInfoUseCase,
+        schedulerProvider,
+        intercom,
+        adapterLoadMoreItemsDelayMs,
+        progressFooterRemoveDelayMs
+    )
+
     override fun onCleared() {
         Timber.tag(TAG).d("onCleared()")
 
         uploadedPhotosFragmentViewModel.onCleared()
         receivedPhotosFragmentViewModel.onCleared()
+        galleryFragmentViewModel.onCleared()
 
         super.onCleared()
     }
@@ -83,39 +97,6 @@ class PhotosActivityViewModel(
         return Observable.fromCallable { settingsRepository.getUserId() }
             .subscribeOn(schedulerProvider.IO())
             .concatMap { userId -> favouritePhotoUseCase.favouritePhoto(userId, photoName) }
-    }
-
-    fun loadNextPageOfGalleryPhotos(
-        lastId: Long,
-        photosPerPage: Int
-    ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
-        return Observable.just(Unit)
-            .subscribeOn(schedulerProvider.IO())
-            .concatMap { loadPageOfGalleryPhotos(lastId, photosPerPage) }
-            .concatMap { result ->
-                if (result !is Either.Value) {
-                    return@concatMap Observable.just(result)
-                }
-
-                val userId = settingsRepository.getUserId()
-                return@concatMap getGalleryPhotosInfoUseCase.loadGalleryPhotosInfo(userId, result.value)
-            }
-    }
-
-    private fun loadPageOfGalleryPhotos(
-        lastId: Long,
-        photosPerPage: Int
-    ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
-        return Observable.just(Unit)
-            .doOnNext { intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.GeneralEvents.ShowProgressFooter()) }
-            .flatMap { getGalleryPhotosUseCase.loadPageOfPhotos(lastId, photosPerPage) }
-            .delay(adapterLoadMoreItemsDelayMs, TimeUnit.MILLISECONDS)
-            .doOnEach { event ->
-                if (event.isOnNext || event.isOnError) {
-                    intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.GeneralEvents.HideProgressFooter())
-                }
-            }
-            .delay(progressFooterRemoveDelayMs, TimeUnit.MILLISECONDS)
     }
 
     fun checkHasPhotosToUpload(): Observable<Boolean> {
@@ -143,13 +124,14 @@ class PhotosActivityViewModel(
     }
 
     fun changePhotoState(photoId: Long, newPhotoState: PhotoState): Completable {
-        return Completable.fromAction { takenPhotosRepository.updatePhotoState(photoId, newPhotoState) }
-            .subscribeOn(schedulerProvider.IO())
+        return Completable.fromAction {
+            takenPhotosRepository.updatePhotoState(photoId, newPhotoState)
+        }.subscribeOn(schedulerProvider.IO())
     }
 
     fun updateGpsPermissionGranted(granted: Boolean): Completable {
         return Completable.fromAction {
             settingsRepository.updateGpsPermissionGranted(granted)
-        }
+        }.subscribeOn(schedulerProvider.IO())
     }
 }

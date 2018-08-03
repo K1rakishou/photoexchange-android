@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.mvp.viewmodel.factory
 
 import android.arch.lifecycle.ViewModel
 import android.arch.lifecycle.ViewModelProvider
+import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.interactors.*
@@ -13,6 +14,7 @@ import javax.inject.Inject
  */
 class PhotosActivityViewModelFactory
 @Inject constructor(
+    val imageLoader: ImageLoader,
     val takenPhotosRepository: TakenPhotosRepository,
     val uploadedPhotosRepository: UploadedPhotosRepository,
     val galleryPhotoRepository: GalleryPhotoRepository,
@@ -32,6 +34,7 @@ class PhotosActivityViewModelFactory
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
         return PhotosActivityViewModel(
+            imageLoader,
             takenPhotosRepository,
             uploadedPhotosRepository,
             galleryPhotoRepository,

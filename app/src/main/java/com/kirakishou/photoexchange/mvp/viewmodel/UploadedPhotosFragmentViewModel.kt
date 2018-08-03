@@ -53,7 +53,7 @@ class UploadedPhotosFragmentViewModel(
             .publish()
 
         compositeDisposable += Observables.combineLatest(lifecycleObservable, loadMoreEvent)
-            .subscribeOn(schedulerProvider.IO())
+            .observeOn(schedulerProvider.IO())
             .concatMap { figureOutWhatPhotosToLoad() }
             .filter { photosToLoad -> photosToLoad == PhotosToLoad.QueuedUpAndFailed }
             .doOnNext {
@@ -76,7 +76,7 @@ class UploadedPhotosFragmentViewModel(
             }, unknownErrors::onNext)
 
         compositeDisposable += Observables.combineLatest(lifecycleObservable, loadMoreEvent)
-            .subscribeOn(schedulerProvider.IO())
+            .observeOn(schedulerProvider.IO())
             .concatMap { figureOutWhatPhotosToLoad() }
             .filter { photosToLoad -> photosToLoad == PhotosToLoad.Uploaded }
             .doOnNext {

@@ -480,14 +480,14 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
             is CompositeException -> {
                 for (exception in error.exceptions) {
                     Timber.e(error)
-                    showToast(error.message, Toast.LENGTH_SHORT)
+                    showToast(error.message, Toast.LENGTH_LONG)
                 }
             }
 
             else -> {
                 Timber.e(error)
                 showToast(error.message
-                    ?: getString(R.string.unknown_error_exception_text), Toast.LENGTH_SHORT)
+                    ?: getString(R.string.unknown_error_exception_text), Toast.LENGTH_LONG)
             }
         }
     }
