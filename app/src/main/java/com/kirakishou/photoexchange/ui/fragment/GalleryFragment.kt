@@ -142,7 +142,9 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
         layoutManager.spanSizeLookup = GalleryPhotosAdapterSpanSizeLookup(adapter, columnsCount)
 
         photosPerPage = Constants.GALLERY_PHOTOS_PER_ROW * layoutManager.spanCount
-        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, loadMoreSubject, scrollSubject, 1)
+
+        //TODO: visible threshold should be less than photosPerPage count
+        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, 2, loadMoreSubject, scrollSubject, 1)
 
         galleryPhotosList.layoutManager = layoutManager
         galleryPhotosList.adapter = adapter

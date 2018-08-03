@@ -30,10 +30,8 @@ class GalleryPhotosAdapter(
             return
         }
 
-        val lastIndex = items.lastIndex
-
-        items.removeAt(lastIndex)
-        notifyItemRemoved(lastIndex)
+        items.removeAt(items.lastIndex)
+        notifyItemRemoved(items.size)
     }
 
     fun showProgressFooter() {
@@ -41,10 +39,8 @@ class GalleryPhotosAdapter(
             return
         }
 
-        val lastIndex = items.lastIndex
-
         items.add(GalleryPhotosAdapterItem.ProgressItem())
-        notifyItemInserted(lastIndex)
+        notifyItemInserted(items.size)
     }
 
     fun showMessageFooter(message: String) {
@@ -53,10 +49,16 @@ class GalleryPhotosAdapter(
         }
 
         clearFooter()
-        val lastIndex = items.lastIndex
 
         items.add(GalleryPhotosAdapterItem.MessageItem(message))
-        notifyItemInserted(lastIndex)
+        notifyItemInserted( items.size)
+    }
+
+    fun addAll(photos: List<GalleryPhoto>) {
+        val lastIndex = items.size
+
+        items.addAll(photos.map { galleryPhoto -> GalleryPhotosAdapterItem.GalleryPhotoItem(galleryPhoto, true) })
+        notifyItemRangeInserted(lastIndex, photos.size)
     }
 
     fun favouritePhoto(photoName: String, isFavourited: Boolean, favouritesCount: Long): Boolean {
@@ -111,13 +113,6 @@ class GalleryPhotosAdapter(
         (items[photoIndex] as GalleryPhotosAdapterItem.GalleryPhotoItem).photo.galleryPhotoInfo!!.isReported = isReported
         notifyItemChanged(photoIndex)
         return true
-    }
-
-    fun addAll(photos: List<GalleryPhoto>) {
-        val lastIndex = items.size
-
-        items.addAll(photos.map { galleryPhoto -> GalleryPhotosAdapterItem.GalleryPhotoItem(galleryPhoto, true) })
-        notifyItemRangeInserted(lastIndex, photos.size)
     }
 
     fun switchShowMapOrPhoto(photoName: String) {

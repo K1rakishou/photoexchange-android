@@ -23,11 +23,7 @@ class ReceivedPhotosAdapter(
         val filteredReceivedPhotos = receivedPhotos
             .map { photo -> ReceivedPhotosAdapterItem.ReceivedPhotoItem(photo, true) }
 
-        val lastIndex = if (items.isNotEmpty()) {
-            items.lastIndex
-        } else {
-            0
-        }
+        val lastIndex = items.size
 
         items.addAll(filteredReceivedPhotos)
         notifyItemRangeInserted(lastIndex, filteredReceivedPhotos.size)

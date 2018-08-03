@@ -149,7 +149,8 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         layoutManager.spanSizeLookup = UploadedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
         photosPerPage = Constants.UPLOADED_PHOTOS_PER_ROW * layoutManager.spanCount
 
-        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, photosPerPage, loadMoreSubject, scrollSubject, 1)
+        //TODO: visible threshold should be less than photosPerPage count
+        endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, 2, loadMoreSubject, scrollSubject, 1)
 
         uploadedPhotosList.layoutManager = layoutManager
         uploadedPhotosList.adapter = adapter
