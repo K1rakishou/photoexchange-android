@@ -40,15 +40,15 @@ class UploadedPhotosFragmentViewModel(
 
     val viewState = UploadedPhotosFragmentViewState()
 
-    val uploadedPhotosFragmentLifecycle = BehaviorSubject.create<RxLifecycle.FragmentLifecycle>()
+    val fragmentLifecycle = BehaviorSubject.create<RxLifecycle.FragmentLifecycle>()
     val loadMoreEvent = PublishSubject.create<Unit>()
-    val uploadedPhotosFragmentKnownErrors = PublishSubject.create<ErrorCode>()
-    val uploadedPhotosFragmentUnknownErrors = PublishSubject.create<Throwable>()
+    val knownErrors = PublishSubject.create<ErrorCode>()
+    val unknownErrors = PublishSubject.create<Throwable>()
 
     private val compositeDisposable = CompositeDisposable()
 
     init {
-        val lifecycleObservable = uploadedPhotosFragmentLifecycle
+        val lifecycleObservable = fragmentLifecycle
             .filter { lifecycle -> lifecycle.isAtLeast(RxLifecycle.FragmentState.Resumed) }
             .publish()
 
@@ -73,7 +73,7 @@ class UploadedPhotosFragmentViewModel(
 
                 intercom.tell<UploadedPhotosFragment>()
                     .to(UploadedPhotosFragmentEvent.GeneralEvents.ShowTakenPhotos(combinedPhotos))
-            }, uploadedPhotosFragmentUnknownErrors::onNext)
+            }, unknownErrors::onNext)
 
         compositeDisposable += Observables.combineLatest(lifecycleObservable, loadMoreEvent)
             .subscribeOn(schedulerProvider.IO())
@@ -88,8 +88,7 @@ class UploadedPhotosFragmentViewModel(
                     .to(UploadedPhotosFragmentEvent.GeneralEvents.PageIsLoading())
             }
             .concatMap {
-                loadNextPageOfUploadedPhotos(viewState.lastId,
-                    viewState.photosPerPage)
+                loadNextPageOfUploadedPhotos(viewState.lastId, viewState.photosPerPage)
             }
             .subscribe({ result ->
                 when (result) {
@@ -101,10 +100,10 @@ class UploadedPhotosFragmentViewModel(
                                 "Starting the service after a page of uploaded photos was loaded"))
                     }
                     is Either.Error -> {
-                        uploadedPhotosFragmentKnownErrors.onNext(result.error)
+                        knownErrors.onNext(result.error)
                     }
                 }
-            }, uploadedPhotosFragmentUnknownErrors::onNext)
+            }, unknownErrors::onNext)
 
         compositeDisposable += lifecycleObservable.connect()
     }

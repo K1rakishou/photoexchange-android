@@ -51,14 +51,12 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
     private val loadMoreSubject = PublishSubject.create<Unit>()
     private val scrollSubject = PublishSubject.create<Boolean>()
 
-
-    private var isFragmentFreshlyCreated = true
     private var photosPerPage = 0
 
     override fun getContentView(): Int = R.layout.fragment_uploaded_photos
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
-        isFragmentFreshlyCreated = savedInstanceState == null
+        viewModel.uploadedPhotosFragmentViewModel.viewState.reset()
 
         initRx()
         initRecyclerView()
@@ -69,14 +67,12 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
     private fun initRx() {
         compositeDisposable += viewModel.intercom.uploadedPhotosFragmentEvents.listen()
-            .doOnNext { viewState -> onStateEvent(viewState) }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe()
+            .subscribe({ viewState -> onStateEvent(viewState) }, { Timber.tag(TAG).e(it) })
 
-        compositeDisposable += viewModel.uploadedPhotosFragmentViewModel.uploadedPhotosFragmentKnownErrors
+        compositeDisposable += viewModel.uploadedPhotosFragmentViewModel.knownErrors
             .subscribe({ errorCode -> handleKnownErrors(errorCode) })
 
-        compositeDisposable += viewModel.uploadedPhotosFragmentViewModel.uploadedPhotosFragmentUnknownErrors
+        compositeDisposable += viewModel.uploadedPhotosFragmentViewModel.unknownErrors
             .subscribe({ error -> handleUnknownErrors(error) })
 
         compositeDisposable += failedToUploadPhotoButtonClicksSubject
@@ -87,7 +83,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             }, { Timber.tag(TAG).e(it) })
 
         compositeDisposable += lifecycle.getLifecycle()
-            .subscribe(viewModel.uploadedPhotosFragmentViewModel.uploadedPhotosFragmentLifecycle::onNext)
+            .subscribe(viewModel.uploadedPhotosFragmentViewModel.fragmentLifecycle::onNext)
 
         compositeDisposable += loadMoreSubject
             .subscribe(viewModel.uploadedPhotosFragmentViewModel.loadMoreEvent::onNext)
@@ -178,9 +174,8 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                         adapter.updateUploadedPhotoSetReceiverInfo(it.uploadedPhotoName)
                     }
                 }
-                is UploadedPhotosFragmentEvent.GeneralEvents.OnTabClicked -> {
+                is UploadedPhotosFragmentEvent.GeneralEvents.OnPageSelected -> {
                     viewModel.uploadedPhotosFragmentViewModel.viewState.reset()
-                    triggerPhotosLoading()
                 }
                 is UploadedPhotosFragmentEvent.GeneralEvents.ShowTakenPhotos -> {
                     addTakenPhotosToAdapter(event.takenPhotos)

@@ -268,22 +268,21 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
         tabLayout.setScrollPosition(position, positionOffset, true)
     }
 
-    //TODO: use this callback to send event to all other fragments so they can reload photos
     override fun onPageSelected(position: Int) {
         viewPager.currentItem = position
 
         when (position) {
             UPLOADED_PHOTOS_TAB_INDEX -> {
                 viewModel.intercom.tell<UploadedPhotosFragment>()
-                    .to(UploadedPhotosFragmentEvent.GeneralEvents.OnTabClicked())
+                    .to(UploadedPhotosFragmentEvent.GeneralEvents.OnPageSelected())
             }
             RECEIVED_PHOTOS_TAB_INDEX -> {
                 viewModel.intercom.tell<ReceivedPhotosFragment>()
-                    .to(ReceivedPhotosFragmentEvent.GeneralEvents.OnTabClicked())
+                    .to(ReceivedPhotosFragmentEvent.GeneralEvents.OnPageSelected())
             }
             GALLERY_PHOTOS_TAB_INDEX -> {
                 viewModel.intercom.tell<GalleryFragment>()
-                    .to(GalleryFragmentEvent.GeneralEvents.OnTabClicked())
+                    .to(GalleryFragmentEvent.GeneralEvents.OnPageSelected())
             }
         }
     }

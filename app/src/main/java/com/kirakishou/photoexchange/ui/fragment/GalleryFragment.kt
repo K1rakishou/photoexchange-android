@@ -260,7 +260,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
                 is GalleryFragmentEvent.GeneralEvents.HideProgressFooter -> {
                     hideProgressFooter()
                 }
-                is GalleryFragmentEvent.GeneralEvents.OnTabClicked -> {
+                is GalleryFragmentEvent.GeneralEvents.OnPageSelected -> {
                     //TODO
                 }
             }.safe

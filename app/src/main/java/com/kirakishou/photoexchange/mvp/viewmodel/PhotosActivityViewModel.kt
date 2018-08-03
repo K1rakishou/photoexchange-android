@@ -55,10 +55,20 @@ class PhotosActivityViewModel(
         progressFooterRemoveDelayMs
     )
 
+    val receivedPhotosFragmentViewModel = ReceivedPhotosFragmentViewModel(
+        settingsRepository,
+        getReceivedPhotosUseCase,
+        schedulerProvider,
+        intercom,
+        adapterLoadMoreItemsDelayMs,
+        progressFooterRemoveDelayMs
+    )
+
     override fun onCleared() {
         Timber.tag(TAG).d("onCleared()")
 
         uploadedPhotosFragmentViewModel.onCleared()
+        receivedPhotosFragmentViewModel.onCleared()
 
         super.onCleared()
     }
@@ -90,24 +100,6 @@ class PhotosActivityViewModel(
                 val userId = settingsRepository.getUserId()
                 return@concatMap getGalleryPhotosInfoUseCase.loadGalleryPhotosInfo(userId, result.value)
             }
-            .doOnError { Timber.tag(TAG).e(it) }
-    }
-
-    fun loadNextPageOfReceivedPhotos(
-        lastId: Long,
-        photosPerPage: Int
-    ): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
-        return Observable.just(Unit)
-            .subscribeOn(schedulerProvider.IO())
-            .concatMap { Observable.fromCallable { settingsRepository.getUserId() } }
-            .concatMap { userId -> loadPageOfReceivedPhotos(userId, lastId, photosPerPage) }
-            .doOnNext { result ->
-                if (result is Either.Value) {
-                    intercom.tell<UploadedPhotosFragment>()
-                        .to(UploadedPhotosFragmentEvent.GeneralEvents.UpdateReceiverInfo(result.value))
-                }
-            }
-            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     private fun loadPageOfGalleryPhotos(
@@ -126,39 +118,10 @@ class PhotosActivityViewModel(
             .delay(progressFooterRemoveDelayMs, TimeUnit.MILLISECONDS)
     }
 
-    private fun loadPageOfReceivedPhotos(
-        userId: String,
-        lastId: Long,
-        photosPerPage: Int
-    ): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
-        if (userId.isEmpty()) {
-            return Observable.just(Either.Error(ErrorCode.GetReceivedPhotosErrors.LocalUserIdIsEmpty()))
-        }
-
-        return Observable.just(Unit)
-            .flatMap { getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage) }
-            .doOnNext { intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.GeneralEvents.ShowProgressFooter()) }
-            .delay(adapterLoadMoreItemsDelayMs, TimeUnit.MILLISECONDS)
-            .doOnEach { event ->
-                if (event.isOnNext || event.isOnError) {
-                    intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.GeneralEvents.HideProgressFooter())
-                }
-            }
-            .delay(progressFooterRemoveDelayMs, TimeUnit.MILLISECONDS)
-    }
-
-    fun checkHasFailedToUploadPhotos(): Observable<Boolean> {
-        return Observable.fromCallable {
-            return@fromCallable takenPhotosRepository.countAllByState(PhotoState.FAILED_TO_UPLOAD) > 0
-        }.subscribeOn(schedulerProvider.IO())
-            .doOnError { Timber.tag(TAG).e(it) }
-    }
-
     fun checkHasPhotosToUpload(): Observable<Boolean> {
         return Observable.fromCallable {
             return@fromCallable takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
         }.subscribeOn(schedulerProvider.IO())
-            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun checkHasPhotosToReceive(): Observable<Boolean> {
@@ -168,7 +131,6 @@ class PhotosActivityViewModel(
 
             return@fromCallable uploadedPhotosCount > receivedPhotosCount
         }.subscribeOn(schedulerProvider.IO())
-            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun deletePhotoById(photoId: Long): Completable {
@@ -178,13 +140,11 @@ class PhotosActivityViewModel(
                 check(takenPhotosRepository.findById(photoId).isEmpty())
             }
         }.subscribeOn(schedulerProvider.IO())
-            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun changePhotoState(photoId: Long, newPhotoState: PhotoState): Completable {
         return Completable.fromAction { takenPhotosRepository.updatePhotoState(photoId, newPhotoState) }
             .subscribeOn(schedulerProvider.IO())
-            .doOnError { Timber.tag(TAG).e(it) }
     }
 
     fun updateGpsPermissionGranted(granted: Boolean): Completable {
