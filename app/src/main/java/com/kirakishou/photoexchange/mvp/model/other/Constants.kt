@@ -9,7 +9,6 @@ import com.kirakishou.photoexchange.helper.extension.minutes
 object Constants {
     val isDebugBuild = BuildConfig.DEBUG
     const val appid = "com.kirakishou.photoexchange"
-    val SHARED_PREFS_PREFIX = "${appid}_SHARED_PREF"
     const val BASE_URL = "http://kez1911.asuscomm.com:8080/"
     const val DATABASE_NAME = "photoexchange_db"
     const val DOMAIN_NAME = "photoexchange.io"
@@ -32,8 +31,8 @@ object Constants {
 
     //interval to update photos in the db with fresh information
     //TODO: change this in production
-    val GALLERY_PHOTOS_CACHE_MAX_LIVE_TIME = 1.minutes()
-    val GALLERY_PHOTOS_INFO_CACHE_MAX_LIVE_TIME = 1.minutes()
-    val UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME = 1.minutes()
-    val RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME = 1.minutes()
+    val GALLERY_PHOTOS_CACHE_MAX_LIVE_TIME = 15.minutes()
+    val GALLERY_PHOTOS_INFO_CACHE_MAX_LIVE_TIME = 15.minutes()
+    val UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME = 15.minutes()
+    val RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME = 15.minutes()
 }
