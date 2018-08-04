@@ -149,7 +149,10 @@ class UploadedPhotosAdapter(
 
     fun addUploadedPhotos(photos: List<UploadedPhoto>) {
         val filteredReceivedPhotos = photos
+            .filter { photo -> !isPhotoAlreadyAdded(photo) }
             .map { photo -> UploadedPhotosAdapterItem.UploadedPhotoItem(photo) }
+
+        filteredReceivedPhotos.forEach { photo -> duplicatesCheckerSet.add(photo.uploadedPhoto.photoId) }
 
         val photosWithoutReceiverInfo = filteredReceivedPhotos.filter { !it.uploadedPhoto.hasReceiverInfo }
         val photosWithReceiverInfo = filteredReceivedPhotos.filter { it.uploadedPhoto.hasReceiverInfo }
@@ -159,16 +162,6 @@ class UploadedPhotosAdapter(
 
         uploadedWithReceiverInfoItems.addAll(photosWithReceiverInfo)
         notifyItemRangeInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size, photosWithReceiverInfo.size)
-    }
-
-    fun addUploadedPhoto(photo: UploadedPhoto) {
-        if (!photo.hasReceiverInfo) {
-            uploadedItems.add(0, UploadedPhotosAdapterItem.UploadedPhotoItem(photo))
-            notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size)
-        } else {
-            uploadedWithReceiverInfoItems.add(0, UploadedPhotosAdapterItem.UploadedPhotoItem(photo))
-            notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size + uploadedItems.size)
-        }
     }
 
     fun removePhotoById(photoId: Long) {

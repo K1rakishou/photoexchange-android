@@ -25,8 +25,10 @@ import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapterSpanSizeLook
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 
@@ -89,8 +91,9 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
             .subscribe(viewModel.uploadedPhotosFragmentViewModel.loadMoreEvent::onNext)
 
         compositeDisposable += scrollSubject
+            .subscribeOn(Schedulers.io())
             .distinctUntilChanged()
-            .subscribeOn(AndroidSchedulers.mainThread())
+            .throttleFirst(200, TimeUnit.MILLISECONDS)
             .subscribe({ isScrollingDown ->
                 viewModel.intercom.tell<PhotosActivity>()
                     .that(PhotosActivityEvent.ScrollEvent(isScrollingDown))

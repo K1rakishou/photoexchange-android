@@ -29,8 +29,10 @@ import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.rxkotlin.zipWith
+import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>, IntercomListener {
@@ -123,8 +125,9 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
             .subscribe({ click -> handleAdapterClick(click) }, { Timber.tag(TAG).e(it) })
 
         compositeDisposable += scrollSubject
+            .subscribeOn(Schedulers.io())
             .distinctUntilChanged()
-            .subscribeOn(AndroidSchedulers.mainThread())
+            .throttleFirst(200, TimeUnit.MILLISECONDS)
             .subscribe({ isScrollingDown ->
                 viewModel.intercom.tell<PhotosActivity>()
                     .that(PhotosActivityEvent.ScrollEvent(isScrollingDown))

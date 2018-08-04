@@ -205,11 +205,10 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
                     .startWith(Unit)
             }
             .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext {
+            .subscribe({
                 viewModel.intercom.tell<UploadedPhotosFragment>()
                     .to(UploadedPhotosFragmentEvent.GeneralEvents.AfterPermissionRequest())
-            }
-            .subscribe()
+            }, { error -> Timber.tag(TAG).e(error) })
     }
 
     private fun restoreUploadedPhotosFragmentFromViewState(savedInstanceState: Bundle?) {
