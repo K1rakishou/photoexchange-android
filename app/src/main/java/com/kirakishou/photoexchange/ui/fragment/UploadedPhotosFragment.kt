@@ -193,7 +193,7 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                     endlessScrollListener.reset()
                 }
                 is UploadedPhotosFragmentEvent.GeneralEvents.PageIsLoading -> {
-                    endlessScrollListener.pageLoading()
+//                    endlessScrollListener.pageLoading()
                 }
             }.safe
         }
@@ -248,9 +248,10 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                 adapter.addUploadedPhotos(uploadedPhotos)
             }
 
+            endlessScrollListener.pageLoaded()
+
             if (adapter.getUploadedPhotosCount() == 0) {
                 adapter.showMessageFooter("You have no uploaded photos")
-                endlessScrollListener.pageLoaded()
                 return@post
             }
 
@@ -258,8 +259,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
                 adapter.showMessageFooter("End of the list reached")
                 endlessScrollListener.reachedEnd()
             }
-
-            endlessScrollListener.pageLoaded()
         }
     }
 

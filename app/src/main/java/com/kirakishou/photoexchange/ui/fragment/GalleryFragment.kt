@@ -57,8 +57,6 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     private val scrollSubject = PublishSubject.create<Boolean>()
     private val adapterButtonClickSubject = PublishSubject.create<GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent>()
 
-    private val viewState = GalleryFragmentViewState()
-
     override fun getContentView(): Int = R.layout.fragment_gallery
 
     override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
@@ -242,7 +240,6 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
                     viewModel.galleryFragmentViewModel.viewState.reset()
                 }
                 is GalleryFragmentEvent.GeneralEvents.PageIsLoading -> {
-                    endlessScrollListener.pageLoading()
                 }
                 is GalleryFragmentEvent.GeneralEvents.ShowGalleryPhotos -> {
                     addPhotosToAdapter(event.photos)
@@ -278,7 +275,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
 
         galleryPhotosList.post {
             if (galleryPhotos.isNotEmpty()) {
-                viewState.updateLastId(galleryPhotos.last().galleryPhotoId)
+                viewModel.galleryFragmentViewModel.viewState.updateLastId(galleryPhotos.last().galleryPhotoId)
                 adapter.addAll(galleryPhotos)
             }
 

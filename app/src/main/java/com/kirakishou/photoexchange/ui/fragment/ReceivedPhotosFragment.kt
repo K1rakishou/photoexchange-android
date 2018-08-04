@@ -167,7 +167,6 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
                     viewModel.receivedPhotosFragmentViewModel.viewState.reset()
                 }
                 is ReceivedPhotosFragmentEvent.GeneralEvents.PageIsLoading -> {
-                    endlessScrollListener.pageLoading()
                 }
                 is ReceivedPhotosFragmentEvent.GeneralEvents.ShowReceivedPhotos -> {
                     addReceivedPhotosToAdapter(event.photos)
@@ -205,9 +204,10 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
                 adapter.addReceivedPhotos(receivedPhotos)
             }
 
+            endlessScrollListener.pageLoaded()
+
             if (adapter.itemCount == 0) {
                 adapter.showMessageFooter("You have not received any photos yet")
-                endlessScrollListener.pageLoaded()
                 return@post
             }
 
@@ -215,8 +215,6 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
                 adapter.showMessageFooter("End of the list reached")
                 endlessScrollListener.reachedEnd()
             }
-
-            endlessScrollListener.pageLoaded()
         }
     }
 

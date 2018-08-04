@@ -86,35 +86,47 @@ class UploadedPhotosAdapter(
         notifyItemChanged(photoIndex)
     }
 
-    fun clearFooter() {
+    fun clearFooter(removeFooter: Boolean = true) {
         if (footerItems.isEmpty()) {
             return
         }
 
         footerItems.clear()
 
-        notifyItemRemoved(headerItems.size + queuedUpItems.size + failedToUploadItems.size +
-            uploadedItems.size + uploadedWithReceiverInfoItems.size)
+        if (removeFooter) {
+            notifyItemRemoved(headerItems.size + queuedUpItems.size + failedToUploadItems.size +
+                uploadedItems.size + uploadedWithReceiverInfoItems.size)
+        }
     }
 
     fun showProgressFooter() {
-        if (footerItems.isNotEmpty()) {
-            clearFooter()
-        }
+        val isFooterNotEmpty = footerItems.isNotEmpty()
+        clearFooter(false)
 
-        footerItems.add(UploadedPhotosAdapterItem.ProgressItem())
-        notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size +
-            uploadedItems.size + uploadedWithReceiverInfoItems.size + footerItems.size)
+        if (isFooterNotEmpty) {
+            footerItems.add(UploadedPhotosAdapterItem.ProgressItem())
+            notifyItemChanged(headerItems.size + queuedUpItems.size + failedToUploadItems.size +
+                uploadedItems.size + uploadedWithReceiverInfoItems.size + footerItems.size)
+        } else {
+            footerItems.add(UploadedPhotosAdapterItem.ProgressItem())
+            notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size +
+                uploadedItems.size + uploadedWithReceiverInfoItems.size + footerItems.size)
+        }
     }
 
     fun showMessageFooter(message: String) {
-        if (footerItems.isNotEmpty()) {
-            clearFooter()
-        }
+        val isFooterNotEmpty = footerItems.isNotEmpty()
+        clearFooter(false)
 
-        footerItems.add(UploadedPhotosAdapterItem.MessageItem(message))
-        notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size +
-            uploadedItems.size + uploadedWithReceiverInfoItems.size + footerItems.size)
+        if (isFooterNotEmpty) {
+            footerItems.add(UploadedPhotosAdapterItem.MessageItem(message))
+            notifyItemChanged(headerItems.size + queuedUpItems.size + failedToUploadItems.size +
+                uploadedItems.size + uploadedWithReceiverInfoItems.size + footerItems.size)
+        } else {
+            footerItems.add(UploadedPhotosAdapterItem.MessageItem(message))
+            notifyItemInserted(headerItems.size + queuedUpItems.size + failedToUploadItems.size +
+                uploadedItems.size + uploadedWithReceiverInfoItems.size + footerItems.size)
+        }
     }
 
     fun addTakenPhotos(photos: List<TakenPhoto>) {

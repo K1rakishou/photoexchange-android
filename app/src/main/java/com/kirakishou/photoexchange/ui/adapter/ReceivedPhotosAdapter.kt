@@ -17,10 +17,12 @@ class ReceivedPhotosAdapter(
     private val clicksSubject: PublishSubject<ReceivedPhotosAdapterClickEvent>
 ) : BaseAdapter<ReceivedPhotosAdapterItem>(context) {
 
-    val items = arrayListOf<ReceivedPhotosAdapterItem>()
+    private val items = arrayListOf<ReceivedPhotosAdapterItem>()
+    private val duplicatesCheckerSet = hashSetOf<Long>()
 
     fun addReceivedPhotos(receivedPhotos: List<ReceivedPhoto>) {
         val filteredReceivedPhotos = receivedPhotos
+            .filter { photo -> duplicatesCheckerSet.add(photo.photoId) }
             .map { photo -> ReceivedPhotosAdapterItem.ReceivedPhotoItem(photo, true) }
 
         val lastIndex = items.size
@@ -30,6 +32,10 @@ class ReceivedPhotosAdapter(
     }
 
     fun addReceivedPhoto(receivedPhoto: ReceivedPhoto) {
+        if (!duplicatesCheckerSet.add(receivedPhoto.photoId)) {
+            return
+        }
+
         items.add(0, ReceivedPhotosAdapterItem.ReceivedPhotoItem(receivedPhoto, true))
         notifyItemInserted(0)
     }
@@ -52,7 +58,7 @@ class ReceivedPhotosAdapter(
         notifyItemChanged(itemIndex)
     }
 
-    fun clearFooter() {
+    fun clearFooter(removeFooter: Boolean = true) {
         if (items.isEmpty()) {
             return
         }
@@ -62,9 +68,11 @@ class ReceivedPhotosAdapter(
         }
 
         val lastIndex = items.lastIndex
-
         items.removeAt(lastIndex)
-        notifyItemRemoved(lastIndex)
+
+        if (removeFooter) {
+            notifyItemRemoved(lastIndex)
+        }
     }
 
     fun showProgressFooter() {
@@ -72,11 +80,16 @@ class ReceivedPhotosAdapter(
             return
         }
 
-        clearFooter()
-        val lastIndex = items.lastIndex
+        val hasFooter = items.lastOrNull()?.getType() == AdapterItemType.VIEW_MESSAGE
 
+        clearFooter(false)
         items.add(ReceivedPhotosAdapterItem.ProgressItem())
-        notifyItemInserted(lastIndex)
+
+        if (hasFooter) {
+            notifyItemChanged(items.size)
+        } else {
+            notifyItemInserted(items.size)
+        }
     }
 
     fun showMessageFooter(message: String) {
@@ -84,11 +97,16 @@ class ReceivedPhotosAdapter(
             return
         }
 
-        clearFooter()
-        val lastIndex = items.lastIndex
+        val hasFooter = items.lastOrNull()?.getType() == AdapterItemType.VIEW_PROGRESS
 
+        clearFooter(false)
         items.add(ReceivedPhotosAdapterItem.MessageItem(message))
-        notifyItemInserted(lastIndex)
+
+        if (hasFooter) {
+            notifyItemChanged(items.size)
+        } else {
+            notifyItemInserted(items.size)
+        }
     }
 
     override fun getItemViewType(position: Int): Int {

@@ -4,9 +4,9 @@ import android.os.Bundle
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView
 import io.reactivex.subjects.PublishSubject
+import android.support.v7.widget.LinearLayoutManager
 import timber.log.Timber
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
+
 
 class EndlessRecyclerOnScrollListener(
     private val fragmentTag: String,
@@ -17,7 +17,8 @@ class EndlessRecyclerOnScrollListener(
 ) : RecyclerView.OnScrollListener() {
 
     private val tag = "EndlessRecyclerOnScrollListener_$fragmentTag"
-    private var loading = AtomicBoolean(false)
+    private var loading = false
+    private var previousTotal = 0
     private var lastVisibleItem = 0
     private var prevLastVisibleItem = lastVisibleItem
     private var totalItemCount = 0
@@ -37,27 +38,25 @@ class EndlessRecyclerOnScrollListener(
             return
         }
 
-        totalItemCount = gridLayoutManager.itemCount
-        lastVisibleItem = gridLayoutManager.findLastVisibleItemPosition() + 1
+        val visibleItemCount = recyclerView.childCount
+        val totalItemCount = gridLayoutManager.itemCount
+        val firstVisibleItem = (recyclerView.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
 
-        if ((totalItemCount - lastVisibleItem) <= visibleThreshold) {
-            if (Math.abs((lastVisibleItem - prevLastVisibleItem)) >= visibleThreshold) {
-                prevLastVisibleItem = lastVisibleItem
-
-                if (loading.compareAndSet(false, true)) {
-                    Timber.tag(tag).d("Loading new page")
-                    loadMoreSubject.onNext(Unit)
-                }
+        if (loading) {
+            if (totalItemCount > previousTotal) {
+                loading = false
+                previousTotal = totalItemCount
             }
-        } 
-    }
+        }
 
-    fun pageLoading() {
-        loading.set(true)
+        if (!loading && totalItemCount - visibleItemCount <= firstVisibleItem + visibleThreshold) {
+            loadMoreSubject.onNext(Unit)
+            loading = true
+        }
     }
 
     fun pageLoaded() {
-        loading.set(false)
+        loading = false
     }
 
     fun reachedEnd() {
@@ -66,7 +65,7 @@ class EndlessRecyclerOnScrollListener(
 
     fun reset() {
         if (isEndReached) {
-            loading.set(false)
+            loading = false
             lastVisibleItem = 0
             prevLastVisibleItem = 0
             totalItemCount = 0
@@ -75,7 +74,7 @@ class EndlessRecyclerOnScrollListener(
     }
 
     fun onSaveInstanceState(outState: Bundle) {
-        outState.putBoolean("loading", loading.get())
+        outState.putBoolean("loading", loading)
         outState.putInt("lastVisibleItem", lastVisibleItem)
         outState.putInt("prevLastVisibleItem", prevLastVisibleItem)
         outState.putInt("totalItemCount", totalItemCount)
@@ -83,7 +82,7 @@ class EndlessRecyclerOnScrollListener(
     }
 
     fun onRestoreInstanceState(savedInstanceState: Bundle) {
-        loading.set(savedInstanceState.getBoolean("loading", false))
+        loading = savedInstanceState.getBoolean("loading", false)
         lastVisibleItem = savedInstanceState.getInt("lastVisibleItem", 0)
         prevLastVisibleItem = savedInstanceState.getInt("prevLastVisibleItem", 0)
         totalItemCount = savedInstanceState.getInt("totalItemCount", 0)

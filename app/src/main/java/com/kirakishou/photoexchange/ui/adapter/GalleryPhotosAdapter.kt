@@ -20,8 +20,9 @@ class GalleryPhotosAdapter(
 ) : BaseAdapter<GalleryPhotosAdapterItem>(context) {
 
     private val items = arrayListOf<GalleryPhotosAdapterItem>()
+    private val duplicatesCheckerSet = hashSetOf<Long>()
 
-    fun clearFooter() {
+    fun clearFooter(removeFooter: Boolean = true) {
         if (items.isEmpty()) {
             return
         }
@@ -31,7 +32,10 @@ class GalleryPhotosAdapter(
         }
 
         items.removeAt(items.lastIndex)
-        notifyItemRemoved(items.size)
+
+        if (removeFooter) {
+            notifyItemRemoved(items.size)
+        }
     }
 
     fun showProgressFooter() {
@@ -39,8 +43,15 @@ class GalleryPhotosAdapter(
             return
         }
 
+        val hasFooter = items.lastOrNull()?.getType() == AdapterItemType.VIEW_MESSAGE
+        clearFooter(false)
         items.add(GalleryPhotosAdapterItem.ProgressItem())
-        notifyItemInserted(items.size)
+
+        if (hasFooter) {
+            notifyItemChanged(items.size)
+        } else {
+            notifyItemInserted(items.size)
+        }
     }
 
     fun showMessageFooter(message: String) {
@@ -48,17 +59,26 @@ class GalleryPhotosAdapter(
             return
         }
 
-        clearFooter()
-
+        val hasFooter = items.lastOrNull()?.getType() == AdapterItemType.VIEW_PROGRESS
+        clearFooter(false)
         items.add(GalleryPhotosAdapterItem.MessageItem(message))
-        notifyItemInserted( items.size)
+
+        if (hasFooter) {
+            notifyItemChanged(items.size)
+        } else {
+            notifyItemInserted(items.size)
+        }
     }
 
     fun addAll(photos: List<GalleryPhoto>) {
+        val filteredPhotos = photos
+            .filter { photo -> duplicatesCheckerSet.add(photo.galleryPhotoId) }
+            .map { galleryPhoto -> GalleryPhotosAdapterItem.GalleryPhotoItem(galleryPhoto, true) }
+
         val lastIndex = items.size
 
-        items.addAll(photos.map { galleryPhoto -> GalleryPhotosAdapterItem.GalleryPhotoItem(galleryPhoto, true) })
-        notifyItemRangeInserted(lastIndex, photos.size)
+        items.addAll(filteredPhotos)
+        notifyItemRangeInserted(lastIndex, filteredPhotos.size)
     }
 
     fun favouritePhoto(photoName: String, isFavourited: Boolean, favouritesCount: Long): Boolean {
