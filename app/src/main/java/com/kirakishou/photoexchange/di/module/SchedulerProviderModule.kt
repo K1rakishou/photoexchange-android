@@ -12,9 +12,9 @@ import javax.inject.Singleton
 @Module
 open class SchedulerProviderModule {
 
-    @Singleton
-    @Provides
-    open fun provideSchedulers(): SchedulerProvider {
-        return NormalSchedulers()
-    }
+  @Singleton
+  @Provides
+  open fun provideSchedulers(): SchedulerProvider {
+    return NormalSchedulers()
+  }
 }

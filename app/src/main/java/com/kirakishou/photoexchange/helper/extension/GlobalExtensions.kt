@@ -7,7 +7,7 @@ import java.lang.ref.WeakReference
  */
 
 fun <T> T.asWeak(): WeakReference<T> {
-    return WeakReference(this)
+  return WeakReference(this)
 }
 
 val Any?.safe get() = Unit

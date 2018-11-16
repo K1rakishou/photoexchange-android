@@ -13,14 +13,14 @@ import javax.inject.Singleton
  * Created by kirakishou on 3/17/2018.
  */
 @Module(includes = [
-    NetworkModule::class,
-    SchedulerProviderModule::class
+  NetworkModule::class,
+  SchedulerProviderModule::class
 ])
 class ApiClientModule {
 
-    @Singleton
-    @Provides
-    fun provideApiClient(apiService: ApiService, gson: MyGson, schedulerProvider: SchedulerProvider): ApiClient {
-        return ApiClientImpl(apiService, gson, schedulerProvider)
-    }
+  @Singleton
+  @Provides
+  fun provideApiClient(apiService: ApiService, gson: MyGson, schedulerProvider: SchedulerProvider): ApiClient {
+    return ApiClientImpl(apiService, gson, schedulerProvider)
+  }
 }

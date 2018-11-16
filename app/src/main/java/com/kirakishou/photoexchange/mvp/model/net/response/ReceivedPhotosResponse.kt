@@ -7,43 +7,43 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 open class ReceivedPhotosResponse
 private constructor(
 
-    @Expose
-    @SerializedName("received_photos")
-    val receivedPhotos: List<ReceivedPhoto>,
+  @Expose
+  @SerializedName("received_photos")
+  val receivedPhotos: List<ReceivedPhoto>,
 
-    errorCode: ErrorCode.ReceivePhotosErrors
+  errorCode: ErrorCode.ReceivePhotosErrors
 ) : StatusResponse(errorCode.getValue(), errorCode) {
 
-    companion object {
-        fun success(receivedPhotos: List<ReceivedPhoto>): ReceivedPhotosResponse {
-            return ReceivedPhotosResponse(receivedPhotos, ErrorCode.ReceivePhotosErrors.Ok())
-        }
-
-        fun error(errorCode: ErrorCode.ReceivePhotosErrors): ReceivedPhotosResponse {
-            return ReceivedPhotosResponse(emptyList(), errorCode)
-        }
+  companion object {
+    fun success(receivedPhotos: List<ReceivedPhoto>): ReceivedPhotosResponse {
+      return ReceivedPhotosResponse(receivedPhotos, ErrorCode.ReceivePhotosErrors.Ok())
     }
 
-    //TODO: add photoId to the response on the server side as well
-    class ReceivedPhoto(
-        @Expose
-        @SerializedName("photo_id")
-        val photoId: Long,
+    fun error(errorCode: ErrorCode.ReceivePhotosErrors): ReceivedPhotosResponse {
+      return ReceivedPhotosResponse(emptyList(), errorCode)
+    }
+  }
 
-        @Expose
-        @SerializedName("uploaded_photo_name")
-        val uploadedPhotoName: String,
+  //TODO: add photoId to the response on the server side as well
+  class ReceivedPhoto(
+    @Expose
+    @SerializedName("photo_id")
+    val photoId: Long,
 
-        @Expose
-        @SerializedName("received_photo_name")
-        val receivedPhotoName: String,
+    @Expose
+    @SerializedName("uploaded_photo_name")
+    val uploadedPhotoName: String,
 
-        @Expose
-        @SerializedName("lon")
-        val lon: Double,
+    @Expose
+    @SerializedName("received_photo_name")
+    val receivedPhotoName: String,
 
-        @Expose
-        @SerializedName("lat")
-        val lat: Double
-    )
+    @Expose
+    @SerializedName("lon")
+    val lon: Double,
+
+    @Expose
+    @SerializedName("lat")
+    val lat: Double
+  )
 }

@@ -9,20 +9,20 @@ import io.reactivex.android.schedulers.AndroidSchedulers
  */
 object RxLocationManager {
 
-    fun start(locationManager: MyLocationManager): Observable<LonLat> {
-        val observable = Observable.create<LonLat> { emitter ->
-            locationManager.start(object : MyLocationManager.OnLocationChanged {
-                override fun onNewLocation(location: LonLat) {
-                    if (!emitter.isDisposed) {
-                        emitter.onNext(location)
-                        emitter.onComplete()
-                    }
-                }
-            })
+  fun start(locationManager: MyLocationManager): Observable<LonLat> {
+    val observable = Observable.create<LonLat> { emitter ->
+      locationManager.start(object : MyLocationManager.OnLocationChanged {
+        override fun onNewLocation(location: LonLat) {
+          if (!emitter.isDisposed) {
+            emitter.onNext(location)
+            emitter.onComplete()
+          }
         }
-
-        return observable
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .doFinally { locationManager.stop() }
+      })
     }
+
+    return observable
+      .subscribeOn(AndroidSchedulers.mainThread())
+      .doFinally { locationManager.stop() }
+  }
 }

@@ -2,42 +2,44 @@ package com.kirakishou.photoexchange.mvp.model.exception
 
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 
+class ApiException(val errorCode: ErrorCode) : Exception()
+class EmptyUserIdException : Exception()
+
 sealed class GeneralException : Exception() {
-    class ErrorCodeException(val errorCode: ErrorCode) : GeneralException()
-    class ApiException(val errorCode: ErrorCode) : GeneralException()
+  class ErrorCodeException(val errorCode: ErrorCode) : GeneralException()
 }
 
 sealed class UploadPhotoServiceException : Exception() {
-    class CouldNotGetUserIdException(val errorCode: ErrorCode.GetUserIdError) : UploadPhotoServiceException()
+  class CouldNotGetUserIdException(val errorCode: ErrorCode.GetUserIdError) : UploadPhotoServiceException()
 }
 
 sealed class ReceivePhotosServiceException : Exception() {
-    class PhotoNamesAreEmpty : ReceivePhotosServiceException()
-    class CouldNotGetUserId : ReceivePhotosServiceException()
-    class ApiException(val remoteErrorCode: ErrorCode.ReceivePhotosErrors) : ReceivePhotosServiceException()
-    class NoUploadedPhotosWithoutReceiverInfo() : ReceivePhotosServiceException()
+  class PhotoNamesAreEmpty : ReceivePhotosServiceException()
+  class CouldNotGetUserId : ReceivePhotosServiceException()
+  class ApiException(val remoteErrorCode: ErrorCode.ReceivePhotosErrors) : ReceivePhotosServiceException()
+  class NoUploadedPhotosWithoutReceiverInfo() : ReceivePhotosServiceException()
 }
 
 sealed class PhotoUploadingException : Exception() {
-    class PhotoDoesNotExistOnDisk : PhotoUploadingException()
-    class CouldNotRotatePhoto : PhotoUploadingException()
-    class DatabaseException : PhotoUploadingException()
-    class CouldNotUpdatePhotoState : PhotoUploadingException()
-    class ApiException(val remoteErrorCode: ErrorCode.UploadPhotoErrors) : PhotoUploadingException()
+  class PhotoDoesNotExistOnDisk : PhotoUploadingException()
+  class CouldNotRotatePhoto : PhotoUploadingException()
+  class DatabaseException : PhotoUploadingException()
+  class CouldNotUpdatePhotoState : PhotoUploadingException()
+  class ApiException(val remoteErrorCode: ErrorCode.UploadPhotoErrors) : PhotoUploadingException()
 }
 
 sealed class GetReceivedPhotosException : Exception() {
-    class OnKnownError(val errorCode: ErrorCode.GetReceivedPhotosErrors) : GetReceivedPhotosException()
+  class OnKnownError(val errorCode: ErrorCode.GetReceivedPhotosErrors) : GetReceivedPhotosException()
 }
 
 sealed class GetGalleryPhotosException : Exception() {
-    class OnKnownError(val errorCode: ErrorCode.GetGalleryPhotosErrors) : GetGalleryPhotosException()
+  class OnKnownError(val errorCode: ErrorCode.GetGalleryPhotosErrors) : GetGalleryPhotosException()
 }
 
 sealed class GetGalleryPhotosInfoException : Exception() {
-    class OnKnownError(val errorCode: ErrorCode.GetGalleryPhotosErrors) : GetGalleryPhotosInfoException()
+  class OnKnownError(val errorCode: ErrorCode.GetGalleryPhotosErrors) : GetGalleryPhotosInfoException()
 }
 
 sealed class GetUploadedPhotosException : Exception() {
-    class OnKnownError(val errorCode: ErrorCode.GetUploadedPhotosErrors) : GetUploadedPhotosException()
+  class OnKnownError(val errorCode: ErrorCode.GetUploadedPhotosErrors) : GetUploadedPhotosException()
 }

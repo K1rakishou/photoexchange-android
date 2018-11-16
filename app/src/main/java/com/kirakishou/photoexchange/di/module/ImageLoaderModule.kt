@@ -12,9 +12,9 @@ import javax.inject.Singleton
 @Module
 class ImageLoaderModule {
 
-    @Singleton
-    @Provides
-    fun provideImageLoader(context: Context): ImageLoader {
-        return ImageLoader(context)
-    }
+  @Singleton
+  @Provides
+  fun provideImageLoader(context: Context): ImageLoader {
+    return ImageLoader(context)
+  }
 }

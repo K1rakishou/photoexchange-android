@@ -10,19 +10,19 @@ import timber.log.Timber
  * Created by kirakishou on 11/7/2017.
  */
 class TakePhotoActivityViewModel(
-    private val schedulerProvider: SchedulerProvider,
-    private val takenPhotosRepository: TakenPhotosRepository
+  private val schedulerProvider: SchedulerProvider,
+  private val takenPhotosRepository: TakenPhotosRepository
 ) : BaseViewModel() {
 
-    private val TAG = "TakePhotoActivityViewModel"
+  private val TAG = "TakePhotoActivityViewModel"
 
-    val errorCodesSubject = PublishSubject.create<ErrorCode>().toSerialized()
+  val errorCodesSubject = PublishSubject.create<ErrorCode>().toSerialized()
 
-    override fun onCleared() {
-        Timber.tag(TAG).d("onCleared()")
+  override fun onCleared() {
+    Timber.tag(TAG).d("onCleared()")
 
-        super.onCleared()
-    }
+    super.onCleared()
+  }
 }
 
 

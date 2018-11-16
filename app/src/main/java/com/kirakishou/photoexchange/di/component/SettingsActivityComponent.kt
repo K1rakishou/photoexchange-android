@@ -7,8 +7,8 @@ import dagger.Subcomponent
 
 @PerActivity
 @Subcomponent(modules = [
-    SettingsActivityModule::class
+  SettingsActivityModule::class
 ])
 interface SettingsActivityComponent {
-    fun inject(activity: SettingsActivity)
+  fun inject(activity: SettingsActivity)
 }

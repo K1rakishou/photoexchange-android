@@ -11,11 +11,11 @@ import dagger.Provides
 @Module
 class LocationServiceModule {
 
-    @PerService
-    @Provides
-    fun provideLocationService(applicationContext: Context,
-                               takenPhotosRepository: TakenPhotosRepository,
-                               settingsRepository: SettingsRepository): LocationService {
-        return LocationService(applicationContext, takenPhotosRepository, settingsRepository)
-    }
+  @PerService
+  @Provides
+  fun provideLocationService(applicationContext: Context,
+                             takenPhotosRepository: TakenPhotosRepository,
+                             settingsRepository: SettingsRepository): LocationService {
+    return LocationService(applicationContext, takenPhotosRepository, settingsRepository)
+  }
 }

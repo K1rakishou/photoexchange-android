@@ -9,49 +9,49 @@ import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicBoolean
 
 class UploadPhotoServiceConnection(
-    val activity: PhotosActivity
+  val activity: PhotosActivity
 ) : AtomicBoolean(false), ServiceConnection {
 
-    private val tag = "UploadPhotoServiceConnection"
-    private var uploadPhotoService: UploadPhotoService? = null
+  private val tag = "UploadPhotoServiceConnection"
+  private var uploadPhotoService: UploadPhotoService? = null
 
-    override fun onServiceConnected(className: ComponentName, _service: IBinder) {
-        onUploadingServiceConnected(_service)
+  override fun onServiceConnected(className: ComponentName, _service: IBinder) {
+    onUploadingServiceConnected(_service)
+  }
+
+  override fun onServiceDisconnected(className: ComponentName) {
+    onUploadingServiceDisconnected()
+  }
+
+  fun isConnected(): Boolean {
+    return this.get()
+  }
+
+  fun startPhotosUploading() {
+    uploadPhotoService!!.startPhotosUploading()
+  }
+
+  private fun onUploadingServiceConnected(_service: IBinder) {
+    if (this.compareAndSet(false, true)) {
+      Timber.tag(tag).d("+++ onUploadingServiceConnected")
+
+      uploadPhotoService = (_service as UploadPhotoService.UploadPhotosBinder).getService()
+      uploadPhotoService!!.attachCallback(WeakReference(activity))
+      startPhotosUploading()
+    } else {
+      Timber.tag(tag).d("+++ onUploadingServiceConnected already connected")
     }
+  }
 
-    override fun onServiceDisconnected(className: ComponentName) {
-        onUploadingServiceDisconnected()
+  fun onUploadingServiceDisconnected() {
+    if (this.compareAndSet(true, false)) {
+      Timber.tag(tag).d("--- onUploadingServiceDisconnected")
+
+      uploadPhotoService?.detachCallback()
+      activity.unbindService(this)
+      uploadPhotoService = null
+    } else {
+      Timber.tag(tag).d("--- onUploadingServiceDisconnected already disconnected")
     }
-
-    fun isConnected(): Boolean {
-        return this.get()
-    }
-
-    fun startPhotosUploading() {
-        uploadPhotoService!!.startPhotosUploading()
-    }
-
-    private fun onUploadingServiceConnected(_service: IBinder) {
-        if (this.compareAndSet(false, true)) {
-            Timber.tag(tag).d("+++ onUploadingServiceConnected")
-
-            uploadPhotoService = (_service as UploadPhotoService.UploadPhotosBinder).getService()
-            uploadPhotoService!!.attachCallback(WeakReference(activity))
-            startPhotosUploading()
-        } else {
-            Timber.tag(tag).d("+++ onUploadingServiceConnected already connected")
-        }
-    }
-
-    fun onUploadingServiceDisconnected() {
-        if (this.compareAndSet(true, false)) {
-            Timber.tag(tag).d("--- onUploadingServiceDisconnected")
-
-            uploadPhotoService?.detachCallback()
-            activity.unbindService(this)
-            uploadPhotoService = null
-        } else {
-            Timber.tag(tag).d("--- onUploadingServiceDisconnected already disconnected")
-        }
-    }
+  }
 }

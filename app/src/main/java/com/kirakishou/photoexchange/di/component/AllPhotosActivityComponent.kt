@@ -15,12 +15,12 @@ import dagger.Subcomponent
 
 @PerActivity
 @Subcomponent(modules = [
-    PhotosActivityModule::class,
-    PermissionManagerModule::class
+  PhotosActivityModule::class,
+  PermissionManagerModule::class
 ])
 interface AllPhotosActivityComponent {
-    fun inject(activity: PhotosActivity)
-    fun inject(fragment: UploadedPhotosFragment)
-    fun inject(fragment: ReceivedPhotosFragment)
-    fun inject(fragment: GalleryFragment)
+  fun inject(activity: PhotosActivity)
+  fun inject(fragment: UploadedPhotosFragment)
+  fun inject(fragment: ReceivedPhotosFragment)
+  fun inject(fragment: GalleryFragment)
 }

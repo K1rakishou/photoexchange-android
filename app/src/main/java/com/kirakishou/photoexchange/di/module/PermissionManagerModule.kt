@@ -12,9 +12,9 @@ import dagger.Provides
 @Module
 class PermissionManagerModule {
 
-    @PerActivity
-    @Provides
-    fun providePermissionManager(): PermissionManager {
-        return PermissionManager()
-    }
+  @PerActivity
+  @Provides
+  fun providePermissionManager(): PermissionManager {
+    return PermissionManager()
+  }
 }

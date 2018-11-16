@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.helper.database.converter
 
-import android.arch.persistence.room.TypeConverter
+import androidx.room.TypeConverter
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 
 /**
@@ -8,15 +8,15 @@ import com.kirakishou.photoexchange.mvp.model.PhotoState
  */
 object PhotoStateConverter {
 
-    @TypeConverter
-    @JvmStatic
-    fun toPhotoState(photoStateInt: Int): PhotoState {
-        return PhotoState.from(photoStateInt)
-    }
+  @TypeConverter
+  @JvmStatic
+  fun toPhotoState(photoStateInt: Int): PhotoState {
+    return PhotoState.from(photoStateInt)
+  }
 
-    @TypeConverter
-    @JvmStatic
-    fun fromPhotoState(photoState: PhotoState): Int {
-        return photoState.state
-    }
+  @TypeConverter
+  @JvmStatic
+  fun fromPhotoState(photoState: PhotoState): Int {
+    return photoState.state
+  }
 }

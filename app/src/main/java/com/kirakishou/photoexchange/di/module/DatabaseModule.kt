@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.di.module
 
-import android.arch.persistence.room.Room
+import androidx.room.Room
 import android.content.Context
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.*
@@ -21,60 +21,60 @@ import javax.inject.Singleton
 
 @Module
 open class DatabaseModule(
-    val dbName: String
+  val dbName: String
 ) {
 
-    @Singleton
-    @Provides
-    open fun provideDatabase(context: Context): MyDatabase {
-        return Room.databaseBuilder(context, MyDatabase::class.java, dbName).build()
-    }
+  @Singleton
+  @Provides
+  open fun provideDatabase(context: Context): MyDatabase {
+    return Room.databaseBuilder(context, MyDatabase::class.java, dbName).build()
+  }
 
-    @Singleton
-    @Provides
-    @Named("files_directory")
-    fun provideFilesDirectoryPath(context: Context): String {
-        return context.filesDir.absolutePath
-    }
+  @Singleton
+  @Provides
+  @Named("files_directory")
+  fun provideFilesDirectoryPath(context: Context): String {
+    return context.filesDir.absolutePath
+  }
 
-    @Singleton
-    @Provides
-    fun provideTempFilesRepository(@Named("files_directory") filesDir: String,
-                                   database: MyDatabase,
-                                   timeUtils: TimeUtils,
-                                   fileUtils: FileUtils): TempFileRepository {
-        return TempFileRepository(filesDir, database, timeUtils, fileUtils)
-    }
+  @Singleton
+  @Provides
+  fun provideTempFilesRepository(@Named("files_directory") filesDir: String,
+                                 database: MyDatabase,
+                                 timeUtils: TimeUtils,
+                                 fileUtils: FileUtils): TempFileRepository {
+    return TempFileRepository(filesDir, database, timeUtils, fileUtils)
+  }
 
-    @Singleton
-    @Provides
-    open fun provideTakenPhotoRepository(database: MyDatabase,
-                                         timeUtils: TimeUtils,
-                                         tempFileRepository: TempFileRepository): TakenPhotosRepository {
-        return TakenPhotosRepository(timeUtils, database, tempFileRepository)
-    }
+  @Singleton
+  @Provides
+  open fun provideTakenPhotoRepository(database: MyDatabase,
+                                       timeUtils: TimeUtils,
+                                       tempFileRepository: TempFileRepository): TakenPhotosRepository {
+    return TakenPhotosRepository(timeUtils, database, tempFileRepository)
+  }
 
-    @Singleton
-    @Provides
-    open fun provideSettingsRepository(database: MyDatabase): SettingsRepository {
-        return SettingsRepository(database)
-    }
+  @Singleton
+  @Provides
+  open fun provideSettingsRepository(database: MyDatabase): SettingsRepository {
+    return SettingsRepository(database)
+  }
 
-    @Singleton
-    @Provides
-    open fun provideReceivedPhotoRepository(database: MyDatabase, timeUtils: TimeUtils): ReceivedPhotosRepository {
-        return ReceivedPhotosRepository(database, timeUtils, RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME)
-    }
+  @Singleton
+  @Provides
+  open fun provideReceivedPhotoRepository(database: MyDatabase, timeUtils: TimeUtils): ReceivedPhotosRepository {
+    return ReceivedPhotosRepository(database, timeUtils, RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME)
+  }
 
-    @Singleton
-    @Provides
-    open fun provideGalleryPhotoRepository(database: MyDatabase, timeUtils: TimeUtils): GalleryPhotoRepository {
-        return GalleryPhotoRepository(database, timeUtils, GALLERY_PHOTOS_CACHE_MAX_LIVE_TIME, GALLERY_PHOTOS_INFO_CACHE_MAX_LIVE_TIME)
-    }
+  @Singleton
+  @Provides
+  open fun provideGalleryPhotoRepository(database: MyDatabase, timeUtils: TimeUtils): GalleryPhotoRepository {
+    return GalleryPhotoRepository(database, timeUtils, GALLERY_PHOTOS_CACHE_MAX_LIVE_TIME, GALLERY_PHOTOS_INFO_CACHE_MAX_LIVE_TIME)
+  }
 
-    @Singleton
-    @Provides
-    open fun provideUploadedPhotoRepository(database: MyDatabase, timeUtils: TimeUtils): UploadedPhotosRepository {
-        return UploadedPhotosRepository(database, timeUtils, UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME)
-    }
+  @Singleton
+  @Provides
+  open fun provideUploadedPhotoRepository(database: MyDatabase, timeUtils: TimeUtils): UploadedPhotosRepository {
+    return UploadedPhotosRepository(database, timeUtils, UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME)
+  }
 }

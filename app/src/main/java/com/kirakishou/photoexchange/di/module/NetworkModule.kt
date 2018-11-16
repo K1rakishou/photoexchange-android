@@ -18,47 +18,47 @@ import javax.inject.Singleton
 @Module
 class NetworkModule(private val baseUrl: String) {
 
-    @Singleton
-    @Provides
-    fun provideLoggingInterceptor(): HttpLoggingInterceptor {
-        val loggingInterceptor = HttpLoggingInterceptor()
-        loggingInterceptor.level = HttpLoggingInterceptor.Level.BODY
+  @Singleton
+  @Provides
+  fun provideLoggingInterceptor(): HttpLoggingInterceptor {
+    val loggingInterceptor = HttpLoggingInterceptor()
+    loggingInterceptor.level = HttpLoggingInterceptor.Level.BODY
 
-        return loggingInterceptor
-    }
+    return loggingInterceptor
+  }
 
-    @Singleton
-    @Provides
-    fun provideOkHttpClient(): OkHttpClient {
-        return if (Constants.isDebugBuild) {
-            OkHttpClient.Builder()
-                .connectTimeout(5, TimeUnit.SECONDS)
-                .writeTimeout(5, TimeUnit.SECONDS)
-                .readTimeout(5, TimeUnit.SECONDS)
-                .build()
-        } else {
-            OkHttpClient.Builder()
-                .connectTimeout(15, TimeUnit.SECONDS)
-                .writeTimeout(15, TimeUnit.SECONDS)
-                .readTimeout(15, TimeUnit.SECONDS)
-                .build()
-        }
+  @Singleton
+  @Provides
+  fun provideOkHttpClient(): OkHttpClient {
+    return if (Constants.isDebugBuild) {
+      OkHttpClient.Builder()
+        .connectTimeout(5, TimeUnit.SECONDS)
+        .writeTimeout(5, TimeUnit.SECONDS)
+        .readTimeout(5, TimeUnit.SECONDS)
+        .build()
+    } else {
+      OkHttpClient.Builder()
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .writeTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(15, TimeUnit.SECONDS)
+        .build()
     }
+  }
 
-    @Singleton
-    @Provides
-    fun provideRetrofit(client: OkHttpClient, converterFactory: GsonConverterFactory): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl(baseUrl)
-            .addConverterFactory(converterFactory)
-            .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-            .client(client)
-            .build()
-    }
+  @Singleton
+  @Provides
+  fun provideRetrofit(client: OkHttpClient, converterFactory: GsonConverterFactory): Retrofit {
+    return Retrofit.Builder()
+      .baseUrl(baseUrl)
+      .addConverterFactory(converterFactory)
+      .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+      .client(client)
+      .build()
+  }
 
-    @Singleton
-    @Provides
-    fun provideApiService(retrofit: Retrofit): ApiService {
-        return retrofit.create(ApiService::class.java)
-    }
+  @Singleton
+  @Provides
+  fun provideApiService(retrofit: Retrofit): ApiService {
+    return retrofit.create(ApiService::class.java)
+  }
 }

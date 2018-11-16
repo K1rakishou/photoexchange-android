@@ -7,134 +7,113 @@ import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerPro
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
 import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
-import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetGalleryPhotosInfoUseCase
 import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
+import com.kirakishou.photoexchange.mvp.model.exception.ApiException
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import com.kirakishou.photoexchange.ui.viewstate.GalleryFragmentViewState
 import io.reactivex.Observable
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.Observables
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.rx2.rxObservable
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
+import kotlin.coroutines.CoroutineContext
 
 class GalleryFragmentViewModel(
-    private val imageLoader: ImageLoader,
-    private val settingsRepository: SettingsRepository,
-    private val getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
-    private val getGalleryPhotosInfoUseCase: GetGalleryPhotosInfoUseCase,
-    private val schedulerProvider: SchedulerProvider,
-    private val adapterLoadMoreItemsDelayMs: Long,
-    private val progressFooterRemoveDelayMs: Long
-) {
-    private val TAG = "GalleryFragmentViewModel"
+  private val imageLoader: ImageLoader,
+  private val settingsRepository: SettingsRepository,
+  private val getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
+  private val getGalleryPhotosInfoUseCase: GetGalleryPhotosInfoUseCase,
+  private val schedulerProvider: SchedulerProvider,
+  private val adapterLoadMoreItemsDelayMs: Long,
+  private val progressFooterRemoveDelayMs: Long
+) : CoroutineScope {
+  private val TAG = "GalleryFragmentViewModel"
 
-    lateinit var intercom: PhotosActivityViewModelIntercom
+  private val compositeDisposable = CompositeDisposable()
+  private val job = Job()
 
-    val viewState = GalleryFragmentViewState()
+  lateinit var intercom: PhotosActivityViewModelIntercom
 
-    val fragmentLifecycle = BehaviorSubject.create<RxLifecycle.FragmentLifecycle>()
-    val loadMoreEvent = PublishSubject.create<Unit>()
-    val knownErrors = PublishSubject.create<ErrorCode>()
-    val unknownErrors = PublishSubject.create<Throwable>()
+  val viewState = GalleryFragmentViewState()
+  val fragmentLifecycle = BehaviorSubject.create<RxLifecycle.FragmentLifecycle>()
+  val loadMoreEvent = PublishSubject.create<Unit>()
+  val knownErrors = PublishSubject.create<ErrorCode>()
+  val unknownErrors = PublishSubject.create<Throwable>()
 
-    private val compositeDisposable = CompositeDisposable()
+  override val coroutineContext: CoroutineContext
+    get() = job
 
-    init {
-        compositeDisposable += Observables.combineLatest(fragmentLifecycle, loadMoreEvent)
-            .filter { (lifecycle, _) -> lifecycle.isAtLeast(RxLifecycle.FragmentState.Resumed) }
-            .observeOn(schedulerProvider.IO())
-            .doOnNext {
-                intercom.tell<GalleryFragment>()
-                    .to(GalleryFragmentEvent.GeneralEvents.PageIsLoading())
-            }
-            .concatMap { loadNextPageOfGalleryPhotos(viewState.lastId, viewState.photosPerPage) }
-            .subscribe({ result ->
-                when (result) {
-                    is Either.Value -> {
-                        intercom.tell<GalleryFragment>()
-                            .to(GalleryFragmentEvent.GeneralEvents.ShowGalleryPhotos(result.value))
-                    }
-                    is Either.Error -> {
-                        knownErrors.onNext(result.error)
-                    }
-                }
-            }, unknownErrors::onNext)
-    }
+  init {
+    compositeDisposable += Observables.combineLatest(fragmentLifecycle, loadMoreEvent)
+      .filter { (lifecycle, _) -> lifecycle.isAtLeast(RxLifecycle.FragmentState.Resumed) }
+      .observeOn(schedulerProvider.IO())
+      .doOnNext {
+        intercom.tell<GalleryFragment>()
+          .to(GalleryFragmentEvent.GeneralEvents.PageIsLoading())
+      }
+      .flatMap { loadNextPageOfGalleryPhotos(viewState.lastId, viewState.photosPerPage) }
+      .subscribe({ photos ->
+        intercom.tell<GalleryFragment>()
+          .to(GalleryFragmentEvent.GeneralEvents.ShowGalleryPhotos(photos))
+      }, unknownErrors::onNext)
+  }
 
-    private fun loadNextPageOfGalleryPhotos(
-        lastId: Long,
-        photosPerPage: Int
-    ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
-        return Observable.just(Unit)
-            .subscribeOn(schedulerProvider.IO())
-            .concatMap {
-                return@concatMap loadPageOfGalleryPhotos(lastId, photosPerPage)
-                    .observeOn(schedulerProvider.UI())
-                    /**
-                     * preloadPhotos method uses glide internally and glide requires all it's
-                     * operations to be run on the main thread
-                     * */
-                    .flatMap(this::preloadPhotos)
-            }
-            .observeOn(schedulerProvider.IO())
-            .concatMap { result ->
-                if (result !is Either.Value) {
-                    return@concatMap Observable.just(result)
-                }
+  private fun loadNextPageOfGalleryPhotos(
+    lastUploadedOn: Long,
+    count: Int
+  ): Observable<List<GalleryPhoto>> {
+    return rxObservable(coroutineContext) {
+      val photos = loadPageOfGalleryPhotos(lastUploadedOn, count)
+      val result = getGalleryPhotosInfoUseCase.loadGalleryPhotosInfo(settingsRepository.getUserId(), photos)
 
-                val userId = settingsRepository.getUserId()
-                return@concatMap getGalleryPhotosInfoUseCase.loadGalleryPhotosInfo(userId, result.value)
-            }
-    }
-
-    private fun loadPageOfGalleryPhotos(
-        lastId: Long,
-        photosPerPage: Int
-    ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
-        return Observable.just(Unit)
-            .doOnNext { intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.GeneralEvents.ShowProgressFooter()) }
-            .flatMap { getGalleryPhotosUseCase.loadPageOfPhotos(lastId, photosPerPage) }
-            .delay(adapterLoadMoreItemsDelayMs, TimeUnit.MILLISECONDS)
-            .doOnEach { event ->
-                if (event.isOnNext || event.isOnError) {
-                    intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.GeneralEvents.HideProgressFooter())
-                }
-            }
-            .delay(progressFooterRemoveDelayMs, TimeUnit.MILLISECONDS)
-    }
-
-    private fun preloadPhotos(
-        result: Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>
-    ): Observable<Either<ErrorCode.GetGalleryPhotosErrors, List<GalleryPhoto>>> {
-        if (result is Either.Error) {
-            return Observable.just(result)
+      when (result) {
+        is Either.Value -> {
+          send(result.value)
         }
-
-        return Observable.fromIterable((result as Either.Value).value)
-            .flatMapSingle { galleryPhoto ->
-                return@flatMapSingle imageLoader.preloadImageFromNetAsync(galleryPhoto.photoName)
-                    .doOnSuccess { result ->
-                        if (!result) {
-                            Timber.tag(TAG).w("Could not pre-load photo ${galleryPhoto.photoName}")
-                        }
-                    }
-            }
-            .toList()
-            .toObservable()
-            .map { result }
+        is Either.Error -> {
+          if (result.error is ApiException) {
+            knownErrors.onNext(result.error.errorCode)
+          } else {
+            throw result.error
+          }
+        }
+      }
     }
+  }
 
-    fun onCleared() {
-        Timber.tag(TAG).d("onCleared()")
+  private suspend fun loadPageOfGalleryPhotos(
+    lastUploadedOn: Long,
+    count: Int
+  ): List<GalleryPhoto> {
+    intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.GeneralEvents.ShowProgressFooter())
 
-        compositeDisposable.dispose()
+    try {
+      val result = getGalleryPhotosUseCase.loadPageOfPhotos(lastUploadedOn, count)
+      when (result) {
+        is Either.Value -> {
+          return result.value
+        }
+        is Either.Error -> {
+          throw result.error
+        }
+      }
+    } finally {
+      intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.GeneralEvents.HideProgressFooter())
     }
+  }
+
+  fun onCleared() {
+    Timber.tag(TAG).d("onCleared()")
+
+    compositeDisposable.dispose()
+    job.cancel()
+  }
 }

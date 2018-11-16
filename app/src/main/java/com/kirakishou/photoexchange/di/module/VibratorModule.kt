@@ -8,9 +8,9 @@ import dagger.Provides
 @Module
 class VibratorModule {
 
-    @PerActivity
-    @Provides
-    fun provideVibrator(): Vibrator {
-        return Vibrator()
-    }
+  @PerActivity
+  @Provides
+  fun provideVibrator(): Vibrator {
+    return Vibrator()
+  }
 }

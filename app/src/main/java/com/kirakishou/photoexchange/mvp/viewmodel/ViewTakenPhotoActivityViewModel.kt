@@ -14,48 +14,48 @@ import timber.log.Timber
  * Created by kirakishou on 3/9/2018.
  */
 class ViewTakenPhotoActivityViewModel(
-    private val schedulerProvider: SchedulerProvider,
-    private val takenPhotosRepository: TakenPhotosRepository,
-    private val settingsRepository: SettingsRepository
+  private val schedulerProvider: SchedulerProvider,
+  private val takenPhotosRepository: TakenPhotosRepository,
+  private val settingsRepository: SettingsRepository
 ) : BaseViewModel() {
 
-    private val TAG = "ViewTakenPhotoActivityViewModel"
+  private val TAG = "ViewTakenPhotoActivityViewModel"
 
-    val addToGalleryFragmentResult = PublishSubject.create<AddToGalleryDialogFragment.FragmentResult>().toSerialized()
+  val addToGalleryFragmentResult = PublishSubject.create<AddToGalleryDialogFragment.FragmentResult>().toSerialized()
 
-    override fun onCleared() {
-        Timber.tag(TAG).d("onCleared()")
+  override fun onCleared() {
+    Timber.tag(TAG).d("onCleared()")
 
-        super.onCleared()
-    }
+    super.onCleared()
+  }
 
-    fun queueUpTakenPhoto(takenPhotoId: Long): Observable<Boolean> {
-        return Observable
-            .fromCallable { takenPhotosRepository.updatePhotoState(takenPhotoId, PhotoState.PHOTO_QUEUED_UP) }
-            .subscribeOn(schedulerProvider.IO())
-            .doOnError { Timber.tag(TAG).e(it) }
-    }
+  fun queueUpTakenPhoto(takenPhotoId: Long): Observable<Boolean> {
+    return Observable
+      .fromCallable { takenPhotosRepository.updatePhotoState(takenPhotoId, PhotoState.PHOTO_QUEUED_UP) }
+      .subscribeOn(schedulerProvider.IO())
+      .doOnError { Timber.tag(TAG).e(it) }
+  }
 
-    fun updateSetIsPhotoPublic(takenPhotoId: Long): Observable<Boolean> {
-        return Observable
-            .fromCallable { takenPhotosRepository.updateMakePhotoPublic(takenPhotoId) }
-            .subscribeOn(schedulerProvider.IO())
-            .doOnError { Timber.tag(TAG).e(it) }
-    }
+  fun updateSetIsPhotoPublic(takenPhotoId: Long): Observable<Boolean> {
+    return Observable
+      .fromCallable { takenPhotosRepository.updateMakePhotoPublic(takenPhotoId) }
+      .subscribeOn(schedulerProvider.IO())
+      .doOnError { Timber.tag(TAG).e(it) }
+  }
 
-    fun saveMakePublicFlag(rememberChoice: Boolean, makePublic: Boolean): Completable {
-        return Completable.fromAction {
-            if (!rememberChoice) {
-                return@fromAction
-            }
+  fun saveMakePublicFlag(rememberChoice: Boolean, makePublic: Boolean): Completable {
+    return Completable.fromAction {
+      if (!rememberChoice) {
+        return@fromAction
+      }
 
-            settingsRepository.saveMakePublicFlag(makePublic)
-        }.doOnError { Timber.tag(TAG).e(it) }
-    }
+      settingsRepository.saveMakePublicFlag(makePublic)
+    }.doOnError { Timber.tag(TAG).e(it) }
+  }
 
-    fun getMakePublicFlag(): Observable<SettingsRepository.MakePhotosPublicState> {
-        return Observable.fromCallable { settingsRepository.getMakePublicFlag() }
-            .subscribeOn(schedulerProvider.IO())
-            .doOnError { Timber.tag(TAG).e(it) }
-    }
+  fun getMakePublicFlag(): Observable<SettingsRepository.MakePhotosPublicState> {
+    return Observable.fromCallable { settingsRepository.getMakePublicFlag() }
+      .subscribeOn(schedulerProvider.IO())
+      .doOnError { Timber.tag(TAG).e(it) }
+  }
 }

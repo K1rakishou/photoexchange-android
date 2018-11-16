@@ -8,10 +8,11 @@ import android.net.ConnectivityManager
  */
 object NetUtils {
 
-    fun isWifiConnected(context: Context): Boolean {
-        val connManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI)
-
-        return mWifi.isConnected
-    }
+  //TODO
+//  fun isWifiConnected(context: Context): Boolean {
+//    val connManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+//    val mWifi = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI)
+//
+//    return mWifi.isConnected
+//  }
 }

@@ -11,18 +11,18 @@ import javax.inject.Singleton
  */
 @Module
 open class ApplicationModule(
-    private val application: Application
+  private val application: Application
 ) {
 
-    @Singleton
-    @Provides
-    open fun provideApplication(): Application {
-        return application
-    }
+  @Singleton
+  @Provides
+  open fun provideApplication(): Application {
+    return application
+  }
 
-    @Singleton
-    @Provides
-    open fun provideContext(): Context {
-        return application.applicationContext
-    }
+  @Singleton
+  @Provides
+  open fun provideContext(): Context {
+    return application.applicationContext
+  }
 }

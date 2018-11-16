@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSin
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.gson.MyGson
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
+import com.kirakishou.photoexchange.mvp.model.exception.ApiException
 import com.kirakishou.photoexchange.mvp.model.exception.GeneralException
 import com.kirakishou.photoexchange.mvp.model.net.packet.SendPhotoPacket
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
@@ -21,60 +22,60 @@ import java.util.concurrent.TimeoutException
  * Created by kirakishou on 3/17/2018.
  */
 class UploadPhotoRequest<T>(
-    private val photoFilePath: String,
-    private val location: LonLat,
-    private val userId: String,
-    private val isPublic: Boolean,
-    private val callback: UploadPhotosUseCase.PhotoUploadProgressCallback,
-    private val apiService: ApiService,
-    private val schedulerProvider: SchedulerProvider,
-    private val gson: MyGson
+  private val photoFilePath: String,
+  private val location: LonLat,
+  private val userId: String,
+  private val isPublic: Boolean,
+  private val callback: UploadPhotosUseCase.PhotoUploadProgressCallback,
+  private val apiService: ApiService,
+  private val schedulerProvider: SchedulerProvider,
+  private val gson: MyGson
 ) : AbstractRequest<T>() {
 
-    private val tag = "UploadPhotoRequest"
+  private val tag = "UploadPhotoRequest"
 
-    @Suppress("UNCHECKED_CAST")
-    override fun execute(): Single<T> {
-        val single = Single.fromCallable {
-            val packet = SendPhotoPacket(location.lon, location.lat, userId, isPublic)
-            val photoFile = File(photoFilePath)
+  @Suppress("UNCHECKED_CAST")
+  override fun execute(): Single<T> {
+    val single = Single.fromCallable {
+      val packet = SendPhotoPacket(location.lon, location.lat, userId, isPublic)
+      val photoFile = File(photoFilePath)
 
-            return@fromCallable getBody(photoFile, packet, callback)
-        }
+      return@fromCallable getBody(photoFile, packet, callback)
+    }
 
-        return single
-            .subscribeOn(schedulerProvider.IO())
-            .observeOn(schedulerProvider.IO())
-            .flatMap { body ->
-                return@flatMap apiService.uploadPhoto(body.part(0), body.part(1))
-                    .lift(OnApiErrorSingle<UploadPhotoResponse>(gson, UploadPhotoResponse::class))
-                    .map { response ->
-                        if (ErrorCode.UploadPhotoErrors.fromInt(response.serverErrorCode!!) is ErrorCode.UploadPhotoErrors.Ok) {
-                            return@map UploadPhotoResponse.success(response.photoId, response.photoName)
-                        } else {
-                            return@map UploadPhotoResponse.error(ErrorCode.fromInt(ErrorCode.UploadPhotoErrors::class, response.serverErrorCode!!))
-                        }
-                    }
-                    .onErrorReturn(this::extractError) as Single<T>
+    return single
+      .subscribeOn(schedulerProvider.IO())
+      .observeOn(schedulerProvider.IO())
+      .flatMap { body ->
+        return@flatMap apiService.uploadPhoto(body.part(0), body.part(1))
+          .lift(OnApiErrorSingle<UploadPhotoResponse>(gson, UploadPhotoResponse::class))
+          .map { response ->
+            if (ErrorCode.UploadPhotoErrors.fromInt(response.serverErrorCode!!) is ErrorCode.UploadPhotoErrors.Ok) {
+              return@map UploadPhotoResponse.success(response.photoId, response.photoName)
+            } else {
+              return@map UploadPhotoResponse.error(ErrorCode.fromInt(ErrorCode.UploadPhotoErrors::class, response.serverErrorCode!!))
             }
-    }
+          }
+          .onErrorReturn(this::extractError) as Single<T>
+      }
+  }
 
-    private fun extractError(error: Throwable): UploadPhotoResponse {
-        return when (error) {
-            is GeneralException.ApiException -> UploadPhotoResponse.error(error.errorCode)
-            is SocketTimeoutException,
-            is TimeoutException -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.LocalTimeout())
-            else -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.UnknownError())
-        }
+  private fun extractError(error: Throwable): UploadPhotoResponse {
+    return when (error) {
+      is ApiException -> UploadPhotoResponse.error(error.errorCode)
+      is SocketTimeoutException,
+      is TimeoutException -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.LocalTimeout())
+      else -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.UnknownError())
     }
+  }
 
-    private fun getBody(photoFile: File, packet: SendPhotoPacket, callback: UploadPhotosUseCase.PhotoUploadProgressCallback): MultipartBody {
-        val photoRequestBody = ProgressRequestBody(photoFile, callback)
-        val packetJson = gson.toJson(packet)
+  private fun getBody(photoFile: File, packet: SendPhotoPacket, callback: UploadPhotosUseCase.PhotoUploadProgressCallback): MultipartBody {
+    val photoRequestBody = ProgressRequestBody(photoFile, callback)
+    val packetJson = gson.toJson(packet)
 
-        return MultipartBody.Builder()
-            .addFormDataPart("photo", photoFile.name, photoRequestBody)
-            .addFormDataPart("packet", packetJson)
-            .build()
-    }
+    return MultipartBody.Builder()
+      .addFormDataPart("photo", photoFile.name, photoRequestBody)
+      .addFormDataPart("packet", packetJson)
+      .build()
+  }
 }

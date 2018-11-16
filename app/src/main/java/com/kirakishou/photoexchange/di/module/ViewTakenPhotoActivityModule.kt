@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.di.module
 
-import android.arch.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProviders
 import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
@@ -17,20 +17,20 @@ import dagger.Provides
 
 @Module
 open class ViewTakenPhotoActivityModule(
-    val activity: ViewTakenPhotoActivity
+  val activity: ViewTakenPhotoActivity
 ) {
 
-    @PerActivity
-    @Provides
-    open fun provideViewModelFactory(schedulerProvider: SchedulerProvider,
-                                     takenPhotosRepository: TakenPhotosRepository,
-                                     settingsRepository: SettingsRepository): ViewTakenPhotoActivityViewModelFactory {
-        return ViewTakenPhotoActivityViewModelFactory(schedulerProvider, takenPhotosRepository, settingsRepository)
-    }
+  @PerActivity
+  @Provides
+  open fun provideViewModelFactory(schedulerProvider: SchedulerProvider,
+                                   takenPhotosRepository: TakenPhotosRepository,
+                                   settingsRepository: SettingsRepository): ViewTakenPhotoActivityViewModelFactory {
+    return ViewTakenPhotoActivityViewModelFactory(schedulerProvider, takenPhotosRepository, settingsRepository)
+  }
 
-    @PerActivity
-    @Provides
-    fun provideViewModel(viewModelFactory: ViewTakenPhotoActivityViewModelFactory): ViewTakenPhotoActivityViewModel {
-        return ViewModelProviders.of(activity, viewModelFactory).get(ViewTakenPhotoActivityViewModel::class.java)
-    }
+  @PerActivity
+  @Provides
+  fun provideViewModel(viewModelFactory: ViewTakenPhotoActivityViewModelFactory): ViewTakenPhotoActivityViewModel {
+    return ViewModelProviders.of(activity, viewModelFactory).get(ViewTakenPhotoActivityViewModel::class.java)
+  }
 }

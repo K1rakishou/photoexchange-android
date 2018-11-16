@@ -11,24 +11,24 @@ import javax.inject.Singleton
 
 @Singleton
 @Component(modules = [
-    ApplicationModule::class,
-    SchedulerProviderModule::class,
-    DatabaseModule::class,
-    GsonModule::class,
-    NetworkModule::class,
-    DatabaseModule::class,
-    ApiClientModule::class,
-    ImageLoaderModule::class,
-    UseCaseProviderModule::class,
-    UtilsModule::class
+  ApplicationModule::class,
+  SchedulerProviderModule::class,
+  DatabaseModule::class,
+  GsonModule::class,
+  NetworkModule::class,
+  DatabaseModule::class,
+  ApiClientModule::class,
+  ImageLoaderModule::class,
+  UseCaseProviderModule::class,
+  UtilsModule::class
 ])
 interface ApplicationComponent {
-    fun inject(application: PhotoExchangeApplication)
+  fun inject(application: PhotoExchangeApplication)
 
-    fun plus(takePhotoActivityModule: TakePhotoActivityModule): TakePhotoActivityComponent
-    fun plus(viewTakenPhotoActivityModule: ViewTakenPhotoActivityModule): ViewTakenPhotoActivityComponent
-    fun plus(photosActivityModule: PhotosActivityModule): AllPhotosActivityComponent
-    fun plus(uploadPhotoServiceModule: UploadPhotoServiceModule): UploadPhotoServiceComponent
-    fun plus(receivePhotosServiceModule: ReceivePhotosServiceModule): ReceivePhotosServiceComponent
-    fun plus(settingsActivityModule: SettingsActivityModule): SettingsActivityComponent
+  fun plus(takePhotoActivityModule: TakePhotoActivityModule): TakePhotoActivityComponent
+  fun plus(viewTakenPhotoActivityModule: ViewTakenPhotoActivityModule): ViewTakenPhotoActivityComponent
+  fun plus(photosActivityModule: PhotosActivityModule): AllPhotosActivityComponent
+  fun plus(uploadPhotoServiceModule: UploadPhotoServiceModule): UploadPhotoServiceComponent
+  fun plus(receivePhotosServiceModule: ReceivePhotosServiceModule): ReceivePhotosServiceComponent
+  fun plus(settingsActivityModule: SettingsActivityModule): SettingsActivityComponent
 }

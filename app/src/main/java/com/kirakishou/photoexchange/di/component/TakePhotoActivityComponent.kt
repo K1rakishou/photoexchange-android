@@ -12,10 +12,10 @@ import dagger.Subcomponent
  */
 @PerActivity
 @Subcomponent(modules = [
-    TakePhotoActivityModule::class,
-    PermissionManagerModule::class,
-    VibratorModule::class
+  TakePhotoActivityModule::class,
+  PermissionManagerModule::class,
+  VibratorModule::class
 ])
 interface TakePhotoActivityComponent {
-    fun inject(activity: TakePhotoActivity)
+  fun inject(activity: TakePhotoActivity)
 }

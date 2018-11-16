@@ -6,57 +6,57 @@ import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotoInfoRespo
 
 object GalleryPhotosInfoMapper {
 
-    object FromResponse {
-        object ToEntity {
-            fun toGalleryPhotoInfoEntity(time: Long, galleryPhotoInfoResponseData: GalleryPhotoInfoResponse.GalleryPhotosInfoData): GalleryPhotoInfoEntity {
-                return GalleryPhotoInfoEntity.create(
-                    galleryPhotoInfoResponseData.id,
-                    galleryPhotoInfoResponseData.isFavourited,
-                    galleryPhotoInfoResponseData.isReported,
-                    time
-                )
-            }
+  object FromResponse {
+    object ToEntity {
+      fun toGalleryPhotoInfoEntity(time: Long, galleryPhotoInfoResponseData: GalleryPhotoInfoResponse.GalleryPhotosInfoData): GalleryPhotoInfoEntity {
+        return GalleryPhotoInfoEntity.create(
+          galleryPhotoInfoResponseData.id,
+          galleryPhotoInfoResponseData.isFavourited,
+          galleryPhotoInfoResponseData.isReported,
+          time
+        )
+      }
 
-            fun toGalleryPhotoInfoEntityList(
-                time: Long,
-                galleryPhotoInfoResponseDataList: List<GalleryPhotoInfoResponse.GalleryPhotosInfoData>
-            ): List<GalleryPhotoInfoEntity> {
-                return galleryPhotoInfoResponseDataList.map { toGalleryPhotoInfoEntity(time, it) }
-            }
-        }
-
-        object ToObject {
-            fun toGalleryPhotoInfo(galleryPhotoInfoResponseData: GalleryPhotoInfoResponse.GalleryPhotosInfoData): GalleryPhotoInfo {
-                return GalleryPhotoInfo(
-                    galleryPhotoInfoResponseData.id,
-                    galleryPhotoInfoResponseData.isFavourited,
-                    galleryPhotoInfoResponseData.isReported
-                )
-            }
-
-            fun toGalleryPhotoInfoList(
-                galleryPhotoInfoResponseDataList: List<GalleryPhotoInfoResponse.GalleryPhotosInfoData>
-            ): List<GalleryPhotoInfo> {
-                return galleryPhotoInfoResponseDataList.map { toGalleryPhotoInfo(it) }
-            }
-        }
+      fun toGalleryPhotoInfoEntityList(
+        time: Long,
+        galleryPhotoInfoResponseDataList: List<GalleryPhotoInfoResponse.GalleryPhotosInfoData>
+      ): List<GalleryPhotoInfoEntity> {
+        return galleryPhotoInfoResponseDataList.map { toGalleryPhotoInfoEntity(time, it) }
+      }
     }
 
     object ToObject {
-        fun toGalleryPhotoInfo(galleryPhotoInfoEntity: GalleryPhotoInfoEntity?): GalleryPhotoInfo? {
-            if (galleryPhotoInfoEntity == null) {
-                return null
-            }
+      fun toGalleryPhotoInfo(galleryPhotoInfoResponseData: GalleryPhotoInfoResponse.GalleryPhotosInfoData): GalleryPhotoInfo {
+        return GalleryPhotoInfo(
+          galleryPhotoInfoResponseData.id,
+          galleryPhotoInfoResponseData.isFavourited,
+          galleryPhotoInfoResponseData.isReported
+        )
+      }
 
-            return GalleryPhotoInfo(
-                galleryPhotoInfoEntity.galleryPhotoId,
-                galleryPhotoInfoEntity.isFavourited,
-                galleryPhotoInfoEntity.isReported
-            )
-        }
-
-        fun toGalleryPhotoInfoList(galleryPhotoInfoEntityList: List<GalleryPhotoInfoEntity?>): List<GalleryPhotoInfo> {
-            return galleryPhotoInfoEntityList.mapNotNull { toGalleryPhotoInfo(it) }
-        }
+      fun toGalleryPhotoInfoList(
+        galleryPhotoInfoResponseDataList: List<GalleryPhotoInfoResponse.GalleryPhotosInfoData>
+      ): List<GalleryPhotoInfo> {
+        return galleryPhotoInfoResponseDataList.map { toGalleryPhotoInfo(it) }
+      }
     }
+  }
+
+  object ToObject {
+    fun toGalleryPhotoInfo(galleryPhotoInfoEntity: GalleryPhotoInfoEntity?): GalleryPhotoInfo? {
+      if (galleryPhotoInfoEntity == null) {
+        return null
+      }
+
+      return GalleryPhotoInfo(
+        galleryPhotoInfoEntity.galleryPhotoId,
+        galleryPhotoInfoEntity.isFavourited,
+        galleryPhotoInfoEntity.isReported
+      )
+    }
+
+    fun toGalleryPhotoInfoList(galleryPhotoInfoEntityList: List<GalleryPhotoInfoEntity?>): List<GalleryPhotoInfo> {
+      return galleryPhotoInfoEntityList.mapNotNull { toGalleryPhotoInfo(it) }
+    }
+  }
 }
