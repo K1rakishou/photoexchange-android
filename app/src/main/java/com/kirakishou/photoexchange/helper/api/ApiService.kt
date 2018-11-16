@@ -31,12 +31,9 @@ interface ApiService {
   @GET("/v1/api/get_user_id")
   fun getUserId(): Single<Response<GetUserIdResponse>>
 
-  @GET("/v1/api/get_gallery_photo_ids/{last_id}/{count}")
-  fun getGalleryPhotoIds(@Path("last_id") lastId: Long,
-                         @Path("count") count: Int): Single<Response<GalleryPhotoIdsResponse>>
-
-  @GET("/v1/api/get_gallery_photos/{photo_ids}")
-  fun getGalleryPhotos(@Path("photo_ids") photoIds: String): Single<Response<GalleryPhotosResponse>>
+  @GET("/v1/api/get_gallery_photos/{last_uploaded_on}/{count}")
+  fun getPageOfGalleryPhotos(@Path("last_uploaded_on") lastUploadedOn: Long,
+                             @Path("count") count: Int): Single<Response<GalleryPhotosResponse>>
 
   @GET("/v1/api/get_gallery_photo_info/{user_id}/{photo_ids}")
   fun getGalleryPhotoInfo(@Path("user_id") userId: String,

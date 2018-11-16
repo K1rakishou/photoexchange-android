@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSin
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.gson.MyGson
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
+import com.kirakishou.photoexchange.mvp.model.exception.ApiException
 import com.kirakishou.photoexchange.mvp.model.exception.GeneralException
 import com.kirakishou.photoexchange.mvp.model.net.packet.SendPhotoPacket
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
@@ -61,7 +62,7 @@ class UploadPhotoRequest<T>(
 
   private fun extractError(error: Throwable): UploadPhotoResponse {
     return when (error) {
-      is GeneralException.ApiException -> UploadPhotoResponse.error(error.errorCode)
+      is ApiException -> UploadPhotoResponse.error(error.errorCode)
       is SocketTimeoutException,
       is TimeoutException -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.LocalTimeout())
       else -> UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.UnknownError())

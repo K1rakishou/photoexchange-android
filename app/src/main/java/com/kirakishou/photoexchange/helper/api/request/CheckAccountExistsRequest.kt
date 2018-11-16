@@ -4,6 +4,7 @@ import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.gson.MyGson
+import com.kirakishou.photoexchange.mvp.model.exception.ApiException
 import com.kirakishou.photoexchange.mvp.model.exception.GeneralException
 import com.kirakishou.photoexchange.mvp.model.net.response.CheckAccountExistsResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
@@ -35,7 +36,7 @@ class CheckAccountExistsRequest<T>(
 
   private fun extractError(error: Throwable): CheckAccountExistsResponse {
     return when (error) {
-      is GeneralException.ApiException -> CheckAccountExistsResponse.fail(error.errorCode)
+      is ApiException -> CheckAccountExistsResponse.fail(error.errorCode)
       is SocketTimeoutException,
       is TimeoutException -> CheckAccountExistsResponse.fail(ErrorCode.CheckAccountExistsErrors.LocalTimeout())
       else -> CheckAccountExistsResponse.fail(ErrorCode.CheckAccountExistsErrors.UnknownError())

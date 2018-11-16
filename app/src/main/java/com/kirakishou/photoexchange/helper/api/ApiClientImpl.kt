@@ -30,13 +30,8 @@ open class ApiClientImpl
       .execute()
   }
 
-  override fun getGalleryPhotoIds(lastId: Long, photosPerPage: Int): Single<GalleryPhotoIdsResponse> {
-    return GetGalleryPhotoIdsRequest<GalleryPhotoIdsResponse>(lastId, photosPerPage, apiService, schedulerProvider, gson)
-      .execute()
-  }
-
-  override fun getGalleryPhotos(galleryPhotoIds: String): Single<GalleryPhotosResponse> {
-    return GetGalleryPhotosRequest<GalleryPhotosResponse>(galleryPhotoIds, apiService, schedulerProvider, gson)
+  override fun getPageOfGalleryPhotos(lastUploadedOn: Long, count: Int): Single<GalleryPhotosResponse> {
+    return GetPageOfGalleryPhotosRequest<GalleryPhotosResponse>(lastUploadedOn, count, apiService, schedulerProvider, gson)
       .execute()
   }
 

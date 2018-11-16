@@ -37,6 +37,10 @@ open class GalleryPhotoRepository(
       .toGalleryPhotoEntitiesList(now, galleryPhotos)).size == galleryPhotos.size
   }
 
+  fun getPageOfGalleryPhotos(time: Long, count: Int): List<GalleryPhoto> {
+    return GalleryPhotosMapper.FromEntity.toGalleryPhotos(galleryPhotoDao.getPage(time, count))
+  }
+
   fun findManyInfo(galleryPhotoIds: List<Long>): List<GalleryPhotoInfo> {
     return GalleryPhotosInfoMapper.ToObject.toGalleryPhotoInfoList(galleryPhotoInfoDao.findMany(galleryPhotoIds))
   }

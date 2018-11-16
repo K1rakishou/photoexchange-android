@@ -41,8 +41,9 @@ class UseCaseProviderModule {
   @Singleton
   @Provides
   fun provideGetGalleryPhotosUseCase(apiClient: ApiClient,
-                                     galleryPhotoRepository: GalleryPhotoRepository): GetGalleryPhotosUseCase {
-    return GetGalleryPhotosUseCase(apiClient, galleryPhotoRepository)
+                                     galleryPhotoRepository: GalleryPhotoRepository,
+                                     timeUtils: TimeUtils): GetGalleryPhotosUseCase {
+    return GetGalleryPhotosUseCase(apiClient, galleryPhotoRepository, timeUtils)
   }
 
   @Singleton

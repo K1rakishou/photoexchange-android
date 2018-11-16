@@ -10,8 +10,7 @@ interface ApiClient {
                   callback: UploadPhotosUseCase.PhotoUploadProgressCallback): Single<UploadPhotoResponse>
 
   fun receivePhotos(userId: String, photoNames: String): Single<ReceivedPhotosResponse>
-  fun getGalleryPhotoIds(lastId: Long, photosPerPage: Int): Single<GalleryPhotoIdsResponse>
-  fun getGalleryPhotos(galleryPhotoIds: String): Single<GalleryPhotosResponse>
+  fun getPageOfGalleryPhotos(lastUploadedOn: Long, count: Int): Single<GalleryPhotosResponse>
   fun getGalleryPhotoInfo(userId: String, galleryPhotoIds: String): Single<GalleryPhotoInfoResponse>
   fun favouritePhoto(userId: String, photoName: String): Single<FavouritePhotoResponse>
   fun reportPhoto(userId: String, photoName: String): Single<ReportPhotoResponse>

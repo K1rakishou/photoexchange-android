@@ -2,9 +2,11 @@ package com.kirakishou.photoexchange.mvp.model.exception
 
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 
+class ApiException(val errorCode: ErrorCode) : Exception()
+class EmptyUserIdException : Exception()
+
 sealed class GeneralException : Exception() {
   class ErrorCodeException(val errorCode: ErrorCode) : GeneralException()
-  class ApiException(val errorCode: ErrorCode) : GeneralException()
 }
 
 sealed class UploadPhotoServiceException : Exception() {

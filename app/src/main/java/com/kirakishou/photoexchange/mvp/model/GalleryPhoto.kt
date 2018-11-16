@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.mvp.model
 
-class GalleryPhoto(
+data class GalleryPhoto(
   val galleryPhotoId: Long,
   val photoName: String,
   val lon: Double,

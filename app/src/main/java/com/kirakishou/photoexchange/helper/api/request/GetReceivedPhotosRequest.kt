@@ -5,6 +5,7 @@ import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.gson.MyGson
+import com.kirakishou.photoexchange.mvp.model.exception.ApiException
 import com.kirakishou.photoexchange.mvp.model.exception.GeneralException
 import com.kirakishou.photoexchange.mvp.model.net.response.GetReceivedPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
@@ -37,7 +38,7 @@ class GetReceivedPhotosRequest<T>(
 
   private fun extractError(error: Throwable): GetReceivedPhotosResponse {
     return when (error) {
-      is GeneralException.ApiException -> GetReceivedPhotosResponse.fail(error.errorCode)
+      is ApiException -> GetReceivedPhotosResponse.fail(error.errorCode)
       is SocketTimeoutException,
       is TimeoutException -> GetReceivedPhotosResponse.fail(ErrorCode.GetReceivedPhotosErrors.LocalTimeout())
       else -> GetReceivedPhotosResponse.fail(ErrorCode.GetReceivedPhotosErrors.UnknownError())

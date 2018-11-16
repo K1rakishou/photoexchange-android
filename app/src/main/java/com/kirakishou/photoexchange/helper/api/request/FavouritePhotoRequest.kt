@@ -5,6 +5,7 @@ import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.gson.MyGson
+import com.kirakishou.photoexchange.mvp.model.exception.ApiException
 import com.kirakishou.photoexchange.mvp.model.exception.GeneralException
 import com.kirakishou.photoexchange.mvp.model.net.packet.FavouritePhotoPacket
 import com.kirakishou.photoexchange.mvp.model.net.response.FavouritePhotoResponse
@@ -38,7 +39,7 @@ class FavouritePhotoRequest<T>(
 
   private fun extractError(error: Throwable): FavouritePhotoResponse {
     return when (error) {
-      is GeneralException.ApiException -> FavouritePhotoResponse.error(error.errorCode as ErrorCode.FavouritePhotoErrors)
+      is ApiException -> FavouritePhotoResponse.error(error.errorCode as ErrorCode.FavouritePhotoErrors)
       is SocketTimeoutException,
       is TimeoutException -> FavouritePhotoResponse.error(ErrorCode.FavouritePhotoErrors.LocalTimeout())
       else -> FavouritePhotoResponse.error(ErrorCode.FavouritePhotoErrors.UnknownError())
