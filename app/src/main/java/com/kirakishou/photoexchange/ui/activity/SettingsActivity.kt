@@ -3,7 +3,7 @@ package com.kirakishou.photoexchange.ui.activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.support.v7.widget.AppCompatButton
+import androidx.appcompat.widget.AppCompatButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -24,87 +24,88 @@ import javax.inject.Inject
 
 class SettingsActivity : BaseActivity() {
 
-    @BindView(R.id.reset_make_public_photo_option_button)
-    lateinit var resetButton: AppCompatButton
+  @BindView(R.id.reset_make_public_photo_option_button)
+  lateinit var resetButton: AppCompatButton
 
-    @BindView(R.id.restore_from_old_user_id)
-    lateinit var restoreFromOldUserIdButton: AppCompatButton
+  @BindView(R.id.restore_from_old_user_id)
+  lateinit var restoreFromOldUserIdButton: AppCompatButton
 
-    @BindView(R.id.user_id_text_view)
-    lateinit var userIdTextView: TextView
+  @BindView(R.id.user_id_text_view)
+  lateinit var userIdTextView: TextView
 
-    @BindView(R.id.user_id_holder)
-    lateinit var userIdHolder: LinearLayout
+  @BindView(R.id.user_id_holder)
+  lateinit var userIdHolder: LinearLayout
 
-    @Inject
-    lateinit var viewModel: SettingsActivityViewModel
+  @Inject
+  lateinit var viewModel: SettingsActivityViewModel
 
-    private val TAG = "SettingsActivity"
+  private val TAG = "SettingsActivity"
 
-    override fun getContentView(): Int = R.layout.activity_settings
+  override fun getContentView(): Int = R.layout.activity_settings
 
-    override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
-        resetButton.setOnClickListener {
-            compositeDisposable += RxView.clicks(resetButton)
-                .subscribeOn(Schedulers.io())
-                .concatMap { viewModel.resetMakePublicPhotoOption() }
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnComplete {
-                    Toast.makeText(this, "Done", Toast.LENGTH_SHORT).show()
-                    finish()
-                }
-                .doOnError { Timber.tag(TAG).e(it) }
-                .subscribe()
+  override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
+    resetButton.setOnClickListener {
+      compositeDisposable += RxView.clicks(resetButton)
+        .subscribeOn(Schedulers.io())
+        .concatMap { viewModel.resetMakePublicPhotoOption() }
+        .observeOn(AndroidSchedulers.mainThread())
+        .doOnComplete {
+          Toast.makeText(this, "Done", Toast.LENGTH_SHORT).show()
+          finish()
         }
-
-        compositeDisposable += RxView.clicks(userIdHolder)
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .doOnNext { copyUserIdToClipBoard() }
-            .doOnNext {  Toast.makeText(this, "UserId copied to clipboard", Toast.LENGTH_SHORT).show() }
-            .subscribe()
-
-        compositeDisposable += viewModel.getUserId()
-            .subscribe({ userId ->
-                if (userId.isEmpty()) {
-                    userIdTextView.text = "Empty userId"
-                } else {
-                    userIdTextView.text = userId
-                }
-            })
-
-        compositeDisposable += RxView.clicks(restoreFromOldUserIdButton)
-            .concatMap { EnterOldUserIdDialog().show(this).toObservable() }
-            .filter { userId -> userId.isNotEmpty() }
-            .concatMap { userId -> viewModel.restoreOldAccount(userId).toObservable() }
-            .subscribe({ result ->
-                when (result) {
-                    is Either.Value -> {
-                        onShowToast("Successfully restored old account")
-                        finish()
-                    }
-                    is Either.Error -> showErrorCodeToast(result.error)
-                }
-            }, { error ->
-                Timber.tag(TAG).e(error)
-                onShowToast("Unknown error while trying to restore account: ${error.message ?: "empty error message"}")
-            })
+        .doOnError { Timber.tag(TAG).e(it) }
+        .subscribe()
     }
 
-    private fun copyUserIdToClipBoard() {
-        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-        val clip = android.content.ClipData.newPlainText("user_id", userIdTextView.text.toString())
-        clipboard.primaryClip = clip
-    }
+    compositeDisposable += RxView.clicks(userIdHolder)
+      .subscribeOn(AndroidSchedulers.mainThread())
+      .doOnNext { copyUserIdToClipBoard() }
+      .doOnNext { Toast.makeText(this, "UserId copied to clipboard", Toast.LENGTH_SHORT).show() }
+      .subscribe()
 
-    override fun onActivityStart() {
-    }
+    compositeDisposable += viewModel.getUserId()
+      .subscribe({ userId ->
+        if (userId.isEmpty()) {
+          userIdTextView.text = "Empty userId"
+        } else {
+          userIdTextView.text = userId
+        }
+      })
 
-    override fun onActivityStop() {
-    }
+    compositeDisposable += RxView.clicks(restoreFromOldUserIdButton)
+      .concatMap { EnterOldUserIdDialog().show(this).toObservable() }
+      .filter { userId -> userId.isNotEmpty() }
+      .concatMap { userId -> viewModel.restoreOldAccount(userId).toObservable() }
+      .subscribe({ result ->
+        when (result) {
+          is Either.Value -> {
+            onShowToast("Successfully restored old account")
+            finish()
+          }
+          is Either.Error -> showErrorCodeToast(result.error)
+        }
+      }, { error ->
+        Timber.tag(TAG).e(error)
+        onShowToast("Unknown error while trying to restore account: ${error.message
+          ?: "empty error message"}")
+      })
+  }
 
-    override fun resolveDaggerDependency() {
-        (application as PhotoExchangeApplication).applicationComponent
-            .plus(SettingsActivityModule(this))
-            .inject(this)
-    }
+  private fun copyUserIdToClipBoard() {
+    val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+    val clip = android.content.ClipData.newPlainText("user_id", userIdTextView.text.toString())
+    clipboard.primaryClip = clip
+  }
+
+  override fun onActivityStart() {
+  }
+
+  override fun onActivityStop() {
+  }
+
+  override fun resolveDaggerDependency() {
+    (application as PhotoExchangeApplication).applicationComponent
+      .plus(SettingsActivityModule(this))
+      .inject(this)
+  }
 }

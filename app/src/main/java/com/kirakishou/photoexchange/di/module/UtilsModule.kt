@@ -8,21 +8,21 @@ import javax.inject.Singleton
 @Module
 class UtilsModule {
 
-    @Provides
-    @Singleton
-    fun provideTimeUtils(): TimeUtils {
-        return TimeUtilsImpl()
-    }
+  @Provides
+  @Singleton
+  fun provideTimeUtils(): TimeUtils {
+    return TimeUtilsImpl()
+  }
 
-    @Provides
-    @Singleton
-    fun provideBitmapUtils(): BitmapUtils {
-        return BitmapUtilsImpl()
-    }
+  @Provides
+  @Singleton
+  fun provideBitmapUtils(): BitmapUtils {
+    return BitmapUtilsImpl()
+  }
 
-    @Provides
-    @Singleton
-    fun provideFileUtils(): FileUtils {
-        return FileUtilsImpl()
-    }
+  @Provides
+  @Singleton
+  fun provideFileUtils(): FileUtils {
+    return FileUtilsImpl()
+  }
 }

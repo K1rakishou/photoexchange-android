@@ -14,34 +14,34 @@ import java.net.SocketTimeoutException
 import java.util.concurrent.TimeoutException
 
 class FavouritePhotoRequest<T>(
-    private val userId: String,
-    private val photoName: String,
-    private val apiService: ApiService,
-    private val schedulerProvider: SchedulerProvider,
-    private val gson: MyGson
+  private val userId: String,
+  private val photoName: String,
+  private val apiService: ApiService,
+  private val schedulerProvider: SchedulerProvider,
+  private val gson: MyGson
 ) : AbstractRequest<T>() {
 
-    override fun execute(): Single<T> {
-        return apiService.favouritePhoto(FavouritePhotoPacket(userId, photoName))
-            .subscribeOn(schedulerProvider.IO())
-            .observeOn(schedulerProvider.IO())
-            .lift(OnApiErrorSingle<FavouritePhotoResponse>(gson, FavouritePhotoResponse::class))
-            .map { response ->
-                if (ErrorCode.FavouritePhotoErrors.fromInt(response.serverErrorCode!!) is ErrorCode.FavouritePhotoErrors.Ok) {
-                    return@map FavouritePhotoResponse.success(response.isFavourited, response.favouritesCount)
-                } else {
-                    return@map FavouritePhotoResponse.error(ErrorCode.fromInt(ErrorCode.FavouritePhotoErrors::class, response.serverErrorCode!!))
-                }
-            }
-            .onErrorReturn(this::extractError) as Single<T>
-    }
-
-    private fun extractError(error: Throwable): FavouritePhotoResponse {
-        return when (error) {
-            is GeneralException.ApiException -> FavouritePhotoResponse.error(error.errorCode as ErrorCode.FavouritePhotoErrors)
-            is SocketTimeoutException,
-            is TimeoutException -> FavouritePhotoResponse.error(ErrorCode.FavouritePhotoErrors.LocalTimeout())
-            else -> FavouritePhotoResponse.error(ErrorCode.FavouritePhotoErrors.UnknownError())
+  override fun execute(): Single<T> {
+    return apiService.favouritePhoto(FavouritePhotoPacket(userId, photoName))
+      .subscribeOn(schedulerProvider.IO())
+      .observeOn(schedulerProvider.IO())
+      .lift(OnApiErrorSingle<FavouritePhotoResponse>(gson, FavouritePhotoResponse::class))
+      .map { response ->
+        if (ErrorCode.FavouritePhotoErrors.fromInt(response.serverErrorCode!!) is ErrorCode.FavouritePhotoErrors.Ok) {
+          return@map FavouritePhotoResponse.success(response.isFavourited, response.favouritesCount)
+        } else {
+          return@map FavouritePhotoResponse.error(ErrorCode.fromInt(ErrorCode.FavouritePhotoErrors::class, response.serverErrorCode!!))
         }
+      }
+      .onErrorReturn(this::extractError) as Single<T>
+  }
+
+  private fun extractError(error: Throwable): FavouritePhotoResponse {
+    return when (error) {
+      is GeneralException.ApiException -> FavouritePhotoResponse.error(error.errorCode as ErrorCode.FavouritePhotoErrors)
+      is SocketTimeoutException,
+      is TimeoutException -> FavouritePhotoResponse.error(ErrorCode.FavouritePhotoErrors.LocalTimeout())
+      else -> FavouritePhotoResponse.error(ErrorCode.FavouritePhotoErrors.UnknownError())
     }
+  }
 }

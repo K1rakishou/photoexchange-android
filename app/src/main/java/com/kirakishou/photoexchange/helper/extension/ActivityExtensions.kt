@@ -8,5 +8,5 @@ import com.kirakishou.photoexchange.helper.util.AndroidUtils
  */
 
 fun Activity.hideKeyboard() {
-    AndroidUtils.hideSoftKeyboard(this)
+  AndroidUtils.hideSoftKeyboard(this)
 }

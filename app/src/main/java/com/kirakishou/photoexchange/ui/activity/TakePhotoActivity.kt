@@ -6,8 +6,8 @@ import android.animation.ObjectAnimator
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.support.design.widget.FloatingActionButton
-import android.support.v4.app.ActivityCompat
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import androidx.core.app.ActivityCompat
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AccelerateInterpolator
@@ -40,252 +40,252 @@ import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity() {
 
-    @BindView(R.id.show_all_photos_btn)
-    lateinit var showAllPhotosButton: LinearLayout
+  @BindView(R.id.show_all_photos_btn)
+  lateinit var showAllPhotosButton: LinearLayout
 
-    @BindView(R.id.camera_view)
-    lateinit var cameraView: CameraView
+  @BindView(R.id.camera_view)
+  lateinit var cameraView: CameraView
 
-    @BindView(R.id.take_photo_button)
-    lateinit var takePhotoButton: FloatingActionButton
+  @BindView(R.id.take_photo_button)
+  lateinit var takePhotoButton: FloatingActionButton
 
-    @Inject
-    lateinit var viewModel: TakePhotoActivityViewModel
+  @Inject
+  lateinit var viewModel: TakePhotoActivityViewModel
 
-    @Inject
-    lateinit var permissionManager: PermissionManager
+  @Inject
+  lateinit var permissionManager: PermissionManager
 
-    @Inject
-    lateinit var cameraProvider: CameraProvider
+  @Inject
+  lateinit var cameraProvider: CameraProvider
 
-    @Inject
-    lateinit var vibrator: Vibrator
+  @Inject
+  lateinit var vibrator: Vibrator
 
-    private val TAG = "TakePhotoActivity"
-    private val VIBRATION_TIME_MS = 25L
-    private val BUTTONS_TRANSITION_DELTA = 96f
-    private var translationDelta: Float = 0f
+  private val TAG = "TakePhotoActivity"
+  private val VIBRATION_TIME_MS = 25L
+  private val BUTTONS_TRANSITION_DELTA = 96f
+  private var translationDelta: Float = 0f
 
-    override fun getContentView(): Int = R.layout.activity_take_photo
+  override fun getContentView(): Int = R.layout.activity_take_photo
 
-    override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
-        initViews()
-    }
+  override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
+    initViews()
+  }
 
-    override fun onActivityStart() {
-        initRx()
-    }
+  override fun onActivityStart() {
+    initRx()
+  }
 
-    override fun onResume() {
-        super.onResume()
+  override fun onResume() {
+    super.onResume()
 
-        checkPermissions()
-    }
+    checkPermissions()
+  }
 
-    override fun onPause() {
-        super.onPause()
-        cameraProvider.stopCamera()
-    }
+  override fun onPause() {
+    super.onPause()
+    cameraProvider.stopCamera()
+  }
 
-    override fun onActivityStop() {
-    }
+  override fun onActivityStop() {
+  }
 
-    private fun initViews() {
-        translationDelta = AndroidUtils.dpToPx(BUTTONS_TRANSITION_DELTA, this)
+  private fun initViews() {
+    translationDelta = AndroidUtils.dpToPx(BUTTONS_TRANSITION_DELTA, this)
 
-        takePhotoButton.translationY = takePhotoButton.translationY + translationDelta
-        showAllPhotosButton.translationX = showAllPhotosButton.translationX + translationDelta
-    }
+    takePhotoButton.translationY = takePhotoButton.translationY + translationDelta
+    showAllPhotosButton.translationX = showAllPhotosButton.translationX + translationDelta
+  }
 
-    private fun initRx() {
-        compositeDisposable += viewModel.errorCodesSubject
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .doOnNext { showErrorCodeToast(it) }
-            .subscribe()
+  private fun initRx() {
+    compositeDisposable += viewModel.errorCodesSubject
+      .subscribeOn(AndroidSchedulers.mainThread())
+      .doOnNext { showErrorCodeToast(it) }
+      .subscribe()
 
-        compositeDisposable += RxView.clicks(takePhotoButton)
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .debounceClicks()
-            .doOnNext { vibrator.vibrate(this, VIBRATION_TIME_MS) }
-            .observeOn(Schedulers.io())
-            .concatMap { takePhoto() }
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({ errorCode ->
-                if (errorCode is ErrorCode.TakePhotoErrors.Ok) {
-                    onPhotoTaken(errorCode.photo)
-                } else {
-                    showErrorCodeToast(errorCode)
-                }
-            }, { error ->
-                Timber.tag(TAG).e(error)
-            })
-
-        compositeDisposable += RxView.clicks(showAllPhotosButton)
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .debounceClicks()
-            .doOnNext { runActivity(PhotosActivity::class.java) }
-            .doOnError { Timber.tag(TAG).e(it) }
-            .subscribe()
-    }
-
-    private fun checkPermissions() {
-        val requestedPermissions = arrayOf(Manifest.permission.CAMERA)
-        permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
-            val index = permissions.indexOf(Manifest.permission.CAMERA)
-            if (index == -1) {
-                throw RuntimeException("Couldn't find Manifest.permission.CAMERA in result permissions")
-            }
-
-            if (grantResults[index] == PackageManager.PERMISSION_DENIED) {
-                if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
-                    showCameraRationaleDialog()
-                } else {
-                    Timber.tag(TAG).d("getPermissions() Could not obtain camera permission")
-                    showAppCannotWorkWithoutCameraPermissionDialog()
-                }
-
-                return@askForPermission
-            }
-
-            onPermissionCallback()
+    compositeDisposable += RxView.clicks(takePhotoButton)
+      .subscribeOn(AndroidSchedulers.mainThread())
+      .debounceClicks()
+      .doOnNext { vibrator.vibrate(this, VIBRATION_TIME_MS) }
+      .observeOn(Schedulers.io())
+      .concatMap { takePhoto() }
+      .observeOn(AndroidSchedulers.mainThread())
+      .subscribe({ errorCode ->
+        if (errorCode is ErrorCode.TakePhotoErrors.Ok) {
+          onPhotoTaken(errorCode.photo)
+        } else {
+          showErrorCodeToast(errorCode)
         }
-    }
+      }, { error ->
+        Timber.tag(TAG).e(error)
+      })
 
-    private fun onPermissionCallback() {
-        startCamera()
-        animateAppear()
-    }
+    compositeDisposable += RxView.clicks(showAllPhotosButton)
+      .subscribeOn(AndroidSchedulers.mainThread())
+      .debounceClicks()
+      .doOnNext { runActivity(PhotosActivity::class.java) }
+      .doOnError { Timber.tag(TAG).e(it) }
+      .subscribe()
+  }
 
-    private fun startCamera() {
-        if (cameraProvider.isStarted()) {
-            return
+  private fun checkPermissions() {
+    val requestedPermissions = arrayOf(Manifest.permission.CAMERA)
+    permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
+      val index = permissions.indexOf(Manifest.permission.CAMERA)
+      if (index == -1) {
+        throw RuntimeException("Couldn't find Manifest.permission.CAMERA in result permissions")
+      }
+
+      if (grantResults[index] == PackageManager.PERMISSION_DENIED) {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
+          showCameraRationaleDialog()
+        } else {
+          Timber.tag(TAG).d("getPermissions() Could not obtain camera permission")
+          showAppCannotWorkWithoutCameraPermissionDialog()
         }
 
-        cameraProvider.provideCamera(cameraView)
+        return@askForPermission
+      }
 
-        if (!cameraProvider.isAvailable()) {
-            showCameraIsNotAvailableDialog()
-            return
+      onPermissionCallback()
+    }
+  }
+
+  private fun onPermissionCallback() {
+    startCamera()
+    animateAppear()
+  }
+
+  private fun startCamera() {
+    if (cameraProvider.isStarted()) {
+      return
+    }
+
+    cameraProvider.provideCamera(cameraView)
+
+    if (!cameraProvider.isAvailable()) {
+      showCameraIsNotAvailableDialog()
+      return
+    }
+
+    cameraProvider.startCamera()
+  }
+
+  private fun showAppCannotWorkWithoutCameraPermissionDialog() {
+    AppCannotWorkWithoutCameraPermissionDialog().show(this) {
+      finish()
+    }
+  }
+
+  private fun showCameraRationaleDialog() {
+    CameraRationaleDialog().show(this, {
+      checkPermissions()
+    }, {
+      finish()
+    })
+  }
+
+  private fun showCameraIsNotAvailableDialog() {
+    CameraIsNotAvailableDialog().show(this) {
+      finish()
+    }
+  }
+
+  private fun takePhoto(): Observable<ErrorCode.TakePhotoErrors> {
+    return cameraProvider.takePhoto()
+      .subscribeOn(Schedulers.computation())
+      .toObservable()
+  }
+
+  private fun onPhotoTaken(takenPhoto: TakenPhoto) {
+    runActivityWithArgs(ViewTakenPhotoActivity::class.java,
+      takenPhoto.toBundle())
+  }
+
+  private fun animateAppear() {
+    runOnUiThread {
+      val set = AnimatorSet()
+
+      val animation1 = ObjectAnimator.ofFloat(takePhotoButton, View.TRANSLATION_Y, translationDelta, 0f)
+      animation1.setInterpolator(AccelerateDecelerateInterpolator())
+
+      val animation2 = ObjectAnimator.ofFloat(showAllPhotosButton, View.TRANSLATION_X, translationDelta, 0f)
+      animation2.setInterpolator(AccelerateDecelerateInterpolator())
+
+      set.playTogether(animation1, animation2)
+      set.setStartDelay(50)
+      set.setDuration(200)
+      set.addListener(onEnd = {
+        if (::takePhotoButton.isInitialized) {
+          takePhotoButton.isClickable = true
         }
 
-        cameraProvider.startCamera()
-    }
-
-    private fun showAppCannotWorkWithoutCameraPermissionDialog() {
-        AppCannotWorkWithoutCameraPermissionDialog().show(this) {
-            finish()
+        if (::showAllPhotosButton.isInitialized) {
+          showAllPhotosButton.isClickable = true
         }
-    }
-
-    private fun showCameraRationaleDialog() {
-        CameraRationaleDialog().show(this, {
-            checkPermissions()
-        }, {
-            finish()
-        })
-    }
-
-    private fun showCameraIsNotAvailableDialog() {
-        CameraIsNotAvailableDialog().show(this) {
-            finish()
+      }, onStart = {
+        if (::takePhotoButton.isInitialized) {
+          takePhotoButton.show()
         }
-    }
 
-    private fun takePhoto(): Observable<ErrorCode.TakePhotoErrors> {
-        return cameraProvider.takePhoto()
-            .subscribeOn(Schedulers.computation())
-            .toObservable()
-    }
-
-    private fun onPhotoTaken(takenPhoto: TakenPhoto) {
-        runActivityWithArgs(ViewTakenPhotoActivity::class.java,
-            takenPhoto.toBundle())
-    }
-
-    private fun animateAppear() {
-        runOnUiThread {
-            val set = AnimatorSet()
-
-            val animation1 = ObjectAnimator.ofFloat(takePhotoButton, View.TRANSLATION_Y, translationDelta, 0f)
-            animation1.setInterpolator(AccelerateDecelerateInterpolator())
-
-            val animation2 = ObjectAnimator.ofFloat(showAllPhotosButton, View.TRANSLATION_X, translationDelta, 0f)
-            animation2.setInterpolator(AccelerateDecelerateInterpolator())
-
-            set.playTogether(animation1, animation2)
-            set.setStartDelay(50)
-            set.setDuration(200)
-            set.addListener(onEnd = {
-                if (::takePhotoButton.isInitialized) {
-                    takePhotoButton.isClickable = true
-                }
-
-                if (::showAllPhotosButton.isInitialized) {
-                    showAllPhotosButton.isClickable = true
-                }
-            }, onStart = {
-                if (::takePhotoButton.isInitialized) {
-                    takePhotoButton.visibility = View.VISIBLE
-                }
-
-                if (::showAllPhotosButton.isInitialized) {
-                    showAllPhotosButton.visibility = View.VISIBLE
-                }
-            })
-            set.start()
+        if (::showAllPhotosButton.isInitialized) {
+          showAllPhotosButton.visibility = View.VISIBLE
         }
+      })
+      set.start()
     }
+  }
 
-    private fun animateDisappear(): Completable {
-        return Completable.create { emitter ->
-            val set = AnimatorSet()
+  private fun animateDisappear(): Completable {
+    return Completable.create { emitter ->
+      val set = AnimatorSet()
 
-            val animation1 = ObjectAnimator.ofFloat(takePhotoButton, View.TRANSLATION_Y, 0f, translationDelta)
-            animation1.setInterpolator(AccelerateInterpolator())
+      val animation1 = ObjectAnimator.ofFloat(takePhotoButton, View.TRANSLATION_Y, 0f, translationDelta)
+      animation1.setInterpolator(AccelerateInterpolator())
 
-            val animation2 = ObjectAnimator.ofFloat(showAllPhotosButton, View.TRANSLATION_X, 0f, translationDelta)
-            animation2.setInterpolator(AccelerateInterpolator())
+      val animation2 = ObjectAnimator.ofFloat(showAllPhotosButton, View.TRANSLATION_X, 0f, translationDelta)
+      animation2.setInterpolator(AccelerateInterpolator())
 
-            set.playTogether(animation1, animation2)
-            set.setDuration(250)
-            set.addListener(onStart = {
-                if (::takePhotoButton.isInitialized) {
-                    takePhotoButton.isClickable = false
-                }
-
-                if (::showAllPhotosButton.isInitialized) {
-                    showAllPhotosButton.isClickable = false
-                }
-            }, onEnd = {
-                if (::takePhotoButton.isInitialized) {
-                    takePhotoButton.visibility = View.GONE
-                }
-
-                if (::showAllPhotosButton.isInitialized) {
-                    showAllPhotosButton.visibility = View.GONE
-                }
-
-                emitter.onComplete()
-            })
-            set.start()
+      set.playTogether(animation1, animation2)
+      set.setDuration(250)
+      set.addListener(onStart = {
+        if (::takePhotoButton.isInitialized) {
+          takePhotoButton.isClickable = false
         }
-    }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        permissionManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
-    }
+        if (::showAllPhotosButton.isInitialized) {
+          showAllPhotosButton.isClickable = false
+        }
+      }, onEnd = {
+        if (::takePhotoButton.isInitialized) {
+          takePhotoButton.hide()
+        }
 
-    override fun onBackPressed() {
-        compositeDisposable += animateDisappear()
-            .observeOn(AndroidSchedulers.mainThread())
-            .doOnComplete { super.onBackPressed() }
-            .subscribe()
-    }
+        if (::showAllPhotosButton.isInitialized) {
+          showAllPhotosButton.visibility = View.GONE
+        }
 
-    override fun resolveDaggerDependency() {
-        (application as PhotoExchangeApplication).applicationComponent
-            .plus(TakePhotoActivityModule(this))
-            .inject(this)
+        emitter.onComplete()
+      })
+      set.start()
     }
+  }
+
+  override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    permissionManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
+  }
+
+  override fun onBackPressed() {
+    compositeDisposable += animateDisappear()
+      .observeOn(AndroidSchedulers.mainThread())
+      .doOnComplete { super.onBackPressed() }
+      .subscribe()
+  }
+
+  override fun resolveDaggerDependency() {
+    (application as PhotoExchangeApplication).applicationComponent
+      .plus(TakePhotoActivityModule(this))
+      .inject(this)
+  }
 }

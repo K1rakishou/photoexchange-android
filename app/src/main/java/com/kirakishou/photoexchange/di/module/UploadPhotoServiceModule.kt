@@ -17,13 +17,13 @@ import dagger.Provides
 @Module
 class UploadPhotoServiceModule {
 
-    @PerService
-    @Provides
-    fun provideUploadPhotoServicePresenter(myTakenPhotosRepository: TakenPhotosRepository,
-                                           schedulerProvider: SchedulerProvider,
-                                           uploadPhotosUseCase: UploadPhotosUseCase,
-                                           getUserIdUseCase: GetUserIdUseCase): UploadPhotoServicePresenter {
-        return UploadPhotoServicePresenter(myTakenPhotosRepository, schedulerProvider,
-            uploadPhotosUseCase, getUserIdUseCase, Constants.UPLOAD_PHOTOS_DELAY_MS)
-    }
+  @PerService
+  @Provides
+  fun provideUploadPhotoServicePresenter(myTakenPhotosRepository: TakenPhotosRepository,
+                                         schedulerProvider: SchedulerProvider,
+                                         uploadPhotosUseCase: UploadPhotosUseCase,
+                                         getUserIdUseCase: GetUserIdUseCase): UploadPhotoServicePresenter {
+    return UploadPhotoServicePresenter(myTakenPhotosRepository, schedulerProvider,
+      uploadPhotosUseCase, getUserIdUseCase, Constants.UPLOAD_PHOTOS_DELAY_MS)
+  }
 }

@@ -11,34 +11,34 @@ import io.reactivex.Single
 import timber.log.Timber
 
 class SettingsActivityViewModel(
-    private val settingsRepository: SettingsRepository,
-    private val schedulerProvider: SchedulerProvider,
-    private val restoreAccountUseCase: RestoreAccountUseCase
+  private val settingsRepository: SettingsRepository,
+  private val schedulerProvider: SchedulerProvider,
+  private val restoreAccountUseCase: RestoreAccountUseCase
 ) : BaseViewModel() {
-    private val TAG = "SettingsActivityViewModel"
+  private val TAG = "SettingsActivityViewModel"
 
 
-    fun resetMakePublicPhotoOption(): Observable<Unit> {
-        return Observable.fromCallable { settingsRepository.saveMakePublicFlag(null) }
-            .subscribeOn(schedulerProvider.IO())
-            .doOnError { Timber.tag(TAG).e(it) }
+  fun resetMakePublicPhotoOption(): Observable<Unit> {
+    return Observable.fromCallable { settingsRepository.saveMakePublicFlag(null) }
+      .subscribeOn(schedulerProvider.IO())
+      .doOnError { Timber.tag(TAG).e(it) }
+  }
+
+  fun getUserId(): Single<String> {
+    return Single.fromCallable { settingsRepository.getUserId() }
+      .subscribeOn(schedulerProvider.IO())
+      .doOnError { Timber.tag(TAG).e(it) }
+  }
+
+  fun restoreOldAccount(oldUserId: String): Single<Either<ErrorCode.CheckAccountExistsErrors, Boolean>> {
+    val suffix = "@${DOMAIN_NAME}"
+
+    val userId = if (!oldUserId.endsWith(suffix, true)) {
+      oldUserId + suffix
+    } else {
+      oldUserId
     }
 
-    fun getUserId(): Single<String> {
-        return Single.fromCallable { settingsRepository.getUserId() }
-            .subscribeOn(schedulerProvider.IO())
-            .doOnError { Timber.tag(TAG).e(it) }
-    }
-
-    fun restoreOldAccount(oldUserId: String): Single<Either<ErrorCode.CheckAccountExistsErrors, Boolean>> {
-        val suffix = "@${DOMAIN_NAME}"
-
-        val userId = if (!oldUserId.endsWith(suffix, true)) {
-            oldUserId + suffix
-        } else {
-            oldUserId
-        }
-
-        return restoreAccountUseCase.restoreAccount(userId)
-    }
+    return restoreAccountUseCase.restoreAccount(userId)
+  }
 }

@@ -23,87 +23,87 @@ import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
 class ReceivedPhotosFragmentViewModel(
-    private val settingsRepository: SettingsRepository,
-    private val getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
-    private val schedulerProvider: SchedulerProvider,
-    private val adapterLoadMoreItemsDelayMs: Long,
-    private val progressFooterRemoveDelayMs: Long
+  private val settingsRepository: SettingsRepository,
+  private val getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
+  private val schedulerProvider: SchedulerProvider,
+  private val adapterLoadMoreItemsDelayMs: Long,
+  private val progressFooterRemoveDelayMs: Long
 ) {
-    private val TAG = "ReceivedPhotosFragmentViewModel"
+  private val TAG = "ReceivedPhotosFragmentViewModel"
 
-    lateinit var intercom: PhotosActivityViewModelIntercom
+  lateinit var intercom: PhotosActivityViewModelIntercom
 
-    val viewState = ReceivedPhotosFragmentViewState()
+  val viewState = ReceivedPhotosFragmentViewState()
 
-    val fragmentLifecycle = BehaviorSubject.create<RxLifecycle.FragmentLifecycle>()
-    val loadMoreEvent = PublishSubject.create<Unit>()
-    val knownErrors = PublishSubject.create<ErrorCode>()
-    val unknownErrors = PublishSubject.create<Throwable>()
+  val fragmentLifecycle = BehaviorSubject.create<RxLifecycle.FragmentLifecycle>()
+  val loadMoreEvent = PublishSubject.create<Unit>()
+  val knownErrors = PublishSubject.create<ErrorCode>()
+  val unknownErrors = PublishSubject.create<Throwable>()
 
-    private val compositeDisposable = CompositeDisposable()
+  private val compositeDisposable = CompositeDisposable()
 
-    init {
-        compositeDisposable += Observables.combineLatest(fragmentLifecycle, loadMoreEvent)
-            .filter { (lifecycle, _) -> lifecycle.isAtLeast(RxLifecycle.FragmentState.Resumed) }
-            .observeOn(schedulerProvider.IO())
-            .doOnNext {
-                intercom.tell<ReceivedPhotosFragment>()
-                    .to(ReceivedPhotosFragmentEvent.GeneralEvents.PageIsLoading())
-            }
-            .concatMap { loadNextPageOfReceivedPhotos(viewState.lastId, viewState.photosPerPage) }
-            .subscribe({ result ->
-                when (result) {
-                    is Either.Value -> {
-                        intercom.tell<ReceivedPhotosFragment>()
-                            .to(ReceivedPhotosFragmentEvent.GeneralEvents.ShowReceivedPhotos(result.value))
-                    }
-                    is Either.Error -> {
-                        knownErrors.onNext(result.error)
-                    }
-                }
-            }, unknownErrors::onNext)
-    }
-
-    private fun loadNextPageOfReceivedPhotos(
-        lastId: Long,
-        photosPerPage: Int
-    ): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
-        return Observable.just(Unit)
-            .subscribeOn(schedulerProvider.IO())
-            .concatMap { Observable.fromCallable { settingsRepository.getUserId() } }
-            .concatMap { userId -> loadPageOfReceivedPhotos(userId, lastId, photosPerPage) }
-            .doOnNext { result ->
-                if (result is Either.Value) {
-                    intercom.tell<UploadedPhotosFragment>()
-                        .to(UploadedPhotosFragmentEvent.GeneralEvents.UpdateReceiverInfo(result.value))
-                }
-            }
-    }
-
-    private fun loadPageOfReceivedPhotos(
-        userId: String,
-        lastId: Long,
-        photosPerPage: Int
-    ): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
-        if (userId.isEmpty()) {
-            return Observable.just(Either.Error(ErrorCode.GetReceivedPhotosErrors.LocalUserIdIsEmpty()))
+  init {
+    compositeDisposable += Observables.combineLatest(fragmentLifecycle, loadMoreEvent)
+      .filter { (lifecycle, _) -> lifecycle.isAtLeast(RxLifecycle.FragmentState.Resumed) }
+      .observeOn(schedulerProvider.IO())
+      .doOnNext {
+        intercom.tell<ReceivedPhotosFragment>()
+          .to(ReceivedPhotosFragmentEvent.GeneralEvents.PageIsLoading())
+      }
+      .concatMap { loadNextPageOfReceivedPhotos(viewState.lastId, viewState.photosPerPage) }
+      .subscribe({ result ->
+        when (result) {
+          is Either.Value -> {
+            intercom.tell<ReceivedPhotosFragment>()
+              .to(ReceivedPhotosFragmentEvent.GeneralEvents.ShowReceivedPhotos(result.value))
+          }
+          is Either.Error -> {
+            knownErrors.onNext(result.error)
+          }
         }
+      }, unknownErrors::onNext)
+  }
 
-        return Observable.just(Unit)
-            .flatMap { getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage) }
-            .doOnNext { intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.GeneralEvents.ShowProgressFooter()) }
-            .delay(adapterLoadMoreItemsDelayMs, TimeUnit.MILLISECONDS)
-            .doOnEach { event ->
-                if (event.isOnNext || event.isOnError) {
-                    intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.GeneralEvents.HideProgressFooter())
-                }
-            }
-            .delay(progressFooterRemoveDelayMs, TimeUnit.MILLISECONDS)
+  private fun loadNextPageOfReceivedPhotos(
+    lastId: Long,
+    photosPerPage: Int
+  ): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
+    return Observable.just(Unit)
+      .subscribeOn(schedulerProvider.IO())
+      .concatMap { Observable.fromCallable { settingsRepository.getUserId() } }
+      .concatMap { userId -> loadPageOfReceivedPhotos(userId, lastId, photosPerPage) }
+      .doOnNext { result ->
+        if (result is Either.Value) {
+          intercom.tell<UploadedPhotosFragment>()
+            .to(UploadedPhotosFragmentEvent.GeneralEvents.UpdateReceiverInfo(result.value))
+        }
+      }
+  }
+
+  private fun loadPageOfReceivedPhotos(
+    userId: String,
+    lastId: Long,
+    photosPerPage: Int
+  ): Observable<Either<ErrorCode.GetReceivedPhotosErrors, MutableList<ReceivedPhoto>>> {
+    if (userId.isEmpty()) {
+      return Observable.just(Either.Error(ErrorCode.GetReceivedPhotosErrors.LocalUserIdIsEmpty()))
     }
 
-    fun onCleared() {
-        Timber.tag(TAG).d("onCleared()")
+    return Observable.just(Unit)
+      .flatMap { getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage) }
+      .doOnNext { intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.GeneralEvents.ShowProgressFooter()) }
+      .delay(adapterLoadMoreItemsDelayMs, TimeUnit.MILLISECONDS)
+      .doOnEach { event ->
+        if (event.isOnNext || event.isOnError) {
+          intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.GeneralEvents.HideProgressFooter())
+        }
+      }
+      .delay(progressFooterRemoveDelayMs, TimeUnit.MILLISECONDS)
+  }
 
-        compositeDisposable.dispose()
-    }
+  fun onCleared() {
+    Timber.tag(TAG).d("onCleared()")
+
+    compositeDisposable.dispose()
+  }
 }

@@ -8,35 +8,35 @@ import io.reactivex.Single
 import timber.log.Timber
 
 open class GetUserIdUseCase(
-    private val settingsRepository: SettingsRepository,
-    private val apiClient: ApiClient
+  private val settingsRepository: SettingsRepository,
+  private val apiClient: ApiClient
 ) {
-    private val TAG = "GetUserIdUseCase"
+  private val TAG = "GetUserIdUseCase"
 
-    open fun getUserId(): Single<Either<ErrorCode.GetUserIdError, String>> {
-        return Single.fromCallable { settingsRepository.getUserId() }
-            .flatMap { userId ->
-                if (userId.isNotEmpty()) {
-                    return@flatMap Single.just(Either.Value(userId))
-                }
+  open fun getUserId(): Single<Either<ErrorCode.GetUserIdError, String>> {
+    return Single.fromCallable { settingsRepository.getUserId() }
+      .flatMap { userId ->
+        if (userId.isNotEmpty()) {
+          return@flatMap Single.just(Either.Value(userId))
+        }
 
-                return@flatMap apiClient.getUserId()
-                    .map { response ->
-                        val errorCode = response.errorCode as ErrorCode.GetUserIdError
-                        if (errorCode !is ErrorCode.GetUserIdError.Ok) {
-                            return@map Either.Error(errorCode)
-                        }
-
-                        if (!settingsRepository.saveUserId(response.userId)) {
-                            return@map Either.Error(ErrorCode.GetUserIdError.LocalDatabaseError())
-                        }
-
-                        return@map Either.Value(response.userId)
-                    }
+        return@flatMap apiClient.getUserId()
+          .map { response ->
+            val errorCode = response.errorCode as ErrorCode.GetUserIdError
+            if (errorCode !is ErrorCode.GetUserIdError.Ok) {
+              return@map Either.Error(errorCode)
             }
-            .onErrorReturn { error ->
-                Timber.tag(TAG).e(error)
-                return@onErrorReturn Either.Error(ErrorCode.GetUserIdError.UnknownError())
+
+            if (!settingsRepository.saveUserId(response.userId)) {
+              return@map Either.Error(ErrorCode.GetUserIdError.LocalDatabaseError())
             }
-    }
+
+            return@map Either.Value(response.userId)
+          }
+      }
+      .onErrorReturn { error ->
+        Timber.tag(TAG).e(error)
+        return@onErrorReturn Either.Error(ErrorCode.GetUserIdError.UnknownError())
+      }
+  }
 }

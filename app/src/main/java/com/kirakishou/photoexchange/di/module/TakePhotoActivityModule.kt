@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.di.module
 
-import android.arch.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProviders
 import android.content.Context
 import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.helper.CameraProvider
@@ -19,27 +19,27 @@ import dagger.Provides
 
 @Module
 open class TakePhotoActivityModule(
-    val activity: TakePhotoActivity
+  val activity: TakePhotoActivity
 ) {
 
-    @PerActivity
-    @Provides
-    open fun provideViewModelFactory(schedulerProvider: SchedulerProvider,
-                                     takenPhotosRepository: TakenPhotosRepository): TakePhotoActivityViewModelFactory {
-        return TakePhotoActivityViewModelFactory(takenPhotosRepository, schedulerProvider)
-    }
+  @PerActivity
+  @Provides
+  open fun provideViewModelFactory(schedulerProvider: SchedulerProvider,
+                                   takenPhotosRepository: TakenPhotosRepository): TakePhotoActivityViewModelFactory {
+    return TakePhotoActivityViewModelFactory(takenPhotosRepository, schedulerProvider)
+  }
 
-    @PerActivity
-    @Provides
-    open fun provideViewModel(viewModelFactory: TakePhotoActivityViewModelFactory): TakePhotoActivityViewModel {
-        return ViewModelProviders.of(activity, viewModelFactory).get(TakePhotoActivityViewModel::class.java)
-    }
+  @PerActivity
+  @Provides
+  open fun provideViewModel(viewModelFactory: TakePhotoActivityViewModelFactory): TakePhotoActivityViewModel {
+    return ViewModelProviders.of(activity, viewModelFactory).get(TakePhotoActivityViewModel::class.java)
+  }
 
-    @PerActivity
-    @Provides
-    open fun provideCameraProvider(context: Context,
-                                   takenPhotosRepository: TakenPhotosRepository,
-                                   tempFilesRepository: TempFileRepository): CameraProvider {
-        return CameraProvider(context, takenPhotosRepository, tempFilesRepository)
-    }
+  @PerActivity
+  @Provides
+  open fun provideCameraProvider(context: Context,
+                                 takenPhotosRepository: TakenPhotosRepository,
+                                 tempFilesRepository: TempFileRepository): CameraProvider {
+    return CameraProvider(context, takenPhotosRepository, tempFilesRepository)
+  }
 }

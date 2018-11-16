@@ -20,155 +20,153 @@ import com.facebook.stetho.Stetho
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
 
 
-
-
 /**
  * Created by kirakishou on 11/3/2017.
  */
 
 open class PhotoExchangeApplication : Application() {
 
-    open lateinit var applicationComponent: ApplicationComponent
+  open lateinit var applicationComponent: ApplicationComponent
 
-    override fun onCreate() {
-        super.onCreate()
+  override fun onCreate() {
+    super.onCreate()
 
-        init()
+    init()
 
-        applicationComponent = initializeApplicationComponent()
-        applicationComponent.inject(this)
+    applicationComponent = initializeApplicationComponent()
+    applicationComponent.inject(this)
+  }
+
+  open fun initializeApplicationComponent(): ApplicationComponent {
+    return DaggerApplicationComponent.builder()
+      .applicationModule(ApplicationModule(this))
+      .databaseModule(DatabaseModule(Constants.DATABASE_NAME))
+      .networkModule(NetworkModule(Constants.BASE_URL))
+      .schedulerProviderModule(SchedulerProviderModule())
+      .build()
+  }
+
+  open fun init() {
+    Stetho.initializeWithDefaults(this);
+
+    initCrashlytics()
+    initTimber()
+    initLeakCanary()
+    //enabledStrictMode()
+  }
+
+  private fun initCrashlytics() {
+    val crashlyticsKit = Crashlytics.Builder()
+      .core(CrashlyticsCore.Builder().disabled(BuildConfig.DEBUG).build())
+      .build()
+
+    Fabric.with(this, crashlyticsKit)
+  }
+
+  private fun initLeakCanary() {
+    if (Constants.isDebugBuild) {
+      if (LeakCanary.isInAnalyzerProcess(this)) {
+        return
+      }
+
+      refWatcher = LeakCanary.install(this)
     }
+  }
 
-    open fun initializeApplicationComponent(): ApplicationComponent {
-        return DaggerApplicationComponent.builder()
-            .applicationModule(ApplicationModule(this))
-            .databaseModule(DatabaseModule(Constants.DATABASE_NAME))
-            .networkModule(NetworkModule(Constants.BASE_URL))
-            .schedulerProviderModule(SchedulerProviderModule())
-            .build()
+  private fun enabledStrictMode() {
+    if (Constants.isDebugBuild) {
+      StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder()
+        .detectAll()
+        .penaltyLog()
+        //.penaltyDeath()
+        .build())
+
+      StrictMode.setVmPolicy(StrictMode.VmPolicy.Builder()
+        .detectAll()
+        .penaltyLog()
+        //.penaltyDeath()
+        .build())
     }
+  }
 
-    open fun init() {
-        Stetho.initializeWithDefaults(this);
-
-        initCrashlytics()
-        initTimber()
-        initLeakCanary()
-        //enabledStrictMode()
+  private fun initTimber() {
+    if (Constants.isDebugBuild) {
+      Timber.plant(DebugTree())
+    } else {
+      Timber.plant(CrashlyticsTree())
     }
+  }
 
-    private fun initCrashlytics() {
-        val crashlyticsKit = Crashlytics.Builder()
-            .core(CrashlyticsCore.Builder().disabled(BuildConfig.DEBUG).build())
-            .build()
-
-        Fabric.with(this, crashlyticsKit)
-    }
-
-    private fun initLeakCanary() {
-        if (Constants.isDebugBuild) {
-            if (LeakCanary.isInAnalyzerProcess(this)) {
-                return
-            }
-
-            refWatcher = LeakCanary.install(this)
+  class DebugTree : Timber.Tree() {
+    override fun log(priority: Int, tag: String?, message: String, error: Throwable?) {
+      when (priority) {
+        Log.DEBUG -> {
+          System.out.println("_DEBUG: ($tag) $message")
         }
-    }
 
-    private fun enabledStrictMode() {
-        if (Constants.isDebugBuild) {
-            StrictMode.setThreadPolicy(StrictMode.ThreadPolicy.Builder()
-                .detectAll()
-                .penaltyLog()
-                //.penaltyDeath()
-                .build())
-
-            StrictMode.setVmPolicy(StrictMode.VmPolicy.Builder()
-                .detectAll()
-                .penaltyLog()
-                //.penaltyDeath()
-                .build())
+        Log.WARN -> {
+          System.out.println("_WARNING: ($tag) $message")
         }
-    }
 
-    private fun initTimber() {
-        if (Constants.isDebugBuild) {
-            Timber.plant(DebugTree())
-        } else {
-            Timber.plant(CrashlyticsTree())
+        Log.ERROR -> {
+          System.err.println("_ERROR: ($tag) $message")
+          error?.printStackTrace()
         }
-    }
 
-    class DebugTree : Timber.Tree() {
-        override fun log(priority: Int, tag: String?, message: String, error: Throwable?) {
-            when (priority) {
-                Log.DEBUG -> {
-                    System.out.println("_DEBUG: ($tag) $message")
-                }
-
-                Log.WARN -> {
-                    System.out.println("_WARNING: ($tag) $message")
-                }
-
-                Log.ERROR -> {
-                    System.err.println("_ERROR: ($tag) $message")
-                    error?.printStackTrace()
-                }
-
-                else -> {
-                    System.out.println("_OTHER: ($tag) $message")
-                }
-            }
+        else -> {
+          System.out.println("_OTHER: ($tag) $message")
         }
+      }
     }
+  }
 
-    class CrashlyticsTree : Timber.Tree() {
-        override fun log(priority: Int, tagParam: String?, messageParam: String, error: Throwable?) {
-            if (priority != Log.WARN && priority != Log.ERROR && priority != Log.DEBUG) {
-                return
-            }
+  class CrashlyticsTree : Timber.Tree() {
+    override fun log(priority: Int, tagParam: String?, messageParam: String, error: Throwable?) {
+      if (priority != Log.WARN && priority != Log.ERROR && priority != Log.DEBUG) {
+        return
+      }
 
-            val tag = tagParam ?: "Empty tag"
+      val tag = tagParam ?: "Empty tag"
 
-            Crashlytics.setInt(CRASHLYTICS_KEY_PRIORITY, priority)
-            Crashlytics.setString(CRASHLYTICS_KEY_TAG, tag)
+      Crashlytics.setInt(CRASHLYTICS_KEY_PRIORITY, priority)
+      Crashlytics.setString(CRASHLYTICS_KEY_TAG, tag)
 
-            when (priority) {
-                Log.DEBUG -> {
-                    Crashlytics.log(Log.DEBUG, tag, messageParam)
-                }
-
-                Log.WARN -> {
-                    if (error == null) {
-                        Crashlytics.log(Log.WARN, tag, messageParam)
-                    } else {
-                        Crashlytics.logException(error)
-                    }
-                }
-
-                Log.ERROR -> {
-                    if (error == null) {
-                        Crashlytics.log(Log.ERROR, tag, messageParam)
-                    } else {
-                        Crashlytics.logException(error)
-                    }
-                }
-            }
+      when (priority) {
+        Log.DEBUG -> {
+          Crashlytics.log(Log.DEBUG, tag, messageParam)
         }
-    }
 
-    companion object {
-        var refWatcher: RefWatcher? = null
-        val baseUrl = "http://kez1911.asuscomm.com:8080/"
-
-        private val CRASHLYTICS_KEY_PRIORITY = "priority"
-        private val CRASHLYTICS_KEY_TAG = "tag"
-        private val CRASHLYTICS_KEY_MESSAGE = "message"
-
-        fun watch(reference: Any, refName: String?) {
-            if (refWatcher != null) {
-                refWatcher!!.watch(reference, refName ?: "Unknown class")
-            }
+        Log.WARN -> {
+          if (error == null) {
+            Crashlytics.log(Log.WARN, tag, messageParam)
+          } else {
+            Crashlytics.logException(error)
+          }
         }
+
+        Log.ERROR -> {
+          if (error == null) {
+            Crashlytics.log(Log.ERROR, tag, messageParam)
+          } else {
+            Crashlytics.logException(error)
+          }
+        }
+      }
     }
+  }
+
+  companion object {
+    var refWatcher: RefWatcher? = null
+    val baseUrl = "http://kez1911.asuscomm.com:8080/"
+
+    private val CRASHLYTICS_KEY_PRIORITY = "priority"
+    private val CRASHLYTICS_KEY_TAG = "tag"
+    private val CRASHLYTICS_KEY_MESSAGE = "message"
+
+    fun watch(reference: Any, refName: String?) {
+      if (refWatcher != null) {
+        refWatcher!!.watch(reference, refName ?: "Unknown class")
+      }
+    }
+  }
 }

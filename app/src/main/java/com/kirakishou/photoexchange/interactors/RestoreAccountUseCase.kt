@@ -10,40 +10,40 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
 
 open class RestoreAccountUseCase(
-    private val apiClient: ApiClient,
-    private val database: MyDatabase,
-    private val settingsRepository: SettingsRepository,
-    private val uploadedPhotosRepository: UploadedPhotosRepository,
-    private val receivedPhotosRepository: ReceivedPhotosRepository
+  private val apiClient: ApiClient,
+  private val database: MyDatabase,
+  private val settingsRepository: SettingsRepository,
+  private val uploadedPhotosRepository: UploadedPhotosRepository,
+  private val receivedPhotosRepository: ReceivedPhotosRepository
 ) {
-    fun restoreAccount(oldUserId: String): Single<Either<ErrorCode.CheckAccountExistsErrors, Boolean>> {
-        return apiClient.checkAccountExists(oldUserId)
-            .flatMap { response ->
-                val errorCode = response.errorCode as ErrorCode.CheckAccountExistsErrors
-                if (errorCode !is ErrorCode.CheckAccountExistsErrors.Ok) {
-                    return@flatMap Single.just(Either.Error(errorCode))
-                }
+  fun restoreAccount(oldUserId: String): Single<Either<ErrorCode.CheckAccountExistsErrors, Boolean>> {
+    return apiClient.checkAccountExists(oldUserId)
+      .flatMap { response ->
+        val errorCode = response.errorCode as ErrorCode.CheckAccountExistsErrors
+        if (errorCode !is ErrorCode.CheckAccountExistsErrors.Ok) {
+          return@flatMap Single.just(Either.Error(errorCode))
+        }
 
-                if (!response.accountExists) {
-                    return@flatMap Single.just(Either.Value(false))
-                }
+        if (!response.accountExists) {
+          return@flatMap Single.just(Either.Value(false))
+        }
 
-                val transactionResult = database.transactional {
-                    if (!settingsRepository.saveUserId(oldUserId)) {
-                        return@transactional false
-                    }
+        val transactionResult = database.transactional {
+          if (!settingsRepository.saveUserId(oldUserId)) {
+            return@transactional false
+          }
 
-                    uploadedPhotosRepository.deleteAll()
-                    receivedPhotosRepository.deleteAll()
+          uploadedPhotosRepository.deleteAll()
+          receivedPhotosRepository.deleteAll()
 
-                    return@transactional true
-                }
+          return@transactional true
+        }
 
-                if (!transactionResult) {
-                    return@flatMap Single.just(Either.Error(ErrorCode.CheckAccountExistsErrors.LocalDatabaseError()))
-                }
+        if (!transactionResult) {
+          return@flatMap Single.just(Either.Error(ErrorCode.CheckAccountExistsErrors.LocalDatabaseError()))
+        }
 
-                return@flatMap Single.just(Either.Value(true))
-            }
-    }
+        return@flatMap Single.just(Either.Value(true))
+      }
+  }
 }

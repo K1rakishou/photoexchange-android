@@ -7,47 +7,47 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 class GetUploadedPhotosResponse
 private constructor(
 
-    @Expose
-    @SerializedName("uploaded_photos")
-    val uploadedPhotos: List<UploadedPhotoData>,
+  @Expose
+  @SerializedName("uploaded_photos")
+  val uploadedPhotos: List<UploadedPhotoData>,
 
-    errorCode: ErrorCode
+  errorCode: ErrorCode
 ) : StatusResponse(errorCode.getValue(), errorCode) {
 
-    companion object {
-        fun success(uploadedPhotos: List<UploadedPhotoData>): GetUploadedPhotosResponse {
-            return GetUploadedPhotosResponse(uploadedPhotos, ErrorCode.GetUploadedPhotosErrors.Ok())
-        }
-
-        fun fail(errorCode: ErrorCode): GetUploadedPhotosResponse {
-            return GetUploadedPhotosResponse(emptyList(), errorCode)
-        }
+  companion object {
+    fun success(uploadedPhotos: List<UploadedPhotoData>): GetUploadedPhotosResponse {
+      return GetUploadedPhotosResponse(uploadedPhotos, ErrorCode.GetUploadedPhotosErrors.Ok())
     }
 
-    class UploadedPhotoData(
+    fun fail(errorCode: ErrorCode): GetUploadedPhotosResponse {
+      return GetUploadedPhotosResponse(emptyList(), errorCode)
+    }
+  }
 
-        @Expose
-        @SerializedName("photo_id")
-        val photoId: Long,
+  class UploadedPhotoData(
 
-        @Expose
-        @SerializedName("photo_name")
-        val photoName: String,
+    @Expose
+    @SerializedName("photo_id")
+    val photoId: Long,
 
-        @Expose
-        @SerializedName("uploader_lon")
-        val uploaderLon: Double,
+    @Expose
+    @SerializedName("photo_name")
+    val photoName: String,
 
-        @Expose
-        @SerializedName("uploader_lat")
-        val uploaderLat: Double,
+    @Expose
+    @SerializedName("uploader_lon")
+    val uploaderLon: Double,
 
-        @Expose
-        @SerializedName("has_receiver_info")
-        val hasReceivedInfo: Boolean,
+    @Expose
+    @SerializedName("uploader_lat")
+    val uploaderLat: Double,
 
-        @Expose
-        @SerializedName("uploaded_on")
-        val uploadedOn: Long
-    )
+    @Expose
+    @SerializedName("has_receiver_info")
+    val hasReceivedInfo: Boolean,
+
+    @Expose
+    @SerializedName("uploaded_on")
+    val uploadedOn: Long
+  )
 }

@@ -9,17 +9,17 @@ import com.kirakishou.photoexchange.mvp.model.TakenPhoto
  */
 object TakenPhotosMapper {
 
-    fun toMyPhoto(takenPhotoEntity: TakenPhotoEntity, tempFileEntity: TempFileEntity): TakenPhoto {
-        if (takenPhotoEntity.id == null || takenPhotoEntity.id!! <= 0L) {
-            return TakenPhoto.empty()
-        }
-
-        val file = if (tempFileEntity.isEmpty()) {
-            null
-        } else {
-            tempFileEntity.asFile()
-        }
-
-        return TakenPhoto(takenPhotoEntity.id!!, takenPhotoEntity.photoState, takenPhotoEntity.isPublic, takenPhotoEntity.photoName, file)
+  fun toMyPhoto(takenPhotoEntity: TakenPhotoEntity, tempFileEntity: TempFileEntity): TakenPhoto {
+    if (takenPhotoEntity.id == null || takenPhotoEntity.id!! <= 0L) {
+      return TakenPhoto.empty()
     }
+
+    val file = if (tempFileEntity.isEmpty()) {
+      null
+    } else {
+      tempFileEntity.asFile()
+    }
+
+    return TakenPhoto(takenPhotoEntity.id!!, takenPhotoEntity.photoState, takenPhotoEntity.isPublic, takenPhotoEntity.photoName, file)
+  }
 }

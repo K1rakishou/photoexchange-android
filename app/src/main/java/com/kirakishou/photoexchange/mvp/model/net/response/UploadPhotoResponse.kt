@@ -9,25 +9,25 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
  */
 class UploadPhotoResponse(
 
-    @Expose
-    @SerializedName("photo_id")
-    val photoId: Long,
+  @Expose
+  @SerializedName("photo_id")
+  val photoId: Long,
 
-    @Expose
-    @SerializedName("photo_name")
-    val photoName: String,
+  @Expose
+  @SerializedName("photo_name")
+  val photoName: String,
 
-    errorCode: ErrorCode
+  errorCode: ErrorCode
 
 ) : StatusResponse(errorCode.getValue(), errorCode) {
 
-    companion object {
-        fun success(photoId: Long, photoName: String): UploadPhotoResponse {
-            return UploadPhotoResponse(photoId, photoName, ErrorCode.UploadPhotoErrors.Ok())
-        }
-
-        fun error(errorCode: ErrorCode): UploadPhotoResponse {
-            return UploadPhotoResponse(-1L, "", errorCode)
-        }
+  companion object {
+    fun success(photoId: Long, photoName: String): UploadPhotoResponse {
+      return UploadPhotoResponse(photoId, photoName, ErrorCode.UploadPhotoErrors.Ok())
     }
+
+    fun error(errorCode: ErrorCode): UploadPhotoResponse {
+      return UploadPhotoResponse(-1L, "", errorCode)
+    }
+  }
 }

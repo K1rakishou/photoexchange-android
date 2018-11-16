@@ -8,10 +8,10 @@ import kotlin.reflect.full.primaryConstructor
  */
 
 fun <T> KClass<*>.newInstance(): T {
-    val ctor = this.primaryConstructor
-    return if (ctor != null && ctor.parameters.isEmpty()) {
-        ctor.call() as T
-    } else {
-        throw IllegalStateException("ctor is null or empty")
-    }
+  val ctor = this.primaryConstructor
+  return if (ctor != null && ctor.parameters.isEmpty()) {
+    ctor.call() as T
+  } else {
+    throw IllegalStateException("ctor is null or empty")
+  }
 }

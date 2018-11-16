@@ -7,20 +7,20 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 class GalleryPhotoIdsResponse
 private constructor(
 
-    @Expose
-    @SerializedName("gallery_photo_ids")
-    val galleryPhotoIds: List<Long>,
+  @Expose
+  @SerializedName("gallery_photo_ids")
+  val galleryPhotoIds: List<Long>,
 
-    errorCode: ErrorCode.GetGalleryPhotosErrors
+  errorCode: ErrorCode.GetGalleryPhotosErrors
 ) : StatusResponse(errorCode.getValue(), errorCode) {
 
-    companion object {
-        fun success(galleryPhotoIds: List<Long>): GalleryPhotoIdsResponse {
-            return GalleryPhotoIdsResponse(galleryPhotoIds, ErrorCode.GetGalleryPhotosErrors.Ok())
-        }
-
-        fun error(errorCode: ErrorCode.GetGalleryPhotosErrors): GalleryPhotoIdsResponse {
-            return GalleryPhotoIdsResponse(emptyList(), errorCode)
-        }
+  companion object {
+    fun success(galleryPhotoIds: List<Long>): GalleryPhotoIdsResponse {
+      return GalleryPhotoIdsResponse(galleryPhotoIds, ErrorCode.GetGalleryPhotosErrors.Ok())
     }
+
+    fun error(errorCode: ErrorCode.GetGalleryPhotosErrors): GalleryPhotoIdsResponse {
+      return GalleryPhotoIdsResponse(emptyList(), errorCode)
+    }
+  }
 }

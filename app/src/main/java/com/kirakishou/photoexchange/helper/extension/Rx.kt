@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit
  */
 
 fun <T> Observable<T>.debounceClicks(): Observable<T> {
-    return this.observeOn(Schedulers.io())
-        .throttleFirst(500, TimeUnit.MILLISECONDS)
-        .observeOn(AndroidSchedulers.mainThread())
+  return this.observeOn(Schedulers.io())
+    .throttleFirst(500, TimeUnit.MILLISECONDS)
+    .observeOn(AndroidSchedulers.mainThread())
 }

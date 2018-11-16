@@ -7,24 +7,24 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 class FavouritePhotoResponse
 private constructor(
 
-    @Expose
-    @SerializedName("is_favourited")
-    val isFavourited: Boolean,
+  @Expose
+  @SerializedName("is_favourited")
+  val isFavourited: Boolean,
 
-    @Expose
-    @SerializedName("count")
-    val favouritesCount: Long,
+  @Expose
+  @SerializedName("count")
+  val favouritesCount: Long,
 
-    errorCode: ErrorCode
+  errorCode: ErrorCode
 ) : StatusResponse(errorCode.getValue(), errorCode) {
 
-    companion object {
-        fun success(isFavourited: Boolean, count: Long): FavouritePhotoResponse {
-            return FavouritePhotoResponse(isFavourited, count, ErrorCode.FavouritePhotoErrors.Ok())
-        }
-
-        fun error(errorCode: ErrorCode): FavouritePhotoResponse {
-            return FavouritePhotoResponse(false, 0, errorCode)
-        }
+  companion object {
+    fun success(isFavourited: Boolean, count: Long): FavouritePhotoResponse {
+      return FavouritePhotoResponse(isFavourited, count, ErrorCode.FavouritePhotoErrors.Ok())
     }
+
+    fun error(errorCode: ErrorCode): FavouritePhotoResponse {
+      return FavouritePhotoResponse(false, 0, errorCode)
+    }
+  }
 }

@@ -12,46 +12,46 @@ import java.io.FileInputStream
  * Created by kirakishou on 3/17/2018.
  */
 class ProgressRequestBody(
-    private val photoFile: File,
-    private val callback: UploadPhotosUseCase.PhotoUploadProgressCallback
+  private val photoFile: File,
+  private val callback: UploadPhotosUseCase.PhotoUploadProgressCallback
 ) : RequestBody() {
-    private val DEFAULT_BUFFER_SIZE = 4096
+  private val DEFAULT_BUFFER_SIZE = 4096
 
-    override fun contentType(): MediaType? {
-        return MediaType.parse("image/*")
-    }
+  override fun contentType(): MediaType? {
+    return MediaType.parse("image/*")
+  }
 
-    override fun contentLength(): Long {
-        return photoFile.length()
-    }
+  override fun contentLength(): Long {
+    return photoFile.length()
+  }
 
-    override fun writeTo(sink: BufferedSink) {
-        val fileLength = photoFile.length()
-        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-        val fis = FileInputStream(photoFile)
-        var uploaded: Long = 0
-        var lastPercent = 0L
+  override fun writeTo(sink: BufferedSink) {
+    val fileLength = photoFile.length()
+    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+    val fis = FileInputStream(photoFile)
+    var uploaded: Long = 0
+    var lastPercent = 0L
 
-        try {
-            while (true) {
-                val read = fis.read(buffer)
-                if (read == -1) {
-                    break
-                }
-
-                val percent = 100L * uploaded / fileLength
-                if (percent - lastPercent >= 3) {
-                    lastPercent = percent
-                    callback.onProgress(percent.toInt())
-                }
-
-                uploaded += read.toLong()
-                sink.write(buffer, 0, read)
-            }
-
-            callback.onProgress(100)
-        } finally {
-            fis.close()
+    try {
+      while (true) {
+        val read = fis.read(buffer)
+        if (read == -1) {
+          break
         }
+
+        val percent = 100L * uploaded / fileLength
+        if (percent - lastPercent >= 3) {
+          lastPercent = percent
+          callback.onProgress(percent.toInt())
+        }
+
+        uploaded += read.toLong()
+        sink.write(buffer, 0, read)
+      }
+
+      callback.onProgress(100)
+    } finally {
+      fis.close()
     }
+  }
 }

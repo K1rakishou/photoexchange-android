@@ -7,7 +7,7 @@ import android.content.SharedPreferences
  */
 
 inline fun SharedPreferences.edit(operation: (SharedPreferences.Editor) -> Unit) {
-    val editor = this.edit()
-    operation(editor)
-    editor.apply()
+  val editor = this.edit()
+  operation(editor)
+  editor.apply()
 }

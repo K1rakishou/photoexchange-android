@@ -14,74 +14,74 @@ import javax.inject.Inject
  */
 open class ApiClientImpl
 @Inject constructor(
-    private val apiService: ApiService,
-    private val gson: MyGson,
-    private val schedulerProvider: SchedulerProvider
+  private val apiService: ApiService,
+  private val gson: MyGson,
+  private val schedulerProvider: SchedulerProvider
 ) : ApiClient {
 
-    override fun uploadPhoto(photoFilePath: String, location: LonLat, userId: String, isPublic: Boolean,
-                    callback: UploadPhotosUseCase.PhotoUploadProgressCallback): Single<UploadPhotoResponse> {
-        return UploadPhotoRequest<UploadPhotoResponse>(photoFilePath, location, userId, isPublic, callback, apiService, schedulerProvider, gson)
-            .execute()
-    }
+  override fun uploadPhoto(photoFilePath: String, location: LonLat, userId: String, isPublic: Boolean,
+                           callback: UploadPhotosUseCase.PhotoUploadProgressCallback): Single<UploadPhotoResponse> {
+    return UploadPhotoRequest<UploadPhotoResponse>(photoFilePath, location, userId, isPublic, callback, apiService, schedulerProvider, gson)
+      .execute()
+  }
 
-    override fun receivePhotos(userId: String, photoNames: String): Single<ReceivedPhotosResponse> {
-        return ReceivePhotosRequest<ReceivedPhotosResponse>(userId, photoNames, apiService, schedulerProvider, gson)
-            .execute()
-    }
+  override fun receivePhotos(userId: String, photoNames: String): Single<ReceivedPhotosResponse> {
+    return ReceivePhotosRequest<ReceivedPhotosResponse>(userId, photoNames, apiService, schedulerProvider, gson)
+      .execute()
+  }
 
-    override fun getGalleryPhotoIds(lastId: Long, photosPerPage: Int): Single<GalleryPhotoIdsResponse> {
-        return GetGalleryPhotoIdsRequest<GalleryPhotoIdsResponse>(lastId, photosPerPage, apiService, schedulerProvider, gson)
-            .execute()
-    }
+  override fun getGalleryPhotoIds(lastId: Long, photosPerPage: Int): Single<GalleryPhotoIdsResponse> {
+    return GetGalleryPhotoIdsRequest<GalleryPhotoIdsResponse>(lastId, photosPerPage, apiService, schedulerProvider, gson)
+      .execute()
+  }
 
-    override fun getGalleryPhotos(galleryPhotoIds: String): Single<GalleryPhotosResponse> {
-        return GetGalleryPhotosRequest<GalleryPhotosResponse>(galleryPhotoIds, apiService, schedulerProvider, gson)
-            .execute()
-    }
+  override fun getGalleryPhotos(galleryPhotoIds: String): Single<GalleryPhotosResponse> {
+    return GetGalleryPhotosRequest<GalleryPhotosResponse>(galleryPhotoIds, apiService, schedulerProvider, gson)
+      .execute()
+  }
 
-    override fun getGalleryPhotoInfo(userId: String, galleryPhotoIds: String): Single<GalleryPhotoInfoResponse> {
-        return GetGalleryPhotoInfoRequest<GalleryPhotoInfoResponse>(userId, galleryPhotoIds, apiService, schedulerProvider, gson)
-            .execute()
-    }
+  override fun getGalleryPhotoInfo(userId: String, galleryPhotoIds: String): Single<GalleryPhotoInfoResponse> {
+    return GetGalleryPhotoInfoRequest<GalleryPhotoInfoResponse>(userId, galleryPhotoIds, apiService, schedulerProvider, gson)
+      .execute()
+  }
 
-    override fun favouritePhoto(userId: String, photoName: String): Single<FavouritePhotoResponse> {
-        return FavouritePhotoRequest<FavouritePhotoResponse>(userId, photoName, apiService, schedulerProvider, gson)
-            .execute()
-    }
+  override fun favouritePhoto(userId: String, photoName: String): Single<FavouritePhotoResponse> {
+    return FavouritePhotoRequest<FavouritePhotoResponse>(userId, photoName, apiService, schedulerProvider, gson)
+      .execute()
+  }
 
-    override fun reportPhoto(userId: String, photoName: String): Single<ReportPhotoResponse> {
-        return ReportPhotoRequest<ReportPhotoResponse>(userId, photoName, apiService, schedulerProvider, gson)
-            .execute()
-    }
+  override fun reportPhoto(userId: String, photoName: String): Single<ReportPhotoResponse> {
+    return ReportPhotoRequest<ReportPhotoResponse>(userId, photoName, apiService, schedulerProvider, gson)
+      .execute()
+  }
 
-    override fun getUserId(): Single<GetUserIdResponse> {
-        return GetUserIdRequest<GetUserIdResponse>(apiService, schedulerProvider, gson)
-            .execute()
-    }
+  override fun getUserId(): Single<GetUserIdResponse> {
+    return GetUserIdRequest<GetUserIdResponse>(apiService, schedulerProvider, gson)
+      .execute()
+  }
 
-    override fun getUploadedPhotoIds(userId: String, lastId: Long, count: Int): Single<GetUploadedPhotoIdsResponse> {
-        return GetUploadedPhotoIdsRequest<GetUploadedPhotoIdsResponse>(userId, lastId, count, apiService, schedulerProvider, gson)
-            .execute()
-    }
+  override fun getUploadedPhotoIds(userId: String, lastId: Long, count: Int): Single<GetUploadedPhotoIdsResponse> {
+    return GetUploadedPhotoIdsRequest<GetUploadedPhotoIdsResponse>(userId, lastId, count, apiService, schedulerProvider, gson)
+      .execute()
+  }
 
-    override fun getUploadedPhotos(userId: String, photoIds: String): Single<GetUploadedPhotosResponse> {
-        return GetUploadedPhotosRequest<GetUploadedPhotosResponse>(userId, photoIds, apiService, schedulerProvider, gson)
-            .execute()
-    }
+  override fun getUploadedPhotos(userId: String, photoIds: String): Single<GetUploadedPhotosResponse> {
+    return GetUploadedPhotosRequest<GetUploadedPhotosResponse>(userId, photoIds, apiService, schedulerProvider, gson)
+      .execute()
+  }
 
-    override fun getReceivedPhotoIds(userId: String, lastId: Long, count: Int): Single<GetReceivedPhotoIdsResponse> {
-        return GetReceivedPhotoIdsRequest<GetReceivedPhotoIdsResponse>(userId, lastId, count, apiService, schedulerProvider, gson)
-            .execute()
-    }
+  override fun getReceivedPhotoIds(userId: String, lastId: Long, count: Int): Single<GetReceivedPhotoIdsResponse> {
+    return GetReceivedPhotoIdsRequest<GetReceivedPhotoIdsResponse>(userId, lastId, count, apiService, schedulerProvider, gson)
+      .execute()
+  }
 
-    override fun getReceivedPhotos(userId: String, photoIds: String): Single<GetReceivedPhotosResponse> {
-        return GetReceivedPhotosRequest<GetReceivedPhotosResponse>(userId, photoIds, apiService, schedulerProvider, gson)
-            .execute()
-    }
+  override fun getReceivedPhotos(userId: String, photoIds: String): Single<GetReceivedPhotosResponse> {
+    return GetReceivedPhotosRequest<GetReceivedPhotosResponse>(userId, photoIds, apiService, schedulerProvider, gson)
+      .execute()
+  }
 
-    override fun checkAccountExists(userId: String): Single<CheckAccountExistsResponse> {
-        return CheckAccountExistsRequest<CheckAccountExistsResponse>(userId, apiService, schedulerProvider, gson)
-            .execute()
-    }
+  override fun checkAccountExists(userId: String): Single<CheckAccountExistsResponse> {
+    return CheckAccountExistsRequest<CheckAccountExistsResponse>(userId, apiService, schedulerProvider, gson)
+      .execute()
+  }
 }

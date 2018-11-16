@@ -13,13 +13,13 @@ import dagger.Provides
 @Module
 class ReceivePhotosServiceModule() {
 
-    @PerService
-    @Provides
-    fun provideReceivePhotosServicePresenter(uploadedPhotosRepository: UploadedPhotosRepository,
-                                             settingsRepository: SettingsRepository,
-                                             schedulerProvider: SchedulerProvider,
-                                             receivePhotosUseCase: ReceivePhotosUseCase): ReceivePhotosServicePresenter {
-        return ReceivePhotosServicePresenter(uploadedPhotosRepository,
-            settingsRepository, schedulerProvider, receivePhotosUseCase, Constants.RECEIVE_PHOTOS_DELAY_MS)
-    }
+  @PerService
+  @Provides
+  fun provideReceivePhotosServicePresenter(uploadedPhotosRepository: UploadedPhotosRepository,
+                                           settingsRepository: SettingsRepository,
+                                           schedulerProvider: SchedulerProvider,
+                                           receivePhotosUseCase: ReceivePhotosUseCase): ReceivePhotosServicePresenter {
+    return ReceivePhotosServicePresenter(uploadedPhotosRepository,
+      settingsRepository, schedulerProvider, receivePhotosUseCase, Constants.RECEIVE_PHOTOS_DELAY_MS)
+  }
 }

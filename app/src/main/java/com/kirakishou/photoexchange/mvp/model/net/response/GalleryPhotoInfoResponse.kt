@@ -7,35 +7,35 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 class GalleryPhotoInfoResponse
 private constructor(
 
-    @Expose
-    @SerializedName("gallery_photos_info")
-    val galleryPhotosInfo: List<GalleryPhotosInfoData>,
+  @Expose
+  @SerializedName("gallery_photos_info")
+  val galleryPhotosInfo: List<GalleryPhotosInfoData>,
 
-    errorCode: ErrorCode
+  errorCode: ErrorCode
 ) : StatusResponse(errorCode.getValue(), errorCode) {
 
-    companion object {
-        fun success(galleryPhotosInfo: List<GalleryPhotosInfoData>): GalleryPhotoInfoResponse {
-            return GalleryPhotoInfoResponse(galleryPhotosInfo, ErrorCode.GetGalleryPhotosErrors.Ok())
-        }
-
-        fun fail(errorCode: ErrorCode): GalleryPhotoInfoResponse {
-            return GalleryPhotoInfoResponse(emptyList(), errorCode)
-        }
+  companion object {
+    fun success(galleryPhotosInfo: List<GalleryPhotosInfoData>): GalleryPhotoInfoResponse {
+      return GalleryPhotoInfoResponse(galleryPhotosInfo, ErrorCode.GetGalleryPhotosErrors.Ok())
     }
 
-    class GalleryPhotosInfoData(
+    fun fail(errorCode: ErrorCode): GalleryPhotoInfoResponse {
+      return GalleryPhotoInfoResponse(emptyList(), errorCode)
+    }
+  }
 
-        @Expose
-        @SerializedName("photoId")
-        val id: Long,
+  class GalleryPhotosInfoData(
 
-        @Expose
-        @SerializedName("is_favourited")
-        val isFavourited: Boolean,
+    @Expose
+    @SerializedName("photoId")
+    val id: Long,
 
-        @Expose
-        @SerializedName("is_reported")
-        val isReported: Boolean
-    )
+    @Expose
+    @SerializedName("is_favourited")
+    val isFavourited: Boolean,
+
+    @Expose
+    @SerializedName("is_reported")
+    val isReported: Boolean
+  )
 }

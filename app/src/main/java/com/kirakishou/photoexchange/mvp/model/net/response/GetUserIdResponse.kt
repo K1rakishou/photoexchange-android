@@ -7,20 +7,20 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 class GetUserIdResponse
 private constructor(
 
-    @Expose
-    @SerializedName("user_id")
-    val userId: String,
+  @Expose
+  @SerializedName("user_id")
+  val userId: String,
 
-    errorCode: ErrorCode
+  errorCode: ErrorCode
 ) : StatusResponse(errorCode.getValue(), errorCode) {
 
-    companion object {
-        fun success(userId: String): GetUserIdResponse {
-            return GetUserIdResponse(userId, ErrorCode.GetUserIdError.Ok())
-        }
-
-        fun error(errorCode: ErrorCode): GetUserIdResponse {
-            return GetUserIdResponse("", errorCode)
-        }
+  companion object {
+    fun success(userId: String): GetUserIdResponse {
+      return GetUserIdResponse(userId, ErrorCode.GetUserIdError.Ok())
     }
+
+    fun error(errorCode: ErrorCode): GetUserIdResponse {
+      return GetUserIdResponse("", errorCode)
+    }
+  }
 }

@@ -15,24 +15,24 @@ import javax.inject.Singleton
 @Module
 class GsonModule {
 
-    @Singleton
-    @Provides
-    fun provideGson(): Gson {
-        return GsonBuilder()
-            .excludeFieldsWithoutExposeAnnotation()
-            .setPrettyPrinting()
-            .create()
-    }
+  @Singleton
+  @Provides
+  fun provideGson(): Gson {
+    return GsonBuilder()
+      .excludeFieldsWithoutExposeAnnotation()
+      .setPrettyPrinting()
+      .create()
+  }
 
-    @Singleton
-    @Provides
-    fun provideGsonConverterFactory(gson: Gson): GsonConverterFactory {
-        return GsonConverterFactory.create(gson)
-    }
+  @Singleton
+  @Provides
+  fun provideGsonConverterFactory(gson: Gson): GsonConverterFactory {
+    return GsonConverterFactory.create(gson)
+  }
 
-    @Singleton
-    @Provides
-    fun provideMyGson(gson: Gson): MyGson {
-        return MyGsonImpl(gson)
-    }
+  @Singleton
+  @Provides
+  fun provideMyGson(gson: Gson): MyGson {
+    return MyGsonImpl(gson)
+  }
 }

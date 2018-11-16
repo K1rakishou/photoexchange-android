@@ -8,27 +8,27 @@ import io.reactivex.Observable
 import timber.log.Timber
 
 open class ReportPhotoUseCase(
-    private val apiClient: ApiClient,
-    private val galleryPhotoRepository: GalleryPhotoRepository
+  private val apiClient: ApiClient,
+  private val galleryPhotoRepository: GalleryPhotoRepository
 ) {
-    private val TAG = "ReportPhotoUseCase"
+  private val TAG = "ReportPhotoUseCase"
 
-    fun reportPhoto(userId: String, photoName: String): Observable<Either<ErrorCode.ReportPhotoErrors, Boolean>> {
-        return apiClient.reportPhoto(userId, photoName)
-            .map { response ->
-                val errorCode = response.errorCode as ErrorCode.ReportPhotoErrors
-                if (errorCode !is ErrorCode.ReportPhotoErrors.Ok) {
-                    return@map Either.Error(errorCode)
-                }
+  fun reportPhoto(userId: String, photoName: String): Observable<Either<ErrorCode.ReportPhotoErrors, Boolean>> {
+    return apiClient.reportPhoto(userId, photoName)
+      .map { response ->
+        val errorCode = response.errorCode as ErrorCode.ReportPhotoErrors
+        if (errorCode !is ErrorCode.ReportPhotoErrors.Ok) {
+          return@map Either.Error(errorCode)
+        }
 
-                val galleryPhoto = galleryPhotoRepository.findByPhotoName(photoName)
-                if (galleryPhoto != null) {
-                    galleryPhotoRepository.reportPhoto(galleryPhoto.galleryPhotoId)
-                }
+        val galleryPhoto = galleryPhotoRepository.findByPhotoName(photoName)
+        if (galleryPhoto != null) {
+          galleryPhotoRepository.reportPhoto(galleryPhoto.galleryPhotoId)
+        }
 
-                return@map Either.Value(response.isReported)
-            }
-            .toObservable()
-            .doOnError { Timber.tag(TAG).e(it) }
-    }
+        return@map Either.Value(response.isReported)
+      }
+      .toObservable()
+      .doOnError { Timber.tag(TAG).e(it) }
+  }
 }

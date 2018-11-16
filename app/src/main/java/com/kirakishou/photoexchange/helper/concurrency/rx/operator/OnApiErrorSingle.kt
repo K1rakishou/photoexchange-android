@@ -19,59 +19,59 @@ import kotlin.reflect.KClass
  * Or ApiException with BadServerResponse and HttpStatus when server didn't return any errorCode in JSON
  * */
 class OnApiErrorSingle<T : StatusResponse>(
-    val gson: MyGson,
-    val clazz: KClass<*>
+  val gson: MyGson,
+  val clazz: KClass<*>
 ) : SingleOperator<T, Response<T>> {
 
-    override fun apply(observer: SingleObserver<in T>): SingleObserver<in Response<T>> {
-        return object : SingleObserver<Response<T>> {
-            override fun onError(e: Throwable) {
-                observer.onError(e)
-            }
+  override fun apply(observer: SingleObserver<in T>): SingleObserver<in Response<T>> {
+    return object : SingleObserver<Response<T>> {
+      override fun onError(e: Throwable) {
+        observer.onError(e)
+      }
 
-            override fun onSubscribe(d: Disposable) {
-                observer.onSubscribe(d)
-            }
+      override fun onSubscribe(d: Disposable) {
+        observer.onSubscribe(d)
+      }
 
-            override fun onSuccess(response: Response<T>) {
-                if (!response.isSuccessful) {
-                    try {
-                        val responseJson = response.errorBody()!!.string()
-                        val error = gson.fromJson<T>(responseJson, StatusResponse::class.java)
+      override fun onSuccess(response: Response<T>) {
+        if (!response.isSuccessful) {
+          try {
+            val responseJson = response.errorBody()!!.string()
+            val error = gson.fromJson<T>(responseJson, StatusResponse::class.java)
 
-                        //may happen in some rare cases (like when client and server have endpoints with different parameters)
-                        if (error?.serverErrorCode == null) {
-                            observer.onError(GeneralException.ApiException(getBadErrorCodeByClass(clazz)))
-                        } else {
-                            observer.onError(GeneralException.ApiException(getErrorCode(error.serverErrorCode!!)))
-                        }
-                    } catch (e: Exception) {
-                        observer.onError(e)
-                    }
-                } else {
-                    observer.onSuccess(response.body()!!)
-                }
+            //may happen in some rare cases (like when client and server have endpoints with different parameters)
+            if (error?.serverErrorCode == null) {
+              observer.onError(GeneralException.ApiException(getBadErrorCodeByClass(clazz)))
+            } else {
+              observer.onError(GeneralException.ApiException(getErrorCode(error.serverErrorCode!!)))
             }
+          } catch (e: Exception) {
+            observer.onError(e)
+          }
+        } else {
+          observer.onSuccess(response.body()!!)
         }
+      }
+    }
+  }
+
+  private fun getErrorCode(errorCodeInt: Int): ErrorCode {
+    return ErrorCode.fromInt(clazz, errorCodeInt)
+  }
+
+  //TODO: don't forget to add errorCodes here
+  private fun getBadErrorCodeByClass(clazz: KClass<*>): ErrorCode {
+    val errorCode = when (clazz) {
+      UploadPhotoResponse::class -> ErrorCode.UploadPhotoErrors.LocalBadServerResponse()
+      ReceivedPhotosResponse::class -> ErrorCode.ReceivePhotosErrors.LocalBadServerResponse()
+      GalleryPhotoIdsResponse::class -> ErrorCode.GetGalleryPhotosErrors.LocalBadServerResponse()
+      FavouritePhotoResponse::class -> ErrorCode.FavouritePhotoErrors.LocalBadServerResponse()
+      ReportPhotoResponse::class -> ErrorCode.ReportPhotoErrors.LocalBadServerResponse()
+      GetUserIdResponse::class -> ErrorCode.GetUserIdError.LocalBadServerResponse()
+      GetUploadedPhotosResponse::class -> ErrorCode.GetUploadedPhotosErrors.LocalBadServerResponse()
+      else -> throw IllegalArgumentException("Bad class: $clazz")
     }
 
-    private fun getErrorCode(errorCodeInt: Int): ErrorCode {
-        return ErrorCode.fromInt(clazz, errorCodeInt)
-    }
-
-    //TODO: don't forget to add errorCodes here
-    private fun getBadErrorCodeByClass(clazz: KClass<*>): ErrorCode {
-        val errorCode = when (clazz) {
-            UploadPhotoResponse::class -> ErrorCode.UploadPhotoErrors.LocalBadServerResponse()
-            ReceivedPhotosResponse::class -> ErrorCode.ReceivePhotosErrors.LocalBadServerResponse()
-            GalleryPhotoIdsResponse::class -> ErrorCode.GetGalleryPhotosErrors.LocalBadServerResponse()
-            FavouritePhotoResponse::class -> ErrorCode.FavouritePhotoErrors.LocalBadServerResponse()
-            ReportPhotoResponse::class -> ErrorCode.ReportPhotoErrors.LocalBadServerResponse()
-            GetUserIdResponse::class -> ErrorCode.GetUserIdError.LocalBadServerResponse()
-            GetUploadedPhotosResponse::class -> ErrorCode.GetUploadedPhotosErrors.LocalBadServerResponse()
-            else -> throw IllegalArgumentException("Bad class: $clazz")
-        }
-
-        return errorCode
-    }
+    return errorCode
+  }
 }

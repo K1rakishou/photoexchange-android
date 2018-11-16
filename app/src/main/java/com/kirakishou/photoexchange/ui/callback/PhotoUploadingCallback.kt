@@ -7,5 +7,5 @@ import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragment
  * Created by kirakishou on 3/17/2018.
  */
 interface PhotoUploadingCallback {
-    fun onUploadPhotosEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent)
+  fun onUploadPhotosEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent)
 }

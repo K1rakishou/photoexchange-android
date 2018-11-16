@@ -22,8 +22,9 @@
             </intent-filter>
         </activity>
         <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity" />
-        <activity android:name="com.kirakishou.photoexchange.ui.activity.PhotosActivity"
-            android:launchMode="singleTop"/>
+        <activity
+            android:name="com.kirakishou.photoexchange.ui.activity.PhotosActivity"
+            android:launchMode="singleTop" />
         <activity android:name="com.kirakishou.photoexchange.ui.activity.SettingsActivity" />
 
         <meta-data
