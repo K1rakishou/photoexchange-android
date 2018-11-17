@@ -13,6 +13,7 @@ import javax.inject.Singleton
 @Component(modules = [
   ApplicationModule::class,
   SchedulerProviderModule::class,
+  DispatchersProviderModule::class,
   DatabaseModule::class,
   GsonModule::class,
   NetworkModule::class,

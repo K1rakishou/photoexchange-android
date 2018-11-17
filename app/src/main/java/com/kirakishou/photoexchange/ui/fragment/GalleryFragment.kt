@@ -140,7 +140,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     val layoutManager = GridLayoutManager(requireContext(), columnsCount)
     layoutManager.spanSizeLookup = GalleryPhotosAdapterSpanSizeLookup(adapter, columnsCount)
 
-    viewModel.galleryFragmentViewModel.viewState.photosPerPage = Constants.GALLERY_PHOTOS_PER_ROW * layoutManager.spanCount
+    viewModel.galleryFragmentViewModel.viewState.updateCount(Constants.GALLERY_PHOTOS_PER_ROW * layoutManager.spanCount)
 
     //TODO: visible threshold should be less than photosPerPage count
     endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, 2, loadMoreSubject, scrollSubject)
@@ -275,7 +275,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
 
     galleryPhotosList.post {
       if (galleryPhotos.isNotEmpty()) {
-        viewModel.galleryFragmentViewModel.viewState.updateLastId(galleryPhotos.last().galleryPhotoId)
+        viewModel.galleryFragmentViewModel.viewState.updateLastUploadedOn(galleryPhotos.lastOrNull()?.galleryPhotoId)
         adapter.addAll(galleryPhotos)
       }
 
@@ -286,7 +286,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
         return@post
       }
 
-      if (galleryPhotos.size < viewModel.galleryFragmentViewModel.viewState.photosPerPage) {
+      if (galleryPhotos.size < viewModel.galleryFragmentViewModel.viewState.count) {
         endlessScrollListener.reachedEnd()
         adapter.showMessageFooter("End of the list reached")
       }

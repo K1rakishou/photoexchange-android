@@ -2,9 +2,12 @@ package com.kirakishou.photoexchange.di.module
 
 import androidx.lifecycle.ViewModelProviders
 import com.kirakishou.photoexchange.di.scope.PerActivity
-import com.kirakishou.photoexchange.helper.ImageLoader
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.database.repository.*
+import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.interactors.*
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.viewmodel.GalleryFragmentViewModel
@@ -57,19 +60,15 @@ open class PhotosActivityModule(
 
   @PerActivity
   @Provides
-  fun provideGalleryFragmentViewModel(imageLoader: ImageLoader,
-                                      settingsRepository: SettingsRepository,
+  fun provideGalleryFragmentViewModel(settingsRepository: SettingsRepository,
                                       galleryPhotosUseCase: GetGalleryPhotosUseCase,
                                       getGalleryPhotosInfoUseCase: GetGalleryPhotosInfoUseCase,
-                                      schedulerProvider: SchedulerProvider): GalleryFragmentViewModel {
+                                      dispatchersProvider: DispatchersProvider): GalleryFragmentViewModel {
     return GalleryFragmentViewModel(
-      imageLoader,
       settingsRepository,
       galleryPhotosUseCase,
       getGalleryPhotosInfoUseCase,
-      schedulerProvider,
-      Constants.ADAPTER_LOAD_MORE_ITEMS_DELAY_MS,
-      Constants.PROGRESS_FOOTER_REMOVE_DELAY_MS
+      dispatchersProvider
     )
   }
 
