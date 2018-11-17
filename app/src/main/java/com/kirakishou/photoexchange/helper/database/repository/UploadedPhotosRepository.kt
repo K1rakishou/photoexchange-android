@@ -48,6 +48,10 @@ open class UploadedPhotosRepository(
     return uploadedPhotoDao.save(uploadedPhotoEntity).isSuccess()
   }
 
+  fun getPageOfUploadedPhotos(time: Long, count: Int): List<UploadedPhoto> {
+    return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.getPage(time, count))
+  }
+
   fun count(): Int {
     return uploadedPhotoDao.count().toInt()
   }

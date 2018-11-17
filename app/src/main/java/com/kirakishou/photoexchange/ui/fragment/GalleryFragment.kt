@@ -64,7 +64,6 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
 
     initRx()
     initRecyclerView()
-    triggerPhotosLoading()
   }
 
   override fun onFragmentViewDestroy() {
@@ -80,11 +79,8 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     compositeDisposable += viewModel.galleryFragmentViewModel.unknownErrors
       .subscribe({ error -> handleUnknownErrors(error) })
 
-    compositeDisposable += lifecycle.getLifecycle()
-      .subscribe(viewModel.galleryFragmentViewModel.fragmentLifecycle::onNext)
-
     compositeDisposable += loadMoreSubject
-      .subscribe(viewModel.galleryFragmentViewModel.loadMoreEvent::onNext)
+      .subscribe({ viewModel.galleryFragmentViewModel.loadMorePhotos() })
 
     compositeDisposable += adapterButtonClickSubject
       .subscribeOn(AndroidSchedulers.mainThread())
@@ -149,10 +145,6 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     galleryPhotosList.adapter = adapter
     galleryPhotosList.clearOnScrollListeners()
     galleryPhotosList.addOnScrollListener(endlessScrollListener)
-  }
-
-  private fun triggerPhotosLoading() {
-    loadMoreSubject.onNext(Unit)
   }
 
   private fun handleAdapterClick(click: GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent) {

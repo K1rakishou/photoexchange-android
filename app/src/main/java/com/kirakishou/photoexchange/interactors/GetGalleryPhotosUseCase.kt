@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosMapper
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepository
 import com.kirakishou.photoexchange.helper.myRunCatching
@@ -16,8 +17,9 @@ import timber.log.Timber
 open class GetGalleryPhotosUseCase(
   private val apiClient: ApiClient,
   private val galleryPhotoRepository: GalleryPhotoRepository,
-  private val timeUtils: TimeUtils
-) : BaseUseCase() {
+  private val timeUtils: TimeUtils,
+  dispatchersProvider: DispatchersProvider
+) : BaseUseCase(dispatchersProvider) {
   private val TAG = "GetGalleryPhotosUseCase"
 
   //ErrorCode.GetGalleryPhotosErrors
@@ -42,7 +44,7 @@ open class GetGalleryPhotosUseCase(
         }
 
         //otherwise reload the page from the server
-        val response = apiClient.getPageOfGalleryPhotos(lastUploadedOn, count).await()
+        val response = apiClient.getPageOfGalleryPhotos(time, count).await()
         val errorCode = response.errorCode as ErrorCode.GetGalleryPhotosErrors
 
         if (errorCode !is ErrorCode.GetGalleryPhotosErrors.Ok) {

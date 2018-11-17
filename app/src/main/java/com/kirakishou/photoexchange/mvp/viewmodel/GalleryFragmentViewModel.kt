@@ -1,7 +1,6 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.helper.RxLifecycle
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
@@ -14,13 +13,14 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import com.kirakishou.photoexchange.ui.viewstate.GalleryFragmentViewState
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 
@@ -36,18 +36,17 @@ class GalleryFragmentViewModel(
   private val job = Job()
 
   lateinit var intercom: PhotosActivityViewModelIntercom
+  lateinit var actor: SendChannel<Unit>
 
   val viewState = GalleryFragmentViewState()
-  val fragmentLifecycle = BehaviorSubject.create<RxLifecycle.FragmentLifecycle>()
-  val loadMoreEvent = PublishSubject.create<Unit>()
   val knownErrors = PublishSubject.create<ErrorCode>()
   val unknownErrors = PublishSubject.create<Throwable>()
 
   override val coroutineContext: CoroutineContext
-    get() = job + dispatchersProvider.CALC()
+    get() = job + dispatchersProvider.GENERAL()
 
   init {
-    actor<Unit> {
+    actor = actor(capacity = 1) {
       consumeEach {
         if (!isActive) {
           return@consumeEach
@@ -70,6 +69,12 @@ class GalleryFragmentViewModel(
         }
       }
     }
+
+    launch { actor.send(Unit) }
+  }
+
+  fun loadMorePhotos() {
+    actor.offer(Unit)
   }
 
   private suspend fun loadNextPageOfGalleryPhotos(

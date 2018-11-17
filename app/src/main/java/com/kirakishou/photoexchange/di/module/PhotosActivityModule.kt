@@ -33,14 +33,12 @@ open class PhotosActivityModule(
   fun provideUploadedPhotosFragmentViewModel(takenPhotosRepository: TakenPhotosRepository,
                                              settingsRepository: SettingsRepository,
                                              getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
-                                             schedulerProvider: SchedulerProvider): UploadedPhotosFragmentViewModel {
+                                             dispatchersProvider: DispatchersProvider): UploadedPhotosFragmentViewModel {
     return UploadedPhotosFragmentViewModel(
       takenPhotosRepository,
       settingsRepository,
       getUploadedPhotosUseCase,
-      schedulerProvider,
-      Constants.ADAPTER_LOAD_MORE_ITEMS_DELAY_MS,
-      Constants.PROGRESS_FOOTER_REMOVE_DELAY_MS
+      dispatchersProvider
     )
   }
 

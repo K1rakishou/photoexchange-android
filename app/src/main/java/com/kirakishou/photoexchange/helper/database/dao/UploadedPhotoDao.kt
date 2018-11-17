@@ -17,6 +17,10 @@ abstract class UploadedPhotoDao {
   abstract fun save(uploadedPhotoEntity: UploadedPhotoEntity): Long
 
   @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
+    "WHERE ${UploadedPhotoEntity.UPLOADED_ON_COLUMN} <= :time LIMIT :count")
+  abstract fun getPage(time: Long, count: Int): List<UploadedPhotoEntity>
+
+  @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
     "WHERE ${UploadedPhotoEntity.PHOTO_NAME_COLUMN} = :photoName")
   abstract fun findByPhotoName(photoName: String): UploadedPhotoEntity?
 

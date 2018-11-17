@@ -55,13 +55,8 @@ open class ApiClientImpl
       .execute()
   }
 
-  override fun getUploadedPhotoIds(userId: String, lastId: Long, count: Int): Single<GetUploadedPhotoIdsResponse> {
-    return GetUploadedPhotoIdsRequest<GetUploadedPhotoIdsResponse>(userId, lastId, count, apiService, schedulerProvider, gson)
-      .execute()
-  }
-
-  override fun getUploadedPhotos(userId: String, photoIds: String): Single<GetUploadedPhotosResponse> {
-    return GetUploadedPhotosRequest<GetUploadedPhotosResponse>(userId, photoIds, apiService, schedulerProvider, gson)
+  override fun getPageOfUploadedPhotos(userId: String, lastUploadedOn: Long, count: Int): Single<GetUploadedPhotosResponse> {
+    return GetPageOfUploadedPhotosRequest<GetUploadedPhotosResponse>(userId, lastUploadedOn, count, apiService, schedulerProvider, gson)
       .execute()
   }
 

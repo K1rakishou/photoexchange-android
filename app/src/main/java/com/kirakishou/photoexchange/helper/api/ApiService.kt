@@ -44,9 +44,10 @@ interface ApiService {
                           @Path("last_id") lastId: Long,
                           @Path("count") count: Int): Single<Response<GetUploadedPhotoIdsResponse>>
 
-  @GET("/v1/api/get_uploaded_photos/{user_id}/{photo_ids}")
-  fun getUploadedPhotos(@Path("user_id") userId: String,
-                        @Path("photo_ids") photoIds: String): Single<Response<GetUploadedPhotosResponse>>
+  @GET("/v1/api/get_page_of_uploaded_photos/{user_id}/{last_uploaded_on}/{count}")
+  fun getPageOfUploadedPhotos(@Path("user_id") userId: String,
+                              @Path("last_uploaded_on") lastUploadedOn: Long,
+                              @Path("count") count: Int): Single<Response<GetUploadedPhotosResponse>>
 
   @GET("/v1/api/get_received_photo_ids/{user_id}/{last_id}/{count}")
   fun getReceivedPhotoIds(@Path("user_id") userId: String,
