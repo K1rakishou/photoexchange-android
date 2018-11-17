@@ -31,7 +31,7 @@ interface ApiService {
   @GET("/v1/api/get_user_id")
   fun getUserId(): Single<Response<GetUserIdResponse>>
 
-  @GET("/v1/api/get_gallery_photos/{last_uploaded_on}/{count}")
+  @GET("/v1/api/get_page_of_gallery_photos/{last_uploaded_on}/{count}")
   fun getPageOfGalleryPhotos(@Path("last_uploaded_on") lastUploadedOn: Long,
                              @Path("count") count: Int): Single<Response<GalleryPhotosResponse>>
 
