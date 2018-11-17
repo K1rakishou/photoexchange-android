@@ -60,7 +60,6 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
 
     initRx()
     initRecyclerView()
-    triggerPhotosLoading()
   }
 
   override fun onFragmentViewDestroy() {
@@ -76,11 +75,8 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     compositeDisposable += viewModel.receivedPhotosFragmentViewModel.unknownErrors
       .subscribe({ error -> handleUnknownErrors(error) })
 
-    compositeDisposable += lifecycle.getLifecycle()
-      .subscribe(viewModel.receivedPhotosFragmentViewModel.fragmentLifecycle::onNext)
-
     compositeDisposable += loadMoreSubject
-      .subscribe(viewModel.receivedPhotosFragmentViewModel.loadMoreEvent::onNext)
+      .subscribe({ viewModel.receivedPhotosFragmentViewModel.loadMorePhotos() })
 
     compositeDisposable += adapterClicksSubject
       .subscribeOn(AndroidSchedulers.mainThread())
@@ -112,10 +108,6 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     receivedPhotosList.adapter = adapter
     receivedPhotosList.clearOnScrollListeners()
     receivedPhotosList.addOnScrollListener(endlessScrollListener)
-  }
-
-  private fun triggerPhotosLoading() {
-    loadMoreSubject.onNext(Unit)
   }
 
   private fun handleAdapterClick(click: ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent) {

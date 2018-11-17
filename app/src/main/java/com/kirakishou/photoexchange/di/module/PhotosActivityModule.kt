@@ -46,13 +46,11 @@ open class PhotosActivityModule(
   @Provides
   fun provideReceivedPhotosFragmentViewModel(settingsRepository: SettingsRepository,
                                              getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
-                                             schedulerProvider: SchedulerProvider): ReceivedPhotosFragmentViewModel {
+                                             dispatchersProvider: DispatchersProvider): ReceivedPhotosFragmentViewModel {
     return ReceivedPhotosFragmentViewModel(
       settingsRepository,
       getReceivedPhotosUseCase,
-      schedulerProvider,
-      Constants.ADAPTER_LOAD_MORE_ITEMS_DELAY_MS,
-      Constants.PROGRESS_FOOTER_REMOVE_DELAY_MS
+      dispatchersProvider
     )
   }
 

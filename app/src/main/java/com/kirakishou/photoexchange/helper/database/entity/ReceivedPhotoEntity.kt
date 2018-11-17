@@ -24,8 +24,8 @@ class ReceivedPhotoEntity(
   @ColumnInfo(name = LAT_COLUMN)
   var lat: Double? = null,
 
-  @ColumnInfo(name = INSERTED_ON_COLUMN)
-  var insertedOn: Long? = null
+  @ColumnInfo(name = UPLOADED_ON_COLUMN)
+  var uploadedOn: Long? = null
 ) {
 
   fun isEmpty(): Boolean {
@@ -55,6 +55,6 @@ class ReceivedPhotoEntity(
     const val RECEIVED_PHOTO_NAME_COLUMN = "RECEIVED_PHOTO_NAME"
     const val LON_COLUMN = "LON"
     const val LAT_COLUMN = "LAT"
-    const val INSERTED_ON_COLUMN = "INSERTED_ON"
+    const val UPLOADED_ON_COLUMN = "UPLOADED_ON"
   }
 }

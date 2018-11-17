@@ -60,13 +60,8 @@ open class ApiClientImpl
       .execute()
   }
 
-  override fun getReceivedPhotoIds(userId: String, lastId: Long, count: Int): Single<GetReceivedPhotoIdsResponse> {
-    return GetReceivedPhotoIdsRequest<GetReceivedPhotoIdsResponse>(userId, lastId, count, apiService, schedulerProvider, gson)
-      .execute()
-  }
-
-  override fun getReceivedPhotos(userId: String, photoIds: String): Single<GetReceivedPhotosResponse> {
-    return GetReceivedPhotosRequest<GetReceivedPhotosResponse>(userId, photoIds, apiService, schedulerProvider, gson)
+  override fun getReceivedPhotos(userId: String, lastUploadedOn: Long, count: Int): Single<GetReceivedPhotosResponse> {
+    return GetPageOfReceivedPhotosRequest<GetReceivedPhotosResponse>(userId, lastUploadedOn, count, apiService, schedulerProvider, gson)
       .execute()
   }
 

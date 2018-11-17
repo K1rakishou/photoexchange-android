@@ -35,6 +35,10 @@ open class ReceivedPhotosRepository(
       .size == receivedPhotos.size
   }
 
+  fun getPageOfReceivedPhotos(time: Long, count: Int): List<ReceivedPhoto> {
+    return ReceivedPhotosMapper.FromEntity.toReceivedPhotos(receivedPhotosDao.getPage(time, count))
+  }
+
   fun count(): Int {
     return receivedPhotosDao.countAll().toInt()
   }
