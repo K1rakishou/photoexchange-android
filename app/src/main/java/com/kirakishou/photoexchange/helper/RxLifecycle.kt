@@ -2,10 +2,22 @@ package com.kirakishou.photoexchange.helper
 
 import io.reactivex.Observable
 import io.reactivex.subjects.BehaviorSubject
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.rx2.openSubscription
 
 class RxLifecycle {
-
   private val lifecycleSubject = BehaviorSubject.createDefault(FragmentLifecycle.onDestroy)
+
+  suspend fun waitForState(desiredState: FragmentState) {
+    val observableSource = lifecycleSubject.openSubscription()
+
+    observableSource.consumeEach {
+      if (it.isAtLeast(desiredState)) {
+        observableSource.cancel()
+        return
+      }
+    }
+  }
 
   fun getLifecycle(): Observable<FragmentLifecycle> = lifecycleSubject
 
@@ -34,10 +46,12 @@ class RxLifecycle {
   }
 
   enum class FragmentState(val value: Int) {
-    Destroyed(0),
-    Created(1),
-    Started(2),
-    Resumed(3);
+    Created(0),
+    Started(1),
+    Resumed(2),
+    Paused(3),
+    Stopped(4),
+    Destroyed(5)
   }
 
   enum class FragmentLifecycle(val value: Int) {
@@ -53,8 +67,8 @@ class RxLifecycle {
         onCreate -> FragmentState.Created
         onStart -> FragmentState.Started
         onResume -> FragmentState.Resumed
-        onPause -> FragmentState.Started
-        onStop -> FragmentState.Created
+        onPause -> FragmentState.Paused
+        onStop -> FragmentState.Stopped
         onDestroy -> FragmentState.Destroyed
       }
     }

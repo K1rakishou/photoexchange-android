@@ -15,6 +15,10 @@ abstract class ReceivedPhotoDao {
   @Insert(onConflict = OnConflictStrategy.REPLACE)
   abstract fun saveMany(receivedPhotoEntityList: List<ReceivedPhotoEntity>): Array<Long>
 
+  @Query("SELECT * FROM ${ReceivedPhotoEntity.TABLE_NAME} " +
+    "WHERE ${ReceivedPhotoEntity.UPLOADED_ON_COLUMN} <= :time LIMIT :count")
+  abstract fun getPage(time: Long, count: Int): List<ReceivedPhotoEntity>
+
   @Query("SELECT * FROM ${ReceivedPhotoEntity.TABLE_NAME}")
   abstract fun findAll(): List<ReceivedPhotoEntity>
 
@@ -27,7 +31,7 @@ abstract class ReceivedPhotoDao {
   abstract fun countAll(): Long
 
   @Query("DELETE FROM ${ReceivedPhotoEntity.TABLE_NAME} " +
-    "WHERE ${ReceivedPhotoEntity.INSERTED_ON_COLUMN} < :time")
+    "WHERE ${ReceivedPhotoEntity.UPLOADED_ON_COLUMN} < :time")
   abstract fun deleteOlderThan(time: Long)
 
   @Query("DELETE FROM ${ReceivedPhotoEntity.TABLE_NAME}")

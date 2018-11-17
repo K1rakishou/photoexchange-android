@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.di.module
 
 import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.helper.util.BitmapUtils
@@ -42,8 +43,9 @@ class UseCaseProviderModule {
   @Provides
   fun provideGetGalleryPhotosUseCase(apiClient: ApiClient,
                                      galleryPhotoRepository: GalleryPhotoRepository,
-                                     timeUtils: TimeUtils): GetGalleryPhotosUseCase {
-    return GetGalleryPhotosUseCase(apiClient, galleryPhotoRepository, timeUtils)
+                                     timeUtils: TimeUtils,
+                                     dispatchersProvider: DispatchersProvider): GetGalleryPhotosUseCase {
+    return GetGalleryPhotosUseCase(apiClient, galleryPhotoRepository, timeUtils, dispatchersProvider)
   }
 
   @Singleton
@@ -71,8 +73,10 @@ class UseCaseProviderModule {
   @Singleton
   @Provides
   fun provideGetUploadedPhotosUseCase(uploadedPhotosRepository: UploadedPhotosRepository,
-                                      apiClient: ApiClient): GetUploadedPhotosUseCase {
-    return GetUploadedPhotosUseCase(uploadedPhotosRepository, apiClient)
+                                      apiClient: ApiClient,
+                                      timeUtils: TimeUtils,
+                                      dispatchersProvider: DispatchersProvider): GetUploadedPhotosUseCase {
+    return GetUploadedPhotosUseCase(uploadedPhotosRepository, apiClient, timeUtils, dispatchersProvider)
   }
 
   @Singleton
@@ -80,15 +84,19 @@ class UseCaseProviderModule {
   fun provideGetReceivedPhotosUseCase(database: MyDatabase,
                                       uploadedPhotosRepository: UploadedPhotosRepository,
                                       receivedPhotosRepository: ReceivedPhotosRepository,
-                                      apiClient: ApiClient): GetReceivedPhotosUseCase {
-    return GetReceivedPhotosUseCase(database, receivedPhotosRepository, uploadedPhotosRepository, apiClient)
+                                      apiClient: ApiClient,
+                                      timeUtils: TimeUtils,
+                                      dispatchersProvider: DispatchersProvider): GetReceivedPhotosUseCase {
+    return GetReceivedPhotosUseCase(database, receivedPhotosRepository,
+      uploadedPhotosRepository, apiClient, timeUtils, dispatchersProvider)
   }
 
   @Singleton
   @Provides
   fun provideGetGalleryPhotosInfoUseCase(apiClient: ApiClient,
-                                         galleryPhotoRepository: GalleryPhotoRepository): GetGalleryPhotosInfoUseCase {
-    return GetGalleryPhotosInfoUseCase(apiClient, galleryPhotoRepository)
+                                         galleryPhotoRepository: GalleryPhotoRepository,
+                                         dispatchersProvider: DispatchersProvider): GetGalleryPhotosInfoUseCase {
+    return GetGalleryPhotosInfoUseCase(apiClient, galleryPhotoRepository, dispatchersProvider)
   }
 
   @Singleton

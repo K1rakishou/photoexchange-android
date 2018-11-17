@@ -14,7 +14,7 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
     class ScrollToTop : GeneralEvents()
     class PhotoRemoved : GeneralEvents()
     class AfterPermissionRequest : GeneralEvents()
-    class UpdateReceiverInfo(val receivedPhotos: MutableList<ReceivedPhoto>) : GeneralEvents()
+    class UpdateReceiverInfo(val receivedPhotos: List<ReceivedPhoto>) : GeneralEvents()
     class OnPageSelected : GeneralEvents()
     class DisableEndlessScrolling : GeneralEvents()
     class EnableEndlessScrolling : GeneralEvents()

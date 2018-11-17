@@ -5,16 +5,15 @@ import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSin
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.gson.MyGson
 import com.kirakishou.photoexchange.mvp.model.exception.ApiException
-import com.kirakishou.photoexchange.mvp.model.exception.GeneralException
-import com.kirakishou.photoexchange.mvp.model.net.response.GetUploadedPhotoIdsResponse
+import com.kirakishou.photoexchange.mvp.model.net.response.GetUploadedPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
 import java.net.SocketTimeoutException
 import java.util.concurrent.TimeoutException
 
-class GetUploadedPhotoIdsRequest<T>(
+class GetPageOfUploadedPhotosRequest<T>(
   private val userId: String,
-  private val lastId: Long,
+  private val lastUploadedOn: Long,
   private val count: Int,
   private val apiService: ApiService,
   private val schedulerProvider: SchedulerProvider,
@@ -22,26 +21,26 @@ class GetUploadedPhotoIdsRequest<T>(
 ) : AbstractRequest<T>() {
 
   override fun execute(): Single<T> {
-    return apiService.getUploadedPhotoIds(userId, lastId, count)
+    return apiService.getPageOfUploadedPhotos(userId, lastUploadedOn, count)
       .subscribeOn(schedulerProvider.IO())
       .observeOn(schedulerProvider.IO())
-      .lift(OnApiErrorSingle<GetUploadedPhotoIdsResponse>(gson, GetUploadedPhotoIdsResponse::class))
+      .lift(OnApiErrorSingle<GetUploadedPhotosResponse>(gson, GetUploadedPhotosResponse::class))
       .map { response ->
         if (ErrorCode.GetUploadedPhotosErrors.fromInt(response.serverErrorCode!!) is ErrorCode.GetUploadedPhotosErrors.Ok) {
-          return@map GetUploadedPhotoIdsResponse.success(response.uploadedPhotoIds)
+          return@map GetUploadedPhotosResponse.success(response.uploadedPhotos)
         } else {
-          return@map GetUploadedPhotoIdsResponse.fail(ErrorCode.fromInt(ErrorCode.GetUploadedPhotosErrors::class, response.serverErrorCode!!))
+          return@map GetUploadedPhotosResponse.fail(ErrorCode.fromInt(ErrorCode.GetUploadedPhotosErrors::class, response.serverErrorCode!!))
         }
       }
       .onErrorReturn(this::extractError) as Single<T>
   }
 
-  private fun extractError(error: Throwable): GetUploadedPhotoIdsResponse {
+  private fun extractError(error: Throwable): GetUploadedPhotosResponse {
     return when (error) {
-      is ApiException -> GetUploadedPhotoIdsResponse.fail(error.errorCode)
+      is ApiException -> GetUploadedPhotosResponse.fail(error.errorCode)
       is SocketTimeoutException,
-      is TimeoutException -> GetUploadedPhotoIdsResponse.fail(ErrorCode.GetUploadedPhotosErrors.LocalTimeout())
-      else -> GetUploadedPhotoIdsResponse.fail(ErrorCode.GetUploadedPhotosErrors.UnknownError())
+      is TimeoutException -> GetUploadedPhotosResponse.fail(ErrorCode.GetUploadedPhotosErrors.LocalTimeout())
+      else -> GetUploadedPhotosResponse.fail(ErrorCode.GetUploadedPhotosErrors.UnknownError())
     }
   }
 }

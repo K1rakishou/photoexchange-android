@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosInfoMapper
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepository
 import com.kirakishou.photoexchange.helper.myRunCatching
@@ -18,8 +19,9 @@ import java.lang.Exception
 
 open class GetGalleryPhotosInfoUseCase(
   private val apiClient: ApiClient,
-  private val galleryPhotoRepository: GalleryPhotoRepository
-) : BaseUseCase() {
+  private val galleryPhotoRepository: GalleryPhotoRepository,
+  dispatchersProvider: DispatchersProvider
+) : BaseUseCase(dispatchersProvider) {
   private val TAG = "GetGalleryPhotosInfoUseCase"
 
   suspend fun loadGalleryPhotosInfo(

@@ -64,7 +64,6 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
 
     initRx()
     initRecyclerView()
-    triggerPhotosLoading()
   }
 
   override fun onFragmentViewDestroy() {
@@ -80,11 +79,8 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     compositeDisposable += viewModel.galleryFragmentViewModel.unknownErrors
       .subscribe({ error -> handleUnknownErrors(error) })
 
-    compositeDisposable += lifecycle.getLifecycle()
-      .subscribe(viewModel.galleryFragmentViewModel.fragmentLifecycle::onNext)
-
     compositeDisposable += loadMoreSubject
-      .subscribe(viewModel.galleryFragmentViewModel.loadMoreEvent::onNext)
+      .subscribe({ viewModel.galleryFragmentViewModel.loadMorePhotos() })
 
     compositeDisposable += adapterButtonClickSubject
       .subscribeOn(AndroidSchedulers.mainThread())
@@ -140,7 +136,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     val layoutManager = GridLayoutManager(requireContext(), columnsCount)
     layoutManager.spanSizeLookup = GalleryPhotosAdapterSpanSizeLookup(adapter, columnsCount)
 
-    viewModel.galleryFragmentViewModel.viewState.photosPerPage = Constants.GALLERY_PHOTOS_PER_ROW * layoutManager.spanCount
+    viewModel.galleryFragmentViewModel.viewState.updateCount(Constants.GALLERY_PHOTOS_PER_ROW * layoutManager.spanCount)
 
     //TODO: visible threshold should be less than photosPerPage count
     endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, 2, loadMoreSubject, scrollSubject)
@@ -149,10 +145,6 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     galleryPhotosList.adapter = adapter
     galleryPhotosList.clearOnScrollListeners()
     galleryPhotosList.addOnScrollListener(endlessScrollListener)
-  }
-
-  private fun triggerPhotosLoading() {
-    loadMoreSubject.onNext(Unit)
   }
 
   private fun handleAdapterClick(click: GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent) {
@@ -275,7 +267,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
 
     galleryPhotosList.post {
       if (galleryPhotos.isNotEmpty()) {
-        viewModel.galleryFragmentViewModel.viewState.updateLastId(galleryPhotos.last().galleryPhotoId)
+        viewModel.galleryFragmentViewModel.viewState.updateLastUploadedOn(galleryPhotos.lastOrNull()?.galleryPhotoId)
         adapter.addAll(galleryPhotos)
       }
 
@@ -286,7 +278,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
         return@post
       }
 
-      if (galleryPhotos.size < viewModel.galleryFragmentViewModel.viewState.photosPerPage) {
+      if (galleryPhotos.size < viewModel.galleryFragmentViewModel.viewState.count) {
         endlessScrollListener.reachedEnd()
         adapter.showMessageFooter("End of the list reached")
       }

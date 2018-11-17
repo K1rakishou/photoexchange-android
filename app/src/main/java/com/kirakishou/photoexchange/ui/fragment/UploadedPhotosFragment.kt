@@ -84,11 +84,8 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
           .that(PhotosActivityEvent.FailedToUploadPhotoButtonClicked(it))
       }, { Timber.tag(TAG).e(it) })
 
-    compositeDisposable += lifecycle.getLifecycle()
-      .subscribe(viewModel.uploadedPhotosFragmentViewModel.fragmentLifecycle::onNext)
-
     compositeDisposable += loadMoreSubject
-      .subscribe(viewModel.uploadedPhotosFragmentViewModel.loadMoreEvent::onNext)
+      .subscribe({ viewModel.uploadedPhotosFragmentViewModel.loadMorePhotos() })
 
     compositeDisposable += scrollSubject
       .subscribeOn(Schedulers.io())

@@ -1,13 +1,15 @@
 package com.kirakishou.photoexchange.interactors
 
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlin.coroutines.CoroutineContext
 
-abstract class BaseUseCase : CoroutineScope {
+abstract class BaseUseCase(
+  private val dispatchersProvider: DispatchersProvider
+) : CoroutineScope {
   private val job = Job()
 
   override val coroutineContext: CoroutineContext
-    get() = job
-
+    get() = job + dispatchersProvider.GENERAL()
 }
