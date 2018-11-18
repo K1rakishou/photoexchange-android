@@ -5,6 +5,7 @@ import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 class EmptyUserIdException : Exception()
 class ApiErrorException(val errorCode: ErrorCode) : Exception()
 class BadServerResponse : Exception()
+class ConnectionError(message: String?) : Exception(message)
 class UnknownException(val exception: Exception) : Exception()
 class DatabaseException(message: String) : Exception(message)
 
@@ -12,9 +13,7 @@ class DatabaseException(message: String) : Exception(message)
 //  class ErrorCodeException(val errorCode: ErrorCode) : GeneralException()
 //}
 //
-//sealed class UploadPhotoServiceException : Exception() {
-//  class CouldNotGetUserIdException(val errorCode: ErrorCode) : UploadPhotoServiceException()
-//}
+
 //
 //sealed class ReceivePhotosServiceException : Exception() {
 //  class PhotoNamesAreEmpty : ReceivePhotosServiceException()
@@ -23,10 +22,3 @@ class DatabaseException(message: String) : Exception(message)
 //  class NoUploadedPhotosWithoutReceiverInfo() : ReceivePhotosServiceException()
 //}
 //
-//sealed class PhotoUploadingException : Exception() {
-//  class PhotoDoesNotExistOnDisk : PhotoUploadingException()
-//  class CouldNotRotatePhoto : PhotoUploadingException()
-//  class DatabaseException : PhotoUploadingException()
-//  class CouldNotUpdatePhotoState : PhotoUploadingException()
-//  class ApiException(val remoteErrorCode: ErrorCode) : PhotoUploadingException()
-//}

@@ -4,11 +4,14 @@ import com.kirakishou.photoexchange.helper.api.request.*
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.gson.JsonConverter
+import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
+import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.net.response.*
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import io.reactivex.Single
+import kotlinx.coroutines.channels.SendChannel
 import javax.inject.Inject
 
 /**
@@ -22,10 +25,28 @@ open class ApiClientImpl
   private val dispatchersProvider: DispatchersProvider
 ) : ApiClient {
 
-  override fun uploadPhoto(photoFilePath: String, location: LonLat, userId: String, isPublic: Boolean,
-                           callback: UploadPhotosUseCase.PhotoUploadProgressCallback): Single<UploadPhotoResponse> {
-    return UploadPhotoRequest<UploadPhotoResponse>(photoFilePath, location, userId, isPublic, callback, apiService, schedulerProvider, jsonConverter)
-      .execute()
+  override suspend fun uploadPhoto(
+    photoFilePath: String,
+    location: LonLat,
+    userId: String,
+    isPublic: Boolean,
+    photo: TakenPhoto,
+    channel: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
+  ): UploadPhotosUseCase.UploadPhotoResult {
+
+    val response = UploadPhotoRequest(
+      photoFilePath,
+      location,
+      userId,
+      isPublic,
+      photo,
+      channel,
+      apiService,
+      jsonConverter,
+      dispatchersProvider
+    ).execute()
+
+    return UploadPhotosUseCase.UploadPhotoResult(response.photoId, response.photoName)
   }
 
   override fun receivePhotos(userId: String, photoNames: String): Single<ReceivedPhotosResponse> {

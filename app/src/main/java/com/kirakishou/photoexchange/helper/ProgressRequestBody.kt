@@ -1,6 +1,9 @@
 package com.kirakishou.photoexchange.helper
 
-import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
+import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
+import com.kirakishou.photoexchange.mvp.model.TakenPhoto
+import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.runBlocking
 import okhttp3.MediaType
 import okio.BufferedSink
 import okhttp3.RequestBody
@@ -13,7 +16,8 @@ import java.io.FileInputStream
  */
 class ProgressRequestBody(
   private val photoFile: File,
-  private val callback: UploadPhotosUseCase.PhotoUploadProgressCallback
+  private val photo: TakenPhoto,
+  private val channel: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
 ) : RequestBody() {
   private val DEFAULT_BUFFER_SIZE = 4096
 
@@ -33,23 +37,25 @@ class ProgressRequestBody(
     var lastPercent = 0L
 
     try {
-      while (true) {
-        val read = fis.read(buffer)
-        if (read == -1) {
-          break
+      runBlocking {
+        while (true) {
+          val read = fis.read(buffer)
+          if (read == -1) {
+            break
+          }
+
+          val percent = 100L * uploaded / fileLength
+          if (percent - lastPercent >= 3) {
+            lastPercent = percent
+            channel.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, percent.toInt()))
+          }
+
+          uploaded += read.toLong()
+          sink.write(buffer, 0, read)
         }
 
-        val percent = 100L * uploaded / fileLength
-        if (percent - lastPercent >= 3) {
-          lastPercent = percent
-          callback.onProgress(percent.toInt())
-        }
-
-        uploaded += read.toLong()
-        sink.write(buffer, 0, read)
+        channel.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 100))
       }
-
-      callback.onProgress(100)
     } finally {
       fis.close()
     }
