@@ -3,7 +3,7 @@ package com.kirakishou.photoexchange.helper.api.request
 import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.gson.MyGson
+import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.mvp.model.exception.ApiException
 import com.kirakishou.photoexchange.mvp.model.net.response.GetReceivedPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
@@ -17,14 +17,14 @@ class GetPageOfReceivedPhotosRequest<T>(
   private val count: Int,
   private val apiService: ApiService,
   private val schedulerProvider: SchedulerProvider,
-  private val gson: MyGson
-) : AbstractRequest<T>() {
+  private val jsonConverter: JsonConverter
+) : BaseRequest<T>() {
 
   override fun execute(): Single<T> {
     return apiService.getReceivedPhotos(userId, lastUploadedOn, count)
       .subscribeOn(schedulerProvider.IO())
       .observeOn(schedulerProvider.IO())
-      .lift(OnApiErrorSingle<GetReceivedPhotosResponse>(gson, GetReceivedPhotosResponse::class))
+      .lift(OnApiErrorSingle<GetReceivedPhotosResponse>(jsonConverter, GetReceivedPhotosResponse::class))
       .map { response ->
         if (ErrorCode.GetReceivedPhotosErrors.fromInt(response.serverErrorCode!!) is ErrorCode.GetReceivedPhotosErrors.Ok) {
           return@map GetReceivedPhotosResponse.success(response.receivedPhotos)

@@ -4,10 +4,9 @@ import com.kirakishou.photoexchange.helper.ProgressRequestBody
 import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.gson.MyGson
+import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.exception.ApiException
-import com.kirakishou.photoexchange.mvp.model.exception.GeneralException
 import com.kirakishou.photoexchange.mvp.model.net.packet.SendPhotoPacket
 import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
@@ -29,8 +28,8 @@ class UploadPhotoRequest<T>(
   private val callback: UploadPhotosUseCase.PhotoUploadProgressCallback,
   private val apiService: ApiService,
   private val schedulerProvider: SchedulerProvider,
-  private val gson: MyGson
-) : AbstractRequest<T>() {
+  private val jsonConverter: JsonConverter
+) : BaseRequest<T>() {
 
   private val tag = "UploadPhotoRequest"
 
@@ -48,7 +47,7 @@ class UploadPhotoRequest<T>(
       .observeOn(schedulerProvider.IO())
       .flatMap { body ->
         return@flatMap apiService.uploadPhoto(body.part(0), body.part(1))
-          .lift(OnApiErrorSingle<UploadPhotoResponse>(gson, UploadPhotoResponse::class))
+          .lift(OnApiErrorSingle<UploadPhotoResponse>(jsonConverter, UploadPhotoResponse::class))
           .map { response ->
             if (ErrorCode.UploadPhotoErrors.fromInt(response.serverErrorCode!!) is ErrorCode.UploadPhotoErrors.Ok) {
               return@map UploadPhotoResponse.success(response.photoId, response.photoName)
@@ -71,7 +70,7 @@ class UploadPhotoRequest<T>(
 
   private fun getBody(photoFile: File, packet: SendPhotoPacket, callback: UploadPhotosUseCase.PhotoUploadProgressCallback): MultipartBody {
     val photoRequestBody = ProgressRequestBody(photoFile, callback)
-    val packetJson = gson.toJson(packet)
+    val packetJson = jsonConverter.toJson(packet)
 
     return MultipartBody.Builder()
       .addFormDataPart("photo", photoFile.name, photoRequestBody)

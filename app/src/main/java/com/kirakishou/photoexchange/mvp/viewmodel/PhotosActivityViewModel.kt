@@ -1,28 +1,20 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.database.repository.*
+import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
-import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
-import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
-import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
-import com.kirakishou.photoexchange.interactors.*
-import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
+import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
+import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.exception.ReportPhotoExceptions
 import com.kirakishou.photoexchange.mvp.model.other.Constants
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
-import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
-import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
 import io.reactivex.Completable
 import io.reactivex.Observable
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
 
 /**
  * Created by kirakishou on 3/11/2018.
@@ -60,17 +52,18 @@ class PhotosActivityViewModel(
     super.onCleared()
   }
 
-  suspend fun reportPhoto(photoName: String): Either<ReportPhotoExceptions, Boolean> {
+  suspend fun reportPhoto(photoName: String): Either<Exception, Boolean> {
     return withContext(coroutineContext) {
-      val userId = settingsRepository.getUserId()
+      val userId = settingsRepository.getUserIdOrThrow()
       return@withContext reportPhotoUseCase.reportPhoto(userId, photoName)
     }
   }
 
-  fun favouritePhoto(photoName: String): Observable<Either<ErrorCode.FavouritePhotoErrors, FavouritePhotoUseCase.FavouritePhotoResult>> {
-    return Observable.fromCallable { settingsRepository.getUserId() }
-      .subscribeOn(schedulerProvider.IO())
-      .concatMap { userId -> favouritePhotoUseCase.favouritePhoto(userId, photoName) }
+  suspend fun favouritePhoto(photoName: String): Either<Exception, FavouritePhotoUseCase.FavouritePhotoResult> {
+    return withContext(coroutineContext) {
+      val userId = settingsRepository.getUserIdOrThrow()
+      return@withContext favouritePhotoUseCase.favouritePhoto(userId, photoName)
+    }
   }
 
   suspend fun checkHasPhotosToUpload(): Boolean {

@@ -3,9 +3,8 @@ package com.kirakishou.photoexchange.helper.api.request
 import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.gson.MyGson
+import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.mvp.model.exception.ApiException
-import com.kirakishou.photoexchange.mvp.model.exception.GeneralException
 import com.kirakishou.photoexchange.mvp.model.net.response.CheckAccountExistsResponse
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
@@ -16,14 +15,14 @@ class CheckAccountExistsRequest<T>(
   private val userId: String,
   private val apiService: ApiService,
   private val schedulerProvider: SchedulerProvider,
-  private val gson: MyGson
-) : AbstractRequest<T>() {
+  private val jsonConverter: JsonConverter
+) : BaseRequest<T>() {
 
   override fun execute(): Single<T> {
     return apiService.checkAccountExists(userId)
       .subscribeOn(schedulerProvider.IO())
       .observeOn(schedulerProvider.IO())
-      .lift(OnApiErrorSingle<CheckAccountExistsResponse>(gson, CheckAccountExistsResponse::class))
+      .lift(OnApiErrorSingle<CheckAccountExistsResponse>(jsonConverter, CheckAccountExistsResponse::class))
       .map { response ->
         if (ErrorCode.CheckAccountExistsErrors.fromInt(response.serverErrorCode!!) is ErrorCode.CheckAccountExistsErrors.Ok) {
           return@map CheckAccountExistsResponse.success(response.accountExists)

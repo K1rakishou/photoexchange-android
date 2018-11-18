@@ -3,7 +3,8 @@ package com.kirakishou.photoexchange.helper.api
 import com.kirakishou.photoexchange.helper.api.request.*
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.gson.MyGson
+import com.kirakishou.photoexchange.helper.gson.JsonConverter
+import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.net.response.*
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
@@ -16,35 +17,42 @@ import javax.inject.Inject
 open class ApiClientImpl
 @Inject constructor(
   private val apiService: ApiService,
-  private val gson: MyGson,
+  private val jsonConverter: JsonConverter,
   private val schedulerProvider: SchedulerProvider,
   private val dispatchersProvider: DispatchersProvider
 ) : ApiClient {
 
   override fun uploadPhoto(photoFilePath: String, location: LonLat, userId: String, isPublic: Boolean,
                            callback: UploadPhotosUseCase.PhotoUploadProgressCallback): Single<UploadPhotoResponse> {
-    return UploadPhotoRequest<UploadPhotoResponse>(photoFilePath, location, userId, isPublic, callback, apiService, schedulerProvider, gson)
+    return UploadPhotoRequest<UploadPhotoResponse>(photoFilePath, location, userId, isPublic, callback, apiService, schedulerProvider, jsonConverter)
       .execute()
   }
 
   override fun receivePhotos(userId: String, photoNames: String): Single<ReceivedPhotosResponse> {
-    return ReceivePhotosRequest<ReceivedPhotosResponse>(userId, photoNames, apiService, schedulerProvider, gson)
+    return ReceivePhotosRequest<ReceivedPhotosResponse>(userId, photoNames, apiService, schedulerProvider, jsonConverter)
       .execute()
   }
 
   override fun getPageOfGalleryPhotos(lastUploadedOn: Long, count: Int): Single<GalleryPhotosResponse> {
-    return GetPageOfGalleryPhotosRequest<GalleryPhotosResponse>(lastUploadedOn, count, apiService, schedulerProvider, gson)
+    return GetPageOfGalleryPhotosRequest<GalleryPhotosResponse>(lastUploadedOn, count, apiService, schedulerProvider, jsonConverter)
       .execute()
   }
 
   override fun getGalleryPhotoInfo(userId: String, galleryPhotoIds: String): Single<GalleryPhotoInfoResponse> {
-    return GetGalleryPhotoInfoRequest<GalleryPhotoInfoResponse>(userId, galleryPhotoIds, apiService, schedulerProvider, gson)
+    return GetGalleryPhotoInfoRequest<GalleryPhotoInfoResponse>(userId, galleryPhotoIds, apiService, schedulerProvider, jsonConverter)
       .execute()
   }
 
-  override fun favouritePhoto(userId: String, photoName: String): Single<FavouritePhotoResponse> {
-    return FavouritePhotoRequest<FavouritePhotoResponse>(userId, photoName, apiService, schedulerProvider, gson)
-      .execute()
+  override suspend fun favouritePhoto(userId: String, photoName: String): FavouritePhotoUseCase.FavouritePhotoResult {
+    val response = FavouritePhotoRequest(
+      userId,
+      photoName,
+      apiService,
+      jsonConverter,
+      dispatchersProvider
+    ).execute()
+
+    return FavouritePhotoUseCase.FavouritePhotoResult(response.isFavourited, response.favouritesCount)
   }
 
   override suspend fun reportPhoto(userId: String, photoName: String): Boolean {
@@ -52,7 +60,7 @@ open class ApiClientImpl
       userId,
       photoName,
       apiService,
-      gson,
+      jsonConverter,
       dispatchersProvider
     ).execute()
 
@@ -60,22 +68,22 @@ open class ApiClientImpl
   }
 
   override fun getUserId(): Single<GetUserIdResponse> {
-    return GetUserIdRequest<GetUserIdResponse>(apiService, schedulerProvider, gson)
+    return GetUserIdRequest<GetUserIdResponse>(apiService, schedulerProvider, jsonConverter)
       .execute()
   }
 
   override fun getPageOfUploadedPhotos(userId: String, lastUploadedOn: Long, count: Int): Single<GetUploadedPhotosResponse> {
-    return GetPageOfUploadedPhotosRequest<GetUploadedPhotosResponse>(userId, lastUploadedOn, count, apiService, schedulerProvider, gson)
+    return GetPageOfUploadedPhotosRequest<GetUploadedPhotosResponse>(userId, lastUploadedOn, count, apiService, schedulerProvider, jsonConverter)
       .execute()
   }
 
   override fun getReceivedPhotos(userId: String, lastUploadedOn: Long, count: Int): Single<GetReceivedPhotosResponse> {
-    return GetPageOfReceivedPhotosRequest<GetReceivedPhotosResponse>(userId, lastUploadedOn, count, apiService, schedulerProvider, gson)
+    return GetPageOfReceivedPhotosRequest<GetReceivedPhotosResponse>(userId, lastUploadedOn, count, apiService, schedulerProvider, jsonConverter)
       .execute()
   }
 
   override fun checkAccountExists(userId: String): Single<CheckAccountExistsResponse> {
-    return CheckAccountExistsRequest<CheckAccountExistsResponse>(userId, apiService, schedulerProvider, gson)
+    return CheckAccountExistsRequest<CheckAccountExistsResponse>(userId, apiService, schedulerProvider, jsonConverter)
       .execute()
   }
 }

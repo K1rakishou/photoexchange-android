@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.helper.database.repository
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.SettingEntity
+import com.kirakishou.photoexchange.mvp.model.exception.EmptyUserIdException
 import kotlinx.coroutines.withContext
 
 /**
@@ -22,7 +23,15 @@ open class SettingsRepository(
 
   open suspend fun getUserId(): String {
     return withContext(coroutineContext) {
-      return@withContext settingsDao.findByName(USER_ID_SETTING)?.settingValue ?: ""
+      return@withContext settingsDao.findByName(USER_ID_SETTING)?.settingValue
+        ?: ""
+    }
+  }
+
+  open suspend fun getUserIdOrThrow(): String {
+    return withContext(coroutineContext) {
+      return@withContext settingsDao.findByName(USER_ID_SETTING)?.settingValue
+        ?: throw EmptyUserIdException()
     }
   }
 

@@ -8,8 +8,10 @@ import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosInfoMapper
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
+import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.GalleryPhotoInfo
+import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
 import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotoInfoResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
 import kotlinx.coroutines.withContext
@@ -96,23 +98,43 @@ open class GalleryPhotoRepository(
     }
   }
 
-  suspend fun updateFavouritesCount(photoName: String, favouritesCount: Long): Boolean {
+  suspend fun updateFavouritesCount(
+    galleryPhoto: GalleryPhoto,
+    photoName: String,
+    favouritePhotoResult: FavouritePhotoUseCase.FavouritePhotoResult
+  ) {
     return withContext(coroutineContext) {
-      return@withContext galleryPhotoDao.updateFavouritesCount(photoName, favouritesCount).isSuccess()
+      val transactionResult = database.transactional {
+        if (!favouritePhoto(galleryPhoto.galleryPhotoId)) {
+          return@transactional false
+        }
+
+        if (!updateFavouritesCount(photoName, favouritePhotoResult.favouritesCount)) {
+          return@transactional false
+        }
+
+        return@transactional true
+      }
+
+      if (!transactionResult) {
+        throw DatabaseException("Could not update favourites count")
+      }
     }
   }
 
-  suspend fun favouritePhoto(galleryPhotoId: Long): Boolean {
-    return withContext(coroutineContext) {
-      var galleryPhotoInfoEntity = galleryPhotoInfoDao.find(galleryPhotoId)
-      if (galleryPhotoInfoEntity == null) {
-        galleryPhotoInfoEntity = GalleryPhotoInfoEntity.create(galleryPhotoId, true, false, timeUtils.getTimeFast())
-      } else {
-        galleryPhotoInfoEntity.isFavourited = !galleryPhotoInfoEntity.isFavourited
-      }
-
-      return@withContext galleryPhotoInfoDao.save(galleryPhotoInfoEntity).isSuccess()
+  private suspend fun favouritePhoto(galleryPhotoId: Long): Boolean {
+    var galleryPhotoInfoEntity = galleryPhotoInfoDao.find(galleryPhotoId)
+    if (galleryPhotoInfoEntity == null) {
+      galleryPhotoInfoEntity = GalleryPhotoInfoEntity.create(galleryPhotoId, true, false, timeUtils.getTimeFast())
+    } else {
+      galleryPhotoInfoEntity.isFavourited = !galleryPhotoInfoEntity.isFavourited
     }
+
+    return galleryPhotoInfoDao.save(galleryPhotoInfoEntity).isSuccess()
+  }
+
+  private suspend fun updateFavouritesCount(photoName: String, favouritesCount: Long): Boolean {
+    return galleryPhotoDao.updateFavouritesCount(photoName, favouritesCount).isSuccess()
   }
 
   suspend fun reportPhoto(photoId: Long, isReported: Boolean): Boolean {

@@ -4,7 +4,7 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
-import com.kirakishou.photoexchange.helper.gson.MyGson
+import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.BitmapUtils
 import com.kirakishou.photoexchange.helper.util.FileUtils
@@ -33,7 +33,7 @@ class UploadPhotosUseCaseTest {
   lateinit var timeUtils: TimeUtils
   lateinit var bitmapUtils: BitmapUtils
   lateinit var fileUtils: FileUtils
-  lateinit var gson: MyGson
+  lateinit var gson: JsonConverter
 
   lateinit var uploadPhotosUseCase: UploadPhotosUseCase
 
@@ -43,7 +43,7 @@ class UploadPhotosUseCaseTest {
     timeUtils = Mockito.mock(TimeUtils::class.java)
     bitmapUtils = Mockito.mock(BitmapUtils::class.java)
     fileUtils = Mockito.mock(FileUtils::class.java)
-    gson = Mockito.mock(MyGson::class.java)
+    gson = Mockito.mock(JsonConverter::class.java)
     apiClient = Mockito.mock(ApiClient::class.java)
 
     takenPhotosRepository = Mockito.mock(TakenPhotosRepository::class.java)

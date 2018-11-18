@@ -2,9 +2,9 @@ package com.kirakishou.photoexchange.helper.gson
 
 import com.google.gson.Gson
 
-class MyGsonImpl(
+class JsonConverterImpl(
   private val gson: Gson
-) : MyGson {
+) : JsonConverter {
 
   override fun <T> fromJson(json: String, clazz: Class<*>): T? {
     return gson.fromJson(json, clazz) as T

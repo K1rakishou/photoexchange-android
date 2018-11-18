@@ -5,8 +5,8 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepository
 import com.kirakishou.photoexchange.helper.myRunCatching
-import com.kirakishou.photoexchange.mvp.model.exception.ReportPhotoExceptions
 import kotlinx.coroutines.withContext
+import java.lang.Exception
 
 open class ReportPhotoUseCase(
   private val apiClient: ApiClient,
@@ -15,9 +15,9 @@ open class ReportPhotoUseCase(
 ) : BaseUseCase(dispatchersProvider) {
   private val TAG = "ReportPhotoUseCase"
 
-  suspend fun reportPhoto(userId: String, photoName: String): Either<ReportPhotoExceptions, Boolean> {
+  suspend fun reportPhoto(userId: String, photoName: String): Either<Exception, Boolean> {
     return withContext(coroutineContext) {
-      return@withContext myRunCatching<ReportPhotoExceptions, Boolean> {
+      return@withContext myRunCatching {
         val isReported = apiClient.reportPhoto(userId, photoName)
         val galleryPhoto = galleryPhotoRepository.findByPhotoName(photoName)
 

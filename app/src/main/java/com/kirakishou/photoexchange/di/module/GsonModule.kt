@@ -2,8 +2,8 @@ package com.kirakishou.photoexchange.di.module
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.kirakishou.photoexchange.helper.gson.MyGson
-import com.kirakishou.photoexchange.helper.gson.MyGsonImpl
+import com.kirakishou.photoexchange.helper.gson.JsonConverter
+import com.kirakishou.photoexchange.helper.gson.JsonConverterImpl
 import dagger.Module
 import dagger.Provides
 import retrofit2.converter.gson.GsonConverterFactory
@@ -32,7 +32,7 @@ class GsonModule {
 
   @Singleton
   @Provides
-  fun provideMyGson(gson: Gson): MyGson {
-    return MyGsonImpl(gson)
+  fun provideJsonConverter(gson: Gson): JsonConverter {
+    return JsonConverterImpl(gson)
   }
 }
