@@ -88,9 +88,14 @@ open class ApiClientImpl
     return response.isReported
   }
 
-  override fun getUserId(): Single<GetUserIdResponse> {
-    return GetUserIdRequest<GetUserIdResponse>(apiService, schedulerProvider, jsonConverter)
-      .execute()
+  override suspend fun getUserId(): String {
+    val response = GetUserIdRequest(
+      apiService,
+      jsonConverter,
+      dispatchersProvider
+    ).execute()
+
+    return response.userId
   }
 
   override fun getPageOfUploadedPhotos(userId: String, lastUploadedOn: Long, count: Int): Single<GetUploadedPhotosResponse> {

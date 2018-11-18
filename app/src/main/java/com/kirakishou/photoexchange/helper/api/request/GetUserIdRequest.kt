@@ -1,43 +1,30 @@
 package com.kirakishou.photoexchange.helper.api.request
 
+import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiService
-import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
-import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.gson.JsonConverter
-import com.kirakishou.photoexchange.mvp.model.exception.ApiException
+import com.kirakishou.photoexchange.mvp.model.exception.ConnectionError
 import com.kirakishou.photoexchange.mvp.model.net.response.GetUserIdResponse
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import io.reactivex.Single
-import java.net.SocketTimeoutException
-import java.util.concurrent.TimeoutException
+import kotlinx.coroutines.rx2.await
 
-class GetUserIdRequest<T>(
+class GetUserIdRequest(
   private val apiService: ApiService,
-  private val schedulerProvider: SchedulerProvider,
-  private val jsonConverter: JsonConverter
-) : BaseRequest<T>() {
+  private val jsonConverter: JsonConverter,
+  dispatchersProvider: DispatchersProvider
+) : BaseRequest<GetUserIdResponse>(dispatchersProvider) {
 
-  override fun execute(): Single<T> {
-    return apiService.getUserId()
-      .subscribeOn(schedulerProvider.IO())
-      .observeOn(schedulerProvider.IO())
-      .lift(OnApiErrorSingle<GetUserIdResponse>(gson, GetUserIdResponse::class))
-      .map { response ->
-        if (ErrorCode.GetUserIdError.fromInt(response.serverErrorCode!!) is ErrorCode.GetUserIdError.Ok) {
-          return@map GetUserIdResponse.success(response.userId)
-        } else {
-          return@map GetUserIdResponse.error(ErrorCode.fromInt(ErrorCode.GetUserIdError::class, response.serverErrorCode!!))
-        }
-      }
-      .onErrorReturn(this::extractError) as Single<T>
-  }
+  override suspend fun execute(): GetUserIdResponse {
+    val response = try {
+      apiService.getUserId().await()
+    } catch (error: Exception) {
+      throw ConnectionError(error.message)
+    }
 
-  private fun extractError(error: Throwable): GetUserIdResponse {
-    return when (error) {
-      is ApiException -> GetUserIdResponse.error(error.errorCode as ErrorCode.GetUserIdError)
-      is SocketTimeoutException,
-      is TimeoutException -> GetUserIdResponse.error(ErrorCode.GetUserIdError.LocalTimeout())
-      else -> GetUserIdResponse.error(ErrorCode.GetUserIdError.UnknownError())
+    val result = handleResponse(jsonConverter, response)
+    return when (result) {
+      is Either.Value -> result.value
+      is Either.Error -> throw result.error
     }
   }
 }

@@ -68,8 +68,12 @@ open class UploadPhotoServicePresenter(
         updateServiceNotification(NotificationType.Error("Could not upload one or more photos"))
       }
     } catch (error: Exception) {
+      Timber.tag(TAG).e(error)
+
       markAllPhotosAsFailed()
       updateServiceNotification(NotificationType.Error("Could not upload one or more photos"))
+
+      eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnError(error))
     } finally {
       sendEvent(UploadPhotoEvent.StopService)
     }
@@ -126,16 +130,13 @@ open class UploadPhotoServicePresenter(
     }.safe
   }
 
-  fun getUserId(): String {
-    return getUserIdUseCase.getUserId()
-      .toObservable()
-      .map { result ->
-        if (result is Either.Error) {
-          throw UploadPhotoServiceException.CouldNotGetUserIdException(result.error)
-        }
+  private suspend fun getUserId(): String {
+    val result = getUserIdUseCase.getUserId()
 
-        return@map (result as Either.Value).value
-      }
+    when (result) {
+      is Either.Value -> return result.value
+      is Either.Error -> throw result.error
+    }.safe
   }
 
   fun onDetach() {
@@ -163,9 +164,5 @@ open class UploadPhotoServicePresenter(
     object Uploading : NotificationType()
     class Success(val message: String) : NotificationType()
     class Error(val errorMessage: String) : NotificationType()
-  }
-
-  sealed class UploadPhotoServiceException : Exception() {
-    class CouldNotGetUserIdException(val errorCode: ErrorCode) : UploadPhotoServiceException()
   }
 }
