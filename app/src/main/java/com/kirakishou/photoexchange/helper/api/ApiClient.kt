@@ -21,7 +21,7 @@ interface ApiClient {
 
   fun receivePhotos(userId: String, photoNames: String): Single<ReceivedPhotosResponse>
   fun getPageOfGalleryPhotos(lastUploadedOn: Long, count: Int): Single<GalleryPhotosResponse>
-  fun getGalleryPhotoInfo(userId: String, galleryPhotoIds: String): Single<GalleryPhotoInfoResponse>
+  suspend fun getGalleryPhotoInfo(userId: String, galleryPhotoIds: String): List<GalleryPhotoInfoResponse.GalleryPhotosInfoData>
   suspend fun favouritePhoto(userId: String, photoName: String): FavouritePhotoUseCase.FavouritePhotoResult
   suspend fun reportPhoto(userId: String, photoName: String): Boolean
   suspend fun getUserId(): String

@@ -59,9 +59,19 @@ open class ApiClientImpl
       .execute()
   }
 
-  override fun getGalleryPhotoInfo(userId: String, galleryPhotoIds: String): Single<GalleryPhotoInfoResponse> {
-    return GetGalleryPhotoInfoRequest<GalleryPhotoInfoResponse>(userId, galleryPhotoIds, apiService, schedulerProvider, jsonConverter)
-      .execute()
+  override suspend fun getGalleryPhotoInfo(
+    userId: String,
+    galleryPhotoIds: String
+  ): List<GalleryPhotoInfoResponse.GalleryPhotosInfoData> {
+    val response = GetGalleryPhotoInfoRequest(
+      userId,
+      galleryPhotoIds,
+      apiService,
+      jsonConverter,
+      dispatchersProvider
+    ).execute()
+
+    return response.galleryPhotosInfo
   }
 
   override suspend fun favouritePhoto(userId: String, photoName: String): FavouritePhotoUseCase.FavouritePhotoResult {

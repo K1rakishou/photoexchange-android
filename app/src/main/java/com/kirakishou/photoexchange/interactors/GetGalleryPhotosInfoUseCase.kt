@@ -8,14 +8,10 @@ import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepos
 import com.kirakishou.photoexchange.helper.myRunCatching
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.GalleryPhotoInfo
-import com.kirakishou.photoexchange.mvp.model.exception.ApiException
 import com.kirakishou.photoexchange.mvp.model.exception.EmptyUserIdException
 import com.kirakishou.photoexchange.mvp.model.other.Constants
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import kotlinx.coroutines.rx2.await
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.lang.Exception
 
 open class GetGalleryPhotosInfoUseCase(
   private val apiClient: ApiClient,
@@ -82,17 +78,8 @@ open class GetGalleryPhotosInfoUseCase(
     photoIds: List<Long>
   ): List<GalleryPhotoInfo> {
     val idsString = photoIds.joinToString(Constants.PHOTOS_DELIMITER)
-    val response = apiClient.getGalleryPhotoInfo(userId, idsString).await()
+    val galleryPhotosInfo = apiClient.getGalleryPhotoInfo(userId, idsString)
 
-    val errorCode = response.errorCode as ErrorCode.GetGalleryPhotosErrors
-    if (errorCode !is ErrorCode.GetGalleryPhotosErrors.Ok) {
-      throw ApiException(errorCode)
-    }
-
-    if (!galleryPhotoRepository.saveManyInfo(response.galleryPhotosInfo)) {
-      throw ApiException(ErrorCode.GetGalleryPhotosErrors.LocalDatabaseError())
-    }
-
-    return GalleryPhotosInfoMapper.FromResponse.ToObject.toGalleryPhotoInfoList(response.galleryPhotosInfo)
+    return GalleryPhotosInfoMapper.FromResponse.ToObject.toGalleryPhotoInfoList(galleryPhotosInfo)
   }
 }
