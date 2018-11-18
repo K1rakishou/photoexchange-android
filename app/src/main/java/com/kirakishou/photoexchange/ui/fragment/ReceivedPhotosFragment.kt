@@ -177,8 +177,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
         is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotoReceived -> {
           adapter.addReceivedPhoto(event.receivedPhoto)
         }
-        is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed,
-        is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnUnknownError -> {
+        is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
           //TODO: do nothing here???
         }
       }.safe
@@ -241,12 +240,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
   }
 
   private fun handleKnownErrors(errorCode: ErrorCode) {
-    when (errorCode) {
-      is ErrorCode.GetReceivedPhotosErrors -> {
-        hideProgressFooter()
-      }
-    }
-
+    hideProgressFooter()
     (activity as? PhotosActivity)?.showKnownErrorMessage(errorCode)
   }
 

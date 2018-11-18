@@ -4,19 +4,20 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.*
-import androidx.coordinatorlayout.widget.CoordinatorLayout
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.tabs.TabLayout
-import androidx.core.app.ActivityCompat
-import androidx.viewpager.widget.ViewPager
+import android.os.Bundle
+import android.os.PersistableBundle
 import android.view.MenuItem
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.Toast
+import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.app.ActivityCompat
+import androidx.viewpager.widget.ViewPager
 import butterknife.BindView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.tabs.TabLayout
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
@@ -26,34 +27,36 @@ import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
+import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
+import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
+import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
-import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
-import com.kirakishou.photoexchange.service.ReceivePhotosServiceConnection
 import com.kirakishou.photoexchange.service.ReceivePhotosService
+import com.kirakishou.photoexchange.service.ReceivePhotosServiceConnection
 import com.kirakishou.photoexchange.service.UploadPhotoService
 import com.kirakishou.photoexchange.service.UploadPhotoServiceConnection
 import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapter
-import com.kirakishou.photoexchange.ui.callback.ReceivePhotosServiceCallback
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
+import com.kirakishou.photoexchange.ui.callback.ReceivePhotosServiceCallback
 import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
-import com.kirakishou.photoexchange.ui.viewstate.PhotosActivityViewState
-import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
-import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
-import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
+import com.kirakishou.photoexchange.ui.viewstate.PhotosActivityViewState
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
-import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.exceptions.CompositeException
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -193,22 +196,17 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
   }
 
   private fun onPermissionsCallback(savedInstanceState: Bundle?, granted: Boolean) {
-    compositeDisposable += Observable.fromCallable {
+    launch {
       initViews()
       restoreUploadedPhotosFragmentFromViewState(savedInstanceState)
-    }
-      .subscribeOn(AndroidSchedulers.mainThread())
-      .observeOn(Schedulers.io())
-      .concatMap {
+
+      withContext(Dispatchers.Default) {
         viewModel.updateGpsPermissionGranted(granted)
-          .toObservable<Unit>()
-          .startWith(Unit)
       }
-      .observeOn(AndroidSchedulers.mainThread())
-      .subscribe({
-        viewModel.intercom.tell<UploadedPhotosFragment>()
-          .to(UploadedPhotosFragmentEvent.GeneralEvents.AfterPermissionRequest())
-      }, { error -> Timber.tag(TAG).e(error) })
+
+      viewModel.intercom.tell<UploadedPhotosFragment>()
+        .to(UploadedPhotosFragmentEvent.GeneralEvents.AfterPermissionRequest())
+    }
   }
 
   private fun restoreUploadedPhotosFragmentFromViewState(savedInstanceState: Bundle?) {
@@ -301,24 +299,28 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
   override fun onStateEvent(event: PhotosActivityEvent) {
     when (event) {
       is PhotosActivityEvent.StartUploadingService -> {
-        compositeDisposable += viewModel.checkHasPhotosToUpload()
-          .filter { hasPhotoToUpload -> hasPhotoToUpload }
-          .subscribe({ bindUploadingService(event.callerClass, event.reason, true) })
+        launch {
+          val hasPhotosToUpload = viewModel.checkHasPhotosToUpload()
+          if (hasPhotosToUpload) {
+            bindUploadingService(event.callerClass, event.reason, true)
+          }
+        }
       }
       is PhotosActivityEvent.StartReceivingService -> {
-        compositeDisposable += viewModel.checkHasPhotosToReceive()
-          .filter { hasPhotosToReceive -> hasPhotosToReceive }
-          .subscribe({ bindReceivingService(event.callerClass, event.reason, true) })
+        launch {
+          val hasPhotosToReceive = viewModel.checkHasPhotosToReceive()
+          if (hasPhotosToReceive) {
+            bindReceivingService(event.callerClass, event.reason, true)
+          }
+        }
       }
       is PhotosActivityEvent.FailedToUploadPhotoButtonClicked -> {
-        compositeDisposable += handleUploadedPhotosFragmentAdapterButtonClicks(event.clickType)
-          .subscribe({ tryToReUpload ->
-            if (tryToReUpload) {
-              bindUploadingService(PhotosActivity::class.java, "Handling of FailedToUploadPhotoButtonClicked", true)
-            }
-          }, { error ->
-            Timber.tag(TAG).e(error)
-          })
+        launch {
+          val tryToReUpload = handleUploadedPhotosFragmentAdapterButtonClicks(event.clickType)
+          if (tryToReUpload) {
+            bindUploadingService(PhotosActivity::class.java, "Handling of FailedToUploadPhotoButtonClicked", true)
+          }
+        }
       }
       is PhotosActivityEvent.ScrollEvent -> {
         if (event.isScrollingDown) {
@@ -327,7 +329,7 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
           takePhotoButton.show()
         }
       }
-    }.safe
+    }
   }
 
   override fun onUploadPhotosEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
@@ -346,66 +348,53 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
       is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
         viewModel.intercom.tell<ReceivedPhotosFragment>().to(event)
       }
-      is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnUnknownError -> {
-        viewModel.intercom.tell<ReceivedPhotosFragment>().to(event)
-      }
     }.safe
   }
 
-  private fun handleUploadedPhotosFragmentAdapterButtonClicks(
+  private suspend fun handleUploadedPhotosFragmentAdapterButtonClicks(
     adapterButtonsClick: UploadedPhotosAdapter.UploadedPhotosAdapterButtonClick
-  ): Observable<Boolean> {
+  ): Boolean {
 
     return when (adapterButtonsClick) {
       is UploadedPhotosAdapter.UploadedPhotosAdapterButtonClick.DeleteButtonClick -> {
-        Observable.fromCallable { showPhotoDeletedSnackbar(adapterButtonsClick.photo) }
-          .subscribeOn(AndroidSchedulers.mainThread())
-          .map { false }
-          .doOnError { Timber.e(it) }
+        showPhotoDeletedSnackbar(adapterButtonsClick.photo)
+        false
       }
 
       is UploadedPhotosAdapter.UploadedPhotosAdapterButtonClick.RetryButtonClick -> {
-        Observable.fromCallable { viewModel.changePhotoState(adapterButtonsClick.photo.id, PhotoState.PHOTO_QUEUED_UP).blockingAwait() }
-          .subscribeOn(Schedulers.io())
-          .observeOn(AndroidSchedulers.mainThread())
-          .doOnNext {
-            val photo = adapterButtonsClick.photo
-            photo.photoState = PhotoState.PHOTO_QUEUED_UP
+        viewModel.changePhotoState(adapterButtonsClick.photo.id, PhotoState.PHOTO_QUEUED_UP)
 
-            viewModel.intercom.tell<UploadedPhotosFragment>()
-              .to(UploadedPhotosFragmentEvent.GeneralEvents.RemovePhoto(photo))
-            viewModel.intercom.tell<UploadedPhotosFragment>()
-              .to(UploadedPhotosFragmentEvent.GeneralEvents.AddPhoto(photo))
-          }.map { true }
-          .doOnError { Timber.e(it) }
+        val photo = adapterButtonsClick.photo
+        photo.photoState = PhotoState.PHOTO_QUEUED_UP
+
+        viewModel.intercom.tell<UploadedPhotosFragment>()
+          .to(UploadedPhotosFragmentEvent.GeneralEvents.RemovePhoto(photo))
+        viewModel.intercom.tell<UploadedPhotosFragment>()
+          .to(UploadedPhotosFragmentEvent.GeneralEvents.AddPhoto(photo))
+
+        true
       }
     }
   }
 
   private fun showPhotoDeletedSnackbar(photo: TakenPhoto) {
-    val disposable = Single.just(1)
-      .observeOn(Schedulers.io())
-      .doOnSuccess {
-        viewModel.intercom.tell<UploadedPhotosFragment>()
-          .to(UploadedPhotosFragmentEvent.GeneralEvents.RemovePhoto(photo))
-      }
-      .zipWith(Single.timer(PHOTO_DELETE_DELAY, TimeUnit.MILLISECONDS))
-      .flatMap { viewModel.deletePhotoById(photo.id).toSingleDefault(Unit) }
-      .subscribe({
-        viewModel.intercom.tell<UploadedPhotosFragment>()
-          .that(UploadedPhotosFragmentEvent.GeneralEvents.PhotoRemoved())
-      }, {
-        Timber.e(it)
-      })
+    val removePhotoJob = launch {
+      viewModel.intercom.tell<UploadedPhotosFragment>()
+        .to(UploadedPhotosFragmentEvent.GeneralEvents.RemovePhoto(photo))
 
-    compositeDisposable += disposable
+      delay(PHOTO_DELETE_DELAY)
+      viewModel.deletePhotoById(photo.id)
+
+      viewModel.intercom.tell<UploadedPhotosFragment>()
+        .that(UploadedPhotosFragmentEvent.GeneralEvents.PhotoRemoved())
+    }
 
     Snackbar.make(rootLayout, getString(R.string.photo_has_been_deleted_snackbar_text), Snackbar.LENGTH_LONG)
       .setDuration(PHOTO_DELETE_DELAY.toInt())
       .setAction(getString(R.string.cancel_snackbar_action_text), {
         viewModel.intercom.tell<UploadedPhotosFragment>()
           .to(UploadedPhotosFragmentEvent.GeneralEvents.AddPhoto(photo))
-        disposable.dispose()
+        removePhotoJob.cancel()
       })
       .show()
   }

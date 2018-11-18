@@ -1,11 +1,10 @@
 package com.kirakishou.photoexchange.di.module
 
 import com.kirakishou.photoexchange.di.scope.PerService
-import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.interactors.ReceivePhotosUseCase
-import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.service.ReceivePhotosServicePresenter
 import dagger.Module
 import dagger.Provides
@@ -17,9 +16,13 @@ class ReceivePhotosServiceModule() {
   @Provides
   fun provideReceivePhotosServicePresenter(uploadedPhotosRepository: UploadedPhotosRepository,
                                            settingsRepository: SettingsRepository,
-                                           schedulerProvider: SchedulerProvider,
-                                           receivePhotosUseCase: ReceivePhotosUseCase): ReceivePhotosServicePresenter {
-    return ReceivePhotosServicePresenter(uploadedPhotosRepository,
-      settingsRepository, schedulerProvider, receivePhotosUseCase, Constants.RECEIVE_PHOTOS_DELAY_MS)
+                                           receivePhotosUseCase: ReceivePhotosUseCase,
+                                           dispatchersProvider: DispatchersProvider): ReceivePhotosServicePresenter {
+    return ReceivePhotosServicePresenter(
+      uploadedPhotosRepository,
+      settingsRepository,
+      receivePhotosUseCase,
+      dispatchersProvider
+    )
   }
 }

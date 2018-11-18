@@ -51,23 +51,24 @@ class UseCaseProviderModule {
   @Singleton
   @Provides
   fun provideReportPhotoUseCase(apiClient: ApiClient,
-                                galleryPhotoRepository: GalleryPhotoRepository): ReportPhotoUseCase {
-    return ReportPhotoUseCase(apiClient, galleryPhotoRepository)
+                                galleryPhotoRepository: GalleryPhotoRepository,
+                                dispatchersProvider: DispatchersProvider): ReportPhotoUseCase {
+    return ReportPhotoUseCase(apiClient, galleryPhotoRepository, dispatchersProvider)
   }
 
   @Singleton
   @Provides
   fun provideFavouritePhotoUseCase(apiClient: ApiClient,
-                                   database: MyDatabase,
                                    galleryPhotoRepository: GalleryPhotoRepository): FavouritePhotoUseCase {
-    return FavouritePhotoUseCase(apiClient, database, galleryPhotoRepository)
+    return FavouritePhotoUseCase(apiClient, galleryPhotoRepository)
   }
 
   @Singleton
   @Provides
   fun provideGetUserIdUseCase(settingsRepository: SettingsRepository,
-                              apiClient: ApiClient): GetUserIdUseCase {
-    return GetUserIdUseCase(settingsRepository, apiClient)
+                              apiClient: ApiClient,
+                              dispatchersProvider: DispatchersProvider): GetUserIdUseCase {
+    return GetUserIdUseCase(settingsRepository, apiClient, dispatchersProvider)
   }
 
   @Singleton
@@ -105,8 +106,15 @@ class UseCaseProviderModule {
                                    database: MyDatabase,
                                    settingsRepository: SettingsRepository,
                                    uploadedPhotosRepository: UploadedPhotosRepository,
-                                   receivedPhotosRepository: ReceivedPhotosRepository): RestoreAccountUseCase {
-    return RestoreAccountUseCase(apiClient, database, settingsRepository,
-      uploadedPhotosRepository, receivedPhotosRepository)
+                                   receivedPhotosRepository: ReceivedPhotosRepository,
+                                   dispatchersProvider: DispatchersProvider): RestoreAccountUseCase {
+    return RestoreAccountUseCase(
+      apiClient,
+      database,
+      settingsRepository,
+      uploadedPhotosRepository,
+      receivedPhotosRepository,
+      dispatchersProvider
+    )
   }
 }

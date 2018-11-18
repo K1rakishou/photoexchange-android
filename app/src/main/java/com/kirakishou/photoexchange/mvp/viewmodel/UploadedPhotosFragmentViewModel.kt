@@ -11,7 +11,7 @@ import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
-import com.kirakishou.photoexchange.mvp.model.exception.ApiException
+import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
@@ -88,7 +88,7 @@ class UploadedPhotosFragmentViewModel(
         .to(PhotosActivityEvent.StartReceivingService(PhotosActivityViewModel::class.java,
           "Starting the service after a page of uploaded photos was loaded"))
     } catch (error: Throwable) {
-      if (error is ApiException) {
+      if (error is ApiErrorException) {
         knownErrors.onNext(error.errorCode)
       } else {
         unknownErrors.onNext(error)
@@ -145,7 +145,7 @@ class UploadedPhotosFragmentViewModel(
       intercom.tell<UploadedPhotosFragment>()
         .to(UploadedPhotosFragmentEvent.GeneralEvents.ShowTakenPhotos(photos))
     } catch (error: Throwable) {
-      if (error is ApiException) {
+      if (error is ApiErrorException) {
         knownErrors.onNext(error.errorCode)
       } else {
         unknownErrors.onNext(error)
@@ -154,36 +154,28 @@ class UploadedPhotosFragmentViewModel(
   }
 
   private suspend fun figureOutWhatPhotosToLoad(): PhotosToLoad {
-    return withContext(dispatchersProvider.DISK()) {
-      val hasFailedToUploadPhotos = takenPhotosRepository.countAllByState(PhotoState.FAILED_TO_UPLOAD) > 0
-      val hasQueuedUpPhotos = takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
+    val hasFailedToUploadPhotos = takenPhotosRepository.countAllByState(PhotoState.FAILED_TO_UPLOAD) > 0
+    val hasQueuedUpPhotos = takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
 
-      if (hasFailedToUploadPhotos || hasQueuedUpPhotos) {
-        return@withContext PhotosToLoad.QueuedUpAndFailed
-      }
-
-      return@withContext PhotosToLoad.Uploaded
+    if (hasFailedToUploadPhotos || hasQueuedUpPhotos) {
+      return PhotosToLoad.QueuedUpAndFailed
     }
+
+    return PhotosToLoad.Uploaded
   }
 
   private suspend fun tryToFixStalledPhotos() {
-    return withContext(dispatchersProvider.DISK()) {
-      return@withContext takenPhotosRepository.tryToFixStalledPhotos()
-    }
+    return takenPhotosRepository.tryToFixStalledPhotos()
   }
 
   private suspend fun loadFailedToUploadPhotos(): List<TakenPhoto> {
-    return withContext(dispatchersProvider.DISK()) {
-      return@withContext takenPhotosRepository.findAllByState(PhotoState.FAILED_TO_UPLOAD)
-        .sortedBy { it.id }
-    }
+    return takenPhotosRepository.findAllByState(PhotoState.FAILED_TO_UPLOAD)
+      .sortedBy { it.id }
   }
 
   private suspend fun loadQueuedUpPhotos(): List<TakenPhoto> {
-    return withContext(dispatchersProvider.DISK()) {
-      return@withContext takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP)
-        .sortedBy { it.id }
-    }
+    return takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP)
+      .sortedBy { it.id }
   }
 
   fun onCleared() {

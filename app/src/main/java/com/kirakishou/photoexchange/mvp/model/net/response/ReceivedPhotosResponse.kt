@@ -11,15 +11,15 @@ private constructor(
   @SerializedName("received_photos")
   val receivedPhotos: List<ReceivedPhoto>,
 
-  errorCode: ErrorCode.ReceivePhotosErrors
-) : StatusResponse(errorCode.getValue(), errorCode) {
+  errorCode: ErrorCode
+) : StatusResponse(errorCode.value, errorCode) {
 
   companion object {
     fun success(receivedPhotos: List<ReceivedPhoto>): ReceivedPhotosResponse {
-      return ReceivedPhotosResponse(receivedPhotos, ErrorCode.ReceivePhotosErrors.Ok())
+      return ReceivedPhotosResponse(receivedPhotos, ErrorCode.Ok)
     }
 
-    fun error(errorCode: ErrorCode.ReceivePhotosErrors): ReceivedPhotosResponse {
+    fun error(errorCode: ErrorCode): ReceivedPhotosResponse {
       return ReceivedPhotosResponse(emptyList(), errorCode)
     }
   }

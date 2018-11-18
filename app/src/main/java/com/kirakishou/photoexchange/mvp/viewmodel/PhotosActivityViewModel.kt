@@ -1,26 +1,19 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.database.repository.*
+import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
-import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
-import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
-import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
-import com.kirakishou.photoexchange.interactors.*
-import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
+import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
+import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
+import com.kirakishou.photoexchange.mvp.model.exception.EmptyUserIdException
 import com.kirakishou.photoexchange.mvp.model.other.Constants
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
-import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
-import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
-import io.reactivex.Completable
-import io.reactivex.Observable
+import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
 
 /**
  * Created by kirakishou on 3/11/2018.
@@ -58,51 +51,51 @@ class PhotosActivityViewModel(
     super.onCleared()
   }
 
-  fun reportPhoto(photoName: String): Observable<Either<ErrorCode.ReportPhotoErrors, Boolean>> {
-    return Observable.fromCallable { settingsRepository.getUserId() }
-      .subscribeOn(schedulerProvider.IO())
-      .concatMap { userId -> reportPhotoUseCase.reportPhoto(userId, photoName) }
-  }
-
-  fun favouritePhoto(photoName: String): Observable<Either<ErrorCode.FavouritePhotoErrors, FavouritePhotoUseCase.FavouritePhotoResult>> {
-    return Observable.fromCallable { settingsRepository.getUserId() }
-      .subscribeOn(schedulerProvider.IO())
-      .concatMap { userId -> favouritePhotoUseCase.favouritePhoto(userId, photoName) }
-  }
-
-  fun checkHasPhotosToUpload(): Observable<Boolean> {
-    return Observable.fromCallable {
-      return@fromCallable takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
-    }.subscribeOn(schedulerProvider.IO())
-  }
-
-  fun checkHasPhotosToReceive(): Observable<Boolean> {
-    return Observable.fromCallable {
-      val uploadedPhotosCount = uploadedPhotosRepository.count()
-      val receivedPhotosCount = receivedPhotosRepository.count()
-
-      return@fromCallable uploadedPhotosCount > receivedPhotosCount
-    }.subscribeOn(schedulerProvider.IO())
-  }
-
-  fun deletePhotoById(photoId: Long): Completable {
-    return Completable.fromAction {
-      takenPhotosRepository.deletePhotoById(photoId)
-      if (Constants.isDebugBuild) {
-        check(takenPhotosRepository.findById(photoId).isEmpty())
+  suspend fun reportPhoto(photoName: String): Either<Exception, Boolean> {
+    return withContext(coroutineContext) {
+      val userId = settingsRepository.getUserId()
+      if (userId.isEmpty()) {
+        throw EmptyUserIdException()
       }
-    }.subscribeOn(schedulerProvider.IO())
+
+      return@withContext reportPhotoUseCase.reportPhoto(userId, photoName)
+    }
   }
 
-  fun changePhotoState(photoId: Long, newPhotoState: PhotoState): Completable {
-    return Completable.fromAction {
-      takenPhotosRepository.updatePhotoState(photoId, newPhotoState)
-    }.subscribeOn(schedulerProvider.IO())
+  suspend fun favouritePhoto(photoName: String): Either<Exception, FavouritePhotoUseCase.FavouritePhotoResult> {
+    return withContext(coroutineContext) {
+      val userId = settingsRepository.getUserId()
+      if (userId.isEmpty()) {
+        throw EmptyUserIdException()
+      }
+
+      return@withContext favouritePhotoUseCase.favouritePhoto(userId, photoName)
+    }
   }
 
-  fun updateGpsPermissionGranted(granted: Boolean): Completable {
-    return Completable.fromAction {
-      settingsRepository.updateGpsPermissionGranted(granted)
-    }.subscribeOn(schedulerProvider.IO())
+  suspend fun checkHasPhotosToUpload(): Boolean {
+    return takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
+  }
+
+  suspend fun checkHasPhotosToReceive(): Boolean {
+    val uploadedPhotosCount = uploadedPhotosRepository.count()
+    val receivedPhotosCount = receivedPhotosRepository.count()
+
+    return uploadedPhotosCount > receivedPhotosCount
+  }
+
+  suspend fun deletePhotoById(photoId: Long) {
+    takenPhotosRepository.deletePhotoById(photoId)
+    if (Constants.isDebugBuild) {
+      check(takenPhotosRepository.findById(photoId).isEmpty())
+    }
+  }
+
+  suspend fun changePhotoState(photoId: Long, newPhotoState: PhotoState) {
+    takenPhotosRepository.updatePhotoState(photoId, newPhotoState)
+  }
+
+  suspend fun updateGpsPermissionGranted(granted: Boolean) {
+    settingsRepository.updateGpsPermissionGranted(granted)
   }
 }

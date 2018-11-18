@@ -8,9 +8,7 @@ import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRep
 import com.kirakishou.photoexchange.helper.myRunCatching
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
-import com.kirakishou.photoexchange.mvp.model.exception.GetUploadedPhotosException
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import kotlinx.coroutines.rx2.await
+import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
@@ -45,22 +43,19 @@ open class GetUploadedPhotosUseCase(
           return@myRunCatching pageOfUploadedPhotos
         }
 
-        val response = apiClient.getPageOfUploadedPhotos(userId, time, count).await()
-        val errorCode = response.errorCode as ErrorCode.GetUploadedPhotosErrors
-
-        if (errorCode !is ErrorCode.GetUploadedPhotosErrors.Ok) {
-          throw GetUploadedPhotosException.OnKnownError(errorCode)
-        }
-
-        if (response.uploadedPhotos.isEmpty()) {
+        val uploadedPhotos = apiClient.getPageOfUploadedPhotos(userId, time, count)
+        if (uploadedPhotos.isEmpty()) {
           return@myRunCatching emptyList<UploadedPhoto>()
         }
 
-        if (!uploadedPhotosRepository.saveMany(response.uploadedPhotos)) {
-          throw GetUploadedPhotosException.OnKnownError(ErrorCode.GetUploadedPhotosErrors.DatabaseError())
+        if (!uploadedPhotosRepository.saveMany(uploadedPhotos)) {
+          throw DatabaseException("Could not cache uploaded photos in the database")
         }
 
-        return@myRunCatching UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhotos(response.uploadedPhotos)
+        val sorted = uploadedPhotos
+          .sortedByDescending { it.photoId }
+
+        return@myRunCatching UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhotos(sorted)
       }
     }
   }

@@ -4,6 +4,7 @@ import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
+import java.lang.Exception
 
 sealed class UploadedPhotosFragmentEvent : BaseEvent {
   sealed class GeneralEvents : UploadedPhotosFragmentEvent() {
@@ -24,15 +25,14 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
   }
 
   sealed class PhotoUploadEvent : UploadedPhotosFragmentEvent() {
-    class OnFailedToUpload(val photo: TakenPhoto,
-                           val errorCode: ErrorCode.UploadPhotoErrors) : PhotoUploadEvent()
-
-    class OnKnownError(val errorCode: ErrorCode.UploadPhotoErrors) : PhotoUploadEvent()
-    class OnUnknownError(val error: Throwable) : PhotoUploadEvent()
     class OnPhotoUploadStart(val photo: TakenPhoto) : PhotoUploadEvent()
     class OnProgress(val photo: TakenPhoto, val progress: Int) : PhotoUploadEvent()
     class OnUploaded(val takenPhoto: TakenPhoto) : PhotoUploadEvent()
-    class PhotoReceived(val takenPhotoName: String) : PhotoUploadEvent()
+    class OnFailedToUpload(val photo: TakenPhoto) : PhotoUploadEvent()
     class OnEnd : PhotoUploadEvent()
+    class OnError(val exception: Exception) : PhotoUploadEvent()
+
+    //FIXME: should this be here? Probably should be moved to GeneralEvents
+    class PhotoReceived(val takenPhotoName: String) : PhotoUploadEvent()
   }
 }

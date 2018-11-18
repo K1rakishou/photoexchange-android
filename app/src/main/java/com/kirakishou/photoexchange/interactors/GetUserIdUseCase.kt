@@ -2,41 +2,34 @@ package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import io.reactivex.Single
-import timber.log.Timber
+import com.kirakishou.photoexchange.helper.myRunCatching
+import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
+import kotlinx.coroutines.withContext
 
 open class GetUserIdUseCase(
   private val settingsRepository: SettingsRepository,
-  private val apiClient: ApiClient
-) {
+  private val apiClient: ApiClient,
+  dispatchersProvider: DispatchersProvider
+) : BaseUseCase(dispatchersProvider) {
   private val TAG = "GetUserIdUseCase"
 
-  open fun getUserId(): Single<Either<ErrorCode.GetUserIdError, String>> {
-    return Single.fromCallable { settingsRepository.getUserId() }
-      .flatMap { userId ->
+  open suspend fun getUserId(): Either<Exception, String> {
+    return withContext(coroutineContext) {
+      return@withContext myRunCatching {
+        val userId = settingsRepository.getUserId()
         if (userId.isNotEmpty()) {
-          return@flatMap Single.just(Either.Value(userId))
+          return@myRunCatching userId
         }
 
-        return@flatMap apiClient.getUserId()
-          .map { response ->
-            val errorCode = response.errorCode as ErrorCode.GetUserIdError
-            if (errorCode !is ErrorCode.GetUserIdError.Ok) {
-              return@map Either.Error(errorCode)
-            }
+        val newUserId = apiClient.getUserId()
+        if (!settingsRepository.saveUserId(newUserId)) {
+          throw DatabaseException("Could not update userId in the database")
+        }
 
-            if (!settingsRepository.saveUserId(response.userId)) {
-              return@map Either.Error(ErrorCode.GetUserIdError.LocalDatabaseError())
-            }
-
-            return@map Either.Value(response.userId)
-          }
+        return@myRunCatching newUserId
       }
-      .onErrorReturn { error ->
-        Timber.tag(TAG).e(error)
-        return@onErrorReturn Either.Error(ErrorCode.GetUserIdError.UnknownError())
-      }
+    }
   }
 }

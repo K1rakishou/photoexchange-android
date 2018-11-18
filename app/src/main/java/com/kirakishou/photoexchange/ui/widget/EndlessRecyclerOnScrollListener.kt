@@ -38,8 +38,13 @@ class EndlessRecyclerOnScrollListener(
       return
     }
 
-    val visibleItemCount = recyclerView.childCount
+    //do nothing if the recyclerview is empty
     val totalItemCount = gridLayoutManager.itemCount
+    if (totalItemCount == 0) {
+      return
+    }
+
+    val visibleItemCount = recyclerView.childCount
     val firstVisibleItem = (recyclerView.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
 
     if (loading) {

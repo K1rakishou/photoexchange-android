@@ -12,11 +12,11 @@ private constructor(
   val galleryPhotosInfo: List<GalleryPhotosInfoData>,
 
   errorCode: ErrorCode
-) : StatusResponse(errorCode.getValue(), errorCode) {
+) : StatusResponse(errorCode.value, errorCode) {
 
   companion object {
     fun success(galleryPhotosInfo: List<GalleryPhotosInfoData>): GalleryPhotoInfoResponse {
-      return GalleryPhotoInfoResponse(galleryPhotosInfo, ErrorCode.GetGalleryPhotosErrors.Ok())
+      return GalleryPhotoInfoResponse(galleryPhotosInfo, ErrorCode.Ok)
     }
 
     fun fail(errorCode: ErrorCode): GalleryPhotoInfoResponse {

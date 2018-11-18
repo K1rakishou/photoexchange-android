@@ -12,11 +12,11 @@ private constructor(
   val userId: String,
 
   errorCode: ErrorCode
-) : StatusResponse(errorCode.getValue(), errorCode) {
+) : StatusResponse(errorCode.value, errorCode) {
 
   companion object {
     fun success(userId: String): GetUserIdResponse {
-      return GetUserIdResponse(userId, ErrorCode.GetUserIdError.Ok())
+      return GetUserIdResponse(userId, ErrorCode.Ok)
     }
 
     fun error(errorCode: ErrorCode): GetUserIdResponse {

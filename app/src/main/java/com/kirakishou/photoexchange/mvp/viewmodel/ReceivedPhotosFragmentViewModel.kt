@@ -8,7 +8,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetReceivedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.exception.ApiException
+import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
@@ -62,7 +62,7 @@ class ReceivedPhotosFragmentViewModel(
           intercom.tell<ReceivedPhotosFragment>()
             .to(ReceivedPhotosFragmentEvent.GeneralEvents.ShowReceivedPhotos(photos))
         } catch (error: Throwable) {
-          if (error is ApiException) {
+          if (error is ApiErrorException) {
             knownErrors.onNext(error.errorCode)
           } else {
             unknownErrors.onNext(error)

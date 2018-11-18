@@ -1,48 +1,33 @@
 package com.kirakishou.photoexchange.helper.api.request
 
-import com.google.gson.Gson
+import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiService
-import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
-import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.gson.MyGson
-import com.kirakishou.photoexchange.mvp.model.exception.ApiException
-import com.kirakishou.photoexchange.mvp.model.exception.GeneralException
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
+import com.kirakishou.photoexchange.helper.gson.JsonConverter
+import com.kirakishou.photoexchange.mvp.model.exception.ConnectionError
 import com.kirakishou.photoexchange.mvp.model.net.packet.FavouritePhotoPacket
 import com.kirakishou.photoexchange.mvp.model.net.response.FavouritePhotoResponse
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import io.reactivex.Single
-import java.net.SocketTimeoutException
-import java.util.concurrent.TimeoutException
+import kotlinx.coroutines.rx2.await
 
-class FavouritePhotoRequest<T>(
+class FavouritePhotoRequest(
   private val userId: String,
   private val photoName: String,
   private val apiService: ApiService,
-  private val schedulerProvider: SchedulerProvider,
-  private val gson: MyGson
-) : AbstractRequest<T>() {
+  private val jsonConverter: JsonConverter,
+  dispatchersProvider: DispatchersProvider
+) : BaseRequest<FavouritePhotoResponse>(dispatchersProvider) {
 
-  override fun execute(): Single<T> {
-    return apiService.favouritePhoto(FavouritePhotoPacket(userId, photoName))
-      .subscribeOn(schedulerProvider.IO())
-      .observeOn(schedulerProvider.IO())
-      .lift(OnApiErrorSingle<FavouritePhotoResponse>(gson, FavouritePhotoResponse::class))
-      .map { response ->
-        if (ErrorCode.FavouritePhotoErrors.fromInt(response.serverErrorCode!!) is ErrorCode.FavouritePhotoErrors.Ok) {
-          return@map FavouritePhotoResponse.success(response.isFavourited, response.favouritesCount)
-        } else {
-          return@map FavouritePhotoResponse.error(ErrorCode.fromInt(ErrorCode.FavouritePhotoErrors::class, response.serverErrorCode!!))
-        }
-      }
-      .onErrorReturn(this::extractError) as Single<T>
-  }
+  override suspend fun execute(): FavouritePhotoResponse {
+    val response = try {
+      apiService.favouritePhoto(FavouritePhotoPacket(userId, photoName)).await()
+    } catch (error: Exception) {
+      throw ConnectionError(error.message)
+    }
 
-  private fun extractError(error: Throwable): FavouritePhotoResponse {
-    return when (error) {
-      is ApiException -> FavouritePhotoResponse.error(error.errorCode as ErrorCode.FavouritePhotoErrors)
-      is SocketTimeoutException,
-      is TimeoutException -> FavouritePhotoResponse.error(ErrorCode.FavouritePhotoErrors.LocalTimeout())
-      else -> FavouritePhotoResponse.error(ErrorCode.FavouritePhotoErrors.UnknownError())
+    val result = handleResponse(jsonConverter, response)
+    return when (result) {
+      is Either.Value -> result.value
+      is Either.Error -> throw result.error
     }
   }
 }

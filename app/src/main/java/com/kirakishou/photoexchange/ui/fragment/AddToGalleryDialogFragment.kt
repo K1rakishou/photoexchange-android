@@ -135,7 +135,8 @@ class AddToGalleryDialogFragment : BaseFragment(), ViewTakenPhotoActivity.BackPr
 
   data class FragmentResult(
     var rememberChoice: Boolean,
-    var makePublic: Boolean)
+    var makePublic: Boolean
+  )
 
   companion object {
     const val BACKSTACK_TAG = "ADD_TO_GALLERY_DIALOG_FRAGMENT"

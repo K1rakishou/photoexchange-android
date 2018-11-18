@@ -3,8 +3,8 @@ package com.kirakishou.photoexchange.di.module
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.api.ApiClientImpl
 import com.kirakishou.photoexchange.helper.api.ApiService
-import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.gson.MyGson
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
+import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import dagger.Module
 import dagger.Provides
 import javax.inject.Singleton
@@ -20,7 +20,11 @@ class ApiClientModule {
 
   @Singleton
   @Provides
-  fun provideApiClient(apiService: ApiService, gson: MyGson, schedulerProvider: SchedulerProvider): ApiClient {
-    return ApiClientImpl(apiService, gson, schedulerProvider)
+  fun provideApiClient(
+    apiService: ApiService,
+    jsonConverter: JsonConverter,
+    dispatchersProvider: DispatchersProvider
+  ): ApiClient {
+    return ApiClientImpl(apiService, jsonConverter, dispatchersProvider)
   }
 }

@@ -10,10 +10,12 @@ import com.kirakishou.photoexchange.mvp.viewmodel.ViewTakenPhotoActivityViewMode
 import com.kirakishou.photoexchange.ui.fragment.AddToGalleryDialogFragment
 import com.kirakishou.photoexchange.ui.fragment.ViewTakenPhotoFragment
 import io.reactivex.Completable
-import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.rx2.await
+import kotlinx.coroutines.rx2.openSubscription
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -40,23 +42,18 @@ class ViewTakenPhotoActivity : BaseActivity() {
   }
 
   override fun onActivityStart() {
-    initRx()
+    launch { initRx() }
   }
 
   override fun onActivityStop() {
   }
 
-  private fun initRx() {
-    compositeDisposable += viewModel.addToGalleryFragmentResult
-      .subscribeOn(AndroidSchedulers.mainThread())
-      .flatMap { fragmentResult ->
-        onBackPressedInternal()
-          .andThen(Observable.just(fragmentResult))
-      }
-      .concatMap { fragmentResult -> onAddToGalleryFragmentResult(fragmentResult) }
-      .doOnNext { onPhotoUpdated() }
-      .doOnError { Timber.tag(TAG).e(it) }
-      .subscribe()
+  private suspend fun initRx() {
+    viewModel.addToGalleryFragmentResult.openSubscription().consumeEach { fragmentResult ->
+      onBackPressedInternal().await()
+      onAddToGalleryFragmentResult(fragmentResult)
+      onPhotoUpdated()
+    }
   }
 
   private fun showViewTakenPhotoFragment(intent: Intent) {
@@ -77,20 +74,9 @@ class ViewTakenPhotoActivity : BaseActivity() {
     runActivity(PhotosActivity::class.java, true)
   }
 
-  private fun onAddToGalleryFragmentResult(fragmentResult: AddToGalleryDialogFragment.FragmentResult): Observable<Boolean> {
-    return viewModel.saveMakePublicFlag(fragmentResult.rememberChoice, fragmentResult.makePublic)
-      .toObservable<Boolean>()
-      .startWith(fragmentResult.makePublic)
-      .subscribeOn(Schedulers.io())
-      .observeOn(Schedulers.io())
-      .flatMap { isPublic ->
-        if (isPublic) {
-          return@flatMap viewModel.updateSetIsPhotoPublic(takenPhoto.id)
-        }
-
-        return@flatMap Observable.just(isPublic)
-      }
-      .doOnError { Timber.tag(TAG).e(it) }
+  private suspend fun onAddToGalleryFragmentResult(fragmentResult: AddToGalleryDialogFragment.FragmentResult) {
+    viewModel.saveMakePublicFlag(fragmentResult.rememberChoice, fragmentResult.makePublic)
+    viewModel.updateSetIsPhotoPublic(takenPhoto.id)
   }
 
   override fun onBackPressed() {

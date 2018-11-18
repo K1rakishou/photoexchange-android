@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
 import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
@@ -10,6 +11,8 @@ import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 /**
  * Created by kirakishou on 3/3/2018.
@@ -17,204 +20,245 @@ import com.kirakishou.photoexchange.mvp.model.other.LonLat
 open class TakenPhotosRepository(
   private val timeUtils: TimeUtils,
   private val database: MyDatabase,
-  private val tempFileRepository: TempFileRepository
-) {
+  private val tempFileRepository: TempFileRepository,
+  dispatchersProvider: DispatchersProvider
+) : BaseRepository(dispatchersProvider) {
   private val TAG = "TakenPhotosRepository"
   private val takenPhotoDao = database.takenPhotoDao()
 
   init {
-    tempFileRepository.init()
+    runBlocking(coroutineContext) {
+      tempFileRepository.init()
+    }
   }
 
-  fun saveTakenPhoto(tempFile: TempFileEntity): TakenPhoto {
-    var photo = TakenPhoto.empty()
+  suspend fun saveTakenPhoto(tempFile: TempFileEntity): TakenPhoto {
+    return withContext(coroutineContext) {
+      var photo = TakenPhoto.empty()
 
-    val transactionResult = database.transactional {
-      val myPhotoEntity = TakenPhotoEntity.create(tempFile.id!!, false, timeUtils.getTimeFast())
-      val insertedPhotoId = takenPhotoDao.insert(myPhotoEntity)
+      val transactionResult = database.transactional {
+        val myPhotoEntity = TakenPhotoEntity.create(tempFile.id!!, false, timeUtils.getTimeFast())
+        val insertedPhotoId = takenPhotoDao.insert(myPhotoEntity)
 
-      if (insertedPhotoId.isFail()) {
-        return@transactional false
-      }
-
-      myPhotoEntity.id = insertedPhotoId
-      photo = TakenPhotosMapper.toMyPhoto(myPhotoEntity, tempFile)
-
-      return@transactional tempFileRepository.updateTakenPhotoId(tempFile, insertedPhotoId).isSuccess()
-    }
-
-    if (!transactionResult) {
-      tempFileRepository.markDeletedById(tempFile)
-      return TakenPhoto.empty()
-    }
-
-    return photo
-  }
-
-  open fun updatePhotoState(photoId: Long, newPhotoState: PhotoState): Boolean {
-    return takenPhotoDao.updateSetNewPhotoState(photoId, newPhotoState) == 1
-  }
-
-  fun updateMakePhotoPublic(takenPhotoId: Long): Boolean {
-    return takenPhotoDao.updateSetPhotoPublic(takenPhotoId) == 1
-  }
-
-  fun updateAllPhotosLocation(location: LonLat) {
-    if (location.isEmpty()) {
-      return
-    }
-
-    val allPhotosWithEmptyLocation = takenPhotoDao.findAllWithEmptyLocation()
-    if (allPhotosWithEmptyLocation.isEmpty()) {
-      return
-    }
-
-    database.transactional {
-      for (photo in allPhotosWithEmptyLocation) {
-        if (takenPhotoDao.updatePhotoLocation(photo.id!!, location.lon, location.lat) != 1) {
+        if (insertedPhotoId.isFail()) {
           return@transactional false
         }
+
+        myPhotoEntity.id = insertedPhotoId
+        photo = TakenPhotosMapper.toMyPhoto(myPhotoEntity, tempFile)
+
+        return@transactional tempFileRepository.updateTakenPhotoId(tempFile, insertedPhotoId).isSuccess()
       }
 
-      return@transactional true
+      if (!transactionResult) {
+        tempFileRepository.markDeletedById(tempFile)
+        return@withContext TakenPhoto.empty()
+      }
+
+      return@withContext photo
     }
   }
 
-  fun hasPhotosWithEmptyLocation(): Boolean {
-    return takenPhotoDao.findAllWithEmptyLocation().isNotEmpty()
+  open suspend fun updatePhotoState(photoId: Long, newPhotoState: PhotoState): Boolean {
+    return withContext(coroutineContext) {
+      return@withContext takenPhotoDao.updateSetNewPhotoState(photoId, newPhotoState) == 1
+    }
   }
 
-  fun findById(id: Long): TakenPhoto {
-    val myPhotoEntity = takenPhotoDao.findById(id) ?: TakenPhotoEntity.empty()
-    val tempFileEntity = findTempFileById(id)
-
-    return TakenPhotosMapper.toMyPhoto(myPhotoEntity, tempFileEntity)
+  suspend fun updateMakePhotoPublic(takenPhotoId: Long): Boolean {
+    return withContext(coroutineContext) {
+      return@withContext takenPhotoDao.updateSetPhotoPublic(takenPhotoId) == 1
+    }
   }
 
-  fun findAll(): List<TakenPhoto> {
-    val allMyPhotos = arrayListOf<TakenPhoto>()
-    val allMyPhotoEntities = takenPhotoDao.findAll()
+  suspend fun updateAllPhotosLocation(location: LonLat) {
+    return withContext(coroutineContext) {
+      if (location.isEmpty()) {
+        return@withContext
+      }
 
-    for (myPhotoEntity in allMyPhotoEntities) {
-      myPhotoEntity.id?.let { myPhotoId ->
-        val tempFile = findTempFileById(myPhotoId)
+      val allPhotosWithEmptyLocation = takenPhotoDao.findAllWithEmptyLocation()
+      if (allPhotosWithEmptyLocation.isEmpty()) {
+        return@withContext
+      }
 
-        TakenPhotosMapper.toMyPhoto(myPhotoEntity, tempFile).let { myPhoto ->
-          allMyPhotos += myPhoto
+      database.transactional {
+        for (photo in allPhotosWithEmptyLocation) {
+          if (takenPhotoDao.updatePhotoLocation(photo.id!!, location.lon, location.lat) != 1) {
+            return@transactional false
+          }
+        }
+
+        return@transactional true
+      }
+    }
+  }
+
+  suspend fun hasPhotosWithEmptyLocation(): Boolean {
+    return withContext(coroutineContext) {
+      return@withContext takenPhotoDao.findAllWithEmptyLocation().isNotEmpty()
+    }
+  }
+
+  suspend fun findById(id: Long): TakenPhoto {
+    return withContext(coroutineContext) {
+      val myPhotoEntity = takenPhotoDao.findById(id) ?: TakenPhotoEntity.empty()
+      val tempFileEntity = findTempFileById(id)
+
+      return@withContext TakenPhotosMapper.toMyPhoto(myPhotoEntity, tempFileEntity)
+    }
+  }
+
+  suspend fun findAll(): List<TakenPhoto> {
+    return withContext(coroutineContext) {
+      val allMyPhotos = arrayListOf<TakenPhoto>()
+      val allMyPhotoEntities = takenPhotoDao.findAll()
+
+      for (myPhotoEntity in allMyPhotoEntities) {
+        myPhotoEntity.id?.let { myPhotoId ->
+          val tempFile = findTempFileById(myPhotoId)
+
+          TakenPhotosMapper.toMyPhoto(myPhotoEntity, tempFile).let { myPhoto ->
+            allMyPhotos += myPhoto
+          }
         }
       }
+
+      return@withContext allMyPhotos
     }
-
-    return allMyPhotos
   }
 
-  open fun countAllByState(state: PhotoState): Int {
-    return takenPhotoDao.countAllByState(state).toInt()
+  open suspend fun countAllByState(state: PhotoState): Int {
+    return withContext(coroutineContext) {
+      return@withContext takenPhotoDao.countAllByState(state).toInt()
+    }
   }
 
-  fun countAllByStates(states: Array<PhotoState>): Int {
-    return takenPhotoDao.countAllByStates(states)
+  suspend fun countAllByStates(states: Array<PhotoState>): Int {
+    return withContext(coroutineContext) {
+      return@withContext takenPhotoDao.countAllByStates(states)
+    }
   }
 
-  open fun updateStates(oldState: PhotoState, newState: PhotoState) {
-    takenPhotoDao.updateStates(oldState, newState)
+  open suspend fun updateStates(oldState: PhotoState, newState: PhotoState) {
+    withContext(coroutineContext) {
+      takenPhotoDao.updateStates(oldState, newState)
+    }
   }
 
-  open fun findAllByState(state: PhotoState): List<TakenPhoto> {
-    val resultList = mutableListOf<TakenPhoto>()
+  open suspend fun findAllByState(state: PhotoState): List<TakenPhoto> {
+    return withContext(coroutineContext) {
+      val resultList = mutableListOf<TakenPhoto>()
 
-    database.transactional {
-      val allPhotoReadyToUploading = takenPhotoDao.findAllWithState(state)
+      database.transactional {
+        val allPhotoReadyToUploading = takenPhotoDao.findAllWithState(state)
 
-      for (photo in allPhotoReadyToUploading) {
-        val tempFileEntity = findTempFileById(photo.id!!)
-        resultList += TakenPhotosMapper.toMyPhoto(photo, tempFileEntity)
+        for (photo in allPhotoReadyToUploading) {
+          val tempFileEntity = findTempFileById(photo.id!!)
+          resultList += TakenPhotosMapper.toMyPhoto(photo, tempFileEntity)
+        }
+
+        return@transactional true
       }
 
-      return@transactional true
+      return@withContext resultList
     }
-
-    return resultList
   }
 
-  fun deleteMyPhoto(takenPhoto: TakenPhoto?): Boolean {
-    if (takenPhoto == null) {
-      return true
-    }
-
-    if (takenPhoto.isEmpty()) {
-      return true
-    }
-
-    return deletePhotoById(takenPhoto.id)
-  }
-
-  fun deletePhotoByName(photoName: String): Boolean {
-    val photoId = takenPhotoDao.findPhotoIdByName(photoName)
-    if (photoId == null) {
-      //already deleted
-      return true
-    }
-
-    return deletePhotoById(photoId)
-  }
-
-  open fun deletePhotoById(photoId: Long): Boolean {
-    return database.transactional {
-      if (takenPhotoDao.deleteById(photoId).isFail()) {
-        return@transactional false
+  suspend fun deleteMyPhoto(takenPhoto: TakenPhoto?): Boolean {
+    return withContext(coroutineContext) {
+      if (takenPhoto == null) {
+        return@withContext true
       }
 
-      return@transactional markTempFileDeleted(photoId)
+      if (takenPhoto.isEmpty()) {
+        return@withContext true
+      }
+
+      return@withContext deletePhotoById(takenPhoto.id)
     }
   }
 
-  fun deleteAllWithState(photoState: PhotoState): Boolean {
-    return database.transactional {
-      val myPhotosList = takenPhotoDao.findAllWithState(photoState)
+  suspend fun deletePhotoByName(photoName: String): Boolean {
+    return withContext(coroutineContext) {
+      val photoId = takenPhotoDao.findPhotoIdByName(photoName)
+      if (photoId == null) {
+        //already deleted
+        return@withContext true
+      }
 
-      for (myPhoto in myPhotosList) {
-        if (!deletePhotoById(myPhoto.id!!)) {
+      return@withContext deletePhotoById(photoId)
+    }
+  }
+
+  open suspend fun deletePhotoById(photoId: Long): Boolean {
+    return withContext(coroutineContext) {
+      return@withContext database.transactional {
+        if (takenPhotoDao.deleteById(photoId).isFail()) {
           return@transactional false
         }
+
+        return@transactional markTempFileDeleted(photoId)
+      }
+    }
+  }
+
+  suspend fun deleteAllWithState(photoState: PhotoState): Boolean {
+    return withContext(coroutineContext) {
+      return@withContext database.transactional {
+        val myPhotosList = takenPhotoDao.findAllWithState(photoState)
+
+        for (myPhoto in myPhotosList) {
+          if (!deletePhotoById(myPhoto.id!!)) {
+            return@transactional false
+          }
+        }
+
+        return@transactional true
+      }
+    }
+  }
+
+  private suspend fun markTempFileDeleted(id: Long): Boolean {
+    return withContext(coroutineContext) {
+      val tempFileEntity = tempFileRepository.findById(id)
+      if (tempFileEntity.isEmpty()) {
+        //has already been deleted
+        return@withContext true
       }
 
-      return@transactional true
-    }
-  }
-
-  private fun markTempFileDeleted(id: Long): Boolean {
-    val tempFileEntity = tempFileRepository.findById(id)
-    if (tempFileEntity.isEmpty()) {
-      //has already been deleted
-      return true
-    }
-
-    if (tempFileRepository.markDeletedById(id).isFail()) {
-      return false
-    }
-
-    return true
-  }
-
-  private fun findTempFileById(id: Long): TempFileEntity {
-    return tempFileRepository.findById(id)
-  }
-
-  fun findTempFile(id: Long): TempFileEntity {
-    return tempFileRepository.findById(id)
-  }
-
-  fun tryToFixStalledPhotos() {
-    val stillUploadingPhotos = findAllByState(PhotoState.PHOTO_UPLOADING)
-
-    for (photo in stillUploadingPhotos) {
-      if (!photo.fileExists()) {
-        deletePhotoById(photo.id)
-        continue
+      if (tempFileRepository.markDeletedById(id).isFail()) {
+        return@withContext false
       }
 
-      updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
+      return@withContext true
+    }
+  }
+
+  private suspend fun findTempFileById(id: Long): TempFileEntity {
+    return withContext(coroutineContext) {
+      return@withContext tempFileRepository.findById(id)
+    }
+  }
+
+  suspend fun findTempFile(id: Long): TempFileEntity {
+    return withContext(coroutineContext) {
+      return@withContext tempFileRepository.findById(id)
+    }
+  }
+
+  suspend fun tryToFixStalledPhotos() {
+    return withContext(coroutineContext) {
+      val stillUploadingPhotos = findAllByState(PhotoState.PHOTO_UPLOADING)
+
+      for (photo in stillUploadingPhotos) {
+        if (!photo.fileExists()) {
+          deletePhotoById(photo.id)
+          continue
+        }
+
+        updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
+      }
     }
   }
 }

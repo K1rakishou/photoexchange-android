@@ -12,11 +12,11 @@ private constructor(
   val accountExists: Boolean,
 
   errorCode: ErrorCode
-) : StatusResponse(errorCode.getValue(), errorCode) {
+) : StatusResponse(errorCode.value, errorCode) {
 
   companion object {
     fun success(accountExists: Boolean): CheckAccountExistsResponse {
-      return CheckAccountExistsResponse(accountExists, ErrorCode.CheckAccountExistsErrors.Ok())
+      return CheckAccountExistsResponse(accountExists, ErrorCode.Ok)
     }
 
     fun fail(errorCode: ErrorCode): CheckAccountExistsResponse {

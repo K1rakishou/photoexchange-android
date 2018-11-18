@@ -1,46 +1,32 @@
 package com.kirakishou.photoexchange.helper.api.request
 
+import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiService
-import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
-import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.gson.MyGson
-import com.kirakishou.photoexchange.mvp.model.exception.ApiException
-import com.kirakishou.photoexchange.mvp.model.exception.GeneralException
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
+import com.kirakishou.photoexchange.helper.gson.JsonConverter
+import com.kirakishou.photoexchange.mvp.model.exception.ConnectionError
 import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import io.reactivex.Single
-import java.net.SocketTimeoutException
-import java.util.concurrent.TimeoutException
+import kotlinx.coroutines.rx2.await
 
-class GetPageOfGalleryPhotosRequest<T>(
+class GetPageOfGalleryPhotosRequest(
   private val lastUploadedOn: Long,
   private val count: Int,
   private val apiService: ApiService,
-  private val schedulerProvider: SchedulerProvider,
-  private val gson: MyGson
-) : AbstractRequest<T>() {
+  private val jsonConverter: JsonConverter,
+  private val dispatchersProvider: DispatchersProvider
+) : BaseRequest<GalleryPhotosResponse>(dispatchersProvider) {
 
-  override fun execute(): Single<T> {
-    return apiService.getPageOfGalleryPhotos(lastUploadedOn, count)
-      .subscribeOn(schedulerProvider.IO())
-      .observeOn(schedulerProvider.IO())
-      .lift(OnApiErrorSingle<GalleryPhotosResponse>(gson, GalleryPhotosResponse::class))
-      .map { response ->
-        if (ErrorCode.GetGalleryPhotosErrors.fromInt(response.serverErrorCode!!) is ErrorCode.GetGalleryPhotosErrors.Ok) {
-          return@map GalleryPhotosResponse.success(response.galleryPhotos)
-        } else {
-          return@map GalleryPhotosResponse.fail(ErrorCode.fromInt(ErrorCode.GetGalleryPhotosErrors::class, response.serverErrorCode!!))
-        }
-      }
-      .onErrorReturn(this::extractError) as Single<T>
-  }
+  override suspend fun execute(): GalleryPhotosResponse {
+    val response = try {
+      apiService.getPageOfGalleryPhotos(lastUploadedOn, count).await()
+    } catch (error: Exception) {
+      throw ConnectionError(error.message)
+    }
 
-  private fun extractError(error: Throwable): GalleryPhotosResponse {
-    return when (error) {
-      is ApiException -> GalleryPhotosResponse.fail(error.errorCode as ErrorCode.GetGalleryPhotosErrors)
-      is SocketTimeoutException,
-      is TimeoutException -> GalleryPhotosResponse.fail(ErrorCode.GetGalleryPhotosErrors.LocalTimeout())
-      else -> GalleryPhotosResponse.fail(ErrorCode.GetGalleryPhotosErrors.UnknownError())
+    val result = handleResponse(jsonConverter, response)
+    return when (result) {
+      is Either.Value -> result.value
+      is Either.Error -> throw result.error
     }
   }
 }

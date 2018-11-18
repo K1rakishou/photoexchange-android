@@ -1,155 +1,89 @@
 package com.kirakishou.photoexchange.service
 
-import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
-import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.interactors.ReceivePhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.FindPhotosData
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.exception.ReceivePhotosServiceException
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.actor
+import kotlinx.coroutines.channels.consumeEach
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
+import kotlin.coroutines.CoroutineContext
 
 open class ReceivePhotosServicePresenter(
   private val uploadedPhotosRepository: UploadedPhotosRepository,
   private val settingsRepository: SettingsRepository,
-  private val schedulerProvider: SchedulerProvider,
   private val receivePhotosUseCase: ReceivePhotosUseCase,
-  private val receivePhotosDelayMs: Long
-) {
-
+  private val dispatchersProvider: DispatchersProvider
+) : CoroutineScope {
   private val TAG = "ReceivePhotosServicePresenter"
-  private val compositeDisposable = CompositeDisposable()
 
-  val findPhotosSubject = PublishSubject.create<Unit>().toSerialized()
+  private val compositeDisposable = CompositeDisposable()
+  private val job = Job()
+
   val resultEventsSubject = PublishSubject.create<ReceivePhotoEvent>().toSerialized()
+  var receiveActor: SendChannel<Unit>
+
+  override val coroutineContext: CoroutineContext
+    get() = job + dispatchersProvider.GENERAL()
 
   init {
-    compositeDisposable += findPhotosSubject
-      .subscribeOn(schedulerProvider.IO())
-      .delay(receivePhotosDelayMs, TimeUnit.MILLISECONDS, schedulerProvider.CALC())
-      .concatMap { receivePhotosInternal() }
-      .doOnEach { sendEvent(ReceivePhotoEvent.StopService()) }
-      .subscribe()
-  }
-
-  private fun receivePhotosInternal(): Observable<Unit> {
-    return Observable.just(1)
-      .doOnNext { sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Progress())) }
-      .concatMap { formatRequestString() }
-      .concatMapSingle { photoData ->
-        return@concatMapSingle receivePhotosUseCase.receivePhotos(photoData)
-          .doOnNext { event -> handlePhotoReceivedEvent(event) }
-          .toList()
-          .doOnSuccess { eventList -> sendNotificationEvent(eventList) }
-      }
-      .doOnError { error -> onError(error) }
-      .map { Unit }
-      .onErrorReturnItem(Unit)
-  }
-
-  private fun sendNotificationEvent(eventList: MutableList<ReceivePhotoEvent>) {
-    val hasErrors = hasErrorEvents(eventList)
-    if (!hasErrors) {
-      sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Success()))
-    } else {
-      val errorEvent = getFirstErrorEvent(eventList)
-
-      val isFatal = when (errorEvent) {
-        is ReceivePhotoEvent.OnKnownError -> isErrorCodeFatal(errorEvent.errorCode)
-        is ReceivePhotoEvent.OnUnknownError -> true
-        else -> throw IllegalArgumentException("Not an error event $errorEvent")
-      }
-      if (isFatal) {
-        sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Error()))
-      } else {
-        sendEvent(ReceivePhotoEvent.RemoveNotification())
+    receiveActor = actor(capacity = 1) {
+      consumeEach {
+        try {
+          receivePhotosInternal()
+        } finally {
+          sendEvent(ReceivePhotoEvent.StopService())
+        }
       }
     }
   }
 
-  private fun isErrorCodeFatal(errorCode: ErrorCode.ReceivePhotosErrors?): Boolean {
-    return when (errorCode) {
-      null,
-      is ErrorCode.ReceivePhotosErrors.Ok,
-      is ErrorCode.ReceivePhotosErrors.NotEnoughPhotosOnServer -> false
-
-      else -> true
+  private suspend fun receivePhotosInternal() {
+    val photoData = formatRequestString()
+    if (photoData == null) {
+      return
     }
+
+    sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Progress()))
+
+    val receivedPhotos = try {
+      receivePhotosUseCase.receivePhotos(photoData)
+    } catch (error: Exception) {
+      sendEvent(ReceivePhotoEvent.OnError(error))
+      sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Error()))
+      return
+    }
+
+    for ((receivedPhoto, takenPhotoName) in receivedPhotos) {
+      sendEvent(ReceivePhotoEvent.OnReceivedPhoto(receivedPhoto, takenPhotoName))
+    }
+
+    sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Success()))
   }
 
-  private fun getFirstErrorEvent(eventList: List<ReceivePhotoEvent>): ReceivePhotoEvent {
-    return eventList.first { it is ReceivePhotoEvent.OnKnownError || it is ReceivePhotoEvent.OnUnknownError }
-  }
-
-  private fun hasErrorEvents(eventList: List<ReceivePhotoEvent>): Boolean {
-    return eventList.any { it is ReceivePhotoEvent.OnKnownError || it is ReceivePhotoEvent.OnUnknownError }
-  }
-
-  private fun formatRequestString(): Observable<FindPhotosData> {
+  private suspend fun formatRequestString(): FindPhotosData? {
     val uploadedPhotos = uploadedPhotosRepository.findAllWithoutReceiverInfo()
     if (uploadedPhotos.isEmpty()) {
-      return Observable.error<FindPhotosData>(ReceivePhotosServiceException.NoUploadedPhotosWithoutReceiverInfo())
+      Timber.tag(TAG).d("No photos without receiver info")
+      return null
     }
 
     val photoNames = uploadedPhotos.joinToString(",") { it.photoName }
     val userId = settingsRepository.getUserId()
     if (userId.isEmpty()) {
-      return Observable.error<FindPhotosData>(ReceivePhotosServiceException.CouldNotGetUserId())
+      Timber.tag(TAG).d("UserId is empty")
+      return null
     }
 
-    return Observable.just(FindPhotosData(userId, photoNames))
-  }
-
-  private fun onError(error: Throwable) {
-    Timber.tag(TAG).e(error)
-
-    if (handleErrors(error)) {
-      sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Error()))
-    } else {
-      sendEvent(ReceivePhotoEvent.RemoveNotification())
-    }
-  }
-
-  //returns true if we should show error notification
-  private fun handleErrors(error: Throwable): Boolean {
-    Timber.tag(TAG).e(error)
-
-    if (error is ReceivePhotosServiceException) {
-      val errorCode = when (error) {
-        is ReceivePhotosServiceException.CouldNotGetUserId -> ErrorCode.ReceivePhotosErrors.LocalCouldNotGetUserId()
-        is ReceivePhotosServiceException.ApiException -> error.remoteErrorCode
-        is ReceivePhotosServiceException.PhotoNamesAreEmpty -> null
-        is ReceivePhotosServiceException.NoUploadedPhotosWithoutReceiverInfo -> null
-      }
-
-      sendEvent(ReceivePhotoEvent.OnKnownError(errorCode))
-      return errorCode != null
-    }
-
-    sendEvent(ReceivePhotoEvent.OnUnknownError(error))
-    return true
-  }
-
-  private fun handlePhotoReceivedEvent(event: ReceivePhotoEvent) {
-    when (event) {
-      is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnReceivedPhoto -> {
-        sendEvent(ReceivePhotoEvent.OnReceivedPhoto(event.receivedPhoto, event.takenPhotoName))
-      }
-      is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnKnownError -> {
-        sendEvent(ReceivePhotoEvent.OnKnownError(event.errorCode))
-      }
-      is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnUnknownError -> {
-        sendEvent(ReceivePhotoEvent.OnUnknownError(event.error))
-      }
-      else -> throw IllegalStateException("Should not happen, event is $event")
-    }.safe
+    return FindPhotosData(userId, photoNames)
   }
 
   private fun sendEvent(event: ReceivePhotoEvent) {
@@ -157,7 +91,8 @@ open class ReceivePhotosServicePresenter(
   }
 
   fun onDetach() {
-    this.compositeDisposable.clear()
+    job.cancel()
+    compositeDisposable.clear()
   }
 
   fun observeResults(): Observable<ReceivePhotoEvent> {
@@ -166,15 +101,13 @@ open class ReceivePhotosServicePresenter(
 
   fun startPhotosReceiving() {
     Timber.tag(TAG).d("startPhotosReceiving called")
-    findPhotosSubject.onNext(Unit)
+    receiveActor.offer(Unit)
   }
 
   sealed class ReceivePhotoEvent {
     class OnReceivedPhoto(val receivedPhoto: ReceivedPhoto,
                           val takenPhotoName: String) : ReceivePhotoEvent()
-
-    class OnKnownError(val errorCode: ErrorCode.ReceivePhotosErrors?) : ReceivePhotoEvent()
-    class OnUnknownError(val error: Throwable) : ReceivePhotoEvent()
+    class OnError(val error: Throwable) : ReceivePhotoEvent()
     class OnNewNotification(val type: NotificationType) : ReceivePhotoEvent()
     class RemoveNotification : ReceivePhotoEvent()
     class StopService : ReceivePhotoEvent()

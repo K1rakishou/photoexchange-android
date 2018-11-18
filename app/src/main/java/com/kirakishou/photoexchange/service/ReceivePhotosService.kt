@@ -75,13 +75,9 @@ class ReceivePhotosService : Service() {
         callback.get()?.onReceivePhotoEvent(ReceivedPhotosFragmentEvent.ReceivePhotosEvent
           .PhotoReceived(event.receivedPhoto, event.takenPhotoName))
       }
-      is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnKnownError -> {
+      is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnError -> {
         callback.get()?.onReceivePhotoEvent(ReceivedPhotosFragmentEvent.ReceivePhotosEvent
-          .OnFailed(event.errorCode))
-      }
-      is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnUnknownError -> {
-        callback.get()?.onReceivePhotoEvent(ReceivedPhotosFragmentEvent.ReceivePhotosEvent
-          .OnUnknownError(event.error))
+          .OnFailed(event.error))
       }
       is ReceivePhotosServicePresenter.ReceivePhotoEvent.StopService -> {
         stopService()
