@@ -54,6 +54,9 @@ import io.reactivex.exceptions.CompositeException
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -193,22 +196,17 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
   }
 
   private fun onPermissionsCallback(savedInstanceState: Bundle?, granted: Boolean) {
-    compositeDisposable += Observable.fromCallable {
+    launch {
       initViews()
       restoreUploadedPhotosFragmentFromViewState(savedInstanceState)
-    }
-      .subscribeOn(AndroidSchedulers.mainThread())
-      .observeOn(Schedulers.io())
-      .concatMap {
+
+      withContext(Dispatchers.Default) {
         viewModel.updateGpsPermissionGranted(granted)
-          .toObservable<Unit>()
-          .startWith(Unit)
       }
-      .observeOn(AndroidSchedulers.mainThread())
-      .subscribe({
-        viewModel.intercom.tell<UploadedPhotosFragment>()
-          .to(UploadedPhotosFragmentEvent.GeneralEvents.AfterPermissionRequest())
-      }, { error -> Timber.tag(TAG).e(error) })
+
+      viewModel.intercom.tell<UploadedPhotosFragment>()
+        .to(UploadedPhotosFragmentEvent.GeneralEvents.AfterPermissionRequest())
+    }
   }
 
   private fun restoreUploadedPhotosFragmentFromViewState(savedInstanceState: Bundle?) {

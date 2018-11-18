@@ -13,7 +13,7 @@ open class ReportPhotoUseCase(
 ) {
   private val TAG = "ReportPhotoUseCase"
 
-  fun reportPhoto(userId: String, photoName: String): Observable<Either<ErrorCode.ReportPhotoErrors, Boolean>> {
+  fun reportPhoto(userId: String, photoName: String): Either<ErrorCode.ReportPhotoErrors, Boolean> {
     return apiClient.reportPhoto(userId, photoName)
       .map { response ->
         val errorCode = response.errorCode as ErrorCode.ReportPhotoErrors

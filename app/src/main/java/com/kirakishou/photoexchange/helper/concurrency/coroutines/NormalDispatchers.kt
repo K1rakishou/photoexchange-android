@@ -6,7 +6,6 @@ import kotlinx.coroutines.newFixedThreadPoolContext
 
 class NormalDispatchers : DispatchersProvider {
   override fun IO(): CoroutineDispatcher = Dispatchers.IO
-  override fun DISK(): CoroutineDispatcher = newFixedThreadPoolContext(2, "disk")
   override fun GENERAL(): CoroutineDispatcher = Dispatchers.Default
   override fun UI(): CoroutineDispatcher = Dispatchers.Main
 }

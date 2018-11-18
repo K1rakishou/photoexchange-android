@@ -58,7 +58,7 @@ class PhotosActivityViewModel(
     super.onCleared()
   }
 
-  fun reportPhoto(photoName: String): Observable<Either<ErrorCode.ReportPhotoErrors, Boolean>> {
+  suspend fun reportPhoto(photoName: String): Observable<Either<ErrorCode.ReportPhotoErrors, Boolean>> {
     return Observable.fromCallable { settingsRepository.getUserId() }
       .subscribeOn(schedulerProvider.IO())
       .concatMap { userId -> reportPhotoUseCase.reportPhoto(userId, photoName) }
@@ -70,10 +70,8 @@ class PhotosActivityViewModel(
       .concatMap { userId -> favouritePhotoUseCase.favouritePhoto(userId, photoName) }
   }
 
-  fun checkHasPhotosToUpload(): Observable<Boolean> {
-    return Observable.fromCallable {
-      return@fromCallable takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
-    }.subscribeOn(schedulerProvider.IO())
+  suspend fun checkHasPhotosToUpload(): Boolean {
+    return takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
   }
 
   fun checkHasPhotosToReceive(): Observable<Boolean> {
@@ -100,9 +98,7 @@ class PhotosActivityViewModel(
     }.subscribeOn(schedulerProvider.IO())
   }
 
-  fun updateGpsPermissionGranted(granted: Boolean): Completable {
-    return Completable.fromAction {
-      settingsRepository.updateGpsPermissionGranted(granted)
-    }.subscribeOn(schedulerProvider.IO())
+  suspend fun updateGpsPermissionGranted(granted: Boolean) {
+    settingsRepository.updateGpsPermissionGranted(granted)
   }
 }

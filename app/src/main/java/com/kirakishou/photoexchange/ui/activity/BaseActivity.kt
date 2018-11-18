@@ -14,13 +14,17 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import timber.log.Timber
+import kotlin.coroutines.CoroutineContext
 
 
 /**
  * Created by kirakishou on 7/20/2017.
  */
-abstract class BaseActivity : AppCompatActivity() {
+abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
 
   private val TAG = "${this::class.java}"
 
@@ -33,7 +37,11 @@ abstract class BaseActivity : AppCompatActivity() {
   protected val unknownErrorsSubject = PublishSubject.create<Throwable>()
 
   protected val compositeDisposable = CompositeDisposable()
+  private lateinit var job: Job
   private var unBinder: Unbinder? = null
+
+  override val coroutineContext: CoroutineContext
+    get() = job + Dispatchers.Main
 
   @Suppress("UNCHECKED_CAST")
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,6 +56,8 @@ abstract class BaseActivity : AppCompatActivity() {
 
   override fun onStart() {
     super.onStart()
+
+    job = Job()
 
     compositeDisposable += unknownErrorsSubject
       .observeOn(AndroidSchedulers.mainThread())
@@ -68,6 +78,7 @@ abstract class BaseActivity : AppCompatActivity() {
   override fun onStop() {
     onActivityStop()
 
+    job.cancel()
     compositeDisposable.clear()
     super.onStop()
   }

@@ -11,16 +11,24 @@ import butterknife.Unbinder
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.helper.RxLifecycle
 import io.reactivex.disposables.CompositeDisposable
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Created by kirakishou on 11/7/2017.
  */
 
-abstract class BaseFragment : Fragment() {
-
+abstract class BaseFragment : Fragment(), CoroutineScope {
   protected val compositeDisposable = CompositeDisposable()
+  private lateinit var job: Job
+
   protected lateinit var lifecycle: RxLifecycle
   private lateinit var unBinder: Unbinder
+
+  override val coroutineContext: CoroutineContext
+    get() = job + Dispatchers.Main
 
   override fun onAttach(context: Context?) {
     super.onAttach(context)
@@ -47,6 +55,8 @@ abstract class BaseFragment : Fragment() {
 
   override fun onStart() {
     super.onStart()
+
+    job = Job()
     lifecycle.onStart()
   }
 
@@ -76,6 +86,8 @@ abstract class BaseFragment : Fragment() {
 
   override fun onStop() {
     super.onStop()
+
+    job.cancel()
     lifecycle.onStop()
   }
 
