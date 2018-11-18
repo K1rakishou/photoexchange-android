@@ -2,7 +2,6 @@ package com.kirakishou.photoexchange.helper.api
 
 import com.kirakishou.photoexchange.helper.api.request.*
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
@@ -10,7 +9,6 @@ import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.net.response.*
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
-import io.reactivex.Single
 import kotlinx.coroutines.channels.SendChannel
 import javax.inject.Inject
 
@@ -21,7 +19,6 @@ open class ApiClientImpl
 @Inject constructor(
   private val apiService: ApiService,
   private val jsonConverter: JsonConverter,
-  private val schedulerProvider: SchedulerProvider,
   private val dispatchersProvider: DispatchersProvider
 ) : ApiClient {
 
@@ -49,9 +46,19 @@ open class ApiClientImpl
     return UploadPhotosUseCase.UploadPhotoResult(response.photoId, response.photoName)
   }
 
-  override fun receivePhotos(userId: String, photoNames: String): Single<ReceivedPhotosResponse> {
-    return ReceivePhotosRequest<ReceivedPhotosResponse>(userId, photoNames, apiService, schedulerProvider, jsonConverter)
-      .execute()
+  override suspend fun receivePhotos(
+    userId: String,
+    photoNames: String
+  ): List<ReceivedPhotosResponse.ReceivedPhoto> {
+    val response = ReceivePhotosRequest(
+      userId,
+      photoNames,
+      apiService,
+      jsonConverter,
+      dispatchersProvider
+    ).execute()
+
+    return response.receivedPhotos
   }
 
   override suspend fun getPageOfGalleryPhotos(

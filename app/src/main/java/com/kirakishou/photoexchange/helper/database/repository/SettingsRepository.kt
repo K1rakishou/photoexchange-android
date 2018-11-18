@@ -28,13 +28,6 @@ open class SettingsRepository(
     }
   }
 
-  open suspend fun getUserIdOrThrow(): String {
-    return withContext(coroutineContext) {
-      return@withContext settingsDao.findByName(USER_ID_SETTING)?.settingValue
-        ?: throw EmptyUserIdException()
-    }
-  }
-
   suspend fun saveMakePublicFlag(makePublic: Boolean?) {
     withContext(coroutineContext) {
       val value = MakePhotosPublicState.fromBoolean(makePublic).value.toString()

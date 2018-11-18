@@ -15,6 +15,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
@@ -42,13 +43,13 @@ open class UploadPhotoServicePresenter(
     get() = job + dispatchersProvider.GENERAL()
 
   init {
-    eventsActor = actor {
+    eventsActor = actor(capacity = Channel.UNLIMITED) {
       consumeEach { event ->
         sendEvent(UploadPhotoEvent.UploadingEvent(event))
       }
     }
 
-    uploadingActor = actor {
+    uploadingActor = actor(capacity = 1) {
       consumeEach { location ->
         startUploading(location)
       }

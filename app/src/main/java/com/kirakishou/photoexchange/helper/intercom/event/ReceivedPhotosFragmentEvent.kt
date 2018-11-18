@@ -17,7 +17,6 @@ sealed class ReceivedPhotosFragmentEvent : BaseEvent {
     class PhotoReceived(val receivedPhoto: ReceivedPhoto,
                         val takenPhotoName: String) : ReceivePhotosEvent()
 
-    class OnFailed(val errorCode: ErrorCode?) : ReceivePhotosEvent()
-    class OnUnknownError(val error: Throwable) : ReceivePhotosEvent()
+    class OnFailed(val error: Throwable) : ReceivePhotosEvent()
   }
 }

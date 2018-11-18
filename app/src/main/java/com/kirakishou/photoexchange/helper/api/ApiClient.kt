@@ -6,7 +6,6 @@ import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.net.response.*
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
-import io.reactivex.Single
 import kotlinx.coroutines.channels.SendChannel
 
 interface ApiClient {
@@ -19,7 +18,7 @@ interface ApiClient {
     channel: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
   ): UploadPhotosUseCase.UploadPhotoResult
 
-  fun receivePhotos(userId: String, photoNames: String): Single<ReceivedPhotosResponse>
+  suspend fun receivePhotos(userId: String, photoNames: String): List<ReceivedPhotosResponse.ReceivedPhoto>
   suspend fun getPageOfGalleryPhotos(lastUploadedOn: Long, count: Int): List<GalleryPhotosResponse.GalleryPhotoResponseData>
   suspend fun getGalleryPhotoInfo(userId: String, galleryPhotoIds: String): List<GalleryPhotoInfoResponse.GalleryPhotosInfoData>
   suspend fun favouritePhoto(userId: String, photoName: String): FavouritePhotoUseCase.FavouritePhotoResult

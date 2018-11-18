@@ -10,6 +10,8 @@ import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
+import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
+import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import kotlinx.coroutines.channels.SendChannel
 import timber.log.Timber
@@ -49,7 +51,12 @@ open class UploadPhotosUseCase(
         throw PhotoUploadingException.CouldNotRotatePhoto()
       }
 
-      val result = apiClient.uploadPhoto(photoFile.absolutePath, location, userId, photo.isPublic, photo, channel)
+      val result = try {
+        apiClient.uploadPhoto(photoFile.absolutePath, location, userId, photo.isPublic, photo, channel)
+      } catch (error: ApiErrorException) {
+        throw PhotoUploadingException.ApiException(error.errorCode)
+      }
+
       if (!tryToMovePhotoToUploaded(photo, result.photoId, result.photoName, location)) {
         throw PhotoUploadingException.DatabaseException()
       }
@@ -83,6 +90,7 @@ open class UploadPhotosUseCase(
     class PhotoDoesNotExistOnDisk : PhotoUploadingException()
     class CouldNotRotatePhoto : PhotoUploadingException()
     class DatabaseException : PhotoUploadingException()
+    class ApiException(val remoteErrorCode: ErrorCode) : PhotoUploadingException()
     class CouldNotUpdatePhotoState : PhotoUploadingException()
   }
 
