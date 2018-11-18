@@ -21,9 +21,9 @@ import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.ViewTakenPhotoActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity
 import io.reactivex.Completable
-import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -70,30 +70,23 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
       .doOnError { Timber.tag(TAG).e(it) }
       .subscribe()
 
-    compositeDisposable += RxView.clicks(fabSendPhoto)
-      .subscribeOn(AndroidSchedulers.mainThread())
-      .debounceClicks()
-      .flatMap {
-        return@flatMap Observable.just(1)
-          .flatMap { viewModel.queueUpTakenPhoto(takenPhoto.id) }
-          .flatMap { viewModel.getMakePublicFlag() }
-          .doOnNext { makePublicFlag ->
-            when (makePublicFlag) {
-              SettingsRepository.MakePhotosPublicState.AlwaysPublic,
-              SettingsRepository.MakePhotosPublicState.AlwaysPrivate -> {
-                val makePublic = makePublicFlag == SettingsRepository.MakePhotosPublicState.AlwaysPublic
-                viewModel.addToGalleryFragmentResult.onNext(AddToGalleryDialogFragment.FragmentResult(false, makePublic))
-              }
+    fabSendPhoto.setOnClickListener {
+      launch {
+        viewModel.queueUpTakenPhoto(takenPhoto.id)
+        val makePublicFlag = viewModel.getMakePublicFlag()
 
-              null,
-              SettingsRepository.MakePhotosPublicState.Neither -> {
-                (requireActivity() as ViewTakenPhotoActivity).showDialogFragment()
-              }
-            }
+        when (makePublicFlag) {
+          SettingsRepository.MakePhotosPublicState.AlwaysPublic,
+          SettingsRepository.MakePhotosPublicState.AlwaysPrivate -> {
+            val makePublic = makePublicFlag == SettingsRepository.MakePhotosPublicState.AlwaysPublic
+            viewModel.addToGalleryFragmentResult.onNext(AddToGalleryDialogFragment.FragmentResult(false, makePublic))
           }
+          SettingsRepository.MakePhotosPublicState.Neither -> {
+            (requireActivity() as ViewTakenPhotoActivity).showDialogFragment()
+          }
+        }
       }
-      .doOnError { Timber.tag(TAG).e(it) }
-      .subscribe()
+    }
   }
 
   private fun initViews() {

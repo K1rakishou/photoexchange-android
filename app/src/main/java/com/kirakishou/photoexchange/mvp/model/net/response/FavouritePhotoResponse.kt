@@ -16,11 +16,11 @@ private constructor(
   val favouritesCount: Long,
 
   errorCode: ErrorCode
-) : StatusResponse(errorCode.getValue(), errorCode) {
+) : StatusResponse(errorCode.value, errorCode) {
 
   companion object {
     fun success(isFavourited: Boolean, count: Long): FavouritePhotoResponse {
-      return FavouritePhotoResponse(isFavourited, count, ErrorCode.FavouritePhotoErrors.Ok())
+      return FavouritePhotoResponse(isFavourited, count, ErrorCode.Ok)
     }
 
     fun error(errorCode: ErrorCode): FavouritePhotoResponse {

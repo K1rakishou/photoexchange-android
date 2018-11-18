@@ -9,30 +9,36 @@ import android.os.IBinder
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.kirakishou.photoexchange.PhotoExchangeApplication
-import com.kirakishou.photoexchange.di.module.*
+import com.kirakishou.photoexchange.di.module.UploadPhotoServiceModule
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.location.LocationService
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
-import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.lang.ref.WeakReference
 import javax.inject.Inject
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Created by kirakishou on 3/11/2018.
  */
-class UploadPhotoService : Service() {
+class UploadPhotoService : Service(), CoroutineScope {
 
   @Inject
   lateinit var presenter: UploadPhotoServicePresenter
 
   @Inject
   lateinit var locationService: LocationService
+
+  @Inject
+  lateinit var dispatchersProvider: DispatchersProvider
 
   private val TAG = "UploadPhotoService"
 
@@ -45,9 +51,16 @@ class UploadPhotoService : Service() {
   private val CHANNEL_ID = "1"
   private val CHANNED_NAME = "name"
 
+  lateinit var job: Job
+
+  override val coroutineContext: CoroutineContext
+    get() = job + dispatchersProvider.UI()
+
   override fun onCreate() {
     super.onCreate()
     Timber.tag(TAG).d("UploadPhotoService started")
+
+    job = Job()
 
     resolveDaggerDependency()
     startForeground(NOTIFICATION_ID, createInitialNotification())
@@ -62,6 +75,8 @@ class UploadPhotoService : Service() {
     removeNotification()
     presenter.onDetach()
     detachCallback()
+
+    job.cancel()
     compositeDisposable.clear()
 
     Timber.tag(TAG).d("UploadPhotoService destroyed")
@@ -80,14 +95,10 @@ class UploadPhotoService : Service() {
   fun startPhotosUploading() {
     requireNotNull(callback.get())
 
-    compositeDisposable += Observable.just(Unit)
-      .subscribeOn(Schedulers.io())
-      .concatMap { locationService.getCurrentLocation() }
-      .subscribe({ location ->
-        presenter.uploadPhotos(location)
-      }, { error ->
-        Timber.tag(TAG).e(error)
-      })
+    launch {
+      val location = locationService.getCurrentLocation()
+      presenter.uploadPhotos(location)
+    }
   }
 
   private fun onUploadingPhotoResult(event: UploadPhotoServicePresenter.UploadPhotoEvent) {

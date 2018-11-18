@@ -8,7 +8,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetGalleryPhotosInfoUseCase
 import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
-import com.kirakishou.photoexchange.mvp.model.exception.ApiException
+import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import com.kirakishou.photoexchange.ui.viewstate.GalleryFragmentViewState
@@ -61,7 +61,7 @@ class GalleryFragmentViewModel(
           intercom.tell<GalleryFragment>()
             .to(GalleryFragmentEvent.GeneralEvents.ShowGalleryPhotos(photos))
         } catch (error: Throwable) {
-          if (error is ApiException) {
+          if (error is ApiErrorException) {
             knownErrors.onNext(error.errorCode)
           } else {
             unknownErrors.onNext(error)

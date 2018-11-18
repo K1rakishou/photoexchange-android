@@ -10,9 +10,8 @@ import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelInter
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvp.model.exception.EmptyUserIdException
 import com.kirakishou.photoexchange.mvp.model.other.Constants
-import io.reactivex.Completable
-import io.reactivex.Observable
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
@@ -54,14 +53,22 @@ class PhotosActivityViewModel(
 
   suspend fun reportPhoto(photoName: String): Either<Exception, Boolean> {
     return withContext(coroutineContext) {
-      val userId = settingsRepository.getUserIdOrThrow()
+      val userId = settingsRepository.getUserId()
+      if (userId.isEmpty()) {
+        throw EmptyUserIdException()
+      }
+
       return@withContext reportPhotoUseCase.reportPhoto(userId, photoName)
     }
   }
 
   suspend fun favouritePhoto(photoName: String): Either<Exception, FavouritePhotoUseCase.FavouritePhotoResult> {
     return withContext(coroutineContext) {
-      val userId = settingsRepository.getUserIdOrThrow()
+      val userId = settingsRepository.getUserId()
+      if (userId.isEmpty()) {
+        throw EmptyUserIdException()
+      }
+
       return@withContext favouritePhotoUseCase.favouritePhoto(userId, photoName)
     }
   }
@@ -70,28 +77,22 @@ class PhotosActivityViewModel(
     return takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
   }
 
-  fun checkHasPhotosToReceive(): Observable<Boolean> {
-    return Observable.fromCallable {
-      val uploadedPhotosCount = uploadedPhotosRepository.count()
-      val receivedPhotosCount = receivedPhotosRepository.count()
+  suspend fun checkHasPhotosToReceive(): Boolean {
+    val uploadedPhotosCount = uploadedPhotosRepository.count()
+    val receivedPhotosCount = receivedPhotosRepository.count()
 
-      return@fromCallable uploadedPhotosCount > receivedPhotosCount
-    }.subscribeOn(schedulerProvider.IO())
+    return uploadedPhotosCount > receivedPhotosCount
   }
 
-  fun deletePhotoById(photoId: Long): Completable {
-    return Completable.fromAction {
-      takenPhotosRepository.deletePhotoById(photoId)
-      if (Constants.isDebugBuild) {
-        check(takenPhotosRepository.findById(photoId).isEmpty())
-      }
-    }.subscribeOn(schedulerProvider.IO())
+  suspend fun deletePhotoById(photoId: Long) {
+    takenPhotosRepository.deletePhotoById(photoId)
+    if (Constants.isDebugBuild) {
+      check(takenPhotosRepository.findById(photoId).isEmpty())
+    }
   }
 
-  fun changePhotoState(photoId: Long, newPhotoState: PhotoState): Completable {
-    return Completable.fromAction {
-      takenPhotosRepository.updatePhotoState(photoId, newPhotoState)
-    }.subscribeOn(schedulerProvider.IO())
+  suspend fun changePhotoState(photoId: Long, newPhotoState: PhotoState) {
+    takenPhotosRepository.updatePhotoState(photoId, newPhotoState)
   }
 
   suspend fun updateGpsPermissionGranted(granted: Boolean) {

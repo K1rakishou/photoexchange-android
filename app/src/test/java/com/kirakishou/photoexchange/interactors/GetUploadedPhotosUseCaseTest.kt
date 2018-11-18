@@ -5,7 +5,6 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
-import com.kirakishou.photoexchange.mvp.model.net.response.GetUploadedPhotoIdsResponse
 import com.kirakishou.photoexchange.mvp.model.net.response.GetUploadedPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode

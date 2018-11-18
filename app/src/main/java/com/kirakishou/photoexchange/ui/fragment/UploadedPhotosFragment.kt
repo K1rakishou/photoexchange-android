@@ -216,7 +216,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUpload -> {
           adapter.removePhotoById(event.photo.id)
           adapter.addTakenPhoto(event.photo.also { it.photoState = PhotoState.FAILED_TO_UPLOAD })
-          (requireActivity() as PhotosActivity).showKnownErrorMessage(event.errorCode)
         }
         is UploadedPhotosFragmentEvent.PhotoUploadEvent.PhotoReceived -> {
           adapter.updateUploadedPhotoSetReceiverInfo(event.takenPhotoName)
@@ -224,11 +223,8 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
           loadMoreSubject.onNext(Unit)
         }
-        is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError -> {
-          handleKnownErrors(event.errorCode)
-        }
-        is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError -> {
-          handleUnknownErrors(event.error)
+        is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnError -> {
+          handleUnknownErrors(event.exception)
         }
       }.safe
     }
@@ -295,15 +291,9 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
   }
 
   private fun handleKnownErrors(errorCode: ErrorCode) {
-    when (errorCode) {
-      is ErrorCode.GetUploadedPhotosErrors -> {
-        hideProgressFooter()
-      }
-      is ErrorCode.UploadPhotoErrors -> {
-        adapter.updateAllPhotosState(PhotoState.FAILED_TO_UPLOAD)
-      }
-    }
-
+    //TODO: do we even need this method?
+    hideProgressFooter()
+    adapter.updateAllPhotosState(PhotoState.FAILED_TO_UPLOAD)
     (activity as? PhotosActivity)?.showKnownErrorMessage(errorCode)
   }
 

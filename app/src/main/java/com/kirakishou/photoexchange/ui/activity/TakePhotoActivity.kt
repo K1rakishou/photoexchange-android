@@ -35,7 +35,9 @@ import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.lang.Exception
 import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity() {
@@ -103,22 +105,24 @@ class TakePhotoActivity : BaseActivity() {
       .doOnNext { showErrorCodeToast(it) }
       .subscribe()
 
-    compositeDisposable += RxView.clicks(takePhotoButton)
-      .subscribeOn(AndroidSchedulers.mainThread())
-      .debounceClicks()
-      .doOnNext { vibrator.vibrate(this, VIBRATION_TIME_MS) }
-      .observeOn(Schedulers.io())
-      .concatMap { takePhoto() }
-      .observeOn(AndroidSchedulers.mainThread())
-      .subscribe({ errorCode ->
-        if (errorCode is ErrorCode.TakePhotoErrors.Ok) {
-          onPhotoTaken(errorCode.photo)
-        } else {
-          showErrorCodeToast(errorCode)
+    takePhotoButton.setOnClickListener {
+      vibrator.vibrate(this, VIBRATION_TIME_MS)
+
+      launch {
+        try {
+          val takenPhoto = takePhoto()
+          if (takenPhoto.isEmpty()) {
+            onShowToast("Could not take photo")
+            return@launch
+          }
+
+          onPhotoTaken(takenPhoto)
+
+        } catch (error: Exception) {
+          onShowToast(error.message)
         }
-      }, { error ->
-        Timber.tag(TAG).e(error)
-      })
+      }
+    }
 
     compositeDisposable += RxView.clicks(showAllPhotosButton)
       .subscribeOn(AndroidSchedulers.mainThread())
@@ -191,10 +195,8 @@ class TakePhotoActivity : BaseActivity() {
     }
   }
 
-  private fun takePhoto(): Observable<ErrorCode.TakePhotoErrors> {
+  private suspend fun takePhoto(): TakenPhoto {
     return cameraProvider.takePhoto()
-      .subscribeOn(Schedulers.computation())
-      .toObservable()
   }
 
   private fun onPhotoTaken(takenPhoto: TakenPhoto) {

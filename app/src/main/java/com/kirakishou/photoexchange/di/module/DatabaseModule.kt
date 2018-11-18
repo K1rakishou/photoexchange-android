@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.di.module
 
 import androidx.room.Room
 import android.content.Context
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.helper.util.FileUtils
@@ -42,39 +43,75 @@ open class DatabaseModule(
   fun provideTempFilesRepository(@Named("files_directory") filesDir: String,
                                  database: MyDatabase,
                                  timeUtils: TimeUtils,
-                                 fileUtils: FileUtils): TempFileRepository {
-    return TempFileRepository(filesDir, database, timeUtils, fileUtils)
+                                 fileUtils: FileUtils,
+                                 dispatchersProvider: DispatchersProvider): TempFileRepository {
+    return TempFileRepository(
+      filesDir,
+      database,
+      timeUtils,
+      fileUtils,
+      dispatchersProvider
+    )
   }
 
   @Singleton
   @Provides
   open fun provideTakenPhotoRepository(database: MyDatabase,
                                        timeUtils: TimeUtils,
-                                       tempFileRepository: TempFileRepository): TakenPhotosRepository {
-    return TakenPhotosRepository(timeUtils, database, tempFileRepository)
+                                       tempFileRepository: TempFileRepository,
+                                       dispatchersProvider: DispatchersProvider): TakenPhotosRepository {
+    return TakenPhotosRepository(
+      timeUtils,
+      database,
+      tempFileRepository,
+      dispatchersProvider
+    )
   }
 
   @Singleton
   @Provides
-  open fun provideSettingsRepository(database: MyDatabase): SettingsRepository {
-    return SettingsRepository(database)
+  open fun provideSettingsRepository(database: MyDatabase,
+                                     dispatchersProvider: DispatchersProvider): SettingsRepository {
+    return SettingsRepository(database, dispatchersProvider)
   }
 
   @Singleton
   @Provides
-  open fun provideReceivedPhotoRepository(database: MyDatabase, timeUtils: TimeUtils): ReceivedPhotosRepository {
-    return ReceivedPhotosRepository(database, timeUtils, RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME)
+  open fun provideReceivedPhotoRepository(database: MyDatabase,
+                                          timeUtils: TimeUtils,
+                                          dispatchersProvider: DispatchersProvider): ReceivedPhotosRepository {
+    return ReceivedPhotosRepository(
+      database,
+      timeUtils,
+      RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME,
+      dispatchersProvider
+    )
   }
 
   @Singleton
   @Provides
-  open fun provideGalleryPhotoRepository(database: MyDatabase, timeUtils: TimeUtils): GalleryPhotoRepository {
-    return GalleryPhotoRepository(database, timeUtils, GALLERY_PHOTOS_CACHE_MAX_LIVE_TIME, GALLERY_PHOTOS_INFO_CACHE_MAX_LIVE_TIME)
+  open fun provideGalleryPhotoRepository(database: MyDatabase,
+                                         timeUtils: TimeUtils,
+                                         dispatchersProvider: DispatchersProvider): GalleryPhotoRepository {
+    return GalleryPhotoRepository(
+      database,
+      timeUtils,
+      GALLERY_PHOTOS_CACHE_MAX_LIVE_TIME,
+      GALLERY_PHOTOS_INFO_CACHE_MAX_LIVE_TIME,
+      dispatchersProvider
+    )
   }
 
   @Singleton
   @Provides
-  open fun provideUploadedPhotoRepository(database: MyDatabase, timeUtils: TimeUtils): UploadedPhotosRepository {
-    return UploadedPhotosRepository(database, timeUtils, UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME)
+  open fun provideUploadedPhotoRepository(database: MyDatabase,
+                                          timeUtils: TimeUtils,
+                                          dispatchersProvider: DispatchersProvider): UploadedPhotosRepository {
+    return UploadedPhotosRepository(
+      database,
+      timeUtils,
+      UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME,
+      dispatchersProvider
+    )
   }
 }

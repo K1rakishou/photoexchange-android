@@ -18,12 +18,11 @@ class UploadPhotoResponse(
   val photoName: String,
 
   errorCode: ErrorCode
-
-) : StatusResponse(errorCode.getValue(), errorCode) {
+) : StatusResponse(errorCode.value, errorCode) {
 
   companion object {
     fun success(photoId: Long, photoName: String): UploadPhotoResponse {
-      return UploadPhotoResponse(photoId, photoName, ErrorCode.UploadPhotoErrors.Ok())
+      return UploadPhotoResponse(photoId, photoName, ErrorCode.Ok)
     }
 
     fun error(errorCode: ErrorCode): UploadPhotoResponse {

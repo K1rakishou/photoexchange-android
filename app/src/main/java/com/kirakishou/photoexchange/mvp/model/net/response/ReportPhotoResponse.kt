@@ -12,11 +12,11 @@ private constructor(
   val isReported: Boolean,
 
   errorCode: ErrorCode
-) : StatusResponse(errorCode.getValue(), errorCode) {
+) : StatusResponse(errorCode.value, errorCode) {
 
   companion object {
     fun success(isReported: Boolean): ReportPhotoResponse {
-      return ReportPhotoResponse(isReported, ErrorCode.ReportPhotoErrors.Ok())
+      return ReportPhotoResponse(isReported, ErrorCode.Ok)
     }
 
     fun error(errorCode: ErrorCode): ReportPhotoResponse {

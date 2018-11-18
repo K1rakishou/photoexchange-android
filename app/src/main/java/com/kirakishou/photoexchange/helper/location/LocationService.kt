@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import io.reactivex.Observable
 import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.rx2.awaitFirst
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
@@ -20,30 +21,26 @@ class LocationService(
 
   private val locationManager by lazy { MyLocationManager(context) }
 
-  fun getCurrentLocation(): Observable<LonLat> {
+  suspend fun getCurrentLocation(): LonLat {
     if (!takenPhotosRepository.hasPhotosWithEmptyLocation()) {
-      return Observable.just(LonLat.empty())
+      return LonLat.empty()
     }
 
-    val gpsPermissionGrantedObservable = Observable.fromCallable {
-      settingsRepository.isGpsPermissionGranted()
-    }.publish().autoConnect(2)
+    val gpsPermissionGranted = settingsRepository.isGpsPermissionGranted()
 
-    val gpsGranted = gpsPermissionGrantedObservable
-      .filter { permissionGranted -> permissionGranted }
-      .doOnNext { Timber.tag(TAG).d("Gps permission is granted") }
-      .flatMap { getCurrentLocationInternal() }
-      .doOnNext { updateCurrentLocationForAllPhotosWithEmptyLocation(it) }
+    return if (gpsPermissionGranted) {
+      Timber.tag(TAG).d("Gps permission is granted")
 
-    val gpsNotGranted = gpsPermissionGrantedObservable
-      .filter { permissionGranted -> !permissionGranted }
-      .doOnNext { Timber.tag(TAG).d("Gps permission is not granted") }
-      .map { LonLat.empty() }
-
-    return Observable.merge(gpsGranted, gpsNotGranted)
+      val currentLocation = getCurrentLocationInternal().awaitFirst()
+      updateCurrentLocationForAllPhotosWithEmptyLocation(currentLocation)
+      currentLocation
+    } else {
+      Timber.tag(TAG).d("Gps permission is not granted")
+      LonLat.empty()
+    }
   }
 
-  private fun updateCurrentLocationForAllPhotosWithEmptyLocation(location: LonLat) {
+  private suspend fun updateCurrentLocationForAllPhotosWithEmptyLocation(location: LonLat) {
     try {
       takenPhotosRepository.updateAllPhotosLocation(location)
     } catch (error: Throwable) {
