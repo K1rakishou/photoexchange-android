@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.helper.api
 
 import com.kirakishou.photoexchange.helper.api.request.*
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.gson.MyGson
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
@@ -16,7 +17,8 @@ open class ApiClientImpl
 @Inject constructor(
   private val apiService: ApiService,
   private val gson: MyGson,
-  private val schedulerProvider: SchedulerProvider
+  private val schedulerProvider: SchedulerProvider,
+  private val dispatchersProvider: DispatchersProvider
 ) : ApiClient {
 
   override fun uploadPhoto(photoFilePath: String, location: LonLat, userId: String, isPublic: Boolean,
@@ -45,9 +47,16 @@ open class ApiClientImpl
       .execute()
   }
 
-  override fun reportPhoto(userId: String, photoName: String): Single<ReportPhotoResponse> {
-    return ReportPhotoRequest<ReportPhotoResponse>(userId, photoName, apiService, schedulerProvider, gson)
-      .execute()
+  override suspend fun reportPhoto(userId: String, photoName: String): Boolean {
+    val response = ReportPhotoRequest(
+      userId,
+      photoName,
+      apiService,
+      gson,
+      dispatchersProvider
+    ).execute()
+
+    return response.isReported
   }
 
   override fun getUserId(): Single<GetUserIdResponse> {

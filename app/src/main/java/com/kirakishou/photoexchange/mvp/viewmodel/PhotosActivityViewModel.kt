@@ -12,6 +12,7 @@ import com.kirakishou.photoexchange.interactors.*
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
+import com.kirakishou.photoexchange.mvp.model.exception.ReportPhotoExceptions
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
@@ -19,6 +20,7 @@ import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
 import io.reactivex.Completable
 import io.reactivex.Observable
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
@@ -58,10 +60,11 @@ class PhotosActivityViewModel(
     super.onCleared()
   }
 
-  suspend fun reportPhoto(photoName: String): Observable<Either<ErrorCode.ReportPhotoErrors, Boolean>> {
-    return Observable.fromCallable { settingsRepository.getUserId() }
-      .subscribeOn(schedulerProvider.IO())
-      .concatMap { userId -> reportPhotoUseCase.reportPhoto(userId, photoName) }
+  suspend fun reportPhoto(photoName: String): Either<ReportPhotoExceptions, Boolean> {
+    return withContext(coroutineContext) {
+      val userId = settingsRepository.getUserId()
+      return@withContext reportPhotoUseCase.reportPhoto(userId, photoName)
+    }
   }
 
   fun favouritePhoto(photoName: String): Observable<Either<ErrorCode.FavouritePhotoErrors, FavouritePhotoUseCase.FavouritePhotoResult>> {

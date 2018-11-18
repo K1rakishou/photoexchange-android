@@ -7,10 +7,10 @@ sealed class Either<out E, out V> {
   data class Value<out V>(val value: V) : Either<Nothing, V>()
 }
 
-suspend fun <T> myRunCatching(block: suspend () -> T): Either<Exception, T> {
+suspend fun <E : Exception, T> myRunCatching(block: suspend () -> T): Either<E, T> {
   return try {
     Either.Value(block())
   } catch (error: Exception) {
-    Either.Error(error)
+    Either.Error(error as E)
   }
 }

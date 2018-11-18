@@ -10,13 +10,13 @@ sealed class GeneralException : Exception() {
 }
 
 sealed class UploadPhotoServiceException : Exception() {
-  class CouldNotGetUserIdException(val errorCode: ErrorCode.GetUserIdError) : UploadPhotoServiceException()
+  class CouldNotGetUserIdException(val errorCode: ErrorCode) : UploadPhotoServiceException()
 }
 
 sealed class ReceivePhotosServiceException : Exception() {
   class PhotoNamesAreEmpty : ReceivePhotosServiceException()
   class CouldNotGetUserId : ReceivePhotosServiceException()
-  class ApiException(val remoteErrorCode: ErrorCode.ReceivePhotosErrors) : ReceivePhotosServiceException()
+  class ApiException(val remoteErrorCode: ErrorCode) : ReceivePhotosServiceException()
   class NoUploadedPhotosWithoutReceiverInfo() : ReceivePhotosServiceException()
 }
 
@@ -25,21 +25,27 @@ sealed class PhotoUploadingException : Exception() {
   class CouldNotRotatePhoto : PhotoUploadingException()
   class DatabaseException : PhotoUploadingException()
   class CouldNotUpdatePhotoState : PhotoUploadingException()
-  class ApiException(val remoteErrorCode: ErrorCode.UploadPhotoErrors) : PhotoUploadingException()
+  class ApiException(val remoteErrorCode: ErrorCode) : PhotoUploadingException()
 }
 
 sealed class GetReceivedPhotosException : Exception() {
-  class OnKnownError(val errorCode: ErrorCode.GetReceivedPhotosErrors) : GetReceivedPhotosException()
+  class OnKnownError(val errorCode: ErrorCode) : GetReceivedPhotosException()
 }
 
 sealed class GetGalleryPhotosException : Exception() {
-  class OnKnownError(val errorCode: ErrorCode.GetGalleryPhotosErrors) : GetGalleryPhotosException()
+  class OnKnownError(val errorCode: ErrorCode) : GetGalleryPhotosException()
 }
 
 sealed class GetGalleryPhotosInfoException : Exception() {
-  class OnKnownError(val errorCode: ErrorCode.GetGalleryPhotosErrors) : GetGalleryPhotosInfoException()
+  class OnKnownError(val errorCode: ErrorCode) : GetGalleryPhotosInfoException()
 }
 
 sealed class GetUploadedPhotosException : Exception() {
-  class OnKnownError(val errorCode: ErrorCode.GetUploadedPhotosErrors) : GetUploadedPhotosException()
+  class OnKnownError(val errorCode: ErrorCode) : GetUploadedPhotosException()
+}
+
+sealed class ReportPhotoExceptions : Exception() {
+  class ApiErrorException(val errorCode: ErrorCode) : ReportPhotoExceptions()
+  class BadServerResponse : ReportPhotoExceptions()
+  class UnknownException(val exception: Exception) : ReportPhotoExceptions()
 }

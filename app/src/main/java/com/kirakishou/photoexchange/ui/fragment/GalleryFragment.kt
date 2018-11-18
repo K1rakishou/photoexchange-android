@@ -16,6 +16,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
+import com.kirakishou.photoexchange.mvp.model.exception.ReportPhotoExceptions
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.Constants.DEFAULT_ADAPTER_ITEM_WIDTH
 import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
@@ -31,6 +32,9 @@ import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.rx2.openSubscription
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -82,41 +86,35 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     compositeDisposable += loadMoreSubject
       .subscribe({ viewModel.galleryFragmentViewModel.loadMorePhotos() })
 
-    compositeDisposable += adapterButtonClickSubject
-      .subscribeOn(AndroidSchedulers.mainThread())
-      .filter { buttonClicked -> buttonClicked is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.FavouriteClicked }
-      .cast(GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.FavouriteClicked::class.java)
-      .concatMap { viewModel.favouritePhoto(it.photoName).zipWith(Observable.just(it.photoName)) }
-      .subscribe({ resultPair ->
-        val result = resultPair.first
-        val photoName = resultPair.second
+    launch {
+      adapterButtonClickSubject.openSubscription().consumeEach { buttonClickEvent ->
+        when (buttonClickEvent) {
+          is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.FavouriteClicked -> {
+            val result = viewModel.favouritePhoto(buttonClickEvent.photoName)
+            TODO()
 
-        when (result) {
-          is Either.Value -> favouritePhoto(photoName, result.value.isFavourited, result.value.favouritesCount)
-          is Either.Error -> handleKnownErrors(result.error)
-        }
-      }, { Timber.tag(TAG).e(it) })
+            //favouritePhoto
+          }
+          is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.ReportClicked -> {
+            val result = viewModel.reportPhoto(buttonClickEvent.photoName)
 
-    compositeDisposable += adapterButtonClickSubject
-      .subscribeOn(AndroidSchedulers.mainThread())
-      .filter { buttonClicked -> buttonClicked is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.ReportClicked }
-      .cast(GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.ReportClicked::class.java)
-      .concatMap { viewModel.reportPhoto(it.photoName).zipWith(Observable.just(it.photoName)) }
-      .subscribe({ resultPair ->
-        val result = resultPair.first
-        val photoName = resultPair.second
-
-        when (result) {
-          is Either.Value -> reportPhoto(photoName, result.value)
-          is Either.Error -> handleKnownErrors(result.error)
-        }
-      }, { Timber.tag(TAG).e(it) })
-
-    compositeDisposable += adapterButtonClickSubject
-      .subscribeOn(AndroidSchedulers.mainThread())
-      .filter { buttonClicked -> buttonClicked is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.SwitchShowMapOrPhoto }
-      .cast(GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.SwitchShowMapOrPhoto::class.java)
-      .subscribe({ click -> handleAdapterClick(click) }, { Timber.tag(TAG).e(it) })
+            when (result) {
+              is Either.Value -> reportPhoto(buttonClickEvent.photoName, result.value)
+              is Either.Error -> {
+                when (result.error) {
+                  is ReportPhotoExceptions.ApiErrorException -> handleKnownErrors(result.error.errorCode)
+                  is ReportPhotoExceptions.BadServerResponse,
+                  is ReportPhotoExceptions.UnknownException -> handleUnknownErrors(result.error)
+                }
+              }
+            }
+          }
+          is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.SwitchShowMapOrPhoto -> {
+            handleAdapterClick(buttonClickEvent)
+          }
+        }.safe
+      }
+    }
 
     compositeDisposable += scrollSubject
       .subscribeOn(Schedulers.io())
@@ -286,24 +284,15 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
   }
 
   private fun handleKnownErrors(errorCode: ErrorCode) {
-    when (errorCode) {
-      is ErrorCode.ReportPhotoErrors -> {
-        hideProgressFooter()
-      }
-      is ErrorCode.FavouritePhotoErrors -> {
-        hideProgressFooter()
-      }
-      is ErrorCode.GetGalleryPhotosErrors -> {
-        hideProgressFooter()
-      }
-    }
-
+    hideProgressFooter()
     (activity as? PhotosActivity)?.showKnownErrorMessage(errorCode)
   }
 
   private fun handleUnknownErrors(error: Throwable) {
-    (activity as? PhotosActivity)?.showUnknownErrorMessage(error)
     Timber.tag(TAG).e(error)
+
+    hideProgressFooter()
+    (activity as? PhotosActivity)?.showUnknownErrorMessage(error)
   }
 
   override fun resolveDaggerDependency() {

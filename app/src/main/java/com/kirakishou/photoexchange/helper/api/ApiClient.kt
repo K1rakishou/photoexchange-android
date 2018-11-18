@@ -13,7 +13,7 @@ interface ApiClient {
   fun getPageOfGalleryPhotos(lastUploadedOn: Long, count: Int): Single<GalleryPhotosResponse>
   fun getGalleryPhotoInfo(userId: String, galleryPhotoIds: String): Single<GalleryPhotoInfoResponse>
   fun favouritePhoto(userId: String, photoName: String): Single<FavouritePhotoResponse>
-  fun reportPhoto(userId: String, photoName: String): Single<ReportPhotoResponse>
+  suspend fun reportPhoto(userId: String, photoName: String): Boolean
   fun getUserId(): Single<GetUserIdResponse>
   fun getPageOfUploadedPhotos(userId: String, lastUploadedOn: Long, count: Int): Single<GetUploadedPhotosResponse>
   fun getReceivedPhotos(userId: String, lastUploadedOn: Long, count: Int): Single<GetReceivedPhotosResponse>

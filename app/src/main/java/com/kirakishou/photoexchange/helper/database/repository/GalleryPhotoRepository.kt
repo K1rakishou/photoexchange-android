@@ -115,13 +115,13 @@ open class GalleryPhotoRepository(
     }
   }
 
-  suspend fun reportPhoto(photoId: Long): Boolean {
+  suspend fun reportPhoto(photoId: Long, isReported: Boolean): Boolean {
     return withContext(coroutineContext) {
       var galleryPhotoInfoEntity = galleryPhotoInfoDao.find(photoId)
       if (galleryPhotoInfoEntity == null) {
-        galleryPhotoInfoEntity = GalleryPhotoInfoEntity.create(photoId, false, true, timeUtils.getTimeFast())
+        galleryPhotoInfoEntity = GalleryPhotoInfoEntity.create(photoId, false, isReported, timeUtils.getTimeFast())
       } else {
-        galleryPhotoInfoEntity.isReported = !galleryPhotoInfoEntity.isReported
+        galleryPhotoInfoEntity.isReported = isReported
       }
 
       return@withContext galleryPhotoInfoDao.save(galleryPhotoInfoEntity).isSuccess()
