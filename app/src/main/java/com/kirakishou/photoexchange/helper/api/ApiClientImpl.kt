@@ -118,9 +118,21 @@ open class ApiClientImpl
     return response.userId
   }
 
-  override fun getPageOfUploadedPhotos(userId: String, lastUploadedOn: Long, count: Int): Single<GetUploadedPhotosResponse> {
-    return GetPageOfUploadedPhotosRequest<GetUploadedPhotosResponse>(userId, lastUploadedOn, count, apiService, schedulerProvider, jsonConverter)
-      .execute()
+  override suspend fun getPageOfUploadedPhotos(
+    userId: String,
+    lastUploadedOn: Long,
+    count: Int
+  ): List<GetUploadedPhotosResponse.UploadedPhotoData> {
+    val response = GetPageOfUploadedPhotosRequest(
+      userId,
+      lastUploadedOn,
+      count,
+      apiService,
+      jsonConverter,
+      dispatchersProvider
+    ).execute()
+
+    return response.uploadedPhotos
   }
 
   override suspend fun getReceivedPhotos(userId: String, lastUploadedOn: Long, count: Int): List<GetReceivedPhotosResponse.ReceivedPhoto> {

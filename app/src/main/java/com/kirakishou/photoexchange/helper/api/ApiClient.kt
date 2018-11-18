@@ -25,7 +25,7 @@ interface ApiClient {
   suspend fun favouritePhoto(userId: String, photoName: String): FavouritePhotoUseCase.FavouritePhotoResult
   suspend fun reportPhoto(userId: String, photoName: String): Boolean
   suspend fun getUserId(): String
-  fun getPageOfUploadedPhotos(userId: String, lastUploadedOn: Long, count: Int): Single<GetUploadedPhotosResponse>
+  suspend fun getPageOfUploadedPhotos(userId: String, lastUploadedOn: Long, count: Int): List<GetUploadedPhotosResponse.UploadedPhotoData>
   suspend fun getReceivedPhotos(userId: String, lastUploadedOn: Long, count: Int): List<GetReceivedPhotosResponse.ReceivedPhoto>
   suspend fun checkAccountExists(userId: String): Boolean
 }
