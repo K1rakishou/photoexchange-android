@@ -3,12 +3,9 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.interactors.RestoreAccountUseCase
 import com.kirakishou.photoexchange.mvp.model.other.Constants.DOMAIN_NAME
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import io.reactivex.Observable
-import io.reactivex.Single
-import timber.log.Timber
 
 class SettingsActivityViewModel(
   private val settingsRepository: SettingsRepository,
@@ -18,19 +15,15 @@ class SettingsActivityViewModel(
   private val TAG = "SettingsActivityViewModel"
 
 
-  fun resetMakePublicPhotoOption(): Observable<Unit> {
-    return Observable.fromCallable { settingsRepository.saveMakePublicFlag(null) }
-      .subscribeOn(schedulerProvider.IO())
-      .doOnError { Timber.tag(TAG).e(it) }
+  suspend fun resetMakePublicPhotoOption() {
+    settingsRepository.saveMakePublicFlag(null)
   }
 
-  fun getUserId(): Single<String> {
-    return Single.fromCallable { settingsRepository.getUserId() }
-      .subscribeOn(schedulerProvider.IO())
-      .doOnError { Timber.tag(TAG).e(it) }
+  suspend fun getUserId(): String {
+    return settingsRepository.getUserId()
   }
 
-  fun restoreOldAccount(oldUserId: String): Single<Either<ErrorCode.CheckAccountExistsErrors, Boolean>> {
+  suspend fun restoreOldAccount(oldUserId: String): Boolean {
     val suffix = "@${DOMAIN_NAME}"
 
     val userId = if (!oldUserId.endsWith(suffix, true)) {
@@ -39,6 +32,11 @@ class SettingsActivityViewModel(
       oldUserId
     }
 
-    return restoreAccountUseCase.restoreAccount(userId)
+    val result = restoreAccountUseCase.restoreAccount(userId)
+
+    when (result) {
+      is Either.Value -> return result.value
+      is Either.Error -> throw result.error
+    }.safe
   }
 }

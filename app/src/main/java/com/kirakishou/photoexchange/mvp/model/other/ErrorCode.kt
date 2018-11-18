@@ -17,6 +17,10 @@ enum class ErrorCode(val value: Int) {
   NoPhotosInRequest(8),
   NoPhotosToSendBack(9);
 
+  fun getErrorMessage(): String {
+    TODO()
+  }
+
   companion object {
     fun fromInt(value: Int): ErrorCode {
       return ErrorCode.values().first { it.value == value }

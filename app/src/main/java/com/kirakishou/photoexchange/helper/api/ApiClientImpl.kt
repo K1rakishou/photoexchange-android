@@ -118,8 +118,14 @@ open class ApiClientImpl
       .execute()
   }
 
-  override fun checkAccountExists(userId: String): Single<CheckAccountExistsResponse> {
-    return CheckAccountExistsRequest<CheckAccountExistsResponse>(userId, apiService, schedulerProvider, jsonConverter)
-      .execute()
+  override suspend fun checkAccountExists(userId: String): Boolean {
+    val response = CheckAccountExistsRequest(
+      userId,
+      apiService,
+      jsonConverter,
+      dispatchersProvider
+    ).execute()
+
+    return response.accountExists
   }
 }

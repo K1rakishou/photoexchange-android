@@ -2,48 +2,52 @@ package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import io.reactivex.Single
+import com.kirakishou.photoexchange.helper.myRunCatching
+import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
+import kotlinx.coroutines.withContext
 
 open class RestoreAccountUseCase(
   private val apiClient: ApiClient,
   private val database: MyDatabase,
   private val settingsRepository: SettingsRepository,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
-  private val receivedPhotosRepository: ReceivedPhotosRepository
-) {
-  fun restoreAccount(oldUserId: String): Single<Either<ErrorCode.CheckAccountExistsErrors, Boolean>> {
-    return apiClient.checkAccountExists(oldUserId)
-      .flatMap { response ->
-        val errorCode = response.errorCode as ErrorCode.CheckAccountExistsErrors
-        if (errorCode !is ErrorCode.CheckAccountExistsErrors.Ok) {
-          return@flatMap Single.just(Either.Error(errorCode))
+  private val receivedPhotosRepository: ReceivedPhotosRepository,
+  dispatchersProvider: DispatchersProvider
+) : BaseUseCase(dispatchersProvider) {
+
+  suspend fun restoreAccount(oldUserId: String): Either<Exception, Boolean> {
+    return withContext(coroutineContext) {
+      return@withContext myRunCatching {
+        val accountExists = apiClient.checkAccountExists(oldUserId)
+        if (!accountExists) {
+          return@myRunCatching false
         }
 
-        if (!response.accountExists) {
-          return@flatMap Single.just(Either.Value(false))
-        }
-
-        val transactionResult = database.transactional {
-          if (!settingsRepository.saveUserId(oldUserId)) {
-            return@transactional false
-          }
-
-          uploadedPhotosRepository.deleteAll()
-          receivedPhotosRepository.deleteAll()
-
-          return@transactional true
-        }
-
+        val transactionResult = cleanDatabase(oldUserId)
         if (!transactionResult) {
-          return@flatMap Single.just(Either.Error(ErrorCode.CheckAccountExistsErrors.LocalDatabaseError()))
+          throw DatabaseException("Could not clean database")
         }
 
-        return@flatMap Single.just(Either.Value(true))
+        return@myRunCatching true
       }
+    }
+  }
+
+  private suspend fun cleanDatabase(oldUserId: String): Boolean {
+    return database.transactional {
+      if (!settingsRepository.saveUserId(oldUserId)) {
+        return@transactional false
+      }
+
+      uploadedPhotosRepository.deleteAll()
+      receivedPhotosRepository.deleteAll()
+
+      return@transactional true
+    }
   }
 }

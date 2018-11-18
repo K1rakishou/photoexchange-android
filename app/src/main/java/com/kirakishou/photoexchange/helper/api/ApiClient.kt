@@ -27,5 +27,5 @@ interface ApiClient {
   suspend fun getUserId(): String
   fun getPageOfUploadedPhotos(userId: String, lastUploadedOn: Long, count: Int): Single<GetUploadedPhotosResponse>
   fun getReceivedPhotos(userId: String, lastUploadedOn: Long, count: Int): Single<GetReceivedPhotosResponse>
-  fun checkAccountExists(userId: String): Single<CheckAccountExistsResponse>
+  suspend fun checkAccountExists(userId: String): Boolean
 }

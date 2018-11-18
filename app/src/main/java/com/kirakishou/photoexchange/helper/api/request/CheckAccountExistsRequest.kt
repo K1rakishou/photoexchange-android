@@ -1,44 +1,31 @@
 package com.kirakishou.photoexchange.helper.api.request
 
+import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiService
-import com.kirakishou.photoexchange.helper.concurrency.rx.operator.OnApiErrorSingle
-import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.gson.JsonConverter
-import com.kirakishou.photoexchange.mvp.model.exception.ApiException
+import com.kirakishou.photoexchange.mvp.model.exception.ConnectionError
 import com.kirakishou.photoexchange.mvp.model.net.response.CheckAccountExistsResponse
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import io.reactivex.Single
-import java.net.SocketTimeoutException
-import java.util.concurrent.TimeoutException
+import kotlinx.coroutines.rx2.await
 
-class CheckAccountExistsRequest<T>(
+class CheckAccountExistsRequest(
   private val userId: String,
   private val apiService: ApiService,
-  private val schedulerProvider: SchedulerProvider,
-  private val jsonConverter: JsonConverter
-) : BaseRequest<T>() {
+  private val jsonConverter: JsonConverter,
+  dispatchersProvider: DispatchersProvider
+) : BaseRequest<CheckAccountExistsResponse>(dispatchersProvider) {
 
-  override fun execute(): Single<T> {
-    return apiService.checkAccountExists(userId)
-      .subscribeOn(schedulerProvider.IO())
-      .observeOn(schedulerProvider.IO())
-      .lift(OnApiErrorSingle<CheckAccountExistsResponse>(jsonConverter, CheckAccountExistsResponse::class))
-      .map { response ->
-        if (ErrorCode.CheckAccountExistsErrors.fromInt(response.serverErrorCode!!) is ErrorCode.CheckAccountExistsErrors.Ok) {
-          return@map CheckAccountExistsResponse.success(response.accountExists)
-        } else {
-          return@map CheckAccountExistsResponse.fail(ErrorCode.fromInt(ErrorCode.CheckAccountExistsErrors::class, response.serverErrorCode!!))
-        }
-      }
-      .onErrorReturn(this::extractError) as Single<T>
-  }
+  override suspend fun execute(): CheckAccountExistsResponse {
+    val response = try {
+      apiService.checkAccountExists(userId).await()
+    } catch (error: Exception) {
+      throw ConnectionError(error.message)
+    }
 
-  private fun extractError(error: Throwable): CheckAccountExistsResponse {
-    return when (error) {
-      is ApiException -> CheckAccountExistsResponse.fail(error.errorCode)
-      is SocketTimeoutException,
-      is TimeoutException -> CheckAccountExistsResponse.fail(ErrorCode.CheckAccountExistsErrors.LocalTimeout())
-      else -> CheckAccountExistsResponse.fail(ErrorCode.CheckAccountExistsErrors.UnknownError())
+    val result = handleResponse(jsonConverter, response)
+    return when (result) {
+      is Either.Value -> result.value
+      is Either.Error -> throw result.error
     }
   }
 }

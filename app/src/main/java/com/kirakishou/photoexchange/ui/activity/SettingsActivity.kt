@@ -3,21 +3,18 @@ package com.kirakishou.photoexchange.ui.activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import androidx.appcompat.widget.AppCompatButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.widget.AppCompatButton
 import butterknife.BindView
-import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.SettingsActivityModule
-import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.mvp.viewmodel.SettingsActivityViewModel
 import com.kirakishou.photoexchange.ui.dialog.EnterOldUserIdDialog
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.rx2.await
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -45,50 +42,59 @@ class SettingsActivity : BaseActivity() {
 
   override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
     resetButton.setOnClickListener {
-      compositeDisposable += RxView.clicks(resetButton)
-        .subscribeOn(Schedulers.io())
-        .concatMap { viewModel.resetMakePublicPhotoOption() }
-        .observeOn(AndroidSchedulers.mainThread())
-        .doOnComplete {
-          Toast.makeText(this, "Done", Toast.LENGTH_SHORT).show()
+      //TODO: use actor
+      launch {
+        try {
+          viewModel.resetMakePublicPhotoOption()
+
+          Toast.makeText(this@SettingsActivity, "Done", Toast.LENGTH_SHORT).show()
           finish()
+        } catch (error: Exception) {
+          Timber.tag(TAG).e(error)
         }
-        .doOnError { Timber.tag(TAG).e(it) }
-        .subscribe()
+      }
     }
 
-    compositeDisposable += RxView.clicks(userIdHolder)
-      .subscribeOn(AndroidSchedulers.mainThread())
-      .doOnNext { copyUserIdToClipBoard() }
-      .doOnNext { Toast.makeText(this, "UserId copied to clipboard", Toast.LENGTH_SHORT).show() }
-      .subscribe()
+    userIdHolder.setOnClickListener {
+      copyUserIdToClipBoard()
+      Toast.makeText(this, "UserId copied to clipboard", Toast.LENGTH_SHORT).show()
+    }
 
-    compositeDisposable += viewModel.getUserId()
-      .subscribe({ userId ->
-        if (userId.isEmpty()) {
-          userIdTextView.text = "Empty userId"
+    restoreFromOldUserIdButton.setOnClickListener {
+      //TODO: use actor
+      launch {
+        val userId = EnterOldUserIdDialog().show(this@SettingsActivity).await()
+        if (userId.isBlank()) {
+          return@launch
+        }
+
+
+        val isOk = try {
+          viewModel.restoreOldAccount(userId)
+        } catch (error: Exception) {
+          onShowToast("Unknown error while trying to restore account: ${error.message
+            ?: "empty error message"}")
+          return@launch
+        }
+
+        if (isOk) {
+          onShowToast("Successfully restored old account")
+          finish()
         } else {
-          userIdTextView.text = userId
+          onShowToast("Account does not exist")
         }
-      })
+      }
+    }
 
-    compositeDisposable += RxView.clicks(restoreFromOldUserIdButton)
-      .concatMap { EnterOldUserIdDialog().show(this).toObservable() }
-      .filter { userId -> userId.isNotEmpty() }
-      .concatMap { userId -> viewModel.restoreOldAccount(userId).toObservable() }
-      .subscribe({ result ->
-        when (result) {
-          is Either.Value -> {
-            onShowToast("Successfully restored old account")
-            finish()
-          }
-          is Either.Error -> showErrorCodeToast(result.error)
-        }
-      }, { error ->
-        Timber.tag(TAG).e(error)
-        onShowToast("Unknown error while trying to restore account: ${error.message
-          ?: "empty error message"}")
-      })
+    //TODO: use actor
+    launch {
+      val userId = viewModel.getUserId()
+      if (userId.isEmpty()) {
+        userIdTextView.text = "Empty userId"
+      } else {
+        userIdTextView.text = userId
+      }
+    }
   }
 
   private fun copyUserIdToClipBoard() {
