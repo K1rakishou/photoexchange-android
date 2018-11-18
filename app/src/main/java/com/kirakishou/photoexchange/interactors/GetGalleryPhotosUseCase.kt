@@ -8,9 +8,7 @@ import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepos
 import com.kirakishou.photoexchange.helper.myRunCatching
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
-import com.kirakishou.photoexchange.mvp.model.exception.GetGalleryPhotosException
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import kotlinx.coroutines.rx2.await
+import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
@@ -44,22 +42,16 @@ open class GetGalleryPhotosUseCase(
         }
 
         //otherwise reload the page from the server
-        val response = apiClient.getPageOfGalleryPhotos(time, count).await()
-        val errorCode = response.errorCode as ErrorCode.GetGalleryPhotosErrors
-
-        if (errorCode !is ErrorCode.GetGalleryPhotosErrors.Ok) {
-          throw GetGalleryPhotosException.OnKnownError(errorCode)
-        }
-
-        if (response.galleryPhotos.isEmpty()) {
+        val galleryPhotos = apiClient.getPageOfGalleryPhotos(time, count)
+        if (galleryPhotos.isEmpty()) {
           return@myRunCatching emptyList<GalleryPhoto>()
         }
 
-        if (!galleryPhotoRepository.saveMany(response.galleryPhotos)) {
-          throw GetGalleryPhotosException.OnKnownError(ErrorCode.GetGalleryPhotosErrors.LocalDatabaseError())
+        if (!galleryPhotoRepository.saveMany(galleryPhotos)) {
+          throw DatabaseException("Could not cache gallery photos in the database")
         }
 
-        return@myRunCatching GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(response.galleryPhotos)
+        return@myRunCatching GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(galleryPhotos)
       }
     }
   }

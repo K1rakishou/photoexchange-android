@@ -10,10 +10,8 @@ import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRep
 import com.kirakishou.photoexchange.helper.myRunCatching
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.exception.GetReceivedPhotosException
+import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
 import com.kirakishou.photoexchange.mvp.model.net.response.GetReceivedPhotosResponse
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import kotlinx.coroutines.rx2.await
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
@@ -50,22 +48,17 @@ open class GetReceivedPhotosUseCase(
           return@myRunCatching pageOfReceivedPhotos
         }
 
-        val response = apiClient.getReceivedPhotos(userId, lastUploadedOn, count).await()
-        val errorCode = response.errorCode as ErrorCode.GetReceivedPhotosErrors
-        if (errorCode !is ErrorCode.GetReceivedPhotosErrors.Ok) {
-          throw GetReceivedPhotosException.OnKnownError(errorCode)
-        }
-
-        if (response.receivedPhotos.isEmpty()) {
+        val receivedPhotos = apiClient.getReceivedPhotos(userId, lastUploadedOn, count)
+        if (receivedPhotos.isEmpty()) {
           return@myRunCatching emptyList<ReceivedPhoto>()
         }
 
-        val transactionResult = storeInDatabase(response)
+        val transactionResult = storeInDatabase(receivedPhotos)
         if (!transactionResult) {
-          throw GetReceivedPhotosException.OnKnownError(ErrorCode.GetReceivedPhotosErrors.DatabaseError())
+          throw DatabaseException("Could not cache received photos in the database")
         }
 
-        val sorted = response.receivedPhotos
+        val sorted = receivedPhotos
           .sortedByDescending { it.photoId }
 
         return@myRunCatching ReceivedPhotosMapper.FromResponse.GetReceivedPhotos.toReceivedPhotos(sorted)
@@ -73,15 +66,15 @@ open class GetReceivedPhotosUseCase(
     }
   }
 
-  private suspend fun storeInDatabase(response: GetReceivedPhotosResponse): Boolean {
+  private suspend fun storeInDatabase(receivedPhotos: List<GetReceivedPhotosResponse.ReceivedPhoto>): Boolean {
     return database.transactional {
-      for (receivedPhoto in response.receivedPhotos) {
+      for (receivedPhoto in receivedPhotos) {
         if (!uploadedPhotosRepository.updateReceiverInfo(receivedPhoto.uploadedPhotoName)) {
           return@transactional false
         }
       }
 
-      if (!receivedPhotosRepository.saveMany(response.receivedPhotos)) {
+      if (!receivedPhotosRepository.saveMany(receivedPhotos)) {
         return@transactional false
       }
 

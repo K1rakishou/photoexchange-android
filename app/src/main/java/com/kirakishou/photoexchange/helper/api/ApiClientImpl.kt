@@ -54,9 +54,19 @@ open class ApiClientImpl
       .execute()
   }
 
-  override fun getPageOfGalleryPhotos(lastUploadedOn: Long, count: Int): Single<GalleryPhotosResponse> {
-    return GetPageOfGalleryPhotosRequest<GalleryPhotosResponse>(lastUploadedOn, count, apiService, schedulerProvider, jsonConverter)
-      .execute()
+  override suspend fun getPageOfGalleryPhotos(
+    lastUploadedOn: Long,
+    count: Int
+  ): List<GalleryPhotosResponse.GalleryPhotoResponseData> {
+    val response = GetPageOfGalleryPhotosRequest(
+      lastUploadedOn,
+      count,
+      apiService,
+      jsonConverter,
+      dispatchersProvider
+    ).execute()
+
+    return response.galleryPhotos
   }
 
   override suspend fun getGalleryPhotoInfo(
@@ -113,9 +123,17 @@ open class ApiClientImpl
       .execute()
   }
 
-  override fun getReceivedPhotos(userId: String, lastUploadedOn: Long, count: Int): Single<GetReceivedPhotosResponse> {
-    return GetPageOfReceivedPhotosRequest<GetReceivedPhotosResponse>(userId, lastUploadedOn, count, apiService, schedulerProvider, jsonConverter)
-      .execute()
+  override suspend fun getReceivedPhotos(userId: String, lastUploadedOn: Long, count: Int): List<GetReceivedPhotosResponse.ReceivedPhoto> {
+    val response = GetPageOfReceivedPhotosRequest(
+      userId,
+      lastUploadedOn,
+      count,
+      apiService,
+      jsonConverter,
+      dispatchersProvider
+    ).execute()
+
+    return response.receivedPhotos
   }
 
   override suspend fun checkAccountExists(userId: String): Boolean {

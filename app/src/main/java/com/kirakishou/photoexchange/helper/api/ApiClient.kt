@@ -20,12 +20,12 @@ interface ApiClient {
   ): UploadPhotosUseCase.UploadPhotoResult
 
   fun receivePhotos(userId: String, photoNames: String): Single<ReceivedPhotosResponse>
-  fun getPageOfGalleryPhotos(lastUploadedOn: Long, count: Int): Single<GalleryPhotosResponse>
+  suspend fun getPageOfGalleryPhotos(lastUploadedOn: Long, count: Int): List<GalleryPhotosResponse.GalleryPhotoResponseData>
   suspend fun getGalleryPhotoInfo(userId: String, galleryPhotoIds: String): List<GalleryPhotoInfoResponse.GalleryPhotosInfoData>
   suspend fun favouritePhoto(userId: String, photoName: String): FavouritePhotoUseCase.FavouritePhotoResult
   suspend fun reportPhoto(userId: String, photoName: String): Boolean
   suspend fun getUserId(): String
   fun getPageOfUploadedPhotos(userId: String, lastUploadedOn: Long, count: Int): Single<GetUploadedPhotosResponse>
-  fun getReceivedPhotos(userId: String, lastUploadedOn: Long, count: Int): Single<GetReceivedPhotosResponse>
+  suspend fun getReceivedPhotos(userId: String, lastUploadedOn: Long, count: Int): List<GetReceivedPhotosResponse.ReceivedPhoto>
   suspend fun checkAccountExists(userId: String): Boolean
 }
