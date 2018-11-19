@@ -62,17 +62,14 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
   override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
     viewModel.galleryFragmentViewModel.viewState.reset()
 
-    initRx()
+    launch { initRx() }
     initRecyclerView()
   }
 
   override fun onFragmentViewDestroy() {
   }
 
-  private fun initRx() {
-    compositeDisposable += viewModel.intercom.galleryFragmentEvents.listen()
-      .subscribe({ viewState -> onStateEvent(viewState) }, { Timber.tag(TAG).e(it) })
-
+  private suspend fun initRx() {
     compositeDisposable += viewModel.galleryFragmentViewModel.knownErrors
       .subscribe({ errorCode -> handleKnownErrors(errorCode) })
 
@@ -82,8 +79,21 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     compositeDisposable += loadMoreSubject
       .subscribe({ viewModel.galleryFragmentViewModel.loadMorePhotos() })
 
-    launch {
-      adapterButtonClickSubject.openSubscription().consumeEach { buttonClickEvent ->
+    compositeDisposable += scrollSubject
+      .subscribeOn(Schedulers.io())
+      .distinctUntilChanged()
+      .throttleFirst(200, TimeUnit.MILLISECONDS)
+      .subscribe({ isScrollingDown ->
+        viewModel.intercom.tell<PhotosActivity>()
+          .that(PhotosActivityEvent.ScrollEvent(isScrollingDown))
+      })
+
+    compositeChannel += viewModel.intercom.galleryFragmentEvents.listen().openSubscription().apply {
+      consumeEach { event -> onStateEvent(event) }
+    }
+
+    compositeChannel += adapterButtonClickSubject.openSubscription().apply {
+      consumeEach { buttonClickEvent ->
         when (buttonClickEvent) {
           is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.FavouriteClicked -> {
             val result = viewModel.favouritePhoto(buttonClickEvent.photoName)
@@ -119,15 +129,6 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
         }.safe
       }
     }
-
-    compositeDisposable += scrollSubject
-      .subscribeOn(Schedulers.io())
-      .distinctUntilChanged()
-      .throttleFirst(200, TimeUnit.MILLISECONDS)
-      .subscribe({ isScrollingDown ->
-        viewModel.intercom.tell<PhotosActivity>()
-          .that(PhotosActivityEvent.ScrollEvent(isScrollingDown))
-      })
   }
 
   private fun initRecyclerView() {
@@ -203,18 +204,16 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
     }
   }
 
-  override fun onStateEvent(event: GalleryFragmentEvent) {
+  override suspend fun onStateEvent(event: GalleryFragmentEvent) {
     if (!isAdded) {
       return
     }
 
-    requireActivity().runOnUiThread {
-      when (event) {
-        is GalleryFragmentEvent.GeneralEvents -> {
-          onUiEvent(event)
-        }
-      }.safe
-    }
+    when (event) {
+      is GalleryFragmentEvent.GeneralEvents -> {
+        onUiEvent(event)
+      }
+    }.safe
   }
 
   private fun onUiEvent(event: GalleryFragmentEvent.GeneralEvents) {

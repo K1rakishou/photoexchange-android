@@ -26,6 +26,9 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.rx2.openSubscription
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -58,17 +61,14 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
   override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
     viewModel.receivedPhotosFragmentViewModel.viewState.reset()
 
-    initRx()
+    launch { initRx() }
     initRecyclerView()
   }
 
   override fun onFragmentViewDestroy() {
   }
 
-  private fun initRx() {
-    compositeDisposable += viewModel.intercom.receivedPhotosFragmentEvents.listen()
-      .subscribe({ viewState -> onStateEvent(viewState) }, { Timber.tag(TAG).e(it) })
-
+  private suspend fun initRx() {
     compositeDisposable += viewModel.receivedPhotosFragmentViewModel.knownErrors
       .subscribe({ errorCode -> handleKnownErrors(errorCode) })
 
@@ -90,6 +90,10 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
         viewModel.intercom.tell<PhotosActivity>()
           .that(PhotosActivityEvent.ScrollEvent(isScrollingDown))
       })
+
+    compositeChannel += viewModel.intercom.receivedPhotosFragmentEvents.listen().openSubscription().apply {
+      consumeEach { event -> onStateEvent(event) }
+    }
   }
 
   private fun initRecyclerView() {
@@ -122,21 +126,19 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     }.safe
   }
 
-  override fun onStateEvent(event: ReceivedPhotosFragmentEvent) {
+  override suspend fun onStateEvent(event: ReceivedPhotosFragmentEvent) {
     if (!isAdded) {
       return
     }
 
-    requireActivity().runOnUiThread {
-      when (event) {
-        is ReceivedPhotosFragmentEvent.GeneralEvents -> {
-          onUiEvent(event)
-        }
-        is ReceivedPhotosFragmentEvent.ReceivePhotosEvent -> {
-          onReceivePhotosEvent(event)
-        }
-      }.safe
-    }
+    when (event) {
+      is ReceivedPhotosFragmentEvent.GeneralEvents -> {
+        onUiEvent(event)
+      }
+      is ReceivedPhotosFragmentEvent.ReceivePhotosEvent -> {
+        onReceivePhotosEvent(event)
+      }
+    }.safe
   }
 
   private fun onUiEvent(event: ReceivedPhotosFragmentEvent.GeneralEvents) {

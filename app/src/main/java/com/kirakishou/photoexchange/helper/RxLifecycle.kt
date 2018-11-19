@@ -2,22 +2,9 @@ package com.kirakishou.photoexchange.helper
 
 import io.reactivex.Observable
 import io.reactivex.subjects.BehaviorSubject
-import kotlinx.coroutines.channels.consumeEach
-import kotlinx.coroutines.rx2.openSubscription
 
 class RxLifecycle {
   private val lifecycleSubject = BehaviorSubject.createDefault(FragmentLifecycle.onDestroy)
-
-  suspend fun waitForState(desiredState: FragmentState) {
-    val observableSource = lifecycleSubject.openSubscription()
-
-    observableSource.consumeEach {
-      if (it.isAtLeast(desiredState)) {
-        observableSource.cancel()
-        return
-      }
-    }
-  }
 
   fun getLifecycle(): Observable<FragmentLifecycle> = lifecycleSubject
 

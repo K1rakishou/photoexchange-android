@@ -54,8 +54,10 @@ import io.reactivex.exceptions.CompositeException
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.rx2.openSubscription
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
@@ -119,7 +121,7 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
   }
 
   override fun onActivityStart() {
-    initRx()
+    launch { initRx() }
     checkPermissions(this.savedInstanceState)
   }
 
@@ -135,7 +137,7 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
     viewState.saveToBundle(outState)
   }
 
-  private fun initRx() {
+  private suspend fun initRx() {
     compositeDisposable += RxView.clicks(ivCloseActivityButton)
       .subscribeOn(AndroidSchedulers.mainThread())
       .debounceClicks()
@@ -157,11 +159,9 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
       .doOnError { Timber.e(it) }
       .subscribe()
 
-    compositeDisposable += viewModel.intercom.photosActivityEvents.listen()
-      .subscribeOn(AndroidSchedulers.mainThread())
-      .doOnNext { onStateEvent(it) }
-      .doOnError { Timber.e(it) }
-      .subscribe()
+    compositeChannel += viewModel.intercom.photosActivityEvents.listen().openSubscription().apply {
+      consumeEach { event -> onStateEvent(event) }
+    }
   }
 
   private fun checkPermissions(savedInstanceState: Bundle?) {
@@ -296,30 +296,24 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
     return true
   }
 
-  override fun onStateEvent(event: PhotosActivityEvent) {
+  override suspend fun onStateEvent(event: PhotosActivityEvent) {
     when (event) {
       is PhotosActivityEvent.StartUploadingService -> {
-        launch {
-          val hasPhotosToUpload = viewModel.checkHasPhotosToUpload()
-          if (hasPhotosToUpload) {
-            bindUploadingService(event.callerClass, event.reason, true)
-          }
+        val hasPhotosToUpload = viewModel.checkHasPhotosToUpload()
+        if (hasPhotosToUpload) {
+          bindUploadingService(event.callerClass, event.reason, true)
         }
       }
       is PhotosActivityEvent.StartReceivingService -> {
-        launch {
-          val hasPhotosToReceive = viewModel.checkHasPhotosToReceive()
-          if (hasPhotosToReceive) {
-            bindReceivingService(event.callerClass, event.reason, true)
-          }
+        val hasPhotosToReceive = viewModel.checkHasPhotosToReceive()
+        if (hasPhotosToReceive) {
+          bindReceivingService(event.callerClass, event.reason, true)
         }
       }
       is PhotosActivityEvent.FailedToUploadPhotoButtonClicked -> {
-        launch {
-          val tryToReUpload = handleUploadedPhotosFragmentAdapterButtonClicks(event.clickType)
-          if (tryToReUpload) {
-            bindUploadingService(PhotosActivity::class.java, "Handling of FailedToUploadPhotoButtonClicked", true)
-          }
+        val tryToReUpload = handleUploadedPhotosFragmentAdapterButtonClicks(event.clickType)
+        if (tryToReUpload) {
+          bindUploadingService(PhotosActivity::class.java, "Handling of FailedToUploadPhotoButtonClicked", true)
         }
       }
       is PhotosActivityEvent.ScrollEvent -> {

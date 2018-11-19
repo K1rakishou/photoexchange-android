@@ -17,6 +17,7 @@ import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.ReceiveChannel
 import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 
@@ -37,6 +38,8 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
   protected val unknownErrorsSubject = PublishSubject.create<Throwable>()
 
   protected val compositeDisposable = CompositeDisposable()
+  protected val compositeChannel = mutableListOf<ReceiveChannel<Any>>()
+
   private lateinit var job: Job
   private var unBinder: Unbinder? = null
 
@@ -79,6 +82,7 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
     onActivityStop()
 
     job.cancel()
+    compositeChannel.forEach { it.cancel() }
     compositeDisposable.clear()
     super.onStop()
   }
