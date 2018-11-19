@@ -7,7 +7,6 @@ import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRep
 import com.kirakishou.photoexchange.interactors.ReceivePhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.nhaarman.mockito_kotlin.any
 import io.reactivex.Observable
 import org.junit.After

@@ -8,7 +8,6 @@ import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosReposi
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.mvp.model.FindPhotosData
 import com.kirakishou.photoexchange.mvp.model.net.response.ReceivedPhotosResponse
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.service.ReceivePhotosServicePresenter
 import com.nhaarman.mockito_kotlin.any
 import io.reactivex.Single

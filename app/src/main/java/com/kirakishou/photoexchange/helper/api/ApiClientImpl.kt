@@ -7,9 +7,9 @@ import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragment
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
-import com.kirakishou.photoexchange.mvp.model.net.response.*
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import kotlinx.coroutines.channels.SendChannel
+import net.response.*
 import javax.inject.Inject
 
 /**
@@ -49,7 +49,7 @@ open class ApiClientImpl
   override suspend fun receivePhotos(
     userId: String,
     photoNames: String
-  ): List<ReceivedPhotosResponse.ReceivedPhoto> {
+  ): List<ReceivePhotosResponse.ReceivedPhotoResponseData> {
     val response = ReceivePhotosRequest(
       userId,
       photoNames,
@@ -79,7 +79,7 @@ open class ApiClientImpl
   override suspend fun getGalleryPhotoInfo(
     userId: String,
     galleryPhotoIds: String
-  ): List<GalleryPhotoInfoResponse.GalleryPhotosInfoData> {
+  ): List<GalleryPhotoInfoResponse.GalleryPhotosInfoResponseData> {
     val response = GetGalleryPhotoInfoRequest(
       userId,
       galleryPhotoIds,
@@ -91,7 +91,10 @@ open class ApiClientImpl
     return response.galleryPhotosInfo
   }
 
-  override suspend fun favouritePhoto(userId: String, photoName: String): FavouritePhotoUseCase.FavouritePhotoResult {
+  override suspend fun favouritePhoto(
+    userId: String,
+    photoName: String
+  ): FavouritePhotoUseCase.FavouritePhotoResult {
     val response = FavouritePhotoRequest(
       userId,
       photoName,
@@ -100,7 +103,10 @@ open class ApiClientImpl
       dispatchersProvider
     ).execute()
 
-    return FavouritePhotoUseCase.FavouritePhotoResult(response.isFavourited, response.favouritesCount)
+    return FavouritePhotoUseCase.FavouritePhotoResult(
+      response.isFavourited,
+      response.favouritesCount
+    )
   }
 
   override suspend fun reportPhoto(userId: String, photoName: String): Boolean {
@@ -129,7 +135,7 @@ open class ApiClientImpl
     userId: String,
     lastUploadedOn: Long,
     count: Int
-  ): List<GetUploadedPhotosResponse.UploadedPhotoData> {
+  ): List<GetUploadedPhotosResponse.UploadedPhotoResponseData> {
     val response = GetPageOfUploadedPhotosRequest(
       userId,
       lastUploadedOn,
@@ -142,7 +148,11 @@ open class ApiClientImpl
     return response.uploadedPhotos
   }
 
-  override suspend fun getReceivedPhotos(userId: String, lastUploadedOn: Long, count: Int): List<GetReceivedPhotosResponse.ReceivedPhoto> {
+  override suspend fun getReceivedPhotos(
+    userId: String,
+    lastUploadedOn: Long,
+    count: Int
+  ): List<GetReceivedPhotosResponse.ReceivedPhotoResponseData> {
     val response = GetPageOfReceivedPhotosRequest(
       userId,
       lastUploadedOn,

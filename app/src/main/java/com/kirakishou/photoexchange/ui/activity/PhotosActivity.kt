@@ -33,7 +33,6 @@ import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragment
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.service.ReceivePhotosService
 import com.kirakishou.photoexchange.service.ReceivePhotosServiceConnection
@@ -48,6 +47,7 @@ import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
 import com.kirakishou.photoexchange.ui.viewstate.PhotosActivityViewState
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
+import core.ErrorCode
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.exceptions.CompositeException

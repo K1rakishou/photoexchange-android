@@ -1,44 +1,43 @@
 package com.kirakishou.photoexchange.helper.database.mapper
 
 import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
-import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
-import com.kirakishou.photoexchange.mvp.model.net.response.GetUploadedPhotosResponse
+import net.response.GetUploadedPhotosResponse
 
 object UploadedPhotosMapper {
 
   object FromResponse {
     object ToEntity {
-      fun toUploadedPhotoEntity(time: Long, uploadedPhotoData: GetUploadedPhotosResponse.UploadedPhotoData): UploadedPhotoEntity {
+      fun toUploadedPhotoEntity(time: Long, uploadedPhotoData: GetUploadedPhotosResponse.UploadedPhotoResponseData): UploadedPhotoEntity {
         return UploadedPhotoEntity.create(
           uploadedPhotoData.photoName,
           uploadedPhotoData.photoId,
           uploadedPhotoData.uploaderLon,
           uploadedPhotoData.uploaderLat,
-          uploadedPhotoData.hasReceivedInfo,
+          uploadedPhotoData.hasReceiverInfo,
           uploadedPhotoData.uploadedOn,
           time
         )
       }
 
-      fun toUploadedPhotoEntities(time: Long, uploadedPhotoDataList: List<GetUploadedPhotosResponse.UploadedPhotoData>): List<UploadedPhotoEntity> {
+      fun toUploadedPhotoEntities(time: Long, uploadedPhotoDataList: List<GetUploadedPhotosResponse.UploadedPhotoResponseData>): List<UploadedPhotoEntity> {
         return uploadedPhotoDataList.map { toUploadedPhotoEntity(time, it) }
       }
     }
 
     object ToObject {
-      fun toUploadedPhoto(uploadedPhotoData: GetUploadedPhotosResponse.UploadedPhotoData): UploadedPhoto {
+      fun toUploadedPhoto(uploadedPhotoData: GetUploadedPhotosResponse.UploadedPhotoResponseData): UploadedPhoto {
         return UploadedPhoto(
           uploadedPhotoData.photoId,
           uploadedPhotoData.photoName,
           uploadedPhotoData.uploaderLon,
           uploadedPhotoData.uploaderLat,
-          uploadedPhotoData.hasReceivedInfo,
+          uploadedPhotoData.hasReceiverInfo,
           uploadedPhotoData.uploadedOn
         )
       }
 
-      fun toUploadedPhotos(uploadedPhotoDataList: List<GetUploadedPhotosResponse.UploadedPhotoData>): List<UploadedPhoto> {
+      fun toUploadedPhotos(uploadedPhotoDataList: List<GetUploadedPhotosResponse.UploadedPhotoResponseData>): List<UploadedPhoto> {
         return uploadedPhotoDataList.map { toUploadedPhoto(it) }
       }
     }

@@ -9,10 +9,10 @@ import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragment
 import com.kirakishou.photoexchange.interactors.GetReceivedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
 import com.kirakishou.photoexchange.ui.viewstate.ReceivedPhotosFragmentViewState
+import core.ErrorCode
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.CoroutineScope

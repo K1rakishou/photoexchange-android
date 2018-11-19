@@ -10,8 +10,8 @@ import com.kirakishou.photoexchange.mvp.model.FindPhotosData
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
 import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
-import com.kirakishou.photoexchange.mvp.model.net.response.ReceivedPhotosResponse
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
+import core.ErrorCode
+import net.response.ReceivePhotosResponse
 import timber.log.Timber
 
 open class ReceivePhotosUseCase(
@@ -44,7 +44,7 @@ open class ReceivePhotosUseCase(
   }
 
   private suspend fun handleSuccessResult(
-    receivedPhotos: List<ReceivedPhotosResponse.ReceivedPhoto>
+    receivedPhotos: List<ReceivePhotosResponse.ReceivedPhotoResponseData>
   ): List<Pair<ReceivedPhoto, String>> {
     val results = mutableListOf<Pair<ReceivedPhoto, String>>()
 
@@ -63,7 +63,7 @@ open class ReceivePhotosUseCase(
   }
 
   private suspend fun tryToUpdatePhotoInTheDatabase(
-    receivedPhoto: ReceivedPhotosResponse.ReceivedPhoto
+    receivedPhoto: ReceivePhotosResponse.ReceivedPhotoResponseData
   ): Boolean {
     return database.transactional {
       if (!receivedPhotosRepository.save(receivedPhoto)) {

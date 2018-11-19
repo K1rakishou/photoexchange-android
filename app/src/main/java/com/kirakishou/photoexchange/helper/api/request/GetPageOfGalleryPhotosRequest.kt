@@ -5,8 +5,8 @@ import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.mvp.model.exception.ConnectionError
-import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
 import kotlinx.coroutines.rx2.await
+import net.response.GalleryPhotosResponse
 
 class GetPageOfGalleryPhotosRequest(
   private val lastUploadedOn: Long,

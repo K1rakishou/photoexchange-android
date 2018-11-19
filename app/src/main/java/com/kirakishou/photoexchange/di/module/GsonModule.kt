@@ -20,6 +20,7 @@ class GsonModule {
   fun provideGson(): Gson {
     return GsonBuilder()
       .excludeFieldsWithoutExposeAnnotation()
+      //TODO: remove
       .setPrettyPrinting()
       .create()
   }

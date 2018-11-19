@@ -1,10 +1,8 @@
 package com.kirakishou.photoexchange.helper.database.mapper
 
 import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoEntity
-import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
-import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
-import java.util.concurrent.TimeUnit
+import net.response.GalleryPhotosResponse
 
 object GalleryPhotosMapper {
 

@@ -7,9 +7,9 @@ import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.net.response.GetReceivedPhotosResponse
-import com.kirakishou.photoexchange.mvp.model.net.response.ReceivedPhotosResponse
 import kotlinx.coroutines.withContext
+import net.response.GetReceivedPhotosResponse
+import net.response.ReceivePhotosResponse
 import timber.log.Timber
 
 open class ReceivedPhotosRepository(
@@ -21,14 +21,14 @@ open class ReceivedPhotosRepository(
   private val TAG = "ReceivedPhotosRepository"
   private val receivedPhotosDao = database.receivedPhotoDao()
 
-  suspend fun save(receivedPhoto: GetReceivedPhotosResponse.ReceivedPhoto): Long {
+  suspend fun save(receivedPhoto: GetReceivedPhotosResponse.ReceivedPhotoResponseData): Long {
     return withContext(coroutineContext) {
       val now = timeUtils.getTimeFast()
       return@withContext receivedPhotosDao.save(ReceivedPhotosMapper.FromObject.toReceivedPhotoEntity(now, receivedPhoto))
     }
   }
 
-  suspend fun save(receivedPhoto: ReceivedPhotosResponse.ReceivedPhoto): Boolean {
+  suspend fun save(receivedPhoto: ReceivePhotosResponse.ReceivedPhotoResponseData): Boolean {
     return withContext(coroutineContext) {
       val now = timeUtils.getTimeFast()
       return@withContext receivedPhotosDao.save(ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhotoEntity(now, receivedPhoto))
@@ -36,7 +36,7 @@ open class ReceivedPhotosRepository(
     }
   }
 
-  suspend fun saveMany(receivedPhotos: List<GetReceivedPhotosResponse.ReceivedPhoto>): Boolean {
+  suspend fun saveMany(receivedPhotos: List<GetReceivedPhotosResponse.ReceivedPhotoResponseData>): Boolean {
     return withContext(coroutineContext) {
       val time = timeUtils.getTimeFast()
       return@withContext receivedPhotosDao.saveMany(ReceivedPhotosMapper.FromResponse.GetReceivedPhotos.toReceivedPhotoEntities(time, receivedPhotos))

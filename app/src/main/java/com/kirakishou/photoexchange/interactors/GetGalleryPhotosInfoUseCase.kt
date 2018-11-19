@@ -80,6 +80,6 @@ open class GetGalleryPhotosInfoUseCase(
     val idsString = photoIds.joinToString(Constants.PHOTOS_DELIMITER)
     val galleryPhotosInfo = apiClient.getGalleryPhotoInfo(userId, idsString)
 
-    return GalleryPhotosInfoMapper.FromResponse.ToObject.toGalleryPhotoInfoList(galleryPhotosInfo)
+    return GalleryPhotosInfoMapper.FromResponseData.ToObject.toGalleryPhotoInfoList(galleryPhotosInfo)
   }
 }

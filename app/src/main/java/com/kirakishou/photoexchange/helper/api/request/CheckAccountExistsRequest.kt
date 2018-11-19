@@ -5,8 +5,8 @@ import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.mvp.model.exception.ConnectionError
-import com.kirakishou.photoexchange.mvp.model.net.response.CheckAccountExistsResponse
 import kotlinx.coroutines.rx2.await
+import net.response.CheckAccountExistsResponse
 
 class CheckAccountExistsRequest(
   private val userId: String,

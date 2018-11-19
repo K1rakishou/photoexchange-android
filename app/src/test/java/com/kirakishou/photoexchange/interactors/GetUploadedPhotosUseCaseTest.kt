@@ -7,7 +7,6 @@ import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRep
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.net.response.GetUploadedPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.other.Constants
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import io.reactivex.Single
 import org.junit.After
 import org.junit.Assert.assertEquals

@@ -1,22 +1,5 @@
 package com.kirakishou.photoexchange.interactors
 
-import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.helper.api.ApiClient
-import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepository
-import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
-import com.kirakishou.photoexchange.mvp.model.GalleryPhotoInfo
-import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotoIdsResponse
-import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
-import com.kirakishou.photoexchange.mvp.model.other.Constants
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import io.reactivex.Single
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
-import org.mockito.Mockito
-
 class GetGalleryPhotosUseCaseTest {
 
   /*lateinit var database: MyDatabase

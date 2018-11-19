@@ -5,10 +5,9 @@ import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.mvp.model.exception.ConnectionError
-import com.kirakishou.photoexchange.mvp.model.exception.UnknownException
-import com.kirakishou.photoexchange.mvp.model.net.packet.ReportPhotoPacket
-import com.kirakishou.photoexchange.mvp.model.net.response.ReportPhotoResponse
 import kotlinx.coroutines.rx2.await
+import net.request.ReportPhotoPacket
+import net.response.ReportPhotoResponse
 import retrofit2.Response
 
 class ReportPhotoRequest(

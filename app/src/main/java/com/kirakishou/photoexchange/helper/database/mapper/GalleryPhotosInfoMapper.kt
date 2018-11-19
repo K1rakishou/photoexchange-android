@@ -2,13 +2,13 @@ package com.kirakishou.photoexchange.helper.database.mapper
 
 import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoInfoEntity
 import com.kirakishou.photoexchange.mvp.model.GalleryPhotoInfo
-import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotoInfoResponse
+import net.response.GalleryPhotoInfoResponse
 
 object GalleryPhotosInfoMapper {
 
-  object FromResponse {
+  object FromResponseData {
     object ToEntity {
-      fun toGalleryPhotoInfoEntity(time: Long, galleryPhotoInfoResponseData: GalleryPhotoInfoResponse.GalleryPhotosInfoData): GalleryPhotoInfoEntity {
+      fun toGalleryPhotoInfoEntity(time: Long, galleryPhotoInfoResponseData: GalleryPhotoInfoResponse.GalleryPhotosInfoResponseData): GalleryPhotoInfoEntity {
         return GalleryPhotoInfoEntity.create(
           galleryPhotoInfoResponseData.id,
           galleryPhotoInfoResponseData.isFavourited,
@@ -19,14 +19,14 @@ object GalleryPhotosInfoMapper {
 
       fun toGalleryPhotoInfoEntityList(
         time: Long,
-        galleryPhotoInfoResponseDataList: List<GalleryPhotoInfoResponse.GalleryPhotosInfoData>
+        galleryPhotoInfoResponseDataList: List<GalleryPhotoInfoResponse.GalleryPhotosInfoResponseData>
       ): List<GalleryPhotoInfoEntity> {
         return galleryPhotoInfoResponseDataList.map { toGalleryPhotoInfoEntity(time, it) }
       }
     }
 
     object ToObject {
-      fun toGalleryPhotoInfo(galleryPhotoInfoResponseData: GalleryPhotoInfoResponse.GalleryPhotosInfoData): GalleryPhotoInfo {
+      fun toGalleryPhotoInfo(galleryPhotoInfoResponseData: GalleryPhotoInfoResponse.GalleryPhotosInfoResponseData): GalleryPhotoInfo {
         return GalleryPhotoInfo(
           galleryPhotoInfoResponseData.id,
           galleryPhotoInfoResponseData.isFavourited,
@@ -35,7 +35,7 @@ object GalleryPhotosInfoMapper {
       }
 
       fun toGalleryPhotoInfoList(
-        galleryPhotoInfoResponseDataList: List<GalleryPhotoInfoResponse.GalleryPhotosInfoData>
+        galleryPhotoInfoResponseDataList: List<GalleryPhotoInfoResponse.GalleryPhotosInfoResponseData>
       ): List<GalleryPhotoInfo> {
         return galleryPhotoInfoResponseDataList.map { toGalleryPhotoInfo(it) }
       }
