@@ -38,12 +38,14 @@ open class GetGalleryPhotosUseCase(
         val pageOfGalleryPhotos = galleryPhotoRepository.getPageOfGalleryPhotos(time, count)
         if (pageOfGalleryPhotos.size == count) {
           return@myRunCatching pageOfGalleryPhotos
+            .sortedByDescending { it.galleryPhotoId }
         }
 
         //otherwise reload the page from the server
         val galleryPhotos = apiClient.getPageOfGalleryPhotos(time, count)
         if (galleryPhotos.isEmpty()) {
-          return@myRunCatching emptyList<GalleryPhoto>()
+          return@myRunCatching pageOfGalleryPhotos
+            .sortedByDescending { it.galleryPhotoId }
         }
 
         if (!galleryPhotoRepository.saveMany(galleryPhotos)) {
@@ -51,6 +53,7 @@ open class GetGalleryPhotosUseCase(
         }
 
         return@myRunCatching GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(galleryPhotos)
+          .sortedByDescending { it.galleryPhotoId }
       }
     }
   }

@@ -46,7 +46,7 @@ open class GalleryPhotoRepository(
     }
   }
 
-  suspend fun getPageOfGalleryPhotos(time: Long, count: Int): List<GalleryPhoto> {
+  open suspend fun getPageOfGalleryPhotos(time: Long, count: Int): List<GalleryPhoto> {
     return withContext(coroutineContext) {
       return@withContext GalleryPhotosMapper.FromEntity.toGalleryPhotos(galleryPhotoDao.getPage(time, count))
     }
