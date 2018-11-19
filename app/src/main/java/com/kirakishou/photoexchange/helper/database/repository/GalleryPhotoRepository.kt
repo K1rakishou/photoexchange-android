@@ -12,9 +12,9 @@ import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.GalleryPhotoInfo
 import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
-import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotoInfoResponse
-import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
 import kotlinx.coroutines.withContext
+import net.response.GalleryPhotoInfoResponse
+import net.response.GalleryPhotosResponse
 import timber.log.Timber
 
 open class GalleryPhotoRepository(
@@ -28,10 +28,10 @@ open class GalleryPhotoRepository(
   private val galleryPhotoDao = database.galleryPhotoDao()
   private val galleryPhotoInfoDao = database.galleryPhotoInfoDao()
 
-  open suspend fun saveManyInfo(galleryPhotoInfoList: List<GalleryPhotoInfoResponse.GalleryPhotosInfoData>): Boolean {
+  open suspend fun saveManyInfo(galleryPhotoInfoList: List<GalleryPhotoInfoResponse.GalleryPhotosInfoResponseData>): Boolean {
     return withContext(coroutineContext) {
       val now = timeUtils.getTimeFast()
-      val galleryPhotoInfoEntityList = GalleryPhotosInfoMapper.FromResponse.ToEntity
+      val galleryPhotoInfoEntityList = GalleryPhotosInfoMapper.FromResponseData.ToEntity
         .toGalleryPhotoInfoEntityList(now, galleryPhotoInfoList)
 
       return@withContext galleryPhotoInfoDao.saveMany(galleryPhotoInfoEntityList).size == galleryPhotoInfoList.size
@@ -46,7 +46,7 @@ open class GalleryPhotoRepository(
     }
   }
 
-  suspend fun getPageOfGalleryPhotos(time: Long, count: Int): List<GalleryPhoto> {
+  open suspend fun getPageOfGalleryPhotos(time: Long, count: Int): List<GalleryPhoto> {
     return withContext(coroutineContext) {
       return@withContext GalleryPhotosMapper.FromEntity.toGalleryPhotos(galleryPhotoDao.getPage(time, count))
     }
@@ -150,6 +150,7 @@ open class GalleryPhotoRepository(
     }
   }
 
+  //TODO: tests
   open suspend fun deleteOldPhotos() {
     withContext(coroutineContext) {
       val oldCount = findAllPhotosTest().size

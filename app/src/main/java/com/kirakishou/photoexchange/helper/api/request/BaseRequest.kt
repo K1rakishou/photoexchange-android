@@ -5,10 +5,10 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersPro
 import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
 import com.kirakishou.photoexchange.mvp.model.exception.BadServerResponse
-import com.kirakishou.photoexchange.mvp.model.net.response.StatusResponse
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
+import core.ErrorCode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import net.response.StatusResponse
 import retrofit2.Response
 import kotlin.coroutines.CoroutineContext
 
@@ -21,7 +21,7 @@ abstract class BaseRequest<T>(
   private val job = Job()
 
   override val coroutineContext: CoroutineContext
-    get() = job + dispatchersProvider.IO()
+    get() = job + dispatchersProvider.NETWORK()
 
   abstract suspend fun execute(): T
 
@@ -35,11 +35,11 @@ abstract class BaseRequest<T>(
         val error = jsonConverter.fromJson<T>(responseJson, StatusResponse::class.java)
 
         //may happen in some rare cases (like when client and server have endpoints with different parameters)
-        if (error?.serverErrorCode == null) {
+        if (error?.errorCode == null) {
           throw BadServerResponse()
         } else {
           //server returned non-zero status
-          throw ApiErrorException(ErrorCode.fromInt(error.serverErrorCode!!))
+          throw ApiErrorException(ErrorCode.fromInt(error.errorCode))
         }
       } catch (e: Exception) {
         throw e

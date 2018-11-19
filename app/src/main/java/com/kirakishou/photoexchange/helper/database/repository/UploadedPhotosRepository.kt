@@ -5,11 +5,10 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
 import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
-import com.kirakishou.photoexchange.helper.extension.minutes
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
-import com.kirakishou.photoexchange.mvp.model.net.response.GetUploadedPhotosResponse
 import kotlinx.coroutines.withContext
+import net.response.GetUploadedPhotosResponse
 import timber.log.Timber
 
 open class UploadedPhotosRepository(
@@ -35,7 +34,7 @@ open class UploadedPhotosRepository(
     }
   }
 
-  open suspend fun saveMany(uploadedPhotoDataList: List<GetUploadedPhotosResponse.UploadedPhotoData>): Boolean {
+  open suspend fun saveMany(uploadedPhotoDataList: List<GetUploadedPhotosResponse.UploadedPhotoResponseData>): Boolean {
     return withContext(coroutineContext) {
       return@withContext database.transactional {
         val now = timeUtils.getTimeFast()
@@ -111,7 +110,8 @@ open class UploadedPhotosRepository(
     }
   }
 
-  open suspend fun deleteOld() {
+  //TODO: tests
+  open suspend fun deleteOldPhotos() {
     withContext(coroutineContext) {
       val oldCount = findAllTest().size
       val now = timeUtils.getTimeFast()

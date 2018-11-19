@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.mvp.model.exception
 
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
+import core.ErrorCode
 
 class EmptyUserIdException : Exception()
 class ApiErrorException(val errorCode: ErrorCode) : Exception()

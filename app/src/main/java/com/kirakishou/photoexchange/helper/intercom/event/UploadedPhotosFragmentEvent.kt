@@ -3,7 +3,6 @@ package com.kirakishou.photoexchange.helper.intercom.event
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import java.lang.Exception
 
 sealed class UploadedPhotosFragmentEvent : BaseEvent {
@@ -17,9 +16,6 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
     class AfterPermissionRequest : GeneralEvents()
     class UpdateReceiverInfo(val receivedPhotos: List<ReceivedPhoto>) : GeneralEvents()
     class OnPageSelected : GeneralEvents()
-    class DisableEndlessScrolling : GeneralEvents()
-    class EnableEndlessScrolling : GeneralEvents()
-    class PageIsLoading : GeneralEvents()
     class ShowTakenPhotos(val takenPhotos: List<TakenPhoto>) : GeneralEvents()
     class ShowUploadedPhotos(val uploadedPhotos: List<UploadedPhoto>) : GeneralEvents()
   }

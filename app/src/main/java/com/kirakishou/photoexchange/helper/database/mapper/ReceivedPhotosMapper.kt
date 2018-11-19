@@ -2,8 +2,8 @@ package com.kirakishou.photoexchange.helper.database.mapper
 
 import com.kirakishou.photoexchange.helper.database.entity.ReceivedPhotoEntity
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.net.response.GetReceivedPhotosResponse
-import com.kirakishou.photoexchange.mvp.model.net.response.ReceivedPhotosResponse
+import net.response.GetReceivedPhotosResponse
+import net.response.ReceivePhotosResponse
 
 object ReceivedPhotosMapper {
 
@@ -25,7 +25,7 @@ object ReceivedPhotosMapper {
 
   object FromResponse {
     object ReceivedPhotos {
-      fun toReceivedPhoto(receivedPhotosResponse: ReceivedPhotosResponse.ReceivedPhoto): ReceivedPhoto {
+      fun toReceivedPhoto(receivedPhotosResponse: ReceivePhotosResponse.ReceivedPhotoResponseData): ReceivedPhoto {
         return ReceivedPhoto(
           receivedPhotosResponse.photoId,
           receivedPhotosResponse.uploadedPhotoName,
@@ -35,11 +35,11 @@ object ReceivedPhotosMapper {
         )
       }
 
-      fun toReceivedPhotos(receivedPhotosResponseList: List<ReceivedPhotosResponse.ReceivedPhoto>): List<ReceivedPhoto> {
+      fun toReceivedPhotos(receivedPhotosResponseList: List<ReceivePhotosResponse.ReceivedPhotoResponseData>): List<ReceivedPhoto> {
         return receivedPhotosResponseList.map { toReceivedPhoto(it) }
       }
 
-      fun toReceivedPhotoEntity(time: Long, receivedPhotosResponse: ReceivedPhotosResponse.ReceivedPhoto): ReceivedPhotoEntity {
+      fun toReceivedPhotoEntity(time: Long, receivedPhotosResponse: ReceivePhotosResponse.ReceivedPhotoResponseData): ReceivedPhotoEntity {
         return ReceivedPhotoEntity.create(
           receivedPhotosResponse.photoId,
           receivedPhotosResponse.uploadedPhotoName,
@@ -50,13 +50,13 @@ object ReceivedPhotosMapper {
         )
       }
 
-      fun toReceivedPhotoEntities(time: Long, receivedPhotosResponseList: List<ReceivedPhotosResponse.ReceivedPhoto>): List<ReceivedPhotoEntity> {
+      fun toReceivedPhotoEntities(time: Long, receivedPhotosResponseList: List<ReceivePhotosResponse.ReceivedPhotoResponseData>): List<ReceivedPhotoEntity> {
         return receivedPhotosResponseList.map { toReceivedPhotoEntity(time, it) }
       }
     }
 
     object GetReceivedPhotos {
-      fun toReceivedPhoto(receivedPhotosResponse: GetReceivedPhotosResponse.ReceivedPhoto): ReceivedPhoto {
+      fun toReceivedPhoto(receivedPhotosResponse: GetReceivedPhotosResponse.ReceivedPhotoResponseData): ReceivedPhoto {
         return ReceivedPhoto(
           receivedPhotosResponse.photoId,
           receivedPhotosResponse.uploadedPhotoName,
@@ -66,11 +66,11 @@ object ReceivedPhotosMapper {
         )
       }
 
-      fun toReceivedPhotos(receivedPhotosResponseList: List<GetReceivedPhotosResponse.ReceivedPhoto>): MutableList<ReceivedPhoto> {
+      fun toReceivedPhotos(receivedPhotosResponseList: List<GetReceivedPhotosResponse.ReceivedPhotoResponseData>): MutableList<ReceivedPhoto> {
         return receivedPhotosResponseList.map { toReceivedPhoto(it) } as MutableList<ReceivedPhoto>
       }
 
-      fun toReceivedPhotoEntity(time: Long, receivedPhotosResponse: GetReceivedPhotosResponse.ReceivedPhoto): ReceivedPhotoEntity {
+      fun toReceivedPhotoEntity(time: Long, receivedPhotosResponse: GetReceivedPhotosResponse.ReceivedPhotoResponseData): ReceivedPhotoEntity {
         return ReceivedPhotoEntity.create(
           receivedPhotosResponse.photoId,
           receivedPhotosResponse.uploadedPhotoName,
@@ -81,14 +81,14 @@ object ReceivedPhotosMapper {
         )
       }
 
-      fun toReceivedPhotoEntities(time: Long, receivedPhotosResponseList: List<GetReceivedPhotosResponse.ReceivedPhoto>): List<ReceivedPhotoEntity> {
+      fun toReceivedPhotoEntities(time: Long, receivedPhotosResponseList: List<GetReceivedPhotosResponse.ReceivedPhotoResponseData>): List<ReceivedPhotoEntity> {
         return receivedPhotosResponseList.map { toReceivedPhotoEntity(time, it) }
       }
     }
   }
 
   object FromObject {
-    fun toReceivedPhotoEntity(time: Long, receivedPhotos: GetReceivedPhotosResponse.ReceivedPhoto): ReceivedPhotoEntity {
+    fun toReceivedPhotoEntity(time: Long, receivedPhotos: GetReceivedPhotosResponse.ReceivedPhotoResponseData): ReceivedPhotoEntity {
       return ReceivedPhotoEntity.create(
         receivedPhotos.uploadedPhotoName,
         receivedPhotos.receivedPhotoName,

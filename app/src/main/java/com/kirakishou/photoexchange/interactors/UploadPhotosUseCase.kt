@@ -11,8 +11,8 @@ import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
+import core.ErrorCode
 import kotlinx.coroutines.channels.SendChannel
 import timber.log.Timber
 
@@ -36,7 +36,7 @@ open class UploadPhotosUseCase(
     if (!photo.fileExists()) {
       val path = photo.photoTempFile?.absolutePath ?: "(No photoTempFile)"
       Timber.tag(TAG).e("Photo does not exists on disk! $path")
-
+      //TODO: add message
       throw PhotoUploadingException.PhotoDoesNotExistOnDisk()
     }
 
@@ -57,7 +57,7 @@ open class UploadPhotosUseCase(
         throw PhotoUploadingException.ApiException(error.errorCode)
       }
 
-      if (!tryToMovePhotoToUploaded(photo, result.photoId, result.photoName, location)) {
+      if (!movePhotoToUploaded(photo, result.photoId, result.photoName, location)) {
         throw PhotoUploadingException.DatabaseException()
       }
 
@@ -66,12 +66,15 @@ open class UploadPhotosUseCase(
     }
   }
 
-  private suspend fun tryToMovePhotoToUploaded(
+  private suspend fun movePhotoToUploaded(
     photo: TakenPhoto,
     photoId: Long,
     photoName: String,
     location: LonLat
   ): Boolean {
+    Timber.tag(TAG).d("movePhotoToUploaded")
+
+    //FIXME: creates nested transaction and hangs forever
     return database.transactional {
       val updateResult1 = takenPhotosRepository.deletePhotoById(photo.id)
       val updateResult2 = uploadedPhotosRepository.save(photoId, photoName, location.lon,
@@ -90,11 +93,7 @@ open class UploadPhotosUseCase(
     class PhotoDoesNotExistOnDisk : PhotoUploadingException()
     class CouldNotRotatePhoto : PhotoUploadingException()
     class DatabaseException : PhotoUploadingException()
-    class ApiException(val remoteErrorCode: ErrorCode) : PhotoUploadingException()
+    class ApiException(val errorCode: ErrorCode) : PhotoUploadingException()
     class CouldNotUpdatePhotoState : PhotoUploadingException()
-  }
-
-  interface PhotoUploadProgressCallback {
-    fun onProgress(progress: Int)
   }
 }

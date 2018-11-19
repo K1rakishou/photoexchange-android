@@ -2,17 +2,18 @@ package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.mvp.model.FindPhotosData
-import com.kirakishou.photoexchange.mvp.model.net.response.ReceivedPhotosResponse
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import com.kirakishou.photoexchange.service.ReceivePhotosServicePresenter
+import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
 import com.nhaarman.mockito_kotlin.any
-import io.reactivex.Single
+import core.ErrorCode
+import kotlinx.coroutines.runBlocking
+import net.response.ReceivePhotosResponse
 import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
@@ -49,104 +50,64 @@ class ReceivePhotosUseCaseTest {
 
   }
 
-  @Test
-  fun `should return LocalCouldNotGetUserId when userId is null`() {
+  @Test(expected = ReceivePhotosUseCase.ReceivePhotosServiceException.UserIdIsEmptyException::class)
+  fun `should throw UserIdIsEmptyException when userId is null`() {
     val userId = null
     val photoNames = ""
 
-    receivePhotosUseCaseTest.receivePhotos(FindPhotosData(userId, photoNames))
-      .test()
-      .assertNoErrors()
-      .assertValueAt(0) { value ->
-        value is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnKnownError
-      }
-      .assertValueAt(0) { value ->
-        (value as ReceivePhotosServicePresenter.ReceivePhotoEvent.OnKnownError).errorCode is ErrorCode.ReceivePhotosErrors.LocalCouldNotGetUserId
-      }
-      .assertTerminated()
-      .awaitTerminalEvent()
+    runBlocking {
+      receivePhotosUseCaseTest.receivePhotos(FindPhotosData(userId, photoNames))
+    }
   }
 
-  @Test
-  fun `should return LocalPhotoNamesAreEmpty when photoNames are empty`() {
+  @Test(expected = ReceivePhotosUseCase.ReceivePhotosServiceException.PhotoNamesAreEmpty::class)
+  fun `should throw PhotoNamesAreEmpty when photoNames are empty`() {
     val userId = "123"
     val photoNames = ""
 
-    receivePhotosUseCaseTest.receivePhotos(FindPhotosData(userId, photoNames))
-      .test()
-      .assertNoErrors()
-      .assertValueAt(0) { value ->
-        value is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnKnownError
-      }
-      .assertValueAt(0) { value ->
-        (value as ReceivePhotosServicePresenter.ReceivePhotoEvent.OnKnownError).errorCode is ErrorCode.ReceivePhotosErrors.LocalPhotoNamesAreEmpty
-      }
-      .assertTerminated()
-      .awaitTerminalEvent()
+    runBlocking {
+      receivePhotosUseCaseTest.receivePhotos(FindPhotosData(userId, photoNames))
+    }
   }
 
-  @Test
-  fun `should return errorCode when server does not return ok`() {
+  @Test(expected = ReceivePhotosUseCase.ReceivePhotosServiceException.ApiException::class)
+  fun `should throw ApiException when server does not return ok`() {
     val userId = "123"
     val photoNames = "photo1,photo2"
 
-    Mockito.`when`(apiClient.receivePhotos(userId, photoNames))
-      .thenReturn(Single.just(ReceivedPhotosResponse.error(ErrorCode.ReceivePhotosErrors.BadRequest())))
+    runBlocking {
+      Mockito.doThrow(ApiErrorException(ErrorCode.DatabaseError))
+        .`when`(apiClient).receivePhotos(userId, photoNames)
 
-    receivePhotosUseCaseTest.receivePhotos(FindPhotosData(userId, photoNames))
-      .test()
-      .assertNoErrors()
-      .assertValueAt(0) { value ->
-        value is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnKnownError
-      }
-      .assertValueAt(0) { value ->
-        (value as ReceivePhotosServicePresenter.ReceivePhotoEvent.OnKnownError).errorCode is ErrorCode.ReceivePhotosErrors.BadRequest
-      }
-      .assertTerminated()
-      .awaitTerminalEvent()
+      receivePhotosUseCaseTest.receivePhotos(FindPhotosData(userId, photoNames))
+    }
   }
 
   @Test
   fun `should return receivedPhotos when server returns ok`() {
     val userId = "123"
     val photoNames = "photo1,photo2"
-    val receivedPhotos = listOf(
-      ReceivedPhotosResponse.ReceivedPhoto(1L, "123", "456", 55.4, 44.5),
-      ReceivedPhotosResponse.ReceivedPhoto(2L, "789", "000", 44.5, 22.4)
+    val expectedPhotos = listOf(
+      ReceivePhotosResponse.ReceivedPhotoResponseData(1L, "123", "456", 55.4, 44.5),
+      ReceivePhotosResponse.ReceivedPhotoResponseData(2L, "789", "000", 44.5, 22.4)
     )
 
-    Mockito.`when`(apiClient.receivePhotos(userId, photoNames))
-      .thenReturn(Single.just(ReceivedPhotosResponse.success(receivedPhotos)))
-    Mockito.`when`(database.transactional(any()))
-      .thenReturn(true)
+    runBlocking {
+      Mockito.`when`(apiClient.receivePhotos(userId, photoNames))
+        .thenReturn(expectedPhotos)
+      Mockito.`when`(database.transactional(any()))
+        .thenReturn(true)
 
-    receivePhotosUseCaseTest.receivePhotos(FindPhotosData(userId, photoNames))
-      .test()
-      .assertNoErrors()
-      .assertValueAt(0) { value ->
-        value is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnReceivedPhoto
-      }
-      .assertValueAt(0) { value ->
-        (value as ReceivePhotosServicePresenter.ReceivePhotoEvent.OnReceivedPhoto).takenPhotoName ==
-          receivedPhotos[0].uploadedPhotoName
-      }
-      .assertValueAt(0) { value ->
-        (value as ReceivePhotosServicePresenter.ReceivePhotoEvent.OnReceivedPhoto).receivedPhoto ==
-          ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhoto(receivedPhotos[0])
-      }
-      .assertValueAt(1) { value ->
-        value is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnReceivedPhoto
-      }
-      .assertValueAt(1) { value ->
-        (value as ReceivePhotosServicePresenter.ReceivePhotoEvent.OnReceivedPhoto).takenPhotoName ==
-          receivedPhotos[1].uploadedPhotoName
-      }
-      .assertValueAt(1) { value ->
-        (value as ReceivePhotosServicePresenter.ReceivePhotoEvent.OnReceivedPhoto).receivedPhoto ==
-          ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhoto(receivedPhotos[1])
-      }
-      .assertTerminated()
-      .awaitTerminalEvent()
+      val receivedPhotos = receivePhotosUseCaseTest.receivePhotos(FindPhotosData(userId, photoNames))
+
+      assertEquals(expectedPhotos.size, receivedPhotos.size)
+
+      assertTrue(receivedPhotos[0].first.uploadedPhotoName == expectedPhotos[0].uploadedPhotoName)
+      assertTrue(receivedPhotos[0].first.receivedPhotoName == expectedPhotos[0].receivedPhotoName)
+
+      assertTrue(receivedPhotos[1].first.uploadedPhotoName == expectedPhotos[1].uploadedPhotoName)
+      assertTrue(receivedPhotos[1].first.receivedPhotoName == expectedPhotos[1].receivedPhotoName)
+    }
   }
 }
 

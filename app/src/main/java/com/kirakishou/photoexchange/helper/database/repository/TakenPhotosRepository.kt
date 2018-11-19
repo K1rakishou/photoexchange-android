@@ -203,22 +203,6 @@ open class TakenPhotosRepository(
     }
   }
 
-  suspend fun deleteAllWithState(photoState: PhotoState): Boolean {
-    return withContext(coroutineContext) {
-      return@withContext database.transactional {
-        val myPhotosList = takenPhotoDao.findAllWithState(photoState)
-
-        for (myPhoto in myPhotosList) {
-          if (!deletePhotoById(myPhoto.id!!)) {
-            return@transactional false
-          }
-        }
-
-        return@transactional true
-      }
-    }
-  }
-
   private suspend fun markTempFileDeleted(id: Long): Boolean {
     return withContext(coroutineContext) {
       val tempFileEntity = tempFileRepository.findById(id)
@@ -258,6 +242,46 @@ open class TakenPhotosRepository(
         }
 
         updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
+      }
+    }
+  }
+
+  //TODO: tests
+  suspend fun cleanup() {
+    withContext(coroutineContext) {
+      database.transactional {
+        //we need to delete all photos with state PHOTO_TAKEN because at this step they are being considered corrupted
+        if (!deleteAllWithState(PhotoState.PHOTO_TAKEN)) {
+          return@transactional false
+        }
+
+        //delete photo files that were marked as deleted earlier than (CURRENT_TIME - OLD_PHOTO_TIME_THRESHOLD)
+        tempFileRepository.deleteOld()
+
+        //delete photo files that have no takenPhotoId
+        tempFileRepository.deleteEmptyTempFiles()
+
+        //in case the user takes photos way too often and they weight a lot (like 3-4 mb per photo)
+        //we need to consider this as well so we delete them when total files size exceeds MAX_CACHE_SIZE
+        tempFileRepository.deleteOldIfCacheSizeIsTooBig()
+
+        return@transactional true
+      }
+    }
+  }
+
+  private suspend fun deleteAllWithState(photoState: PhotoState): Boolean {
+    return withContext(coroutineContext) {
+      return@withContext database.transactional {
+        val myPhotosList = takenPhotoDao.findAllWithState(photoState)
+
+        for (myPhoto in myPhotosList) {
+          if (!deletePhotoById(myPhoto.id!!)) {
+            return@transactional false
+          }
+        }
+
+        return@transactional true
       }
     }
   }

@@ -5,9 +5,9 @@ import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.mvp.model.exception.ConnectionError
-import com.kirakishou.photoexchange.mvp.model.net.packet.FavouritePhotoPacket
-import com.kirakishou.photoexchange.mvp.model.net.response.FavouritePhotoResponse
 import kotlinx.coroutines.rx2.await
+import net.request.FavouritePhotoPacket
+import net.response.FavouritePhotoResponse
 
 class FavouritePhotoRequest(
   private val userId: String,

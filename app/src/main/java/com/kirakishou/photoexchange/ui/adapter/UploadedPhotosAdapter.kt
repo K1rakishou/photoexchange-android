@@ -374,7 +374,7 @@ class UploadedPhotosAdapter(
   override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
     when (holder) {
       is TakenPhotoViewHolder -> {
-        val takenPhoto = (getAdapterItemByIndex(position) as? UploadedPhotosAdapterItem.TakenPhotoItem)?.takenPhoto
+        val takenPhoto = (getAdapterItemByIndex(holder.adapterPosition) as? UploadedPhotosAdapterItem.TakenPhotoItem)?.takenPhoto
           ?: return
 
         holder.photoidTextView.text = takenPhoto.id.toString()
@@ -409,7 +409,7 @@ class UploadedPhotosAdapter(
         }
       }
       is UploadedPhotoViewHolder -> {
-        val uploadedPhoto = (getAdapterItemByIndex(position) as? UploadedPhotosAdapterItem.UploadedPhotoItem)?.uploadedPhoto
+        val uploadedPhoto = (getAdapterItemByIndex(holder.adapterPosition) as? UploadedPhotosAdapterItem.UploadedPhotoItem)?.uploadedPhoto
           ?: return
 
         val drawable = if (!uploadedPhoto.hasReceiverInfo) {
@@ -436,7 +436,7 @@ class UploadedPhotosAdapter(
         photosProgressMap.remove(uploadedPhoto.photoId)
       }
       is FailedToUploadPhotoViewHolder -> {
-        val failedPhoto = (getAdapterItemByIndex(position) as? UploadedPhotosAdapterItem.FailedToUploadItem)?.failedToUploadPhoto
+        val failedPhoto = (getAdapterItemByIndex(holder.adapterPosition) as? UploadedPhotosAdapterItem.FailedToUploadItem)?.failedToUploadPhoto
           ?: return
 
         require(failedPhoto.photoState == PhotoState.FAILED_TO_UPLOAD)
@@ -446,15 +446,21 @@ class UploadedPhotosAdapter(
         }
 
         holder.deleteFailedToUploadPhotoButton.setOnClickListener {
-          adapterButtonsClickSubject.onNext(UploadedPhotosAdapterButtonClick.DeleteButtonClick(failedPhoto))
+          val photo = (getAdapterItemByIndex(holder.adapterPosition) as? UploadedPhotosAdapterItem.FailedToUploadItem)?.failedToUploadPhoto
+            ?: return@setOnClickListener
+
+          adapterButtonsClickSubject.onNext(UploadedPhotosAdapterButtonClick.DeleteButtonClick(photo))
         }
 
         holder.retryToUploadFailedPhoto.setOnClickListener {
-          adapterButtonsClickSubject.onNext(UploadedPhotosAdapterButtonClick.RetryButtonClick(failedPhoto))
+          val photo = (getAdapterItemByIndex(holder.adapterPosition) as? UploadedPhotosAdapterItem.FailedToUploadItem)?.failedToUploadPhoto
+            ?: return@setOnClickListener
+
+          adapterButtonsClickSubject.onNext(UploadedPhotosAdapterButtonClick.RetryButtonClick(photo))
         }
       }
       is MessageViewHolder -> {
-        val messageItem = (getAdapterItemByIndex(position) as? UploadedPhotosAdapterItem.MessageItem)
+        val messageItem = (getAdapterItemByIndex(holder.adapterPosition) as? UploadedPhotosAdapterItem.MessageItem)
           ?: return
 
         holder.message.text = messageItem.message

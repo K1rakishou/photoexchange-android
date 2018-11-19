@@ -5,8 +5,8 @@ import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.mvp.model.exception.ConnectionError
-import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotoInfoResponse
 import kotlinx.coroutines.rx2.await
+import net.response.GalleryPhotoInfoResponse
 
 class GetGalleryPhotoInfoRequest(
   private val userId: String,

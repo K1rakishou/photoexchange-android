@@ -9,7 +9,6 @@ import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -23,7 +22,7 @@ import java.io.IOException
 
 class UploadPhotoServicePresenterTests {
 
-  lateinit var takenPhotosRepository: TakenPhotosRepository
+ /* lateinit var takenPhotosRepository: TakenPhotosRepository
   lateinit var schedulerProvider: SchedulerProvider
   lateinit var uploadPhotosUseCase: UploadPhotosUseCase
   lateinit var getUserIdUseCase: GetUserIdUseCase
@@ -354,7 +353,7 @@ class UploadPhotoServicePresenterTests {
     Mockito.verifyNoMoreInteractions(takenPhotosRepository)
     Mockito.verifyNoMoreInteractions(uploadPhotosUseCase)
     Mockito.verifyNoMoreInteractions(getUserIdUseCase)
-  }
+  }*/
 }
 
 

@@ -20,7 +20,6 @@ open class GetGalleryPhotosUseCase(
 ) : BaseUseCase(dispatchersProvider) {
   private val TAG = "GetGalleryPhotosUseCase"
 
-  //ErrorCode.GetGalleryPhotosErrors
   open suspend fun loadPageOfPhotos(
     lastUploadedOn: Long,
     count: Int
@@ -35,16 +34,20 @@ open class GetGalleryPhotosUseCase(
           timeUtils.getTimeFast()
         }
 
+        galleryPhotoRepository.deleteOldPhotos()
+
         //if we found exactly the same amount of gallery photos that was requested - return them
         val pageOfGalleryPhotos = galleryPhotoRepository.getPageOfGalleryPhotos(time, count)
         if (pageOfGalleryPhotos.size == count) {
           return@myRunCatching pageOfGalleryPhotos
+            .sortedByDescending { it.galleryPhotoId }
         }
 
         //otherwise reload the page from the server
         val galleryPhotos = apiClient.getPageOfGalleryPhotos(time, count)
         if (galleryPhotos.isEmpty()) {
-          return@myRunCatching emptyList<GalleryPhoto>()
+          return@myRunCatching pageOfGalleryPhotos
+            .sortedByDescending { it.galleryPhotoId }
         }
 
         if (!galleryPhotoRepository.saveMany(galleryPhotos)) {
@@ -52,6 +55,7 @@ open class GetGalleryPhotosUseCase(
         }
 
         return@myRunCatching GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(galleryPhotos)
+          .sortedByDescending { it.galleryPhotoId }
       }
     }
   }

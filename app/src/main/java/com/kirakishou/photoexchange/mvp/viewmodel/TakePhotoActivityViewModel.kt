@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
+import core.ErrorCode
 import io.reactivex.subjects.PublishSubject
 import timber.log.Timber
 

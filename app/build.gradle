@@ -22,6 +22,8 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        multiDexEnabled true
     }
     buildTypes {
         release {
@@ -34,18 +36,6 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-    repositories {
-        maven { url "https://dl.bintray.com/drummer-aidan/maven/" }
-        maven { url 'https://maven.fabric.io/public' }
-        maven { url 'https://jitpack.io' }
-        maven {
-            url 'https://oss.sonatype.org/content/repositories/snapshots/'
-            name 'OSS-Sonatype'
-        }
-    }
-    defaultConfig {
-        multiDexEnabled true
-    }
     testOptions {
         unitTests {
             includeAndroidResources = true
@@ -53,6 +43,15 @@ android {
     }
     lintOptions {
         disable 'TimberTagLength'
+    }
+    repositories {
+        maven { url 'https://jitpack.io' }
+        maven { url "https://dl.bintray.com/drummer-aidan/maven/" }
+        maven { url 'https://maven.fabric.io/public' }
+        maven {
+            url 'https://oss.sonatype.org/content/repositories/snapshots/'
+            name 'OSS-Sonatype'
+        }
     }
 }
 
@@ -107,6 +106,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.5'
     implementation 'androidx.core:core-ktx:1.0.1'
     implementation 'org.osmdroid:osmdroid-android:6.0.2'
+    implementation 'com.github.K1rakishou:photoexchange-common:4645cb29a7'
 
     debugImplementation 'com.squareup.leakcanary:leakcanary-android:1.6.2'
     releaseImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.6.2'

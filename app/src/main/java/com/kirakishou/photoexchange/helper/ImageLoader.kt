@@ -8,8 +8,8 @@ import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
-import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.GlideApp
+import com.kirakishou.photoexchange.mvp.model.other.Constants
 import io.reactivex.Single
 import java.io.File
 import javax.inject.Inject
@@ -34,8 +34,8 @@ class ImageLoader
     }
   }
 
-  private val basePhotosUrl = "${PhotoExchangeApplication.baseUrl}v1/api/get_photo"
-  private val baseStaticMapUrl = "${PhotoExchangeApplication.baseUrl}v1/api/get_static_map"
+  private val basePhotosUrl = "${Constants.BASE_URL}v1/api/get_photo"
+  private val baseStaticMapUrl = "${Constants.BASE_URL}v1/api/get_static_map"
 
   fun loadPhotoFromDiskInto(imageFile: File, view: ImageView) {
     GlideApp.with(context)

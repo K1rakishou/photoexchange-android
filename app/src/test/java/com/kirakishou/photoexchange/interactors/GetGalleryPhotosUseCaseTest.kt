@@ -2,25 +2,31 @@ package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.TestDispatchers
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepository
+import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
-import com.kirakishou.photoexchange.mvp.model.GalleryPhotoInfo
-import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotoIdsResponse
-import com.kirakishou.photoexchange.mvp.model.net.response.GalleryPhotosResponse
-import com.kirakishou.photoexchange.mvp.model.other.Constants
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
-import io.reactivex.Single
+import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
+import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
+import core.ErrorCode
+import kotlinx.coroutines.runBlocking
+import net.response.GalleryPhotosResponse
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
+import java.lang.Exception
 
 class GetGalleryPhotosUseCaseTest {
 
-  /*lateinit var database: MyDatabase
+  lateinit var database: MyDatabase
   lateinit var apiClient: ApiClient
+  lateinit var timeUtils: TimeUtils
+  lateinit var dispatchersProvider: DispatchersProvider
   lateinit var galleryPhotoRepository: GalleryPhotoRepository
   lateinit var getGalleryPhotosUseCase: GetGalleryPhotosUseCase
 
@@ -29,10 +35,14 @@ class GetGalleryPhotosUseCaseTest {
     database = Mockito.mock(MyDatabase::class.java)
     apiClient = Mockito.mock(ApiClient::class.java)
     galleryPhotoRepository = Mockito.mock(GalleryPhotoRepository::class.java)
+    timeUtils = Mockito.mock(TimeUtils::class.java)
+    dispatchersProvider = TestDispatchers()
 
     getGalleryPhotosUseCase = GetGalleryPhotosUseCase(
       apiClient,
-      galleryPhotoRepository
+      galleryPhotoRepository,
+      timeUtils,
+      dispatchersProvider
     )
   }
 
@@ -42,209 +52,199 @@ class GetGalleryPhotosUseCaseTest {
   }
 
   @Test
-  fun `should return EitherError with errorCode when server does not return ok`() {
-    val lastId = 10L
-    val photosPerPage = 10
+  fun `should return photos cached photos when there are enough in the database`() {
+    val time = 10L
+    val count = 5
+    val expectedPhotos = listOf(
+      GalleryPhoto(1, "1", 11.1, 11.1, 1, 0, null),
+      GalleryPhoto(2, "1", 11.1, 11.1, 1, 0, null),
+      GalleryPhoto(3, "1", 11.1, 11.1, 1, 0, null),
+      GalleryPhoto(4, "1", 11.1, 11.1, 1, 0, null),
+      GalleryPhoto(5, "1", 11.1, 11.1, 1, 0, null)
+    )
 
-    Mockito.`when`(apiClient.getGalleryPhotoIds(lastId, photosPerPage))
-      .thenReturn(Single.just(GalleryPhotoIdsResponse.error(ErrorCode.GetGalleryPhotosErrors.BadRequest())))
+    runBlocking {
+      Mockito.`when`(galleryPhotoRepository.getPageOfGalleryPhotos(time, count))
+        .thenReturn(expectedPhotos)
 
-    getGalleryPhotosUseCase.loadPageOfPhotos(lastId, photosPerPage)
-      .test()
-      .assertNoErrors()
-      .assertValueAt(0) { value ->
-        value is Either.Error
+      val result = getGalleryPhotosUseCase.loadPageOfPhotos(time, count)
+      assertTrue(result is Either.Value<List<GalleryPhoto>>)
+
+      val actualPhotos = (result as Either.Value<List<GalleryPhoto>>).value
+      assertEquals(5, actualPhotos.size)
+
+      for (i in 0 until expectedPhotos.size) {
+        assertEquals(expectedPhotos[expectedPhotos.lastIndex - i].galleryPhotoId, actualPhotos[i].galleryPhotoId)
       }
-      .assertValueAt(0) { value ->
-        (value as Either.Error).error is ErrorCode.GetGalleryPhotosErrors.BadRequest
-      }
-      .assertTerminated()
-      .awaitTerminalEvent()
 
-    Mockito.verify(apiClient, Mockito.times(1)).getGalleryPhotoIds(lastId, photosPerPage)
+      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).deleteOldPhotos()
+      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
 
-    Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
-    Mockito.verifyNoMoreInteractions(apiClient)
+      Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
+    }
   }
 
   @Test
-  fun `should return nothing when there are no photos on server`() {
-    val lastId = 10L
-    val photosPerPage = 10
-    val galleryPhotoIds = listOf<Long>()
+  fun `should return whatever there is in the database when server returned empty list`() {
+    val time = 10L
+    val count = 5
+    val expectedPhotos = listOf(
+      GalleryPhoto(1, "1", 11.1, 11.1, 1, 0, null),
+      GalleryPhoto(2, "1", 11.1, 11.1, 1, 0, null),
+      GalleryPhoto(3, "1", 11.1, 11.1, 1, 0, null)
+    )
 
-    Mockito.`when`(apiClient.getGalleryPhotoIds(lastId, photosPerPage))
-      .thenReturn(Single.just(GalleryPhotoIdsResponse.success(galleryPhotoIds)))
+    runBlocking {
+      Mockito.`when`(galleryPhotoRepository.getPageOfGalleryPhotos(time, count))
+        .thenReturn(expectedPhotos)
+      Mockito.`when`(apiClient.getPageOfGalleryPhotos(time, count))
+        .thenReturn(emptyList())
 
-    getGalleryPhotosUseCase.loadPageOfPhotos(lastId, photosPerPage)
-      .test()
-      .assertNoErrors()
-      .assertValueAt(0) { value ->
-        value is Either.Value
+      val result = getGalleryPhotosUseCase.loadPageOfPhotos(time, count)
+      assertTrue(result is Either.Value<List<GalleryPhoto>>)
+
+      val actualPhotos = (result as Either.Value<List<GalleryPhoto>>).value
+      assertEquals(3, actualPhotos.size)
+
+      for (i in 0 until expectedPhotos.size) {
+        assertEquals(expectedPhotos[expectedPhotos.lastIndex - i].galleryPhotoId, actualPhotos[i].galleryPhotoId)
       }
-      .assertValueAt(0) { value ->
-        (value as Either.Value).value.isEmpty()
+
+      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).deleteOldPhotos()
+      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
+      Mockito.verify(apiClient, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
+
+      Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
+      Mockito.verifyNoMoreInteractions(apiClient)
+    }
+  }
+
+  @Test
+  fun `should return EitherError with ApiErrorException when apiClient threw ApiErrorException`() {
+    val time = 10L
+    val count = 5
+    val expectedPhotos = listOf(
+      GalleryPhoto(1, "1", 11.1, 11.1, 1, 0, null),
+      GalleryPhoto(2, "1", 11.1, 11.1, 1, 0, null),
+      GalleryPhoto(3, "1", 11.1, 11.1, 1, 0, null)
+    )
+
+    runBlocking {
+      Mockito.`when`(galleryPhotoRepository.getPageOfGalleryPhotos(time, count))
+        .thenReturn(expectedPhotos)
+      Mockito.doThrow(ApiErrorException(ErrorCode.DatabaseError))
+        .`when`(apiClient).getPageOfGalleryPhotos(time, count)
+
+      val result = getGalleryPhotosUseCase.loadPageOfPhotos(time, count)
+      assertTrue(result is Either.Error<Exception>)
+
+      val error = (result as Either.Error<Exception>).error
+      assertTrue(error is ApiErrorException)
+
+      val errorCode = (error as ApiErrorException).errorCode
+      assertEquals(errorCode, ErrorCode.DatabaseError)
+
+      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).deleteOldPhotos()
+      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
+      Mockito.verify(apiClient, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
+
+      Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
+      Mockito.verifyNoMoreInteractions(apiClient)
+    }
+  }
+
+  @Test
+  fun `should return EitherError with DatabaseException when could not store fresh photos`() {
+    val time = 10L
+    val count = 5
+    val expectedPhotos1 = listOf(
+      GalleryPhoto(1, "1", 11.1, 11.1, 1, 0, null),
+      GalleryPhoto(2, "1", 11.1, 11.1, 1, 0, null),
+      GalleryPhoto(3, "1", 11.1, 11.1, 1, 0, null)
+    )
+    val expectedPhotos2 = listOf(
+      GalleryPhotosResponse.GalleryPhotoResponseData(4, "1", 11.1, 11.1, 1, 0),
+      GalleryPhotosResponse.GalleryPhotoResponseData(5, "1", 11.1, 11.1, 1, 0)
+    )
+
+    runBlocking {
+      Mockito.`when`(galleryPhotoRepository.getPageOfGalleryPhotos(time, count))
+        .thenReturn(expectedPhotos1)
+      Mockito.`when`(apiClient.getPageOfGalleryPhotos(time, count))
+        .thenReturn(expectedPhotos2)
+      Mockito.`when`(galleryPhotoRepository.saveMany(expectedPhotos2))
+        .thenReturn(false)
+
+      val result = getGalleryPhotosUseCase.loadPageOfPhotos(time, count)
+      assertTrue(result is Either.Error<Exception>)
+
+      val error = (result as Either.Error<Exception>).error
+      assertTrue(error is DatabaseException)
+
+      val message = (error as DatabaseException).message
+      assertEquals("Could not cache gallery photos in the database", message)
+
+      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).deleteOldPhotos()
+      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
+      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).saveMany(expectedPhotos2)
+      Mockito.verify(apiClient, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
+
+      Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
+      Mockito.verifyNoMoreInteractions(apiClient)
+    }
+  }
+
+  @Test
+  fun `should return cached photos and fresh photos combined and sorted by photoId descending when everything is ok`() {
+    val time = 10L
+    val count = 5
+    val expectedPhotos1 = listOf(
+      GalleryPhoto(1, "1", 11.1, 11.1, 1, 0, null),
+      GalleryPhoto(2, "1", 11.1, 11.1, 1, 0, null),
+      GalleryPhoto(3, "1", 11.1, 11.1, 1, 0, null)
+    )
+    val expectedPhotos2 = listOf(
+      GalleryPhotosResponse.GalleryPhotoResponseData(1, "1", 11.1, 11.1, 1, 0),
+      GalleryPhotosResponse.GalleryPhotoResponseData(2, "1", 11.1, 11.1, 1, 0),
+      GalleryPhotosResponse.GalleryPhotoResponseData(3, "1", 11.1, 11.1, 1, 0),
+      GalleryPhotosResponse.GalleryPhotoResponseData(4, "1", 11.1, 11.1, 1, 0),
+      GalleryPhotosResponse.GalleryPhotoResponseData(5, "1", 11.1, 11.1, 1, 0)
+    )
+    val expectedPhotos3 = listOf(
+      GalleryPhoto(1, "1", 11.1, 11.1, 1, 0, null),
+      GalleryPhoto(2, "1", 11.1, 11.1, 1, 0, null),
+      GalleryPhoto(3, "1", 11.1, 11.1, 1, 0, null),
+      GalleryPhoto(4, "1", 11.1, 11.1, 1, 0, null),
+      GalleryPhoto(5, "1", 11.1, 11.1, 1, 0, null)
+    )
+
+    runBlocking {
+      Mockito.`when`(galleryPhotoRepository.getPageOfGalleryPhotos(time, count))
+        .thenReturn(expectedPhotos1)
+      Mockito.`when`(apiClient.getPageOfGalleryPhotos(time, count))
+        .thenReturn(expectedPhotos2)
+      Mockito.`when`(galleryPhotoRepository.saveMany(expectedPhotos2))
+        .thenReturn(true)
+
+      val result = getGalleryPhotosUseCase.loadPageOfPhotos(time, count)
+      assertTrue(result is Either.Value<List<GalleryPhoto>>)
+
+      val actualPhotos = (result as Either.Value<List<GalleryPhoto>>).value
+      assertEquals(expectedPhotos3.size, actualPhotos.size)
+
+      for (i in 0 until expectedPhotos3.size) {
+        assertEquals(expectedPhotos3[expectedPhotos3.lastIndex - i].galleryPhotoId, actualPhotos[i].galleryPhotoId)
       }
-      .assertTerminated()
-      .awaitTerminalEvent()
 
-    Mockito.verify(apiClient, Mockito.times(1)).getGalleryPhotoIds(lastId, photosPerPage)
+      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).deleteOldPhotos()
+      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
+      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).saveMany(expectedPhotos2)
+      Mockito.verify(apiClient, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
 
-    Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
-    Mockito.verifyNoMoreInteractions(apiClient)
+      Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
+      Mockito.verifyNoMoreInteractions(apiClient)
+    }
   }
-
-  @Test
-  fun `should return the photos from the database when it contains all of the photoIds`() {
-    val lastId = 10L
-    val photosPerPage = 10
-    val galleryPhotoIds = listOf<Long>(1, 2, 3, 4, 5)
-    val galleryPhotos = listOf(
-      GalleryPhoto(1L, "1", 11.1, 11.1, 5555L, 0L, null),
-      GalleryPhoto(2L, "2", 22.1, 22.1, 6555L, 2L, GalleryPhotoInfo(2L, false, false)),
-      GalleryPhoto(3L, "3", 33.1, 33.1, 7555L, 4L, null),
-      GalleryPhoto(4L, "4", 44.1, 44.1, 8555L, 1L, GalleryPhotoInfo(4L, true, true)),
-      GalleryPhoto(5L, "5", 55.1, 55.1, 9555L, 3L, null)
-    )
-
-    Mockito.`when`(apiClient.getGalleryPhotoIds(lastId, photosPerPage))
-      .thenReturn(Single.just(GalleryPhotoIdsResponse.success(galleryPhotoIds)))
-    Mockito.`when`(galleryPhotoRepository.findMany(galleryPhotoIds))
-      .thenReturn(galleryPhotos)
-    Mockito.doNothing().`when`(galleryPhotoRepository).deleteOldPhotos()
-
-    val events = getGalleryPhotosUseCase.loadPageOfPhotos(lastId, photosPerPage)
-      .test()
-      .assertNoErrors()
-      .assertTerminated()
-      .values()
-
-    assertEquals(1, events.size)
-    assertEquals(true, events.first() is Either.Value)
-
-    val values = (events.first() as Either.Value).value
-    assertEquals(5, values.size)
-
-    Mockito.verify(galleryPhotoRepository, Mockito.times(1)).findMany(galleryPhotoIds)
-    Mockito.verify(galleryPhotoRepository, Mockito.times(1)).deleteOldPhotos()
-    Mockito.verify(apiClient, Mockito.times(1)).getGalleryPhotoIds(lastId, photosPerPage)
-
-    Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
-    Mockito.verifyNoMoreInteractions(apiClient)
-  }
-
-  @Test
-  fun `should grab fresh photos from server when photo was not found in the database and concatenate them together`() {
-    val lastId = 10L
-    val photosPerPage = 10
-
-    val galleryPhotoIds = listOf<Long>(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-    val galleryPhotosFromDb = listOf(
-      GalleryPhoto(1L, "1", 11.1, 11.1, 5555L, 0L, null),
-      GalleryPhoto(2L, "2", 22.1, 22.1, 6555L, 2L, GalleryPhotoInfo(2L, false, false)),
-      GalleryPhoto(3L, "3", 33.1, 33.1, 7555L, 4L, null),
-      GalleryPhoto(4L, "4", 44.1, 44.1, 8555L, 1L, GalleryPhotoInfo(4L, true, true)),
-      GalleryPhoto(5L, "5", 55.1, 55.1, 9555L, 3L, null)
-    )
-
-    val filtered = listOf<Long>(6, 7, 8, 9, 10)
-    val galleryPhotosFromServer = listOf(
-      GalleryPhotosResponse.GalleryPhotoResponseData(6L, "6", 11.1, 11.1, 5555L, 0L),
-      GalleryPhotosResponse.GalleryPhotoResponseData(7L, "7", 22.1, 22.1, 6555L, 2L),
-      GalleryPhotosResponse.GalleryPhotoResponseData(8L, "8", 33.1, 33.1, 7555L, 4L),
-      GalleryPhotosResponse.GalleryPhotoResponseData(9L, "9", 44.1, 44.1, 8555L, 1L),
-      GalleryPhotosResponse.GalleryPhotoResponseData(10L, "10", 55.1, 55.1, 9555L, 3L)
-    )
-
-    val photoIdsJoined = filtered.joinToString(Constants.PHOTOS_DELIMITER)
-
-    Mockito.`when`(apiClient.getGalleryPhotoIds(lastId, photosPerPage))
-      .thenReturn(Single.just(GalleryPhotoIdsResponse.success(galleryPhotoIds)))
-    Mockito.`when`(apiClient.getPageOfGalleryPhotos(photoIdsJoined))
-      .thenReturn(Single.just(GalleryPhotosResponse.success(galleryPhotosFromServer)))
-    Mockito.`when`(galleryPhotoRepository.findMany(galleryPhotoIds))
-      .thenReturn(galleryPhotosFromDb)
-    Mockito.`when`(galleryPhotoRepository.saveMany(galleryPhotosFromServer))
-      .thenReturn(true)
-    Mockito.doNothing().`when`(galleryPhotoRepository).deleteOldPhotos()
-
-    val events = getGalleryPhotosUseCase.loadPageOfPhotos(lastId, photosPerPage)
-      .test()
-      .assertNoErrors()
-      .assertTerminated()
-      .values()
-
-    assertEquals(1, events.size)
-    assertEquals(true, events.first() is Either.Value)
-
-    val values = (events.first() as Either.Value).value
-    assertEquals(10, values.size)
-
-    Mockito.verify(galleryPhotoRepository, Mockito.times(1)).findMany(galleryPhotoIds)
-    Mockito.verify(galleryPhotoRepository, Mockito.times(1)).saveMany(galleryPhotosFromServer)
-    Mockito.verify(galleryPhotoRepository, Mockito.times(1)).deleteOldPhotos()
-    Mockito.verify(apiClient, Mockito.times(1)).getGalleryPhotoIds(lastId, photosPerPage)
-    Mockito.verify(apiClient, Mockito.times(1)).getPageOfGalleryPhotos(photoIdsJoined)
-
-    Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
-    Mockito.verifyNoMoreInteractions(apiClient)
-  }
-
-  @Test
-  fun `should only return photos from database when could not get fresh photos from server`() {
-    val lastId = 10L
-    val photosPerPage = 10
-
-    val galleryPhotoIds = listOf<Long>(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-    val galleryPhotosFromDb = listOf(
-      GalleryPhoto(1L, "1", 11.1, 11.1, 5555L, 0L, null),
-      GalleryPhoto(2L, "2", 22.1, 22.1, 6555L, 2L, GalleryPhotoInfo(2L, false, false)),
-      GalleryPhoto(3L, "3", 33.1, 33.1, 7555L, 4L, null),
-      GalleryPhoto(4L, "4", 44.1, 44.1, 8555L, 1L, GalleryPhotoInfo(4L, true, true)),
-      GalleryPhoto(5L, "5", 55.1, 55.1, 9555L, 3L, null)
-    )
-
-    val filtered = listOf<Long>(6, 7, 8, 9, 10)
-    val galleryPhotosFromServer = listOf(
-      GalleryPhotosResponse.GalleryPhotoResponseData(6L, "6", 11.1, 11.1, 5555L, 0L),
-      GalleryPhotosResponse.GalleryPhotoResponseData(7L, "7", 22.1, 22.1, 6555L, 2L),
-      GalleryPhotosResponse.GalleryPhotoResponseData(8L, "8", 33.1, 33.1, 7555L, 4L),
-      GalleryPhotosResponse.GalleryPhotoResponseData(9L, "9", 44.1, 44.1, 8555L, 1L),
-      GalleryPhotosResponse.GalleryPhotoResponseData(10L, "10", 55.1, 55.1, 9555L, 3L)
-    )
-
-    val photoIdsJoined = filtered.joinToString(Constants.PHOTOS_DELIMITER)
-
-    Mockito.`when`(apiClient.getGalleryPhotoIds(lastId, photosPerPage))
-      .thenReturn(Single.just(GalleryPhotoIdsResponse.success(galleryPhotoIds)))
-    Mockito.`when`(apiClient.getPageOfGalleryPhotos(photoIdsJoined))
-      .thenReturn(Single.just(GalleryPhotosResponse.fail(ErrorCode.GetGalleryPhotosErrors.UnknownError())))
-    Mockito.`when`(galleryPhotoRepository.findMany(galleryPhotoIds))
-      .thenReturn(galleryPhotosFromDb)
-    Mockito.`when`(galleryPhotoRepository.saveMany(galleryPhotosFromServer))
-      .thenReturn(true)
-    Mockito.doNothing().`when`(galleryPhotoRepository).deleteOldPhotos()
-
-    val events = getGalleryPhotosUseCase.loadPageOfPhotos(lastId, photosPerPage)
-      .test()
-      .assertNoErrors()
-      .assertTerminated()
-      .values()
-
-    assertEquals(1, events.size)
-    assertEquals(true, events.first() is Either.Value)
-
-    val values = (events.first() as Either.Value).value
-    assertEquals(5, values.size)
-
-    Mockito.verify(galleryPhotoRepository, Mockito.times(1)).findMany(galleryPhotoIds)
-    Mockito.verify(galleryPhotoRepository, Mockito.times(1)).deleteOldPhotos()
-    Mockito.verify(apiClient, Mockito.times(1)).getGalleryPhotoIds(lastId, photosPerPage)
-    Mockito.verify(apiClient, Mockito.times(1)).getPageOfGalleryPhotos(photoIdsJoined)
-
-    Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
-    Mockito.verifyNoMoreInteractions(apiClient)
-  }*/
 }
 
 

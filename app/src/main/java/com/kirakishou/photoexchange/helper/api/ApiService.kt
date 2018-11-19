@@ -1,9 +1,9 @@
 package com.kirakishou.photoexchange.helper.api
 
-import com.kirakishou.photoexchange.mvp.model.net.packet.FavouritePhotoPacket
-import com.kirakishou.photoexchange.mvp.model.net.packet.ReportPhotoPacket
-import com.kirakishou.photoexchange.mvp.model.net.response.*
 import io.reactivex.Single
+import net.request.FavouritePhotoPacket
+import net.request.ReportPhotoPacket
+import net.response.*
 import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.*
@@ -26,7 +26,7 @@ interface ApiService {
 
   @GET("/v1/api/receive_photos/{photo_names}/{user_id}")
   fun receivePhotos(@Path("photo_names") photoNames: String,
-                    @Path("user_id") userId: String): Single<Response<ReceivedPhotosResponse>>
+                    @Path("user_id") userId: String): Single<Response<ReceivePhotosResponse>>
 
   @GET("/v1/api/get_user_id")
   fun getUserId(): Single<Response<GetUserIdResponse>>

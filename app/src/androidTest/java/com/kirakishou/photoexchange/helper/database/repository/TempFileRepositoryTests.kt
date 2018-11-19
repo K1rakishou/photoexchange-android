@@ -4,10 +4,13 @@ import androidx.room.Room
 import android.content.Context
 import androidx.test.InstrumentationRegistry
 import androidx.test.runner.AndroidJUnit4
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.TestDispatchers
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.helper.util.FileUtilsImpl
 import com.kirakishou.photoexchange.helper.util.TimeUtils
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -25,6 +28,7 @@ class TempFileRepositoryTests {
   lateinit var tempFilesDir: String
   lateinit var repository: TempFileRepository
   lateinit var fileUtils: FileUtils
+  lateinit var dispatchersProvider: DispatchersProvider
 
   @Before
   fun init() {
@@ -34,9 +38,12 @@ class TempFileRepositoryTests {
     timeUtils = Mockito.mock(TimeUtils::class.java)
     tempFilesDir = targetContext.getDir("test_temp_files", Context.MODE_PRIVATE).absolutePath
     fileUtils = Mockito.spy(FileUtils::class.java)
+    dispatchersProvider = TestDispatchers()
 
-    repository = TempFileRepository(tempFilesDir, database, timeUtils, fileUtils)
-      .also { it.init() }
+    repository = runBlocking {
+      TempFileRepository(tempFilesDir, database, timeUtils, fileUtils, dispatchersProvider)
+        .also { it.init() }
+    }
   }
 
   @After
@@ -48,23 +55,27 @@ class TempFileRepositoryTests {
 
   @Test
   fun should_create_files_on_disk() {
-    repository.create()
-    repository.create()
-    repository.create()
-    repository.create()
+    runBlocking {
+      repository.create()
+      repository.create()
+      repository.create()
+      repository.create()
 
-    assertEquals(4, repository.findAll().size)
+      assertEquals(4, repository.findAll().size)
+    }
   }
 
   @Test
   fun should_update_entity_deleted_on_field_by_id() {
-    Mockito.`when`(timeUtils.getTimeFast()).thenReturn(123L)
-    repository.create()
+    runBlocking {
+      Mockito.`when`(timeUtils.getTimeFast()).thenReturn(123L)
+      repository.create()
 
-    repository.markDeletedById(1)
-    val markedEntity = repository.findAll().first()
+      repository.markDeletedById(1)
+      val markedEntity = repository.findAll().first()
 
-    assertEquals(123L, markedEntity.deletedOn)
+      assertEquals(123L, markedEntity.deletedOn)
+    }
   }
 
   @Test
@@ -82,21 +93,23 @@ class TempFileRepositoryTests {
       fourthPhotoDeletionTime
     )
 
-    repository.create()
-    repository.create()
-    repository.create()
-    repository.create()
+    runBlocking {
+      repository.create()
+      repository.create()
+      repository.create()
+      repository.create()
 
-    repository.markDeletedById(1)
-    repository.markDeletedById(2)
-    repository.markDeletedById(3)
-    repository.markDeletedById(4)
+      repository.markDeletedById(1)
+      repository.markDeletedById(2)
+      repository.markDeletedById(3)
+      repository.markDeletedById(4)
 
-    val oldFiles = repository.findDeletedOld(deleteBeforeTime)
+      val oldFiles = repository.findDeletedOld(deleteBeforeTime)
 
-    assertEquals(2, oldFiles.size)
-    assertEquals(1, oldFiles[0].id!!)
-    assertEquals(2, oldFiles[1].id!!)
+      assertEquals(2, oldFiles.size)
+      assertEquals(1, oldFiles[0].id!!)
+      assertEquals(2, oldFiles[1].id!!)
+    }
   }
 
   @Test
@@ -114,32 +127,36 @@ class TempFileRepositoryTests {
       fourthPhotoDeletionTime
     )
 
-    repository.create()
-    repository.create()
-    repository.create()
-    repository.create()
+    runBlocking {
+      repository.create()
+      repository.create()
+      repository.create()
+      repository.create()
 
-    repository.markDeletedById(1)
-    repository.markDeletedById(2)
-    repository.markDeletedById(3)
-    repository.markDeletedById(4)
+      repository.markDeletedById(1)
+      repository.markDeletedById(2)
+      repository.markDeletedById(3)
+      repository.markDeletedById(4)
 
-    repository.deleteOld(deleteBeforeTime)
+      repository.deleteOld(deleteBeforeTime)
 
-    assertEquals(2, repository.findAll().size)
+      assertEquals(2, repository.findAll().size)
+    }
   }
 
   @Test
   fun should_remove_empty_temp_files() {
-    repository.create()
-    repository.create()
-    repository.create()
-    repository.create()
+    runBlocking {
+      repository.create()
+      repository.create()
+      repository.create()
+      repository.create()
 
-    assertEquals(4, repository.findAll().size)
-    repository.deleteEmptyTempFiles()
+      assertEquals(4, repository.findAll().size)
+      repository.deleteEmptyTempFiles()
 
-    assertEquals(0, repository.findAll().size)
+      assertEquals(0, repository.findAll().size)
+    }
   }
 
   @Test
@@ -148,56 +165,60 @@ class TempFileRepositoryTests {
       100, 110, 120, 130, 250, 260, 270, 280
     )
 
-    repository.create()
-    repository.create()
-    repository.create()
-    repository.create()
-    repository.create()
-    repository.create()
-    repository.create()
-    repository.create()
+    runBlocking {
+      repository.create()
+      repository.create()
+      repository.create()
+      repository.create()
+      repository.create()
+      repository.create()
+      repository.create()
+      repository.create()
 
-    repository.markDeletedById(1)
-    repository.markDeletedById(2)
-    repository.markDeletedById(3)
-    repository.markDeletedById(4)
-    repository.markDeletedById(5)
-    repository.markDeletedById(6)
-    repository.markDeletedById(7)
-    repository.markDeletedById(8)
+      repository.markDeletedById(1)
+      repository.markDeletedById(2)
+      repository.markDeletedById(3)
+      repository.markDeletedById(4)
+      repository.markDeletedById(5)
+      repository.markDeletedById(6)
+      repository.markDeletedById(7)
+      repository.markDeletedById(8)
 
-    val oldestDeletedFiles = repository.findOldest(4)
+      val oldestDeletedFiles = repository.findOldest(4)
 
-    assertEquals(4, oldestDeletedFiles.size)
-    assertEquals(100, oldestDeletedFiles[0].deletedOn)
-    assertEquals(110, oldestDeletedFiles[1].deletedOn)
-    assertEquals(120, oldestDeletedFiles[2].deletedOn)
-    assertEquals(130, oldestDeletedFiles[3].deletedOn)
+      assertEquals(4, oldestDeletedFiles.size)
+      assertEquals(100, oldestDeletedFiles[0].deletedOn)
+      assertEquals(110, oldestDeletedFiles[1].deletedOn)
+      assertEquals(120, oldestDeletedFiles[2].deletedOn)
+      assertEquals(130, oldestDeletedFiles[3].deletedOn)
 
-    repository.deleteMany(oldestDeletedFiles)
+      repository.deleteMany(oldestDeletedFiles)
 
-    val restOfFiles = repository.findAll()
-    assertEquals(250, restOfFiles[0].deletedOn)
-    assertEquals(260, restOfFiles[1].deletedOn)
-    assertEquals(270, restOfFiles[2].deletedOn)
-    assertEquals(280, restOfFiles[3].deletedOn)
+      val restOfFiles = repository.findAll()
+      assertEquals(250, restOfFiles[0].deletedOn)
+      assertEquals(260, restOfFiles[1].deletedOn)
+      assertEquals(270, restOfFiles[2].deletedOn)
+      assertEquals(280, restOfFiles[3].deletedOn)
+    }
   }
 
   @Test
   fun should_correctly_calculate_size_of_all_files_in_a_directory() {
-    val tempFile1 = repository.create()
-    tempFile1.asFile().writeText("1234567890")
+    runBlocking {
+      val tempFile1 = repository.create()
+      tempFile1.asFile().writeText("1234567890")
 
-    val tempFile2 = repository.create()
-    tempFile2.asFile().writeText("12345678901234567890")
+      val tempFile2 = repository.create()
+      tempFile2.asFile().writeText("12345678901234567890")
 
-    val tempFile3 = repository.create()
-    tempFile3.asFile().writeText("123456789012345678901234567890")
+      val tempFile3 = repository.create()
+      tempFile3.asFile().writeText("123456789012345678901234567890")
 
-    val tempFile4 = repository.create()
-    tempFile4.asFile().writeText("1234567890123456789012345678901234567890")
+      val tempFile4 = repository.create()
+      tempFile4.asFile().writeText("1234567890123456789012345678901234567890")
 
-    assertEquals(100, FileUtilsImpl().calculateTotalDirectorySize(File(tempFilesDir)))
+      assertEquals(100, FileUtilsImpl().calculateTotalDirectorySize(File(tempFilesDir)))
+    }
   }
 }
 

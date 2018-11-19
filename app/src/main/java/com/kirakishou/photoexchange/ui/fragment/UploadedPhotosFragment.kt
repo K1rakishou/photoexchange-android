@@ -17,16 +17,19 @@ import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.Constants.DEFAULT_ADAPTER_ITEM_WIDTH
-import com.kirakishou.photoexchange.mvp.model.other.ErrorCode
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapterSpanSizeLookup
 import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
+import core.ErrorCode
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.rx2.openSubscription
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -60,17 +63,14 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
   override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
     viewModel.uploadedPhotosFragmentViewModel.viewState.reset()
 
-    initRx()
+    launch { initRx() }
     initRecyclerView()
   }
 
   override fun onFragmentViewDestroy() {
   }
 
-  private fun initRx() {
-    compositeDisposable += viewModel.intercom.uploadedPhotosFragmentEvents.listen()
-      .subscribe({ viewState -> onStateEvent(viewState) }, { Timber.tag(TAG).e(it) })
-
+  private suspend fun initRx() {
     compositeDisposable += viewModel.uploadedPhotosFragmentViewModel.knownErrors
       .subscribe({ errorCode -> handleKnownErrors(errorCode) })
 
@@ -95,6 +95,10 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         viewModel.intercom.tell<PhotosActivity>()
           .that(PhotosActivityEvent.ScrollEvent(isScrollingDown))
       })
+
+    compositeChannel += viewModel.intercom.uploadedPhotosFragmentEvents.listen().openSubscription().apply {
+      consumeEach { event -> onStateEvent(event) }
+    }
   }
 
   private fun initRecyclerView() {
@@ -119,22 +123,20 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
     loadMoreSubject.onNext(Unit)
   }
 
-  override fun onStateEvent(event: UploadedPhotosFragmentEvent) {
+  override suspend fun onStateEvent(event: UploadedPhotosFragmentEvent) {
     if (!isAdded) {
       return
     }
 
-    uploadedPhotosList.post {
-      when (event) {
-        is UploadedPhotosFragmentEvent.GeneralEvents -> {
-          onUiEvent(event)
-        }
+    when (event) {
+      is UploadedPhotosFragmentEvent.GeneralEvents -> {
+        onUiEvent(event)
+      }
 
-        is UploadedPhotosFragmentEvent.PhotoUploadEvent -> {
-          onUploadingEvent(event)
-        }
-      }.safe
-    }
+      is UploadedPhotosFragmentEvent.PhotoUploadEvent -> {
+        onUploadingEvent(event)
+      }
+    }.safe
   }
 
   private fun onUiEvent(event: UploadedPhotosFragmentEvent.GeneralEvents) {
@@ -183,15 +185,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         is UploadedPhotosFragmentEvent.GeneralEvents.ShowUploadedPhotos -> {
           addUploadedPhotosToAdapter(event.uploadedPhotos)
         }
-        is UploadedPhotosFragmentEvent.GeneralEvents.DisableEndlessScrolling -> {
-          endlessScrollListener.reachedEnd()
-        }
-        is UploadedPhotosFragmentEvent.GeneralEvents.EnableEndlessScrolling -> {
-          endlessScrollListener.reset()
-        }
-        is UploadedPhotosFragmentEvent.GeneralEvents.PageIsLoading -> {
-//                    endlessScrollListener.pageLoading()
-        }
       }.safe
     }
   }
@@ -237,7 +230,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
     uploadedPhotosList.post {
       if (uploadedPhotos.isNotEmpty()) {
-        viewModel.uploadedPhotosFragmentViewModel.viewState.updateLastId(uploadedPhotos.last().photoId)
         adapter.addUploadedPhotos(uploadedPhotos)
       }
 

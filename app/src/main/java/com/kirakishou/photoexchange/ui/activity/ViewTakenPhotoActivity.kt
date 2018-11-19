@@ -49,10 +49,12 @@ class ViewTakenPhotoActivity : BaseActivity() {
   }
 
   private suspend fun initRx() {
-    viewModel.addToGalleryFragmentResult.openSubscription().consumeEach { fragmentResult ->
-      onBackPressedInternal().await()
-      onAddToGalleryFragmentResult(fragmentResult)
-      onPhotoUpdated()
+    compositeChannel += viewModel.addToGalleryFragmentResult.openSubscription().apply {
+      consumeEach { fragmentResult ->
+        onBackPressedInternal().await()
+        onAddToGalleryFragmentResult(fragmentResult)
+        onPhotoUpdated()
+      }
     }
   }
 

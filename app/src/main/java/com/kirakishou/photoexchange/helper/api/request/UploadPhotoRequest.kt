@@ -8,11 +8,11 @@ import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.exception.ConnectionError
-import com.kirakishou.photoexchange.mvp.model.net.packet.SendPhotoPacket
-import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.rx2.await
+import net.request.SendPhotoPacket
+import net.response.UploadPhotoResponse
 import okhttp3.MultipartBody
 import java.io.File
 

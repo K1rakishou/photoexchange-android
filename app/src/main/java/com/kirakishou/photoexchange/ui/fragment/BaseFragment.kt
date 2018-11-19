@@ -14,6 +14,7 @@ import io.reactivex.disposables.CompositeDisposable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -22,6 +23,7 @@ import kotlin.coroutines.CoroutineContext
 
 abstract class BaseFragment : Fragment(), CoroutineScope {
   protected val compositeDisposable = CompositeDisposable()
+  protected val compositeChannel = mutableListOf<ReceiveChannel<Any>>()
   private lateinit var job: Job
 
   protected lateinit var lifecycle: RxLifecycle
@@ -33,6 +35,7 @@ abstract class BaseFragment : Fragment(), CoroutineScope {
   override fun onAttach(context: Context?) {
     super.onAttach(context)
 
+    job = Job()
     lifecycle = RxLifecycle()
   }
 
@@ -56,7 +59,6 @@ abstract class BaseFragment : Fragment(), CoroutineScope {
   override fun onStart() {
     super.onStart()
 
-    job = Job()
     lifecycle.onStart()
   }
 
@@ -86,8 +88,6 @@ abstract class BaseFragment : Fragment(), CoroutineScope {
 
   override fun onStop() {
     super.onStop()
-
-    job.cancel()
     lifecycle.onStop()
   }
 
@@ -98,6 +98,10 @@ abstract class BaseFragment : Fragment(), CoroutineScope {
 
   override fun onDetach() {
     super.onDetach()
+
+    job.cancel()
+    compositeChannel.forEach { it.cancel() }
+    compositeChannel.clear()
 
     compositeDisposable.clear()
     PhotoExchangeApplication.watch(this, this::class.simpleName)

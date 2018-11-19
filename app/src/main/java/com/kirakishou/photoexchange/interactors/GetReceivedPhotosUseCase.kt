@@ -11,8 +11,8 @@ import com.kirakishou.photoexchange.helper.myRunCatching
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
-import com.kirakishou.photoexchange.mvp.model.net.response.GetReceivedPhotosResponse
 import kotlinx.coroutines.withContext
+import net.response.GetReceivedPhotosResponse
 import timber.log.Timber
 
 open class GetReceivedPhotosUseCase(
@@ -41,7 +41,7 @@ open class GetReceivedPhotosUseCase(
           timeUtils.getTimeFast()
         }
 
-        receivedPhotosRepository.deleteOld()
+        receivedPhotosRepository.deleteOldPhotos()
 
         val pageOfReceivedPhotos = receivedPhotosRepository.getPageOfReceivedPhotos(time, count)
         if (pageOfReceivedPhotos.size == count) {
@@ -66,7 +66,7 @@ open class GetReceivedPhotosUseCase(
     }
   }
 
-  private suspend fun storeInDatabase(receivedPhotos: List<GetReceivedPhotosResponse.ReceivedPhoto>): Boolean {
+  private suspend fun storeInDatabase(receivedPhotos: List<GetReceivedPhotosResponse.ReceivedPhotoResponseData>): Boolean {
     return database.transactional {
       for (receivedPhoto in receivedPhotos) {
         if (!uploadedPhotosRepository.updateReceiverInfo(receivedPhoto.uploadedPhotoName)) {
