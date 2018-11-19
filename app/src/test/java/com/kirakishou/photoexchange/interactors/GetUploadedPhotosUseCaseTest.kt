@@ -2,8 +2,11 @@ package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.TestDispatchers
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
+import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import io.reactivex.Single
@@ -15,19 +18,26 @@ import org.mockito.Mockito
 
 class GetUploadedPhotosUseCaseTest {
 
-  /*lateinit var database: MyDatabase
+  lateinit var database: MyDatabase
   lateinit var apiClient: ApiClient
-  lateinit var uploadedPhotosRepository: UploadedPhotosRepository
+  lateinit var timeUtils: TimeUtils
+  lateinit var dispatchersProvider: DispatchersProvider
 
+  lateinit var uploadedPhotosRepository: UploadedPhotosRepository
   lateinit var getUploadedPhotosUseCase: GetUploadedPhotosUseCase
 
   @Before
   fun setUp() {
     apiClient = Mockito.mock(ApiClient::class.java)
     uploadedPhotosRepository = Mockito.mock(UploadedPhotosRepository::class.java)
+    timeUtils = Mockito.mock(TimeUtils::class.java)
+    dispatchersProvider = TestDispatchers()
 
     getUploadedPhotosUseCase = GetUploadedPhotosUseCase(
-      uploadedPhotosRepository, apiClient
+      uploadedPhotosRepository,
+      apiClient,
+      timeUtils,
+      dispatchersProvider
     )
   }
 
@@ -36,7 +46,7 @@ class GetUploadedPhotosUseCaseTest {
 
   }
 
-  @Test
+  /*@Test
   fun `should return EitherError with errorCode when server did not return ok`() {
     val userId = "123"
     val lastId = 1000L

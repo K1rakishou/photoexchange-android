@@ -34,6 +34,8 @@ open class GetGalleryPhotosUseCase(
           timeUtils.getTimeFast()
         }
 
+        galleryPhotoRepository.deleteOldPhotos()
+
         //if we found exactly the same amount of gallery photos that was requested - return them
         val pageOfGalleryPhotos = galleryPhotoRepository.getPageOfGalleryPhotos(time, count)
         if (pageOfGalleryPhotos.size == count) {
