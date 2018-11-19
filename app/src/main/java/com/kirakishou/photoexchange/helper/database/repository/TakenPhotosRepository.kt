@@ -248,23 +248,25 @@ open class TakenPhotosRepository(
 
   //TODO: tests
   suspend fun cleanup() {
-    database.transactional {
-      //we need to delete all photos with state PHOTO_TAKEN because at this step they are being considered corrupted
-      if (!deleteAllWithState(PhotoState.PHOTO_TAKEN)) {
-        return@transactional false
+    withContext(coroutineContext) {
+      database.transactional {
+        //we need to delete all photos with state PHOTO_TAKEN because at this step they are being considered corrupted
+        if (!deleteAllWithState(PhotoState.PHOTO_TAKEN)) {
+          return@transactional false
+        }
+
+        //delete photo files that were marked as deleted earlier than (CURRENT_TIME - OLD_PHOTO_TIME_THRESHOLD)
+        tempFileRepository.deleteOld()
+
+        //delete photo files that have no takenPhotoId
+        tempFileRepository.deleteEmptyTempFiles()
+
+        //in case the user takes photos way too often and they weight a lot (like 3-4 mb per photo)
+        //we need to consider this as well so we delete them when total files size exceeds MAX_CACHE_SIZE
+        tempFileRepository.deleteOldIfCacheSizeIsTooBig()
+
+        return@transactional true
       }
-
-      //delete photo files that were marked as deleted earlier than (CURRENT_TIME - OLD_PHOTO_TIME_THRESHOLD)
-      tempFileRepository.deleteOld()
-
-      //delete photo files that have no takenPhotoId
-      tempFileRepository.deleteEmptyTempFiles()
-
-      //in case the user takes photos way too often and they weight a lot (like 3-4 mb per photo)
-      //we need to consider this as well so we delete them when total files size exceeds MAX_CACHE_SIZE
-      tempFileRepository.deleteOldIfCacheSizeIsTooBig()
-
-      return@transactional true
     }
   }
 

@@ -84,12 +84,16 @@ open class CameraProvider(
     val takePhotoStatus = takePhotoInternal(tempFile)
 
     if (!takePhotoStatus) {
+      Timber.tag(TAG).d("takePhotoInternal returned false")
+
       deletePhotoFile(tempFile)
       return TakenPhoto.empty()
     }
 
     val takenPhoto = takenPhotosRepository.saveTakenPhoto(tempFile)
     if (takenPhoto.isEmpty()) {
+      Timber.tag(TAG).d("saveTakenPhoto returned empty photo")
+
       deletePhotoFile(tempFile) //TODO: should this be here?
       cleanUp(takenPhoto)
       return TakenPhoto.empty()

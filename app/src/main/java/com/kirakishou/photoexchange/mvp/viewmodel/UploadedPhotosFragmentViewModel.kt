@@ -35,9 +35,9 @@ class UploadedPhotosFragmentViewModel(
 
   private val compositeDisposable = CompositeDisposable()
   private val job = Job()
+  private val actor: SendChannel<Unit>
 
   lateinit var intercom: PhotosActivityViewModelIntercom
-  lateinit var actor: SendChannel<Unit>
 
   val viewState = UploadedPhotosFragmentViewState()
   val knownErrors = PublishSubject.create<ErrorCode>()
@@ -47,7 +47,7 @@ class UploadedPhotosFragmentViewModel(
     get() = job + dispatchersProvider.GENERAL()
 
   init {
-    actor = actor(capacity = 1) {
+    actor = actor {
       consumeEach {
         if (!isActive) {
           return@consumeEach
@@ -55,16 +55,16 @@ class UploadedPhotosFragmentViewModel(
 
         when (figureOutWhatPhotosToLoad()) {
           PhotosToLoad.QueuedUpAndFailed -> {
+            Timber.tag(TAG).d("Loading queued up and failed photos")
             loadQueuedUpAndFailedPhotos()
           }
           PhotosToLoad.Uploaded -> {
+            Timber.tag(TAG).d("Loading uploaded photos")
             loadUploadedPhotos()
           }
         }
       }
     }
-
-    launch { actor.send(Unit) }
   }
 
   fun loadMorePhotos() {
@@ -73,14 +73,8 @@ class UploadedPhotosFragmentViewModel(
 
   private suspend fun loadUploadedPhotos() {
     try {
-      intercom.tell<UploadedPhotosFragment>()
-        .to(UploadedPhotosFragmentEvent.GeneralEvents.EnableEndlessScrolling())
-
-      intercom.tell<UploadedPhotosFragment>()
-        .to(UploadedPhotosFragmentEvent.GeneralEvents.PageIsLoading())
-
       val userId = settingsRepository.getUserId()
-      val uploadedPhotos = loadPageOfUploadedPhotos(userId, viewState.lastId, viewState.photosPerPage)
+      val uploadedPhotos = loadPageOfUploadedPhotos(userId, viewState.lastUploadedOn, viewState.photosPerPage)
 
       intercom.tell<UploadedPhotosFragment>()
         .to(UploadedPhotosFragmentEvent.GeneralEvents.ShowUploadedPhotos(uploadedPhotos))
@@ -111,6 +105,7 @@ class UploadedPhotosFragmentViewModel(
       val result = getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastUploadedOn, count)
       when (result) {
         is Either.Value -> {
+          viewState.lastUploadedOn = result.value.last().uploadedOn
           return result.value
         }
         is Either.Error -> {
@@ -123,10 +118,11 @@ class UploadedPhotosFragmentViewModel(
   }
 
   private suspend fun loadQueuedUpAndFailedPhotos() {
-    try {
-      intercom.tell<UploadedPhotosFragment>()
-        .to(UploadedPhotosFragmentEvent.GeneralEvents.DisableEndlessScrolling())
+    if (viewState.failedPhotosLoaded) {
+      return
+    }
 
+    try {
       tryToFixStalledPhotos()
 
       val queuedUpPhotos = loadQueuedUpPhotos()
@@ -141,6 +137,8 @@ class UploadedPhotosFragmentViewModel(
       val photos = mutableListOf<TakenPhoto>()
       photos.addAll(failedToUploadPhotos)
       photos.addAll(queuedUpPhotos)
+
+      viewState.failedPhotosLoaded = true
 
       intercom.tell<UploadedPhotosFragment>()
         .to(UploadedPhotosFragmentEvent.GeneralEvents.ShowTakenPhotos(photos))
@@ -170,12 +168,12 @@ class UploadedPhotosFragmentViewModel(
 
   private suspend fun loadFailedToUploadPhotos(): List<TakenPhoto> {
     return takenPhotosRepository.findAllByState(PhotoState.FAILED_TO_UPLOAD)
-      .sortedBy { it.id }
+      .sortedByDescending { it.id }
   }
 
   private suspend fun loadQueuedUpPhotos(): List<TakenPhoto> {
     return takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP)
-      .sortedBy { it.id }
+      .sortedByDescending { it.id }
   }
 
   fun onCleared() {

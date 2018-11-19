@@ -33,6 +33,7 @@ abstract class BaseFragment : Fragment(), CoroutineScope {
   override fun onAttach(context: Context?) {
     super.onAttach(context)
 
+    job = Job()
     lifecycle = RxLifecycle()
   }
 
@@ -56,7 +57,6 @@ abstract class BaseFragment : Fragment(), CoroutineScope {
   override fun onStart() {
     super.onStart()
 
-    job = Job()
     lifecycle.onStart()
   }
 
@@ -86,8 +86,6 @@ abstract class BaseFragment : Fragment(), CoroutineScope {
 
   override fun onStop() {
     super.onStop()
-
-    job.cancel()
     lifecycle.onStop()
   }
 
@@ -99,6 +97,7 @@ abstract class BaseFragment : Fragment(), CoroutineScope {
   override fun onDetach() {
     super.onDetach()
 
+    job.cancel()
     compositeDisposable.clear()
     PhotoExchangeApplication.watch(this, this::class.simpleName)
   }

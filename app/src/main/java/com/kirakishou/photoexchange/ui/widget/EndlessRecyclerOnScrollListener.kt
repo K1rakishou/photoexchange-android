@@ -16,7 +16,7 @@ class EndlessRecyclerOnScrollListener(
   private val scrollSubject: PublishSubject<Boolean>
 ) : RecyclerView.OnScrollListener() {
 
-  private val tag = "EndlessRecyclerOnScrollListener_$fragmentTag"
+  private val TAG = "EndlessRecyclerOnScrollListener_$fragmentTag"
   private var loading = false
   private var previousTotal = 0
   private var lastVisibleItem = 0
@@ -46,13 +46,6 @@ class EndlessRecyclerOnScrollListener(
 
     val visibleItemCount = recyclerView.childCount
     val firstVisibleItem = (recyclerView.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
-
-    if (loading) {
-      if (totalItemCount > previousTotal) {
-        loading = false
-        previousTotal = totalItemCount
-      }
-    }
 
     if (!loading && totalItemCount - visibleItemCount <= firstVisibleItem + visibleThreshold) {
       loadMoreSubject.onNext(Unit)

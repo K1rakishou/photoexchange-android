@@ -1,15 +1,14 @@
 package com.kirakishou.photoexchange.ui.viewstate
 
 data class UploadedPhotosFragmentViewState(
-  var lastId: Long = Long.MAX_VALUE,
-  var photosPerPage: Int = 0
+  var lastUploadedOn: Long = -1,
+  var photosPerPage: Int = 0,
+  var failedPhotosLoaded: Boolean = false
 ) {
 
-  fun updateLastId(newLastId: Long) {
-    lastId = newLastId
-  }
-
   fun reset() {
-    lastId = Long.MAX_VALUE
+    lastUploadedOn = -1
+    lastUploadedOn = 0
+    failedPhotosLoaded = false
   }
 }

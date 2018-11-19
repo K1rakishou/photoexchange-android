@@ -56,6 +56,7 @@ open class UploadPhotoServicePresenter(
   }
 
   private suspend fun startUploading(location: LonLat) {
+    Timber.tag(TAG).d("startUploading called")
     updateServiceNotification(NotificationType.Uploading)
 
     try {

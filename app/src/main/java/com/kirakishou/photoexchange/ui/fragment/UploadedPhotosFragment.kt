@@ -183,15 +183,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
         is UploadedPhotosFragmentEvent.GeneralEvents.ShowUploadedPhotos -> {
           addUploadedPhotosToAdapter(event.uploadedPhotos)
         }
-        is UploadedPhotosFragmentEvent.GeneralEvents.DisableEndlessScrolling -> {
-          endlessScrollListener.reachedEnd()
-        }
-        is UploadedPhotosFragmentEvent.GeneralEvents.EnableEndlessScrolling -> {
-          endlessScrollListener.reset()
-        }
-        is UploadedPhotosFragmentEvent.GeneralEvents.PageIsLoading -> {
-//                    endlessScrollListener.pageLoading()
-        }
       }.safe
     }
   }
@@ -237,7 +228,6 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
 
     uploadedPhotosList.post {
       if (uploadedPhotos.isNotEmpty()) {
-        viewModel.uploadedPhotosFragmentViewModel.viewState.updateLastId(uploadedPhotos.last().photoId)
         adapter.addUploadedPhotos(uploadedPhotos)
       }
 
