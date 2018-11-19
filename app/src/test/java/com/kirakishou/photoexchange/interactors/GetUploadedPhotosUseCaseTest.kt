@@ -5,7 +5,6 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
-import com.kirakishou.photoexchange.mvp.model.net.response.GetUploadedPhotosResponse
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import io.reactivex.Single
 import org.junit.After
@@ -16,7 +15,7 @@ import org.mockito.Mockito
 
 class GetUploadedPhotosUseCaseTest {
 
-  lateinit var database: MyDatabase
+  /*lateinit var database: MyDatabase
   lateinit var apiClient: ApiClient
   lateinit var uploadedPhotosRepository: UploadedPhotosRepository
 
@@ -200,7 +199,7 @@ class GetUploadedPhotosUseCaseTest {
 
     Mockito.verifyNoMoreInteractions(apiClient)
     Mockito.verifyNoMoreInteractions(uploadedPhotosRepository)
-  }
+  }*/
 }
 
 

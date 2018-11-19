@@ -1,9 +1,24 @@
 package com.kirakishou.photoexchange.interactors
 
+import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.TestDispatchers
+import com.kirakishou.photoexchange.helper.database.MyDatabase
+import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepository
+import com.kirakishou.photoexchange.helper.util.TimeUtils
+import core.ErrorCode
+import io.reactivex.Single
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
+import org.mockito.Mockito
+
 class GetGalleryPhotosUseCaseTest {
 
   /*lateinit var database: MyDatabase
   lateinit var apiClient: ApiClient
+  lateinit var timeUtils: TimeUtils
+  lateinit var dispatchersProvider: DispatchersProvider
   lateinit var galleryPhotoRepository: GalleryPhotoRepository
   lateinit var getGalleryPhotosUseCase: GetGalleryPhotosUseCase
 
@@ -12,10 +27,14 @@ class GetGalleryPhotosUseCaseTest {
     database = Mockito.mock(MyDatabase::class.java)
     apiClient = Mockito.mock(ApiClient::class.java)
     galleryPhotoRepository = Mockito.mock(GalleryPhotoRepository::class.java)
+    timeUtils = Mockito.mock(TimeUtils::class.java)
+    dispatchersProvider = TestDispatchers()
 
     getGalleryPhotosUseCase = GetGalleryPhotosUseCase(
       apiClient,
-      galleryPhotoRepository
+      galleryPhotoRepository,
+      timeUtils,
+      dispatchersProvider
     )
   }
 
@@ -30,7 +49,7 @@ class GetGalleryPhotosUseCaseTest {
     val photosPerPage = 10
 
     Mockito.`when`(apiClient.getGalleryPhotoIds(lastId, photosPerPage))
-      .thenReturn(Single.just(GalleryPhotoIdsResponse.error(ErrorCode.GetGalleryPhotosErrors.BadRequest())))
+      .thenReturn(Single.just(GalleryPhotoIdsResponse.error(ErrorCode.BadRequest())))
 
     getGalleryPhotosUseCase.loadPageOfPhotos(lastId, photosPerPage)
       .test()

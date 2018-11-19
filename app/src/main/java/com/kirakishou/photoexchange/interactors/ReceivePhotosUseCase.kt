@@ -27,7 +27,7 @@ open class ReceivePhotosUseCase(
     photoData: FindPhotosData
   ): List<Pair<ReceivedPhoto, String>> {
     if (photoData.isUserIdEmpty()) {
-      throw ReceivePhotosServiceException.CouldNotGetUserId()
+      throw ReceivePhotosServiceException.UserIdIsEmptyException()
     }
 
     if (photoData.isPhotoNamesEmpty()) {
@@ -88,7 +88,7 @@ open class ReceivePhotosUseCase(
 
   sealed class ReceivePhotosServiceException : Exception() {
     class PhotoNamesAreEmpty : ReceivePhotosServiceException()
-    class CouldNotGetUserId : ReceivePhotosServiceException()
+    class UserIdIsEmptyException : ReceivePhotosServiceException()
     class ApiException(val errorCode: ErrorCode) : ReceivePhotosServiceException()
   }
 }

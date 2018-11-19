@@ -20,7 +20,6 @@ open class GetGalleryPhotosUseCase(
 ) : BaseUseCase(dispatchersProvider) {
   private val TAG = "GetGalleryPhotosUseCase"
 
-  //ErrorCode.GetGalleryPhotosErrors
   open suspend fun loadPageOfPhotos(
     lastUploadedOn: Long,
     count: Int

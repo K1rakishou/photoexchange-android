@@ -18,7 +18,7 @@ import java.io.IOException
 
 class ReceivePhotosServicePresenterTest {
 
-  lateinit var uploadedPhotosRepository: UploadedPhotosRepository
+  /*lateinit var uploadedPhotosRepository: UploadedPhotosRepository
   lateinit var settingsRepository: SettingsRepository
   lateinit var schedulerProvider: SchedulerProvider
   lateinit var receivePhotosUseCase: ReceivePhotosUseCase
@@ -287,7 +287,7 @@ class ReceivePhotosServicePresenterTest {
     Mockito.verifyNoMoreInteractions(uploadedPhotosRepository)
     Mockito.verifyNoMoreInteractions(settingsRepository)
     Mockito.verifyNoMoreInteractions(receivePhotosUseCase)
-  }
+  }*/
 }
 
 

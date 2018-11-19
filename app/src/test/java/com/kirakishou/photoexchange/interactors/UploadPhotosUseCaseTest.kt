@@ -11,10 +11,16 @@ import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
-import com.kirakishou.photoexchange.mvp.model.net.response.UploadPhotoResponse
+import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.nhaarman.mockito_kotlin.any
+import core.ErrorCode
 import io.reactivex.Single
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.consumes
+import kotlinx.coroutines.runBlocking
+import net.response.UploadPhotoResponse
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -22,6 +28,8 @@ import org.junit.Test
 import org.mockito.Mockito
 import java.io.File
 import java.io.IOException
+import java.lang.IllegalStateException
+import java.lang.RuntimeException
 
 class UploadPhotosUseCaseTest {
 
@@ -64,110 +72,96 @@ class UploadPhotosUseCaseTest {
 
   }
 
-  @Test
-  fun `should return LocalNoPhotoFileOnDisk when photoTempFile is null`() {
+  private suspend fun <T> readChannelUntil(channel: Channel<T>, block: suspend (T) -> Boolean): List<T> {
+    val elements = mutableListOf<T>()
+
+    for (element in channel) {
+      elements += element
+
+      if (!block(element)) {
+        return elements
+      }
+    }
+
+    throw RuntimeException("Should not happen")
+  }
+
+  @Test(expected = UploadPhotosUseCase.PhotoUploadingException.PhotoDoesNotExistOnDisk::class)
+  fun `should throw PhotoDoesNotExistOnDisk when photoTempFile is null`() {
     val takenPhoto = TakenPhoto(1L, PhotoState.PHOTO_QUEUED_UP, true, "123", null)
     val userId = "user_id"
 
-    uploadPhotosUseCase.uploadPhoto(takenPhoto, userId, LonLat.empty())
-      .test()
-      .assertNoErrors()
-      .assertValueAt(0) { value ->
-        value is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError
-      }
-      .assertValueAt(0) { value ->
-        (value as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError).errorCode is ErrorCode.UploadPhotoErrors.LocalNoPhotoFileOnDisk
-      }
-      .assertTerminated()
-      .awaitTerminalEvent()
+    runBlocking {
+      val channel = Channel<UploadedPhotosFragmentEvent.PhotoUploadEvent>()
+      uploadPhotosUseCase.uploadPhoto(takenPhoto, LonLat.empty(), userId, channel)
 
-    Mockito.verify(takenPhotosRepository, Mockito.times(1))
-      .updatePhotoState(takenPhoto.id, PhotoState.FAILED_TO_UPLOAD)
+      Mockito.verify(takenPhotosRepository, Mockito.times(1))
+        .updatePhotoState(takenPhoto.id, PhotoState.FAILED_TO_UPLOAD)
+    }
   }
 
-  @Test
-  fun `should return LocalNoPhotoFileOnDisk when photoTempFile does not exist on disk`() {
+  @Test(expected = UploadPhotosUseCase.PhotoUploadingException.PhotoDoesNotExistOnDisk::class)
+  fun `should return PhotoDoesNotExistOnDisk when photoTempFile does not exist on disk`() {
     val tempFile = Mockito.mock(File::class.java)
     Mockito.`when`(tempFile.exists()).thenReturn(false)
 
     val takenPhoto = TakenPhoto(1L, PhotoState.PHOTO_QUEUED_UP, true, "123", tempFile)
     val userId = "user_id"
 
-    uploadPhotosUseCase.uploadPhoto(takenPhoto, userId, LonLat.empty())
-      .test()
-      .assertNoErrors()
-      .assertValueAt(0) { value ->
-        value is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError
-      }
-      .assertValueAt(0) { value ->
-        (value as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError).errorCode is ErrorCode.UploadPhotoErrors.LocalNoPhotoFileOnDisk
-      }
-      .assertTerminated()
-      .awaitTerminalEvent()
+    runBlocking {
+      val channel = Channel<UploadedPhotosFragmentEvent.PhotoUploadEvent>()
+      uploadPhotosUseCase.uploadPhoto(takenPhoto, LonLat.empty(), userId, channel)
 
-    Mockito.verify(takenPhotosRepository, Mockito.times(1))
-      .updatePhotoState(takenPhoto.id, PhotoState.FAILED_TO_UPLOAD)
+      Mockito.verify(takenPhotosRepository, Mockito.times(1))
+        .updatePhotoState(takenPhoto.id, PhotoState.FAILED_TO_UPLOAD)
+    }
   }
 
-  @Test
-  fun `should return LocalCouldNotUpdatePhotoState and delete created photoFile when could not update photo state in the database`() {
+  @Test(expected = UploadPhotosUseCase.PhotoUploadingException.CouldNotUpdatePhotoState::class)
+  fun `should throw CouldNotUpdatePhotoState and delete created photoFile when could not update photo state in the database`() {
     val tempFile = Mockito.mock(File::class.java)
     val rotatedPhotoFileMock = Mockito.mock(File::class.java)
     val takenPhoto = TakenPhoto(1L, PhotoState.PHOTO_QUEUED_UP, true, "123", tempFile)
     val userId = "user_id"
 
-    Mockito.`when`(tempFile.exists()).thenReturn(true)
-    Mockito.`when`(fileUtils.createTempFile(Mockito.anyString(), Mockito.anyString())).thenReturn(rotatedPhotoFileMock)
-    Mockito.`when`(takenPhotosRepository.updatePhotoState(takenPhoto.id, PhotoState.PHOTO_UPLOADING)).thenReturn(false)
+    runBlocking {
+      Mockito.`when`(tempFile.exists()).thenReturn(true)
+      Mockito.`when`(fileUtils.createTempFile(Mockito.anyString(), Mockito.anyString())).thenReturn(rotatedPhotoFileMock)
+      Mockito.`when`(takenPhotosRepository.updatePhotoState(takenPhoto.id, PhotoState.PHOTO_UPLOADING)).thenReturn(false)
 
-    uploadPhotosUseCase.uploadPhoto(takenPhoto, userId, LonLat.empty())
-      .test()
-      .assertNoErrors()
-      .assertValueAt(0) { value ->
-        value is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError
-      }
-      .assertValueAt(0) { value ->
-        (value as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError).errorCode is ErrorCode.UploadPhotoErrors.LocalCouldNotUpdatePhotoState
-      }
-      .assertTerminated()
-      .awaitTerminalEvent()
+      val channel = Channel<UploadedPhotosFragmentEvent.PhotoUploadEvent>()
+      uploadPhotosUseCase.uploadPhoto(takenPhoto, LonLat.empty(), userId, channel)
 
-    Mockito.verify(fileUtils, Mockito.times(1)).deleteFile(rotatedPhotoFileMock)
-    Mockito.verify(takenPhotosRepository, Mockito.times(1))
-      .updatePhotoState(takenPhoto.id, PhotoState.FAILED_TO_UPLOAD)
+      Mockito.verify(fileUtils, Mockito.times(1)).deleteFile(rotatedPhotoFileMock)
+      Mockito.verify(takenPhotosRepository, Mockito.times(1))
+        .updatePhotoState(takenPhoto.id, PhotoState.FAILED_TO_UPLOAD)
+    }
   }
 
-  @Test
+  @Test(expected = UploadPhotosUseCase.PhotoUploadingException.CouldNotRotatePhoto::class)
   fun `should return LocalCouldNotRotatePhoto and delete created photoFile when could not rotate photo bitmap`() {
     val tempFile = Mockito.mock(File::class.java)
     val rotatedPhotoFileMock = Mockito.mock(File::class.java)
     val takenPhoto = TakenPhoto(1L, PhotoState.PHOTO_QUEUED_UP, true, "123", tempFile)
     val userId = "user_id"
 
-    Mockito.`when`(tempFile.exists()).thenReturn(true)
-    Mockito.`when`(fileUtils.createTempFile(Mockito.anyString(), Mockito.anyString())).thenReturn(rotatedPhotoFileMock)
-    Mockito.`when`(takenPhotosRepository.updatePhotoState(takenPhoto.id, PhotoState.PHOTO_UPLOADING)).thenReturn(true)
-    Mockito.`when`(bitmapUtils.rotatePhoto(tempFile, rotatedPhotoFileMock)).thenReturn(false)
+    runBlocking {
+      Mockito.`when`(tempFile.exists()).thenReturn(true)
+      Mockito.`when`(fileUtils.createTempFile(Mockito.anyString(), Mockito.anyString())).thenReturn(rotatedPhotoFileMock)
+      Mockito.`when`(takenPhotosRepository.updatePhotoState(takenPhoto.id, PhotoState.PHOTO_UPLOADING)).thenReturn(true)
+      Mockito.`when`(bitmapUtils.rotatePhoto(tempFile, rotatedPhotoFileMock)).thenReturn(false)
 
-    uploadPhotosUseCase.uploadPhoto(takenPhoto, userId, LonLat.empty())
-      .test()
-      .assertNoErrors()
-      .assertValueAt(0) { value ->
-        value is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError
-      }
-      .assertValueAt(0) { value ->
-        (value as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError).errorCode is ErrorCode.UploadPhotoErrors.LocalCouldNotRotatePhoto
-      }
-      .assertTerminated()
-      .awaitTerminalEvent()
+      val channel = Channel<UploadedPhotosFragmentEvent.PhotoUploadEvent>()
+      uploadPhotosUseCase.uploadPhoto(takenPhoto, LonLat.empty(), userId, channel)
 
-    Mockito.verify(fileUtils, Mockito.times(1)).deleteFile(rotatedPhotoFileMock)
-    Mockito.verify(takenPhotosRepository, Mockito.times(1))
-      .updatePhotoState(takenPhoto.id, PhotoState.FAILED_TO_UPLOAD)
+      Mockito.verify(fileUtils, Mockito.times(1)).deleteFile(rotatedPhotoFileMock)
+      Mockito.verify(takenPhotosRepository, Mockito.times(1))
+        .updatePhotoState(takenPhoto.id, PhotoState.FAILED_TO_UPLOAD)
+    }
   }
 
-  @Test
-  fun `should return LocalDatabaseError when database error has occurred`() {
+  @Test(expected = UploadPhotosUseCase.PhotoUploadingException.DatabaseException::class)
+  fun `should throw DatabaseException when database error has occurred`() {
     val tempFile = Mockito.mock(File::class.java)
     val rotatedPhotoFileMock = Mockito.mock(File::class.java)
     val takenPhoto = TakenPhoto(1L, PhotoState.PHOTO_QUEUED_UP, true, "123", tempFile)
@@ -175,126 +169,69 @@ class UploadPhotosUseCaseTest {
     val filePath = "file/path"
     val location = LonLat.empty()
 
-    Mockito.doAnswer { invocation ->
-      val callback = invocation.arguments[4] as UploadPhotosUseCase.PhotoUploadProgressCallback
+    runBlocking {
+      val channel = Channel<UploadedPhotosFragmentEvent.PhotoUploadEvent>(Channel.UNLIMITED)
 
-      callback.onProgress(0)
-      callback.onProgress(15)
-      callback.onProgress(30)
-      callback.onProgress(45)
-      callback.onProgress(60)
-      callback.onProgress(65)
-      callback.onProgress(72)
-      callback.onProgress(80)
-      callback.onProgress(90)
-      callback.onProgress(93)
-      callback.onProgress(99)
-      callback.onProgress(100)
+      Mockito.doAnswer { invocation ->
+        val photo = invocation.arguments[4] as TakenPhoto
+        val ch = invocation.arguments[5] as Channel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
 
-      return@doAnswer Single.just(UploadPhotoResponse.success(1L, "photo_name"))
+        runBlocking {
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 0))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 15))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 30))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 45))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 60))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 65))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 72))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 80))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 90))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 93))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 99))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 100))
+        }
+
+        return@doAnswer UploadPhotosUseCase.UploadPhotoResult(1L, "photo_name")
+      }.`when`(apiClient).uploadPhoto(filePath, location, userId, takenPhoto.isPublic, takenPhoto, channel)
+
+      Mockito.`when`(tempFile.exists())
+        .thenReturn(true)
+      Mockito.`when`(fileUtils.createTempFile(Mockito.anyString(), Mockito.anyString())).thenReturn(rotatedPhotoFileMock)
+      Mockito.`when`(takenPhotosRepository.updatePhotoState(takenPhoto.id, PhotoState.PHOTO_UPLOADING))
+        .thenReturn(true)
+      Mockito.`when`(bitmapUtils.rotatePhoto(tempFile, rotatedPhotoFileMock))
+        .thenReturn(true)
+      Mockito.`when`(rotatedPhotoFileMock.absolutePath)
+        .thenReturn(filePath)
+      Mockito.`when`(gson.toJson(any()))
+        .thenReturn("{ \"test\": \"123\" }")
+      Mockito.`when`(database.transactional(any()))
+        .thenReturn(false)
+
+      uploadPhotosUseCase.uploadPhoto(takenPhoto, location, userId, channel)
+
+      val events = readChannelUntil(channel) { event ->
+        if (event !is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress) {
+          throw IllegalStateException("Bad event: ${event::class.java}")
+        }
+
+        if (event.progress >= 100) {
+          return@readChannelUntil false
+        }
+
+        return@readChannelUntil true
+      }
+
+      assertEquals(13, events.size)
+
+      Mockito.verify(fileUtils, Mockito.times(1)).deleteFile(rotatedPhotoFileMock)
+      Mockito.verify(takenPhotosRepository, Mockito.times(1))
+        .updatePhotoState(takenPhoto.id, PhotoState.FAILED_TO_UPLOAD)
     }
-      .`when`(apiClient).uploadPhoto(Mockito.anyString(), any(), Mockito.anyString(), Mockito.anyBoolean(), any())
-    Mockito.`when`(tempFile.exists())
-      .thenReturn(true)
-    Mockito.`when`(fileUtils.createTempFile(Mockito.anyString(), Mockito.anyString())).thenReturn(rotatedPhotoFileMock)
-    Mockito.`when`(takenPhotosRepository.updatePhotoState(takenPhoto.id, PhotoState.PHOTO_UPLOADING))
-      .thenReturn(true)
-    Mockito.`when`(bitmapUtils.rotatePhoto(tempFile, rotatedPhotoFileMock))
-      .thenReturn(true)
-    Mockito.`when`(rotatedPhotoFileMock.absolutePath)
-      .thenReturn(filePath)
-    Mockito.`when`(gson.toJson(any()))
-      .thenReturn("{ \"test\": \"123\" }")
-    Mockito.`when`(database.transactional(any()))
-      .thenReturn(false)
-
-    val events = uploadPhotosUseCase.uploadPhoto(takenPhoto, userId, location)
-      .test()
-      .assertNoErrors()
-      .assertTerminated()
-      .values()
-
-    assertEquals(13, events.size)
-
-    val lastEvent = events.last()
-    assertEquals(true, lastEvent is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError)
-    assertEquals(true, (lastEvent as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError).errorCode is ErrorCode.UploadPhotoErrors.LocalDatabaseError)
-
-    Mockito.verify(fileUtils, Mockito.times(1)).deleteFile(rotatedPhotoFileMock)
-    Mockito.verify(takenPhotosRepository, Mockito.times(1))
-      .updatePhotoState(takenPhoto.id, PhotoState.FAILED_TO_UPLOAD)
   }
 
-  @Test
-  fun `should return errorCode when server did not return ok`() {
-    val tempFile = Mockito.mock(File::class.java)
-    val rotatedPhotoFileMock = Mockito.mock(File::class.java)
-    val takenPhoto = TakenPhoto(1L, PhotoState.PHOTO_QUEUED_UP, true, "123", tempFile)
-    val userId = "user_id"
-    val filePath = "file/path"
-    val location = LonLat.empty()
-    val time = 555L
-
-    Mockito.doAnswer { invocation ->
-      val callback = invocation.arguments[4] as UploadPhotosUseCase.PhotoUploadProgressCallback
-
-      callback.onProgress(0)
-      callback.onProgress(15)
-      callback.onProgress(30)
-      callback.onProgress(45)
-      callback.onProgress(60)
-      callback.onProgress(65)
-      callback.onProgress(72)
-      callback.onProgress(80)
-      callback.onProgress(90)
-      callback.onProgress(93)
-      callback.onProgress(99)
-      callback.onProgress(100)
-
-      return@doAnswer Single.just(UploadPhotoResponse.error(ErrorCode.UploadPhotoErrors.DatabaseError()))
-    }
-      .`when`(apiClient).uploadPhoto(Mockito.anyString(), any(), Mockito.anyString(), Mockito.anyBoolean(), any())
-    Mockito.`when`(tempFile.exists())
-      .thenReturn(true)
-    Mockito.`when`(fileUtils.createTempFile(Mockito.anyString(), Mockito.anyString())).thenReturn(rotatedPhotoFileMock)
-    Mockito.`when`(takenPhotosRepository.updatePhotoState(takenPhoto.id, PhotoState.PHOTO_UPLOADING))
-      .thenReturn(true)
-    Mockito.`when`(bitmapUtils.rotatePhoto(tempFile, rotatedPhotoFileMock))
-      .thenReturn(true)
-    Mockito.`when`(rotatedPhotoFileMock.absolutePath)
-      .thenReturn(filePath)
-    Mockito.`when`(gson.toJson(any()))
-      .thenReturn("{ \"test\": \"123\" }")
-    Mockito.`when`(database.transactional(any()))
-      .thenReturn(true)
-    Mockito.`when`(timeUtils.getTimeFast())
-      .thenReturn(time)
-
-    val events = uploadPhotosUseCase.uploadPhoto(takenPhoto, userId, location)
-      .test()
-      .assertNoErrors()
-      .assertTerminated()
-      .values()
-
-    assertEquals(13, events.size)
-
-    val progressList = listOf(0, 15, 30, 45, 60, 65, 72, 80, 90, 93, 99, 100)
-
-    for (index in 0 until 12) {
-      assertEquals(true, events[index] is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress)
-      assertEquals(progressList[index], (events[index] as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress).progress)
-      assertEquals(takenPhoto, (events[index] as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress).photo)
-    }
-
-    val lastEvent = events.last()
-    assertEquals(true, lastEvent is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError)
-    assertEquals(true, (lastEvent as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnKnownError).errorCode is ErrorCode.UploadPhotoErrors.DatabaseError)
-
-    Mockito.verify(fileUtils, Mockito.times(1)).deleteFile(rotatedPhotoFileMock)
-  }
-
-  @Test
-  fun `should return OnUnknownError when unknown error has occurred while trying to upload a photo`() {
+  @Test(expected = UploadPhotosUseCase.PhotoUploadingException.ApiException::class)
+  fun `should throw ApiException when server did not return ok`() {
     val tempFile = Mockito.mock(File::class.java)
     val rotatedPhotoFileMock = Mockito.mock(File::class.java)
     val takenPhoto = TakenPhoto(1L, PhotoState.PHOTO_QUEUED_UP, true, "123", tempFile)
@@ -303,40 +240,35 @@ class UploadPhotosUseCaseTest {
     val location = LonLat.empty()
     val time = 555L
 
-    Mockito.doAnswer { _ -> throw IOException("Something went wrong") }
-      .`when`(apiClient).uploadPhoto(Mockito.anyString(), any(), Mockito.anyString(), Mockito.anyBoolean(), any())
-    Mockito.`when`(tempFile.exists())
-      .thenReturn(true)
-    Mockito.`when`(fileUtils.createTempFile(Mockito.anyString(), Mockito.anyString())).thenReturn(rotatedPhotoFileMock)
-    Mockito.`when`(takenPhotosRepository.updatePhotoState(takenPhoto.id, PhotoState.PHOTO_UPLOADING))
-      .thenReturn(true)
-    Mockito.`when`(bitmapUtils.rotatePhoto(tempFile, rotatedPhotoFileMock))
-      .thenReturn(true)
-    Mockito.`when`(rotatedPhotoFileMock.absolutePath)
-      .thenReturn(filePath)
-    Mockito.`when`(gson.toJson(any()))
-      .thenReturn("{ \"test\": \"123\" }")
-    Mockito.`when`(database.transactional(any()))
-      .thenReturn(true)
-    Mockito.`when`(timeUtils.getTimeFast())
-      .thenReturn(time)
+    runBlocking {
+      val channel = Channel<UploadedPhotosFragmentEvent.PhotoUploadEvent>(capacity = Channel.UNLIMITED)
 
-    uploadPhotosUseCase.uploadPhoto(takenPhoto, userId, location)
-      .test()
-      .assertNoErrors()
-      .assertValueAt(0) { value ->
-        value is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError
-      }
-      .assertValueAt(0) { value ->
-        (value as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUnknownError).error is IOException
-      }
-      .assertTerminated()
+      Mockito.doThrow(ApiErrorException(ErrorCode.DatabaseError))
+        .`when`(apiClient).uploadPhoto(filePath, location, userId, takenPhoto.isPublic, takenPhoto, channel)
+      Mockito.`when`(tempFile.exists())
+        .thenReturn(true)
+      Mockito.`when`(fileUtils.createTempFile(Mockito.anyString(), Mockito.anyString())).thenReturn(rotatedPhotoFileMock)
+      Mockito.`when`(takenPhotosRepository.updatePhotoState(takenPhoto.id, PhotoState.PHOTO_UPLOADING))
+        .thenReturn(true)
+      Mockito.`when`(bitmapUtils.rotatePhoto(tempFile, rotatedPhotoFileMock))
+        .thenReturn(true)
+      Mockito.`when`(rotatedPhotoFileMock.absolutePath)
+        .thenReturn(filePath)
+      Mockito.`when`(gson.toJson(any()))
+        .thenReturn("{ \"test\": \"123\" }")
+      Mockito.`when`(database.transactional(any()))
+        .thenReturn(true)
+      Mockito.`when`(timeUtils.getTimeFast())
+        .thenReturn(time)
 
-    Mockito.verify(fileUtils, Mockito.times(1)).deleteFile(rotatedPhotoFileMock)
+      uploadPhotosUseCase.uploadPhoto(takenPhoto, location, userId, channel)
+
+      Mockito.verify(fileUtils, Mockito.times(1)).deleteFile(rotatedPhotoFileMock)
+    }
   }
 
-  @Test
-  fun `should return OnUploaded when server returned ok`() {
+  @Test(expected = IOException::class)
+  fun `should throw the exception when unknown exception has occurred while trying to upload a photo`() {
     val tempFile = Mockito.mock(File::class.java)
     val rotatedPhotoFileMock = Mockito.mock(File::class.java)
     val takenPhoto = TakenPhoto(1L, PhotoState.PHOTO_QUEUED_UP, true, "123", tempFile)
@@ -345,58 +277,121 @@ class UploadPhotosUseCaseTest {
     val location = LonLat.empty()
     val time = 555L
 
-    Mockito.doAnswer { invocation ->
-      val callback = invocation.arguments[4] as UploadPhotosUseCase.PhotoUploadProgressCallback
+    runBlocking {
+      val channel = Channel<UploadedPhotosFragmentEvent.PhotoUploadEvent>()
 
-      callback.onProgress(0)
-      callback.onProgress(15)
-      callback.onProgress(30)
-      callback.onProgress(45)
-      callback.onProgress(60)
-      callback.onProgress(65)
-      callback.onProgress(72)
-      callback.onProgress(80)
-      callback.onProgress(90)
-      callback.onProgress(93)
-      callback.onProgress(99)
-      callback.onProgress(100)
+      Mockito.doAnswer { throw IOException("Something went wrong") }
+        .`when`(apiClient).uploadPhoto(filePath, location, userId, takenPhoto.isPublic, takenPhoto, channel)
+      Mockito.`when`(tempFile.exists())
+        .thenReturn(true)
+      Mockito.`when`(fileUtils.createTempFile(Mockito.anyString(), Mockito.anyString())).thenReturn(rotatedPhotoFileMock)
+      Mockito.`when`(takenPhotosRepository.updatePhotoState(takenPhoto.id, PhotoState.PHOTO_UPLOADING))
+        .thenReturn(true)
+      Mockito.`when`(bitmapUtils.rotatePhoto(tempFile, rotatedPhotoFileMock))
+        .thenReturn(true)
+      Mockito.`when`(rotatedPhotoFileMock.absolutePath)
+        .thenReturn(filePath)
+      Mockito.`when`(gson.toJson(any()))
+        .thenReturn("{ \"test\": \"123\" }")
+      Mockito.`when`(database.transactional(any()))
+        .thenReturn(true)
+      Mockito.`when`(timeUtils.getTimeFast())
+        .thenReturn(time)
 
-      return@doAnswer Single.just(UploadPhotoResponse.success(1L, "photo_name"))
+      uploadPhotosUseCase.uploadPhoto(takenPhoto, location, userId, channel)
+
+      val events = readChannelUntil(channel) { event ->
+        if (event !is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress) {
+          throw IllegalStateException("Bad event: ${event::class.java}")
+        }
+
+        if (event.progress >= 100) {
+          return@readChannelUntil false
+        }
+
+        return@readChannelUntil true
+      }
+
+      Mockito.verify(fileUtils, Mockito.times(1)).deleteFile(rotatedPhotoFileMock)
     }
-      .`when`(apiClient).uploadPhoto(Mockito.anyString(), any(), Mockito.anyString(), Mockito.anyBoolean(), any())
-    Mockito.`when`(tempFile.exists())
-      .thenReturn(true)
-    Mockito.`when`(fileUtils.createTempFile(Mockito.anyString(), Mockito.anyString())).thenReturn(rotatedPhotoFileMock)
-    Mockito.`when`(takenPhotosRepository.updatePhotoState(takenPhoto.id, PhotoState.PHOTO_UPLOADING))
-      .thenReturn(true)
-    Mockito.`when`(bitmapUtils.rotatePhoto(tempFile, rotatedPhotoFileMock))
-      .thenReturn(true)
-    Mockito.`when`(rotatedPhotoFileMock.absolutePath)
-      .thenReturn(filePath)
-    Mockito.`when`(gson.toJson(any()))
-      .thenReturn("{ \"test\": \"123\" }")
-    Mockito.`when`(database.transactional(any()))
-      .thenReturn(true)
-    Mockito.`when`(timeUtils.getTimeFast())
-      .thenReturn(time)
+  }
 
-    val events = uploadPhotosUseCase.uploadPhoto(takenPhoto, userId, location)
-      .test()
-      .assertNoErrors()
-      .assertTerminated()
-      .values()
+  @Test
+  fun `should OnProgress event with 100 progress when server returned ok`() {
+    val tempFile = Mockito.mock(File::class.java)
+    val rotatedPhotoFileMock = Mockito.mock(File::class.java)
+    val takenPhoto = TakenPhoto(1L, PhotoState.PHOTO_QUEUED_UP, true, "123", tempFile)
+    val userId = "user_id"
+    val filePath = "file/path"
+    val location = LonLat.empty()
+    val time = 555L
 
-    assertEquals(12, events.size)
+    runBlocking {
+      val channel = Channel<UploadedPhotosFragmentEvent.PhotoUploadEvent>(Channel.UNLIMITED)
 
-    val progressList = listOf(0, 15, 30, 45, 60, 65, 72, 80, 90, 93, 99, 100)
+      Mockito.doAnswer { invocation ->
+        val photo = invocation.arguments[4] as TakenPhoto
+        val ch = invocation.arguments[5] as Channel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
 
-    for (index in 0 until 12) {
-      assertEquals(true, events[index] is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress)
-      assertEquals(progressList[index], (events[index] as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress).progress)
-      assertEquals(takenPhoto, (events[index] as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress).photo)
+        runBlocking {
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 0))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 15))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 30))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 45))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 60))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 65))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 72))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 80))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 90))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 93))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 99))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 100))
+        }
+
+        return@doAnswer UploadPhotosUseCase.UploadPhotoResult(1L, "photo_name")
+      }.`when`(apiClient).uploadPhoto(filePath, location, userId, takenPhoto.isPublic, takenPhoto, channel)
+      Mockito.`when`(tempFile.exists())
+        .thenReturn(true)
+      Mockito.`when`(fileUtils.createTempFile(Mockito.anyString(), Mockito.anyString())).thenReturn(rotatedPhotoFileMock)
+      Mockito.`when`(takenPhotosRepository.updatePhotoState(takenPhoto.id, PhotoState.PHOTO_UPLOADING))
+        .thenReturn(true)
+      Mockito.`when`(bitmapUtils.rotatePhoto(tempFile, rotatedPhotoFileMock))
+        .thenReturn(true)
+      Mockito.`when`(rotatedPhotoFileMock.absolutePath)
+        .thenReturn(filePath)
+      Mockito.`when`(gson.toJson(any()))
+        .thenReturn("{ \"test\": \"123\" }")
+      Mockito.`when`(database.transactional(any()))
+        .thenReturn(true)
+      Mockito.`when`(timeUtils.getTimeFast())
+        .thenReturn(time)
+
+      uploadPhotosUseCase.uploadPhoto(takenPhoto, location, userId, channel)
+
+      val events = readChannelUntil(channel) { event ->
+        if (event !is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress) {
+          throw IllegalStateException("Bad event: ${event::class.java}")
+        }
+
+        if (event.progress >= 100) {
+          return@readChannelUntil false
+        }
+
+        return@readChannelUntil true
+      }
+
+      assertEquals(12, events.size)
+
+      val progressList = listOf(0, 15, 30, 45, 60, 65, 72, 80, 90, 93, 99, 100)
+
+      for (index in 0 until 12) {
+        assertEquals(true, events[index] is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress)
+        assertEquals(progressList[index], (events[index] as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress).progress)
+        assertEquals(takenPhoto, (events[index] as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress).photo)
+      }
+
+      Mockito.verify(fileUtils, Mockito.times(1)).deleteFile(rotatedPhotoFileMock)
     }
-
-    Mockito.verify(fileUtils, Mockito.times(1)).deleteFile(rotatedPhotoFileMock)
   }
 }
 

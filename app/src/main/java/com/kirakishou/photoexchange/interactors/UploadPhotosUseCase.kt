@@ -14,7 +14,6 @@ import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import core.ErrorCode
 import kotlinx.coroutines.channels.SendChannel
-import timber.log.Timber
 
 open class UploadPhotosUseCase(
   private val database: MyDatabase,
@@ -35,8 +34,7 @@ open class UploadPhotosUseCase(
   ) {
     if (!photo.fileExists()) {
       val path = photo.photoTempFile?.absolutePath ?: "(No photoTempFile)"
-      Timber.tag(TAG).e("Photo does not exists on disk! $path")
-
+      //TODO: add message
       throw PhotoUploadingException.PhotoDoesNotExistOnDisk()
     }
 
