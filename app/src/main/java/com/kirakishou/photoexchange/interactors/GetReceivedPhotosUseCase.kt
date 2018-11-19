@@ -41,7 +41,7 @@ open class GetReceivedPhotosUseCase(
           timeUtils.getTimeFast()
         }
 
-        receivedPhotosRepository.deleteOld()
+        receivedPhotosRepository.deleteOldPhotos()
 
         val pageOfReceivedPhotos = receivedPhotosRepository.getPageOfReceivedPhotos(time, count)
         if (pageOfReceivedPhotos.size == count) {

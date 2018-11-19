@@ -246,6 +246,7 @@ open class TakenPhotosRepository(
     }
   }
 
+  //TODO: tests
   suspend fun cleanup() {
     database.transactional {
       //we need to delete all photos with state PHOTO_TAKEN because at this step they are being considered corrupted

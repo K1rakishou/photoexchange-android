@@ -110,7 +110,8 @@ open class UploadedPhotosRepository(
     }
   }
 
-  open suspend fun deleteOld() {
+  //TODO: tests
+  open suspend fun deleteOldPhotos() {
     withContext(coroutineContext) {
       val oldCount = findAllTest().size
       val now = timeUtils.getTimeFast()

@@ -36,7 +36,7 @@ open class GetUploadedPhotosUseCase(
           timeUtils.getTimeFast()
         }
 
-        uploadedPhotosRepository.deleteOld()
+        uploadedPhotosRepository.deleteOldPhotos()
 
         val pageOfUploadedPhotos = uploadedPhotosRepository.getPageOfUploadedPhotos(time, count)
         if (pageOfUploadedPhotos.size == count) {

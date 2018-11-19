@@ -150,6 +150,7 @@ open class GalleryPhotoRepository(
     }
   }
 
+  //TODO: tests
   open suspend fun deleteOldPhotos() {
     withContext(coroutineContext) {
       val oldCount = findAllPhotosTest().size

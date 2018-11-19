@@ -116,7 +116,7 @@ class GetUploadedPhotosUseCaseTest {
       .thenReturn(Single.just(GetUploadedPhotoIdsResponse.success(photoIds)))
     Mockito.`when`(uploadedPhotosRepository.findMany(photoIds))
       .thenReturn(uploadedPhotos)
-    Mockito.doNothing().`when`(uploadedPhotosRepository).deleteOld()
+    Mockito.doNothing().`when`(uploadedPhotosRepository).deleteOldPhotos()
 
     val events = getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
       .test()
@@ -137,7 +137,7 @@ class GetUploadedPhotosUseCaseTest {
     assertEquals(1L, values[4].photoId)
 
     Mockito.verify(uploadedPhotosRepository, Mockito.times(1)).findMany(photoIds)
-    Mockito.verify(uploadedPhotosRepository, Mockito.times(1)).deleteOld()
+    Mockito.verify(uploadedPhotosRepository, Mockito.times(1)).deleteOldPhotos()
     Mockito.verify(apiClient, Mockito.times(1)).getUploadedPhotoIds(userId, lastId, photosPerPage)
 
     Mockito.verifyNoMoreInteractions(uploadedPhotosRepository)
@@ -176,7 +176,7 @@ class GetUploadedPhotosUseCaseTest {
       .thenReturn(uploadedPhotos1)
     Mockito.`when`(uploadedPhotosRepository.saveMany(uploadedPhotos2))
       .thenReturn(true)
-    Mockito.doNothing().`when`(uploadedPhotosRepository).deleteOld()
+    Mockito.doNothing().`when`(uploadedPhotosRepository).deleteOldPhotos()
 
     val events = getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
       .test()
@@ -205,7 +205,7 @@ class GetUploadedPhotosUseCaseTest {
     Mockito.verify(apiClient, Mockito.times(1)).getUploadedPhotos(Mockito.anyString(), Mockito.anyString())
     Mockito.verify(uploadedPhotosRepository, Mockito.times(1)).findMany(Mockito.anyList())
     Mockito.verify(uploadedPhotosRepository, Mockito.times(1)).saveMany(Mockito.anyList())
-    Mockito.verify(uploadedPhotosRepository, Mockito.times(1)).deleteOld()
+    Mockito.verify(uploadedPhotosRepository, Mockito.times(1)).deleteOldPhotos()
 
     Mockito.verifyNoMoreInteractions(apiClient)
     Mockito.verifyNoMoreInteractions(uploadedPhotosRepository)
