@@ -101,6 +101,8 @@ abstract class BaseFragment : Fragment(), CoroutineScope {
 
     job.cancel()
     compositeChannel.forEach { it.cancel() }
+    compositeChannel.clear()
+
     compositeDisposable.clear()
     PhotoExchangeApplication.watch(this, this::class.simpleName)
   }

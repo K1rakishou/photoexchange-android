@@ -83,6 +83,8 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
 
     job.cancel()
     compositeChannel.forEach { it.cancel() }
+    compositeChannel.clear()
+
     compositeDisposable.clear()
     super.onStop()
   }

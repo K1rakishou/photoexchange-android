@@ -65,6 +65,8 @@ class UploadedPhotosFragmentViewModel(
         }
       }
     }
+
+    runBlocking { actor.send(Unit) }
   }
 
   fun loadMorePhotos() {
