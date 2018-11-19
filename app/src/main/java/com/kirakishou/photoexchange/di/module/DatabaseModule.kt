@@ -27,8 +27,11 @@ open class DatabaseModule(
 
   @Singleton
   @Provides
-  open fun provideDatabase(context: Context): MyDatabase {
-    return Room.databaseBuilder(context, MyDatabase::class.java, dbName).build()
+  open fun provideDatabase(context: Context,
+                           dispatchersProvider: DispatchersProvider): MyDatabase {
+    return Room.databaseBuilder(context, MyDatabase::class.java, dbName)
+      .build()
+      .apply { this.dispatchersProvider = dispatchersProvider }
   }
 
   @Singleton

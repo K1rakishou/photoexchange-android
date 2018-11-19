@@ -57,7 +57,7 @@ open class UploadPhotosUseCase(
         throw PhotoUploadingException.ApiException(error.errorCode)
       }
 
-      if (!tryToMovePhotoToUploaded(photo, result.photoId, result.photoName, location)) {
+      if (!movePhotoToUploaded(photo, result.photoId, result.photoName, location)) {
         throw PhotoUploadingException.DatabaseException()
       }
 
@@ -66,12 +66,15 @@ open class UploadPhotosUseCase(
     }
   }
 
-  private suspend fun tryToMovePhotoToUploaded(
+  private suspend fun movePhotoToUploaded(
     photo: TakenPhoto,
     photoId: Long,
     photoName: String,
     location: LonLat
   ): Boolean {
+    Timber.tag(TAG).d("movePhotoToUploaded")
+
+    //FIXME: creates nested transaction and hangs forever
     return database.transactional {
       val updateResult1 = takenPhotosRepository.deletePhotoById(photo.id)
       val updateResult2 = uploadedPhotosRepository.save(photoId, photoName, location.lon,
@@ -92,9 +95,5 @@ open class UploadPhotosUseCase(
     class DatabaseException : PhotoUploadingException()
     class ApiException(val errorCode: ErrorCode) : PhotoUploadingException()
     class CouldNotUpdatePhotoState : PhotoUploadingException()
-  }
-
-  interface PhotoUploadProgressCallback {
-    fun onProgress(progress: Int)
   }
 }

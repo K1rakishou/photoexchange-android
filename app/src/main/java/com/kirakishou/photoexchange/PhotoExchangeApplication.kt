@@ -157,7 +157,6 @@ open class PhotoExchangeApplication : Application() {
 
   companion object {
     var refWatcher: RefWatcher? = null
-    val baseUrl = "http://kez1911.asuscomm.com:8080/"
 
     private val CRASHLYTICS_KEY_PRIORITY = "priority"
     private val CRASHLYTICS_KEY_TAG = "tag"

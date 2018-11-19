@@ -11,5 +11,5 @@ abstract class BaseRepository(
   private val job = Job()
 
   override val coroutineContext: CoroutineContext
-    get() = job + dispatchersProvider.IO()
+    get() = job + dispatchersProvider.DB()
 }

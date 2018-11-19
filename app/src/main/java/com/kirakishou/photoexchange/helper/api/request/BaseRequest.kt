@@ -21,7 +21,7 @@ abstract class BaseRequest<T>(
   private val job = Job()
 
   override val coroutineContext: CoroutineContext
-    get() = job + dispatchersProvider.IO()
+    get() = job + dispatchersProvider.NETWORK()
 
   abstract suspend fun execute(): T
 
