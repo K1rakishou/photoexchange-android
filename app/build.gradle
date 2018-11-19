@@ -22,6 +22,8 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        multiDexEnabled true
     }
     buildTypes {
         release {
@@ -34,6 +36,14 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+    lintOptions {
+        disable 'TimberTagLength'
+    }
     repositories {
         maven { url "https://dl.bintray.com/drummer-aidan/maven/" }
         maven { url 'https://maven.fabric.io/public' }
@@ -42,17 +52,6 @@ android {
             url 'https://oss.sonatype.org/content/repositories/snapshots/'
             name 'OSS-Sonatype'
         }
-    }
-    defaultConfig {
-        multiDexEnabled true
-    }
-    testOptions {
-        unitTests {
-            includeAndroidResources = true
-        }
-    }
-    lintOptions {
-        disable 'TimberTagLength'
     }
 }
 
