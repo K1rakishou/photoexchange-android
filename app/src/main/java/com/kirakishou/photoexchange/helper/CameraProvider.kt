@@ -78,19 +78,7 @@ open class CameraProvider(
   fun isAvailable(): Boolean = camera?.isAvailable(back()) ?: false
 
   suspend fun takePhoto(): TakenPhoto {
-    //TODO: use transaction
-    //we need to delete all photos with state PHOTO_TAKEN because at this step they are being considered corrupted
-    takenPhotosRepository.deleteAllWithState(PhotoState.PHOTO_TAKEN)
-
-    //delete photo files that were marked as deleted earlier than (CURRENT_TIME - OLD_PHOTO_TIME_THRESHOLD)
-    tempFilesRepository.deleteOld()
-
-    //delete photo files that have no takenPhotoId
-    tempFilesRepository.deleteEmptyTempFiles()
-
-    //in case the user takes photos way too often and they weight a lot (like 3-4 mb per photo)
-    //we need to consider this as well so we delete them when total files size exceeds MAX_CACHE_SIZE
-    tempFilesRepository.deleteOldIfCacheSizeIsTooBig()
+    takenPhotosRepository.cleanup()
 
     val tempFile = tempFilesRepository.create()
     val takePhotoStatus = takePhotoInternal(tempFile)
