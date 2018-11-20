@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.helper.Either
+import com.kirakishou.photoexchange.helper.api.response.FavouritePhotoResponseData
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
@@ -62,7 +63,7 @@ class PhotosActivityViewModel(
     }
   }
 
-  suspend fun favouritePhoto(photoName: String): Either<Exception, FavouritePhotoUseCase.FavouritePhotoResult> {
+  suspend fun favouritePhoto(photoName: String): Either<Exception, FavouritePhotoResponseData> {
     return withContext(coroutineContext) {
       val userId = settingsRepository.getUserId()
       if (userId.isEmpty()) {

@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.helper.api
 
+import com.kirakishou.photoexchange.helper.api.response.FavouritePhotoResponseData
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
-import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
@@ -31,7 +31,7 @@ interface ApiClient {
   suspend fun getGalleryPhotoInfo(userId: String, galleryPhotoIds: String): List<GalleryPhotoInfoResponse.GalleryPhotosInfoResponseData>
 
   @Throws(ApiErrorException::class)
-  suspend fun favouritePhoto(userId: String, photoName: String): FavouritePhotoUseCase.FavouritePhotoResult
+  suspend fun favouritePhoto(userId: String, photoName: String): FavouritePhotoResponseData
 
   @Throws(ApiErrorException::class)
   suspend fun reportPhoto(userId: String, photoName: String): Boolean

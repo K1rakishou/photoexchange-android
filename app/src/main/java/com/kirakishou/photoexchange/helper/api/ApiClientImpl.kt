@@ -1,10 +1,10 @@
 package com.kirakishou.photoexchange.helper.api
 
 import com.kirakishou.photoexchange.helper.api.request.*
+import com.kirakishou.photoexchange.helper.api.response.FavouritePhotoResponseData
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
-import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
@@ -94,7 +94,7 @@ open class ApiClientImpl
   override suspend fun favouritePhoto(
     userId: String,
     photoName: String
-  ): FavouritePhotoUseCase.FavouritePhotoResult {
+  ): FavouritePhotoResponseData {
     val response = FavouritePhotoRequest(
       userId,
       photoName,
@@ -103,7 +103,7 @@ open class ApiClientImpl
       dispatchersProvider
     ).execute()
 
-    return FavouritePhotoUseCase.FavouritePhotoResult(
+    return FavouritePhotoResponseData(
       response.isFavourited,
       response.favouritesCount
     )

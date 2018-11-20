@@ -2,14 +2,14 @@ package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepository
+import com.kirakishou.photoexchange.helper.database.repository.GetGalleryPhotosRepository
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 open class GetGalleryPhotosUseCase(
-  private val galleryPhotoRepository: GalleryPhotoRepository,
+  private val getGalleryPhotosRepository: GetGalleryPhotosRepository,
   private val timeUtils: TimeUtils,
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
@@ -28,7 +28,7 @@ open class GetGalleryPhotosUseCase(
         timeUtils.getTimeFast()
       }
 
-      return@withContext galleryPhotoRepository.getPage(time, count)
+      return@withContext getGalleryPhotosRepository.getPage(time, count)
     }
   }
 }

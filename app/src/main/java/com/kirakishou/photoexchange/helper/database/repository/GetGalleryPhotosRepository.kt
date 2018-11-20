@@ -19,9 +19,8 @@ import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
 import kotlinx.coroutines.withContext
 import java.lang.Exception
 
-open class GalleryPhotoRepository(
+open class GetGalleryPhotosRepository(
   private val database: MyDatabase,
-  private val timeUtils: TimeUtils,
   private val settingsLocalSource: SettingsLocalSource,
   private val galleryPhotoRemoteSource: GalleryPhotoRemoteSource,
   private val galleryPhotoLocalSource: GalleryPhotoLocalSource,
@@ -29,59 +28,7 @@ open class GalleryPhotoRepository(
   private val galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
   dispatchersProvider: DispatchersProvider
 ) : BaseRepository(dispatchersProvider) {
-  private val TAG = "GalleryPhotoRepository"
-
-  open suspend fun favouritePhoto(photoName: String, isFavourited: Boolean, favouritesCount: Long) {
-    withContext(coroutineContext) {
-      database.transactional {
-        val galleryPhotoEntity = galleryPhotoLocalSource.findByPhotoName(photoName)
-        if (galleryPhotoEntity == null) {
-          return@transactional
-        }
-
-        var galleryPhotoInfoEntity = galleryPhotoInfoLocalSource.findById(galleryPhotoEntity.galleryPhotoId)
-        if (galleryPhotoInfoEntity == null) {
-          galleryPhotoInfoEntity = GalleryPhotoInfoEntity.create(
-            galleryPhotoEntity.galleryPhotoId,
-            isFavourited,
-            favouritesCount,
-            false,
-            timeUtils.getTimeFast()
-          )
-        } else {
-          galleryPhotoInfoEntity.isFavourited = isFavourited
-        }
-
-        galleryPhotoInfoLocalSource.save(galleryPhotoInfoEntity)
-      }
-    }
-  }
-
-  open suspend fun reportPhoto(photoName: String, isReported: Boolean) {
-    withContext(coroutineContext) {
-      database.transactional {
-        val galleryPhotoEntity = galleryPhotoLocalSource.findByPhotoName(photoName)
-        if (galleryPhotoEntity == null) {
-          return@transactional
-        }
-
-        var galleryPhotoInfoEntity = galleryPhotoInfoLocalSource.findById(galleryPhotoEntity.galleryPhotoId)
-        if (galleryPhotoInfoEntity == null) {
-          galleryPhotoInfoEntity = GalleryPhotoInfoEntity.create(
-            galleryPhotoEntity.galleryPhotoId,
-            false,
-            0,
-            isReported,
-            timeUtils.getTimeFast()
-          )
-        } else {
-          galleryPhotoInfoEntity.isReported = isReported
-        }
-
-        galleryPhotoInfoLocalSource.save(galleryPhotoInfoEntity)
-      }
-    }
-  }
+  private val TAG = "GetGalleryPhotosRepository"
 
   suspend fun getPage(time: Long, count: Int): Either<Exception, List<GalleryPhoto>> {
     return withContext(coroutineContext) {

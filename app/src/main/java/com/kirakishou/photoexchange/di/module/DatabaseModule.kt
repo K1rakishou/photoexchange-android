@@ -9,6 +9,7 @@ import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoInfoLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.SettingsLocalSource
+import com.kirakishou.photoexchange.helper.database.source.remote.FavouritePhotoRemoteSource
 import com.kirakishou.photoexchange.helper.database.source.remote.GalleryPhotoInfoRemoteSource
 import com.kirakishou.photoexchange.helper.database.source.remote.GalleryPhotoRemoteSource
 import com.kirakishou.photoexchange.helper.util.FileUtils
@@ -85,6 +86,12 @@ open class DatabaseModule(
     return GalleryPhotoInfoRemoteSource(apiClient)
   }
 
+  @Singleton
+  @Provides
+  open fun provideFavouritePhotoRemoteSource(apiClient: ApiClient): FavouritePhotoRemoteSource {
+    return FavouritePhotoRemoteSource(apiClient)
+  }
+
   /**
    * Repositories
    * */
@@ -142,16 +149,14 @@ open class DatabaseModule(
   @Singleton
   @Provides
   open fun provideGalleryPhotoRepository(database: MyDatabase,
-                                         timeUtils: TimeUtils,
                                          settingsLocalSource: SettingsLocalSource,
                                          galleryPhotoRemoteSource: GalleryPhotoRemoteSource,
                                          galleryPhotoLocalSource: GalleryPhotoLocalSource,
                                          galleryPhotoInfoRemoteSource: GalleryPhotoInfoRemoteSource,
                                          galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
-                                         dispatchersProvider: DispatchersProvider): GalleryPhotoRepository {
-    return GalleryPhotoRepository(
+                                         dispatchersProvider: DispatchersProvider): GetGalleryPhotosRepository {
+    return GetGalleryPhotosRepository(
       database,
-      timeUtils,
       settingsLocalSource,
       galleryPhotoRemoteSource,
       galleryPhotoLocalSource,
@@ -170,6 +175,40 @@ open class DatabaseModule(
       database,
       timeUtils,
       UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME,
+      dispatchersProvider
+    )
+  }
+
+  @Singleton
+  @Provides
+  open fun provideFavouritePhotoRepository(database: MyDatabase,
+                                           timeUtils: TimeUtils,
+                                           favouritePhotoRemoteSource: FavouritePhotoRemoteSource,
+                                           galleryPhotoLocalSource: GalleryPhotoLocalSource,
+                                           galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
+                                           dispatchersProvider: DispatchersProvider): FavouritePhotoRepository {
+    return FavouritePhotoRepository(
+      database,
+      timeUtils,
+      favouritePhotoRemoteSource,
+      galleryPhotoLocalSource,
+      galleryPhotoInfoLocalSource,
+      dispatchersProvider
+    )
+  }
+
+  @Singleton
+  @Provides
+  open fun provideReportPhotoRepository(database: MyDatabase,
+                                        timeUtils: TimeUtils,
+                                        galleryPhotoLocalSource: GalleryPhotoLocalSource,
+                                        galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
+                                        dispatchersProvider: DispatchersProvider): ReportPhotoRepository {
+    return ReportPhotoRepository(
+      database,
+      timeUtils,
+      galleryPhotoLocalSource,
+      galleryPhotoInfoLocalSource,
       dispatchersProvider
     )
   }

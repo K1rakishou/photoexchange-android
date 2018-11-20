@@ -134,12 +134,6 @@ open class TakenPhotosRepository(
     }
   }
 
-  suspend fun countAllByStates(states: Array<PhotoState>): Int {
-    return withContext(coroutineContext) {
-      return@withContext takenPhotoDao.countAllByStates(states)
-    }
-  }
-
   open suspend fun updateStates(oldState: PhotoState, newState: PhotoState) {
     withContext(coroutineContext) {
       takenPhotoDao.updateStates(oldState, newState)
