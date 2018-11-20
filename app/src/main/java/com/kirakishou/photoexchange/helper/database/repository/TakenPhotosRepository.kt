@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
 import com.kirakishou.photoexchange.helper.database.isFail
 import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.TakenPhotosMapper
+import com.kirakishou.photoexchange.helper.database.source.local.TakenPhotosLocalSource
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
@@ -20,6 +21,7 @@ import kotlinx.coroutines.withContext
 open class TakenPhotosRepository(
   private val timeUtils: TimeUtils,
   private val database: MyDatabase,
+  private val takenPhotosLocalSource: TakenPhotosLocalSource,
   private val tempFileRepository: TempFileRepository,
   dispatchersProvider: DispatchersProvider
 ) : BaseRepository(dispatchersProvider) {
@@ -56,6 +58,12 @@ open class TakenPhotosRepository(
       }
 
       return@withContext photo
+    }
+  }
+
+  suspend fun updatePhotoState(photoId: Long, newPhotoState: PhotoState): Boolean {
+    return withContext(coroutineContext) {
+      return@withContext takenPhotosLocalSource.updatePhotoState(photoId, newPhotoState)
     }
   }
 
@@ -97,7 +105,7 @@ open class TakenPhotosRepository(
   suspend fun findById(id: Long): TakenPhoto {
     return withContext(coroutineContext) {
       val myPhotoEntity = takenPhotoDao.findById(id) ?: TakenPhotoEntity.empty()
-      val tempFileEntity = findTempFileById(id)
+      val tempFileEntity = tempFileRepository.findById(id)
 
       return@withContext TakenPhotosMapper.toMyPhoto(myPhotoEntity, tempFileEntity)
     }
@@ -110,7 +118,7 @@ open class TakenPhotosRepository(
 
       for (myPhotoEntity in allMyPhotoEntities) {
         myPhotoEntity.id?.let { myPhotoId ->
-          val tempFile = findTempFileById(myPhotoId)
+          val tempFile = tempFileRepository.findById(myPhotoId)
 
           TakenPhotosMapper.toMyPhoto(myPhotoEntity, tempFile).let { myPhoto ->
             allMyPhotos += myPhoto
@@ -137,16 +145,11 @@ open class TakenPhotosRepository(
   open suspend fun findAllByState(state: PhotoState): List<TakenPhoto> {
     return withContext(coroutineContext) {
       val resultList = mutableListOf<TakenPhoto>()
+      val allPhotoReadyToUploading = takenPhotoDao.findAllWithState(state)
 
-      database.transactional {
-        val allPhotoReadyToUploading = takenPhotoDao.findAllWithState(state)
-
-        for (photo in allPhotoReadyToUploading) {
-          val tempFileEntity = findTempFileById(photo.id!!)
-          resultList += TakenPhotosMapper.toMyPhoto(photo, tempFileEntity)
-        }
-
-        return@transactional true
+      for (photo in allPhotoReadyToUploading) {
+        val tempFileEntity = tempFileRepository.findById(photo.id!!)
+        resultList += TakenPhotosMapper.toMyPhoto(photo, tempFileEntity)
       }
 
       return@withContext resultList
@@ -163,13 +166,14 @@ open class TakenPhotosRepository(
         return@withContext true
       }
 
-      return@withContext deletePhotoById(takenPhoto.id)
+      return@withContext takenPhotosLocalSource.deletePhotoById(takenPhoto.id)
     }
   }
 
-  private suspend fun findTempFileById(id: Long): TempFileEntity {
+
+  suspend fun deletePhotoById(photoId: Long): Boolean {
     return withContext(coroutineContext) {
-      return@withContext tempFileRepository.findById(id)
+      takenPhotosLocalSource.deletePhotoById(photoId)
     }
   }
 
@@ -185,11 +189,11 @@ open class TakenPhotosRepository(
 
       for (photo in stillUploadingPhotos) {
         if (!photo.fileExists()) {
-          deletePhotoById(photo.id)
+          takenPhotosLocalSource.deletePhotoById(photo.id)
           continue
         }
 
-        updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
+        takenPhotosLocalSource.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
       }
     }
   }
@@ -224,7 +228,7 @@ open class TakenPhotosRepository(
         val myPhotosList = takenPhotoDao.findAllWithState(photoState)
 
         for (myPhoto in myPhotosList) {
-          if (!deletePhotoById(myPhoto.id!!)) {
+          if (!takenPhotosLocalSource.deletePhotoById(myPhoto.id!!)) {
             return@transactional false
           }
         }
@@ -233,4 +237,5 @@ open class TakenPhotosRepository(
       }
     }
   }
+
 }

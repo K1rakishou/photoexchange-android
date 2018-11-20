@@ -11,6 +11,7 @@ import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelInter
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
 import com.kirakishou.photoexchange.mvp.model.exception.EmptyUserIdException
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import kotlinx.coroutines.withContext
@@ -86,7 +87,10 @@ class PhotosActivityViewModel(
   }
 
   suspend fun deletePhotoById(photoId: Long) {
-    takenPhotosRepository.deletePhotoById(photoId)
+    if (!takenPhotosRepository.deletePhotoById(photoId)) {
+      throw DatabaseException("Could not delete taken photo with id ${photoId}")
+    }
+
     if (Constants.isDebugBuild) {
       check(takenPhotosRepository.findById(photoId).isEmpty())
     }

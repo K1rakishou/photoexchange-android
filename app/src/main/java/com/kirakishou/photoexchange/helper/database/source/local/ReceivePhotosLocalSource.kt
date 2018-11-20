@@ -15,7 +15,7 @@ class ReceivePhotosLocalSource(
 ) {
   private val receivedPhotosDao = database.receivedPhotoDao()
 
-  suspend fun save(receivedPhoto: ReceivedPhotosResponse.ReceivedPhotoResponseData): Boolean {
+  fun save(receivedPhoto: ReceivedPhotosResponse.ReceivedPhotoResponseData): Boolean {
     val now = timeUtils.getTimeFast()
 
     return receivedPhotosDao.save(
@@ -23,7 +23,7 @@ class ReceivePhotosLocalSource(
     ).isSuccess()
   }
 
-  suspend fun saveMany(receivedPhotos: List<ReceivedPhotosResponse.ReceivedPhotoResponseData>): Boolean {
+  fun saveMany(receivedPhotos: List<ReceivedPhotosResponse.ReceivedPhotoResponseData>): Boolean {
     val time = timeUtils.getTimeFast()
     return receivedPhotosDao.saveMany(ReceivedPhotosMapper.FromResponse.GetReceivedPhotos.toReceivedPhotoEntities(time, receivedPhotos))
       .size == receivedPhotos.size
@@ -33,12 +33,12 @@ class ReceivePhotosLocalSource(
     return ReceivedPhotosMapper.FromEntity.toReceivedPhotos(receivedPhotosDao.getPage(lastUploadedOn, count))
   }
 
-  suspend fun findAll(): List<ReceivedPhotoEntity> {
+  fun findAll(): List<ReceivedPhotoEntity> {
       return receivedPhotosDao.findAll()
   }
 
   //TODO: tests
-  suspend fun deleteOldPhotos() {
+  fun deleteOldPhotos() {
     val now = timeUtils.getTimeFast()
     receivedPhotosDao.deleteOlderThan(now - receivedPhotoMaxCacheLiveTime)
   }

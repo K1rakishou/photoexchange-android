@@ -12,11 +12,11 @@ open class TakenPhotosLocalSource(
   private val takenPhotoDao = database.takenPhotoDao()
   private val tempFilesDao = database.tempFileDao()
 
-  open suspend fun updatePhotoState(photoId: Long, newPhotoState: PhotoState): Boolean {
+  open fun updatePhotoState(photoId: Long, newPhotoState: PhotoState): Boolean {
     return takenPhotoDao.updateSetNewPhotoState(photoId, newPhotoState) == 1
   }
 
-  suspend fun deletePhotoByName(photoName: String): Boolean {
+  fun deletePhotoByName(photoName: String): Boolean {
     val photoId = takenPhotoDao.findPhotoIdByName(photoName)
     if (photoId == null) {
       //already deleted
@@ -26,7 +26,7 @@ open class TakenPhotosLocalSource(
     return deletePhotoById(photoId)
   }
 
-  open suspend fun deletePhotoById(photoId: Long): Boolean {
+  open fun deletePhotoById(photoId: Long): Boolean {
     if (takenPhotoDao.deleteById(photoId).isFail()) {
       return false
     }

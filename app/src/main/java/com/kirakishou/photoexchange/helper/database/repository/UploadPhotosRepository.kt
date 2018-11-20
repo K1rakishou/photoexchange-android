@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.source.local.TakenPhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.UploadPhotosLocalSource
@@ -14,6 +15,7 @@ import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.withContext
 
 class UploadPhotosRepository(
   private val database: MyDatabase,
@@ -22,8 +24,9 @@ class UploadPhotosRepository(
   private val fileUtils: FileUtils,
   private val takenPhotosLocalSource: TakenPhotosLocalSource,
   private val uploadPhotosRemoteSource: UploadPhotosRemoteSource,
-  private val uploadPhotosLocalSource: UploadPhotosLocalSource
-) {
+  private val uploadPhotosLocalSource: UploadPhotosLocalSource,
+  dispatchersProvider: DispatchersProvider
+) : BaseRepository(dispatchersProvider) {
 
   suspend fun uploadPhoto(
     photo: TakenPhoto,
@@ -31,29 +34,31 @@ class UploadPhotosRepository(
     userId: String,
     channel: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
   ) {
-    val photoFile = fileUtils.createTempFile("rotated_photo", ".tmp")
+    withContext(coroutineContext) {
+      val photoFile = fileUtils.createTempFile("rotated_photo", ".tmp")
 
-    try {
-      if (!uploadPhotosLocalSource.updatePhotoState(photo.id, PhotoState.PHOTO_UPLOADING)) {
-        throw UploadPhotosUseCase.PhotoUploadingException.CouldNotUpdatePhotoState()
+      try {
+        if (!takenPhotosLocalSource.updatePhotoState(photo.id, PhotoState.PHOTO_UPLOADING)) {
+          throw UploadPhotosUseCase.PhotoUploadingException.CouldNotUpdatePhotoState()
+        }
+
+        if (!bitmapUtils.rotatePhoto(photo.photoTempFile!!, photoFile)) {
+          throw UploadPhotosUseCase.PhotoUploadingException.CouldNotRotatePhoto()
+        }
+
+        val result = try {
+          uploadPhotosRemoteSource.uploadPhoto(photoFile.absolutePath, location, userId, photo.isPublic, photo, channel)
+        } catch (error: ApiErrorException) {
+          throw UploadPhotosUseCase.PhotoUploadingException.ApiException(error.errorCode)
+        }
+
+        if (!updatePhotoAsUploaded(photo, result.photoId, result.photoName, location)) {
+          throw UploadPhotosUseCase.PhotoUploadingException.DatabaseException()
+        }
+
+      } finally {
+        fileUtils.deleteFile(photoFile)
       }
-
-      if (!bitmapUtils.rotatePhoto(photo.photoTempFile!!, photoFile)) {
-        throw UploadPhotosUseCase.PhotoUploadingException.CouldNotRotatePhoto()
-      }
-
-      val result = try {
-        uploadPhotosRemoteSource.uploadPhoto(photoFile.absolutePath, location, userId, photo.isPublic, photo, channel)
-      } catch (error: ApiErrorException) {
-        throw UploadPhotosUseCase.PhotoUploadingException.ApiException(error.errorCode)
-      }
-
-      if (!updatePhotoAsUploaded(photo, result.photoId, result.photoName, location)) {
-        throw UploadPhotosUseCase.PhotoUploadingException.DatabaseException()
-      }
-
-    } finally {
-      fileUtils.deleteFile(photoFile)
     }
   }
 

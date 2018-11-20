@@ -16,7 +16,7 @@ open class UploadPhotosLocalSource(
 ) {
   private val uploadedPhotoDao = database.uploadedPhotoDao()
 
-  open suspend fun save(photoId: Long, photoName: String, lon: Double, lat: Double, uploadedOn: Long): Boolean {
+  open fun save(photoId: Long, photoName: String, lon: Double, lat: Double, uploadedOn: Long): Boolean {
     val uploadedPhotoEntity = UploadedPhotosMapper.FromObject.ToEntity.toUploadedPhotoEntity(
       photoId,
       photoName,
@@ -28,7 +28,7 @@ open class UploadPhotosLocalSource(
     return uploadedPhotoDao.save(uploadedPhotoEntity).isSuccess()
   }
 
-  private suspend fun save(uploadedPhotoEntity: UploadedPhotoEntity): Boolean {
+  private fun save(uploadedPhotoEntity: UploadedPhotoEntity): Boolean {
     val cachedPhoto = uploadedPhotoDao.findByPhotoName(uploadedPhotoEntity.photoName)
     if (cachedPhoto != null) {
       uploadedPhotoEntity.photoId = cachedPhoto.photoId
@@ -37,7 +37,7 @@ open class UploadPhotosLocalSource(
     return uploadedPhotoDao.save(uploadedPhotoEntity).isSuccess()
   }
 
-  open suspend fun saveMany(
+  open fun saveMany(
     uploadedPhotoDataList: List<GetUploadedPhotosResponse.UploadedPhotoResponseData>
   ): Boolean {
     val now = timeUtils.getTimeFast()
@@ -52,18 +52,18 @@ open class UploadPhotosLocalSource(
     return true
   }
 
-  suspend fun updateReceiverInfo(uploadedPhotoName: String): Boolean {
+  fun getPage(time: Long, count: Int): List<UploadedPhoto> {
+    return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.getPage(time, count))
+  }
+
+  fun updateReceiverInfo(uploadedPhotoName: String): Boolean {
     return uploadedPhotoDao.updateReceiverInfo(uploadedPhotoName) == 1
   }
 
   //TODO: tests
-  open suspend fun deleteOldPhotos() {
+  open fun deleteOldPhotos() {
     val now = timeUtils.getTimeFast()
     uploadedPhotoDao.deleteOlderThan(now - uploadedPhotoMaxCacheLiveTime)
-  }
-
-  suspend fun getPage(time: Long, count: Int): List<UploadedPhoto> {
-    return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.getPage(time, count))
   }
 
 }

@@ -33,25 +33,29 @@ open class GetGalleryPhotosRepository(
   suspend fun getPage(time: Long, count: Int): Either<Exception, List<GalleryPhoto>> {
     return withContext(coroutineContext) {
       return@withContext myRunCatching {
-        return@myRunCatching database.transactional {
-          galleryPhotoLocalSource.deleteOld()
-          galleryPhotoInfoLocalSource.deleteOld()
+        deleteOld()
 
-          val galleryPhotos = getPageOfGalleryPhotos(time, count)
-          val galleryPhotoIds = galleryPhotos.map { it.galleryPhotoId }
+        val galleryPhotos = getPageOfGalleryPhotos(time, count)
+        val galleryPhotoIds = galleryPhotos.map { it.galleryPhotoId }
 
-          val userId = settingsLocalSource.getUserId()
-          val galleryPhotosInfo = getGalleryPhotosInfo(userId, galleryPhotoIds)
+        val userId = settingsLocalSource.getUserId()
+        val galleryPhotosInfo = getGalleryPhotosInfo(userId, galleryPhotoIds)
 
-          for (galleryPhoto in galleryPhotos) {
-            galleryPhoto.galleryPhotoInfo = galleryPhotosInfo
-              .firstOrNull { it.galleryPhotoId == galleryPhoto.galleryPhotoId }
-          }
-
-          return@transactional galleryPhotos
-            .sortedByDescending { it.galleryPhotoId }
+        for (galleryPhoto in galleryPhotos) {
+          galleryPhoto.galleryPhotoInfo = galleryPhotosInfo
+            .firstOrNull { it.galleryPhotoId == galleryPhoto.galleryPhotoId }
         }
+
+        return@myRunCatching galleryPhotos
+          .sortedByDescending { it.galleryPhotoId }
       }
+    }
+  }
+
+  private suspend fun deleteOld() {
+    database.transactional {
+      galleryPhotoLocalSource.deleteOld()
+      galleryPhotoInfoLocalSource.deleteOld()
     }
   }
 

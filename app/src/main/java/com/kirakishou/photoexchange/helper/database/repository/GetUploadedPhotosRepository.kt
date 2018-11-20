@@ -1,21 +1,26 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.source.local.UploadPhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.remote.GetUploadedPhotosRemoteSource
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
+import kotlinx.coroutines.withContext
 
 class GetUploadedPhotosRepository(
   private val uploadedPhotosLocalSource: UploadPhotosLocalSource,
-  private val getUploadedPhotosRemoteSource: GetUploadedPhotosRemoteSource
-) {
+  private val getUploadedPhotosRemoteSource: GetUploadedPhotosRemoteSource,
+  dispatchersProvider: DispatchersProvider
+) : BaseRepository(dispatchersProvider) {
 
   suspend fun getPage(userId: String, time: Long, count: Int): List<UploadedPhoto> {
-    uploadedPhotosLocalSource.deleteOldPhotos()
+    return withContext(coroutineContext) {
+      uploadedPhotosLocalSource.deleteOldPhotos()
 
-    return getPageInternal(time, count, userId)
-      .sortedByDescending { it.photoId }
+      return@withContext getPageInternal(time, count, userId)
+        .sortedByDescending { it.photoId }
+    }
   }
 
   private suspend fun getPageInternal(time: Long, count: Int, userId: String): List<UploadedPhoto> {

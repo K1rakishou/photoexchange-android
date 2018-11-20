@@ -100,6 +100,8 @@ open class UploadPhotoServicePresenter(
         Timber.tag(TAG).e(error)
 
         hasErrors = true
+
+        takenPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
         eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUpload(photo))
       }
     }

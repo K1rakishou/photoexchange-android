@@ -11,7 +11,7 @@ import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
 import kotlinx.coroutines.withContext
 import java.lang.Exception
 
-class ReportPhotoRepository(
+open class ReportPhotoRepository(
   private val database: MyDatabase,
   private val timeUtils: TimeUtils,
   private val reportPhotoRemoteSource: ReportPhotoRemoteSource,

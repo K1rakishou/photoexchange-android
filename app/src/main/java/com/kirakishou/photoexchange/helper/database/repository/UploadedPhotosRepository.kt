@@ -13,14 +13,10 @@ import timber.log.Timber
 
 open class UploadedPhotosRepository(
   private val database: MyDatabase,
-  private val timeUtils: TimeUtils,
-  private val uploadedPhotoMaxCacheLiveTime: Long,
   dispatchersProvider: DispatchersProvider
 ) : BaseRepository(dispatchersProvider) {
   private val TAG = "UploadedPhotosRepository"
   private val uploadedPhotoDao = database.uploadedPhotoDao()
-
-
 
   suspend fun count(): Int {
     return withContext(coroutineContext) {
@@ -59,9 +55,6 @@ open class UploadedPhotosRepository(
       return@withContext UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(entities)
     }
   }
-
-
-
 
   suspend fun deleteAll() {
     withContext(coroutineContext) {

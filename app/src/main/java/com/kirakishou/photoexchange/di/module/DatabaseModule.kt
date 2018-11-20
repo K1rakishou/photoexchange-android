@@ -157,11 +157,13 @@ open class DatabaseModule(
   @Provides
   open fun provideTakenPhotoRepository(database: MyDatabase,
                                        timeUtils: TimeUtils,
+                                       takenPhotosLocalSource: TakenPhotosLocalSource,
                                        tempFileRepository: TempFileRepository,
                                        dispatchersProvider: DispatchersProvider): TakenPhotosRepository {
     return TakenPhotosRepository(
       timeUtils,
       database,
+      takenPhotosLocalSource,
       tempFileRepository,
       dispatchersProvider
     )
@@ -213,8 +215,6 @@ open class DatabaseModule(
                                           dispatchersProvider: DispatchersProvider): UploadedPhotosRepository {
     return UploadedPhotosRepository(
       database,
-      timeUtils,
-      UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME,
       dispatchersProvider
     )
   }
@@ -260,12 +260,14 @@ open class DatabaseModule(
   open fun provideGetReceivedPhotosRepository(database: MyDatabase,
                                               getReceivedPhotosRemoteSource: GetReceivedPhotosRemoteSource,
                                               receivePhotosLocalSource: ReceivePhotosLocalSource,
-                                              uploadedPhotosLocalSource: UploadPhotosLocalSource): GetReceivedPhotosRepository {
+                                              uploadedPhotosLocalSource: UploadPhotosLocalSource,
+                                              dispatchersProvider: DispatchersProvider): GetReceivedPhotosRepository {
     return GetReceivedPhotosRepository(
       database,
       getReceivedPhotosRemoteSource,
       receivePhotosLocalSource,
-      uploadedPhotosLocalSource
+      uploadedPhotosLocalSource,
+      dispatchersProvider
     )
   }
 
@@ -277,7 +279,8 @@ open class DatabaseModule(
                                          fileUtils: FileUtils,
                                          takenPhotosLocalSource: TakenPhotosLocalSource,
                                          uploadPhotosRemoteSource: UploadPhotosRemoteSource,
-                                         uploadPhotosLocalSource: UploadPhotosLocalSource): UploadPhotosRepository {
+                                         uploadPhotosLocalSource: UploadPhotosLocalSource,
+                                         dispatchersProvider: DispatchersProvider): UploadPhotosRepository {
     return UploadPhotosRepository(
       database,
       timeUtils,
@@ -285,7 +288,8 @@ open class DatabaseModule(
       fileUtils,
       takenPhotosLocalSource,
       uploadPhotosRemoteSource,
-      uploadPhotosLocalSource
+      uploadPhotosLocalSource,
+      dispatchersProvider
     )
   }
 
@@ -302,23 +306,27 @@ open class DatabaseModule(
                                           receivePhotosRemoteSource: ReceivePhotosRemoteSource,
                                           receivePhotosLocalSource: ReceivePhotosLocalSource,
                                           uploadedPhotosLocalSource: UploadPhotosLocalSource,
-                                          takenPhotosLocalSource: TakenPhotosLocalSource): ReceivePhotosRepository {
+                                          takenPhotosLocalSource: TakenPhotosLocalSource,
+                                          dispatchersProvider: DispatchersProvider): ReceivePhotosRepository {
     return ReceivePhotosRepository(
       database,
       receivePhotosRemoteSource,
       receivePhotosLocalSource,
       uploadedPhotosLocalSource,
-      takenPhotosLocalSource
+      takenPhotosLocalSource,
+      dispatchersProvider
     )
   }
 
   @Singleton
   @Provides
   open fun provideGetUploadedPhotosRepository(uploadedPhotosLocalSource: UploadPhotosLocalSource,
-                                              getUploadedPhotosRemoteSource: GetUploadedPhotosRemoteSource): GetUploadedPhotosRepository {
+                                              getUploadedPhotosRemoteSource: GetUploadedPhotosRemoteSource,
+                                              dispatchersProvider: DispatchersProvider): GetUploadedPhotosRepository {
     return GetUploadedPhotosRepository(
       uploadedPhotosLocalSource,
-      getUploadedPhotosRemoteSource
+      getUploadedPhotosRemoteSource,
+      dispatchersProvider
     )
   }
 }

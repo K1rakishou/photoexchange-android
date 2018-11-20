@@ -47,20 +47,17 @@ open class TempFileRepository(
       val fullPathFile = File(filesDir)
       val file = File.createTempFile("file_", ".tmp", fullPathFile)
 
-      return@withContext createInternal(file)
+      val entity = TempFileEntity.createEmpty(file.absolutePath)
+      val insertedId = tempFilesDao.insert(entity)
+
+      if (insertedId.isFail()) {
+        return@withContext TempFileEntity.empty()
+      }
+
+      return@withContext entity.apply { this.id = insertedId }
     }
   }
 
-  private suspend fun createInternal(file: File): TempFileEntity {
-    val entity = TempFileEntity.createEmpty(file.absolutePath)
-    val insertedId = tempFilesDao.insert(entity)
-
-    if (insertedId.isFail()) {
-      return TempFileEntity.empty()
-    }
-
-    return entity.apply { this.id = insertedId }
-  }
 
   suspend fun findById(id: Long): TempFileEntity {
     return withContext(coroutineContext) {
