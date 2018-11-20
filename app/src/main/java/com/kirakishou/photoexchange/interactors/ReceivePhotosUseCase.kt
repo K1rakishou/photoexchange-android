@@ -8,9 +8,7 @@ import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import core.ErrorCode
 
 open class ReceivePhotosUseCase(
-  private val database: MyDatabase,
-  private val receivePhotosRepository: ReceivePhotosRepository,
-  private val apiClient: ApiClient
+  private val receivePhotosRepository: ReceivePhotosRepository
 ) {
   private val TAG = "ReceivePhotosUseCase"
 

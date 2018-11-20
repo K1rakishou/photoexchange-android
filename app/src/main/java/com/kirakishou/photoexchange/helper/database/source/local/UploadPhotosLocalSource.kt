@@ -5,11 +5,14 @@ import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
 import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
+import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
+import kotlinx.coroutines.withContext
 import net.response.GetUploadedPhotosResponse
 
 open class UploadPhotosLocalSource(
   private val database: MyDatabase,
-  private val timeUtils: TimeUtils
+  private val timeUtils: TimeUtils,
+  private val uploadedPhotoMaxCacheLiveTime: Long
 ) {
   private val uploadedPhotoDao = database.uploadedPhotoDao()
 
@@ -34,7 +37,9 @@ open class UploadPhotosLocalSource(
     return uploadedPhotoDao.save(uploadedPhotoEntity).isSuccess()
   }
 
-  open suspend fun saveMany(uploadedPhotoDataList: List<GetUploadedPhotosResponse.UploadedPhotoResponseData>): Boolean {
+  open suspend fun saveMany(
+    uploadedPhotoDataList: List<GetUploadedPhotosResponse.UploadedPhotoResponseData>
+  ): Boolean {
     val now = timeUtils.getTimeFast()
 
     for (uploadedPhotoData in uploadedPhotoDataList) {
@@ -49,6 +54,16 @@ open class UploadPhotosLocalSource(
 
   suspend fun updateReceiverInfo(uploadedPhotoName: String): Boolean {
     return uploadedPhotoDao.updateReceiverInfo(uploadedPhotoName) == 1
+  }
+
+  //TODO: tests
+  open suspend fun deleteOldPhotos() {
+    val now = timeUtils.getTimeFast()
+    uploadedPhotoDao.deleteOlderThan(now - uploadedPhotoMaxCacheLiveTime)
+  }
+
+  suspend fun getPage(time: Long, count: Int): List<UploadedPhoto> {
+    return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.getPage(time, count))
   }
 
 }

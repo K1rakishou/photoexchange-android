@@ -39,7 +39,7 @@ open class GetReceivedPhotosUseCase(
           timeUtils.getTimeFast()
         }
 
-        return@myRunCatching getReceivedPhotosRepository.getReceivedPhotos(userId, time, count)
+        return@myRunCatching getReceivedPhotosRepository.getPage(userId, time, count)
       }
     }
   }

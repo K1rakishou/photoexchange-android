@@ -20,11 +20,7 @@ open class UploadedPhotosRepository(
   private val TAG = "UploadedPhotosRepository"
   private val uploadedPhotoDao = database.uploadedPhotoDao()
 
-  suspend fun getPageOfUploadedPhotos(time: Long, count: Int): List<UploadedPhoto> {
-    return withContext(coroutineContext) {
-      return@withContext UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.getPage(time, count))
-    }
-  }
+
 
   suspend fun count(): Int {
     return withContext(coroutineContext) {
@@ -66,19 +62,6 @@ open class UploadedPhotosRepository(
 
 
 
-  //TODO: tests
-  open suspend fun deleteOldPhotos() {
-    withContext(coroutineContext) {
-      val oldCount = findAllTest().size
-      val now = timeUtils.getTimeFast()
-      uploadedPhotoDao.deleteOlderThan(now - uploadedPhotoMaxCacheLiveTime)
-
-      val newCount = findAllTest().size
-      if (newCount < oldCount) {
-        Timber.tag(TAG).d("Deleted ${newCount - oldCount} uploadedPhotos from the cache")
-      }
-    }
-  }
 
   suspend fun deleteAll() {
     withContext(coroutineContext) {

@@ -16,15 +16,19 @@ open class GetReceivedPhotosRepository(
   private val uploadedPhotosLocalSource: UploadPhotosLocalSource
 ) {
 
-  open suspend fun getReceivedPhotos(userId: String, lastUploadedOn: Long, count: Int): List<ReceivedPhoto> {
+  open suspend fun getPage(
+    userId: String,
+    lastUploadedOn: Long,
+    count: Int
+  ): List<ReceivedPhoto> {
     receivedPhotosLocalSource.deleteOldPhotos()
 
-    val receivedPhotos = getReceivedPhotosInternal(userId, lastUploadedOn, count)
+    val receivedPhotos = getPageInternal(userId, lastUploadedOn, count)
     return receivedPhotos
       .sortedByDescending { it.photoId }
   }
 
-  private suspend fun getReceivedPhotosInternal(userId: String, lastUploadedOn: Long, count: Int): List<ReceivedPhoto> {
+  private suspend fun getPageInternal(userId: String, lastUploadedOn: Long, count: Int): List<ReceivedPhoto> {
     val pageOfReceivedPhotos = receivedPhotosLocalSource.getPageOfReceivedPhotos(lastUploadedOn, count)
     if (pageOfReceivedPhotos.size == count) {
       return pageOfReceivedPhotos

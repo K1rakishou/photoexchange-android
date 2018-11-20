@@ -78,7 +78,7 @@ open class DatabaseModule(
   @Provides
   open fun provideUploadPhotosLocalSource(database: MyDatabase,
                                           timeUtils: TimeUtils): UploadPhotosLocalSource {
-    return UploadPhotosLocalSource(database, timeUtils)
+    return UploadPhotosLocalSource(database, timeUtils, UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME)
   }
 
   /**
@@ -125,6 +125,12 @@ open class DatabaseModule(
   @Provides
   open fun provideReceivePhotosRemoteSource(apiClient: ApiClient): ReceivePhotosRemoteSource {
     return ReceivePhotosRemoteSource(apiClient)
+  }
+
+  @Singleton
+  @Provides
+  open fun provideGetUploadedPhotosRemoteSource(apiClient: ApiClient): GetUploadedPhotosRemoteSource {
+    return GetUploadedPhotosRemoteSource(apiClient)
   }
 
   /**
@@ -303,6 +309,16 @@ open class DatabaseModule(
       receivePhotosLocalSource,
       uploadedPhotosLocalSource,
       takenPhotosLocalSource
+    )
+  }
+
+  @Singleton
+  @Provides
+  open fun provideGetUploadedPhotosRepository(uploadedPhotosLocalSource: UploadPhotosLocalSource,
+                                              getUploadedPhotosRemoteSource: GetUploadedPhotosRemoteSource): GetUploadedPhotosRepository {
+    return GetUploadedPhotosRepository(
+      uploadedPhotosLocalSource,
+      getUploadedPhotosRemoteSource
     )
   }
 }

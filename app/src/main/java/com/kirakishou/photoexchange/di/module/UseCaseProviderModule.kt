@@ -23,10 +23,8 @@ class UseCaseProviderModule {
 
   @Singleton
   @Provides
-  fun provideFindPhotoAnswersUseCase(database: MyDatabase,
-                                     receivePhotosRepository: ReceivePhotosRepository,
-                                     apiClient: ApiClient): ReceivePhotosUseCase {
-    return ReceivePhotosUseCase(database, receivePhotosRepository, apiClient)
+  fun provideFindPhotoAnswersUseCase(receivePhotosRepository: ReceivePhotosRepository): ReceivePhotosUseCase {
+    return ReceivePhotosUseCase(receivePhotosRepository)
   }
 
   @Singleton
@@ -61,11 +59,10 @@ class UseCaseProviderModule {
 
   @Singleton
   @Provides
-  fun provideGetUploadedPhotosUseCase(uploadedPhotosRepository: UploadedPhotosRepository,
-                                      apiClient: ApiClient,
+  fun provideGetUploadedPhotosUseCase(getUploadedPhotosRepository: GetUploadedPhotosRepository,
                                       timeUtils: TimeUtils,
                                       dispatchersProvider: DispatchersProvider): GetUploadedPhotosUseCase {
-    return GetUploadedPhotosUseCase(uploadedPhotosRepository, apiClient, timeUtils, dispatchersProvider)
+    return GetUploadedPhotosUseCase(getUploadedPhotosRepository, timeUtils, dispatchersProvider)
   }
 
   @Singleton
