@@ -72,13 +72,15 @@ open class UploadPhotosUseCase(
     photoName: String,
     location: LonLat
   ): Boolean {
-    Timber.tag(TAG).d("movePhotoToUploaded")
-
-    //FIXME: creates nested transaction and hangs forever
     return database.transactional {
       val updateResult1 = takenPhotosRepository.deletePhotoById(photo.id)
-      val updateResult2 = uploadedPhotosRepository.save(photoId, photoName, location.lon,
-        location.lat, timeUtils.getTimeFast())
+      val updateResult2 = uploadedPhotosRepository.save(
+        photoId,
+        photoName,
+        location.lon,
+        location.lat,
+        timeUtils.getTimeFast()
+      )
 
       return@transactional updateResult1 && updateResult2
     }

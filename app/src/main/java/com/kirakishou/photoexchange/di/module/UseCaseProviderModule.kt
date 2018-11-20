@@ -41,11 +41,10 @@ class UseCaseProviderModule {
 
   @Singleton
   @Provides
-  fun provideGetGalleryPhotosUseCase(apiClient: ApiClient,
-                                     galleryPhotoRepository: GalleryPhotoRepository,
+  fun provideGetGalleryPhotosUseCase(galleryPhotoRepository: GalleryPhotoRepository,
                                      timeUtils: TimeUtils,
                                      dispatchersProvider: DispatchersProvider): GetGalleryPhotosUseCase {
-    return GetGalleryPhotosUseCase(apiClient, galleryPhotoRepository, timeUtils, dispatchersProvider)
+    return GetGalleryPhotosUseCase(galleryPhotoRepository, timeUtils, dispatchersProvider)
   }
 
   @Singleton
@@ -90,14 +89,6 @@ class UseCaseProviderModule {
                                       dispatchersProvider: DispatchersProvider): GetReceivedPhotosUseCase {
     return GetReceivedPhotosUseCase(database, receivedPhotosRepository,
       uploadedPhotosRepository, apiClient, timeUtils, dispatchersProvider)
-  }
-
-  @Singleton
-  @Provides
-  fun provideGetGalleryPhotosInfoUseCase(apiClient: ApiClient,
-                                         galleryPhotoRepository: GalleryPhotoRepository,
-                                         dispatchersProvider: DispatchersProvider): GetGalleryPhotosInfoUseCase {
-    return GetGalleryPhotosInfoUseCase(apiClient, galleryPhotoRepository, dispatchersProvider)
   }
 
   @Singleton

@@ -193,13 +193,11 @@ open class TakenPhotosRepository(
 
   open suspend fun deletePhotoById(photoId: Long): Boolean {
     return withContext(coroutineContext) {
-      return@withContext database.transactional {
-        if (takenPhotoDao.deleteById(photoId).isFail()) {
-          return@transactional false
-        }
-
-        return@transactional markTempFileDeleted(photoId)
+      if (takenPhotoDao.deleteById(photoId).isFail()) {
+        return@withContext false
       }
+
+      return@withContext markTempFileDeleted(photoId)
     }
   }
 

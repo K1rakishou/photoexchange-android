@@ -2,11 +2,8 @@ package com.kirakishou.photoexchange.helper.database
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.dao.*
 import com.kirakishou.photoexchange.helper.database.entity.*
-import kotlinx.coroutines.withContext
-import timber.log.Timber
 
 /**
  * Created by kirakishou on 9/12/2017.
@@ -30,26 +27,16 @@ abstract class MyDatabase : RoomDatabase() {
   abstract fun galleryPhotoInfoDao(): GalleryPhotoInfoDao
   abstract fun uploadedPhotoDao(): UploadedPhotoDao
 
-  lateinit var dispatchersProvider: DispatchersProvider
+  open suspend fun <T> transactional(func: suspend () -> T): T {
+    beginTransaction()
 
-  open suspend fun transactional(func: suspend () -> Boolean): Boolean {
-    return withContext(dispatchersProvider.DB()) {
-      Timber.d("before beginTransaction")
-      beginTransaction()
-      Timber.d("after beginTransaction")
+    try {
+      val result = func()
+      setTransactionSuccessful()
 
-      try {
-        val result = func()
-        if (result) {
-          setTransactionSuccessful()
-        }
-
-        return@withContext result
-      } finally {
-        Timber.d("before endTransaction")
-        endTransaction()
-        Timber.d("after endTransaction")
-      }
+      return result
+    } finally {
+      endTransaction()
     }
   }
 

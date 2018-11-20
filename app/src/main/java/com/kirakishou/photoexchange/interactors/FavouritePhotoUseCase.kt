@@ -17,11 +17,12 @@ open class FavouritePhotoUseCase(
     return withContext(coroutineContext) {
       return@withContext myRunCatching {
         val favouritePhotoResult = apiClient.favouritePhoto(userId, photoName)
-        val galleryPhoto = galleryPhotoRepository.findByPhotoName(photoName)
 
-        if (galleryPhoto != null) {
-          galleryPhotoRepository.updateFavouritesCount(galleryPhoto, photoName, favouritePhotoResult)
-        }
+        galleryPhotoRepository.favouritePhoto(
+          photoName,
+          favouritePhotoResult.isFavourited,
+          favouritePhotoResult.favouritesCount
+        )
 
         return@myRunCatching favouritePhotoResult
       }

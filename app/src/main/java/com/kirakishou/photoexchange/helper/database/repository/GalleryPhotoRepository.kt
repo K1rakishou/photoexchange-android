@@ -1,179 +1,147 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
+import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoEntity
 import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoInfoEntity
-import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosInfoMapper
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosMapper
+import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoInfoLocalSource
+import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoLocalSource
+import com.kirakishou.photoexchange.helper.database.source.local.SettingsLocalSource
+import com.kirakishou.photoexchange.helper.database.source.remote.GalleryPhotoInfoRemoteSource
+import com.kirakishou.photoexchange.helper.database.source.remote.GalleryPhotoRemoteSource
+import com.kirakishou.photoexchange.helper.myRunCatching
 import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.GalleryPhotoInfo
 import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
 import kotlinx.coroutines.withContext
-import net.response.GalleryPhotoInfoResponse
-import net.response.GalleryPhotosResponse
-import timber.log.Timber
+import java.lang.Exception
 
 open class GalleryPhotoRepository(
   private val database: MyDatabase,
   private val timeUtils: TimeUtils,
-  private val galleryPhotoCacheMaxLiveTime: Long,
-  private val galleryPhotoInfoCacheMaxLiveTime: Long,
+  private val settingsLocalSource: SettingsLocalSource,
+  private val galleryPhotoRemoteSource: GalleryPhotoRemoteSource,
+  private val galleryPhotoLocalSource: GalleryPhotoLocalSource,
+  private val galleryPhotoInfoRemoteSource: GalleryPhotoInfoRemoteSource,
+  private val galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
   dispatchersProvider: DispatchersProvider
 ) : BaseRepository(dispatchersProvider) {
   private val TAG = "GalleryPhotoRepository"
-  private val galleryPhotoDao = database.galleryPhotoDao()
-  private val galleryPhotoInfoDao = database.galleryPhotoInfoDao()
 
-  open suspend fun saveManyInfo(galleryPhotoInfoList: List<GalleryPhotoInfoResponse.GalleryPhotosInfoResponseData>): Boolean {
-    return withContext(coroutineContext) {
-      val now = timeUtils.getTimeFast()
-      val galleryPhotoInfoEntityList = GalleryPhotosInfoMapper.FromResponseData.ToEntity
-        .toGalleryPhotoInfoEntityList(now, galleryPhotoInfoList)
-
-      return@withContext galleryPhotoInfoDao.saveMany(galleryPhotoInfoEntityList).size == galleryPhotoInfoList.size
-    }
-  }
-
-  open suspend fun saveMany(galleryPhotos: List<GalleryPhotosResponse.GalleryPhotoResponseData>): Boolean {
-    return withContext(coroutineContext) {
-      val now = timeUtils.getTimeFast()
-      return@withContext galleryPhotoDao.saveMany(GalleryPhotosMapper.FromResponse.ToEntity
-        .toGalleryPhotoEntitiesList(now, galleryPhotos)).size == galleryPhotos.size
-    }
-  }
-
-  open suspend fun getPageOfGalleryPhotos(time: Long, count: Int): List<GalleryPhoto> {
-    return withContext(coroutineContext) {
-      return@withContext GalleryPhotosMapper.FromEntity.toGalleryPhotos(galleryPhotoDao.getPage(time, count))
-    }
-  }
-
-  suspend fun findManyInfo(galleryPhotoIds: List<Long>): List<GalleryPhotoInfo> {
-    return withContext(coroutineContext) {
-      return@withContext GalleryPhotosInfoMapper.ToObject.toGalleryPhotoInfoList(galleryPhotoInfoDao.findMany(galleryPhotoIds))
-    }
-  }
-
-  suspend fun findByPhotoName(photoName: String): GalleryPhoto? {
-    return withContext(coroutineContext) {
-      val galleryPhotoEntity = galleryPhotoDao.findByPhotoName(photoName)
-      if (galleryPhotoEntity == null) {
-        return@withContext null
-      }
-
-      val galleryPhotoInfoEntity = galleryPhotoInfoDao.find(galleryPhotoEntity.galleryPhotoId)
-      val galleryPhoto = GalleryPhotosMapper.FromEntity.toGalleryPhoto(galleryPhotoEntity)
-      galleryPhoto.galleryPhotoInfo = GalleryPhotosInfoMapper.ToObject.toGalleryPhotoInfo(galleryPhotoInfoEntity)
-
-      return@withContext galleryPhoto
-    }
-  }
-
-  open suspend fun findMany(galleryPhotoIds: List<Long>): List<GalleryPhoto> {
-    return withContext(coroutineContext) {
-      val galleryPhotos = GalleryPhotosMapper.FromEntity.toGalleryPhotos(galleryPhotoDao.findMany(galleryPhotoIds))
-
-      for (galleryPhoto in galleryPhotos) {
-        val galleryPhotoInfo = galleryPhotoInfoDao.find(galleryPhoto.galleryPhotoId)
-        galleryPhoto.galleryPhotoInfo = GalleryPhotosInfoMapper.ToObject.toGalleryPhotoInfo(galleryPhotoInfo)
-      }
-
-      return@withContext galleryPhotos
-    }
-  }
-
-  suspend fun findAllPhotosTest(): List<GalleryPhotoEntity> {
-    return withContext(coroutineContext) {
-      return@withContext galleryPhotoDao.findAll()
-    }
-  }
-
-  suspend fun findAllPhotosInfoTest(): List<GalleryPhotoInfoEntity> {
-    return withContext(coroutineContext) {
-      return@withContext galleryPhotoInfoDao.findAll()
-    }
-  }
-
-  suspend fun updateFavouritesCount(
-    galleryPhoto: GalleryPhoto,
-    photoName: String,
-    favouritePhotoResult: FavouritePhotoUseCase.FavouritePhotoResult
-  ) {
-    return withContext(coroutineContext) {
-      val transactionResult = database.transactional {
-        if (!favouritePhoto(galleryPhoto.galleryPhotoId)) {
-          return@transactional false
-        }
-
-        if (!updateFavouritesCount(photoName, favouritePhotoResult.favouritesCount)) {
-          return@transactional false
-        }
-
-        return@transactional true
-      }
-
-      if (!transactionResult) {
-        throw DatabaseException("Could not update favourites count")
-      }
-    }
-  }
-
-  private suspend fun favouritePhoto(galleryPhotoId: Long): Boolean {
-    var galleryPhotoInfoEntity = galleryPhotoInfoDao.find(galleryPhotoId)
-    if (galleryPhotoInfoEntity == null) {
-      galleryPhotoInfoEntity = GalleryPhotoInfoEntity.create(galleryPhotoId, true, false, timeUtils.getTimeFast())
-    } else {
-      galleryPhotoInfoEntity.isFavourited = !galleryPhotoInfoEntity.isFavourited
-    }
-
-    return galleryPhotoInfoDao.save(galleryPhotoInfoEntity).isSuccess()
-  }
-
-  private suspend fun updateFavouritesCount(photoName: String, favouritesCount: Long): Boolean {
-    return galleryPhotoDao.updateFavouritesCount(photoName, favouritesCount).isSuccess()
-  }
-
-  suspend fun reportPhoto(photoId: Long, isReported: Boolean): Boolean {
-    return withContext(coroutineContext) {
-      var galleryPhotoInfoEntity = galleryPhotoInfoDao.find(photoId)
-      if (galleryPhotoInfoEntity == null) {
-        galleryPhotoInfoEntity = GalleryPhotoInfoEntity.create(photoId, false, isReported, timeUtils.getTimeFast())
-      } else {
-        galleryPhotoInfoEntity.isReported = isReported
-      }
-
-      return@withContext galleryPhotoInfoDao.save(galleryPhotoInfoEntity).isSuccess()
-    }
-  }
-
-  //TODO: tests
-  open suspend fun deleteOldPhotos() {
+  open suspend fun favouritePhoto(photoName: String, isFavourited: Boolean, favouritesCount: Long) {
     withContext(coroutineContext) {
-      val oldCount = findAllPhotosTest().size
-      val now = timeUtils.getTimeFast()
-      galleryPhotoDao.deleteOlderThan(now - galleryPhotoCacheMaxLiveTime)
+      database.transactional {
+        val galleryPhotoEntity = galleryPhotoLocalSource.findByPhotoName(photoName)
+        if (galleryPhotoEntity == null) {
+          return@transactional
+        }
 
-      val newCount = findAllPhotosTest().size
-      if (newCount < oldCount) {
-        Timber.tag(TAG).d("Deleted ${newCount - oldCount} galleryPhotos from the cache")
+        var galleryPhotoInfoEntity = galleryPhotoInfoLocalSource.findById(galleryPhotoEntity.galleryPhotoId)
+        if (galleryPhotoInfoEntity == null) {
+          galleryPhotoInfoEntity = GalleryPhotoInfoEntity.create(
+            galleryPhotoEntity.galleryPhotoId,
+            isFavourited,
+            favouritesCount,
+            false,
+            timeUtils.getTimeFast()
+          )
+        } else {
+          galleryPhotoInfoEntity.isFavourited = isFavourited
+        }
+
+        galleryPhotoInfoLocalSource.save(galleryPhotoInfoEntity)
       }
     }
   }
 
-  suspend fun deleteOldPhotosInfo() {
+  open suspend fun reportPhoto(photoName: String, isReported: Boolean) {
+    withContext(coroutineContext) {
+      database.transactional {
+        val galleryPhotoEntity = galleryPhotoLocalSource.findByPhotoName(photoName)
+        if (galleryPhotoEntity == null) {
+          return@transactional
+        }
+
+        var galleryPhotoInfoEntity = galleryPhotoInfoLocalSource.findById(galleryPhotoEntity.galleryPhotoId)
+        if (galleryPhotoInfoEntity == null) {
+          galleryPhotoInfoEntity = GalleryPhotoInfoEntity.create(
+            galleryPhotoEntity.galleryPhotoId,
+            false,
+            0,
+            isReported,
+            timeUtils.getTimeFast()
+          )
+        } else {
+          galleryPhotoInfoEntity.isReported = isReported
+        }
+
+        galleryPhotoInfoLocalSource.save(galleryPhotoInfoEntity)
+      }
+    }
+  }
+
+  suspend fun getPage(time: Long, count: Int): Either<Exception, List<GalleryPhoto>> {
     return withContext(coroutineContext) {
-      val oldCount = findAllPhotosInfoTest().size
-      val now = timeUtils.getTimeFast()
-      galleryPhotoInfoDao.deleteOlderThan(now - galleryPhotoInfoCacheMaxLiveTime)
+      return@withContext myRunCatching {
+        return@myRunCatching database.transactional {
+          galleryPhotoLocalSource.deleteOld()
+          galleryPhotoInfoLocalSource.deleteOld()
 
-      val newCount = findAllPhotosInfoTest().size
-      if (newCount < oldCount) {
-        Timber.tag(TAG).d("Deleted ${newCount - oldCount} galleryPhotosInfo from the cache")
+          val galleryPhotos = getPageOfGalleryPhotos(time, count)
+          val galleryPhotoIds = galleryPhotos.map { it.galleryPhotoId }
+
+          val userId = settingsLocalSource.getUserId()
+          val galleryPhotosInfo = getGalleryPhotosInfo(userId, galleryPhotoIds)
+
+          for (galleryPhoto in galleryPhotos) {
+            galleryPhoto.galleryPhotoInfo = galleryPhotosInfo
+              .firstOrNull { it.galleryPhotoId == galleryPhoto.galleryPhotoId }
+          }
+
+          return@transactional galleryPhotos
+            .sortedByDescending { it.galleryPhotoId }
+        }
       }
     }
   }
+
+  private suspend fun getPageOfGalleryPhotos(time: Long, count: Int): List<GalleryPhoto> {
+    //if we found exactly the same amount of gallery photos that was requested - return them
+    val cachedGalleryPhotos = galleryPhotoLocalSource.getPage(time, count)
+    if (cachedGalleryPhotos.size == count) {
+      return cachedGalleryPhotos
+    }
+
+    //otherwise reload the page from the server
+    val galleryPhotos = galleryPhotoRemoteSource.getPageOfGalleryPhotos(time, count)
+    if (galleryPhotos.isEmpty()) {
+      return cachedGalleryPhotos
+    }
+
+    if (!galleryPhotoLocalSource.saveMany(galleryPhotos)) {
+      throw DatabaseException("Could not cache gallery photos in the database")
+    }
+
+    return GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(galleryPhotos)
+  }
+
+  private suspend fun getGalleryPhotosInfo(userId: String, galleryPhotoIds: List<Long>): List<GalleryPhotoInfo> {
+    val cachedGalleryPhotosInfo = galleryPhotoInfoLocalSource.findMany(galleryPhotoIds)
+    if (cachedGalleryPhotosInfo.size == galleryPhotoIds.size) {
+      return cachedGalleryPhotosInfo
+    }
+
+    val requestString = galleryPhotoIds.joinToString()
+    val galleryPhotosInfo = galleryPhotoInfoRemoteSource.getGalleryPhotoInfo(userId, requestString)
+
+    if (!galleryPhotoInfoLocalSource.saveMany(galleryPhotosInfo)) {
+      throw DatabaseException("Could not cache gallery photo info in the database")
+    }
+
+    return GalleryPhotosInfoMapper.FromResponseData.ToObject.toGalleryPhotoInfoList(galleryPhotosInfo)
+  }
+
 }

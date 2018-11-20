@@ -19,11 +19,11 @@ open class ReportPhotoUseCase(
     return withContext(coroutineContext) {
       return@withContext myRunCatching {
         val isReported = apiClient.reportPhoto(userId, photoName)
-        val galleryPhoto = galleryPhotoRepository.findByPhotoName(photoName)
 
-        if (galleryPhoto != null) {
-          galleryPhotoRepository.reportPhoto(galleryPhoto.galleryPhotoId, isReported)
-        }
+        galleryPhotoRepository.reportPhoto(
+          photoName,
+          isReported
+        )
 
         return@myRunCatching isReported
       }

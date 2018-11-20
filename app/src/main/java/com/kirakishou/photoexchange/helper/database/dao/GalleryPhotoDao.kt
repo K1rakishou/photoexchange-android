@@ -17,6 +17,10 @@ abstract class GalleryPhotoDao {
   abstract fun getPage(time: Long, count: Int): List<GalleryPhotoEntity>
 
   @Query("SELECT * FROM ${GalleryPhotoEntity.TABLE_NAME} " +
+    "WHERE ${GalleryPhotoEntity.GALLERY_PHOTO_ID_COLUMN} = :galleryPhotoId")
+  abstract fun findById(galleryPhotoId: Long): GalleryPhotoEntity?
+
+  @Query("SELECT * FROM ${GalleryPhotoEntity.TABLE_NAME} " +
     "WHERE ${GalleryPhotoEntity.GALLERY_PHOTO_ID_COLUMN} IN (:galleryPhotoIds) " +
     "ORDER BY ${GalleryPhotoEntity.GALLERY_PHOTO_ID_COLUMN} DESC")
   abstract fun findMany(galleryPhotoIds: List<Long>): List<GalleryPhotoEntity>
