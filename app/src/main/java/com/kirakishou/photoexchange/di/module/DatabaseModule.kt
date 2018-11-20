@@ -12,6 +12,7 @@ import com.kirakishou.photoexchange.helper.database.source.local.SettingsLocalSo
 import com.kirakishou.photoexchange.helper.database.source.remote.FavouritePhotoRemoteSource
 import com.kirakishou.photoexchange.helper.database.source.remote.GalleryPhotoInfoRemoteSource
 import com.kirakishou.photoexchange.helper.database.source.remote.GalleryPhotoRemoteSource
+import com.kirakishou.photoexchange.helper.database.source.remote.ReportPhotoRemoteSource
 import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.other.Constants.GALLERY_PHOTOS_CACHE_MAX_LIVE_TIME
@@ -90,6 +91,12 @@ open class DatabaseModule(
   @Provides
   open fun provideFavouritePhotoRemoteSource(apiClient: ApiClient): FavouritePhotoRemoteSource {
     return FavouritePhotoRemoteSource(apiClient)
+  }
+
+  @Singleton
+  @Provides
+  open fun provideReportPhotoRemoteSource(apiClient: ApiClient): ReportPhotoRemoteSource {
+    return ReportPhotoRemoteSource(apiClient)
   }
 
   /**
@@ -201,12 +208,14 @@ open class DatabaseModule(
   @Provides
   open fun provideReportPhotoRepository(database: MyDatabase,
                                         timeUtils: TimeUtils,
+                                        reportPhotoRemoteSource: ReportPhotoRemoteSource,
                                         galleryPhotoLocalSource: GalleryPhotoLocalSource,
                                         galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
                                         dispatchersProvider: DispatchersProvider): ReportPhotoRepository {
     return ReportPhotoRepository(
       database,
       timeUtils,
+      reportPhotoRemoteSource,
       galleryPhotoLocalSource,
       galleryPhotoInfoLocalSource,
       dispatchersProvider

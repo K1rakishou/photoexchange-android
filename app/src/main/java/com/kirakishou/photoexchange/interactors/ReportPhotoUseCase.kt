@@ -10,7 +10,6 @@ import kotlinx.coroutines.withContext
 import java.lang.Exception
 
 open class ReportPhotoUseCase(
-  private val apiClient: ApiClient,
   private val reportPhotoRepository: ReportPhotoRepository,
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
@@ -19,14 +18,7 @@ open class ReportPhotoUseCase(
   suspend fun reportPhoto(userId: String, photoName: String): Either<Exception, Boolean> {
     return withContext(coroutineContext) {
       return@withContext myRunCatching {
-        val isReported = apiClient.reportPhoto(userId, photoName)
-
-        reportPhotoRepository.reportPhoto(
-          photoName,
-          isReported
-        )
-
-        return@myRunCatching isReported
+        return@myRunCatching reportPhotoRepository.reportPhoto(userId, photoName)
       }
     }
   }

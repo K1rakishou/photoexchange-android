@@ -49,10 +49,9 @@ class UseCaseProviderModule {
 
   @Singleton
   @Provides
-  fun provideReportPhotoUseCase(apiClient: ApiClient,
-                                reportPhotoRepository: ReportPhotoRepository,
+  fun provideReportPhotoUseCase(reportPhotoRepository: ReportPhotoRepository,
                                 dispatchersProvider: DispatchersProvider): ReportPhotoUseCase {
-    return ReportPhotoUseCase(apiClient, reportPhotoRepository, dispatchersProvider)
+    return ReportPhotoUseCase(reportPhotoRepository, dispatchersProvider)
   }
 
   @Singleton
