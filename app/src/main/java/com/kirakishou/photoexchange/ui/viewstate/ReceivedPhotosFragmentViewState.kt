@@ -1,15 +1,25 @@
 package com.kirakishou.photoexchange.ui.viewstate
 
-data class ReceivedPhotosFragmentViewState(
-    var lastId: Long = Long.MAX_VALUE,
-    var photosPerPage: Int = 0
+import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
+
+class ReceivedPhotosFragmentViewState(
+  private var lastUploadedOn: Long = -1,
+  var photosPerPage: Int = 0
 ) {
 
-    fun updateLastId(newLastId: Long) {
-        lastId = newLastId
+  fun getLastUploadedOn(): Long = lastUploadedOn
+
+  fun updateFromReceivedPhotos(receivedPhotos: List<ReceivedPhoto>) {
+    if (receivedPhotos.isEmpty()) {
+      return
     }
 
-    fun reset() {
-        lastId = Long.MAX_VALUE
-    }
+    TODO()
+//    lastUploadedOn = receivedPhotos.last().
+  }
+
+
+  fun reset() {
+    lastUploadedOn = -1
+  }
 }

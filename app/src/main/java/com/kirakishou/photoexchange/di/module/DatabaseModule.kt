@@ -81,6 +81,15 @@ open class DatabaseModule(
     return UploadPhotosLocalSource(database, timeUtils, UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME)
   }
 
+  @Singleton
+  @Provides
+  open fun provideTempFileLocalSource(database: MyDatabase,
+                                      @Named("files_directory") filesDir: String,
+                                      timeUtils: TimeUtils,
+                                      fileUtils: FileUtils): TempFileLocalSource {
+    return TempFileLocalSource(database, filesDir, timeUtils, fileUtils)
+  }
+
   /**
    * Remote Sources
    * */
@@ -139,32 +148,16 @@ open class DatabaseModule(
 
   @Singleton
   @Provides
-  fun provideTempFilesRepository(@Named("files_directory") filesDir: String,
-                                 database: MyDatabase,
-                                 timeUtils: TimeUtils,
-                                 fileUtils: FileUtils,
-                                 dispatchersProvider: DispatchersProvider): TempFileRepository {
-    return TempFileRepository(
-      filesDir,
-      database,
-      timeUtils,
-      fileUtils,
-      dispatchersProvider
-    )
-  }
-
-  @Singleton
-  @Provides
   open fun provideTakenPhotoRepository(database: MyDatabase,
                                        timeUtils: TimeUtils,
                                        takenPhotosLocalSource: TakenPhotosLocalSource,
-                                       tempFileRepository: TempFileRepository,
+                                       tempFileLocalSource: TempFileLocalSource,
                                        dispatchersProvider: DispatchersProvider): TakenPhotosRepository {
     return TakenPhotosRepository(
       timeUtils,
       database,
       takenPhotosLocalSource,
-      tempFileRepository,
+      tempFileLocalSource,
       dispatchersProvider
     )
   }

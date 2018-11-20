@@ -4,6 +4,10 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.kirakishou.photoexchange.helper.database.dao.*
 import com.kirakishou.photoexchange.helper.database.entity.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /**
  * Created by kirakishou on 9/12/2017.
@@ -19,6 +23,8 @@ import com.kirakishou.photoexchange.helper.database.entity.*
   UploadedPhotoEntity::class
 ], version = 1)
 abstract class MyDatabase : RoomDatabase() {
+  private val mutex = Mutex()
+
   abstract fun takenPhotoDao(): TakenPhotoDao
   abstract fun tempFileDao(): TempFileDao
   abstract fun settingsDao(): SettingsDao
@@ -28,15 +34,17 @@ abstract class MyDatabase : RoomDatabase() {
   abstract fun uploadedPhotoDao(): UploadedPhotoDao
 
   open suspend fun <T> transactional(func: suspend () -> T): T {
-    beginTransaction()
+    mutex.withLock {
+      beginTransaction()
 
-    try {
-      val result = func()
-      setTransactionSuccessful()
+      try {
+        val result = func()
+        setTransactionSuccessful()
 
-      return result
-    } finally {
-      endTransaction()
+        return result
+      } finally {
+        endTransaction()
+      }
     }
   }
 

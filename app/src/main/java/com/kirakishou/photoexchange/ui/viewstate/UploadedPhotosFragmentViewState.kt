@@ -1,10 +1,22 @@
 package com.kirakishou.photoexchange.ui.viewstate
 
+import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
+
 data class UploadedPhotosFragmentViewState(
-  var lastUploadedOn: Long = -1,
+  private var lastUploadedOn: Long = -1,
   var photosPerPage: Int = 0,
   var failedPhotosLoaded: Boolean = false
 ) {
+
+  fun getLastUploadedOn(): Long = lastUploadedOn
+
+  fun updateFromUploadedPhotos(uploadedPhotos: List<UploadedPhoto>) {
+    if (uploadedPhotos.isEmpty()) {
+      return
+    }
+
+    lastUploadedOn = uploadedPhotos.last().uploadedOn
+  }
 
   fun reset() {
     lastUploadedOn = -1

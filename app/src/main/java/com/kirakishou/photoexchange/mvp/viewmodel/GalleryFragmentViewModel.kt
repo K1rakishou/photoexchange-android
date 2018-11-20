@@ -52,7 +52,7 @@ class GalleryFragmentViewModel(
           intercom.tell<GalleryFragment>()
             .to(GalleryFragmentEvent.GeneralEvents.PageIsLoading())
 
-          val photos = loadPageOfGalleryPhotos(viewState.lastUploadedOn, viewState.count)
+          val photos = loadPageOfGalleryPhotos(viewState.getLastUploadedOn(), viewState.count)
 
           intercom.tell<GalleryFragment>()
             .to(GalleryFragmentEvent.GeneralEvents.ShowGalleryPhotos(photos))

@@ -8,9 +8,11 @@ import com.kirakishou.photoexchange.helper.database.isFail
 import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.TakenPhotosMapper
 import com.kirakishou.photoexchange.helper.database.source.local.TakenPhotosLocalSource
+import com.kirakishou.photoexchange.helper.database.source.local.TempFileLocalSource
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -22,7 +24,7 @@ open class TakenPhotosRepository(
   private val timeUtils: TimeUtils,
   private val database: MyDatabase,
   private val takenPhotosLocalSource: TakenPhotosLocalSource,
-  private val tempFileRepository: TempFileRepository,
+  private val tempFileLocalSource: TempFileLocalSource,
   dispatchersProvider: DispatchersProvider
 ) : BaseRepository(dispatchersProvider) {
   private val TAG = "TakenPhotosRepository"
@@ -30,7 +32,19 @@ open class TakenPhotosRepository(
 
   init {
     runBlocking(coroutineContext) {
-      tempFileRepository.init()
+      tempFileLocalSource.init()
+    }
+  }
+
+  suspend fun createTempFile(): TempFileEntity {
+    return withContext(coroutineContext) {
+      return@withContext tempFileLocalSource.create()
+    }
+  }
+
+  suspend fun markDeletedById(tempFile: TempFileEntity) {
+    withContext(coroutineContext) {
+      tempFileLocalSource.markDeletedById(tempFile)
     }
   }
 
@@ -49,11 +63,11 @@ open class TakenPhotosRepository(
         myPhotoEntity.id = insertedPhotoId
         photo = TakenPhotosMapper.toMyPhoto(myPhotoEntity, tempFile)
 
-        return@transactional tempFileRepository.updateTakenPhotoId(tempFile, insertedPhotoId).isSuccess()
+        return@transactional tempFileLocalSource.updateTakenPhotoId(tempFile, insertedPhotoId).isSuccess()
       }
 
       if (!transactionResult) {
-        tempFileRepository.markDeletedById(tempFile)
+        tempFileLocalSource.markDeletedById(tempFile)
         return@withContext TakenPhoto.empty()
       }
 
@@ -105,7 +119,7 @@ open class TakenPhotosRepository(
   suspend fun findById(id: Long): TakenPhoto {
     return withContext(coroutineContext) {
       val myPhotoEntity = takenPhotoDao.findById(id) ?: TakenPhotoEntity.empty()
-      val tempFileEntity = tempFileRepository.findById(id)
+      val tempFileEntity = tempFileLocalSource.findById(id)
 
       return@withContext TakenPhotosMapper.toMyPhoto(myPhotoEntity, tempFileEntity)
     }
@@ -118,7 +132,7 @@ open class TakenPhotosRepository(
 
       for (myPhotoEntity in allMyPhotoEntities) {
         myPhotoEntity.id?.let { myPhotoId ->
-          val tempFile = tempFileRepository.findById(myPhotoId)
+          val tempFile = tempFileLocalSource.findById(myPhotoId)
 
           TakenPhotosMapper.toMyPhoto(myPhotoEntity, tempFile).let { myPhoto ->
             allMyPhotos += myPhoto
@@ -148,7 +162,7 @@ open class TakenPhotosRepository(
       val allPhotoReadyToUploading = takenPhotoDao.findAllWithState(state)
 
       for (photo in allPhotoReadyToUploading) {
-        val tempFileEntity = tempFileRepository.findById(photo.id!!)
+        val tempFileEntity = tempFileLocalSource.findById(photo.id!!)
         resultList += TakenPhotosMapper.toMyPhoto(photo, tempFileEntity)
       }
 
@@ -179,7 +193,7 @@ open class TakenPhotosRepository(
 
   suspend fun findTempFile(id: Long): TempFileEntity {
     return withContext(coroutineContext) {
-      return@withContext tempFileRepository.findById(id)
+      return@withContext tempFileLocalSource.findById(id)
     }
   }
 
@@ -203,35 +217,22 @@ open class TakenPhotosRepository(
     withContext(coroutineContext) {
       database.transactional {
         //we need to delete all photos with state PHOTO_TAKEN because at this step they are being considered corrupted
-        if (!deleteAllWithState(PhotoState.PHOTO_TAKEN)) {
-          return@transactional false
+        val myPhotosList = takenPhotoDao.findAllWithState(PhotoState.PHOTO_TAKEN)
+        for (myPhoto in myPhotosList) {
+          if (!takenPhotosLocalSource.deletePhotoById(myPhoto.id!!)) {
+            throw DatabaseException("Could not delete photo with id ${myPhoto.id!!}")
+          }
         }
 
         //delete photo files that were marked as deleted earlier than (CURRENT_TIME - OLD_PHOTO_TIME_THRESHOLD)
-        tempFileRepository.deleteOld()
+        tempFileLocalSource.deleteOld()
 
         //delete photo files that have no takenPhotoId
-        tempFileRepository.deleteEmptyTempFiles()
+        tempFileLocalSource.deleteEmptyTempFiles()
 
         //in case the user takes photos way too often and they weight a lot (like 3-4 mb per photo)
         //we need to consider this as well so we delete them when total files size exceeds MAX_CACHE_SIZE
-        tempFileRepository.deleteOldIfCacheSizeIsTooBig()
-
-        return@transactional true
-      }
-    }
-  }
-
-  private suspend fun deleteAllWithState(photoState: PhotoState): Boolean {
-    return withContext(coroutineContext) {
-      return@withContext database.transactional {
-        val myPhotosList = takenPhotoDao.findAllWithState(photoState)
-
-        for (myPhoto in myPhotosList) {
-          if (!takenPhotosLocalSource.deletePhotoById(myPhoto.id!!)) {
-            return@transactional false
-          }
-        }
+        tempFileLocalSource.deleteOldIfCacheSizeIsTooBig()
 
         return@transactional true
       }

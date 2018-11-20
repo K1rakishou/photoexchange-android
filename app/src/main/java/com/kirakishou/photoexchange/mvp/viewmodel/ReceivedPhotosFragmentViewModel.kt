@@ -57,7 +57,7 @@ class ReceivedPhotosFragmentViewModel(
             .to(ReceivedPhotosFragmentEvent.GeneralEvents.PageIsLoading())
 
           val userId = settingsRepository.getUserId()
-          val photos = loadPageOfReceivedPhotos(userId, viewState.lastId, viewState.photosPerPage)
+          val photos = loadPageOfReceivedPhotos(userId, viewState.getLastUploadedOn(), viewState.photosPerPage)
 
           intercom.tell<ReceivedPhotosFragment>()
             .to(ReceivedPhotosFragmentEvent.GeneralEvents.ShowReceivedPhotos(photos))
@@ -80,7 +80,7 @@ class ReceivedPhotosFragmentViewModel(
 
   private suspend fun loadPageOfReceivedPhotos(
     userId: String,
-    lastId: Long,
+    lastUploadedOn: Long,
     photosPerPage: Int
   ): List<ReceivedPhoto> {
     if (userId.isEmpty()) {
@@ -90,7 +90,7 @@ class ReceivedPhotosFragmentViewModel(
     intercom.tell<ReceivedPhotosFragment>().to(ReceivedPhotosFragmentEvent.GeneralEvents.ShowProgressFooter())
 
     try {
-      val result = getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastId, photosPerPage)
+      val result = getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastUploadedOn, photosPerPage)
       when (result) {
         is Either.Value -> {
           intercom.tell<UploadedPhotosFragment>()
