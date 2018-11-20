@@ -268,7 +268,7 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
 
     galleryPhotosList.post {
       if (galleryPhotos.isNotEmpty()) {
-        viewModel.galleryFragmentViewModel.viewState.updateLastUploadedOn(galleryPhotos.lastOrNull()?.galleryPhotoId)
+        viewModel.galleryFragmentViewModel.viewState.updateFromGalleryPhotos(galleryPhotos)
         adapter.addAll(galleryPhotos)
       }
 

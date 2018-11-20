@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.helper.Either
+import com.kirakishou.photoexchange.helper.api.response.FavouritePhotoResponseData
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
@@ -10,6 +11,7 @@ import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelInter
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
 import com.kirakishou.photoexchange.mvp.model.exception.EmptyUserIdException
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import kotlinx.coroutines.withContext
@@ -62,7 +64,7 @@ class PhotosActivityViewModel(
     }
   }
 
-  suspend fun favouritePhoto(photoName: String): Either<Exception, FavouritePhotoUseCase.FavouritePhotoResult> {
+  suspend fun favouritePhoto(photoName: String): Either<Exception, FavouritePhotoResponseData> {
     return withContext(coroutineContext) {
       val userId = settingsRepository.getUserId()
       if (userId.isEmpty()) {
@@ -85,7 +87,10 @@ class PhotosActivityViewModel(
   }
 
   suspend fun deletePhotoById(photoId: Long) {
-    takenPhotosRepository.deletePhotoById(photoId)
+    if (!takenPhotosRepository.deletePhotoById(photoId)) {
+      throw DatabaseException("Could not delete taken photo with id ${photoId}")
+    }
+
     if (Constants.isDebugBuild) {
       check(takenPhotosRepository.findById(photoId).isEmpty())
     }

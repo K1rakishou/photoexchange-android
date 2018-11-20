@@ -3,8 +3,6 @@ package com.kirakishou.photoexchange.helper
 import android.content.Context
 import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.TempFileRepository
-import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import io.fotoapparat.Fotoapparat
 import io.fotoapparat.configuration.CameraConfiguration
@@ -23,8 +21,7 @@ import kotlin.coroutines.suspendCoroutine
  */
 open class CameraProvider(
   val context: Context,
-  private val takenPhotosRepository: TakenPhotosRepository,
-  private val tempFilesRepository: TempFileRepository
+  private val takenPhotosRepository: TakenPhotosRepository
 ) {
 
   private val TAG = "CameraProvider"
@@ -78,24 +75,29 @@ open class CameraProvider(
   fun isAvailable(): Boolean = camera?.isAvailable(back()) ?: false
 
   suspend fun takePhoto(): TakenPhoto {
+    Timber.tag(TAG).d("before cleanup")
     takenPhotosRepository.cleanup()
+    Timber.tag(TAG).d("after cleanup")
 
-    val tempFile = tempFilesRepository.create()
+    val tempFile = takenPhotosRepository.createTempFile()
     val takePhotoStatus = takePhotoInternal(tempFile)
 
     if (!takePhotoStatus) {
       Timber.tag(TAG).d("takePhotoInternal returned false")
 
-      deletePhotoFile(tempFile)
+      takenPhotosRepository.markDeletedById(tempFile)
       return TakenPhoto.empty()
     }
 
+    Timber.tag(TAG).d("before saveTakenPhoto")
     val takenPhoto = takenPhotosRepository.saveTakenPhoto(tempFile)
+    Timber.tag(TAG).d("after saveTakenPhoto")
+
     if (takenPhoto.isEmpty()) {
       Timber.tag(TAG).d("saveTakenPhoto returned empty photo")
 
-      deletePhotoFile(tempFile) //TODO: should this be here?
-      cleanUp(takenPhoto)
+      takenPhotosRepository.markDeletedById(tempFile) //TODO: should this be here?
+      takenPhotosRepository.deleteMyPhoto(takenPhoto)
       return TakenPhoto.empty()
     }
 
@@ -128,14 +130,6 @@ open class CameraProvider(
         continuation.resume(false)
       }
     }
-  }
-
-  private suspend fun deletePhotoFile(tempFile: TempFileEntity) {
-    tempFilesRepository.markDeletedById(tempFile)
-  }
-
-  private suspend fun cleanUp(photo: TakenPhoto?) {
-    takenPhotosRepository.deleteMyPhoto(photo)
   }
 
   class CameraIsNotStartedException(msg: String) : Exception(msg)

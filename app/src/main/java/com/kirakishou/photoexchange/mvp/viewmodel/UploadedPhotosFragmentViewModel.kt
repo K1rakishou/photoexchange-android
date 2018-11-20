@@ -76,7 +76,7 @@ class UploadedPhotosFragmentViewModel(
   private suspend fun loadUploadedPhotos() {
     try {
       val userId = settingsRepository.getUserId()
-      val uploadedPhotos = loadPageOfUploadedPhotos(userId, viewState.lastUploadedOn, viewState.photosPerPage)
+      val uploadedPhotos = loadPageOfUploadedPhotos(userId, viewState.getLastUploadedOn(), viewState.photosPerPage)
 
       intercom.tell<UploadedPhotosFragment>()
         .to(UploadedPhotosFragmentEvent.GeneralEvents.ShowUploadedPhotos(uploadedPhotos))
@@ -107,7 +107,7 @@ class UploadedPhotosFragmentViewModel(
       val result = getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastUploadedOn, count)
       when (result) {
         is Either.Value -> {
-          viewState.lastUploadedOn = result.value.last().uploadedOn
+          viewState.updateFromUploadedPhotos(result.value)
           return result.value
         }
         is Either.Error -> {

@@ -6,7 +6,7 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersPro
 import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.mvp.model.exception.ConnectionError
 import kotlinx.coroutines.rx2.await
-import net.response.GetReceivedPhotosResponse
+import net.response.ReceivedPhotosResponse
 
 class GetPageOfReceivedPhotosRequest(
   private val userId: String,
@@ -15,9 +15,9 @@ class GetPageOfReceivedPhotosRequest(
   private val apiService: ApiService,
   private val jsonConverter: JsonConverter,
   private val dispatchersProvider: DispatchersProvider
-) : BaseRequest<GetReceivedPhotosResponse>(dispatchersProvider) {
+) : BaseRequest<ReceivedPhotosResponse>(dispatchersProvider) {
 
-  override suspend fun execute(): GetReceivedPhotosResponse {
+  override suspend fun execute(): ReceivedPhotosResponse {
     val response = try {
       apiService.getReceivedPhotos(userId, lastUploadedOn, count).await()
     } catch (error: Exception) {

@@ -193,7 +193,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
 
     receivedPhotosList.post {
       if (receivedPhotos.isNotEmpty()) {
-        viewModel.receivedPhotosFragmentViewModel.viewState.updateLastId(receivedPhotos.last().photoId)
+        viewModel.receivedPhotosFragmentViewModel.viewState.updateFromReceivedPhotos(receivedPhotos)
         adapter.addReceivedPhotos(receivedPhotos)
       }
 

@@ -2,10 +2,8 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
 import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
-import com.kirakishou.photoexchange.interactors.GetGalleryPhotosInfoUseCase
 import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
@@ -25,9 +23,7 @@ import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 
 class GalleryFragmentViewModel(
-  private val settingsRepository: SettingsRepository,
   private val getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
-  private val getGalleryPhotosInfoUseCase: GetGalleryPhotosInfoUseCase,
   private val dispatchersProvider: DispatchersProvider
 ) : CoroutineScope {
   private val TAG = "GalleryFragmentViewModel"
@@ -56,7 +52,7 @@ class GalleryFragmentViewModel(
           intercom.tell<GalleryFragment>()
             .to(GalleryFragmentEvent.GeneralEvents.PageIsLoading())
 
-          val photos = loadNextPageOfGalleryPhotos(viewState.lastUploadedOn, viewState.count)
+          val photos = loadPageOfGalleryPhotos(viewState.getLastUploadedOn(), viewState.count)
 
           intercom.tell<GalleryFragment>()
             .to(GalleryFragmentEvent.GeneralEvents.ShowGalleryPhotos(photos))
@@ -75,23 +71,6 @@ class GalleryFragmentViewModel(
 
   fun loadMorePhotos() {
     actor.offer(Unit)
-  }
-
-  private suspend fun loadNextPageOfGalleryPhotos(
-    lastUploadedOn: Long,
-    count: Int
-  ): List<GalleryPhoto> {
-    val photos = loadPageOfGalleryPhotos(lastUploadedOn, count)
-    val result = getGalleryPhotosInfoUseCase.loadGalleryPhotosInfo(settingsRepository.getUserId(), photos)
-
-    when (result) {
-      is Either.Value -> {
-        return result.value
-      }
-      is Either.Error -> {
-        throw result.error
-      }
-    }
   }
 
   private suspend fun loadPageOfGalleryPhotos(

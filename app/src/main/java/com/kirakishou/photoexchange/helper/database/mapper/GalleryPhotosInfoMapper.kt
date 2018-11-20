@@ -12,6 +12,8 @@ object GalleryPhotosInfoMapper {
         return GalleryPhotoInfoEntity.create(
           galleryPhotoInfoResponseData.id,
           galleryPhotoInfoResponseData.isFavourited,
+          //TODO
+          0L,
           galleryPhotoInfoResponseData.isReported,
           time
         )

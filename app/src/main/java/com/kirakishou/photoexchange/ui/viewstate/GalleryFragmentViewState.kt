@@ -1,16 +1,20 @@
 package com.kirakishou.photoexchange.ui.viewstate
 
+import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
+
 class GalleryFragmentViewState(
-  var lastUploadedOn: Long = -1,
+  private var lastUploadedOn: Long = -1,
   var count: Int = 5
 ) {
 
-  fun updateLastUploadedOn(newLastUploadedOn: Long?) {
-    if (newLastUploadedOn == null) {
+  fun getLastUploadedOn(): Long = lastUploadedOn
+
+  fun updateFromGalleryPhotos(galleryPhotos: List<GalleryPhoto>) {
+    if (galleryPhotos.isEmpty()) {
       return
     }
 
-    lastUploadedOn = newLastUploadedOn
+    lastUploadedOn = galleryPhotos.last().uploadedOn
   }
 
   fun updateCount(newCount: Int) {

@@ -17,50 +17,36 @@ class UseCaseProviderModule {
 
   @Singleton
   @Provides
-  fun provideUploadPhotosUseCase(database: MyDatabase,
-                                 takenPhotosRepository: TakenPhotosRepository,
-                                 uploadedPhotosRepository: UploadedPhotosRepository,
-                                 apiClient: ApiClient,
-                                 timeUtils: TimeUtils,
-                                 bitmapUtils: BitmapUtils,
-                                 fileUtils: FileUtils): UploadPhotosUseCase {
-    return UploadPhotosUseCase(database, takenPhotosRepository, uploadedPhotosRepository,
-      apiClient, timeUtils, bitmapUtils, fileUtils)
+  fun provideUploadPhotosUseCase(uploadPhotosRepository: UploadPhotosRepository): UploadPhotosUseCase {
+    return UploadPhotosUseCase(uploadPhotosRepository)
   }
 
   @Singleton
   @Provides
-  fun provideFindPhotoAnswersUseCase(database: MyDatabase,
-                                     takenPhotosRepository: TakenPhotosRepository,
-                                     receivedPhotosRepository: ReceivedPhotosRepository,
-                                     uploadedPhotosRepository: UploadedPhotosRepository,
-                                     apiClient: ApiClient): ReceivePhotosUseCase {
-    return ReceivePhotosUseCase(database, takenPhotosRepository,
-      receivedPhotosRepository, uploadedPhotosRepository, apiClient)
+  fun provideFindPhotoAnswersUseCase(receivePhotosRepository: ReceivePhotosRepository): ReceivePhotosUseCase {
+    return ReceivePhotosUseCase(receivePhotosRepository)
   }
 
   @Singleton
   @Provides
-  fun provideGetGalleryPhotosUseCase(apiClient: ApiClient,
-                                     galleryPhotoRepository: GalleryPhotoRepository,
+  fun provideGetGalleryPhotosUseCase(getGalleryPhotosRepository: GetGalleryPhotosRepository,
                                      timeUtils: TimeUtils,
                                      dispatchersProvider: DispatchersProvider): GetGalleryPhotosUseCase {
-    return GetGalleryPhotosUseCase(apiClient, galleryPhotoRepository, timeUtils, dispatchersProvider)
+    return GetGalleryPhotosUseCase(getGalleryPhotosRepository, timeUtils, dispatchersProvider)
   }
 
   @Singleton
   @Provides
-  fun provideReportPhotoUseCase(apiClient: ApiClient,
-                                galleryPhotoRepository: GalleryPhotoRepository,
+  fun provideReportPhotoUseCase(reportPhotoRepository: ReportPhotoRepository,
                                 dispatchersProvider: DispatchersProvider): ReportPhotoUseCase {
-    return ReportPhotoUseCase(apiClient, galleryPhotoRepository, dispatchersProvider)
+    return ReportPhotoUseCase(reportPhotoRepository, dispatchersProvider)
   }
 
   @Singleton
   @Provides
-  fun provideFavouritePhotoUseCase(apiClient: ApiClient,
-                                   galleryPhotoRepository: GalleryPhotoRepository): FavouritePhotoUseCase {
-    return FavouritePhotoUseCase(apiClient, galleryPhotoRepository)
+  fun provideFavouritePhotoUseCase(favouritePhotoRepository: FavouritePhotoRepository,
+                                   dispatchersProvider: DispatchersProvider): FavouritePhotoUseCase {
+    return FavouritePhotoUseCase(favouritePhotoRepository, dispatchersProvider)
   }
 
   @Singleton
@@ -73,31 +59,18 @@ class UseCaseProviderModule {
 
   @Singleton
   @Provides
-  fun provideGetUploadedPhotosUseCase(uploadedPhotosRepository: UploadedPhotosRepository,
-                                      apiClient: ApiClient,
+  fun provideGetUploadedPhotosUseCase(getUploadedPhotosRepository: GetUploadedPhotosRepository,
                                       timeUtils: TimeUtils,
                                       dispatchersProvider: DispatchersProvider): GetUploadedPhotosUseCase {
-    return GetUploadedPhotosUseCase(uploadedPhotosRepository, apiClient, timeUtils, dispatchersProvider)
+    return GetUploadedPhotosUseCase(getUploadedPhotosRepository, timeUtils, dispatchersProvider)
   }
 
   @Singleton
   @Provides
-  fun provideGetReceivedPhotosUseCase(database: MyDatabase,
-                                      uploadedPhotosRepository: UploadedPhotosRepository,
-                                      receivedPhotosRepository: ReceivedPhotosRepository,
-                                      apiClient: ApiClient,
+  fun provideGetReceivedPhotosUseCase(getReceivedPhotosRepository: GetReceivedPhotosRepository,
                                       timeUtils: TimeUtils,
                                       dispatchersProvider: DispatchersProvider): GetReceivedPhotosUseCase {
-    return GetReceivedPhotosUseCase(database, receivedPhotosRepository,
-      uploadedPhotosRepository, apiClient, timeUtils, dispatchersProvider)
-  }
-
-  @Singleton
-  @Provides
-  fun provideGetGalleryPhotosInfoUseCase(apiClient: ApiClient,
-                                         galleryPhotoRepository: GalleryPhotoRepository,
-                                         dispatchersProvider: DispatchersProvider): GetGalleryPhotosInfoUseCase {
-    return GetGalleryPhotosInfoUseCase(apiClient, galleryPhotoRepository, dispatchersProvider)
+    return GetReceivedPhotosUseCase(getReceivedPhotosRepository, timeUtils, dispatchersProvider)
   }
 
   @Singleton

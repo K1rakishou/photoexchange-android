@@ -56,14 +56,10 @@ open class PhotosActivityModule(
 
   @PerActivity
   @Provides
-  fun provideGalleryFragmentViewModel(settingsRepository: SettingsRepository,
-                                      galleryPhotosUseCase: GetGalleryPhotosUseCase,
-                                      getGalleryPhotosInfoUseCase: GetGalleryPhotosInfoUseCase,
+  fun provideGalleryFragmentViewModel(galleryPhotosUseCase: GetGalleryPhotosUseCase,
                                       dispatchersProvider: DispatchersProvider): GalleryFragmentViewModel {
     return GalleryFragmentViewModel(
-      settingsRepository,
       galleryPhotosUseCase,
-      getGalleryPhotosInfoUseCase,
       dispatchersProvider
     )
   }

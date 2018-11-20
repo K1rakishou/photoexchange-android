@@ -5,7 +5,7 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.TestDispatchers
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotoRepository
+import com.kirakishou.photoexchange.helper.database.repository.GetGalleryPhotosRepository
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
@@ -27,20 +27,20 @@ class GetGalleryPhotosUseCaseTest {
   lateinit var apiClient: ApiClient
   lateinit var timeUtils: TimeUtils
   lateinit var dispatchersProvider: DispatchersProvider
-  lateinit var galleryPhotoRepository: GalleryPhotoRepository
+  lateinit var getGalleryPhotosRepository: GetGalleryPhotosRepository
   lateinit var getGalleryPhotosUseCase: GetGalleryPhotosUseCase
 
   @Before
   fun setUp() {
     database = Mockito.mock(MyDatabase::class.java)
     apiClient = Mockito.mock(ApiClient::class.java)
-    galleryPhotoRepository = Mockito.mock(GalleryPhotoRepository::class.java)
+    getGalleryPhotosRepository = Mockito.mock(GetGalleryPhotosRepository::class.java)
     timeUtils = Mockito.mock(TimeUtils::class.java)
     dispatchersProvider = TestDispatchers()
 
     getGalleryPhotosUseCase = GetGalleryPhotosUseCase(
       apiClient,
-      galleryPhotoRepository,
+      getGalleryPhotosRepository,
       timeUtils,
       dispatchersProvider
     )
@@ -64,7 +64,7 @@ class GetGalleryPhotosUseCaseTest {
     )
 
     runBlocking {
-      Mockito.`when`(galleryPhotoRepository.getPageOfGalleryPhotos(time, count))
+      Mockito.`when`(getGalleryPhotosRepository.getPageOfGalleryPhotos(time, count))
         .thenReturn(expectedPhotos)
 
       val result = getGalleryPhotosUseCase.loadPageOfPhotos(time, count)
@@ -77,10 +77,10 @@ class GetGalleryPhotosUseCaseTest {
         assertEquals(expectedPhotos[expectedPhotos.lastIndex - i].galleryPhotoId, actualPhotos[i].galleryPhotoId)
       }
 
-      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).deleteOldPhotos()
-      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
+      Mockito.verify(getGalleryPhotosRepository, Mockito.times(1)).deleteOldPhotos()
+      Mockito.verify(getGalleryPhotosRepository, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
 
-      Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
+      Mockito.verifyNoMoreInteractions(getGalleryPhotosRepository)
     }
   }
 
@@ -95,7 +95,7 @@ class GetGalleryPhotosUseCaseTest {
     )
 
     runBlocking {
-      Mockito.`when`(galleryPhotoRepository.getPageOfGalleryPhotos(time, count))
+      Mockito.`when`(getGalleryPhotosRepository.getPageOfGalleryPhotos(time, count))
         .thenReturn(expectedPhotos)
       Mockito.`when`(apiClient.getPageOfGalleryPhotos(time, count))
         .thenReturn(emptyList())
@@ -110,11 +110,11 @@ class GetGalleryPhotosUseCaseTest {
         assertEquals(expectedPhotos[expectedPhotos.lastIndex - i].galleryPhotoId, actualPhotos[i].galleryPhotoId)
       }
 
-      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).deleteOldPhotos()
-      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
+      Mockito.verify(getGalleryPhotosRepository, Mockito.times(1)).deleteOldPhotos()
+      Mockito.verify(getGalleryPhotosRepository, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
       Mockito.verify(apiClient, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
 
-      Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
+      Mockito.verifyNoMoreInteractions(getGalleryPhotosRepository)
       Mockito.verifyNoMoreInteractions(apiClient)
     }
   }
@@ -130,7 +130,7 @@ class GetGalleryPhotosUseCaseTest {
     )
 
     runBlocking {
-      Mockito.`when`(galleryPhotoRepository.getPageOfGalleryPhotos(time, count))
+      Mockito.`when`(getGalleryPhotosRepository.getPageOfGalleryPhotos(time, count))
         .thenReturn(expectedPhotos)
       Mockito.doThrow(ApiErrorException(ErrorCode.DatabaseError))
         .`when`(apiClient).getPageOfGalleryPhotos(time, count)
@@ -144,11 +144,11 @@ class GetGalleryPhotosUseCaseTest {
       val errorCode = (error as ApiErrorException).errorCode
       assertEquals(errorCode, ErrorCode.DatabaseError)
 
-      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).deleteOldPhotos()
-      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
+      Mockito.verify(getGalleryPhotosRepository, Mockito.times(1)).deleteOldPhotos()
+      Mockito.verify(getGalleryPhotosRepository, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
       Mockito.verify(apiClient, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
 
-      Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
+      Mockito.verifyNoMoreInteractions(getGalleryPhotosRepository)
       Mockito.verifyNoMoreInteractions(apiClient)
     }
   }
@@ -168,11 +168,11 @@ class GetGalleryPhotosUseCaseTest {
     )
 
     runBlocking {
-      Mockito.`when`(galleryPhotoRepository.getPageOfGalleryPhotos(time, count))
+      Mockito.`when`(getGalleryPhotosRepository.getPageOfGalleryPhotos(time, count))
         .thenReturn(expectedPhotos1)
       Mockito.`when`(apiClient.getPageOfGalleryPhotos(time, count))
         .thenReturn(expectedPhotos2)
-      Mockito.`when`(galleryPhotoRepository.saveMany(expectedPhotos2))
+      Mockito.`when`(getGalleryPhotosRepository.saveMany(expectedPhotos2))
         .thenReturn(false)
 
       val result = getGalleryPhotosUseCase.loadPageOfPhotos(time, count)
@@ -184,12 +184,12 @@ class GetGalleryPhotosUseCaseTest {
       val message = (error as DatabaseException).message
       assertEquals("Could not cache gallery photos in the database", message)
 
-      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).deleteOldPhotos()
-      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
-      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).saveMany(expectedPhotos2)
+      Mockito.verify(getGalleryPhotosRepository, Mockito.times(1)).deleteOldPhotos()
+      Mockito.verify(getGalleryPhotosRepository, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
+      Mockito.verify(getGalleryPhotosRepository, Mockito.times(1)).saveMany(expectedPhotos2)
       Mockito.verify(apiClient, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
 
-      Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
+      Mockito.verifyNoMoreInteractions(getGalleryPhotosRepository)
       Mockito.verifyNoMoreInteractions(apiClient)
     }
   }
@@ -219,11 +219,11 @@ class GetGalleryPhotosUseCaseTest {
     )
 
     runBlocking {
-      Mockito.`when`(galleryPhotoRepository.getPageOfGalleryPhotos(time, count))
+      Mockito.`when`(getGalleryPhotosRepository.getPageOfGalleryPhotos(time, count))
         .thenReturn(expectedPhotos1)
       Mockito.`when`(apiClient.getPageOfGalleryPhotos(time, count))
         .thenReturn(expectedPhotos2)
-      Mockito.`when`(galleryPhotoRepository.saveMany(expectedPhotos2))
+      Mockito.`when`(getGalleryPhotosRepository.saveMany(expectedPhotos2))
         .thenReturn(true)
 
       val result = getGalleryPhotosUseCase.loadPageOfPhotos(time, count)
@@ -236,12 +236,12 @@ class GetGalleryPhotosUseCaseTest {
         assertEquals(expectedPhotos3[expectedPhotos3.lastIndex - i].galleryPhotoId, actualPhotos[i].galleryPhotoId)
       }
 
-      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).deleteOldPhotos()
-      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
-      Mockito.verify(galleryPhotoRepository, Mockito.times(1)).saveMany(expectedPhotos2)
+      Mockito.verify(getGalleryPhotosRepository, Mockito.times(1)).deleteOldPhotos()
+      Mockito.verify(getGalleryPhotosRepository, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
+      Mockito.verify(getGalleryPhotosRepository, Mockito.times(1)).saveMany(expectedPhotos2)
       Mockito.verify(apiClient, Mockito.times(1)).getPageOfGalleryPhotos(time, count)
 
-      Mockito.verifyNoMoreInteractions(galleryPhotoRepository)
+      Mockito.verifyNoMoreInteractions(getGalleryPhotosRepository)
       Mockito.verifyNoMoreInteractions(apiClient)
     }
   }

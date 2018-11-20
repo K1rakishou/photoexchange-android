@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.helper.api
 
+import com.kirakishou.photoexchange.helper.api.response.FavouritePhotoResponseData
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
-import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
@@ -22,7 +22,7 @@ interface ApiClient {
   ): UploadPhotosUseCase.UploadPhotoResult
 
   @Throws(ApiErrorException::class)
-  suspend fun receivePhotos(userId: String, photoNames: String): List<ReceivePhotosResponse.ReceivedPhotoResponseData>
+  suspend fun receivePhotos(userId: String, photoNames: String): List<ReceivedPhotosResponse.ReceivedPhotoResponseData>
 
   @Throws(ApiErrorException::class)
   suspend fun getPageOfGalleryPhotos(lastUploadedOn: Long, count: Int): List<GalleryPhotosResponse.GalleryPhotoResponseData>
@@ -31,7 +31,7 @@ interface ApiClient {
   suspend fun getGalleryPhotoInfo(userId: String, galleryPhotoIds: String): List<GalleryPhotoInfoResponse.GalleryPhotosInfoResponseData>
 
   @Throws(ApiErrorException::class)
-  suspend fun favouritePhoto(userId: String, photoName: String): FavouritePhotoUseCase.FavouritePhotoResult
+  suspend fun favouritePhoto(userId: String, photoName: String): FavouritePhotoResponseData
 
   @Throws(ApiErrorException::class)
   suspend fun reportPhoto(userId: String, photoName: String): Boolean
@@ -43,7 +43,7 @@ interface ApiClient {
   suspend fun getPageOfUploadedPhotos(userId: String, lastUploadedOn: Long, count: Int): List<GetUploadedPhotosResponse.UploadedPhotoResponseData>
 
   @Throws(ApiErrorException::class)
-  suspend fun getReceivedPhotos(userId: String, lastUploadedOn: Long, count: Int): List<GetReceivedPhotosResponse.ReceivedPhotoResponseData>
+  suspend fun getReceivedPhotos(userId: String, lastUploadedOn: Long, count: Int): List<ReceivedPhotosResponse.ReceivedPhotoResponseData>
 
   @Throws(ApiErrorException::class)
   suspend fun checkAccountExists(userId: String): Boolean
