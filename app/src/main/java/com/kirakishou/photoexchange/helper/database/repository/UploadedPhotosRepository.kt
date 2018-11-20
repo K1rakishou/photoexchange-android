@@ -20,20 +20,6 @@ open class UploadedPhotosRepository(
   private val TAG = "UploadedPhotosRepository"
   private val uploadedPhotoDao = database.uploadedPhotoDao()
 
-  open suspend fun save(photoId: Long, photoName: String, lon: Double, lat: Double, uploadedOn: Long): Boolean {
-    return withContext(coroutineContext) {
-      val uploadedPhotoEntity = UploadedPhotosMapper.FromObject.ToEntity.toUploadedPhotoEntity(
-        photoId,
-        photoName,
-        lon,
-        lat,
-        timeUtils.getTimeFast(),
-        uploadedOn
-      )
-      return@withContext uploadedPhotoDao.save(uploadedPhotoEntity).isSuccess()
-    }
-  }
-
   open suspend fun saveMany(uploadedPhotoDataList: List<GetUploadedPhotosResponse.UploadedPhotoResponseData>): Boolean {
     return withContext(coroutineContext) {
       return@withContext database.transactional {

@@ -59,12 +59,6 @@ open class TakenPhotosRepository(
     }
   }
 
-  open suspend fun updatePhotoState(photoId: Long, newPhotoState: PhotoState): Boolean {
-    return withContext(coroutineContext) {
-      return@withContext takenPhotoDao.updateSetNewPhotoState(photoId, newPhotoState) == 1
-    }
-  }
-
   suspend fun updateMakePhotoPublic(takenPhotoId: Long): Boolean {
     return withContext(coroutineContext) {
       return@withContext takenPhotoDao.updateSetPhotoPublic(takenPhotoId) == 1
@@ -182,32 +176,6 @@ open class TakenPhotosRepository(
       }
 
       return@withContext deletePhotoById(photoId)
-    }
-  }
-
-  open suspend fun deletePhotoById(photoId: Long): Boolean {
-    return withContext(coroutineContext) {
-      if (takenPhotoDao.deleteById(photoId).isFail()) {
-        return@withContext false
-      }
-
-      return@withContext markTempFileDeleted(photoId)
-    }
-  }
-
-  private suspend fun markTempFileDeleted(id: Long): Boolean {
-    return withContext(coroutineContext) {
-      val tempFileEntity = tempFileRepository.findById(id)
-      if (tempFileEntity.isEmpty()) {
-        //has already been deleted
-        return@withContext true
-      }
-
-      if (tempFileRepository.markDeletedById(id).isFail()) {
-        return@withContext false
-      }
-
-      return@withContext true
     }
   }
 
