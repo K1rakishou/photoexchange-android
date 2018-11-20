@@ -26,7 +26,7 @@ interface ApiService {
 
   @GET("/v1/api/receive_photos/{photo_names}/{user_id}")
   fun receivePhotos(@Path("photo_names") photoNames: String,
-                    @Path("user_id") userId: String): Single<Response<ReceivePhotosResponse>>
+                    @Path("user_id") userId: String): Single<Response<ReceivedPhotosResponse>>
 
   @GET("/v1/api/get_user_id")
   fun getUserId(): Single<Response<GetUserIdResponse>>
@@ -47,7 +47,7 @@ interface ApiService {
   @GET("/v1/api/get_page_of_received_photos/{user_id}/{last_uploaded_on}/{count}")
   fun getReceivedPhotos(@Path("user_id") userId: String,
                         @Path("last_uploaded_on") lastUploadedOn: Long,
-                        @Path("count") count: Int): Single<Response<GetReceivedPhotosResponse>>
+                        @Path("count") count: Int): Single<Response<ReceivedPhotosResponse>>
 
   @GET("/v1/api/check_account_exists/{user_id}")
   fun checkAccountExists(@Path("user_id") userId: String): Single<Response<CheckAccountExistsResponse>>

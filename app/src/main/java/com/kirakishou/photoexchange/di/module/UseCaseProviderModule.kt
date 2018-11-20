@@ -17,26 +17,16 @@ class UseCaseProviderModule {
 
   @Singleton
   @Provides
-  fun provideUploadPhotosUseCase(database: MyDatabase,
-                                 takenPhotosRepository: TakenPhotosRepository,
-                                 uploadedPhotosRepository: UploadedPhotosRepository,
-                                 apiClient: ApiClient,
-                                 timeUtils: TimeUtils,
-                                 bitmapUtils: BitmapUtils,
-                                 fileUtils: FileUtils): UploadPhotosUseCase {
-    return UploadPhotosUseCase(database, takenPhotosRepository, uploadedPhotosRepository,
-      apiClient, timeUtils, bitmapUtils, fileUtils)
+  fun provideUploadPhotosUseCase(uploadPhotosRepository: UploadPhotosRepository): UploadPhotosUseCase {
+    return UploadPhotosUseCase(uploadPhotosRepository)
   }
 
   @Singleton
   @Provides
   fun provideFindPhotoAnswersUseCase(database: MyDatabase,
-                                     takenPhotosRepository: TakenPhotosRepository,
-                                     receivedPhotosRepository: ReceivedPhotosRepository,
-                                     uploadedPhotosRepository: UploadedPhotosRepository,
+                                     receivePhotosRepository: ReceivePhotosRepository,
                                      apiClient: ApiClient): ReceivePhotosUseCase {
-    return ReceivePhotosUseCase(database, takenPhotosRepository,
-      receivedPhotosRepository, uploadedPhotosRepository, apiClient)
+    return ReceivePhotosUseCase(database, receivePhotosRepository, apiClient)
   }
 
   @Singleton
@@ -80,14 +70,10 @@ class UseCaseProviderModule {
 
   @Singleton
   @Provides
-  fun provideGetReceivedPhotosUseCase(database: MyDatabase,
-                                      uploadedPhotosRepository: UploadedPhotosRepository,
-                                      receivedPhotosRepository: ReceivedPhotosRepository,
-                                      apiClient: ApiClient,
+  fun provideGetReceivedPhotosUseCase(getReceivedPhotosRepository: GetReceivedPhotosRepository,
                                       timeUtils: TimeUtils,
                                       dispatchersProvider: DispatchersProvider): GetReceivedPhotosUseCase {
-    return GetReceivedPhotosUseCase(database, receivedPhotosRepository,
-      uploadedPhotosRepository, apiClient, timeUtils, dispatchersProvider)
+    return GetReceivedPhotosUseCase(getReceivedPhotosRepository, timeUtils, dispatchersProvider)
   }
 
   @Singleton

@@ -22,7 +22,7 @@ interface ApiClient {
   ): UploadPhotosUseCase.UploadPhotoResult
 
   @Throws(ApiErrorException::class)
-  suspend fun receivePhotos(userId: String, photoNames: String): List<ReceivePhotosResponse.ReceivedPhotoResponseData>
+  suspend fun receivePhotos(userId: String, photoNames: String): List<ReceivedPhotosResponse.ReceivedPhotoResponseData>
 
   @Throws(ApiErrorException::class)
   suspend fun getPageOfGalleryPhotos(lastUploadedOn: Long, count: Int): List<GalleryPhotosResponse.GalleryPhotoResponseData>
@@ -43,7 +43,7 @@ interface ApiClient {
   suspend fun getPageOfUploadedPhotos(userId: String, lastUploadedOn: Long, count: Int): List<GetUploadedPhotosResponse.UploadedPhotoResponseData>
 
   @Throws(ApiErrorException::class)
-  suspend fun getReceivedPhotos(userId: String, lastUploadedOn: Long, count: Int): List<GetReceivedPhotosResponse.ReceivedPhotoResponseData>
+  suspend fun getReceivedPhotos(userId: String, lastUploadedOn: Long, count: Int): List<ReceivedPhotosResponse.ReceivedPhotoResponseData>
 
   @Throws(ApiErrorException::class)
   suspend fun checkAccountExists(userId: String): Boolean

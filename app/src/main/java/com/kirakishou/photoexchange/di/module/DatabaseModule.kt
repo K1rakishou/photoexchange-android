@@ -6,13 +6,9 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.*
-import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoInfoLocalSource
-import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoLocalSource
-import com.kirakishou.photoexchange.helper.database.source.local.SettingsLocalSource
-import com.kirakishou.photoexchange.helper.database.source.remote.FavouritePhotoRemoteSource
-import com.kirakishou.photoexchange.helper.database.source.remote.GalleryPhotoInfoRemoteSource
-import com.kirakishou.photoexchange.helper.database.source.remote.GalleryPhotoRemoteSource
-import com.kirakishou.photoexchange.helper.database.source.remote.ReportPhotoRemoteSource
+import com.kirakishou.photoexchange.helper.database.source.local.*
+import com.kirakishou.photoexchange.helper.database.source.remote.*
+import com.kirakishou.photoexchange.helper.util.BitmapUtils
 import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.other.Constants.GALLERY_PHOTOS_CACHE_MAX_LIVE_TIME
@@ -71,6 +67,20 @@ open class DatabaseModule(
     return SettingsLocalSource(database)
   }
 
+  @Singleton
+  @Provides
+  open fun provideReceivePhotosLocalSource(database: MyDatabase,
+                                           timeUtils: TimeUtils): ReceivePhotosLocalSource {
+    return ReceivePhotosLocalSource(database, timeUtils, RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME)
+  }
+
+  @Singleton
+  @Provides
+  open fun provideUploadPhotosLocalSource(database: MyDatabase,
+                                          timeUtils: TimeUtils): UploadPhotosLocalSource {
+    return UploadPhotosLocalSource(database, timeUtils)
+  }
+
   /**
    * Remote Sources
    * */
@@ -97,6 +107,24 @@ open class DatabaseModule(
   @Provides
   open fun provideReportPhotoRemoteSource(apiClient: ApiClient): ReportPhotoRemoteSource {
     return ReportPhotoRemoteSource(apiClient)
+  }
+
+  @Singleton
+  @Provides
+  open fun provideGetReceivedPhotosRemoteSource(apiClient: ApiClient): GetReceivedPhotosRemoteSource {
+    return GetReceivedPhotosRemoteSource(apiClient)
+  }
+
+  @Singleton
+  @Provides
+  open fun provideUploadPhotosRemoteSource(apiClient: ApiClient): UploadPhotosRemoteSource {
+    return UploadPhotosRemoteSource(apiClient)
+  }
+
+  @Singleton
+  @Provides
+  open fun provideReceivePhotosRemoteSource(apiClient: ApiClient): ReceivePhotosRemoteSource {
+    return ReceivePhotosRemoteSource(apiClient)
   }
 
   /**
@@ -148,7 +176,6 @@ open class DatabaseModule(
     return ReceivedPhotosRepository(
       database,
       timeUtils,
-      RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME,
       dispatchersProvider
     )
   }
@@ -219,6 +246,63 @@ open class DatabaseModule(
       galleryPhotoLocalSource,
       galleryPhotoInfoLocalSource,
       dispatchersProvider
+    )
+  }
+
+  @Singleton
+  @Provides
+  open fun provideGetReceivedPhotosRepository(database: MyDatabase,
+                                              getReceivedPhotosRemoteSource: GetReceivedPhotosRemoteSource,
+                                              receivePhotosLocalSource: ReceivePhotosLocalSource,
+                                              uploadedPhotosLocalSource: UploadPhotosLocalSource): GetReceivedPhotosRepository {
+    return GetReceivedPhotosRepository(
+      database,
+      getReceivedPhotosRemoteSource,
+      receivePhotosLocalSource,
+      uploadedPhotosLocalSource
+    )
+  }
+
+  @Singleton
+  @Provides
+  open fun provideUploadPhotosRepository(database: MyDatabase,
+                                         timeUtils: TimeUtils,
+                                         bitmapUtils: BitmapUtils,
+                                         fileUtils: FileUtils,
+                                         takenPhotosLocalSource: TakenPhotosLocalSource,
+                                         uploadPhotosRemoteSource: UploadPhotosRemoteSource,
+                                         uploadPhotosLocalSource: UploadPhotosLocalSource): UploadPhotosRepository {
+    return UploadPhotosRepository(
+      database,
+      timeUtils,
+      bitmapUtils,
+      fileUtils,
+      takenPhotosLocalSource,
+      uploadPhotosRemoteSource,
+      uploadPhotosLocalSource
+    )
+  }
+
+  @Singleton
+  @Provides
+  open fun provideTakenPhotosLocalSource(database: MyDatabase,
+                                         timeUtils: TimeUtils): TakenPhotosLocalSource {
+    return TakenPhotosLocalSource(database, timeUtils)
+  }
+
+  @Singleton
+  @Provides
+  open fun provideReceivePhotosRepository(database: MyDatabase,
+                                          receivePhotosRemoteSource: ReceivePhotosRemoteSource,
+                                          receivePhotosLocalSource: ReceivePhotosLocalSource,
+                                          uploadedPhotosLocalSource: UploadPhotosLocalSource,
+                                          takenPhotosLocalSource: TakenPhotosLocalSource): ReceivePhotosRepository {
+    return ReceivePhotosRepository(
+      database,
+      receivePhotosRemoteSource,
+      receivePhotosLocalSource,
+      uploadedPhotosLocalSource,
+      takenPhotosLocalSource
     )
   }
 }

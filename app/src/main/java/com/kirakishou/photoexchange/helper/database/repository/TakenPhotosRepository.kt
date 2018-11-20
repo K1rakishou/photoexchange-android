@@ -167,18 +167,6 @@ open class TakenPhotosRepository(
     }
   }
 
-  suspend fun deletePhotoByName(photoName: String): Boolean {
-    return withContext(coroutineContext) {
-      val photoId = takenPhotoDao.findPhotoIdByName(photoName)
-      if (photoId == null) {
-        //already deleted
-        return@withContext true
-      }
-
-      return@withContext deletePhotoById(photoId)
-    }
-  }
-
   private suspend fun findTempFileById(id: Long): TempFileEntity {
     return withContext(coroutineContext) {
       return@withContext tempFileRepository.findById(id)

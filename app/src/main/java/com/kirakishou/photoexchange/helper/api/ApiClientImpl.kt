@@ -49,7 +49,7 @@ open class ApiClientImpl
   override suspend fun receivePhotos(
     userId: String,
     photoNames: String
-  ): List<ReceivePhotosResponse.ReceivedPhotoResponseData> {
+  ): List<ReceivedPhotosResponse.ReceivedPhotoResponseData> {
     val response = ReceivePhotosRequest(
       userId,
       photoNames,
@@ -152,7 +152,7 @@ open class ApiClientImpl
     userId: String,
     lastUploadedOn: Long,
     count: Int
-  ): List<GetReceivedPhotosResponse.ReceivedPhotoResponseData> {
+  ): List<ReceivedPhotosResponse.ReceivedPhotoResponseData> {
     val response = GetPageOfReceivedPhotosRequest(
       userId,
       lastUploadedOn,

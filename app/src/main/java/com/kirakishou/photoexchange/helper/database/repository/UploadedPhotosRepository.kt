@@ -20,32 +20,6 @@ open class UploadedPhotosRepository(
   private val TAG = "UploadedPhotosRepository"
   private val uploadedPhotoDao = database.uploadedPhotoDao()
 
-  open suspend fun saveMany(uploadedPhotoDataList: List<GetUploadedPhotosResponse.UploadedPhotoResponseData>): Boolean {
-    return withContext(coroutineContext) {
-      return@withContext database.transactional {
-        val now = timeUtils.getTimeFast()
-
-        for (uploadedPhotoData in uploadedPhotoDataList) {
-          val photo = UploadedPhotosMapper.FromResponse.ToEntity.toUploadedPhotoEntity(now, uploadedPhotoData)
-          if (!save(photo)) {
-            return@transactional false
-          }
-        }
-
-        return@transactional true
-      }
-    }
-  }
-
-  private suspend fun save(uploadedPhotoEntity: UploadedPhotoEntity): Boolean {
-    val cachedPhoto = uploadedPhotoDao.findByPhotoName(uploadedPhotoEntity.photoName)
-    if (cachedPhoto != null) {
-      uploadedPhotoEntity.photoId = cachedPhoto.photoId
-    }
-
-    return uploadedPhotoDao.save(uploadedPhotoEntity).isSuccess()
-  }
-
   suspend fun getPageOfUploadedPhotos(time: Long, count: Int): List<UploadedPhoto> {
     return withContext(coroutineContext) {
       return@withContext UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.getPage(time, count))
@@ -90,11 +64,7 @@ open class UploadedPhotosRepository(
     }
   }
 
-  suspend fun updateReceiverInfo(uploadedPhotoName: String): Boolean {
-    return withContext(coroutineContext) {
-      return@withContext uploadedPhotoDao.updateReceiverInfo(uploadedPhotoName) == 1
-    }
-  }
+
 
   //TODO: tests
   open suspend fun deleteOldPhotos() {
