@@ -338,7 +338,7 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
     when (event) {
       is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotoReceived -> {
         viewModel.intercom.tell<UploadedPhotosFragment>()
-          .that(UploadedPhotosFragmentEvent.PhotoUploadEvent.PhotoReceived(event.takenPhotoName))
+          .that(UploadedPhotosFragmentEvent.GeneralEvents.PhotoReceived(event.takenPhotoName))
         viewModel.intercom.tell<ReceivedPhotosFragment>()
           .that(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotoReceived(event.receivedPhoto, event.takenPhotoName))
         showPhotoAnswerFoundSnackbar()

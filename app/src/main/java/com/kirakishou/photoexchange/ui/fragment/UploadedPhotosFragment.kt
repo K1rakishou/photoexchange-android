@@ -20,9 +20,9 @@ import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
-import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapter
-import com.kirakishou.photoexchange.ui.adapter.epoxy.queuedUpPhotoAdapterRow
-import com.kirakishou.photoexchange.ui.adapter.epoxy.uploadingPhotoAdapterRow
+import com.kirakishou.photoexchange.ui.adapter.epoxy.failedToUploadPhotoRow
+import com.kirakishou.photoexchange.ui.adapter.epoxy.queuedUpPhotoRow
+import com.kirakishou.photoexchange.ui.adapter.epoxy.uploadingPhotoRow
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -37,7 +37,7 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
   @Inject
   lateinit var viewModel: PhotosActivityViewModel
 
-  lateinit var adapter: UploadedPhotosAdapter
+//  lateinit var adapter: UploadedPhotosAdapter
 //  lateinit var endlessScrollListener: EndlessRecyclerOnScrollListener
 
   private val TAG = "UploadedPhotosFragment"
@@ -80,20 +80,29 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
                   PhotoState.PHOTO_TAKEN -> {
                   }
                   PhotoState.PHOTO_QUEUED_UP -> {
-                    queuedUpPhotoAdapterRow {
+                    queuedUpPhotoRow {
                       id(photo.id)
                       photo(photo)
                     }
                   }
                   PhotoState.PHOTO_UPLOADING -> {
-                    uploadingPhotoAdapterRow {
+                    uploadingPhotoRow {
                       id(photo.id)
                       photo(photo)
                       progress(50)
                     }
                   }
                   PhotoState.FAILED_TO_UPLOAD -> {
-
+                    failedToUploadPhotoRow {
+                      id(photo.id)
+                      photo(photo)
+                      deleteButtonCallback { _ ->
+                        println("delete clicked")
+                      }
+                      retryButtonCallback { _ ->
+                        println("retry clicked")
+                      }
+                    }
                   }
                 }
               }
@@ -186,7 +195,7 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
       }
 
       is UploadedPhotosFragmentEvent.PhotoUploadEvent -> {
-        onUploadingEvent(event)
+        viewModel.uploadedPhotosFragmentViewModel.onUploadingEvent(event)
       }
     }.safe
   }
@@ -202,10 +211,10 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
           uploadedPhotosList.scrollToPosition(0)
         }
         is UploadedPhotosFragmentEvent.GeneralEvents.RemovePhoto -> {
-          adapter.removePhotoById(event.photo.id)
+//          adapter.removePhotoById(event.photo.id)
         }
         is UploadedPhotosFragmentEvent.GeneralEvents.AddPhoto -> {
-          adapter.addTakenPhoto(event.photo)
+//          adapter.addTakenPhoto(event.photo)
         }
         is UploadedPhotosFragmentEvent.GeneralEvents.PhotoRemoved -> {
 //          if (adapter.getQueuedUpAndFailedPhotosCount() == 0) {
@@ -218,9 +227,9 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
 //          triggerPhotosLoading()
         }
         is UploadedPhotosFragmentEvent.GeneralEvents.UpdateReceiverInfo -> {
-          event.receivedPhotos.forEach {
-            adapter.updateUploadedPhotoSetReceiverInfo(it.uploadedPhotoName)
-          }
+//          event.receivedPhotos.forEach {
+//            adapter.updateUploadedPhotoSetReceiverInfo(it.uploadedPhotoName)
+//          }
         }
         is UploadedPhotosFragmentEvent.GeneralEvents.OnPageSelected -> {
 //          viewModel.uploadedPhotosFragmentViewModel.viewState.reset()
@@ -231,44 +240,9 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
         is UploadedPhotosFragmentEvent.GeneralEvents.ShowUploadedPhotos -> {
 //          addUploadedPhotosToAdapter(event.uploadedPhotos)
         }
-      }.safe
-    }
-  }
-
-  private fun onUploadingEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
-    if (!isAdded) {
-      return
-    }
-
-    uploadedPhotosList.post {
-      when (event) {
-        is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadStart -> {
-          val photo = event.photo
-            .also { it.photoState = PhotoState.PHOTO_UPLOADING }
-          adapter.addTakenPhoto(photo)
-        }
-        is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress -> {
-          adapter.addTakenPhoto(event.photo)
-          adapter.updatePhotoProgress(event.photo.id, event.progress)
-        }
-        is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUploaded -> {
-          adapter.removePhotoById(event.photo.id)
-        }
-        is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUpload -> {
-          adapter.removePhotoById(event.photo.id)
-
-          val photo = event.photo
-            .also { it.photoState = PhotoState.FAILED_TO_UPLOAD }
-          adapter.addTakenPhoto(photo)
-        }
-        is UploadedPhotosFragmentEvent.PhotoUploadEvent.PhotoReceived -> {
-          adapter.updateUploadedPhotoSetReceiverInfo(event.takenPhotoName)
-        }
-        is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
-//          triggerPhotosLoading()
-        }
-        is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnError -> {
-//          handleUnknownErrors(event.exception)
+        is UploadedPhotosFragmentEvent.GeneralEvents.PhotoReceived -> {
+          //TODO
+//          adapter.updateUploadedPhotoSetReceiverInfo(event.takenPhotoName)
         }
       }.safe
     }

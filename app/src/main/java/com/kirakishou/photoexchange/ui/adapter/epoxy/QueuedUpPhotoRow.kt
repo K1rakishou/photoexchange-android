@@ -20,7 +20,7 @@ import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import java.lang.IllegalStateException
 
 @ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT)
-class UploadingPhotoAdapterRow  @JvmOverloads constructor(
+class QueuedUpPhotoRow @JvmOverloads constructor(
   context: Context,
   attrs: AttributeSet? = null,
   defStyleAttr: Int = 0
@@ -41,7 +41,7 @@ class UploadingPhotoAdapterRow  @JvmOverloads constructor(
     photoUploadingStateIndicator = findViewById<View>(R.id.photo_uploading_state_indicator)
 
     orientation = VERTICAL
-    loadingProgress.isIndeterminate = false
+    loadingProgress.isIndeterminate = true
   }
 
   @ModelProp
@@ -61,14 +61,5 @@ class UploadingPhotoAdapterRow  @JvmOverloads constructor(
         .apply(RequestOptions().centerCrop())
         .into(photoView)
     }
-  }
-
-  @ModelProp
-  fun setProgress(progress: Int) {
-    if (loadingProgress.isIndeterminate) {
-      loadingProgress.isIndeterminate = false
-    }
-
-    loadingProgress.progress = progress
   }
 }

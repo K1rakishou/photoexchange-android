@@ -16,17 +16,16 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
     class OnPageSelected : GeneralEvents()
     class ShowTakenPhotos(val takenPhotos: List<TakenPhoto>) : GeneralEvents()
     class ShowUploadedPhotos(val uploadedPhotos: List<UploadedPhoto>) : GeneralEvents()
+    class PhotoReceived(val takenPhotoName: String) : GeneralEvents()
   }
 
   sealed class PhotoUploadEvent : UploadedPhotosFragmentEvent() {
-    class OnPhotoUploadStart(val photo: TakenPhoto) : PhotoUploadEvent()
-    class OnProgress(val photo: TakenPhoto, val progress: Int) : PhotoUploadEvent()
-    class OnUploaded(val photo: TakenPhoto) : PhotoUploadEvent()
-    class OnFailedToUpload(val photo: TakenPhoto) : PhotoUploadEvent()
+    class OnPhotoUploadingStart(val photo: TakenPhoto) : PhotoUploadEvent()
+    class OnPhotoUploadingProgress(val photo: TakenPhoto, val progress: Int) : PhotoUploadEvent()
+    class OnPhotoUploaded(val photo: TakenPhoto) : PhotoUploadEvent()
+    class OnFailedToUploadPhoto(val photo: TakenPhoto) : PhotoUploadEvent()
     class OnEnd : PhotoUploadEvent()
     class OnError(val exception: Exception) : PhotoUploadEvent()
 
-    //FIXME: should this be here? Probably should be moved to GeneralEvents
-    class PhotoReceived(val takenPhotoName: String) : PhotoUploadEvent()
   }
 }

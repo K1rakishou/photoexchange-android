@@ -145,16 +145,16 @@ open class TakenPhotosRepository(
     }
   }
 
-  open suspend fun figureOutWhatPhotosToLoad(): UploadedPhotosFragmentViewModel.PhotosToLoad {
+  open suspend fun figureOutWhatPhotosToLoad(): PhotosToLoad {
     return withContext(coroutineContext) {
       val hasFailedToUploadPhotos = countAllByState(PhotoState.FAILED_TO_UPLOAD) > 0
       val hasQueuedUpPhotos = countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
 
       if (hasFailedToUploadPhotos || hasQueuedUpPhotos) {
-        return@withContext UploadedPhotosFragmentViewModel.PhotosToLoad.QueuedUpAndFailed
+        return@withContext PhotosToLoad.QueuedUpAndFailed
       }
 
-      return@withContext UploadedPhotosFragmentViewModel.PhotosToLoad.Uploaded
+      return@withContext PhotosToLoad.Uploaded
     }
   }
 
@@ -252,4 +252,8 @@ open class TakenPhotosRepository(
     }
   }
 
+  enum class PhotosToLoad {
+    QueuedUpAndFailed,
+    Uploaded
+  }
 }

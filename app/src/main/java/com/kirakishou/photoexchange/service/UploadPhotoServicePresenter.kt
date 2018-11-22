@@ -91,18 +91,18 @@ open class UploadPhotoServicePresenter(
 
     for (photo in queuedUpPhotos) {
       //send event on every photo
-      eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadStart(photo))
+      eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingStart(photo))
 
       try {
         uploadPhotosUseCase.uploadPhoto(photo, currentLocation, userId, eventsActor)
-        eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUploaded(photo))
+        eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploaded(photo))
       } catch (error: Exception) {
         Timber.tag(TAG).e(error)
 
         hasErrors = true
 
         takenPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
-        eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUpload(photo))
+        eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUploadPhoto(photo))
       }
     }
 

@@ -8,7 +8,9 @@ import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
+import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
@@ -47,11 +49,11 @@ class UploadedPhotosFragmentViewModel(
 
   private suspend fun loadPhotos() {
     when (takenPhotosRepository.figureOutWhatPhotosToLoad()) {
-      PhotosToLoad.QueuedUpAndFailed -> {
+      TakenPhotosRepository.PhotosToLoad.QueuedUpAndFailed -> {
         Timber.tag(TAG).d("Loading queued up and failed photos")
         loadQueuedUpAndFailedPhotos()
       }
-      PhotosToLoad.Uploaded -> {
+      TakenPhotosRepository.PhotosToLoad.Uploaded -> {
         Timber.tag(TAG).d("Loading uploaded photos")
         loadUploadedPhotos(photosPerPage)
       }
@@ -138,17 +140,66 @@ class UploadedPhotosFragmentViewModel(
     onCleared()
   }
 
+  fun onUploadingEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
+    when (event) {
+      is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingStart -> {
+        withState { state ->
+          val photoIndex = state.takenPhotos.indexOfFirst { it.id == event.photo.id }
+          if (photoIndex != -1) {
+            val updatePhotos = state.takenPhotos.toMutableList()
+            updatePhotos[photoIndex]
+              .also { it.photoState = PhotoState.PHOTO_UPLOADING }
+
+            setState { copy(takenPhotos = updatePhotos) }
+          } else {
+            val newPhoto = event.photo
+              .also { it.photoState = PhotoState.PHOTO_UPLOADING }
+
+            setState { copy(takenPhotos = state.takenPhotos + newPhoto) }
+          }
+        }
+      }
+      is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress -> {
+        //TODO
+//        adapter.addTakenPhoto(event.photo)
+//        adapter.updatePhotoProgress(event.photo.id, event.progress)
+      }
+      is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploaded -> {
+        withState { state ->
+          val photoIndex = state.takenPhotos.indexOfFirst { it.id == event.photo.id }
+          if (photoIndex == -1) {
+            return@withState
+          }
+
+          val newPhotos = state.takenPhotos.filter { it.id == event.photo.id }
+          setState { copy(takenPhotos = newPhotos) }
+        }
+      }
+      is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUploadPhoto -> {
+        //TODO
+//        adapter.removePhotoById(event.photo.id)
+//
+//        val photo = event.photo
+//          .also { it.photoState = PhotoState.FAILED_TO_UPLOAD }
+//        adapter.addTakenPhoto(photo)
+      }
+      is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
+        //TODO
+//          triggerPhotosLoading()
+      }
+      is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnError -> {
+        //TODO
+//          handleUnknownErrors(event.exception)
+      }
+    }.safe
+  }
+
   override fun onCleared() {
     super.onCleared()
     Timber.tag(TAG).d("onCleared()")
 
     compositeDisposable.dispose()
     job.cancel()
-  }
-
-  enum class PhotosToLoad {
-    QueuedUpAndFailed,
-    Uploaded
   }
 
   companion object : MvRxViewModelFactory<UploadedPhotosFragmentState> {
