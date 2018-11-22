@@ -7,8 +7,6 @@ import java.lang.Exception
 
 sealed class UploadedPhotosFragmentEvent : BaseEvent {
   sealed class GeneralEvents : UploadedPhotosFragmentEvent() {
-    class ShowProgressFooter : GeneralEvents()
-    class HideProgressFooter : GeneralEvents()
     class RemovePhoto(val photo: TakenPhoto) : GeneralEvents()
     class AddPhoto(val photo: TakenPhoto) : GeneralEvents()
     class ScrollToTop : GeneralEvents()

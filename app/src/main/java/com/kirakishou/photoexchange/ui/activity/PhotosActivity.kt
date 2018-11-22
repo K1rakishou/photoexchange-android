@@ -60,7 +60,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.rx2.openSubscription
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.lang.Exception
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 

@@ -14,6 +14,7 @@ import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
+import com.kirakishou.photoexchange.mvp.viewmodel.UploadedPhotosFragmentViewModel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
@@ -144,6 +145,19 @@ open class TakenPhotosRepository(
     }
   }
 
+  open suspend fun figureOutWhatPhotosToLoad(): UploadedPhotosFragmentViewModel.PhotosToLoad {
+    return withContext(coroutineContext) {
+      val hasFailedToUploadPhotos = countAllByState(PhotoState.FAILED_TO_UPLOAD) > 0
+      val hasQueuedUpPhotos = countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
+
+      if (hasFailedToUploadPhotos || hasQueuedUpPhotos) {
+        return@withContext UploadedPhotosFragmentViewModel.PhotosToLoad.QueuedUpAndFailed
+      }
+
+      return@withContext UploadedPhotosFragmentViewModel.PhotosToLoad.Uploaded
+    }
+  }
+
   open suspend fun countAllByState(state: PhotoState): Int {
     return withContext(coroutineContext) {
       return@withContext takenPhotoDao.countAllByState(state).toInt()
@@ -167,7 +181,7 @@ open class TakenPhotosRepository(
       }
 
       return@withContext resultList
-    }
+    }.sortedByDescending { it.id }
   }
 
   suspend fun deleteMyPhoto(takenPhoto: TakenPhoto?): Boolean {
@@ -184,7 +198,6 @@ open class TakenPhotosRepository(
     }
   }
 
-
   suspend fun deletePhotoById(photoId: Long): Boolean {
     return withContext(coroutineContext) {
       takenPhotosLocalSource.deletePhotoById(photoId)
@@ -197,7 +210,7 @@ open class TakenPhotosRepository(
     }
   }
 
-  suspend fun tryToFixStalledPhotos() {
+  suspend fun resetStalledPhotosState() {
     return withContext(coroutineContext) {
       val stillUploadingPhotos = findAllByState(PhotoState.PHOTO_UPLOADING)
 

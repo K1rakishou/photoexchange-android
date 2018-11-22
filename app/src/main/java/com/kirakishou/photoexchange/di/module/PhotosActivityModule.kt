@@ -14,10 +14,10 @@ import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.ReceivedPhotosFragmentViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.UploadedPhotosFragmentViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.PhotosActivityViewModelFactory
+import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import dagger.Module
 import dagger.Provides
-import kotlinx.coroutines.CoroutineScope
 
 /**
  * Created by kirakishou on 3/11/2018.
@@ -35,6 +35,7 @@ open class PhotosActivityModule(
                                              getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
                                              dispatchersProvider: DispatchersProvider): UploadedPhotosFragmentViewModel {
     return UploadedPhotosFragmentViewModel(
+      UploadedPhotosFragmentState(),
       takenPhotosRepository,
       settingsRepository,
       getUploadedPhotosUseCase,

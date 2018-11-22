@@ -25,7 +25,6 @@ class UploadedPhotosAdapter(
   private val adapterButtonsClickSubject: Subject<UploadedPhotosAdapterButtonClick>
 ) : BaseAdapter<UploadedPhotosAdapterItem>(context) {
 
-
   private val headerItems = arrayListOf<UploadedPhotosAdapterItem>()
   private val queuedUpItems = arrayListOf<UploadedPhotosAdapterItem>()
   private val failedToUploadItems = arrayListOf<UploadedPhotosAdapterItem>()
