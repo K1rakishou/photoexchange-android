@@ -197,24 +197,29 @@ class UploadedPhotosFragment : BaseFragment(), StateEventListener<UploadedPhotos
     uploadedPhotosList.post {
       when (event) {
         is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadStart -> {
-          adapter.addTakenPhoto(event.photo.also { it.photoState = PhotoState.PHOTO_UPLOADING })
+          val photo = event.photo
+            .also { it.photoState = PhotoState.PHOTO_UPLOADING }
+          adapter.addTakenPhoto(photo)
         }
         is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress -> {
           adapter.addTakenPhoto(event.photo)
           adapter.updatePhotoProgress(event.photo.id, event.progress)
         }
         is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUploaded -> {
-          adapter.removePhotoById(event.takenPhoto.id)
+          adapter.removePhotoById(event.photo.id)
         }
         is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUpload -> {
           adapter.removePhotoById(event.photo.id)
-          adapter.addTakenPhoto(event.photo.also { it.photoState = PhotoState.FAILED_TO_UPLOAD })
+
+          val photo = event.photo
+            .also { it.photoState = PhotoState.FAILED_TO_UPLOAD }
+          adapter.addTakenPhoto(photo)
         }
         is UploadedPhotosFragmentEvent.PhotoUploadEvent.PhotoReceived -> {
           adapter.updateUploadedPhotoSetReceiverInfo(event.takenPhotoName)
         }
         is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
-          loadMoreSubject.onNext(Unit)
+          triggerPhotosLoading()
         }
         is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnError -> {
           handleUnknownErrors(event.exception)

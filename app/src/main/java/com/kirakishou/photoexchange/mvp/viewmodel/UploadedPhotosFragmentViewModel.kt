@@ -49,6 +49,8 @@ class UploadedPhotosFragmentViewModel(
   init {
     actor = actor {
       consumeEach {
+        Timber.tag(TAG).d("loadMorePhotos actor called")
+
         if (!isActive) {
           return@consumeEach
         }
@@ -65,8 +67,6 @@ class UploadedPhotosFragmentViewModel(
         }
       }
     }
-
-    runBlocking { actor.send(Unit) }
   }
 
   fun loadMorePhotos() {

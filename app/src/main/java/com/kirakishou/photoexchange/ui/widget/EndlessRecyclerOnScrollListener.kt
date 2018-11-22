@@ -18,7 +18,6 @@ class EndlessRecyclerOnScrollListener(
 
   private val TAG = "EndlessRecyclerOnScrollListener_$fragmentTag"
   private var loading = false
-  private var previousTotal = 0
   private var lastVisibleItem = 0
   private var prevLastVisibleItem = lastVisibleItem
   private var totalItemCount = 0

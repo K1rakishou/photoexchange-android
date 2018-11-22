@@ -1,6 +1,5 @@
 package com.kirakishou.photoexchange.di.component
 
-import com.kirakishou.photoexchange.di.module.PermissionManagerModule
 import com.kirakishou.photoexchange.di.module.TakePhotoActivityModule
 import com.kirakishou.photoexchange.di.module.VibratorModule
 import com.kirakishou.photoexchange.di.scope.PerActivity
@@ -13,7 +12,6 @@ import dagger.Subcomponent
 @PerActivity
 @Subcomponent(modules = [
   TakePhotoActivityModule::class,
-  PermissionManagerModule::class,
   VibratorModule::class
 ])
 interface TakePhotoActivityComponent {

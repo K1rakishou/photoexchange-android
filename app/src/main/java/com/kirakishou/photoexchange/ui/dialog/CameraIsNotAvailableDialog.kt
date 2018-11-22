@@ -4,15 +4,20 @@ import android.content.Context
 import androidx.core.content.ContextCompat
 import com.afollestad.materialdialogs.MaterialDialog
 import com.kirakishou.fixmypc.photoexchange.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 
 /**
  * Created by kirakishou on 1/26/2018.
  */
-class CameraIsNotAvailableDialog : AbstractDialog<Unit>() {
-  override fun show(context: Context,
-                    onPositiveCallback: (() -> Unit)?,
-                    onNegativeCallback: (() -> Unit)?) {
+class CameraIsNotAvailableDialog(
+  private val coroutineScope: CoroutineScope
+) : AbstractDialog<Unit>() {
+
+  override suspend fun show(context: Context,
+                    onPositiveCallback: (suspend () -> Unit)?,
+                    onNegativeCallback: (suspend () -> Unit)?) {
     checkNotNull(onPositiveCallback)
 
     //TODO: change this to homemade dialog and get rid of the MaterialDialogs dependency
@@ -21,7 +26,7 @@ class CameraIsNotAvailableDialog : AbstractDialog<Unit>() {
       .message(text = "It looks like your device does not support camera. This app cannot work without a camera.")
       .cancelable(false)
       .positiveButton(text = "OK") {
-        onPositiveCallback.invoke()
+        coroutineScope.launch { onPositiveCallback.invoke() }
       }
       .show()
   }

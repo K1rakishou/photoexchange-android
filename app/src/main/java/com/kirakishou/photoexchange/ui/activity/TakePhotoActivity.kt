@@ -52,13 +52,12 @@ class TakePhotoActivity : BaseActivity() {
   lateinit var viewModel: TakePhotoActivityViewModel
 
   @Inject
-  lateinit var permissionManager: PermissionManager
-
-  @Inject
   lateinit var cameraProvider: CameraProvider
 
   @Inject
   lateinit var vibrator: Vibrator
+
+  private val permissionManager = PermissionManager()
 
   private val TAG = "TakePhotoActivity"
   private val VIBRATION_TIME_MS = 25L
@@ -71,22 +70,19 @@ class TakePhotoActivity : BaseActivity() {
     initViews()
   }
 
-  override fun onActivityStart() {
+  override suspend fun onActivityStart() {
     initRx()
   }
 
-  override fun onResume() {
-    super.onResume()
-
+  override suspend fun onActivityResume() {
     checkPermissions()
   }
 
-  override fun onPause() {
-    super.onPause()
+  override suspend fun onActivityPause() {
     cameraProvider.stopCamera()
   }
 
-  override fun onActivityStop() {
+  override suspend fun onActivityStop() {
   }
 
   private fun initViews() {
@@ -96,7 +92,7 @@ class TakePhotoActivity : BaseActivity() {
     showAllPhotosButton.translationX = showAllPhotosButton.translationX + translationDelta
   }
 
-  private fun initRx() {
+  private suspend fun initRx() {
     compositeDisposable += viewModel.errorCodesSubject
       .subscribeOn(AndroidSchedulers.mainThread())
       .doOnNext { showErrorCodeToast(it) }
@@ -131,6 +127,7 @@ class TakePhotoActivity : BaseActivity() {
 
   private fun checkPermissions() {
     val requestedPermissions = arrayOf(Manifest.permission.CAMERA)
+
     permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
       val index = permissions.indexOf(Manifest.permission.CAMERA)
       if (index == -1) {
@@ -139,25 +136,25 @@ class TakePhotoActivity : BaseActivity() {
 
       if (grantResults[index] == PackageManager.PERMISSION_DENIED) {
         if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
-          showCameraRationaleDialog()
+          launch { showCameraRationaleDialog() }
         } else {
           Timber.tag(TAG).d("getPermissions() Could not obtain camera permission")
-          showAppCannotWorkWithoutCameraPermissionDialog()
+          launch { showAppCannotWorkWithoutCameraPermissionDialog() }
         }
 
         return@askForPermission
       }
 
-      onPermissionCallback()
+      launch { onPermissionCallback() }
     }
   }
 
-  private fun onPermissionCallback() {
+  private suspend fun onPermissionCallback() {
     startCamera()
     animateAppear()
   }
 
-  private fun startCamera() {
+  private suspend fun startCamera() {
     if (cameraProvider.isStarted()) {
       return
     }
@@ -172,22 +169,22 @@ class TakePhotoActivity : BaseActivity() {
     cameraProvider.startCamera()
   }
 
-  private fun showAppCannotWorkWithoutCameraPermissionDialog() {
-    AppCannotWorkWithoutCameraPermissionDialog().show(this) {
+  private suspend fun showAppCannotWorkWithoutCameraPermissionDialog() {
+    AppCannotWorkWithoutCameraPermissionDialog(this).show(this) {
       finish()
     }
   }
 
-  private fun showCameraRationaleDialog() {
-    CameraRationaleDialog().show(this, {
+  private suspend fun showCameraRationaleDialog() {
+    CameraRationaleDialog(this).show(this, {
       checkPermissions()
     }, {
       finish()
     })
   }
 
-  private fun showCameraIsNotAvailableDialog() {
-    CameraIsNotAvailableDialog().show(this) {
+  private suspend fun showCameraIsNotAvailableDialog() {
+    CameraIsNotAvailableDialog(this).show(this) {
       finish()
     }
   }
@@ -197,8 +194,7 @@ class TakePhotoActivity : BaseActivity() {
   }
 
   private fun onPhotoTaken(takenPhoto: TakenPhoto) {
-    runActivityWithArgs(ViewTakenPhotoActivity::class.java,
-      takenPhoto.toBundle())
+    runActivityWithArgs(ViewTakenPhotoActivity::class.java, takenPhoto.toBundle())
   }
 
   private fun animateAppear() {

@@ -60,6 +60,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.rx2.openSubscription
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.lang.Exception
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -89,9 +90,6 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
   @Inject
   lateinit var viewModel: PhotosActivityViewModel
 
-  @Inject
-  lateinit var permissionManager: PermissionManager
-
   val activityComponent by lazy {
     (application as PhotoExchangeApplication).applicationComponent
       .plus(PhotosActivityModule(this))
@@ -110,6 +108,7 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
   private val adapter = FragmentTabsPager(supportFragmentManager)
   private var savedInstanceState: Bundle? = null
   private var viewState = PhotosActivityViewState()
+  private val permissionManager = PermissionManager()
 
   override fun getContentView(): Int = R.layout.activity_all_photos
 
@@ -120,12 +119,18 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
     uploadPhotosServiceConnection = UploadPhotoServiceConnection(this)
   }
 
-  override fun onActivityStart() {
-    launch { initRx() }
-    checkPermissions(this.savedInstanceState)
+  override suspend fun onActivityStart() {
+    initRx()
+    checkPermissions(savedInstanceState)
   }
 
-  override fun onActivityStop() {
+  override suspend fun onActivityResume() {
+  }
+
+  override suspend fun onActivityPause() {
+  }
+
+  override suspend fun onActivityStop() {
     receivePhotosServiceConnection.onFindingServiceDisconnected()
     uploadPhotosServiceConnection.onUploadingServiceDisconnected()
   }
@@ -159,12 +164,14 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
       .doOnError { Timber.e(it) }
       .subscribe()
 
-    compositeChannel += viewModel.intercom.photosActivityEvents.listen().openSubscription().apply {
-      consumeEach { event -> onStateEvent(event) }
+    launch {
+      compositeChannel += viewModel.intercom.photosActivityEvents.listen().openSubscription().apply {
+        consumeEach { event -> onStateEvent(event) }
+      }
     }
   }
 
-  private fun checkPermissions(savedInstanceState: Bundle?) {
+  private suspend fun checkPermissions(savedInstanceState: Bundle?) {
     val requestedPermissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
     permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
       val index = permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -178,35 +185,33 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
         granted = false
 
         if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-          showGpsRationaleDialog(savedInstanceState)
+          launch { showGpsRationaleDialog(savedInstanceState) }
           return@askForPermission
         }
       }
 
-      onPermissionsCallback(savedInstanceState, granted)
+      launch {  onPermissionsCallback(savedInstanceState, granted) }
     }
   }
 
-  private fun showGpsRationaleDialog(savedInstanceState: Bundle?) {
-    GpsRationaleDialog().show(this, {
+  private suspend fun showGpsRationaleDialog(savedInstanceState: Bundle?) {
+    GpsRationaleDialog(this).show(this, {
       checkPermissions(savedInstanceState)
     }, {
       onPermissionsCallback(savedInstanceState, false)
     })
   }
 
-  private fun onPermissionsCallback(savedInstanceState: Bundle?, granted: Boolean) {
-    launch {
-      initViews()
-      restoreUploadedPhotosFragmentFromViewState(savedInstanceState)
+  private suspend fun onPermissionsCallback(savedInstanceState: Bundle?, granted: Boolean) {
+    initViews()
+    restoreUploadedPhotosFragmentFromViewState(savedInstanceState)
 
-      withContext(Dispatchers.Default) {
-        viewModel.updateGpsPermissionGranted(granted)
-      }
-
-      viewModel.intercom.tell<UploadedPhotosFragment>()
-        .to(UploadedPhotosFragmentEvent.GeneralEvents.AfterPermissionRequest())
+    withContext(Dispatchers.Default) {
+      viewModel.updateGpsPermissionGranted(granted)
     }
+
+    viewModel.intercom.tell<UploadedPhotosFragment>()
+      .to(UploadedPhotosFragmentEvent.GeneralEvents.AfterPermissionRequest())
   }
 
   private fun restoreUploadedPhotosFragmentFromViewState(savedInstanceState: Bundle?) {
@@ -475,6 +480,7 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
   }
 
   override fun resolveDaggerDependency() {
-    activityComponent.inject(this)
+    activityComponent
+      .inject(this)
   }
 }

@@ -9,7 +9,6 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.interactors.*
-import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.viewmodel.GalleryFragmentViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.ReceivedPhotosFragmentViewModel
@@ -18,6 +17,7 @@ import com.kirakishou.photoexchange.mvp.viewmodel.factory.PhotosActivityViewMode
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import dagger.Module
 import dagger.Provides
+import kotlinx.coroutines.CoroutineScope
 
 /**
  * Created by kirakishou on 3/11/2018.

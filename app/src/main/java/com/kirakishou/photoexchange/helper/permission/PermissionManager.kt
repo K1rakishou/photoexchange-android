@@ -27,7 +27,7 @@ open class PermissionManager {
     }
 
     val requestCode = requestCodeSeed.getAndIncrement()
-    val permissionRequest = PermissionRequest(requestCode, permissions, callback)
+    val permissionRequest = PermissionRequest(requestCode, callback)
     pendingPermissions.add(permissionRequest)
 
     ActivityCompat.requestPermissions(activity, permissions, requestCode)
@@ -35,8 +35,8 @@ open class PermissionManager {
 
   fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
     val permission = pendingPermissions.first { permission -> permission.requestCode == requestCode }
-
     pendingPermissions.removeAll { it.requestCode == requestCode }
+
     permission.callback.invoke(permissions, grantResults)
   }
 }
