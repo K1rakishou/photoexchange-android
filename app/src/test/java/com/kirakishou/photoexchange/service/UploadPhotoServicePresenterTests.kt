@@ -66,8 +66,8 @@ class UploadPhotoServicePresenterTests {
     assertEquals(true, event is UploadPhotoServicePresenter.UploadPhotoEvent.UploadingEvent)
 
     val nestedEvent = (event as UploadPhotoServicePresenter.UploadPhotoEvent.UploadingEvent).nestedEvent
-    assertEquals(true, nestedEvent is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUpload)
-    assertEquals(photo, (nestedEvent as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUpload).photo)
+    assertEquals(true, nestedEvent is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUploadPhoto)
+    assertEquals(photo, (nestedEvent as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUploadPhoto).photo)
     assertEquals(errorCode.getValue(), nestedEvent.errorCode.getValue())
   }
 
@@ -82,16 +82,16 @@ class UploadPhotoServicePresenterTests {
     assertEquals(true, event is UploadPhotoServicePresenter.UploadPhotoEvent.UploadingEvent)
 
     val nestedEvent = (event as UploadPhotoServicePresenter.UploadPhotoEvent.UploadingEvent).nestedEvent
-    assertEquals(true, nestedEvent is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadStart)
-    assertEquals(photo, (nestedEvent as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadStart).photo)
+    assertEquals(true, nestedEvent is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingStart)
+    assertEquals(photo, (nestedEvent as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingStart).photo)
   }
 
   private fun checkOnProgressEvent(progress: Int, photo: TakenPhoto, event: UploadPhotoServicePresenter.UploadPhotoEvent) {
     assertEquals(true, event is UploadPhotoServicePresenter.UploadPhotoEvent.UploadingEvent)
 
     val nestedEvent = (event as UploadPhotoServicePresenter.UploadPhotoEvent.UploadingEvent).nestedEvent
-    assertEquals(true, nestedEvent is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress)
-    assertEquals(progress, (nestedEvent as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress).progress)
+    assertEquals(true, nestedEvent is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress)
+    assertEquals(progress, (nestedEvent as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress).progress)
     assertEquals(photo, nestedEvent.photo)
   }
 
@@ -99,8 +99,8 @@ class UploadPhotoServicePresenterTests {
     assertEquals(true, event is UploadPhotoServicePresenter.UploadPhotoEvent.UploadingEvent)
 
     val nestedEvent = (event as UploadPhotoServicePresenter.UploadPhotoEvent.UploadingEvent).nestedEvent
-    assertEquals(true, nestedEvent is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUploaded)
-    assertEquals(photo, (nestedEvent as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnUploaded).takenPhoto)
+    assertEquals(true, nestedEvent is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploaded)
+    assertEquals(photo, (nestedEvent as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploaded).takenPhoto)
   }
 
   @Test
@@ -206,25 +206,25 @@ class UploadPhotoServicePresenterTests {
 
     Mockito.doAnswer {
       return@doAnswer Observable.create<UploadedPhotosFragmentEvent.PhotoUploadEvent> { emitter ->
-        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(queuedUpPhoto1, 6))
-        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(queuedUpPhoto1, 55))
-        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(queuedUpPhoto1, 100))
+        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(queuedUpPhoto1, 6))
+        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(queuedUpPhoto1, 55))
+        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(queuedUpPhoto1, 100))
         emitter.onComplete()
       }
     }.`when`(uploadPhotosUseCase).uploadPhoto(queuedUpPhoto1, userId, location)
     Mockito.doAnswer {
       return@doAnswer Observable.create<UploadedPhotosFragmentEvent.PhotoUploadEvent> { emitter ->
-        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(queuedUpPhoto2, 14))
-        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(queuedUpPhoto2, 44))
-        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(queuedUpPhoto2, 100))
+        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(queuedUpPhoto2, 14))
+        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(queuedUpPhoto2, 44))
+        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(queuedUpPhoto2, 100))
         emitter.onComplete()
       }
     }.`when`(uploadPhotosUseCase).uploadPhoto(queuedUpPhoto2, userId, location)
     Mockito.doAnswer {
       return@doAnswer Observable.create<UploadedPhotosFragmentEvent.PhotoUploadEvent> { emitter ->
-        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(queuedUpPhoto3, 11))
-        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(queuedUpPhoto3, 53))
-        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(queuedUpPhoto3, 100))
+        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(queuedUpPhoto3, 11))
+        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(queuedUpPhoto3, 53))
+        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(queuedUpPhoto3, 100))
         emitter.onComplete()
       }
     }.`when`(uploadPhotosUseCase).uploadPhoto(queuedUpPhoto3, userId, location)
@@ -291,23 +291,23 @@ class UploadPhotoServicePresenterTests {
 
     Mockito.doAnswer {
       return@doAnswer Observable.create<UploadedPhotosFragmentEvent.PhotoUploadEvent> { emitter ->
-        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(queuedUpPhoto1, 6))
-        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(queuedUpPhoto1, 55))
-        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(queuedUpPhoto1, 100))
+        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(queuedUpPhoto1, 6))
+        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(queuedUpPhoto1, 55))
+        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(queuedUpPhoto1, 100))
         emitter.onComplete()
       }
     }.`when`(uploadPhotosUseCase).uploadPhoto(queuedUpPhoto1, userId, location)
     Mockito.doAnswer {
       return@doAnswer Observable.create<UploadedPhotosFragmentEvent.PhotoUploadEvent> { emitter ->
-        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(queuedUpPhoto2, 14))
+        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(queuedUpPhoto2, 14))
         emitter.onError(IOException("Error while trying to write a file to socket"))
       }
     }.`when`(uploadPhotosUseCase).uploadPhoto(queuedUpPhoto2, userId, location)
     Mockito.doAnswer {
       return@doAnswer Observable.create<UploadedPhotosFragmentEvent.PhotoUploadEvent> { emitter ->
-        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(queuedUpPhoto3, 11))
-        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(queuedUpPhoto3, 53))
-        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(queuedUpPhoto3, 100))
+        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(queuedUpPhoto3, 11))
+        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(queuedUpPhoto3, 53))
+        emitter.onNext(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(queuedUpPhoto3, 100))
         emitter.onComplete()
       }
     }.`when`(uploadPhotosUseCase).uploadPhoto(queuedUpPhoto3, userId, location)

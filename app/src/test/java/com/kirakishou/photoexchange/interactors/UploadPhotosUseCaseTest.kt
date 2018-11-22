@@ -15,12 +15,8 @@ import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.nhaarman.mockito_kotlin.any
 import core.ErrorCode
-import io.reactivex.Single
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.channels.consumes
 import kotlinx.coroutines.runBlocking
-import net.response.UploadPhotoResponse
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -177,18 +173,18 @@ class UploadPhotosUseCaseTest {
         val ch = invocation.arguments[5] as Channel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
 
         runBlocking {
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 0))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 15))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 30))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 45))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 60))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 65))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 72))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 80))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 90))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 93))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 99))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 100))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 0))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 15))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 30))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 45))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 60))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 65))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 72))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 80))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 90))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 93))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 99))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 100))
         }
 
         return@doAnswer UploadPhotosUseCase.UploadPhotoResult(1L, "photo_name")
@@ -211,7 +207,7 @@ class UploadPhotosUseCaseTest {
       uploadPhotosUseCase.uploadPhoto(takenPhoto, location, userId, channel)
 
       val events = readChannelUntil(channel) { event ->
-        if (event !is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress) {
+        if (event !is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress) {
           throw IllegalStateException("Bad event: ${event::class.java}")
         }
 
@@ -301,7 +297,7 @@ class UploadPhotosUseCaseTest {
       uploadPhotosUseCase.uploadPhoto(takenPhoto, location, userId, channel)
 
       val events = readChannelUntil(channel) { event ->
-        if (event !is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress) {
+        if (event !is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress) {
           throw IllegalStateException("Bad event: ${event::class.java}")
         }
 
@@ -334,18 +330,18 @@ class UploadPhotosUseCaseTest {
         val ch = invocation.arguments[5] as Channel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
 
         runBlocking {
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 0))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 15))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 30))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 45))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 60))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 65))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 72))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 80))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 90))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 93))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 99))
-          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 100))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 0))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 15))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 30))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 45))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 60))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 65))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 72))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 80))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 90))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 93))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 99))
+          ch.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, 100))
         }
 
         return@doAnswer UploadPhotosUseCase.UploadPhotoResult(1L, "photo_name")
@@ -369,7 +365,7 @@ class UploadPhotosUseCaseTest {
       uploadPhotosUseCase.uploadPhoto(takenPhoto, location, userId, channel)
 
       val events = readChannelUntil(channel) { event ->
-        if (event !is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress) {
+        if (event !is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress) {
           throw IllegalStateException("Bad event: ${event::class.java}")
         }
 
@@ -385,9 +381,9 @@ class UploadPhotosUseCaseTest {
       val progressList = listOf(0, 15, 30, 45, 60, 65, 72, 80, 90, 93, 99, 100)
 
       for (index in 0 until 12) {
-        assertEquals(true, events[index] is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress)
-        assertEquals(progressList[index], (events[index] as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress).progress)
-        assertEquals(takenPhoto, (events[index] as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress).photo)
+        assertEquals(true, events[index] is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress)
+        assertEquals(progressList[index], (events[index] as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress).progress)
+        assertEquals(takenPhoto, (events[index] as UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress).photo)
       }
 
       Mockito.verify(fileUtils, Mockito.times(1)).deleteFile(rotatedPhotoFileMock)

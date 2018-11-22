@@ -41,11 +41,17 @@ class ViewTakenPhotoActivity : BaseActivity() {
     showViewTakenPhotoFragment(intent)
   }
 
-  override fun onActivityStart() {
-    launch { initRx() }
+  override suspend fun onActivityStart() {
+    initRx()
   }
 
-  override fun onActivityStop() {
+  override suspend fun onActivityResume() {
+  }
+
+  override suspend fun onActivityPause() {
+  }
+
+  override suspend fun onActivityStop() {
   }
 
   private suspend fun initRx() {

@@ -47,7 +47,7 @@ open class PhotoExchangeApplication : Application() {
   }
 
   open fun init() {
-    Stetho.initializeWithDefaults(this);
+    Stetho.initializeWithDefaults(this)
 
     initCrashlytics()
     initTimber()

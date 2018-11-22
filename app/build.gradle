@@ -81,6 +81,10 @@ dependencies {
     implementation "androidx.room:room-rxjava2:2.1.0-alpha02"
     kapt "androidx.room:room-compiler:2.1.0-alpha02"
 
+    implementation 'com.airbnb.android:mvrx:0.6.0'
+    implementation 'com.airbnb.android:epoxy:2.16.4'
+    kapt 'com.airbnb.android:epoxy-processor:2.16.4'
+
     implementation 'androidx.multidex:multidex:2.0.0'
     implementation 'androidx.appcompat:appcompat:1.0.2'
     implementation 'androidx.cardview:cardview:1.0.0'

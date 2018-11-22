@@ -97,16 +97,22 @@ class SettingsActivity : BaseActivity() {
     }
   }
 
+  override suspend fun onActivityStart() {
+  }
+
+  override suspend fun onActivityResume() {
+  }
+
+  override suspend fun onActivityPause() {
+  }
+
+  override suspend fun onActivityStop() {
+  }
+
   private fun copyUserIdToClipBoard() {
     val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
     val clip = android.content.ClipData.newPlainText("user_id", userIdTextView.text.toString())
     clipboard.primaryClip = clip
-  }
-
-  override fun onActivityStart() {
-  }
-
-  override fun onActivityStop() {
   }
 
   override fun resolveDaggerDependency() {

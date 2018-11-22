@@ -46,7 +46,7 @@ class PhotosActivityViewModel(
   override fun onCleared() {
     Timber.tag(TAG).d("onCleared()")
 
-    uploadedPhotosFragmentViewModel.onCleared()
+    uploadedPhotosFragmentViewModel.clear()
     receivedPhotosFragmentViewModel.onCleared()
     galleryFragmentViewModel.onCleared()
 

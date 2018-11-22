@@ -4,15 +4,19 @@ import android.content.Context
 import androidx.core.content.ContextCompat
 import com.afollestad.materialdialogs.MaterialDialog
 import com.kirakishou.fixmypc.photoexchange.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 
 /**
  * Created by kirakishou on 1/26/2018.
  */
-class CameraRationaleDialog : AbstractDialog<Unit>() {
-  override fun show(context: Context,
-                    onPositiveCallback: (() -> Unit)?,
-                    onNegativeCallback: (() -> Unit)?) {
+class CameraRationaleDialog(
+  private val coroutineScope: CoroutineScope
+) : AbstractDialog<Unit>() {
+  override suspend fun show(context: Context,
+                    onPositiveCallback: (suspend () -> Unit)?,
+                    onNegativeCallback: (suspend () -> Unit)?) {
     checkNotNull(onPositiveCallback)
     checkNotNull(onNegativeCallback)
 
@@ -22,10 +26,10 @@ class CameraRationaleDialog : AbstractDialog<Unit>() {
       .message(text = "We need camera permission so you can take a photo that will be sent to someone else.")
       .cancelable(false)
       .negativeButton(text = "Close app") {
-        onNegativeCallback.invoke()
+        coroutineScope.launch { onNegativeCallback.invoke() }
       }
       .positiveButton(text = "Allow") {
-        onPositiveCallback.invoke()
+        coroutineScope.launch { onPositiveCallback.invoke() }
       }
       .show()
   }

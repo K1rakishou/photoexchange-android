@@ -19,7 +19,9 @@ class ProgressRequestBody(
   private val photo: TakenPhoto,
   private val channel: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
 ) : RequestBody() {
-  private val DEFAULT_BUFFER_SIZE = 4096
+  private val defaultBufferSize = 4096
+  private val maxPercent = 100
+  private val percentStep = 10
 
   override fun contentType(): MediaType? {
     return MediaType.parse("image/*")
@@ -31,7 +33,7 @@ class ProgressRequestBody(
 
   override fun writeTo(sink: BufferedSink) {
     val fileLength = photoFile.length()
-    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+    val buffer = ByteArray(defaultBufferSize)
     val fis = FileInputStream(photoFile)
     var uploaded: Long = 0
     var lastPercent = 0L
@@ -44,17 +46,17 @@ class ProgressRequestBody(
             break
           }
 
-          val percent = 100L * uploaded / fileLength
-          if (percent - lastPercent >= 3) {
+          val percent = maxPercent * uploaded / fileLength
+          if (percent - lastPercent >= percentStep) {
             lastPercent = percent
-            channel.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, percent.toInt()))
+            channel.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, percent.toInt()))
           }
 
           uploaded += read.toLong()
           sink.write(buffer, 0, read)
         }
 
-        channel.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnProgress(photo, 100))
+        channel.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress(photo, maxPercent))
       }
     } finally {
       fis.close()

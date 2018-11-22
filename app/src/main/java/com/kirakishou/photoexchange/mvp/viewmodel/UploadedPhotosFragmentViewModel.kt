@@ -1,94 +1,118 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
+import androidx.fragment.app.FragmentActivity
+import com.airbnb.mvrx.BaseMvRxViewModel
+import com.airbnb.mvrx.Loading
+import com.airbnb.mvrx.MvRxViewModelFactory
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
-import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
-import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
+import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
-import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
-import com.kirakishou.photoexchange.ui.viewstate.UploadedPhotosFragmentViewState
-import core.ErrorCode
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.subjects.PublishSubject
-import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.channels.actor
-import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.rx2.rxSingle
 import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 
 class UploadedPhotosFragmentViewModel(
+  initialState: UploadedPhotosFragmentState,
   private val takenPhotosRepository: TakenPhotosRepository,
   private val settingsRepository: SettingsRepository,
   private val getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
   private val dispatchersProvider: DispatchersProvider
-) : CoroutineScope {
+) : BaseMvRxViewModel<UploadedPhotosFragmentState>(initialState), CoroutineScope {
   private val TAG = "UploadedPhotosFragmentViewModel"
 
   private val compositeDisposable = CompositeDisposable()
   private val job = Job()
-  private val actor: SendChannel<Unit>
+  private val photosPerPage = 10
 
   lateinit var intercom: PhotosActivityViewModelIntercom
-
-  val viewState = UploadedPhotosFragmentViewState()
-  val knownErrors = PublishSubject.create<ErrorCode>()
-  val unknownErrors = PublishSubject.create<Throwable>()
 
   override val coroutineContext: CoroutineContext
     get() = job + dispatchersProvider.GENERAL()
 
   init {
-    actor = actor {
-      consumeEach {
-        if (!isActive) {
-          return@consumeEach
-        }
+    launch { loadPhotos() }
+  }
 
-        when (figureOutWhatPhotosToLoad()) {
-          PhotosToLoad.QueuedUpAndFailed -> {
-            Timber.tag(TAG).d("Loading queued up and failed photos")
-            loadQueuedUpAndFailedPhotos()
-          }
-          PhotosToLoad.Uploaded -> {
-            Timber.tag(TAG).d("Loading uploaded photos")
-            loadUploadedPhotos()
-          }
-        }
+  private suspend fun loadPhotos() {
+    when (takenPhotosRepository.figureOutWhatPhotosToLoad()) {
+      TakenPhotosRepository.PhotosToLoad.QueuedUpAndFailed -> {
+        Timber.tag(TAG).d("Loading queued up and failed photos")
+        loadQueuedUpAndFailedPhotos()
+      }
+      TakenPhotosRepository.PhotosToLoad.Uploaded -> {
+        Timber.tag(TAG).d("Loading uploaded photos")
+        loadUploadedPhotos(photosPerPage)
       }
     }
-
-    runBlocking { actor.send(Unit) }
   }
 
-  fun loadMorePhotos() {
-    actor.offer(Unit)
-  }
-
-  private suspend fun loadUploadedPhotos() {
-    try {
-      val userId = settingsRepository.getUserId()
-      val uploadedPhotos = loadPageOfUploadedPhotos(userId, viewState.getLastUploadedOn(), viewState.photosPerPage)
-
-      intercom.tell<UploadedPhotosFragment>()
-        .to(UploadedPhotosFragmentEvent.GeneralEvents.ShowUploadedPhotos(uploadedPhotos))
-      intercom.tell<PhotosActivity>()
-        .to(PhotosActivityEvent.StartReceivingService(PhotosActivityViewModel::class.java,
-          "Starting the service after a page of uploaded photos was loaded"))
-    } catch (error: Throwable) {
-      if (error is ApiErrorException) {
-        knownErrors.onNext(error.errorCode)
-      } else {
-        unknownErrors.onNext(error)
+  private fun loadQueuedUpAndFailedPhotos() {
+    withState { state ->
+      if (state.takenPhotosRequest is Loading) {
+        return@withState
       }
+
+      val singleResult = rxSingle {
+        loadQueuedUpAndFailedPhotosInternal()
+      }
+
+      singleResult
+        .execute { request ->
+          copy(
+            takenPhotosRequest = request,
+            takenPhotos = state.takenPhotos + (request() ?: emptyList())
+          )
+        }
+        .disposeOnClear()
+    }
+  }
+
+  private fun loadUploadedPhotos(count: Int) {
+    withState { state ->
+      if (state.takenPhotosRequest is Loading) {
+        return@withState
+      }
+
+      val singleResult = rxSingle {
+        val userId = settingsRepository.getUserId()
+        val lastUploadedOn = state.uploadedPhotos
+          .lastOrNull()
+          ?.uploadedOn
+          ?: -1L
+
+        loadPageOfUploadedPhotos(userId, lastUploadedOn, count)
+      }
+
+      singleResult
+        .execute { request ->
+          copy(
+            uploadedPhotosRequest = request,
+            uploadedPhotos = state.uploadedPhotos + (request() ?: emptyList())
+          )
+        }
+    }
+  }
+
+  private suspend fun loadQueuedUpAndFailedPhotosInternal(): List<TakenPhoto> {
+    takenPhotosRepository.resetStalledPhotosState()
+
+    return mutableListOf<TakenPhoto>().apply {
+      addAll(takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP))
+      addAll(takenPhotosRepository.findAllByState(PhotoState.FAILED_TO_UPLOAD))
     }
   }
 
@@ -101,92 +125,89 @@ class UploadedPhotosFragmentViewModel(
       return emptyList()
     }
 
-    intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.GeneralEvents.ShowProgressFooter())
+    val result = getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastUploadedOn, count)
+    when (result) {
+      is Either.Value -> {
+        return result.value
+      }
+      is Either.Error -> {
+        throw result.error
+      }
+    }
+  }
 
-    try {
-      val result = getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastUploadedOn, count)
-      when (result) {
-        is Either.Value -> {
-          viewState.updateFromUploadedPhotos(result.value)
-          return result.value
+  fun clear() {
+    onCleared()
+  }
+
+  fun onUploadingEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
+    when (event) {
+      is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingStart -> {
+        withState { state ->
+          val photoIndex = state.takenPhotos.indexOfFirst { it.id == event.photo.id }
+          if (photoIndex != -1) {
+            val updatePhotos = state.takenPhotos.toMutableList()
+            updatePhotos[photoIndex]
+              .also { it.photoState = PhotoState.PHOTO_UPLOADING }
+
+            setState { copy(takenPhotos = updatePhotos) }
+          } else {
+            val newPhoto = event.photo
+              .also { it.photoState = PhotoState.PHOTO_UPLOADING }
+
+            setState { copy(takenPhotos = state.takenPhotos + newPhoto) }
+          }
         }
-        is Either.Error -> {
-          throw result.error
+      }
+      is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress -> {
+        //TODO
+//        adapter.addTakenPhoto(event.photo)
+//        adapter.updatePhotoProgress(event.photo.id, event.progress)
+      }
+      is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploaded -> {
+        withState { state ->
+          val photoIndex = state.takenPhotos.indexOfFirst { it.id == event.photo.id }
+          if (photoIndex == -1) {
+            return@withState
+          }
+
+          val newPhotos = state.takenPhotos.filter { it.id == event.photo.id }
+          setState { copy(takenPhotos = newPhotos) }
         }
       }
-    } finally {
-      intercom.tell<UploadedPhotosFragment>().to(UploadedPhotosFragmentEvent.GeneralEvents.HideProgressFooter())
-    }
-  }
-
-  private suspend fun loadQueuedUpAndFailedPhotos() {
-    if (viewState.failedPhotosLoaded) {
-      return
-    }
-
-    try {
-      tryToFixStalledPhotos()
-
-      val queuedUpPhotos = loadQueuedUpPhotos()
-      val failedToUploadPhotos = loadFailedToUploadPhotos()
-
-      if (queuedUpPhotos.isNotEmpty()) {
-        intercom.tell<PhotosActivity>()
-          .to(PhotosActivityEvent.StartUploadingService(PhotosActivityViewModel::class.java,
-            "There are queued up photos in the database"))
+      is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUploadPhoto -> {
+        //TODO
+//        adapter.removePhotoById(event.photo.id)
+//
+//        val photo = event.photo
+//          .also { it.photoState = PhotoState.FAILED_TO_UPLOAD }
+//        adapter.addTakenPhoto(photo)
       }
-
-      val photos = mutableListOf<TakenPhoto>()
-      photos.addAll(failedToUploadPhotos)
-      photos.addAll(queuedUpPhotos)
-
-      viewState.failedPhotosLoaded = true
-
-      intercom.tell<UploadedPhotosFragment>()
-        .to(UploadedPhotosFragmentEvent.GeneralEvents.ShowTakenPhotos(photos))
-    } catch (error: Throwable) {
-      if (error is ApiErrorException) {
-        knownErrors.onNext(error.errorCode)
-      } else {
-        unknownErrors.onNext(error)
+      is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
+        //TODO
+//          triggerPhotosLoading()
       }
-    }
+      is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnError -> {
+        //TODO
+//          handleUnknownErrors(event.exception)
+      }
+    }.safe
   }
 
-  private suspend fun figureOutWhatPhotosToLoad(): PhotosToLoad {
-    val hasFailedToUploadPhotos = takenPhotosRepository.countAllByState(PhotoState.FAILED_TO_UPLOAD) > 0
-    val hasQueuedUpPhotos = takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
-
-    if (hasFailedToUploadPhotos || hasQueuedUpPhotos) {
-      return PhotosToLoad.QueuedUpAndFailed
-    }
-
-    return PhotosToLoad.Uploaded
-  }
-
-  private suspend fun tryToFixStalledPhotos() {
-    return takenPhotosRepository.tryToFixStalledPhotos()
-  }
-
-  private suspend fun loadFailedToUploadPhotos(): List<TakenPhoto> {
-    return takenPhotosRepository.findAllByState(PhotoState.FAILED_TO_UPLOAD)
-      .sortedByDescending { it.id }
-  }
-
-  private suspend fun loadQueuedUpPhotos(): List<TakenPhoto> {
-    return takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP)
-      .sortedByDescending { it.id }
-  }
-
-  fun onCleared() {
+  override fun onCleared() {
+    super.onCleared()
     Timber.tag(TAG).d("onCleared()")
 
     compositeDisposable.dispose()
     job.cancel()
   }
 
-  enum class PhotosToLoad {
-    QueuedUpAndFailed,
-    Uploaded
+  companion object : MvRxViewModelFactory<UploadedPhotosFragmentState> {
+    override fun create(
+      activity: FragmentActivity,
+      state: UploadedPhotosFragmentState
+    ): BaseMvRxViewModel<UploadedPhotosFragmentState> {
+      return (activity as PhotosActivity).viewModel.uploadedPhotosFragmentViewModel
+    }
   }
 }

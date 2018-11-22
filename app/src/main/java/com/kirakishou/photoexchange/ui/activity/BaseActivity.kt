@@ -14,9 +14,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
@@ -67,19 +65,23 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
       .doOnError(this::onUnknownError)
       .subscribe(this::onUnknownError)
 
-    onActivityStart()
+    launch { onActivityStart() }
   }
 
   override fun onResume() {
     super.onResume()
+
+    launch { onActivityResume() }
   }
 
   override fun onPause() {
     super.onPause()
+
+    launch { onActivityPause() }
   }
 
   override fun onStop() {
-    onActivityStop()
+    launch { onActivityStop() }
 
     job.cancel()
     compositeChannel.forEach { it.cancel() }
@@ -142,7 +144,9 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
 
   protected abstract fun getContentView(): Int
   protected abstract fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent)
-  protected abstract fun onActivityStart()
-  protected abstract fun onActivityStop()
+  protected abstract suspend fun onActivityStart()
+  protected abstract suspend fun onActivityStop()
+  protected abstract suspend fun onActivityResume()
+  protected abstract suspend fun onActivityPause()
   protected abstract fun resolveDaggerDependency()
 }
