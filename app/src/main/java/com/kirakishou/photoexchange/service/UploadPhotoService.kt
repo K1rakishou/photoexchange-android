@@ -101,6 +101,10 @@ class UploadPhotoService : Service(), CoroutineScope {
     }
   }
 
+  fun cancelPhotoUploading(photoId: Long) {
+    presenter.cancelPhotoUploading(photoId)
+  }
+
   private fun onUploadingPhotoResult(event: UploadPhotoServicePresenter.UploadPhotoEvent) {
     when (event) {
       is UploadPhotoServicePresenter.UploadPhotoEvent.UploadingEvent -> {

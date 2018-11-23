@@ -3,8 +3,6 @@ package com.kirakishou.photoexchange.ui.fragment
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
-import androidx.recyclerview.widget.RecyclerView
-import butterknife.BindView
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.airbnb.mvrx.Fail
 import com.airbnb.mvrx.Loading
@@ -22,15 +20,18 @@ import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
-import com.kirakishou.photoexchange.ui.adapter.epoxy.*
+import com.kirakishou.photoexchange.ui.adapter.epoxy.loadingRow
+import com.kirakishou.photoexchange.ui.adapter.epoxy.queuedUpPhotoRow
+import com.kirakishou.photoexchange.ui.adapter.epoxy.textRow
+import com.kirakishou.photoexchange.ui.adapter.epoxy.uploadingPhotoRow
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.rx2.openSubscription
 import timber.log.Timber
 import javax.inject.Inject
 
 
 class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPhotosFragmentEvent>, IntercomListener {
-  @BindView(R.id.my_photos_list)
-  lateinit var uploadedPhotosList: RecyclerView
-
   @Inject
   lateinit var imageLoader: ImageLoader
 
@@ -65,6 +66,8 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
         .to(PhotosActivityEvent.StartReceivingService(PhotosActivityViewModel::class.java,
           "Starting the service after a page of uploaded photos was loaded"))
     }
+
+    launch { initRx() }
   }
 
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
@@ -74,26 +77,28 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
           Timber.tag(TAG).d("Success")
 
           if (state.takenPhotos.isNotEmpty()) {
-            state.takenPhotos
-              .forEach { photo ->
-                when (photo.photoState) {
-                  PhotoState.PHOTO_TAKEN -> {
+            state.takenPhotos.forEach { photo ->
+              when (photo.photoState) {
+                PhotoState.PHOTO_TAKEN -> {
+                }
+                PhotoState.PHOTO_QUEUED_UP -> {
+                  queuedUpPhotoRow {
+                    id(photo.id)
+                    photo(photo)
+                    callback { _ -> viewModel.uploadedPhotosFragmentViewModel.cancelPhotoUploading(photo.id) }
                   }
-                  PhotoState.PHOTO_QUEUED_UP -> {
-                    queuedUpPhotoRow {
-                      id(photo.id)
-                      photo(photo)
-                    }
-                  }
-                  PhotoState.PHOTO_UPLOADING -> {
-                    uploadingPhotoRow {
-                      id(photo.id)
-                      photo(photo as UploadingPhoto)
-                      progress(50)
-                    }
+                }
+                PhotoState.PHOTO_UPLOADING -> {
+                  val uploadingPhoto = photo as UploadingPhoto
+
+                  uploadingPhotoRow {
+                    id(photo.id)
+                    photo(uploadingPhoto)
+                    progress(uploadingPhoto.progress)
                   }
                 }
               }
+            }
           } else {
             textRow {
               id("not_queued_up_photos")
@@ -140,7 +145,7 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
 //  override fun onFragmentViewDestroy() {
 //  }
 
-//  private suspend fun initRx() {
+  private suspend fun initRx() {
 //    compositeDisposable += viewModel.uploadedPhotosFragmentViewModel.knownErrors
 //      .subscribe({ errorCode -> handleKnownErrors(errorCode) })
 //
@@ -166,12 +171,14 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
 //          .that(PhotosActivityEvent.ScrollEvent(isScrollingDown))
 //      })
 //
-//    compositeChannel += viewModel.intercom.uploadedPhotosFragmentEvents.listen().openSubscription().apply {
-//      consumeEach { event -> onStateEvent(event) }
-//    }
-//  }
+    compositeChannel += viewModel.intercom.uploadedPhotosFragmentEvents.listen().openSubscription().apply {
+      consumeEach { event ->
+        onStateEvent(event)
+      }
+    }
+  }
 
-  private fun initRecyclerView() {
+//  private fun initRecyclerView() {
 //    val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), PHOTO_ADAPTER_VIEW_WIDTH)
 //
 //    adapter = UploadedPhotosAdapter(requireContext(), imageLoader, failedToUploadPhotoButtonClicksSubject)
@@ -187,7 +194,7 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
 //    uploadedPhotosList.adapter = adapter
 //    uploadedPhotosList.clearOnScrollListeners()
 //    uploadedPhotosList.addOnScrollListener(endlessScrollListener)
-  }
+//  }
 
 //  private fun triggerPhotosLoading() {
 //    loadMoreSubject.onNext(Unit)
@@ -214,47 +221,50 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
       return
     }
 
-    uploadedPhotosList.post {
-      when (event) {
-        is UploadedPhotosFragmentEvent.GeneralEvents.ScrollToTop -> {
-          uploadedPhotosList.scrollToPosition(0)
-        }
-        is UploadedPhotosFragmentEvent.GeneralEvents.RemovePhoto -> {
+    when (event) {
+      is UploadedPhotosFragmentEvent.GeneralEvents.ScrollToTop -> {
+//          uploadedPhotosList.scrollToPosition(0)
+      }
+      is UploadedPhotosFragmentEvent.GeneralEvents.RemovePhoto -> {
 //          adapter.removePhotoById(event.photo.id)
-        }
-        is UploadedPhotosFragmentEvent.GeneralEvents.AddPhoto -> {
+      }
+      is UploadedPhotosFragmentEvent.GeneralEvents.AddPhoto -> {
 //          adapter.addTakenPhoto(event.photo)
-        }
-        is UploadedPhotosFragmentEvent.GeneralEvents.PhotoRemoved -> {
+      }
+      is UploadedPhotosFragmentEvent.GeneralEvents.PhotoRemoved -> {
 //          if (adapter.getQueuedUpAndFailedPhotosCount() == 0) {
 //            triggerPhotosLoading()
 //          } else {
 //            //do nothing
 //          }
-        }
-        is UploadedPhotosFragmentEvent.GeneralEvents.AfterPermissionRequest -> {
+      }
+      is UploadedPhotosFragmentEvent.GeneralEvents.AfterPermissionRequest -> {
 //          triggerPhotosLoading()
-        }
-        is UploadedPhotosFragmentEvent.GeneralEvents.UpdateReceiverInfo -> {
+      }
+      is UploadedPhotosFragmentEvent.GeneralEvents.UpdateReceiverInfo -> {
 //          event.receivedPhotos.forEach {
 //            adapter.updateUploadedPhotoSetReceiverInfo(it.uploadedPhotoName)
 //          }
-        }
-        is UploadedPhotosFragmentEvent.GeneralEvents.OnPageSelected -> {
+      }
+      is UploadedPhotosFragmentEvent.GeneralEvents.OnPageSelected -> {
 //          viewModel.uploadedPhotosFragmentViewModel.viewState.reset()
-        }
-        is UploadedPhotosFragmentEvent.GeneralEvents.ShowTakenPhotos -> {
+      }
+      is UploadedPhotosFragmentEvent.GeneralEvents.ShowTakenPhotos -> {
 //          addTakenPhotosToAdapter(event.takenPhotos)
-        }
-        is UploadedPhotosFragmentEvent.GeneralEvents.ShowUploadedPhotos -> {
+      }
+      is UploadedPhotosFragmentEvent.GeneralEvents.ShowUploadedPhotos -> {
 //          addUploadedPhotosToAdapter(event.uploadedPhotos)
-        }
-        is UploadedPhotosFragmentEvent.GeneralEvents.PhotoReceived -> {
-          //TODO
+      }
+      is UploadedPhotosFragmentEvent.GeneralEvents.PhotoReceived -> {
+        //TODO
 //          adapter.updateUploadedPhotoSetReceiverInfo(event.takenPhotoName)
-        }
-      }.safe
-    }
+      }
+      is UploadedPhotosFragmentEvent.GeneralEvents.Invalidate -> {
+        //Hack to update the view after changing the state manually
+        //(for some reason it does not getting called automatically, so I have to do it manually with this hack)
+        invalidate()
+      }
+    }.safe
   }
 
 //  private fun addUploadedPhotosToAdapter(uploadedPhotos: List<UploadedPhoto>) {

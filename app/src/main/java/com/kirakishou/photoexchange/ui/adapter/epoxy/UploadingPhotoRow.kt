@@ -8,6 +8,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.appcompat.widget.AppCompatButton
 import androidx.cardview.widget.CardView
 import com.airbnb.epoxy.ModelProp
 import com.airbnb.epoxy.ModelView
@@ -31,6 +32,7 @@ class UploadingPhotoRow  @JvmOverloads constructor(
   private val uploadingMessageHolderView: CardView
   private val loadingProgress: ProgressBar
   private val photoUploadingStateIndicator: View
+  private val cancelButton: AppCompatButton
 
   init {
     inflate(context, R.layout.epoxy_adapter_item_taken_photo, this)
@@ -40,9 +42,11 @@ class UploadingPhotoRow  @JvmOverloads constructor(
     uploadingMessageHolderView = findViewById(R.id.uploading_message_holder)
     loadingProgress = findViewById(R.id.loading_progress)
     photoUploadingStateIndicator = findViewById<View>(R.id.photo_uploading_state_indicator)
+    cancelButton = findViewById(R.id.cancel_button)
 
     orientation = VERTICAL
     loadingProgress.isIndeterminate = false
+    cancelButton.isEnabled = false
   }
 
   @ModelProp

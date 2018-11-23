@@ -308,18 +308,24 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
         val hasPhotosToUpload = viewModel.checkHasPhotosToUpload()
         if (hasPhotosToUpload) {
           bindUploadingService(event.callerClass, event.reason, true)
+        } else {
+          //do nothing
         }
       }
       is PhotosActivityEvent.StartReceivingService -> {
         val hasPhotosToReceive = viewModel.checkHasPhotosToReceive()
         if (hasPhotosToReceive) {
           bindReceivingService(event.callerClass, event.reason, true)
+        } else {
+          //do nothing
         }
       }
       is PhotosActivityEvent.FailedToUploadPhotoButtonClicked -> {
         val tryToReUpload = handleUploadedPhotosFragmentAdapterButtonClicks(event.clickType)
         if (tryToReUpload) {
           bindUploadingService(PhotosActivity::class.java, "Handling of FailedToUploadPhotoButtonClicked", true)
+        } else {
+          //do nothing
         }
       }
       is PhotosActivityEvent.ScrollEvent -> {
@@ -329,7 +335,10 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
           takePhotoButton.show()
         }
       }
-    }
+      is PhotosActivityEvent.CancelPhotoUploading -> {
+        uploadPhotosServiceConnection.cancelPhotoUploading(event.photoId)
+      }
+    }.safe
   }
 
   override fun onUploadPhotosEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {

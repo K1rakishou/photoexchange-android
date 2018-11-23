@@ -8,7 +8,9 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.appcompat.widget.AppCompatButton
 import androidx.cardview.widget.CardView
+import com.airbnb.epoxy.CallbackProp
 import com.airbnb.epoxy.ModelProp
 import com.airbnb.epoxy.ModelView
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -30,6 +32,7 @@ class QueuedUpPhotoRow @JvmOverloads constructor(
   private val uploadingMessageHolderView: CardView
   private val loadingProgress: ProgressBar
   private val photoUploadingStateIndicator: View
+  private val cancelButton: AppCompatButton
 
   init {
     inflate(context, R.layout.epoxy_adapter_item_taken_photo, this)
@@ -39,9 +42,11 @@ class QueuedUpPhotoRow @JvmOverloads constructor(
     uploadingMessageHolderView = findViewById(R.id.uploading_message_holder)
     loadingProgress = findViewById(R.id.loading_progress)
     photoUploadingStateIndicator = findViewById<View>(R.id.photo_uploading_state_indicator)
+    cancelButton = findViewById(R.id.cancel_button)
 
     orientation = VERTICAL
     loadingProgress.isIndeterminate = true
+    cancelButton.isEnabled = true
   }
 
   @ModelProp
@@ -61,5 +66,10 @@ class QueuedUpPhotoRow @JvmOverloads constructor(
         .apply(RequestOptions().centerCrop())
         .into(photoView)
     }
+  }
+
+  @CallbackProp
+  fun setCallback(listener: OnClickListener?) {
+    cancelButton.setOnClickListener(listener)
   }
 }

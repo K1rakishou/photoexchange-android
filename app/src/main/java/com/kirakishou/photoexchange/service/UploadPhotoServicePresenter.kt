@@ -37,6 +37,7 @@ open class UploadPhotoServicePresenter(
 
   private val uploadingActor: SendChannel<LonLat>
   private val eventsActor: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
+  private val photosToCancel = hashSetOf<Long>()
 
   override val coroutineContext: CoroutineContext
     get() = job + dispatchersProvider.GENERAL()
@@ -90,6 +91,16 @@ open class UploadPhotoServicePresenter(
     var hasErrors = false
 
     for (photo in queuedUpPhotos) {
+      if (photosToCancel.contains(photo.id)) {
+        if (takenPhotosRepository.findById(photo.id) != null) {
+          takenPhotosRepository.deletePhotoById(photo.id)
+          eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoCanceled(photo))
+        }
+
+        photosToCancel.remove(photo.id)
+        continue
+      }
+
       //send event on every photo
       eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingStart(photo))
 
@@ -149,6 +160,10 @@ open class UploadPhotoServicePresenter(
   fun uploadPhotos(location: LonLat) {
     Timber.tag(TAG).d("uploadPhotos called")
     uploadingActor.offer(location)
+  }
+
+  fun cancelPhotoUploading(photoId: Long) {
+    photosToCancel.add(photoId)
   }
 
   sealed class UploadPhotoEvent {

@@ -5,12 +5,14 @@ import com.airbnb.mvrx.BaseMvRxViewModel
 import com.airbnb.mvrx.Loading
 import com.airbnb.mvrx.MvRxViewModelFactory
 import com.airbnb.mvrx.Uninitialized
+import com.kirakishou.fixmypc.photoexchange.BuildConfig
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
+import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
@@ -19,6 +21,7 @@ import com.kirakishou.photoexchange.mvp.model.photo.QueuedUpPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
+import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -33,7 +36,7 @@ class UploadedPhotosFragmentViewModel(
   private val settingsRepository: SettingsRepository,
   private val getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
   private val dispatchersProvider: DispatchersProvider
-) : BaseMvRxViewModel<UploadedPhotosFragmentState>(initialState), CoroutineScope {
+) : BaseMvRxViewModel<UploadedPhotosFragmentState>(initialState, BuildConfig.DEBUG), CoroutineScope {
   private val TAG = "UploadedPhotosFragmentViewModel"
 
   private val compositeDisposable = CompositeDisposable()
@@ -60,6 +63,29 @@ class UploadedPhotosFragmentViewModel(
     }
 
     launch { loadQueuedUpPhotos() }
+  }
+
+  fun cancelPhotoUploading(photoId: Long) {
+    launch {
+      if (takenPhotosRepository.findById(photoId) == null) {
+        return@launch
+      }
+
+      takenPhotosRepository.deletePhotoById(photoId)
+
+      intercom.tell<PhotosActivity>()
+        .to(PhotosActivityEvent.CancelPhotoUploading(photoId))
+
+      withState { state ->
+        val newPhotos = state.takenPhotos.toMutableList()
+        newPhotos.removeAll { it.id == photoId }
+
+        setState { copy(takenPhotos = newPhotos) }
+
+        intercom.tell<UploadedPhotosFragment>()
+          .to(UploadedPhotosFragmentEvent.GeneralEvents.Invalidate)
+      }
+    }
   }
 
   private suspend fun loadQueuedUpPhotos() {
@@ -157,7 +183,7 @@ class UploadedPhotosFragmentViewModel(
         withState { state ->
           val photoIndex = state.takenPhotos.indexOfFirst { it.id == event.photo.id }
           val newPhotos = if (photoIndex != -1) {
-            state.takenPhotos.filter { it.id == event.photo.id }.toMutableList()
+            state.takenPhotos.filter { it.id != event.photo.id }.toMutableList()
           } else {
             state.takenPhotos.toMutableList()
           }
@@ -173,7 +199,7 @@ class UploadedPhotosFragmentViewModel(
             return@withState
           }
 
-          val newPhotos = state.takenPhotos.filter { it.id == event.photo.id }
+          val newPhotos = state.takenPhotos.filter { it.id != event.photo.id }
           setState { copy(takenPhotos = newPhotos) }
         }
       }
@@ -181,7 +207,7 @@ class UploadedPhotosFragmentViewModel(
         withState { state ->
           val photoIndex = state.takenPhotos.indexOfFirst { it.id == event.photo.id }
           val newPhotos = if (photoIndex != -1) {
-            state.takenPhotos.filter { it.id == event.photo.id }.toMutableList()
+            state.takenPhotos.filter { it.id != event.photo.id }.toMutableList()
           } else {
             state.takenPhotos.toMutableList()
           }
@@ -189,6 +215,9 @@ class UploadedPhotosFragmentViewModel(
           newPhotos.add(photoIndex, QueuedUpPhoto.fromTakenPhoto(event.photo))
           setState { copy(takenPhotos = newPhotos) }
         }
+      }
+      is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoCanceled -> {
+        cancelPhotoUploading(event.photo.id)
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnError -> {
         withState { state ->

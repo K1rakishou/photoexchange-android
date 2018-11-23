@@ -24,11 +24,19 @@ class UploadPhotoServiceConnection(
   }
 
   fun isConnected(): Boolean {
-    return this.get()
+    return get()
   }
 
   fun startPhotosUploading() {
-    uploadPhotoService!!.startPhotosUploading()
+    if (isConnected()) {
+      uploadPhotoService?.startPhotosUploading()
+    }
+  }
+
+  fun cancelPhotoUploading(photoId: Long) {
+    if (isConnected()) {
+      uploadPhotoService?.cancelPhotoUploading(photoId)
+    }
   }
 
   private fun onUploadingServiceConnected(_service: IBinder) {
