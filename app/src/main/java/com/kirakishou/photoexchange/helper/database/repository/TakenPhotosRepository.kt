@@ -144,18 +144,18 @@ open class TakenPhotosRepository(
     }
   }
 
-  open suspend fun figureOutWhatPhotosToLoad(): PhotosToLoad {
-    return withContext(coroutineContext) {
-      val hasFailedToUploadPhotos = countAllByState(PhotoState.FAILED_TO_UPLOAD) > 0
-      val hasQueuedUpPhotos = countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
-
-      if (hasFailedToUploadPhotos || hasQueuedUpPhotos) {
-        return@withContext PhotosToLoad.QueuedUpAndFailed
-      }
-
-      return@withContext PhotosToLoad.Uploaded
-    }
-  }
+//  open suspend fun figureOutWhatPhotosToLoad(): PhotosToLoad {
+//    return withContext(coroutineContext) {
+//      val hasFailedToUploadPhotos = countAllByState(PhotoState.FAILED_TO_UPLOAD) > 0
+//      val hasQueuedUpPhotos = countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
+//
+//      if (hasFailedToUploadPhotos || hasQueuedUpPhotos) {
+//        return@withContext PhotosToLoad.QueuedUpAndFailed
+//      }
+//
+//      return@withContext PhotosToLoad.Uploaded
+//    }
+//  }
 
   open suspend fun countAllByState(state: PhotoState): Int {
     return withContext(coroutineContext) {
@@ -219,13 +219,10 @@ open class TakenPhotosRepository(
           continue
         }
 
-        takenPhotosLocalSource.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
+        takenPhotosLocalSource.updatePhotoState(photo.id, PhotoState.PHOTO_QUEUED_UP)
       }
 
-      return@withContext mutableListOf<TakenPhoto>().apply {
-        addAll(findAllByState(PhotoState.PHOTO_QUEUED_UP))
-        addAll(findAllByState(PhotoState.FAILED_TO_UPLOAD))
-      }
+      return@withContext findAllByState(PhotoState.PHOTO_QUEUED_UP)
     }
   }
 
@@ -254,10 +251,5 @@ open class TakenPhotosRepository(
         return@transactional true
       }
     }
-  }
-
-  enum class PhotosToLoad {
-    QueuedUpAndFailed,
-    Uploaded
   }
 }

@@ -15,8 +15,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragment
 import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
-import com.kirakishou.photoexchange.mvp.model.photo.FailedToUploadPhoto
-import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.QueuedUpPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
@@ -51,16 +50,17 @@ class UploadedPhotosFragmentViewModel(
   }
 
   private suspend fun loadPhotos() {
-    when (takenPhotosRepository.figureOutWhatPhotosToLoad()) {
-      TakenPhotosRepository.PhotosToLoad.QueuedUpAndFailed -> {
-        Timber.tag(TAG).d("Loading queued up and failed photos")
-        loadNotUploadedPhotos()
-      }
-      TakenPhotosRepository.PhotosToLoad.Uploaded -> {
-        Timber.tag(TAG).d("Loading uploaded photos")
-        loadUploadedPhotos(photosPerPage)
-      }
-    }
+    //TODO
+//    when (takenPhotosRepository.figureOutWhatPhotosToLoad()) {
+//      TakenPhotosRepository.PhotosToLoad.QueuedUpAndFailed -> {
+//        Timber.tag(TAG).d("Loading queued up and failed photos")
+//        loadNotUploadedPhotos()
+//      }
+//      TakenPhotosRepository.PhotosToLoad.Uploaded -> {
+//        Timber.tag(TAG).d("Loading uploaded photos")
+//        loadUploadedPhotos(photosPerPage)
+//      }
+//    }
   }
 
   fun resetState() {
@@ -199,14 +199,14 @@ class UploadedPhotosFragmentViewModel(
             state.takenPhotos.toMutableList()
           }
 
-          newPhotos.add(photoIndex, FailedToUploadPhoto.fromTakenPhoto(event.photo))
+          newPhotos.add(photoIndex, QueuedUpPhoto.fromTakenPhoto(event.photo))
           setState { copy(takenPhotos = newPhotos) }
         }
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnError -> {
         withState { state ->
           val newPhotos = state.takenPhotos
-            .map { takenPhoto -> FailedToUploadPhoto.fromTakenPhoto(takenPhoto) }
+            .map { takenPhoto -> QueuedUpPhoto.fromTakenPhoto(takenPhoto) }
 
           setState { copy(takenPhotos = newPhotos) }
         }

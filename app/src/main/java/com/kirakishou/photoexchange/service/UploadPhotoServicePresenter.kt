@@ -71,7 +71,7 @@ open class UploadPhotoServicePresenter(
     } catch (error: Exception) {
       Timber.tag(TAG).e(error)
 
-      markAllPhotosAsFailed()
+      takenPhotosRepository.updateStates(PhotoState.PHOTO_UPLOADING, PhotoState.PHOTO_QUEUED_UP)
       updateServiceNotification(NotificationType.Error("Could not upload one or more photos"))
 
       eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnError(error))
@@ -101,7 +101,7 @@ open class UploadPhotoServicePresenter(
 
         hasErrors = true
 
-        takenPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
+        takenPhotosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_QUEUED_UP)
         eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUploadPhoto(photo))
       }
     }
@@ -112,11 +112,6 @@ open class UploadPhotoServicePresenter(
 
   private fun sendEvent(event: UploadPhotoEvent) {
     resultEventsSubject.onNext(event)
-  }
-
-  private suspend fun markAllPhotosAsFailed() {
-    takenPhotosRepository.updateStates(PhotoState.PHOTO_QUEUED_UP, PhotoState.FAILED_TO_UPLOAD)
-    takenPhotosRepository.updateStates(PhotoState.PHOTO_UPLOADING, PhotoState.FAILED_TO_UPLOAD)
   }
 
   private fun updateServiceNotification(serviceNotification: NotificationType) {

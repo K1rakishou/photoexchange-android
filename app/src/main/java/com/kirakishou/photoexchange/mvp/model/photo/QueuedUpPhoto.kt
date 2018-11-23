@@ -18,7 +18,7 @@ class QueuedUpPhoto(
         takenPhoto.isPublic,
         takenPhoto.photoName,
         takenPhoto.photoTempFile,
-        PhotoState.FAILED_TO_UPLOAD
+        PhotoState.PHOTO_QUEUED_UP
       )
     }
   }

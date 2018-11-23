@@ -3,7 +3,6 @@ package com.kirakishou.photoexchange.helper.database.mapper
 import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
 import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.photo.FailedToUploadPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
 
@@ -44,13 +43,6 @@ object TakenPhotosMapper {
         takenPhotoEntity.photoName,
         file,
         0,
-        takenPhotoEntity.photoState
-      )
-      PhotoState.FAILED_TO_UPLOAD -> FailedToUploadPhoto(
-        takenPhotoEntity.id!!,
-        takenPhotoEntity.isPublic,
-        takenPhotoEntity.photoName,
-        file,
         takenPhotoEntity.photoState
       )
     }

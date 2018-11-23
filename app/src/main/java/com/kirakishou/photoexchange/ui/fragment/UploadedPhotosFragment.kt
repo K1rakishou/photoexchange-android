@@ -17,8 +17,6 @@ import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.photo.FailedToUploadPhoto
-import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
@@ -91,18 +89,6 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
                       id(photo.id)
                       photo(photo as UploadingPhoto)
                       progress(50)
-                    }
-                  }
-                  PhotoState.FAILED_TO_UPLOAD -> {
-                    failedToUploadPhotoRow {
-                      id(photo.id)
-                      photo(photo as FailedToUploadPhoto)
-                      deleteButtonCallback { _ ->
-                        println("delete clicked")
-                      }
-                      retryButtonCallback { _ ->
-                        println("retry clicked")
-                      }
                     }
                   }
                 }
