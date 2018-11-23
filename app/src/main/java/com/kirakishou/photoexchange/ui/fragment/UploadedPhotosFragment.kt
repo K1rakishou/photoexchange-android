@@ -17,12 +17,13 @@ import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvp.model.photo.FailedToUploadPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
-import com.kirakishou.photoexchange.ui.adapter.epoxy.failedToUploadPhotoRow
-import com.kirakishou.photoexchange.ui.adapter.epoxy.queuedUpPhotoRow
-import com.kirakishou.photoexchange.ui.adapter.epoxy.uploadingPhotoRow
+import com.kirakishou.photoexchange.ui.adapter.epoxy.*
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -54,7 +55,7 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
 
-    viewModel.uploadedPhotosFragmentViewModel.selectSubscribe(this, UploadedPhotosFragmentState::takenPhotos) { takenPhotos ->
+    viewModel.uploadedPhotosFragmentViewModel.selectSubscribe(this, UploadedPhotosFragmentState::takenPhotos) {
       viewModel.intercom.tell<PhotosActivity>()
         .to(PhotosActivityEvent.StartUploadingService(PhotosActivityViewModel::class.java,
           "There are queued up photos in the database"))
@@ -88,14 +89,14 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
                   PhotoState.PHOTO_UPLOADING -> {
                     uploadingPhotoRow {
                       id(photo.id)
-                      photo(photo)
+                      photo(photo as UploadingPhoto)
                       progress(50)
                     }
                   }
                   PhotoState.FAILED_TO_UPLOAD -> {
                     failedToUploadPhotoRow {
                       id(photo.id)
-                      photo(photo)
+                      photo(photo as FailedToUploadPhoto)
                       deleteButtonCallback { _ ->
                         println("delete clicked")
                       }
@@ -110,9 +111,25 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
         }
         is Fail -> {
           Timber.tag(TAG).d("Fail")
+
+          textRow {
+            val exceptionMessage = state.takenPhotosRequest.error.message ?: "Unknown error message"
+            val message = "Unknown error has occurred while trying to load photos from the database. \nException message is: \"$exceptionMessage\". \nClick here to retry."
+
+            id("unknown_error")
+            text(message)
+            callback { _ ->
+              Timber.tag(TAG).d("Reloading")
+              viewModel.uploadedPhotosFragmentViewModel.resetState()
+            }
+          }
         }
         is Loading -> {
           Timber.tag(TAG).d("Loading")
+
+          loadingRow {
+            id("loading_row")
+          }
         }
         else -> {
           //do nothing when Uninitialized

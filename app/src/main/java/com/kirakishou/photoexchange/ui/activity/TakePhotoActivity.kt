@@ -23,7 +23,7 @@ import com.kirakishou.photoexchange.helper.Vibrator
 import com.kirakishou.photoexchange.helper.extension.debounceClicks
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvp.model.TakenPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.ui.dialog.AppCannotWorkWithoutCameraPermissionDialog
 import com.kirakishou.photoexchange.ui.dialog.CameraIsNotAvailableDialog
@@ -104,7 +104,7 @@ class TakePhotoActivity : BaseActivity() {
       launch {
         try {
           val takenPhoto = takePhoto()
-          if (takenPhoto.isEmpty()) {
+          if (takenPhoto == null) {
             onShowToast("Could not take photo")
             return@launch
           }
@@ -189,7 +189,7 @@ class TakePhotoActivity : BaseActivity() {
     }
   }
 
-  private suspend fun takePhoto(): TakenPhoto {
+  private suspend fun takePhoto(): TakenPhoto? {
     return cameraProvider.takePhoto()
   }
 

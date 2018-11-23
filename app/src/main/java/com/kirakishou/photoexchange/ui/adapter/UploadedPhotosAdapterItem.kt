@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.ui.adapter
 
-import com.kirakishou.photoexchange.mvp.model.TakenPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 
 sealed class UploadedPhotosAdapterItem : BaseAdapterItem() {

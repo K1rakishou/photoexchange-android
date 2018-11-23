@@ -3,7 +3,7 @@ package com.kirakishou.photoexchange.helper
 import android.content.Context
 import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import com.kirakishou.photoexchange.mvp.model.TakenPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import io.fotoapparat.Fotoapparat
 import io.fotoapparat.configuration.CameraConfiguration
 import io.fotoapparat.selector.back
@@ -74,7 +74,7 @@ open class CameraProvider(
   fun isStarted(): Boolean = isStarted.get()
   fun isAvailable(): Boolean = camera?.isAvailable(back()) ?: false
 
-  suspend fun takePhoto(): TakenPhoto {
+  suspend fun takePhoto(): TakenPhoto? {
     Timber.tag(TAG).d("before cleanup")
     takenPhotosRepository.cleanup()
     Timber.tag(TAG).d("after cleanup")
@@ -86,19 +86,19 @@ open class CameraProvider(
       Timber.tag(TAG).d("takePhotoInternal returned false")
 
       takenPhotosRepository.markDeletedById(tempFile)
-      return TakenPhoto.empty()
+      return null
     }
 
     Timber.tag(TAG).d("before saveTakenPhoto")
     val takenPhoto = takenPhotosRepository.saveTakenPhoto(tempFile)
     Timber.tag(TAG).d("after saveTakenPhoto")
 
-    if (takenPhoto.isEmpty()) {
+    if (takenPhoto == null) {
       Timber.tag(TAG).d("saveTakenPhoto returned empty photo")
 
       takenPhotosRepository.markDeletedById(tempFile) //TODO: should this be here?
       takenPhotosRepository.deleteMyPhoto(takenPhoto)
-      return TakenPhoto.empty()
+      return null
     }
 
     return takenPhoto

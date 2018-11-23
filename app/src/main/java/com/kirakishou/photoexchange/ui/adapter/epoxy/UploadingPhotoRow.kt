@@ -16,7 +16,8 @@ import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.di.module.GlideApp
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.TakenPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
 import java.lang.IllegalStateException
 
 @ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT)
@@ -45,9 +46,9 @@ class UploadingPhotoRow  @JvmOverloads constructor(
   }
 
   @ModelProp
-  fun photo(photo: TakenPhoto) {
-    if (photo.photoState != PhotoState.PHOTO_QUEUED_UP) {
-      throw IllegalStateException("photo state should be PHOTO_QUEUED_UP but actually is (${photo.photoState})")
+  fun photo(photo: UploadingPhoto) {
+    if (photo.photoState != PhotoState.PHOTO_UPLOADING) {
+      throw IllegalStateException("photo state should be PHOTO_UPLOADING but actually is (${photo.photoState})")
     }
 
     photoUploadingStateIndicator.background = ColorDrawable(context.resources.getColor(R.color.photo_state_uploading_color))

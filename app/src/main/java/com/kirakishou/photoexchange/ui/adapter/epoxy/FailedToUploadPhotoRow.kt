@@ -13,7 +13,8 @@ import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.di.module.GlideApp
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.TakenPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.FailedToUploadPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 
 
 @ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT)
@@ -37,7 +38,7 @@ class FailedToUploadPhotoRow @JvmOverloads constructor(
   }
 
   @ModelProp
-  fun photo(photo: TakenPhoto) {
+  fun photo(photo: FailedToUploadPhoto) {
     if (photo.photoState != PhotoState.FAILED_TO_UPLOAD) {
       throw IllegalStateException("photo state should be FAILED_TO_UPLOAD but actually is (${photo.photoState})")
     }

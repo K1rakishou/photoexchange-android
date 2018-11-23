@@ -3,7 +3,6 @@ package com.kirakishou.photoexchange.ui.adapter
 import android.content.Context
 import android.graphics.drawable.ColorDrawable
 import androidx.appcompat.widget.AppCompatButton
-import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import android.view.View
 import android.widget.ImageView
@@ -11,7 +10,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.mvp.model.TakenPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import io.reactivex.subjects.Subject
