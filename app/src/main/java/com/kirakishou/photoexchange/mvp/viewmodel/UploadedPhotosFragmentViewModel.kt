@@ -46,21 +46,7 @@ class UploadedPhotosFragmentViewModel(
     get() = job + dispatchersProvider.GENERAL()
 
   init {
-    launch { loadPhotos() }
-  }
-
-  private suspend fun loadPhotos() {
-    //TODO
-//    when (takenPhotosRepository.figureOutWhatPhotosToLoad()) {
-//      TakenPhotosRepository.PhotosToLoad.QueuedUpAndFailed -> {
-//        Timber.tag(TAG).d("Loading queued up and failed photos")
-//        loadNotUploadedPhotos()
-//      }
-//      TakenPhotosRepository.PhotosToLoad.Uploaded -> {
-//        Timber.tag(TAG).d("Loading uploaded photos")
-//        loadUploadedPhotos(photosPerPage)
-//      }
-//    }
+    launch { loadQueuedUpPhotos() }
   }
 
   fun resetState() {
@@ -73,10 +59,10 @@ class UploadedPhotosFragmentViewModel(
       )
     }
 
-    launch { loadPhotos() }
+    launch { loadQueuedUpPhotos() }
   }
 
-  private fun loadNotUploadedPhotos() {
+  private suspend fun loadQueuedUpPhotos() {
     withState { state ->
       if (state.takenPhotosRequest is Loading) {
         return@withState
@@ -87,6 +73,7 @@ class UploadedPhotosFragmentViewModel(
       }
 
       singleResult
+        .doFinally { loadUploadedPhotos(photosPerPage) }
         .execute { request ->
           copy(
             takenPhotosRequest = request,

@@ -32,7 +32,7 @@ class UploadPhotoServiceConnection(
   }
 
   private fun onUploadingServiceConnected(_service: IBinder) {
-    if (this.compareAndSet(false, true)) {
+    if (compareAndSet(false, true)) {
       Timber.tag(tag).d("+++ onUploadingServiceConnected")
 
       uploadPhotoService = (_service as UploadPhotoService.UploadPhotosBinder).getService()
@@ -44,7 +44,7 @@ class UploadPhotoServiceConnection(
   }
 
   fun onUploadingServiceDisconnected() {
-    if (this.compareAndSet(true, false)) {
+    if (compareAndSet(true, false)) {
       Timber.tag(tag).d("--- onUploadingServiceDisconnected")
 
       uploadPhotoService?.detachCallback()

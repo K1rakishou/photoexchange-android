@@ -97,16 +97,16 @@ class SettingsActivity : BaseActivity() {
     }
   }
 
-  override suspend fun onActivityStart() {
+  override fun onActivityStart() {
   }
 
-  override suspend fun onActivityResume() {
+  override fun onActivityResume() {
   }
 
-  override suspend fun onActivityPause() {
+  override fun onActivityPause() {
   }
 
-  override suspend fun onActivityStop() {
+  override fun onActivityStop() {
   }
 
   private fun copyUserIdToClipBoard() {

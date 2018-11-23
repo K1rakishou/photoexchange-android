@@ -118,18 +118,20 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
     uploadPhotosServiceConnection = UploadPhotoServiceConnection(this)
   }
 
-  override suspend fun onActivityStart() {
-    initRx()
-    checkPermissions(savedInstanceState)
+  override fun onActivityStart() {
+    launch {
+      initRx()
+      checkPermissions(savedInstanceState)
+    }
   }
 
-  override suspend fun onActivityResume() {
+  override fun onActivityResume() {
   }
 
-  override suspend fun onActivityPause() {
+  override fun onActivityPause() {
   }
 
-  override suspend fun onActivityStop() {
+  override fun onActivityStop() {
     receivePhotosServiceConnection.onFindingServiceDisconnected()
     uploadPhotosServiceConnection.onUploadingServiceDisconnected()
   }

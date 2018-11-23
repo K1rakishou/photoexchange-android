@@ -70,19 +70,19 @@ class TakePhotoActivity : BaseActivity() {
     initViews()
   }
 
-  override suspend fun onActivityStart() {
-    initRx()
+  override fun onActivityStart() {
+    launch { initRx() }
   }
 
-  override suspend fun onActivityResume() {
+  override fun onActivityResume() {
     checkPermissions()
   }
 
-  override suspend fun onActivityPause() {
+  override fun onActivityPause() {
     cameraProvider.stopCamera()
   }
 
-  override suspend fun onActivityStop() {
+  override fun onActivityStop() {
   }
 
   private fun initViews() {

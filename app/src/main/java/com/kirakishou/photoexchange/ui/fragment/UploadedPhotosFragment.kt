@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.ui.fragment
 
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import butterknife.BindView
 import com.airbnb.epoxy.AsyncEpoxyController
@@ -93,6 +94,11 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
                   }
                 }
               }
+          } else {
+            textRow {
+              id("not_queued_up_photos")
+              text("You have no photos yet")
+            }
           }
         }
         is Fail -> {
@@ -100,10 +106,10 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
 
           textRow {
             val exceptionMessage = state.takenPhotosRequest.error.message ?: "Unknown error message"
-            val message = "Unknown error has occurred while trying to load photos from the database. \nException message is: \"$exceptionMessage\". \nClick here to retry."
+            Toast.makeText(requireContext(), "Exception message is: \"$exceptionMessage\"", Toast.LENGTH_LONG).show()
 
             id("unknown_error")
-            text(message)
+            text("Unknown error has occurred while trying to load photos from the database. \nClick here to retry")
             callback { _ ->
               Timber.tag(TAG).d("Reloading")
               viewModel.uploadedPhotosFragmentViewModel.resetState()
@@ -114,7 +120,7 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
           Timber.tag(TAG).d("Loading")
 
           loadingRow {
-            id("loading_row")
+            id("queued_up_photos_loading_row")
           }
         }
         else -> {

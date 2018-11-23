@@ -13,6 +13,7 @@ import io.reactivex.Completable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.rx2.await
 import kotlinx.coroutines.rx2.openSubscription
 import timber.log.Timber
@@ -40,25 +41,27 @@ class ViewTakenPhotoActivity : BaseActivity() {
     showViewTakenPhotoFragment(intent)
   }
 
-  override suspend fun onActivityStart() {
-    initRx()
+  override fun onActivityStart() {
+    launch { initRx() }
   }
 
-  override suspend fun onActivityResume() {
+  override fun onActivityResume() {
   }
 
-  override suspend fun onActivityPause() {
+  override fun onActivityPause() {
   }
 
-  override suspend fun onActivityStop() {
+  override fun onActivityStop() {
   }
 
   private suspend fun initRx() {
-    compositeChannel += viewModel.addToGalleryFragmentResult.openSubscription().apply {
-      consumeEach { fragmentResult ->
-        onBackPressedInternal().await()
-        onAddToGalleryFragmentResult(fragmentResult)
-        onPhotoUpdated()
+    launch {
+      compositeChannel += viewModel.addToGalleryFragmentResult.openSubscription().apply {
+        consumeEach { fragmentResult ->
+          onBackPressedInternal().await()
+          onAddToGalleryFragmentResult(fragmentResult)
+          onPhotoUpdated()
+        }
       }
     }
   }

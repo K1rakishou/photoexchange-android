@@ -20,7 +20,7 @@ class TextRow @JvmOverloads constructor(
 
   init {
     inflate(context, R.layout.epoxy_adapter_item_text, this)
-    footerTextView = findViewById(R.id.message)
+    footerTextView = findViewById(R.id.footer_text_view)
   }
 
   @ModelProp
