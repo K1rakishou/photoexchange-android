@@ -4,10 +4,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import com.airbnb.epoxy.AsyncEpoxyController
-import com.airbnb.mvrx.Fail
-import com.airbnb.mvrx.Loading
-import com.airbnb.mvrx.Success
-import com.airbnb.mvrx.withState
+import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.extension.safe
@@ -74,7 +71,7 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
     return@simpleController withState(viewModel.uploadedPhotosFragmentViewModel) { state ->
       when (state.takenPhotosRequest) {
         is Success -> {
-          Timber.tag(TAG).d("Success")
+          Timber.tag(TAG).d("Success queued up photos")
 
           if (state.takenPhotos.isNotEmpty()) {
             state.takenPhotos.forEach { photo ->
@@ -100,14 +97,18 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
               }
             }
           } else {
-            textRow {
-              id("not_queued_up_photos")
-              text("You have no photos yet")
+            if (state.uploadedPhotosRequest !is Success && state.uploadedPhotosRequest !is Fail) {
+              textRow {
+                id("not_queued_up_photos")
+                text("You have no photos yet")
+              }
+            } else {
+
             }
           }
         }
         is Fail -> {
-          Timber.tag(TAG).d("Fail")
+          Timber.tag(TAG).d("Fail queued up photos")
 
           textRow {
             val exceptionMessage = state.takenPhotosRequest.error.message ?: "Unknown error message"
@@ -122,16 +123,35 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
           }
         }
         is Loading -> {
-          Timber.tag(TAG).d("Loading")
+          Timber.tag(TAG).d("Loading queued up photos")
 
           loadingRow {
             id("queued_up_photos_loading_row")
           }
         }
-        else -> {
+        is Uninitialized -> {
           //do nothing when Uninitialized
         }
-      }
+      }.safe
+
+      when (state.uploadedPhotosRequest) {
+        is Success -> {
+          Timber.tag(TAG).d("Success uploaded photos")
+        }
+        is Fail -> {
+          Timber.tag(TAG).d("Fail uploaded photos")
+        }
+        is Loading -> {
+          Timber.tag(TAG).d("Loading uploaded photos")
+
+          loadingRow {
+            id("uploaded_photos_loading_row")
+          }
+        }
+        is Uninitialized -> {
+
+        }
+      }.safe
     }
   }
 
@@ -171,9 +191,11 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
 //          .that(PhotosActivityEvent.ScrollEvent(isScrollingDown))
 //      })
 //
-    compositeChannel += viewModel.intercom.uploadedPhotosFragmentEvents.listen().openSubscription().apply {
-      consumeEach { event ->
-        onStateEvent(event)
+    launch {
+      compositeChannel += viewModel.intercom.uploadedPhotosFragmentEvents.listen().openSubscription().apply {
+        consumeEach { event ->
+          onStateEvent(event)
+        }
       }
     }
   }
