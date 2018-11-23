@@ -6,7 +6,6 @@ import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
-import kotlinx.coroutines.withContext
 import net.response.GetUploadedPhotosResponse
 
 open class UploadPhotosLocalSource(

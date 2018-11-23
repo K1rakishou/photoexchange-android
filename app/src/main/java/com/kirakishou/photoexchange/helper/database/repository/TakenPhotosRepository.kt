@@ -10,11 +10,10 @@ import com.kirakishou.photoexchange.helper.database.mapper.TakenPhotosMapper
 import com.kirakishou.photoexchange.helper.database.source.local.TakenPhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.TempFileLocalSource
 import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.mvp.model.TakenPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
-import com.kirakishou.photoexchange.mvp.viewmodel.UploadedPhotosFragmentViewModel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
@@ -49,9 +48,9 @@ open class TakenPhotosRepository(
     }
   }
 
-  suspend fun saveTakenPhoto(tempFile: TempFileEntity): TakenPhoto {
+  suspend fun saveTakenPhoto(tempFile: TempFileEntity): TakenPhoto? {
     return withContext(coroutineContext) {
-      var photo = TakenPhoto.empty()
+      var photo: TakenPhoto? = null
 
       val transactionResult = database.transactional {
         val myPhotoEntity = TakenPhotoEntity.create(tempFile.id!!, false, timeUtils.getTimeFast())
@@ -62,14 +61,14 @@ open class TakenPhotosRepository(
         }
 
         myPhotoEntity.id = insertedPhotoId
-        photo = TakenPhotosMapper.toMyPhoto(myPhotoEntity, tempFile)
+        photo = TakenPhotosMapper.toTakenPhoto(myPhotoEntity, tempFile)
 
         return@transactional tempFileLocalSource.updateTakenPhotoId(tempFile, insertedPhotoId).isSuccess()
       }
 
       if (!transactionResult) {
         tempFileLocalSource.markDeletedById(tempFile)
-        return@withContext TakenPhoto.empty()
+        return@withContext null
       }
 
       return@withContext photo
@@ -117,12 +116,12 @@ open class TakenPhotosRepository(
     }
   }
 
-  suspend fun findById(id: Long): TakenPhoto {
+  suspend fun findById(id: Long): TakenPhoto? {
     return withContext(coroutineContext) {
       val myPhotoEntity = takenPhotoDao.findById(id) ?: TakenPhotoEntity.empty()
       val tempFileEntity = tempFileLocalSource.findById(id)
 
-      return@withContext TakenPhotosMapper.toMyPhoto(myPhotoEntity, tempFileEntity)
+      return@withContext TakenPhotosMapper.toTakenPhoto(myPhotoEntity, tempFileEntity)
     }
   }
 
@@ -135,7 +134,7 @@ open class TakenPhotosRepository(
         myPhotoEntity.id?.let { myPhotoId ->
           val tempFile = tempFileLocalSource.findById(myPhotoId)
 
-          TakenPhotosMapper.toMyPhoto(myPhotoEntity, tempFile).let { myPhoto ->
+          TakenPhotosMapper.toTakenPhoto(myPhotoEntity, tempFile)?.let { myPhoto ->
             allMyPhotos += myPhoto
           }
         }
@@ -145,18 +144,18 @@ open class TakenPhotosRepository(
     }
   }
 
-  open suspend fun figureOutWhatPhotosToLoad(): PhotosToLoad {
-    return withContext(coroutineContext) {
-      val hasFailedToUploadPhotos = countAllByState(PhotoState.FAILED_TO_UPLOAD) > 0
-      val hasQueuedUpPhotos = countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
-
-      if (hasFailedToUploadPhotos || hasQueuedUpPhotos) {
-        return@withContext PhotosToLoad.QueuedUpAndFailed
-      }
-
-      return@withContext PhotosToLoad.Uploaded
-    }
-  }
+//  open suspend fun figureOutWhatPhotosToLoad(): PhotosToLoad {
+//    return withContext(coroutineContext) {
+//      val hasFailedToUploadPhotos = countAllByState(PhotoState.FAILED_TO_UPLOAD) > 0
+//      val hasQueuedUpPhotos = countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
+//
+//      if (hasFailedToUploadPhotos || hasQueuedUpPhotos) {
+//        return@withContext PhotosToLoad.QueuedUpAndFailed
+//      }
+//
+//      return@withContext PhotosToLoad.Uploaded
+//    }
+//  }
 
   open suspend fun countAllByState(state: PhotoState): Int {
     return withContext(coroutineContext) {
@@ -177,7 +176,11 @@ open class TakenPhotosRepository(
 
       for (photo in allPhotoReadyToUploading) {
         val tempFileEntity = tempFileLocalSource.findById(photo.id!!)
-        resultList += TakenPhotosMapper.toMyPhoto(photo, tempFileEntity)
+        val myPhoto = TakenPhotosMapper.toTakenPhoto(photo, tempFileEntity)
+
+        if (myPhoto != null) {
+          resultList += myPhoto
+        }
       }
 
       return@withContext resultList
@@ -187,10 +190,6 @@ open class TakenPhotosRepository(
   suspend fun deleteMyPhoto(takenPhoto: TakenPhoto?): Boolean {
     return withContext(coroutineContext) {
       if (takenPhoto == null) {
-        return@withContext true
-      }
-
-      if (takenPhoto.isEmpty()) {
         return@withContext true
       }
 
@@ -210,7 +209,7 @@ open class TakenPhotosRepository(
     }
   }
 
-  suspend fun resetStalledPhotosState() {
+  suspend fun loadNotUploadedPhotos(): List<TakenPhoto> {
     return withContext(coroutineContext) {
       val stillUploadingPhotos = findAllByState(PhotoState.PHOTO_UPLOADING)
 
@@ -220,8 +219,10 @@ open class TakenPhotosRepository(
           continue
         }
 
-        takenPhotosLocalSource.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
+        takenPhotosLocalSource.updatePhotoState(photo.id, PhotoState.PHOTO_QUEUED_UP)
       }
+
+      return@withContext findAllByState(PhotoState.PHOTO_QUEUED_UP)
     }
   }
 
@@ -250,10 +251,5 @@ open class TakenPhotosRepository(
         return@transactional true
       }
     }
-  }
-
-  enum class PhotosToLoad {
-    QueuedUpAndFailed,
-    Uploaded
   }
 }

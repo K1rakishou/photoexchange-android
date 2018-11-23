@@ -10,7 +10,7 @@ import com.airbnb.epoxy.ModelView
 import com.kirakishou.fixmypc.photoexchange.R
 
 @ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT)
-class FooterTextRow @JvmOverloads constructor(
+class TextRow @JvmOverloads constructor(
   context: Context, 
   attrs: AttributeSet? = null, 
   defStyleAttr: Int = 0
@@ -19,8 +19,8 @@ class FooterTextRow @JvmOverloads constructor(
   private val footerTextView: TextView
 
   init {
-    inflate(context, R.layout.adapter_item_message, this)
-    footerTextView = findViewById(R.id.message)
+    inflate(context, R.layout.epoxy_adapter_item_text, this)
+    footerTextView = findViewById(R.id.footer_text_view)
   }
 
   @ModelProp

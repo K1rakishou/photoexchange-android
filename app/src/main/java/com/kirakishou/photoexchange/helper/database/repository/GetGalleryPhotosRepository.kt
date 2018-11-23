@@ -3,7 +3,6 @@ package com.kirakishou.photoexchange.helper.database.repository
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoInfoEntity
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosInfoMapper
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosMapper
 import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoInfoLocalSource
@@ -12,7 +11,6 @@ import com.kirakishou.photoexchange.helper.database.source.local.SettingsLocalSo
 import com.kirakishou.photoexchange.helper.database.source.remote.GalleryPhotoInfoRemoteSource
 import com.kirakishou.photoexchange.helper.database.source.remote.GalleryPhotoRemoteSource
 import com.kirakishou.photoexchange.helper.myRunCatching
-import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.GalleryPhotoInfo
 import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException

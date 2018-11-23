@@ -1,25 +1,5 @@
 package com.kirakishou.photoexchange.service
 
-import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.TestSchedulers
-import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
-import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
-import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
-import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.TakenPhoto
-import com.kirakishou.photoexchange.mvp.model.other.LonLat
-import io.reactivex.Observable
-import io.reactivex.Single
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
-import org.mockito.Mockito
-import java.io.File
-import java.io.IOException
-
 class UploadPhotoServicePresenterTests {
 
  /* lateinit var takenPhotosRepository: TakenPhotosRepository

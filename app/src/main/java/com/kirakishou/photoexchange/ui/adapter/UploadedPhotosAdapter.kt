@@ -3,7 +3,6 @@ package com.kirakishou.photoexchange.ui.adapter
 import android.content.Context
 import android.graphics.drawable.ColorDrawable
 import androidx.appcompat.widget.AppCompatButton
-import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import android.view.View
 import android.widget.ImageView
@@ -11,7 +10,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.mvp.model.TakenPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import io.reactivex.subjects.Subject
@@ -146,10 +145,6 @@ class UploadedPhotosAdapter(
       PhotoState.PHOTO_UPLOADING -> {
         queuedUpItems.add(0, UploadedPhotosAdapterItem.TakenPhotoItem(photo))
         notifyItemInserted(headerItems.size)
-      }
-      PhotoState.FAILED_TO_UPLOAD -> {
-        failedToUploadItems.add(0, UploadedPhotosAdapterItem.FailedToUploadItem(photo))
-        notifyItemInserted(headerItems.size + queuedUpItems.size)
       }
       PhotoState.PHOTO_TAKEN -> {
         //Do nothing
@@ -365,7 +360,6 @@ class UploadedPhotosAdapter(
       BaseAdapterInfo(AdapterItemType.VIEW_TAKEN_PHOTO, R.layout.adapter_item_taken_photo, TakenPhotoViewHolder::class.java),
       BaseAdapterInfo(AdapterItemType.VIEW_UPLOADED_PHOTO, R.layout.adapter_item_uploaded_photo, UploadedPhotoViewHolder::class.java),
       BaseAdapterInfo(AdapterItemType.VIEW_PROGRESS, R.layout.adapter_item_progress, ProgressViewHolder::class.java),
-      BaseAdapterInfo(AdapterItemType.VIEW_FAILED_TO_UPLOAD, R.layout.adapter_failed_to_upload_photo, FailedToUploadPhotoViewHolder::class.java),
       BaseAdapterInfo(AdapterItemType.VIEW_MESSAGE, R.layout.adapter_item_message, MessageViewHolder::class.java)
     )
   }
@@ -381,27 +375,6 @@ class UploadedPhotosAdapter(
         when (takenPhoto.photoState) {
           PhotoState.PHOTO_QUEUED_UP,
           PhotoState.PHOTO_UPLOADING,
-          PhotoState.FAILED_TO_UPLOAD -> {
-            if (takenPhoto.photoState == PhotoState.PHOTO_QUEUED_UP || takenPhoto.photoState == PhotoState.PHOTO_UPLOADING) {
-              holder.photoUploadingStateIndicator.background = ColorDrawable(context.resources.getColor(R.color.photo_state_uploading_color))
-            } else {
-              holder.photoUploadingStateIndicator.background = ColorDrawable(context.resources.getColor(R.color.photo_state_failed_to_upload_color))
-            }
-
-            holder.uploadingMessageHolderView.visibility = View.VISIBLE
-
-            takenPhoto.photoTempFile?.let { photoFile ->
-              imageLoader.loadPhotoFromDiskInto(photoFile, holder.photoView)
-            }
-
-            if (photosProgressMap.containsKey(takenPhoto.id)) {
-              if (holder.loadingProgress.isIndeterminate) {
-                holder.loadingProgress.isIndeterminate = false
-              }
-
-              holder.loadingProgress.progress = photosProgressMap[takenPhoto.id]!!
-            }
-          }
           PhotoState.PHOTO_TAKEN -> {
             throw IllegalStateException("uploadedPhoto with state PHOTO_TAKEN should not be here!")
           }
@@ -434,30 +407,6 @@ class UploadedPhotosAdapter(
 
         photosProgressMap.remove(uploadedPhoto.photoId)
       }
-      is FailedToUploadPhotoViewHolder -> {
-        val failedPhoto = (getAdapterItemByIndex(holder.adapterPosition) as? UploadedPhotosAdapterItem.FailedToUploadItem)?.failedToUploadPhoto
-          ?: return
-
-        require(failedPhoto.photoState == PhotoState.FAILED_TO_UPLOAD)
-
-        failedPhoto.photoTempFile?.let { photoFile ->
-          imageLoader.loadPhotoFromDiskInto(photoFile, holder.photoView)
-        }
-
-        holder.deleteFailedToUploadPhotoButton.setOnClickListener {
-          val photo = (getAdapterItemByIndex(holder.adapterPosition) as? UploadedPhotosAdapterItem.FailedToUploadItem)?.failedToUploadPhoto
-            ?: return@setOnClickListener
-
-          adapterButtonsClickSubject.onNext(UploadedPhotosAdapterButtonClick.DeleteButtonClick(photo))
-        }
-
-        holder.retryToUploadFailedPhoto.setOnClickListener {
-          val photo = (getAdapterItemByIndex(holder.adapterPosition) as? UploadedPhotosAdapterItem.FailedToUploadItem)?.failedToUploadPhoto
-            ?: return@setOnClickListener
-
-          adapterButtonsClickSubject.onNext(UploadedPhotosAdapterButtonClick.RetryButtonClick(photo))
-        }
-      }
       is MessageViewHolder -> {
         val messageItem = (getAdapterItemByIndex(holder.adapterPosition) as? UploadedPhotosAdapterItem.MessageItem)
           ?: return
@@ -488,12 +437,6 @@ class UploadedPhotosAdapter(
 
     class MessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
       val message = itemView.findViewById<TextView>(R.id.message)
-    }
-
-    class FailedToUploadPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-      val photoView = itemView.findViewById<ImageView>(R.id.photo_view)
-      val deleteFailedToUploadPhotoButton = itemView.findViewById<AppCompatButton>(R.id.delete_failed_to_upload_photo)
-      val retryToUploadFailedPhoto = itemView.findViewById<AppCompatButton>(R.id.retry_to_upload_failed_photo)
     }
 
     class UploadedPhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

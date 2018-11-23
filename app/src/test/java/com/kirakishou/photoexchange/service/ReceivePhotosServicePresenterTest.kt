@@ -1,21 +1,5 @@
 package com.kirakishou.photoexchange.service
 
-import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.TestSchedulers
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
-import com.kirakishou.photoexchange.interactors.ReceivePhotosUseCase
-import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
-import com.nhaarman.mockito_kotlin.any
-import io.reactivex.Observable
-import org.junit.After
-import org.junit.Assert.*
-import org.junit.Before
-import org.junit.Test
-import org.mockito.Mockito
-import java.io.IOException
-
 class ReceivePhotosServicePresenterTest {
 
   /*lateinit var uploadedPhotosRepository: UploadedPhotosRepository

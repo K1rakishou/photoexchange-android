@@ -37,6 +37,7 @@ open class UploadPhotoServicePresenter(
 
   private val uploadingActor: SendChannel<LonLat>
   private val eventsActor: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
+  private val photosToCancel = hashSetOf<Long>()
 
   override val coroutineContext: CoroutineContext
     get() = job + dispatchersProvider.GENERAL()
@@ -71,7 +72,7 @@ open class UploadPhotoServicePresenter(
     } catch (error: Exception) {
       Timber.tag(TAG).e(error)
 
-      markAllPhotosAsFailed()
+      takenPhotosRepository.updateStates(PhotoState.PHOTO_UPLOADING, PhotoState.PHOTO_QUEUED_UP)
       updateServiceNotification(NotificationType.Error("Could not upload one or more photos"))
 
       eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnError(error))
@@ -90,6 +91,16 @@ open class UploadPhotoServicePresenter(
     var hasErrors = false
 
     for (photo in queuedUpPhotos) {
+      if (photosToCancel.contains(photo.id)) {
+        if (takenPhotosRepository.findById(photo.id) != null) {
+          takenPhotosRepository.deletePhotoById(photo.id)
+          eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoCanceled(photo))
+        }
+
+        photosToCancel.remove(photo.id)
+        continue
+      }
+
       //send event on every photo
       eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingStart(photo))
 
@@ -101,7 +112,7 @@ open class UploadPhotoServicePresenter(
 
         hasErrors = true
 
-        takenPhotosRepository.updatePhotoState(photo.id, PhotoState.FAILED_TO_UPLOAD)
+        takenPhotosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_QUEUED_UP)
         eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUploadPhoto(photo))
       }
     }
@@ -112,11 +123,6 @@ open class UploadPhotoServicePresenter(
 
   private fun sendEvent(event: UploadPhotoEvent) {
     resultEventsSubject.onNext(event)
-  }
-
-  private suspend fun markAllPhotosAsFailed() {
-    takenPhotosRepository.updateStates(PhotoState.PHOTO_QUEUED_UP, PhotoState.FAILED_TO_UPLOAD)
-    takenPhotosRepository.updateStates(PhotoState.PHOTO_UPLOADING, PhotoState.FAILED_TO_UPLOAD)
   }
 
   private fun updateServiceNotification(serviceNotification: NotificationType) {
@@ -154,6 +160,10 @@ open class UploadPhotoServicePresenter(
   fun uploadPhotos(location: LonLat) {
     Timber.tag(TAG).d("uploadPhotos called")
     uploadingActor.offer(location)
+  }
+
+  fun cancelPhotoUploading(photoId: Long) {
+    photosToCancel.add(photoId)
   }
 
   sealed class UploadPhotoEvent {

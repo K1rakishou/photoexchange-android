@@ -32,7 +32,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.TakenPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.service.ReceivePhotosService
 import com.kirakishou.photoexchange.service.ReceivePhotosServiceConnection
@@ -118,18 +118,20 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
     uploadPhotosServiceConnection = UploadPhotoServiceConnection(this)
   }
 
-  override suspend fun onActivityStart() {
-    initRx()
-    checkPermissions(savedInstanceState)
+  override fun onActivityStart() {
+    launch {
+      initRx()
+      checkPermissions(savedInstanceState)
+    }
   }
 
-  override suspend fun onActivityResume() {
+  override fun onActivityResume() {
   }
 
-  override suspend fun onActivityPause() {
+  override fun onActivityPause() {
   }
 
-  override suspend fun onActivityStop() {
+  override fun onActivityStop() {
     receivePhotosServiceConnection.onFindingServiceDisconnected()
     uploadPhotosServiceConnection.onUploadingServiceDisconnected()
   }
@@ -306,18 +308,24 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
         val hasPhotosToUpload = viewModel.checkHasPhotosToUpload()
         if (hasPhotosToUpload) {
           bindUploadingService(event.callerClass, event.reason, true)
+        } else {
+          //do nothing
         }
       }
       is PhotosActivityEvent.StartReceivingService -> {
         val hasPhotosToReceive = viewModel.checkHasPhotosToReceive()
         if (hasPhotosToReceive) {
           bindReceivingService(event.callerClass, event.reason, true)
+        } else {
+          //do nothing
         }
       }
       is PhotosActivityEvent.FailedToUploadPhotoButtonClicked -> {
         val tryToReUpload = handleUploadedPhotosFragmentAdapterButtonClicks(event.clickType)
         if (tryToReUpload) {
           bindUploadingService(PhotosActivity::class.java, "Handling of FailedToUploadPhotoButtonClicked", true)
+        } else {
+          //do nothing
         }
       }
       is PhotosActivityEvent.ScrollEvent -> {
@@ -327,7 +335,10 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
           takePhotoButton.show()
         }
       }
-    }
+      is PhotosActivityEvent.CancelPhotoUploading -> {
+        uploadPhotosServiceConnection.cancelPhotoUploading(event.photoId)
+      }
+    }.safe
   }
 
   override fun onUploadPhotosEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {

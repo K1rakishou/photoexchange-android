@@ -92,7 +92,7 @@ class PhotosActivityViewModel(
     }
 
     if (Constants.isDebugBuild) {
-      check(takenPhotosRepository.findById(photoId).isEmpty())
+      check(takenPhotosRepository.findById(photoId) == null)
     }
   }
 

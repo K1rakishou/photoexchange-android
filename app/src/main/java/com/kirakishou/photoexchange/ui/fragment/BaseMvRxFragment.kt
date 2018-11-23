@@ -12,10 +12,23 @@ import com.airbnb.epoxy.EpoxyRecyclerView
 import com.airbnb.mvrx.BaseMvRxFragment
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
 import com.kirakishou.fixmypc.photoexchange.R
+import io.reactivex.disposables.CompositeDisposable
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlin.coroutines.CoroutineContext
 
-abstract class BaseMvRxFragment : BaseMvRxFragment() {
+abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
   private val spanCount = 1
+
+  private val job = Job()
+  protected val compositeDisposable = CompositeDisposable()
+  protected val compositeChannel = mutableListOf<ReceiveChannel<Any>>()
   protected lateinit var recyclerView: EpoxyRecyclerView
+
+  override val coroutineContext: CoroutineContext
+    get() = job + Dispatchers.Main
 
   protected val epoxyController: EpoxyController by lazy {
     buildEpoxyController().apply {
@@ -66,6 +79,13 @@ abstract class BaseMvRxFragment : BaseMvRxFragment() {
   @CallSuper
   override fun onDestroyView() {
     epoxyController.cancelPendingModelBuild()
+
+    compositeDisposable.clear()
+    job.cancel()
+
+    compositeChannel.forEach { it.cancel() }
+    compositeChannel.clear()
+
     super.onDestroyView()
   }
 
@@ -75,7 +95,7 @@ abstract class BaseMvRxFragment : BaseMvRxFragment() {
   }
 
   protected fun simpleController(
-    build: EpoxyController.() -> Unit
+    build: AsyncEpoxyController.() -> Unit
   ): AsyncEpoxyController {
     return object : AsyncEpoxyController() {
       override fun buildModels() {

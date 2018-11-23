@@ -9,6 +9,8 @@ sealed class PhotosActivityEvent : BaseEvent {
   class StartReceivingService(val callerClass: Class<*>,
                               val reason: String) : PhotosActivityEvent()
 
+  class CancelPhotoUploading(val photoId: Long) : PhotosActivityEvent()
+
   class ScrollEvent(val isScrollingDown: Boolean) : PhotosActivityEvent()
 
   class FailedToUploadPhotoButtonClicked(

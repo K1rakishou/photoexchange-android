@@ -5,7 +5,7 @@ import android.os.Bundle
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.ViewTakenPhotoActivityModule
-import com.kirakishou.photoexchange.mvp.model.TakenPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.ViewTakenPhotoActivityViewModel
 import com.kirakishou.photoexchange.ui.fragment.AddToGalleryDialogFragment
 import com.kirakishou.photoexchange.ui.fragment.ViewTakenPhotoFragment
@@ -41,25 +41,27 @@ class ViewTakenPhotoActivity : BaseActivity() {
     showViewTakenPhotoFragment(intent)
   }
 
-  override suspend fun onActivityStart() {
-    initRx()
+  override fun onActivityStart() {
+    launch { initRx() }
   }
 
-  override suspend fun onActivityResume() {
+  override fun onActivityResume() {
   }
 
-  override suspend fun onActivityPause() {
+  override fun onActivityPause() {
   }
 
-  override suspend fun onActivityStop() {
+  override fun onActivityStop() {
   }
 
   private suspend fun initRx() {
-    compositeChannel += viewModel.addToGalleryFragmentResult.openSubscription().apply {
-      consumeEach { fragmentResult ->
-        onBackPressedInternal().await()
-        onAddToGalleryFragmentResult(fragmentResult)
-        onPhotoUpdated()
+    launch {
+      compositeChannel += viewModel.addToGalleryFragmentResult.openSubscription().apply {
+        consumeEach { fragmentResult ->
+          onBackPressedInternal().await()
+          onAddToGalleryFragmentResult(fragmentResult)
+          onPhotoUpdated()
+        }
       }
     }
   }

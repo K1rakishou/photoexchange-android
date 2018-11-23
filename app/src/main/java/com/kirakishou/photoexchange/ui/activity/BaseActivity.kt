@@ -65,23 +65,23 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
       .doOnError(this::onUnknownError)
       .subscribe(this::onUnknownError)
 
-    launch { onActivityStart() }
+    onActivityStart()
   }
 
   override fun onResume() {
     super.onResume()
 
-    launch { onActivityResume() }
+    onActivityResume()
   }
 
   override fun onPause() {
     super.onPause()
 
-    launch { onActivityPause() }
+    onActivityPause()
   }
 
   override fun onStop() {
-    launch { onActivityStop() }
+    onActivityStop()
 
     job.cancel()
     compositeChannel.forEach { it.cancel() }
@@ -144,9 +144,9 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
 
   protected abstract fun getContentView(): Int
   protected abstract fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent)
-  protected abstract suspend fun onActivityStart()
-  protected abstract suspend fun onActivityStop()
-  protected abstract suspend fun onActivityResume()
-  protected abstract suspend fun onActivityPause()
+  protected abstract fun onActivityStart()
+  protected abstract fun onActivityStop()
+  protected abstract fun onActivityResume()
+  protected abstract fun onActivityPause()
   protected abstract fun resolveDaggerDependency()
 }

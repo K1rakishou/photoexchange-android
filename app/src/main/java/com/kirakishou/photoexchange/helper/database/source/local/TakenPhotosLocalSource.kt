@@ -27,6 +27,11 @@ open class TakenPhotosLocalSource(
   }
 
   open fun deletePhotoById(photoId: Long): Boolean {
+    if (takenPhotoDao.findById(photoId) == null) {
+      //already deleted
+      return true
+    }
+
     if (takenPhotoDao.deleteById(photoId).isFail()) {
       return false
     }

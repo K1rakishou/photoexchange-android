@@ -2,16 +2,18 @@ package com.kirakishou.photoexchange.helper.database.mapper
 
 import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
 import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
-import com.kirakishou.photoexchange.mvp.model.TakenPhoto
+import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
 
 /**
  * Created by kirakishou on 3/9/2018.
  */
 object TakenPhotosMapper {
 
-  fun toMyPhoto(takenPhotoEntity: TakenPhotoEntity, tempFileEntity: TempFileEntity): TakenPhoto {
+  fun toTakenPhoto(takenPhotoEntity: TakenPhotoEntity, tempFileEntity: TempFileEntity): TakenPhoto? {
     if (takenPhotoEntity.id == null || takenPhotoEntity.id!! <= 0L) {
-      return TakenPhoto.empty()
+      return null
     }
 
     val file = if (tempFileEntity.isEmpty()) {
@@ -20,6 +22,29 @@ object TakenPhotosMapper {
       tempFileEntity.asFile()
     }
 
-    return TakenPhoto(takenPhotoEntity.id!!, takenPhotoEntity.photoState, takenPhotoEntity.isPublic, takenPhotoEntity.photoName, file)
+    return when (takenPhotoEntity.photoState) {
+      PhotoState.PHOTO_TAKEN -> TakenPhoto(
+        takenPhotoEntity.id!!,
+        takenPhotoEntity.isPublic,
+        takenPhotoEntity.photoName,
+        file,
+        takenPhotoEntity.photoState
+      )
+      PhotoState.PHOTO_QUEUED_UP -> TakenPhoto(
+        takenPhotoEntity.id!!,
+        takenPhotoEntity.isPublic,
+        takenPhotoEntity.photoName,
+        file,
+        takenPhotoEntity.photoState
+      )
+      PhotoState.PHOTO_UPLOADING -> UploadingPhoto(
+        takenPhotoEntity.id!!,
+        takenPhotoEntity.isPublic,
+        takenPhotoEntity.photoName,
+        file,
+        0,
+        takenPhotoEntity.photoState
+      )
+    }
   }
 }

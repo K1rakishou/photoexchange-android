@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.helper.intercom.event
 
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.TakenPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import java.lang.Exception
 
@@ -17,6 +17,7 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
     class ShowTakenPhotos(val takenPhotos: List<TakenPhoto>) : GeneralEvents()
     class ShowUploadedPhotos(val uploadedPhotos: List<UploadedPhoto>) : GeneralEvents()
     class PhotoReceived(val takenPhotoName: String) : GeneralEvents()
+    object Invalidate : GeneralEvents()
   }
 
   sealed class PhotoUploadEvent : UploadedPhotosFragmentEvent() {
@@ -24,8 +25,8 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
     class OnPhotoUploadingProgress(val photo: TakenPhoto, val progress: Int) : PhotoUploadEvent()
     class OnPhotoUploaded(val photo: TakenPhoto) : PhotoUploadEvent()
     class OnFailedToUploadPhoto(val photo: TakenPhoto) : PhotoUploadEvent()
-    class OnEnd : PhotoUploadEvent()
+    class OnPhotoCanceled(val photo: TakenPhoto) : PhotoUploadEvent()
     class OnError(val exception: Exception) : PhotoUploadEvent()
-
+    class OnEnd : PhotoUploadEvent()
   }
 }
