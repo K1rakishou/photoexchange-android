@@ -22,7 +22,7 @@ import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
 import java.lang.IllegalStateException
 
 @ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT)
-class UploadingPhotoRow  @JvmOverloads constructor(
+class UploadingPhotoRow @JvmOverloads constructor(
   context: Context,
   attrs: AttributeSet? = null,
   defStyleAttr: Int = 0

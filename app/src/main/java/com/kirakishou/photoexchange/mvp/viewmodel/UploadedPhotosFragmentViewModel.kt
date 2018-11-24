@@ -4,6 +4,7 @@ import androidx.fragment.app.FragmentActivity
 import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
 import com.kirakishou.photoexchange.helper.Either
+import com.kirakishou.photoexchange.helper.PhotoSize
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
@@ -39,6 +40,7 @@ class UploadedPhotosFragmentViewModel(
   private val job = Job()
   private val photosPerPage = 10
 
+  lateinit var photoSize: PhotoSize
   lateinit var intercom: PhotosActivityViewModelIntercom
 
   override val coroutineContext: CoroutineContext
@@ -89,7 +91,7 @@ class UploadedPhotosFragmentViewModel(
       }
 
       launch {
-        setState { copy(uploadedPhotosRequest = Loading()) }
+        setState { copy(takenPhotosRequest = Loading()) }
 
         val request = try {
           Success(takenPhotosRepository.loadNotUploadedPhotos())
@@ -112,7 +114,7 @@ class UploadedPhotosFragmentViewModel(
 
   private fun loadUploadedPhotos(count: Int) {
     withState { state ->
-      if (state.takenPhotosRequest is Loading) {
+      if (state.uploadedPhotosRequest is Loading) {
         return@withState
       }
 
@@ -155,7 +157,9 @@ class UploadedPhotosFragmentViewModel(
     val result = getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastUploadedOn, count)
     when (result) {
       is Either.Value -> {
-        return result.value
+        return result.value.also { uploadedPhotos ->
+          uploadedPhotos.forEach { uploadedPhoto -> uploadedPhoto.photoSize = photoSize }
+        }
       }
       is Either.Error -> {
         throw result.error
