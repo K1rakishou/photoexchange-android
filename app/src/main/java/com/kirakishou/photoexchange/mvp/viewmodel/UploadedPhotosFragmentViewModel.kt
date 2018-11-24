@@ -30,6 +30,7 @@ import kotlin.coroutines.CoroutineContext
 
 class UploadedPhotosFragmentViewModel(
   initialState: UploadedPhotosFragmentState,
+  private val intercom: PhotosActivityViewModelIntercom,
   private val takenPhotosRepository: TakenPhotosRepository,
   private val settingsRepository: SettingsRepository,
   private val getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
@@ -43,8 +44,6 @@ class UploadedPhotosFragmentViewModel(
 
   var photosPerPage: Int = Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
   var photoSize: PhotoSize = PhotoSize.Medium
-
-  lateinit var intercom: PhotosActivityViewModelIntercom
 
   override val coroutineContext: CoroutineContext
     get() = job + dispatchersProvider.GENERAL()
@@ -193,10 +192,6 @@ class UploadedPhotosFragmentViewModel(
     }
   }
 
-  fun clear() {
-    onCleared()
-  }
-
   fun onUploadingEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
     when (event) {
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingStart -> {
@@ -313,6 +308,13 @@ class UploadedPhotosFragmentViewModel(
   private fun invalidate() {
     intercom.tell<UploadedPhotosFragment>()
       .to(UploadedPhotosFragmentEvent.GeneralEvents.Invalidate)
+  }
+
+  /**
+   * Called when parent's viewModel onClear method is called
+   * */
+  fun clear() {
+    onCleared()
   }
 
   override fun onCleared() {

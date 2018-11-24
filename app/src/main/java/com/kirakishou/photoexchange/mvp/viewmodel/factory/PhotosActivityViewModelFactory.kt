@@ -2,11 +2,13 @@ package com.kirakishou.photoexchange.mvp.viewmodel.factory
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
-import com.kirakishou.photoexchange.helper.database.repository.*
-import com.kirakishou.photoexchange.interactors.*
-import com.kirakishou.photoexchange.mvp.model.other.Constants
+import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
+import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
+import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
+import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
 import com.kirakishou.photoexchange.mvp.viewmodel.GalleryFragmentViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.ReceivedPhotosFragmentViewModel
@@ -18,31 +20,31 @@ import javax.inject.Inject
  */
 class PhotosActivityViewModelFactory
 @Inject constructor(
+  val uploadedPhotosFragmentViewModel: UploadedPhotosFragmentViewModel,
+  val receivedPhotosFragmentViewModel: ReceivedPhotosFragmentViewModel,
+  val galleryFragmentViewModel: GalleryFragmentViewModel,
+  val intercom: PhotosActivityViewModelIntercom,
   val settingsRepository: SettingsRepository,
   val takenPhotosRepository: TakenPhotosRepository,
   val uploadedPhotosRepository: UploadedPhotosRepository,
   val receivedPhotosRepository: ReceivedPhotosRepository,
-  val uploadedPhotosFragmentViewModel: UploadedPhotosFragmentViewModel,
-  val receivedPhotosFragmentViewModel: ReceivedPhotosFragmentViewModel,
-  val galleryFragmentViewModel: GalleryFragmentViewModel,
   val reportPhotoUseCase: ReportPhotoUseCase,
-  val favouritePhotoUseCase: FavouritePhotoUseCase,
-  val schedulerProvider: SchedulerProvider
+  val favouritePhotoUseCase: FavouritePhotoUseCase
 ) : ViewModelProvider.Factory {
 
   @Suppress("UNCHECKED_CAST")
   override fun <T : ViewModel?> create(modelClass: Class<T>): T {
     return PhotosActivityViewModel(
+      uploadedPhotosFragmentViewModel,
+      receivedPhotosFragmentViewModel,
+      galleryFragmentViewModel,
+      intercom,
       settingsRepository,
       takenPhotosRepository,
       uploadedPhotosRepository,
       receivedPhotosRepository,
-      uploadedPhotosFragmentViewModel,
-      receivedPhotosFragmentViewModel,
-      galleryFragmentViewModel,
       reportPhotoUseCase,
-      favouritePhotoUseCase,
-      schedulerProvider
+      favouritePhotoUseCase
     ) as T
   }
 }

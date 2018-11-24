@@ -9,7 +9,6 @@ import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
 
 class PhotosActivityViewModelIntercom {
-
   val photosActivityEvents = PhotosActivityEvents()
   val uploadedPhotosFragmentEvents = UploadedPhotosFragmentEvents()
   val receivedPhotosFragmentEvents = ReceivedPhotosFragmentEvents()
