@@ -115,7 +115,7 @@ class UploadedPhotosFragmentViewModel(
 
   private fun loadQueuedUpPhotosInternal() {
     withState { state ->
-      runBlocking {
+      launch {
         val request = try {
           Success(takenPhotosRepository.loadNotUploadedPhotos())
         } catch (error: Throwable) {
@@ -140,7 +140,7 @@ class UploadedPhotosFragmentViewModel(
         return@withState
       }
 
-      runBlocking {
+      launch {
         val userId = settingsRepository.getUserId()
         val lastUploadedOn = state.uploadedPhotos
           .lastOrNull()
