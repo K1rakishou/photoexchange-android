@@ -2,7 +2,6 @@ package com.kirakishou.photoexchange.ui.fragment
 
 import android.os.Bundle
 import android.view.View
-import android.widget.Toast
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.R
@@ -13,7 +12,9 @@ import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
+import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
@@ -27,23 +28,14 @@ import javax.inject.Inject
 
 
 class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPhotosFragmentEvent>, IntercomListener {
+
   @Inject
   lateinit var imageLoader: ImageLoader
 
   @Inject
   lateinit var viewModel: PhotosActivityViewModel
 
-//  lateinit var adapter: UploadedPhotosAdapter
-//  lateinit var endlessScrollListener: EndlessRecyclerOnScrollListener
-
   private val TAG = "UploadedPhotosFragment"
-//  private val PHOTO_ADAPTER_VIEW_WIDTH = DEFAULT_ADAPTER_ITEM_WIDTH
-//  private val failedToUploadPhotoButtonClicksSubject = PublishSubject.create<UploadedPhotosAdapter.UploadedPhotosAdapterButtonClick>().toSerialized()
-//
-//  private val loadMoreSubject = PublishSubject.create<Unit>()
-//  private val scrollSubject = PublishSubject.create<Boolean>()
-//
-//  private var photosPerPage = 0
 
   private val photoSize by lazy {
     val density = requireContext().resources.displayMetrics.density
@@ -56,12 +48,18 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
     }
   }
 
+  private val uploadedPhotoAdapterViewWidth = Constants.DEFAULT_ADAPTER_ITEM_WIDTH
+  private val columnsCount by lazy {
+    AndroidUtils.calculateNoOfColumns(requireContext(), uploadedPhotoAdapterViewWidth)
+  }
+
   override fun getFragmentLayoutId(): Int = R.layout.fragment_mvrx
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
 
     viewModel.uploadedPhotosFragmentViewModel.photoSize = photoSize
+    viewModel.uploadedPhotosFragmentViewModel.columnsCount = columnsCount
 
     viewModel.uploadedPhotosFragmentViewModel.selectSubscribe(this, UploadedPhotosFragmentState::takenPhotos) {
       viewModel.intercom.tell<PhotosActivity>()
@@ -77,16 +75,6 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
 
     launch { initRx() }
   }
-
-//  override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
-//    viewModel.uploadedPhotosFragmentViewModel.viewState.reset()
-//
-//    launch { initRx() }
-//    initRecyclerView()
-//  }
-//
-//  override fun onFragmentViewDestroy() {
-//  }
 
   private suspend fun initRx() {
 //    compositeDisposable += viewModel.uploadedPhotosFragmentViewModel.knownErrors
@@ -125,66 +113,37 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
 
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
     return@simpleController withState(viewModel.uploadedPhotosFragmentViewModel) { state ->
-      when (state.takenPhotosRequest) {
-        is Success -> {
-          Timber.tag(TAG).d("Success queued up photos")
-
-          if (state.takenPhotos.isNotEmpty()) {
-            state.takenPhotos.forEach { photo ->
-              when (photo.photoState) {
-                PhotoState.PHOTO_TAKEN -> {
-                }
-                PhotoState.PHOTO_QUEUED_UP -> {
-                  queuedUpPhotoRow {
-                    id(photo.id)
-                    photo(photo)
-                    callback { _ -> viewModel.uploadedPhotosFragmentViewModel.cancelPhotoUploading(photo.id) }
-                  }
-                }
-                PhotoState.PHOTO_UPLOADING -> {
-                  val uploadingPhoto = photo as UploadingPhoto
-
-                  uploadingPhotoRow {
-                    id(photo.id)
-                    photo(uploadingPhoto)
-                    progress(uploadingPhoto.progress)
-                  }
-                }
+      if (state.takenPhotos.isNotEmpty()) {
+        state.takenPhotos.forEach { photo ->
+          when (photo.photoState) {
+            PhotoState.PHOTO_TAKEN -> {
+            }
+            PhotoState.PHOTO_QUEUED_UP -> {
+              queuedUpPhotoRow {
+                id(photo.id)
+                photo(photo)
+                callback { _ -> viewModel.uploadedPhotosFragmentViewModel.cancelPhotoUploading(photo.id) }
               }
             }
-          } else {
-            textRow {
-              id("not_queued_up_photos")
-              text("You have no photos yet")
+            PhotoState.PHOTO_UPLOADING -> {
+              val uploadingPhoto = photo as UploadingPhoto
+
+              uploadingPhotoRow {
+                id(photo.id)
+                photo(uploadingPhoto)
+                progress(uploadingPhoto.progress)
+              }
             }
           }
         }
-        is Fail -> {
-          Timber.tag(TAG).d("Fail queued up photos")
-
+      } else {
+        if (state.shouldShowNoPhotosMessage) {
           textRow {
-            val exceptionMessage = state.takenPhotosRequest.error.message ?: "Unknown error message"
-            Toast.makeText(requireContext(), "Exception message is: \"$exceptionMessage\"", Toast.LENGTH_LONG).show()
-
-            id("unknown_error")
-            text("Unknown error has occurred while trying to load photos from the database. \nClick here to retry")
-            callback { _ ->
-              Timber.tag(TAG).d("Reloading")
-              viewModel.uploadedPhotosFragmentViewModel.resetState()
-            }
+            id("not_queued_up_photos")
+            text("You have no photos yet")
           }
         }
-        is Loading -> {
-          Timber.tag(TAG).d("Loading queued up photos")
-
-          loadingRow {
-            id("queued_up_photos_loading_row")
-          }
-        }
-        is Uninitialized -> {
-          //do nothing when Uninitialized
-        }
-      }.safe
+      }
 
       when (state.uploadedPhotosRequest) {
         is Success -> {

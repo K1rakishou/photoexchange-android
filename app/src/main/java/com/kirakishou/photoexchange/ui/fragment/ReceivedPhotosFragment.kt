@@ -104,7 +104,7 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     val layoutManager = GridLayoutManager(requireContext(), columnsCount)
     layoutManager.spanSizeLookup = ReceivedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
 
-    photosPerPage = Constants.RECEIVED_PHOTOS_PER_ROW * layoutManager.spanCount
+    photosPerPage = Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT * layoutManager.spanCount
     //TODO: visible threshold should be less than photosPerPage count
     endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, 2, loadMoreSubject, scrollSubject)
 

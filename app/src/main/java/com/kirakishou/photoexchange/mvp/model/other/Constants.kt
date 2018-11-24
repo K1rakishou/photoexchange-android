@@ -16,20 +16,8 @@ object Constants {
   const val DOMAIN_NAME = "photoexchange.io"
 
   const val PHOTOS_DELIMITER = ","
-
-  //TODO: change this in production
-  const val GALLERY_PHOTOS_PER_ROW = 5
-  //TODO: change this in production
-  const val UPLOADED_PHOTOS_PER_ROW = 5
-  //TODO: change this in production
-  const val RECEIVED_PHOTOS_PER_ROW = 5
-
   const val DEFAULT_ADAPTER_ITEM_WIDTH = 288
-
-  const val ADAPTER_LOAD_MORE_ITEMS_DELAY_MS = 800L
-  const val PROGRESS_FOOTER_REMOVE_DELAY_MS = 200L
-  const val RECEIVE_PHOTOS_DELAY_MS = 1000L
-  const val UPLOAD_PHOTOS_DELAY_MS = 1000L
+  const val DEFAULT_PHOTOS_PER_PAGE_COUNT = 5
 
   //interval to update photos in the db with fresh information
   //TODO: change this in production

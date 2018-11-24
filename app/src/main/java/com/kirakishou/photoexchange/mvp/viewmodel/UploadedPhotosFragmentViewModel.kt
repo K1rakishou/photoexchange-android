@@ -14,6 +14,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
+import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.photo.QueuedUpPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
@@ -38,7 +39,9 @@ class UploadedPhotosFragmentViewModel(
 
   private val compositeDisposable = CompositeDisposable()
   private val job = Job()
-  private val photosPerPage = 10
+
+  var columnsCount = 1
+  private val photosPerPage by lazy { Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT * columnsCount }
 
   lateinit var photoSize: PhotoSize
   lateinit var intercom: PhotosActivityViewModelIntercom
@@ -54,7 +57,6 @@ class UploadedPhotosFragmentViewModel(
     setState {
       copy(
         takenPhotos = emptyList(),
-        takenPhotosRequest = Uninitialized,
         uploadedPhotos = emptyList(),
         uploadedPhotosRequest = Uninitialized
       )
@@ -86,13 +88,7 @@ class UploadedPhotosFragmentViewModel(
 
   private fun loadQueuedUpPhotos() {
     withState { state ->
-      if (state.takenPhotosRequest is Loading) {
-        return@withState
-      }
-
       launch {
-        setState { copy(takenPhotosRequest = Loading()) }
-
         val request = try {
           Success(takenPhotosRepository.loadNotUploadedPhotos())
         } catch (error: Throwable) {
@@ -101,13 +97,12 @@ class UploadedPhotosFragmentViewModel(
 
         setState {
           copy(
-            takenPhotosRequest = request,
             takenPhotos = state.takenPhotos + (request() ?: emptyList())
           )
         }
 
         invalidate()
-        loadUploadedPhotos(10)
+        loadUploadedPhotos(photosPerPage)
       }
     }
   }
@@ -134,9 +129,17 @@ class UploadedPhotosFragmentViewModel(
         }
 
         setState {
+          val uploadedPhotos = request() ?: emptyList()
+          val shouldShowMessage = when {
+            state.takenPhotos.isNotEmpty() -> false
+            state.takenPhotos.isEmpty() && uploadedPhotos.isNotEmpty() || state.uploadedPhotos.isNotEmpty() -> false
+            else -> true
+          }
+
           copy(
+            shouldShowNoPhotosMessage = shouldShowMessage,
             uploadedPhotosRequest = request,
-            uploadedPhotos = state.uploadedPhotos + (request() ?: emptyList())
+            uploadedPhotos = state.uploadedPhotos + uploadedPhotos
           )
         }
 

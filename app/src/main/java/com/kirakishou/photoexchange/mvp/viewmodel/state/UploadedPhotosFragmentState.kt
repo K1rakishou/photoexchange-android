@@ -7,8 +7,8 @@ import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 
 data class UploadedPhotosFragmentState(
+  val shouldShowNoPhotosMessage: Boolean = false,
   val takenPhotos: List<TakenPhoto> = emptyList(),
-  val takenPhotosRequest: Async<List<TakenPhoto>> = Uninitialized,
 
   val uploadedPhotos: List<UploadedPhoto> = emptyList(),
   val uploadedPhotosRequest: Async<List<UploadedPhoto>> = Uninitialized
