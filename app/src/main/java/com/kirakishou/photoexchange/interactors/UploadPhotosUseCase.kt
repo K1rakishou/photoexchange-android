@@ -31,7 +31,8 @@ open class UploadPhotosUseCase(
 
   data class UploadPhotoResult(
     val photoId: Long,
-    val photoName: String
+    val photoName: String,
+    val uploadedOn: Long
   )
 
   sealed class PhotoUploadingException : Exception() {

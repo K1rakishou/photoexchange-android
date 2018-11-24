@@ -110,6 +110,7 @@ open class UploadPhotoServicePresenter(
           photo,
           result.photoId,
           result.photoName,
+          result.uploadedOn,
           currentLocation)
         )
       } catch (error: Exception) {

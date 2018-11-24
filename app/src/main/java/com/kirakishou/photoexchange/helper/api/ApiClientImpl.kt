@@ -43,7 +43,11 @@ open class ApiClientImpl
       dispatchersProvider
     ).execute()
 
-    return UploadPhotosUseCase.UploadPhotoResult(response.photoId, response.photoName)
+    return UploadPhotosUseCase.UploadPhotoResult(
+      response.photoId,
+      response.photoName,
+      response.uploadedOn
+    )
   }
 
   override suspend fun receivePhotos(

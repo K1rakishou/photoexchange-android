@@ -256,8 +256,7 @@ class UploadedPhotosFragmentViewModel(
             event.currentLocation.lon,
             event.currentLocation.lat,
             false,
-            //TODO:
-            System.currentTimeMillis(),
+            event.uploadedOn,
             photoSize
           )
 
