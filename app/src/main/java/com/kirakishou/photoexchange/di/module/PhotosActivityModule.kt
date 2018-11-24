@@ -8,6 +8,7 @@ import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRep
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
+import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
 import com.kirakishou.photoexchange.interactors.*
 import com.kirakishou.photoexchange.mvp.viewmodel.GalleryFragmentViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
@@ -30,12 +31,27 @@ open class PhotosActivityModule(
 
   @PerActivity
   @Provides
-  fun provideUploadedPhotosFragmentViewModel(takenPhotosRepository: TakenPhotosRepository,
+  fun providePhotosActivityViewModelIntercom(): PhotosActivityViewModelIntercom {
+    return PhotosActivityViewModelIntercom()
+  }
+
+  @PerActivity
+  @Provides
+  fun provideUploadedPhotosFragmentState(): UploadedPhotosFragmentState {
+    return UploadedPhotosFragmentState()
+  }
+
+  @PerActivity
+  @Provides
+  fun provideUploadedPhotosFragmentViewModel(intercom: PhotosActivityViewModelIntercom,
+                                             viewState: UploadedPhotosFragmentState,
+                                             takenPhotosRepository: TakenPhotosRepository,
                                              settingsRepository: SettingsRepository,
                                              getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
                                              dispatchersProvider: DispatchersProvider): UploadedPhotosFragmentViewModel {
     return UploadedPhotosFragmentViewModel(
-      UploadedPhotosFragmentState(),
+      viewState,
+      intercom,
       takenPhotosRepository,
       settingsRepository,
       getUploadedPhotosUseCase,
@@ -67,27 +83,27 @@ open class PhotosActivityModule(
 
   @PerActivity
   @Provides
-  fun provideViewModelFactory(settingsRepository: SettingsRepository,
+  fun provideViewModelFactory(uploadedPhotosFragmentViewModel: UploadedPhotosFragmentViewModel,
+                              receivedPhotosFragmentViewModel: ReceivedPhotosFragmentViewModel,
+                              galleryFragmentViewModel: GalleryFragmentViewModel,
+                              intercom: PhotosActivityViewModelIntercom,
+                              settingsRepository: SettingsRepository,
                               takenPhotosRepository: TakenPhotosRepository,
                               uploadedPhotosRepository: UploadedPhotosRepository,
                               receivedPhotosRepository: ReceivedPhotosRepository,
-                              uploadedPhotosFragmentViewModel: UploadedPhotosFragmentViewModel,
-                              receivedPhotosFragmentViewModel: ReceivedPhotosFragmentViewModel,
-                              galleryFragmentViewModel: GalleryFragmentViewModel,
                               reportPhotoUseCase: ReportPhotoUseCase,
-                              favouritePhotoUseCase: FavouritePhotoUseCase,
-                              schedulerProvider: SchedulerProvider): PhotosActivityViewModelFactory {
+                              favouritePhotoUseCase: FavouritePhotoUseCase): PhotosActivityViewModelFactory {
     return PhotosActivityViewModelFactory(
+      uploadedPhotosFragmentViewModel,
+      receivedPhotosFragmentViewModel,
+      galleryFragmentViewModel,
+      intercom,
       settingsRepository,
       takenPhotosRepository,
       uploadedPhotosRepository,
       receivedPhotosRepository,
-      uploadedPhotosFragmentViewModel,
-      receivedPhotosFragmentViewModel,
-      galleryFragmentViewModel,
       reportPhotoUseCase,
-      favouritePhotoUseCase,
-      schedulerProvider)
+      favouritePhotoUseCase)
   }
 
   @PerActivity

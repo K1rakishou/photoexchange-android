@@ -13,16 +13,17 @@ import com.airbnb.mvrx.BaseMvRxFragment
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
 import com.kirakishou.fixmypc.photoexchange.R
 import io.reactivex.disposables.CompositeDisposable
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 import kotlin.coroutines.CoroutineContext
 
 abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
   private val spanCount = 1
-
+  private val invalidateDelay = 50L
   private val job = Job()
+
+  private val invalidationActor: SendChannel<Unit>
+
   protected val compositeDisposable = CompositeDisposable()
   protected val compositeChannel = mutableListOf<ReceiveChannel<Any>>()
   protected lateinit var recyclerView: EpoxyRecyclerView
@@ -36,6 +37,15 @@ abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
     }
   }
 
+  init {
+    invalidationActor = actor(capacity = Channel.RENDEZVOUS) {
+      consumeEach {
+        delay(invalidateDelay)
+        postInvalidate()
+      }
+    }
+  }
+
   @CallSuper
   override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
     return inflater.inflate(getFragmentLayoutId(), container, false).apply {
@@ -44,7 +54,6 @@ abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
         throw IllegalStateException("BaseMvRxFragment requires fragment to contain " +
           "RecyclerView with id = R.id.recycler_view!")
       }
-
 
       recyclerView = recyclerViewInstance.apply {
         epoxyController.spanCount = spanCount
@@ -87,6 +96,10 @@ abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
     compositeChannel.clear()
 
     super.onDestroyView()
+  }
+
+  fun doInvalidate() {
+    invalidationActor.offer(Unit)
   }
 
   @CallSuper

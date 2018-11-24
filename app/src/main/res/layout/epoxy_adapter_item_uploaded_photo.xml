@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<merge xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="256dp"
     android:layout_marginStart="2dp"
@@ -10,11 +9,9 @@
     android:layout_marginEnd="2dp"
     android:layout_marginBottom="2dp"
     android:background="?attr/selectableItemBackground"
-    android:orientation="vertical"
-    tools:parentTag="android.widget.LinearLayout">
+    android:orientation="vertical">
 
-
-<androidx.cardview.widget.CardView
+    <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         card_view:cardBackgroundColor="@android:color/white"
@@ -74,4 +71,4 @@
 
     </androidx.cardview.widget.CardView>
 
-</merge>
+</LinearLayout>

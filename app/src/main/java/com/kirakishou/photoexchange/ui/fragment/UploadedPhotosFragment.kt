@@ -7,50 +7,60 @@ import com.airbnb.epoxy.AsyncEpoxyController
 import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
+import com.kirakishou.photoexchange.helper.PhotoSize
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
+import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
-import com.kirakishou.photoexchange.ui.adapter.epoxy.loadingRow
-import com.kirakishou.photoexchange.ui.adapter.epoxy.queuedUpPhotoRow
-import com.kirakishou.photoexchange.ui.adapter.epoxy.textRow
-import com.kirakishou.photoexchange.ui.adapter.epoxy.uploadingPhotoRow
-import kotlinx.coroutines.channels.consumeEach
+import com.kirakishou.photoexchange.ui.adapter.epoxy.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.rx2.openSubscription
+import kotlinx.coroutines.rx2.consumeEach
 import timber.log.Timber
 import javax.inject.Inject
 
 
 class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPhotosFragmentEvent>, IntercomListener {
+
   @Inject
   lateinit var imageLoader: ImageLoader
 
   @Inject
   lateinit var viewModel: PhotosActivityViewModel
 
-//  lateinit var adapter: UploadedPhotosAdapter
-//  lateinit var endlessScrollListener: EndlessRecyclerOnScrollListener
-
   private val TAG = "UploadedPhotosFragment"
-//  private val PHOTO_ADAPTER_VIEW_WIDTH = DEFAULT_ADAPTER_ITEM_WIDTH
-//  private val failedToUploadPhotoButtonClicksSubject = PublishSubject.create<UploadedPhotosAdapter.UploadedPhotosAdapterButtonClick>().toSerialized()
-//
-//  private val loadMoreSubject = PublishSubject.create<Unit>()
-//  private val scrollSubject = PublishSubject.create<Boolean>()
-//
-//  private var photosPerPage = 0
+
+  private val photoSize by lazy {
+    val density = requireContext().resources.displayMetrics.density
+
+    return@lazy if (density < 2.0) {
+      PhotoSize.Small
+    } else if (density >= 2.0 && density < 3.0) {
+      PhotoSize.Medium
+    } else {
+      PhotoSize.Big
+    }
+  }
+
+  private val uploadedPhotoAdapterViewWidth = Constants.DEFAULT_ADAPTER_ITEM_WIDTH
+  private val columnsCount by lazy {
+    AndroidUtils.calculateNoOfColumns(requireContext(), uploadedPhotoAdapterViewWidth)
+  }
 
   override fun getFragmentLayoutId(): Int = R.layout.fragment_mvrx
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
+
+    viewModel.uploadedPhotosFragmentViewModel.photoSize = photoSize
+    viewModel.uploadedPhotosFragmentViewModel.photosPerPage = columnsCount * Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
 
     viewModel.uploadedPhotosFragmentViewModel.selectSubscribe(this, UploadedPhotosFragmentState::takenPhotos) {
       viewModel.intercom.tell<PhotosActivity>()
@@ -66,104 +76,6 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
 
     launch { initRx() }
   }
-
-  override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
-    return@simpleController withState(viewModel.uploadedPhotosFragmentViewModel) { state ->
-      when (state.takenPhotosRequest) {
-        is Success -> {
-          Timber.tag(TAG).d("Success queued up photos")
-
-          if (state.takenPhotos.isNotEmpty()) {
-            state.takenPhotos.forEach { photo ->
-              when (photo.photoState) {
-                PhotoState.PHOTO_TAKEN -> {
-                }
-                PhotoState.PHOTO_QUEUED_UP -> {
-                  queuedUpPhotoRow {
-                    id(photo.id)
-                    photo(photo)
-                    callback { _ -> viewModel.uploadedPhotosFragmentViewModel.cancelPhotoUploading(photo.id) }
-                  }
-                }
-                PhotoState.PHOTO_UPLOADING -> {
-                  val uploadingPhoto = photo as UploadingPhoto
-
-                  uploadingPhotoRow {
-                    id(photo.id)
-                    photo(uploadingPhoto)
-                    progress(uploadingPhoto.progress)
-                  }
-                }
-              }
-            }
-          } else {
-            if (state.uploadedPhotosRequest !is Success && state.uploadedPhotosRequest !is Fail) {
-              textRow {
-                id("not_queued_up_photos")
-                text("You have no photos yet")
-              }
-            } else {
-
-            }
-          }
-        }
-        is Fail -> {
-          Timber.tag(TAG).d("Fail queued up photos")
-
-          textRow {
-            val exceptionMessage = state.takenPhotosRequest.error.message ?: "Unknown error message"
-            Toast.makeText(requireContext(), "Exception message is: \"$exceptionMessage\"", Toast.LENGTH_LONG).show()
-
-            id("unknown_error")
-            text("Unknown error has occurred while trying to load photos from the database. \nClick here to retry")
-            callback { _ ->
-              Timber.tag(TAG).d("Reloading")
-              viewModel.uploadedPhotosFragmentViewModel.resetState()
-            }
-          }
-        }
-        is Loading -> {
-          Timber.tag(TAG).d("Loading queued up photos")
-
-          loadingRow {
-            id("queued_up_photos_loading_row")
-          }
-        }
-        is Uninitialized -> {
-          //do nothing when Uninitialized
-        }
-      }.safe
-
-      when (state.uploadedPhotosRequest) {
-        is Success -> {
-          Timber.tag(TAG).d("Success uploaded photos")
-        }
-        is Fail -> {
-          Timber.tag(TAG).d("Fail uploaded photos")
-        }
-        is Loading -> {
-          Timber.tag(TAG).d("Loading uploaded photos")
-
-          loadingRow {
-            id("uploaded_photos_loading_row")
-          }
-        }
-        is Uninitialized -> {
-
-        }
-      }.safe
-    }
-  }
-
-//  override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
-//    viewModel.uploadedPhotosFragmentViewModel.viewState.reset()
-//
-//    launch { initRx() }
-//    initRecyclerView()
-//  }
-//
-//  override fun onFragmentViewDestroy() {
-//  }
 
   private suspend fun initRx() {
 //    compositeDisposable += viewModel.uploadedPhotosFragmentViewModel.knownErrors
@@ -192,35 +104,102 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
 //      })
 //
     launch {
-      compositeChannel += viewModel.intercom.uploadedPhotosFragmentEvents.listen().openSubscription().apply {
-        consumeEach { event ->
-          onStateEvent(event)
-        }
+      viewModel.intercom.uploadedPhotosFragmentEvents.listen().consumeEach { event ->
+        onStateEvent(event)
       }
     }
   }
 
-//  private fun initRecyclerView() {
-//    val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), PHOTO_ADAPTER_VIEW_WIDTH)
-//
-//    adapter = UploadedPhotosAdapter(requireContext(), imageLoader, failedToUploadPhotoButtonClicksSubject)
-//
-//    val layoutManager = GridLayoutManager(requireContext(), columnsCount)
-//    layoutManager.spanSizeLookup = UploadedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
-//    photosPerPage = Constants.UPLOADED_PHOTOS_PER_ROW * layoutManager.spanCount
-//
-//    //TODO: visible threshold should be less than photosPerPage count
-//    endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, 2, loadMoreSubject, scrollSubject)
-//
-//    uploadedPhotosList.layoutManager = layoutManager
-//    uploadedPhotosList.adapter = adapter
-//    uploadedPhotosList.clearOnScrollListeners()
-//    uploadedPhotosList.addOnScrollListener(endlessScrollListener)
-//  }
+  override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
+    return@simpleController withState(viewModel.uploadedPhotosFragmentViewModel) { state ->
+      if (state.takenPhotos.isNotEmpty()) {
+        state.takenPhotos.forEach { photo ->
+          when (photo.photoState) {
+            PhotoState.PHOTO_TAKEN -> {
+            }
+            PhotoState.PHOTO_QUEUED_UP -> {
+              queuedUpPhotoRow {
+                id("queued_up_photo_${photo.id}")
+                photo(photo)
+                callback { _ -> viewModel.uploadedPhotosFragmentViewModel.cancelPhotoUploading(photo.id) }
+              }
+            }
+            PhotoState.PHOTO_UPLOADING -> {
+              val uploadingPhoto = photo as UploadingPhoto
 
-//  private fun triggerPhotosLoading() {
-//    loadMoreSubject.onNext(Unit)
-//  }
+              uploadingPhotoRow {
+                id("uploading_photo_${photo.id}")
+                photo(uploadingPhoto)
+                progress(uploadingPhoto.progress)
+              }
+            }
+          }
+        }
+      }
+
+      when (state.uploadedPhotosRequest) {
+        is Loading -> {
+          Timber.tag(TAG).d("Loading uploaded photos")
+
+          loadingRow {
+            id("uploaded_photos_loading_row")
+          }
+        }
+        is Success -> {
+          Timber.tag(TAG).d("Success uploaded photos")
+
+          state.uploadedPhotos.forEach { photo ->
+            uploadedPhotoRow {
+              id("uploaded_photo_${photo.photoId}")
+              photo(photo)
+            }
+          }
+
+          if (state.uploadedPhotos.isEmpty()) {
+            textRow {
+              id("no_uploaded_photos")
+              text("You have no photos yet")
+            }
+          } else {
+            if (state.isEndReached) {
+              textRow {
+                id("list_end_footer_text")
+                text("End of the list reached.\nClick here to reload")
+                callback { _ ->
+                  Timber.tag(TAG).d("Reloading")
+                  viewModel.uploadedPhotosFragmentViewModel.resetState()
+                }
+              }
+            } else {
+              loadingRow {
+                //we should change the id to trigger the binding
+                id("load_next_page_${state.uploadedPhotos.size}")
+                onBind { _, _, _ -> viewModel.uploadedPhotosFragmentViewModel.loadUploadedPhotos() }
+              }
+            }
+          }
+        }
+        is Fail -> {
+          Timber.tag(TAG).d("Fail uploaded photos")
+
+          textRow {
+            val exceptionMessage = state.uploadedPhotosRequest.error.message ?: "Unknown error message"
+            Toast.makeText(requireContext(), "Exception message is: \"$exceptionMessage\"", Toast.LENGTH_LONG).show()
+
+            id("unknown_error")
+            text("Unknown error has occurred while trying to load photos from the database. \nClick here to retry")
+            callback { _ ->
+              Timber.tag(TAG).d("Reloading")
+              viewModel.uploadedPhotosFragmentViewModel.resetState()
+            }
+          }
+        }
+        is Uninitialized -> {
+          //do nothing
+        }
+      }.safe
+    }
+  }
 
   override suspend fun onStateEvent(event: UploadedPhotosFragmentEvent) {
     if (!isAdded) {
@@ -238,7 +217,7 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
     }.safe
   }
 
-  private fun onUiEvent(event: UploadedPhotosFragmentEvent.GeneralEvents) {
+  private suspend fun onUiEvent(event: UploadedPhotosFragmentEvent.GeneralEvents) {
     if (!isAdded) {
       return
     }
@@ -282,9 +261,9 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
 //          adapter.updateUploadedPhotoSetReceiverInfo(event.takenPhotoName)
       }
       is UploadedPhotosFragmentEvent.GeneralEvents.Invalidate -> {
-        //Hack to update the view after changing the state manually
+        //FIXME: Hack to update the view after changing the state manually
         //(for some reason it does not getting called automatically, so I have to do it manually with this hack)
-        invalidate()
+        doInvalidate()
       }
     }.safe
   }

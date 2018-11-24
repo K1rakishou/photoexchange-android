@@ -16,7 +16,9 @@ abstract class ReceivedPhotoDao {
   abstract fun saveMany(receivedPhotoEntityList: List<ReceivedPhotoEntity>): Array<Long>
 
   @Query("SELECT * FROM ${ReceivedPhotoEntity.TABLE_NAME} " +
-    "WHERE ${ReceivedPhotoEntity.UPLOADED_ON_COLUMN} <= :time LIMIT :count")
+    "WHERE ${ReceivedPhotoEntity.UPLOADED_ON_COLUMN} < :time " +
+    "ORDER BY ${ReceivedPhotoEntity.UPLOADED_ON_COLUMN} DESC " +
+    "LIMIT :count")
   abstract fun getPage(time: Long, count: Int): List<ReceivedPhotoEntity>
 
   @Query("SELECT * FROM ${ReceivedPhotoEntity.TABLE_NAME}")

@@ -21,24 +21,21 @@ import timber.log.Timber
  * Created by kirakishou on 3/11/2018.
  */
 class PhotosActivityViewModel(
+  val uploadedPhotosFragmentViewModel: UploadedPhotosFragmentViewModel,
+  val receivedPhotosFragmentViewModel: ReceivedPhotosFragmentViewModel,
+  val galleryFragmentViewModel: GalleryFragmentViewModel,
+  val intercom: PhotosActivityViewModelIntercom,
   private val settingsRepository: SettingsRepository,
   private val takenPhotosRepository: TakenPhotosRepository,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
   private val receivedPhotosRepository: ReceivedPhotosRepository,
-  val uploadedPhotosFragmentViewModel: UploadedPhotosFragmentViewModel,
-  val receivedPhotosFragmentViewModel: ReceivedPhotosFragmentViewModel,
-  val galleryFragmentViewModel: GalleryFragmentViewModel,
   private val reportPhotoUseCase: ReportPhotoUseCase,
-  private val favouritePhotoUseCase: FavouritePhotoUseCase,
-  private val schedulerProvider: SchedulerProvider
+  private val favouritePhotoUseCase: FavouritePhotoUseCase
 ) : BaseViewModel() {
 
   private val TAG = "PhotosActivityViewModel"
 
-  val intercom = PhotosActivityViewModelIntercom()
-
   init {
-    uploadedPhotosFragmentViewModel.intercom = intercom
     receivedPhotosFragmentViewModel.intercom = intercom
     galleryFragmentViewModel.intercom = intercom
   }
