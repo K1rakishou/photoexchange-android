@@ -33,8 +33,8 @@ class UploadPhotosRepository(
     location: LonLat,
     userId: String,
     channel: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
-  ) {
-    withContext(coroutineContext) {
+  ): UploadPhotosUseCase.UploadPhotoResult {
+    return withContext(coroutineContext) {
       val photoFile = fileUtils.createTempFile("rotated_photo", ".tmp")
 
       try {
@@ -56,6 +56,7 @@ class UploadPhotosRepository(
           throw UploadPhotosUseCase.PhotoUploadingException.DatabaseException()
         }
 
+        return@withContext result
       } finally {
         fileUtils.deleteFile(photoFile)
       }

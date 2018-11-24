@@ -105,8 +105,13 @@ open class UploadPhotoServicePresenter(
       eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingStart(photo))
 
       try {
-        uploadPhotosUseCase.uploadPhoto(photo, currentLocation, userId, eventsActor)
-        eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploaded(photo))
+        val result = uploadPhotosUseCase.uploadPhoto(photo, currentLocation, userId, eventsActor)
+        eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploaded(
+          photo,
+          result.photoId,
+          result.photoName,
+          currentLocation)
+        )
       } catch (error: Exception) {
         Timber.tag(TAG).e(error)
 

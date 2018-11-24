@@ -18,7 +18,7 @@ open class UploadPhotosUseCase(
     location: LonLat,
     userId: String,
     channel: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
-  ) {
+  ): UploadPhotosUseCase.UploadPhotoResult {
     if (!photo.fileExists()) {
       val path = photo.photoTempFile?.absolutePath ?: "(No photoTempFile)"
       Timber.tag(TAG).e("Photo does not exists on disk! $path")
@@ -26,7 +26,7 @@ open class UploadPhotosUseCase(
       throw PhotoUploadingException.PhotoDoesNotExistOnDisk()
     }
 
-    uploadPhotosRepository.uploadPhoto(photo, location, userId, channel)
+    return uploadPhotosRepository.uploadPhoto(photo, location, userId, channel)
   }
 
   data class UploadPhotoResult(

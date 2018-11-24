@@ -13,16 +13,15 @@ import com.airbnb.mvrx.BaseMvRxFragment
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
 import com.kirakishou.fixmypc.photoexchange.R
 import io.reactivex.disposables.CompositeDisposable
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlin.coroutines.CoroutineContext
 
 abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
   private val spanCount = 1
-
+  private val invalidateDelay = 50L
   private val job = Job()
+
   protected val compositeDisposable = CompositeDisposable()
   protected val compositeChannel = mutableListOf<ReceiveChannel<Any>>()
   protected lateinit var recyclerView: EpoxyRecyclerView
@@ -87,6 +86,12 @@ abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
     compositeChannel.clear()
 
     super.onDestroyView()
+  }
+
+  suspend fun doInvalidate() {
+    //FIXME: Here is another hack to ensure that invalidate() gets called after any setState()
+    delay(invalidateDelay)
+    postInvalidate()
   }
 
   @CallSuper

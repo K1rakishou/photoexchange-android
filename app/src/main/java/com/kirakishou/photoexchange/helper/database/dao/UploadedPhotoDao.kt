@@ -17,7 +17,9 @@ abstract class UploadedPhotoDao {
   abstract fun save(uploadedPhotoEntity: UploadedPhotoEntity): Long
 
   @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
-    "WHERE ${UploadedPhotoEntity.UPLOADED_ON_COLUMN} <= :time LIMIT :count")
+    "WHERE ${UploadedPhotoEntity.UPLOADED_ON_COLUMN} < :time " +
+    "ORDER BY ${UploadedPhotoEntity.UPLOADED_ON_COLUMN} DESC " +
+    "LIMIT :count")
   abstract fun getPage(time: Long, count: Int): List<UploadedPhotoEntity>
 
   @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
