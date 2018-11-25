@@ -25,6 +25,7 @@ import io.reactivex.rxkotlin.plusAssign
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.rx2.consumeEach
 import timber.log.Timber
+import java.lang.IllegalStateException
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -59,6 +60,10 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
 
     viewModel.uploadedPhotosFragmentViewModel.selectSubscribe(this, UploadedPhotosFragmentState::uploadedPhotos) {
       startReceivingService("Starting the service after a page of uploaded photos was loaded")
+    }
+
+    viewModel.uploadedPhotosFragmentViewModel.subscribe(this, true) {
+      doInvalidate()
     }
 
     launch { initRx() }
@@ -112,15 +117,17 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
       }
 
       when (state.uploadedPhotosRequest) {
-        is Loading -> {
-          Timber.tag(TAG).d("Loading uploaded photos")
-
-          loadingRow {
-            id("uploaded_photos_loading_row")
-          }
-        }
+        is Loading,
         is Success -> {
           Timber.tag(TAG).d("Success uploaded photos")
+
+          if (state.uploadedPhotosRequest is Loading) {
+            Timber.tag(TAG).d("Loading uploaded photos")
+
+            loadingRow {
+              id("uploaded_photos_loading_row")
+            }
+          }
 
           if (state.uploadedPhotos.isEmpty()) {
             textRow {
@@ -202,14 +209,18 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
     }
 
     when (event) {
-      is UploadedPhotosFragmentEvent.GeneralEvents.UpdateReceiverInfo -> {
-        //TODO
-      }
       is UploadedPhotosFragmentEvent.GeneralEvents.OnPageSelected -> {
 //          viewModel.uploadedPhotosFragmentViewModel.viewState.reset()
       }
+      is UploadedPhotosFragmentEvent.GeneralEvents.UpdateReceiverInfo,
       is UploadedPhotosFragmentEvent.GeneralEvents.PhotosReceived -> {
-        viewModel.uploadedPhotosFragmentViewModel.onUpdateReceiverInfo(event.receivedPhotos)
+        val receivedPhotos = when (event) {
+          is UploadedPhotosFragmentEvent.GeneralEvents.UpdateReceiverInfo -> event.receivedPhotos
+          is UploadedPhotosFragmentEvent.GeneralEvents.PhotosReceived -> event.receivedPhotos
+          else -> throw IllegalStateException("Event not supported (${event::class})")
+        }
+
+        viewModel.uploadedPhotosFragmentViewModel.onUpdateReceiverInfo(receivedPhotos)
       }
       is UploadedPhotosFragmentEvent.GeneralEvents.Invalidate -> {
         //FIXME: Hack to update the view after changing the state manually

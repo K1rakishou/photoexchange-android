@@ -19,7 +19,6 @@ import kotlin.coroutines.CoroutineContext
 
 abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
   private val spanCount = 1
-  private val invalidateDelay = 100L
   private val job = Job()
 
   private val invalidationActor: SendChannel<Unit>
@@ -41,7 +40,6 @@ abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
   init {
     invalidationActor = actor(capacity = Channel.RENDEZVOUS) {
       consumeEach {
-        delay(invalidateDelay)
         postInvalidate()
       }
     }

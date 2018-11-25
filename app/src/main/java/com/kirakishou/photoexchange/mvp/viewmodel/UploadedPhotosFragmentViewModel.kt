@@ -86,14 +86,7 @@ class UploadedPhotosFragmentViewModel(
   }
 
   private fun resetStateInternal() {
-    setState {
-      copy(
-        takenPhotos = emptyList(),
-        uploadedPhotos = emptyList(),
-        uploadedPhotosRequest = Uninitialized
-      )
-    }
-
+    setState { UploadedPhotosFragmentState() }
     launch { loadQueuedUpPhotos() }
   }
 
@@ -113,7 +106,6 @@ class UploadedPhotosFragmentViewModel(
         newPhotos.removeAll { it.id == photoId }
 
         setState { copy(takenPhotos = newPhotos) }
-        invalidate()
       }
     }
   }
@@ -133,7 +125,6 @@ class UploadedPhotosFragmentViewModel(
           )
         }
 
-        invalidate()
         loadUploadedPhotos()
       }
     }
@@ -170,8 +161,6 @@ class UploadedPhotosFragmentViewModel(
             uploadedPhotos = state.uploadedPhotos + uploadedPhotos
           )
         }
-
-        invalidate()
       }
     }
   }
@@ -217,7 +206,6 @@ class UploadedPhotosFragmentViewModel(
       }
 
       setState { copy(uploadedPhotos = newPhotos) }
-      invalidate()
     }
   }
 
@@ -241,8 +229,6 @@ class UploadedPhotosFragmentViewModel(
             val newPhoto = UploadingPhoto.fromMyPhoto(event.photo, 0)
             setState { copy(takenPhotos = state.takenPhotos + newPhoto) }
           }
-
-          invalidate()
         }
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress -> {
@@ -260,7 +246,6 @@ class UploadedPhotosFragmentViewModel(
 
           newPhotos.add(photoIndex, UploadingPhoto.fromMyPhoto(event.photo, event.progress))
           setState { copy(takenPhotos = newPhotos) }
-          invalidate()
         }
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploaded -> {
@@ -299,7 +284,6 @@ class UploadedPhotosFragmentViewModel(
               uploadedPhotos = newUploadedPhotos
             )
           }
-          invalidate()
         }
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUploadPhoto -> {
@@ -313,7 +297,6 @@ class UploadedPhotosFragmentViewModel(
 
           newPhotos.add(photoIndex, QueuedUpPhoto.fromTakenPhoto(event.photo))
           setState { copy(takenPhotos = newPhotos) }
-          invalidate()
         }
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoCanceled -> {
@@ -325,18 +308,12 @@ class UploadedPhotosFragmentViewModel(
             .map { takenPhoto -> QueuedUpPhoto.fromTakenPhoto(takenPhoto) }
 
           setState { copy(takenPhotos = newPhotos) }
-          invalidate()
         }
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
         Timber.tag(TAG).d("OnEnd")
       }
     }.safe
-  }
-
-  private fun invalidate() {
-    intercom.tell<UploadedPhotosFragment>()
-      .to(UploadedPhotosFragmentEvent.GeneralEvents.Invalidate)
   }
 
   /**
