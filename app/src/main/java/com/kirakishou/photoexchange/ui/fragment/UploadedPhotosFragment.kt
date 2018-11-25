@@ -218,11 +218,6 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
 
         viewModel.uploadedPhotosFragmentViewModel.onUpdateReceiverInfo(receivedPhotos)
       }
-      is UploadedPhotosFragmentEvent.GeneralEvents.Invalidate -> {
-        //FIXME: Hack to update the view after changing the state manually
-        //(for some reason it does not getting called automatically, so I have to do it manually with this hack)
-        doInvalidate()
-      }
     }.safe
   }
 
