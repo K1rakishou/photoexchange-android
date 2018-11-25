@@ -54,10 +54,9 @@ import io.reactivex.exceptions.CompositeException
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.rx2.openSubscription
+import kotlinx.coroutines.rx2.consumeEach
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
@@ -166,8 +165,8 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
       .subscribe()
 
     launch {
-      compositeChannel += viewModel.intercom.photosActivityEvents.listen().openSubscription().apply {
-        consumeEach { event -> onStateEvent(event) }
+      viewModel.intercom.photosActivityEvents.listen().consumeEach { event ->
+        onStateEvent(event)
       }
     }
   }
@@ -191,7 +190,7 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
         }
       }
 
-      launch {  onPermissionsCallback(savedInstanceState, granted) }
+      launch { onPermissionsCallback(savedInstanceState, granted) }
     }
   }
 

@@ -28,9 +28,8 @@ import core.ErrorCode
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
-import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.rx2.openSubscription
+import kotlinx.coroutines.rx2.consumeEach
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -88,46 +87,44 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
           .that(PhotosActivityEvent.ScrollEvent(isScrollingDown))
       })
 
-    compositeChannel += viewModel.intercom.galleryFragmentEvents.listen().openSubscription().apply {
-      consumeEach { event -> onStateEvent(event) }
+    viewModel.intercom.galleryFragmentEvents.listen().consumeEach { event ->
+      onStateEvent(event)
     }
 
-    compositeChannel += adapterButtonClickSubject.openSubscription().apply {
-      consumeEach { buttonClickEvent ->
-        when (buttonClickEvent) {
-          is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.FavouriteClicked -> {
-            val result = viewModel.favouritePhoto(buttonClickEvent.photoName)
+    adapterButtonClickSubject.consumeEach { buttonClickEvent ->
+      when (buttonClickEvent) {
+        is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.FavouriteClicked -> {
+          val result = viewModel.favouritePhoto(buttonClickEvent.photoName)
 
-            //TODO: hide inside viewmodel
-            when (result) {
-              is Either.Value -> favouritePhoto(buttonClickEvent.photoName, result.value.isFavourited, result.value.favouritesCount)
-              is Either.Error -> {
-                when (result.error) {
-                  is ApiErrorException -> handleKnownErrors(result.error.errorCode)
-                  else -> handleUnknownErrors(result.error)
-                }
+          //TODO: hide inside viewmodel
+          when (result) {
+            is Either.Value -> favouritePhoto(buttonClickEvent.photoName, result.value.isFavourited, result.value.favouritesCount)
+            is Either.Error -> {
+              when (result.error) {
+                is ApiErrorException -> handleKnownErrors(result.error.errorCode)
+                else -> handleUnknownErrors(result.error)
               }
             }
           }
-          is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.ReportClicked -> {
-            val result = viewModel.reportPhoto(buttonClickEvent.photoName)
+        }
+        is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.ReportClicked -> {
+          val result = viewModel.reportPhoto(buttonClickEvent.photoName)
 
-            //TODO: hide inside viewmodel
-            when (result) {
-              is Either.Value -> reportPhoto(buttonClickEvent.photoName, result.value)
-              is Either.Error -> {
-                when (result.error) {
-                  is ApiErrorException -> handleKnownErrors(result.error.errorCode)
-                  else -> handleUnknownErrors(result.error)
-                }
+          //TODO: hide inside viewmodel
+          when (result) {
+            is Either.Value -> reportPhoto(buttonClickEvent.photoName, result.value)
+            is Either.Error -> {
+              when (result.error) {
+                is ApiErrorException -> handleKnownErrors(result.error.errorCode)
+                else -> handleUnknownErrors(result.error)
               }
             }
           }
-          is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.SwitchShowMapOrPhoto -> {
-            handleAdapterClick(buttonClickEvent)
-          }
-        }.safe
-      }
+        }
+        is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.SwitchShowMapOrPhoto -> {
+          handleAdapterClick(buttonClickEvent)
+        }
+      }.safe
     }
   }
 

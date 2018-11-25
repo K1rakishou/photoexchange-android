@@ -15,6 +15,7 @@ import io.reactivex.rxkotlin.plusAssign
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.rx2.await
+import kotlinx.coroutines.rx2.consumeEach
 import kotlinx.coroutines.rx2.openSubscription
 import timber.log.Timber
 import javax.inject.Inject
@@ -56,12 +57,10 @@ class ViewTakenPhotoActivity : BaseActivity() {
 
   private suspend fun initRx() {
     launch {
-      compositeChannel += viewModel.addToGalleryFragmentResult.openSubscription().apply {
-        consumeEach { fragmentResult ->
-          onBackPressedInternal().await()
-          onAddToGalleryFragmentResult(fragmentResult)
-          onPhotoUpdated()
-        }
+      viewModel.addToGalleryFragmentResult.consumeEach { fragmentResult ->
+        onBackPressedInternal().await()
+        onAddToGalleryFragmentResult(fragmentResult)
+        onPhotoUpdated()
       }
     }
   }

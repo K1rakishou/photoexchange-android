@@ -27,6 +27,7 @@ class UploadedPhotoEntity(
   @ColumnInfo(name = UPLOADED_ON_COLUMN)
   var uploadedOn: Long? = null,
 
+  //TODO: delete this
   @ColumnInfo(name = INSERTED_ON_COLUMN)
   var insertedOn: Long? = null
 ) {

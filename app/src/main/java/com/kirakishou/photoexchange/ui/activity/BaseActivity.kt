@@ -24,7 +24,6 @@ import kotlin.coroutines.CoroutineContext
  * Created by kirakishou on 7/20/2017.
  */
 abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
-
   private val TAG = "${this::class.java}"
 
   private val registry by lazy {
@@ -34,9 +33,7 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
   override fun getLifecycle(): LifecycleRegistry = registry
 
   protected val unknownErrorsSubject = PublishSubject.create<Throwable>()
-
   protected val compositeDisposable = CompositeDisposable()
-  protected val compositeChannel = mutableListOf<ReceiveChannel<Any>>()
 
   private lateinit var job: Job
   private var unBinder: Unbinder? = null
@@ -84,9 +81,6 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
     onActivityStop()
 
     job.cancel()
-    compositeChannel.forEach { it.cancel() }
-    compositeChannel.clear()
-
     compositeDisposable.clear()
     super.onStop()
   }
