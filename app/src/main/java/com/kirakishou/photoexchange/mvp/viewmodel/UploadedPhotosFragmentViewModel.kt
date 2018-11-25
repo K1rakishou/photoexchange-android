@@ -23,8 +23,13 @@ import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentSt
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
 import io.reactivex.disposables.CompositeDisposable
-import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.actor
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 

@@ -11,6 +11,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
@@ -35,7 +36,7 @@ open class ReceivePhotosServicePresenter(
     get() = job + dispatchersProvider.GENERAL()
 
   init {
-    receiveActor = actor(capacity = 1) {
+    receiveActor = actor(capacity = Channel.RENDEZVOUS) {
       consumeEach {
         try {
           receivePhotosInternal()

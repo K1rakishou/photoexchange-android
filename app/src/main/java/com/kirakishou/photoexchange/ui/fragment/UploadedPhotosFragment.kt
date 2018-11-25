@@ -21,9 +21,12 @@ import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.epoxy.*
+import io.reactivex.Flowable
+import io.reactivex.rxkotlin.plusAssign
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.rx2.consumeEach
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 
@@ -38,6 +41,8 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
   private val TAG = "UploadedPhotosFragment"
 
   private val uploadedPhotoAdapterViewWidth = Constants.DEFAULT_ADAPTER_ITEM_WIDTH
+  private val intervalTime = 30L
+
   private val photoSize by lazy { AndroidUtils.figureOutPhotosSizes(requireContext()) }
   private val columnsCount by lazy { AndroidUtils.calculateNoOfColumns(requireContext(), uploadedPhotoAdapterViewWidth) }
 
@@ -50,18 +55,21 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
     viewModel.uploadedPhotosFragmentViewModel.photosPerPage = columnsCount * Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
 
     viewModel.uploadedPhotosFragmentViewModel.selectSubscribe(this, UploadedPhotosFragmentState::takenPhotos) {
-      viewModel.intercom.tell<PhotosActivity>()
-        .to(PhotosActivityEvent.StartUploadingService(PhotosActivityViewModel::class.java,
-          "There are queued up photos in the database"))
+      startUploadingService()
     }
 
     viewModel.uploadedPhotosFragmentViewModel.selectSubscribe(this, UploadedPhotosFragmentState::uploadedPhotos) {
-      viewModel.intercom.tell<PhotosActivity>()
-        .to(PhotosActivityEvent.StartReceivingService(PhotosActivityViewModel::class.java,
-          "Starting the service after a page of uploaded photos was loaded"))
+      startReceivingService("Starting the service after a page of uploaded photos was loaded")
     }
 
     launch { initRx() }
+  }
+
+  override fun onResume() {
+    super.onResume()
+
+    clearOnPauseCompositeDisposable += Flowable.interval(intervalTime, intervalTime, TimeUnit.SECONDS)
+      .subscribe({ startReceivingService("Periodic check of photos to receive") })
   }
 
   private suspend fun initRx() {
@@ -211,6 +219,22 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
         doInvalidate()
       }
     }.safe
+  }
+
+  private fun startReceivingService(reason: String) {
+    viewModel.intercom.tell<PhotosActivity>()
+      .to(PhotosActivityEvent.StartReceivingService(
+        PhotosActivityViewModel::class.java,
+        reason)
+      )
+  }
+
+  private fun startUploadingService() {
+    viewModel.intercom.tell<PhotosActivity>()
+      .to(PhotosActivityEvent.StartUploadingService(
+        PhotosActivityViewModel::class.java,
+        "There are queued up photos in the database")
+      )
   }
 
   override fun resolveDaggerDependency() {
