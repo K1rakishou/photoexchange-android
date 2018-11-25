@@ -20,8 +20,17 @@ class GetUploadedPhotosRepository(
     return withContext(coroutineContext) {
       uploadedPhotosLocalSource.deleteOldPhotos()
 
-      return@withContext getPageInternal(time, count, userId)
+      val uploadedPhotos = getPageInternal(time, count, userId)
+      val uploadedPhotosWithNoReceiver = uploadedPhotos
+        .filter { !it.hasReceiverInfo }
         .sortedByDescending { it.photoId }
+
+      val uploadedPhotosWithReceiver = uploadedPhotos
+        .filter { it.hasReceiverInfo }
+        .sortedByDescending { it.photoId }
+
+      //we need to show photos without receiver first and after them photos with receiver
+      return@withContext uploadedPhotosWithNoReceiver + uploadedPhotosWithReceiver
     }
   }
 

@@ -113,6 +113,11 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
     return@simpleController withState(viewModel.uploadedPhotosFragmentViewModel) { state ->
       if (state.takenPhotos.isNotEmpty()) {
+        sectionRow {
+          id("queued_up_and_uploading_photos_section")
+          text("Uploading photos")
+        }
+
         state.takenPhotos.forEach { photo ->
           when (photo.photoState) {
             PhotoState.PHOTO_TAKEN -> {
@@ -148,19 +153,24 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
         is Success -> {
           Timber.tag(TAG).d("Success uploaded photos")
 
-          state.uploadedPhotos.forEach { photo ->
-            uploadedPhotoRow {
-              id("uploaded_photo_${photo.photoId}")
-              photo(photo)
-            }
-          }
-
           if (state.uploadedPhotos.isEmpty()) {
             textRow {
               id("no_uploaded_photos")
               text("You have no photos yet")
             }
           } else {
+            sectionRow {
+              id("uploaded_photos_section")
+              text("Uploaded photos")
+            }
+
+            state.uploadedPhotos.forEach { photo ->
+              uploadedPhotoRow {
+                id("uploaded_photo_${photo.photoId}")
+                photo(photo)
+              }
+            }
+
             if (state.isEndReached) {
               textRow {
                 id("list_end_footer_text")
@@ -225,19 +235,6 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
     when (event) {
       is UploadedPhotosFragmentEvent.GeneralEvents.ScrollToTop -> {
 //          uploadedPhotosList.scrollToPosition(0)
-      }
-      is UploadedPhotosFragmentEvent.GeneralEvents.RemovePhoto -> {
-//          adapter.removePhotoById(event.photo.id)
-      }
-      is UploadedPhotosFragmentEvent.GeneralEvents.AddPhoto -> {
-//          adapter.addTakenPhoto(event.photo)
-      }
-      is UploadedPhotosFragmentEvent.GeneralEvents.PhotoRemoved -> {
-//          if (adapter.getQueuedUpAndFailedPhotosCount() == 0) {
-//            triggerPhotosLoading()
-//          } else {
-//            //do nothing
-//          }
       }
       is UploadedPhotosFragmentEvent.GeneralEvents.AfterPermissionRequest -> {
 //          triggerPhotosLoading()
