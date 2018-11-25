@@ -31,14 +31,11 @@ import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
-import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.service.ReceivePhotosService
 import com.kirakishou.photoexchange.service.ReceivePhotosServiceConnection
 import com.kirakishou.photoexchange.service.UploadPhotoService
 import com.kirakishou.photoexchange.service.UploadPhotoServiceConnection
-import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapter
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
 import com.kirakishou.photoexchange.ui.callback.ReceivePhotosServiceCallback
 import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
@@ -54,7 +51,6 @@ import io.reactivex.exceptions.CompositeException
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.rx2.consumeEach
 import kotlinx.coroutines.withContext
@@ -311,7 +307,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingCallback, ReceivePhotosServ
         }
       }
       is PhotosActivityEvent.StartReceivingService -> {
-        val hasPhotosToReceive = viewModel.checkHasPhotosToReceive()
+        val hasPhotosToReceive = viewModel.checkCanReceivePhotos()
         if (hasPhotosToReceive) {
           bindReceivingService(event.callerClass, event.reason, true)
         } else {

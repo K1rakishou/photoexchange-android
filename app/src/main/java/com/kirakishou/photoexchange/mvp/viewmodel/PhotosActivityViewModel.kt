@@ -73,7 +73,7 @@ class PhotosActivityViewModel(
     return takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
   }
 
-  suspend fun checkHasPhotosToReceive(): Boolean {
+  suspend fun checkCanReceivePhotos(): Boolean {
     val uploadedPhotosCount = uploadedPhotosRepository.count()
     val receivedPhotosCount = receivedPhotosRepository.count()
 
