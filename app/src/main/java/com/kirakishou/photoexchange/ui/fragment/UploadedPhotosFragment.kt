@@ -209,8 +209,7 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
 //          viewModel.uploadedPhotosFragmentViewModel.viewState.reset()
       }
       is UploadedPhotosFragmentEvent.GeneralEvents.PhotosReceived -> {
-        val uploadedPhotoNamesList = event.receivedPhotos.map { it.second }
-        viewModel.uploadedPhotosFragmentViewModel.onUpdateReceiverInfo(uploadedPhotoNamesList)
+        viewModel.uploadedPhotosFragmentViewModel.onUpdateReceiverInfo(event.receivedPhotos)
       }
       is UploadedPhotosFragmentEvent.GeneralEvents.Invalidate -> {
         //FIXME: Hack to update the view after changing the state manually

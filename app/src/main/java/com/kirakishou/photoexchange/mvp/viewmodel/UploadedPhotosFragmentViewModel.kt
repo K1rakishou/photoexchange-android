@@ -198,17 +198,17 @@ class UploadedPhotosFragmentViewModel(
     }
   }
 
-  fun onUpdateReceiverInfo(uploadedPhotoNamesToUpdate: List<String>) {
-    if (uploadedPhotoNamesToUpdate.isEmpty()) {
+  fun onUpdateReceiverInfo(receivedPhotos: List<ReceivedPhoto>) {
+    if (receivedPhotos.isEmpty()) {
       return
     }
 
     withState { state ->
       val newPhotos = mutableListOf<UploadedPhoto>()
 
-      for (uploadedPhotoName in uploadedPhotoNamesToUpdate) {
+      for (receivedPhoto in receivedPhotos) {
         for (uploadedPhoto in state.uploadedPhotos) {
-          newPhotos += if (uploadedPhoto.photoName == uploadedPhotoName) {
+          newPhotos += if (uploadedPhoto.photoName == receivedPhoto.uploadedPhotoName) {
             uploadedPhoto.copy(hasReceiverInfo = true)
           } else {
             uploadedPhoto.copy()

@@ -103,7 +103,7 @@ open class ReceivePhotosServicePresenter(
   }
 
   sealed class ReceivePhotoEvent {
-    class OnPhotosReceived(val receivedPhotos: List<Pair<ReceivedPhoto, String>>) : ReceivePhotoEvent()
+    class OnPhotosReceived(val receivedPhotos: List<ReceivedPhoto>) : ReceivePhotoEvent()
     class OnError(val error: Throwable) : ReceivePhotoEvent()
     class OnNewNotification(val type: NotificationType) : ReceivePhotoEvent()
     class RemoveNotification : ReceivePhotoEvent()

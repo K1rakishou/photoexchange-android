@@ -10,7 +10,7 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
   sealed class GeneralEvents : UploadedPhotosFragmentEvent() {
     class UpdateReceiverInfo(val receivedPhotos: List<ReceivedPhoto>) : GeneralEvents()
     class OnPageSelected : GeneralEvents()
-    class PhotosReceived(val receivedPhotos: List<Pair<ReceivedPhoto, String>>) : GeneralEvents()
+    class PhotosReceived(val receivedPhotos: List<ReceivedPhoto>) : GeneralEvents()
     object Invalidate : GeneralEvents()
   }
 

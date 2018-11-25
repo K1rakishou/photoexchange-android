@@ -12,7 +12,7 @@ open class ReceivePhotosUseCase(
 
   suspend fun receivePhotos(
     photoData: FindPhotosData
-  ): List<Pair<ReceivedPhoto, String>> {
+  ): List<ReceivedPhoto> {
     if (photoData.isUserIdEmpty()) {
       throw ReceivePhotosServiceException.UserIdIsEmptyException()
     }

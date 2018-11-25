@@ -25,7 +25,7 @@ class ReceivePhotosRepository(
 ) : BaseRepository(dispatchersProvider) {
   private val TAG = "ReceivePhotosRepository"
 
-  suspend fun receivePhotos(userId: String, photoNames: String): List<Pair<ReceivedPhoto, String>> {
+  suspend fun receivePhotos(userId: String, photoNames: String): List<ReceivedPhoto> {
     return withContext(coroutineContext) {
       val receivedPhotos = try {
         receivePhotosRemoteSource.receivePhotos(userId, photoNames)
@@ -33,7 +33,7 @@ class ReceivePhotosRepository(
         throw ReceivePhotosUseCase.ReceivePhotosServiceException.ApiException(error.errorCode)
       }
 
-      val results = mutableListOf<Pair<ReceivedPhoto, String>>()
+      val results = mutableListOf<ReceivedPhoto>()
 
       for (receivedPhoto in receivedPhotos) {
         try {
@@ -44,7 +44,7 @@ class ReceivePhotosRepository(
 
         val photoAnswer = ReceivedPhotosMapper.FromResponse
           .ReceivedPhotos.toReceivedPhoto(receivedPhoto)
-        results += Pair(photoAnswer, photoAnswer.uploadedPhotoName)
+        results += photoAnswer
       }
 
       return@withContext results
