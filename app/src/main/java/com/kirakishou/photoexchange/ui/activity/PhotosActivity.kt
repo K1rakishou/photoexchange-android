@@ -63,8 +63,7 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 
-class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
-  ViewPager.OnPageChangeListener, PhotoUploadingCallback, ReceivePhotosServiceCallback,
+class PhotosActivity : BaseActivity(), PhotoUploadingCallback, ReceivePhotosServiceCallback,
   PopupMenu.OnMenuItemClickListener, StateEventListener<PhotosActivityEvent>, IntercomListener {
 
   @BindView(R.id.root_layout)
@@ -95,7 +94,6 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
 
   private val TAG = "PhotosActivity"
   private val FRAGMENT_SCROLL_DELAY_MS = 250L
-  private val PHOTO_DELETE_DELAY = 3000L
   private val UPLOADED_PHOTOS_TAB_INDEX = 0
   private val RECEIVED_PHOTOS_TAB_INDEX = 1
   private val GALLERY_PHOTOS_TAB_INDEX = 2
@@ -241,8 +239,46 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
     viewPager.clearOnPageChangeListeners()
     tabLayout.clearOnTabSelectedListeners()
 
-    viewPager.addOnPageChangeListener(this)
-    tabLayout.addOnTabSelectedListener(this)
+    viewPager.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
+      override fun onPageScrollStateChanged(state: Int) {
+      }
+
+      override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
+        tabLayout.setScrollPosition(position, positionOffset, true)
+      }
+
+      override fun onPageSelected(position: Int) {
+        viewPager.currentItem = position
+
+        when (position) {
+          UPLOADED_PHOTOS_TAB_INDEX -> {
+            viewModel.intercom.tell<UploadedPhotosFragment>()
+              .to(UploadedPhotosFragmentEvent.GeneralEvents.OnPageSelected())
+          }
+          RECEIVED_PHOTOS_TAB_INDEX -> {
+            viewModel.intercom.tell<ReceivedPhotosFragment>()
+              .to(ReceivedPhotosFragmentEvent.GeneralEvents.OnPageSelected())
+          }
+          GALLERY_PHOTOS_TAB_INDEX -> {
+            viewModel.intercom.tell<GalleryFragment>()
+              .to(GalleryFragmentEvent.GeneralEvents.OnPageSelected())
+          }
+        }
+      }
+    })
+
+    tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+      override fun onTabReselected(tab: TabLayout.Tab) {
+        viewPager.currentItem = tab.position
+      }
+
+      override fun onTabUnselected(tab: TabLayout.Tab) {
+      }
+
+      override fun onTabSelected(tab: TabLayout.Tab) {
+        viewPager.currentItem = tab.position
+      }
+    })
   }
 
   private fun createMenu() {
@@ -250,43 +286,6 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
     popupMenu.setOnMenuItemClickListener(this)
     popupMenu.menu.add(1, R.id.settings_item, 1, resources.getString(R.string.settings_menu_item_text))
     popupMenu.show()
-  }
-
-  override fun onTabReselected(tab: TabLayout.Tab) {
-    viewPager.currentItem = tab.position
-  }
-
-  override fun onTabUnselected(tab: TabLayout.Tab) {
-  }
-
-  override fun onTabSelected(tab: TabLayout.Tab) {
-    viewPager.currentItem = tab.position
-  }
-
-  override fun onPageScrollStateChanged(state: Int) {
-  }
-
-  override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
-    tabLayout.setScrollPosition(position, positionOffset, true)
-  }
-
-  override fun onPageSelected(position: Int) {
-    viewPager.currentItem = position
-
-    when (position) {
-      UPLOADED_PHOTOS_TAB_INDEX -> {
-        viewModel.intercom.tell<UploadedPhotosFragment>()
-          .to(UploadedPhotosFragmentEvent.GeneralEvents.OnPageSelected())
-      }
-      RECEIVED_PHOTOS_TAB_INDEX -> {
-        viewModel.intercom.tell<ReceivedPhotosFragment>()
-          .to(ReceivedPhotosFragmentEvent.GeneralEvents.OnPageSelected())
-      }
-      GALLERY_PHOTOS_TAB_INDEX -> {
-        viewModel.intercom.tell<GalleryFragment>()
-          .to(GalleryFragmentEvent.GeneralEvents.OnPageSelected())
-      }
-    }
   }
 
   override fun onMenuItemClick(item: MenuItem): Boolean {
@@ -315,14 +314,6 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
         val hasPhotosToReceive = viewModel.checkHasPhotosToReceive()
         if (hasPhotosToReceive) {
           bindReceivingService(event.callerClass, event.reason, true)
-        } else {
-          //do nothing
-        }
-      }
-      is PhotosActivityEvent.FailedToUploadPhotoButtonClicked -> {
-        val tryToReUpload = handleUploadedPhotosFragmentAdapterButtonClicks(event.clickType)
-        if (tryToReUpload) {
-          bindUploadingService(PhotosActivity::class.java, "Handling of FailedToUploadPhotoButtonClicked", true)
         } else {
           //do nothing
         }
@@ -359,54 +350,6 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
     }.safe
   }
 
-  private suspend fun handleUploadedPhotosFragmentAdapterButtonClicks(
-    adapterButtonsClick: UploadedPhotosAdapter.UploadedPhotosAdapterButtonClick
-  ): Boolean {
-
-    return when (adapterButtonsClick) {
-      is UploadedPhotosAdapter.UploadedPhotosAdapterButtonClick.DeleteButtonClick -> {
-        showPhotoDeletedSnackbar(adapterButtonsClick.photo)
-        false
-      }
-
-      is UploadedPhotosAdapter.UploadedPhotosAdapterButtonClick.RetryButtonClick -> {
-        viewModel.changePhotoState(adapterButtonsClick.photo.id, PhotoState.PHOTO_QUEUED_UP)
-
-        val photo = adapterButtonsClick.photo
-        photo.photoState = PhotoState.PHOTO_QUEUED_UP
-
-        viewModel.intercom.tell<UploadedPhotosFragment>()
-          .to(UploadedPhotosFragmentEvent.GeneralEvents.RemovePhoto(photo))
-        viewModel.intercom.tell<UploadedPhotosFragment>()
-          .to(UploadedPhotosFragmentEvent.GeneralEvents.AddPhoto(photo))
-
-        true
-      }
-    }
-  }
-
-  private fun showPhotoDeletedSnackbar(photo: TakenPhoto) {
-    val removePhotoJob = launch {
-      viewModel.intercom.tell<UploadedPhotosFragment>()
-        .to(UploadedPhotosFragmentEvent.GeneralEvents.RemovePhoto(photo))
-
-      delay(PHOTO_DELETE_DELAY)
-      viewModel.deletePhotoById(photo.id)
-
-      viewModel.intercom.tell<UploadedPhotosFragment>()
-        .that(UploadedPhotosFragmentEvent.GeneralEvents.PhotoRemoved())
-    }
-
-    Snackbar.make(rootLayout, getString(R.string.photo_has_been_deleted_snackbar_text), Snackbar.LENGTH_LONG)
-      .setDuration(PHOTO_DELETE_DELAY.toInt())
-      .setAction(getString(R.string.cancel_snackbar_action_text), {
-        viewModel.intercom.tell<UploadedPhotosFragment>()
-          .to(UploadedPhotosFragmentEvent.GeneralEvents.AddPhoto(photo))
-        removePhotoJob.cancel()
-      })
-      .show()
-  }
-
   private fun showPhotoAnswerFoundSnackbar() {
     Snackbar.make(rootLayout, getString(R.string.photo_has_been_received_snackbar_text), Snackbar.LENGTH_LONG)
       .setAction(getString(R.string.show_snackbar_action_text), {
@@ -430,12 +373,20 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
     onShowToast(message, duration)
   }
 
-  override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+  override fun onRequestPermissionsResult(
+    requestCode: Int,
+    permissions: Array<out String>,
+    grantResults: IntArray
+  ) {
     super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     permissionManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
   }
 
-  private fun bindReceivingService(callerClass: Class<*>, reason: String, start: Boolean = true) {
+  private fun bindReceivingService(
+    callerClass: Class<*>,
+    reason: String,
+    start: Boolean = true
+  ) {
     if (!receivePhotosServiceConnection.isConnected()) {
       Timber.tag(TAG).d("(callerClass = $callerClass, reason = $reason) bindReceivingService, start = $start")
 
@@ -451,7 +402,11 @@ class PhotosActivity : BaseActivity(), TabLayout.OnTabSelectedListener,
     }
   }
 
-  private fun bindUploadingService(callerClass: Class<*>, reason: String, start: Boolean = true) {
+  private fun bindUploadingService(
+    callerClass: Class<*>,
+    reason: String,
+    start: Boolean = true
+  ) {
     if (!uploadPhotosServiceConnection.isConnected()) {
       Timber.tag(TAG).d("(callerClass = $callerClass, reason = $reason) bindUploadingService, start = $start")
 

@@ -20,8 +20,7 @@ import io.reactivex.subjects.Subject
  */
 class UploadedPhotosAdapter(
   private val context: Context,
-  private val imageLoader: ImageLoader,
-  private val adapterButtonsClickSubject: Subject<UploadedPhotosAdapterButtonClick>
+  private val imageLoader: ImageLoader
 ) : BaseAdapter<UploadedPhotosAdapterItem>(context) {
 
   private val headerItems = arrayListOf<UploadedPhotosAdapterItem>()
@@ -421,11 +420,6 @@ class UploadedPhotosAdapter(
       }
       else -> IllegalArgumentException("Unknown viewHolder: ${holder::class.java.simpleName}")
     }
-  }
-
-  sealed class UploadedPhotosAdapterButtonClick {
-    class DeleteButtonClick(val photo: TakenPhoto) : UploadedPhotosAdapterButtonClick()
-    class RetryButtonClick(val photo: TakenPhoto) : UploadedPhotosAdapterButtonClick()
   }
 
   companion object {

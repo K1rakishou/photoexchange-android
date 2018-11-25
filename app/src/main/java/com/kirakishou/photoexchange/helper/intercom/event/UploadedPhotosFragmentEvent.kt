@@ -8,10 +8,7 @@ import java.lang.Exception
 
 sealed class UploadedPhotosFragmentEvent : BaseEvent {
   sealed class GeneralEvents : UploadedPhotosFragmentEvent() {
-    class RemovePhoto(val photo: TakenPhoto) : GeneralEvents()
-    class AddPhoto(val photo: TakenPhoto) : GeneralEvents()
     class ScrollToTop : GeneralEvents()
-    class PhotoRemoved : GeneralEvents()
     class AfterPermissionRequest : GeneralEvents()
     class UpdateReceiverInfo(val receivedPhotos: List<ReceivedPhoto>) : GeneralEvents()
     class OnPageSelected : GeneralEvents()
