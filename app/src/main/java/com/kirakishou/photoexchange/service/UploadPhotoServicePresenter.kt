@@ -49,9 +49,13 @@ open class UploadPhotoServicePresenter(
       }
     }
 
-    uploadingActor = actor(capacity = 1) {
+    uploadingActor = actor(capacity = Channel.RENDEZVOUS) {
       consumeEach { location ->
-        startUploading(location)
+        try {
+          startUploading(location)
+        } finally {
+          sendEvent(UploadPhotoEvent.StopService)
+        }
       }
     }
   }
@@ -76,8 +80,6 @@ open class UploadPhotoServicePresenter(
       updateServiceNotification(NotificationType.Error("Could not upload one or more photos"))
 
       eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnError(error))
-    } finally {
-      sendEvent(UploadPhotoEvent.StopService)
     }
   }
 

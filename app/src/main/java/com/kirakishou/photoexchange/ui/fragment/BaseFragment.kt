@@ -23,7 +23,6 @@ import kotlin.coroutines.CoroutineContext
 
 abstract class BaseFragment : Fragment(), CoroutineScope {
   protected val compositeDisposable = CompositeDisposable()
-  protected val compositeChannel = mutableListOf<ReceiveChannel<Any>>()
   private lateinit var job: Job
 
   protected lateinit var lifecycle: RxLifecycle
@@ -100,10 +99,8 @@ abstract class BaseFragment : Fragment(), CoroutineScope {
     super.onDetach()
 
     job.cancel()
-    compositeChannel.forEach { it.cancel() }
-    compositeChannel.clear()
-
     compositeDisposable.clear()
+
     PhotoExchangeApplication.watch(this, this::class.simpleName)
   }
 

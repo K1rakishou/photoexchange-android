@@ -71,9 +71,9 @@ class ReceivePhotosService : Service() {
 
   private fun onReceivePhotoResult(event: ReceivePhotosServicePresenter.ReceivePhotoEvent) {
     when (event) {
-      is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnReceivedPhoto -> {
+      is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnPhotosReceived -> {
         callback.get()?.onReceivePhotoEvent(ReceivedPhotosFragmentEvent.ReceivePhotosEvent
-          .PhotoReceived(event.receivedPhoto, event.takenPhotoName))
+          .PhotosReceived(event.receivedPhotos))
       }
       is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnError -> {
         callback.get()?.onReceivePhotoEvent(ReceivedPhotosFragmentEvent.ReceivePhotosEvent

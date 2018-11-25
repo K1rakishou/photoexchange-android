@@ -19,12 +19,12 @@ import kotlin.coroutines.CoroutineContext
 
 abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
   private val spanCount = 1
-  private val invalidateDelay = 50L
   private val job = Job()
 
   private val invalidationActor: SendChannel<Unit>
 
   protected val compositeDisposable = CompositeDisposable()
+  protected val clearOnPauseCompositeDisposable = CompositeDisposable()
   protected val compositeChannel = mutableListOf<ReceiveChannel<Any>>()
   protected lateinit var recyclerView: EpoxyRecyclerView
 
@@ -40,7 +40,6 @@ abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
   init {
     invalidationActor = actor(capacity = Channel.RENDEZVOUS) {
       consumeEach {
-        delay(invalidateDelay)
         postInvalidate()
       }
     }
@@ -98,7 +97,12 @@ abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
     super.onDestroyView()
   }
 
-  fun doInvalidate() {
+  override fun onPause() {
+    super.onPause()
+    clearOnPauseCompositeDisposable.clear()
+  }
+
+  protected fun doInvalidate() {
     invalidationActor.offer(Unit)
   }
 

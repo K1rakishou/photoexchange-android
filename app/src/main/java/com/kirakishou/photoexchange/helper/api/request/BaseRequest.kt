@@ -3,8 +3,8 @@ package com.kirakishou.photoexchange.helper.api.request
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.gson.JsonConverter
-import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
-import com.kirakishou.photoexchange.mvp.model.exception.BadServerResponse
+import com.kirakishou.photoexchange.helper.exception.ApiErrorException
+import com.kirakishou.photoexchange.helper.exception.BadServerResponse
 import core.ErrorCode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job

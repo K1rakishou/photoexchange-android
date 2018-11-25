@@ -11,6 +11,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
@@ -35,7 +36,7 @@ open class ReceivePhotosServicePresenter(
     get() = job + dispatchersProvider.GENERAL()
 
   init {
-    receiveActor = actor(capacity = 1) {
+    receiveActor = actor(capacity = Channel.RENDEZVOUS) {
       consumeEach {
         try {
           receivePhotosInternal()
@@ -62,10 +63,7 @@ open class ReceivePhotosServicePresenter(
       return
     }
 
-    for ((receivedPhoto, takenPhotoName) in receivedPhotos) {
-      sendEvent(ReceivePhotoEvent.OnReceivedPhoto(receivedPhoto, takenPhotoName))
-    }
-
+    sendEvent(ReceivePhotoEvent.OnPhotosReceived(receivedPhotos))
     sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Success()))
   }
 
@@ -105,8 +103,7 @@ open class ReceivePhotosServicePresenter(
   }
 
   sealed class ReceivePhotoEvent {
-    class OnReceivedPhoto(val receivedPhoto: ReceivedPhoto,
-                          val takenPhotoName: String) : ReceivePhotoEvent()
+    class OnPhotosReceived(val receivedPhotos: List<ReceivedPhoto>) : ReceivePhotoEvent()
     class OnError(val error: Throwable) : ReceivePhotoEvent()
     class OnNewNotification(val type: NotificationType) : ReceivePhotoEvent()
     class RemoveNotification : ReceivePhotoEvent()

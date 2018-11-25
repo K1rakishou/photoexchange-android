@@ -2,7 +2,6 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.response.FavouritePhotoResponseData
-import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
@@ -11,9 +10,7 @@ import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelInter
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
-import com.kirakishou.photoexchange.mvp.model.exception.EmptyUserIdException
-import com.kirakishou.photoexchange.mvp.model.other.Constants
+import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
@@ -36,7 +33,6 @@ class PhotosActivityViewModel(
   private val TAG = "PhotosActivityViewModel"
 
   init {
-    receivedPhotosFragmentViewModel.intercom = intercom
     galleryFragmentViewModel.intercom = intercom
   }
 
@@ -44,7 +40,7 @@ class PhotosActivityViewModel(
     Timber.tag(TAG).d("onCleared()")
 
     uploadedPhotosFragmentViewModel.clear()
-    receivedPhotosFragmentViewModel.onCleared()
+    receivedPhotosFragmentViewModel.clear()
     galleryFragmentViewModel.onCleared()
 
     super.onCleared()
@@ -76,25 +72,11 @@ class PhotosActivityViewModel(
     return takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
   }
 
-  suspend fun checkHasPhotosToReceive(): Boolean {
+  suspend fun checkCanReceivePhotos(): Boolean {
     val uploadedPhotosCount = uploadedPhotosRepository.count()
     val receivedPhotosCount = receivedPhotosRepository.count()
 
     return uploadedPhotosCount > receivedPhotosCount
-  }
-
-  suspend fun deletePhotoById(photoId: Long) {
-    if (!takenPhotosRepository.deletePhotoById(photoId)) {
-      throw DatabaseException("Could not delete taken photo with id ${photoId}")
-    }
-
-    if (Constants.isDebugBuild) {
-      check(takenPhotosRepository.findById(photoId) == null)
-    }
-  }
-
-  suspend fun changePhotoState(photoId: Long, newPhotoState: PhotoState) {
-    takenPhotosRepository.updatePhotoState(photoId, newPhotoState)
   }
 
   suspend fun updateGpsPermissionGranted(granted: Boolean) {

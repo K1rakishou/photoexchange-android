@@ -22,7 +22,8 @@ open class ReceivedPhotosRepository(
   suspend fun save(receivedPhoto: ReceivedPhotosResponse.ReceivedPhotoResponseData): Boolean {
     return withContext(coroutineContext) {
       val now = timeUtils.getTimeFast()
-      return@withContext receivedPhotosDao.save(ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhotoEntity(now, receivedPhoto))
+      return@withContext receivedPhotosDao.save(ReceivedPhotosMapper.FromResponse.ReceivedPhotos
+        .toReceivedPhotoEntity(now, receivedPhoto))
         .isSuccess()
     }
   }
@@ -35,7 +36,8 @@ open class ReceivedPhotosRepository(
 
   suspend fun findMany(receivedPhotoIds: List<Long>): MutableList<ReceivedPhoto> {
     return withContext(coroutineContext) {
-      return@withContext ReceivedPhotosMapper.FromEntity.toReceivedPhotos(receivedPhotosDao.findMany(receivedPhotoIds))
+      return@withContext ReceivedPhotosMapper.FromEntity
+        .toReceivedPhotos(receivedPhotosDao.findMany(receivedPhotoIds))
     }
   }
 

@@ -8,6 +8,7 @@ import android.os.Looper
 import android.util.DisplayMetrics
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
+import com.kirakishou.photoexchange.helper.PhotoSize
 import timber.log.Timber
 
 
@@ -78,18 +79,25 @@ object AndroidUtils {
 
   fun calculateNoOfColumns(context: Context, viewWidth: Int): Int {
     val screenSize = getScreenSize(context)
-    val dp = dpToPx(viewWidth.toFloat(), context).toInt()
+    val viewWidthInDp = dpToPx(viewWidth.toFloat(), context).toInt()
 
     return when {
-      screenSize / 8 >= dp -> 8
-      screenSize / 7 >= dp -> 7
-      screenSize / 6 >= dp -> 6
-      screenSize / 5 >= dp -> 5
-      screenSize / 4 >= dp -> 4
-      screenSize / 3 >= dp -> 3
-      screenSize / 2 >= dp -> 2
+      screenSize / 4 >= viewWidthInDp -> 4
+      screenSize / 3 >= viewWidthInDp -> 3
+      screenSize / 2 >= viewWidthInDp -> 2
       else -> 1
     }
+  }
 
+  fun figureOutPhotosSizes(context: Context): PhotoSize {
+    val density = context.resources.displayMetrics.density
+
+    return if (density < 2.0) {
+      PhotoSize.Small
+    } else if (density >= 2.0 && density < 3.0) {
+      PhotoSize.Medium
+    } else {
+      PhotoSize.Big
+    }
   }
 }

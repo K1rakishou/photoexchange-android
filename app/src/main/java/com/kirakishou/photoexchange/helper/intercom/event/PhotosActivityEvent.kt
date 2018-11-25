@@ -1,7 +1,5 @@
 package com.kirakishou.photoexchange.helper.intercom.event
 
-import com.kirakishou.photoexchange.ui.adapter.UploadedPhotosAdapter
-
 sealed class PhotosActivityEvent : BaseEvent {
   class StartUploadingService(val callerClass: Class<*>,
                               val reason: String) : PhotosActivityEvent()
@@ -12,8 +10,4 @@ sealed class PhotosActivityEvent : BaseEvent {
   class CancelPhotoUploading(val photoId: Long) : PhotosActivityEvent()
 
   class ScrollEvent(val isScrollingDown: Boolean) : PhotosActivityEvent()
-
-  class FailedToUploadPhotoButtonClicked(
-    val clickType: UploadedPhotosAdapter.UploadedPhotosAdapterButtonClick
-  ) : PhotosActivityEvent()
 }

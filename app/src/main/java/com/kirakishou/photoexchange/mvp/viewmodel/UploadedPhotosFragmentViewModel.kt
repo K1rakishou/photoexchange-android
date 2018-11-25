@@ -14,6 +14,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.photo.QueuedUpPhoto
@@ -21,10 +22,15 @@ import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
-import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
 import io.reactivex.disposables.CompositeDisposable
-import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.actor
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 
@@ -51,6 +57,10 @@ class UploadedPhotosFragmentViewModel(
   init {
     viewModelActor = actor(capacity = Channel.UNLIMITED) {
       consumeEach { action ->
+        if (!isActive) {
+          return@consumeEach
+        }
+
         when (action) {
           ActorAction.ResetState -> resetStateInternal()
           is ActorAction.CancelPhotoUploading -> cancelPhotoUploadingInternal(action.photoId)
@@ -80,14 +90,7 @@ class UploadedPhotosFragmentViewModel(
   }
 
   private fun resetStateInternal() {
-    setState {
-      copy(
-        takenPhotos = emptyList(),
-        uploadedPhotos = emptyList(),
-        uploadedPhotosRequest = Uninitialized
-      )
-    }
-
+    setState { UploadedPhotosFragmentState() }
     launch { loadQueuedUpPhotos() }
   }
 
@@ -107,7 +110,6 @@ class UploadedPhotosFragmentViewModel(
         newPhotos.removeAll { it.id == photoId }
 
         setState { copy(takenPhotos = newPhotos) }
-        invalidate()
       }
     }
   }
@@ -127,7 +129,6 @@ class UploadedPhotosFragmentViewModel(
           )
         }
 
-        invalidate()
         loadUploadedPhotos()
       }
     }
@@ -140,7 +141,6 @@ class UploadedPhotosFragmentViewModel(
       }
 
       launch {
-        val userId = settingsRepository.getUserId()
         val lastUploadedOn = state.uploadedPhotos
           .lastOrNull()
           ?.uploadedOn
@@ -149,7 +149,7 @@ class UploadedPhotosFragmentViewModel(
         setState { copy(uploadedPhotosRequest = Loading()) }
 
         val request = try {
-          Success(loadPageOfUploadedPhotos(userId, lastUploadedOn, photosPerPage))
+          Success(loadPageOfUploadedPhotos(lastUploadedOn, photosPerPage))
         } catch (error: Throwable) {
           Fail<List<UploadedPhoto>>(error)
         }
@@ -164,22 +164,15 @@ class UploadedPhotosFragmentViewModel(
             uploadedPhotos = state.uploadedPhotos + uploadedPhotos
           )
         }
-
-        invalidate()
       }
     }
   }
 
   private suspend fun loadPageOfUploadedPhotos(
-    userId: String,
     lastUploadedOn: Long,
     count: Int
   ): List<UploadedPhoto> {
-    if (userId.isEmpty()) {
-      return emptyList()
-    }
-
-    val result = getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastUploadedOn, count)
+    val result = getUploadedPhotosUseCase.loadPageOfPhotos(lastUploadedOn, count)
     when (result) {
       is Either.Value -> {
         return result.value.also { uploadedPhotos ->
@@ -189,6 +182,28 @@ class UploadedPhotosFragmentViewModel(
       is Either.Error -> {
         throw result.error
       }
+    }
+  }
+
+  fun onUpdateReceiverInfo(receivedPhotos: List<ReceivedPhoto>) {
+    if (receivedPhotos.isEmpty()) {
+      return
+    }
+
+    withState { state ->
+      val newPhotos = mutableListOf<UploadedPhoto>()
+
+      for (receivedPhoto in receivedPhotos) {
+        for (uploadedPhoto in state.uploadedPhotos) {
+          newPhotos += if (uploadedPhoto.photoName == receivedPhoto.uploadedPhotoName) {
+            uploadedPhoto.copy(hasReceiverInfo = true)
+          } else {
+            uploadedPhoto.copy()
+          }
+        }
+      }
+
+      setState { copy(uploadedPhotos = newPhotos) }
     }
   }
 
@@ -212,8 +227,6 @@ class UploadedPhotosFragmentViewModel(
             val newPhoto = UploadingPhoto.fromMyPhoto(event.photo, 0)
             setState { copy(takenPhotos = state.takenPhotos + newPhoto) }
           }
-
-          invalidate()
         }
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress -> {
@@ -231,7 +244,6 @@ class UploadedPhotosFragmentViewModel(
 
           newPhotos.add(photoIndex, UploadingPhoto.fromMyPhoto(event.photo, event.progress))
           setState { copy(takenPhotos = newPhotos) }
-          invalidate()
         }
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploaded -> {
@@ -270,7 +282,6 @@ class UploadedPhotosFragmentViewModel(
               uploadedPhotos = newUploadedPhotos
             )
           }
-          invalidate()
         }
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUploadPhoto -> {
@@ -284,7 +295,6 @@ class UploadedPhotosFragmentViewModel(
 
           newPhotos.add(photoIndex, QueuedUpPhoto.fromTakenPhoto(event.photo))
           setState { copy(takenPhotos = newPhotos) }
-          invalidate()
         }
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoCanceled -> {
@@ -296,18 +306,12 @@ class UploadedPhotosFragmentViewModel(
             .map { takenPhoto -> QueuedUpPhoto.fromTakenPhoto(takenPhoto) }
 
           setState { copy(takenPhotos = newPhotos) }
-          invalidate()
         }
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
         Timber.tag(TAG).d("OnEnd")
       }
     }.safe
-  }
-
-  private fun invalidate() {
-    intercom.tell<UploadedPhotosFragment>()
-      .to(UploadedPhotosFragmentEvent.GeneralEvents.Invalidate)
   }
 
   /**

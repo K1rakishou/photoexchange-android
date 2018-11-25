@@ -3,12 +3,16 @@ package com.kirakishou.photoexchange.interactors
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.GetGalleryPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.myRunCatching
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
+import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 open class GetGalleryPhotosUseCase(
+  private val settingsRepository: SettingsRepository,
   private val getGalleryPhotosRepository: GetGalleryPhotosRepository,
   private val timeUtils: TimeUtils,
   dispatchersProvider: DispatchersProvider
@@ -22,13 +26,20 @@ open class GetGalleryPhotosUseCase(
     Timber.tag(TAG).d("sending loadPageOfPhotos request...")
 
     return withContext(coroutineContext) {
-      val time = if (lastUploadedOn != -1L) {
-        lastUploadedOn
-      } else {
-        timeUtils.getTimeFast()
-      }
+      return@withContext myRunCatching {
+        val time = if (lastUploadedOn != -1L) {
+          lastUploadedOn
+        } else {
+          timeUtils.getTimeFast()
+        }
 
-      return@withContext getGalleryPhotosRepository.getPage(time, count)
+        val userId = settingsRepository.getUserId()
+        if (userId.isEmpty()) {
+          throw EmptyUserIdException()
+        }
+
+        return@myRunCatching getGalleryPhotosRepository.getPage(userId, time, count)
+      }
     }
   }
 }

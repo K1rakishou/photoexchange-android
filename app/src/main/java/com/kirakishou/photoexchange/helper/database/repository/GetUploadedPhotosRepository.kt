@@ -5,7 +5,7 @@ import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.source.local.UploadPhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.remote.GetUploadedPhotosRemoteSource
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
-import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
@@ -20,8 +20,17 @@ class GetUploadedPhotosRepository(
     return withContext(coroutineContext) {
       uploadedPhotosLocalSource.deleteOldPhotos()
 
-      return@withContext getPageInternal(time, count, userId)
+      val uploadedPhotos = getPageInternal(time, count, userId)
+      val uploadedPhotosWithNoReceiver = uploadedPhotos
+        .filter { !it.hasReceiverInfo }
         .sortedByDescending { it.photoId }
+
+      val uploadedPhotosWithReceiver = uploadedPhotos
+        .filter { it.hasReceiverInfo }
+        .sortedByDescending { it.photoId }
+
+      //we need to show photos without receiver first and after them photos with receiver
+      return@withContext uploadedPhotosWithNoReceiver + uploadedPhotosWithReceiver
     }
   }
 

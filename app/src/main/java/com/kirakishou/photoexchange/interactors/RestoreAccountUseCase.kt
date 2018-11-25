@@ -8,7 +8,7 @@ import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRep
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.myRunCatching
-import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import kotlinx.coroutines.withContext
 
 open class RestoreAccountUseCase(
