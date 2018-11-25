@@ -71,8 +71,22 @@ class ReceivedPhotosFragmentViewModel(
     setState { ReceivedPhotosFragmentState() }
   }
 
-  fun swapPhotoAndMap() {
-    TODO()
+  fun swapPhotoAndMap(receivedPhotoName: String) {
+    withState { state ->
+      val photoIndex = state.receivedPhotos.indexOfFirst { it.receivedPhotoName == receivedPhotoName }
+      if (photoIndex == -1) {
+        return@withState
+      }
+
+      val oldShowPhoto = state.receivedPhotos[photoIndex].showPhoto
+      val updatedPhoto = state.receivedPhotos[photoIndex]
+        .copy(showPhoto = !oldShowPhoto)
+
+      val updatedPhotos = state.receivedPhotos.toMutableList()
+      updatedPhotos[photoIndex] = updatedPhoto
+
+      setState { copy(receivedPhotos = updatedPhotos) }
+    }
   }
 
   private suspend fun loadReceivedPhotosInternal() {

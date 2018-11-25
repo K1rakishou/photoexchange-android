@@ -115,7 +115,9 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
               receivedPhotoRow {
                 id("received_photo_${photo.photoId}")
                 photo(photo)
-                callback { _ -> viewModel.receivedPhotosFragmentViewModel.swapPhotoAndMap() }
+                callback { model, _, _, _ ->
+                  viewModel.receivedPhotosFragmentViewModel.swapPhotoAndMap(model.photo().receivedPhotoName)
+                }
               }
             }
 
