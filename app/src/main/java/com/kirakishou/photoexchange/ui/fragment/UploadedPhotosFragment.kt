@@ -188,13 +188,13 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
   }
 
   override suspend fun onStateEvent(event: UploadedPhotosFragmentEvent) {
-    if (!isAdded) {
-      return
-    }
-
     when (event) {
       is UploadedPhotosFragmentEvent.GeneralEvents -> {
-        onUiEvent(event)
+        kotlin.run {
+          if (isAdded) {
+            onUiEvent(event)
+          }
+        }
       }
 
       is UploadedPhotosFragmentEvent.PhotoUploadEvent -> {
@@ -204,10 +204,6 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
   }
 
   private suspend fun onUiEvent(event: UploadedPhotosFragmentEvent.GeneralEvents) {
-    if (!isAdded) {
-      return
-    }
-
     when (event) {
       is UploadedPhotosFragmentEvent.GeneralEvents.OnPageSelected -> {
 //          viewModel.uploadedPhotosFragmentViewModel.viewState.reset()

@@ -15,6 +15,7 @@ import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.ReceivedPhotosFragmentViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.UploadedPhotosFragmentViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.PhotosActivityViewModelFactory
+import com.kirakishou.photoexchange.mvp.viewmodel.state.ReceivedPhotosFragmentState
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import dagger.Module
@@ -43,6 +44,12 @@ open class PhotosActivityModule(
 
   @PerActivity
   @Provides
+  fun provideReceivedPhotosFragmentState(): ReceivedPhotosFragmentState {
+    return ReceivedPhotosFragmentState()
+  }
+
+  @PerActivity
+  @Provides
   fun provideUploadedPhotosFragmentViewModel(intercom: PhotosActivityViewModelIntercom,
                                              viewState: UploadedPhotosFragmentState,
                                              takenPhotosRepository: TakenPhotosRepository,
@@ -61,10 +68,14 @@ open class PhotosActivityModule(
 
   @PerActivity
   @Provides
-  fun provideReceivedPhotosFragmentViewModel(settingsRepository: SettingsRepository,
+  fun provideReceivedPhotosFragmentViewModel(intercom: PhotosActivityViewModelIntercom,
+                                             viewState: ReceivedPhotosFragmentState,
+                                             settingsRepository: SettingsRepository,
                                              getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
                                              dispatchersProvider: DispatchersProvider): ReceivedPhotosFragmentViewModel {
     return ReceivedPhotosFragmentViewModel(
+      viewState,
+      intercom,
       settingsRepository,
       getReceivedPhotosUseCase,
       dispatchersProvider

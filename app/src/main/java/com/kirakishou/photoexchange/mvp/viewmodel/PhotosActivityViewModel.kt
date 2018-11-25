@@ -33,7 +33,6 @@ class PhotosActivityViewModel(
   private val TAG = "PhotosActivityViewModel"
 
   init {
-    receivedPhotosFragmentViewModel.intercom = intercom
     galleryFragmentViewModel.intercom = intercom
   }
 
@@ -41,7 +40,7 @@ class PhotosActivityViewModel(
     Timber.tag(TAG).d("onCleared()")
 
     uploadedPhotosFragmentViewModel.clear()
-    receivedPhotosFragmentViewModel.onCleared()
+    receivedPhotosFragmentViewModel.clear()
     galleryFragmentViewModel.onCleared()
 
     super.onCleared()

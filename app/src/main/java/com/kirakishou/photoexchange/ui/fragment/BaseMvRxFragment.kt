@@ -102,7 +102,7 @@ abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
     clearOnPauseCompositeDisposable.clear()
   }
 
-  fun doInvalidate() {
+  protected fun doInvalidate() {
     invalidationActor.offer(Unit)
   }
 

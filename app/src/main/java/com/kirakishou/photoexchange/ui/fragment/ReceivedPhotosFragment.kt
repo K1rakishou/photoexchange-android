@@ -2,9 +2,11 @@ package com.kirakishou.photoexchange.ui.fragment
 
 
 import android.os.Bundle
-import androidx.recyclerview.widget.GridLayoutManager
+import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import butterknife.BindView
+import com.airbnb.epoxy.AsyncEpoxyController
+import com.airbnb.mvrx.withState
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.extension.safe
@@ -13,15 +15,10 @@ import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
-import com.kirakishou.photoexchange.mvp.model.other.Constants.DEFAULT_ADAPTER_ITEM_WIDTH
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapter
-import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapterSpanSizeLookup
-import com.kirakishou.photoexchange.ui.widget.EndlessRecyclerOnScrollListener
-import core.ErrorCode
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
@@ -32,7 +29,7 @@ import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotosFragmentEvent>, IntercomListener {
+class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPhotosFragmentEvent>, IntercomListener {
 
   @BindView(R.id.received_photos_list)
   lateinit var receivedPhotosList: RecyclerView
@@ -43,40 +40,28 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
   @Inject
   lateinit var viewModel: PhotosActivityViewModel
 
-  lateinit var adapter: ReceivedPhotosAdapter
-  lateinit var endlessScrollListener: EndlessRecyclerOnScrollListener
-
   private val TAG = "ReceivedPhotosFragment"
-  private val PHOTO_ADAPTER_VIEW_WIDTH = DEFAULT_ADAPTER_ITEM_WIDTH
-
-  private val loadMoreSubject = PublishSubject.create<Unit>()
   private val scrollSubject = PublishSubject.create<Boolean>()
   private val adapterClicksSubject = PublishSubject.create<ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent>()
 
-  private var photosPerPage = 0
+  private val receivedPhotoAdapterViewWidth = Constants.DEFAULT_ADAPTER_ITEM_WIDTH
+  private val columnsCount by lazy { AndroidUtils.calculateNoOfColumns(requireContext(), receivedPhotoAdapterViewWidth) }
 
-  override fun getContentView(): Int = R.layout.fragment_received_photos
+  override fun getFragmentLayoutId(): Int = R.layout.fragment_received_photos
 
-  override fun onFragmentViewCreated(savedInstanceState: Bundle?) {
-    viewModel.receivedPhotosFragmentViewModel.viewState.reset()
+  override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    super.onViewCreated(view, savedInstanceState)
+
+    viewModel.receivedPhotosFragmentViewModel.photosPerPage = columnsCount * Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
+
+    viewModel.receivedPhotosFragmentViewModel.subscribe(this, true) {
+      doInvalidate()
+    }
 
     launch { initRx() }
-    initRecyclerView()
-  }
-
-  override fun onFragmentViewDestroy() {
   }
 
   private suspend fun initRx() {
-    compositeDisposable += viewModel.receivedPhotosFragmentViewModel.knownErrors
-      .subscribe({ errorCode -> handleKnownErrors(errorCode) })
-
-    compositeDisposable += viewModel.receivedPhotosFragmentViewModel.unknownErrors
-      .subscribe({ error -> handleUnknownErrors(error) })
-
-    compositeDisposable += loadMoreSubject
-      .subscribe({ viewModel.receivedPhotosFragmentViewModel.loadMorePhotos() })
-
     compositeDisposable += adapterClicksSubject
       .subscribeOn(AndroidSchedulers.mainThread())
       .subscribe({ click -> handleAdapterClick(click) }, { Timber.tag(TAG).e(it) })
@@ -90,27 +75,17 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
           .that(PhotosActivityEvent.ScrollEvent(isScrollingDown))
       })
 
-    viewModel.intercom.receivedPhotosFragmentEvents.listen().consumeEach { event ->
-      onStateEvent(event)
+    launch {
+      viewModel.intercom.receivedPhotosFragmentEvents.listen().consumeEach { event ->
+        onStateEvent(event)
+      }
     }
   }
 
-  private fun initRecyclerView() {
-    val columnsCount = AndroidUtils.calculateNoOfColumns(requireContext(), PHOTO_ADAPTER_VIEW_WIDTH)
+  override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
+    return@simpleController withState(viewModel.receivedPhotosFragmentViewModel) { state ->
 
-    adapter = ReceivedPhotosAdapter(requireContext(), imageLoader, adapterClicksSubject)
-
-    val layoutManager = GridLayoutManager(requireContext(), columnsCount)
-    layoutManager.spanSizeLookup = ReceivedPhotosAdapterSpanSizeLookup(adapter, columnsCount)
-
-    photosPerPage = Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT * layoutManager.spanCount
-    //TODO: visible threshold should be less than photosPerPage count
-    endlessScrollListener = EndlessRecyclerOnScrollListener(TAG, layoutManager, 2, loadMoreSubject, scrollSubject)
-
-    receivedPhotosList.layoutManager = layoutManager
-    receivedPhotosList.adapter = adapter
-    receivedPhotosList.clearOnScrollListeners()
-    receivedPhotosList.addOnScrollListener(endlessScrollListener)
+    }
   }
 
   private fun handleAdapterClick(click: ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent) {
@@ -126,109 +101,42 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
   }
 
   override suspend fun onStateEvent(event: ReceivedPhotosFragmentEvent) {
-    if (!isAdded) {
-      return
-    }
 
     when (event) {
       is ReceivedPhotosFragmentEvent.GeneralEvents -> {
-        onUiEvent(event)
+        kotlin.run {
+          if (isAdded) {
+            onUiEvent(event)
+          }
+        }
       }
       is ReceivedPhotosFragmentEvent.ReceivePhotosEvent -> {
+        //TODO: move to viewModel
         onReceivePhotosEvent(event)
       }
     }.safe
   }
 
-  private fun onUiEvent(event: ReceivedPhotosFragmentEvent.GeneralEvents) {
-    if (!isAdded) {
-      return
-    }
-
-    receivedPhotosList.post {
-      when (event) {
-        is ReceivedPhotosFragmentEvent.GeneralEvents.ScrollToTop -> {
-          receivedPhotosList.scrollToPosition(0)
-        }
-        is ReceivedPhotosFragmentEvent.GeneralEvents.ShowProgressFooter -> {
-          showProgressFooter()
-        }
-        is ReceivedPhotosFragmentEvent.GeneralEvents.HideProgressFooter -> {
-          hideProgressFooter()
-        }
-        is ReceivedPhotosFragmentEvent.GeneralEvents.OnPageSelected -> {
-          viewModel.receivedPhotosFragmentViewModel.viewState.reset()
-        }
-        is ReceivedPhotosFragmentEvent.GeneralEvents.PageIsLoading -> {
-        }
-        is ReceivedPhotosFragmentEvent.GeneralEvents.ShowReceivedPhotos -> {
-          addReceivedPhotosToAdapter(event.photos)
-        }
-      }.safe
-    }
+  private suspend fun onUiEvent(event: ReceivedPhotosFragmentEvent.GeneralEvents) {
+    when (event) {
+      is ReceivedPhotosFragmentEvent.GeneralEvents.ScrollToTop -> {
+        recyclerView.scrollToPosition(0)
+      }
+      is ReceivedPhotosFragmentEvent.GeneralEvents.OnPageSelected -> {
+      }
+    }.safe
   }
 
   private fun onReceivePhotosEvent(event: ReceivedPhotosFragmentEvent.ReceivePhotosEvent) {
-    if (!isAdded) {
-      return
-    }
-
-    receivedPhotosList.post {
-      when (event) {
-        is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived -> {
-          //TODO:
+    when (event) {
+      is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived -> {
+        //TODO:
 //          adapter.addReceivedPhoto(event.receivedPhoto)
-        }
-        is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
-          //TODO: do nothing here???
-        }
-      }.safe
-    }
-  }
-
-  private fun addReceivedPhotosToAdapter(receivedPhotos: List<ReceivedPhoto>) {
-    if (!isAdded) {
-      return
-    }
-
-    receivedPhotosList.post {
-      if (receivedPhotos.isNotEmpty()) {
-        viewModel.receivedPhotosFragmentViewModel.viewState.updateFromReceivedPhotos(receivedPhotos)
-        adapter.addReceivedPhotos(receivedPhotos)
       }
-
-      endlessScrollListener.pageLoaded()
-
-      if (adapter.itemCount == 0) {
-        adapter.showMessageFooter("You have not received any photos yet")
-        return@post
+      is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
+        //TODO: do nothing here???
       }
-
-      if (receivedPhotos.size < photosPerPage) {
-        adapter.showMessageFooter("End of the list reached")
-        endlessScrollListener.reachedEnd()
-      }
-    }
-  }
-
-  private fun showProgressFooter() {
-    if (!isAdded) {
-      return
-    }
-
-    receivedPhotosList.post {
-      adapter.showProgressFooter()
-    }
-  }
-
-  private fun hideProgressFooter() {
-    if (!isAdded) {
-      return
-    }
-
-    receivedPhotosList.post {
-      adapter.clearFooter()
-    }
+    }.safe
   }
 
   private fun switchShowMapOrPhoto(photoName: String) {
@@ -237,18 +145,9 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
     }
 
     receivedPhotosList.post {
-      adapter.switchShowMapOrPhoto(photoName)
+      //TODO
+//      adapter.switchShowMapOrPhoto(photoName)
     }
-  }
-
-  private fun handleKnownErrors(errorCode: ErrorCode) {
-    hideProgressFooter()
-    (activity as? PhotosActivity)?.showKnownErrorMessage(errorCode)
-  }
-
-  private fun handleUnknownErrors(error: Throwable) {
-    (activity as? PhotosActivity)?.showUnknownErrorMessage(error)
-    Timber.tag(TAG).e(error)
   }
 
   override fun resolveDaggerDependency() {

@@ -79,12 +79,12 @@ object AndroidUtils {
 
   fun calculateNoOfColumns(context: Context, viewWidth: Int): Int {
     val screenSize = getScreenSize(context)
-    val dp = dpToPx(viewWidth.toFloat(), context).toInt()
+    val viewWidthInDp = dpToPx(viewWidth.toFloat(), context).toInt()
 
     return when {
-      screenSize / 4 >= dp -> 4
-      screenSize / 3 >= dp -> 3
-      screenSize / 2 >= dp -> 2
+      screenSize / 4 >= viewWidthInDp -> 4
+      screenSize / 3 >= viewWidthInDp -> 3
+      screenSize / 2 >= viewWidthInDp -> 2
       else -> 1
     }
   }

@@ -30,6 +30,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
@@ -57,6 +58,10 @@ class UploadedPhotosFragmentViewModel(
   init {
     viewModelActor = actor(capacity = Channel.UNLIMITED) {
       consumeEach { action ->
+        if (!isActive) {
+          return@consumeEach
+        }
+
         when (action) {
           ActorAction.ResetState -> resetStateInternal()
           is ActorAction.CancelPhotoUploading -> cancelPhotoUploadingInternal(action.photoId)

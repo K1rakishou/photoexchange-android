@@ -13,7 +13,8 @@ object ReceivedPhotosMapper {
         receivedPhotoEntity.uploadedPhotoName!!,
         receivedPhotoEntity.receivedPhotoName!!,
         receivedPhotoEntity.lon!!,
-        receivedPhotoEntity.lat!!
+        receivedPhotoEntity.lat!!,
+        receivedPhotoEntity.uploadedOn!!
       )
     }
 
@@ -30,7 +31,9 @@ object ReceivedPhotosMapper {
           receivedPhotosResponse.uploadedPhotoName,
           receivedPhotosResponse.receivedPhotoName,
           receivedPhotosResponse.lon,
-          receivedPhotosResponse.lat
+          receivedPhotosResponse.lat,
+          //TODO
+          -1L
         )
       }
 
@@ -61,7 +64,9 @@ object ReceivedPhotosMapper {
           receivedPhotosResponse.uploadedPhotoName,
           receivedPhotosResponse.receivedPhotoName,
           receivedPhotosResponse.lon,
-          receivedPhotosResponse.lat
+          receivedPhotosResponse.lat,
+          //TODO
+          -1L
         )
       }
 
