@@ -47,6 +47,7 @@ object ReceivedPhotosMapper {
           receivedPhotosResponse.receivedPhotoName,
           receivedPhotosResponse.lon,
           receivedPhotosResponse.lat,
+          receivedPhotosResponse.uploadedOn,
           time
         )
       }
@@ -79,6 +80,7 @@ object ReceivedPhotosMapper {
           receivedPhotosResponse.receivedPhotoName,
           receivedPhotosResponse.lon,
           receivedPhotosResponse.lat,
+          receivedPhotosResponse.uploadedOn,
           time
         )
       }
@@ -90,12 +92,13 @@ object ReceivedPhotosMapper {
   }
 
   object FromObject {
-    fun toReceivedPhotoEntity(time: Long, receivedPhotos: ReceivedPhotosResponse.ReceivedPhotoResponseData): ReceivedPhotoEntity {
+    fun toReceivedPhotoEntity(time: Long, receivedPhoto: ReceivedPhotosResponse.ReceivedPhotoResponseData): ReceivedPhotoEntity {
       return ReceivedPhotoEntity.create(
-        receivedPhotos.uploadedPhotoName,
-        receivedPhotos.receivedPhotoName,
-        receivedPhotos.lon,
-        receivedPhotos.lat,
+        receivedPhoto.uploadedPhotoName,
+        receivedPhoto.receivedPhotoName,
+        receivedPhoto.lon,
+        receivedPhoto.lat,
+        receivedPhoto.uploadedOn,
         time
       )
     }
