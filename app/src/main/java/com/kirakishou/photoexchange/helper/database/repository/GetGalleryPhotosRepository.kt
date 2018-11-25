@@ -1,25 +1,20 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
-import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosInfoMapper
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosMapper
 import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoInfoLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoLocalSource
-import com.kirakishou.photoexchange.helper.database.source.local.SettingsLocalSource
 import com.kirakishou.photoexchange.helper.database.source.remote.GalleryPhotoInfoRemoteSource
 import com.kirakishou.photoexchange.helper.database.source.remote.GalleryPhotoRemoteSource
-import com.kirakishou.photoexchange.helper.myRunCatching
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.GalleryPhotoInfo
-import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import kotlinx.coroutines.withContext
-import java.lang.Exception
 
 open class GetGalleryPhotosRepository(
   private val database: MyDatabase,
-  private val settingsLocalSource: SettingsLocalSource,
   private val galleryPhotoRemoteSource: GalleryPhotoRemoteSource,
   private val galleryPhotoLocalSource: GalleryPhotoLocalSource,
   private val galleryPhotoInfoRemoteSource: GalleryPhotoInfoRemoteSource,
@@ -28,25 +23,22 @@ open class GetGalleryPhotosRepository(
 ) : BaseRepository(dispatchersProvider) {
   private val TAG = "GetGalleryPhotosRepository"
 
-  suspend fun getPage(time: Long, count: Int): Either<Exception, List<GalleryPhoto>> {
+  suspend fun getPage(userId: String, time: Long, count: Int): List<GalleryPhoto> {
     return withContext(coroutineContext) {
-      return@withContext myRunCatching {
-        deleteOld()
+      deleteOld()
 
-        val galleryPhotos = getPageOfGalleryPhotos(time, count)
-        val galleryPhotoIds = galleryPhotos.map { it.galleryPhotoId }
+      val galleryPhotos = getPageOfGalleryPhotos(time, count)
+      val galleryPhotoIds = galleryPhotos.map { it.galleryPhotoId }
 
-        val userId = settingsLocalSource.getUserId()
-        val galleryPhotosInfo = getGalleryPhotosInfo(userId, galleryPhotoIds)
+      val galleryPhotosInfo = getGalleryPhotosInfo(userId, galleryPhotoIds)
 
-        for (galleryPhoto in galleryPhotos) {
-          galleryPhoto.galleryPhotoInfo = galleryPhotosInfo
-            .firstOrNull { it.galleryPhotoId == galleryPhoto.galleryPhotoId }
-        }
-
-        return@myRunCatching galleryPhotos
-          .sortedByDescending { it.galleryPhotoId }
+      for (galleryPhoto in galleryPhotos) {
+        galleryPhoto.galleryPhotoInfo = galleryPhotosInfo
+          .firstOrNull { it.galleryPhotoId == galleryPhoto.galleryPhotoId }
       }
+
+      return@withContext galleryPhotos
+        .sortedByDescending { it.galleryPhotoId }
     }
   }
 

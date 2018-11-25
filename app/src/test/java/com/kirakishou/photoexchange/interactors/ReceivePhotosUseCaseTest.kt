@@ -6,7 +6,7 @@ import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRep
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.mvp.model.FindPhotosData
-import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
+import com.kirakishou.photoexchange.helper.exception.ApiErrorException
 import com.nhaarman.mockito_kotlin.any
 import core.ErrorCode
 import kotlinx.coroutines.runBlocking

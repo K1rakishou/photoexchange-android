@@ -22,7 +22,6 @@ import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
-import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -142,7 +141,6 @@ class UploadedPhotosFragmentViewModel(
       }
 
       launch {
-        val userId = settingsRepository.getUserId()
         val lastUploadedOn = state.uploadedPhotos
           .lastOrNull()
           ?.uploadedOn
@@ -151,7 +149,7 @@ class UploadedPhotosFragmentViewModel(
         setState { copy(uploadedPhotosRequest = Loading()) }
 
         val request = try {
-          Success(loadPageOfUploadedPhotos(userId, lastUploadedOn, photosPerPage))
+          Success(loadPageOfUploadedPhotos(lastUploadedOn, photosPerPage))
         } catch (error: Throwable) {
           Fail<List<UploadedPhoto>>(error)
         }
@@ -171,15 +169,10 @@ class UploadedPhotosFragmentViewModel(
   }
 
   private suspend fun loadPageOfUploadedPhotos(
-    userId: String,
     lastUploadedOn: Long,
     count: Int
   ): List<UploadedPhoto> {
-    if (userId.isEmpty()) {
-      return emptyList()
-    }
-
-    val result = getUploadedPhotosUseCase.loadPageOfPhotos(userId, lastUploadedOn, count)
+    val result = getUploadedPhotosUseCase.loadPageOfPhotos(lastUploadedOn, count)
     when (result) {
       is Either.Value -> {
         return result.value.also { uploadedPhotos ->

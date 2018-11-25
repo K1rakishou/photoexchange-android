@@ -96,14 +96,13 @@ class ReceivedPhotosFragmentViewModel(
       }
 
       launch {
-        val userId = settingsRepository.getUserId()
         val lastUploadedOn = state.receivedPhotos
           .lastOrNull()
           ?.uploadedOn
           ?: -1L
 
         val request = try {
-          Success(loadPageOfReceivedPhotos(userId, lastUploadedOn, photosPerPage))
+          Success(loadPageOfReceivedPhotos(lastUploadedOn, photosPerPage))
         } catch (error: Throwable) {
           Fail<List<ReceivedPhoto>>(error)
         }
@@ -123,15 +122,10 @@ class ReceivedPhotosFragmentViewModel(
   }
 
   private suspend fun loadPageOfReceivedPhotos(
-    userId: String,
     lastUploadedOn: Long,
     photosPerPage: Int
   ): List<ReceivedPhoto> {
-    if (userId.isEmpty()) {
-      return emptyList()
-    }
-
-    val result = getReceivedPhotosUseCase.loadPageOfPhotos(userId, lastUploadedOn, photosPerPage)
+    val result = getReceivedPhotosUseCase.loadPageOfPhotos(lastUploadedOn, photosPerPage)
     when (result) {
       is Either.Value -> {
         intercom.tell<UploadedPhotosFragment>()

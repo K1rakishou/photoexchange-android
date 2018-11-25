@@ -8,8 +8,8 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.GetGalleryPhotosRepository
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
-import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
-import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.exception.ApiErrorException
+import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import core.ErrorCode
 import kotlinx.coroutines.runBlocking
 import net.response.GalleryPhotosResponse

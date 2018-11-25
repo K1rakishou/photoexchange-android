@@ -9,8 +9,8 @@ import com.kirakishou.photoexchange.helper.database.source.local.UploadPhotosLoc
 import com.kirakishou.photoexchange.helper.database.source.remote.ReceivePhotosRemoteSource
 import com.kirakishou.photoexchange.interactors.ReceivePhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.exception.ApiErrorException
-import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.exception.ApiErrorException
+import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import kotlinx.coroutines.withContext
 import net.response.ReceivedPhotosResponse
 import timber.log.Timber

@@ -1,22 +1,18 @@
 package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.repository.GetReceivedPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.myRunCatching
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
 import kotlinx.coroutines.withContext
-import net.response.ReceivedPhotosResponse
 import timber.log.Timber
 
 open class GetReceivedPhotosUseCase(
+  private val settingsRepository: SettingsRepository,
   private val getReceivedPhotosRepository: GetReceivedPhotosRepository,
   private val timeUtils: TimeUtils,
   dispatchersProvider: DispatchersProvider
@@ -25,7 +21,6 @@ open class GetReceivedPhotosUseCase(
   private val TAG = "GetReceivedPhotosUseCase"
 
   suspend fun loadPageOfPhotos(
-    userId: String,
     lastUploadedOn: Long,
     count: Int
   ): Either<Exception, List<ReceivedPhoto>> {
@@ -37,6 +32,11 @@ open class GetReceivedPhotosUseCase(
           lastUploadedOn
         } else {
           timeUtils.getTimeFast()
+        }
+
+        val userId = settingsRepository.getUserId()
+        if (userId.isEmpty()) {
+          throw EmptyUserIdException()
         }
 
         return@myRunCatching getReceivedPhotosRepository.getPage(userId, time, count)

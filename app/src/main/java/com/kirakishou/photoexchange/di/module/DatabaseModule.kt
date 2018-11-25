@@ -63,12 +63,6 @@ open class DatabaseModule(
 
   @Singleton
   @Provides
-  open fun provideSettingsLocalSource(database: MyDatabase): SettingsLocalSource {
-    return SettingsLocalSource(database)
-  }
-
-  @Singleton
-  @Provides
   open fun provideReceivePhotosLocalSource(database: MyDatabase,
                                            timeUtils: TimeUtils): ReceivePhotosLocalSource {
     return ReceivePhotosLocalSource(database, timeUtils, RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME)
@@ -184,7 +178,6 @@ open class DatabaseModule(
   @Singleton
   @Provides
   open fun provideGalleryPhotoRepository(database: MyDatabase,
-                                         settingsLocalSource: SettingsLocalSource,
                                          galleryPhotoRemoteSource: GalleryPhotoRemoteSource,
                                          galleryPhotoLocalSource: GalleryPhotoLocalSource,
                                          galleryPhotoInfoRemoteSource: GalleryPhotoInfoRemoteSource,
@@ -192,7 +185,6 @@ open class DatabaseModule(
                                          dispatchersProvider: DispatchersProvider): GetGalleryPhotosRepository {
     return GetGalleryPhotosRepository(
       database,
-      settingsLocalSource,
       galleryPhotoRemoteSource,
       galleryPhotoLocalSource,
       galleryPhotoInfoRemoteSource,

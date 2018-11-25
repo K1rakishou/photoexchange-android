@@ -7,7 +7,7 @@ import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoInf
 import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoLocalSource
 import com.kirakishou.photoexchange.helper.database.source.remote.ReportPhotoRemoteSource
 import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import kotlinx.coroutines.withContext
 import java.lang.Exception
 

@@ -7,7 +7,7 @@ import com.kirakishou.photoexchange.helper.database.source.local.ReceivePhotosLo
 import com.kirakishou.photoexchange.helper.database.source.local.UploadPhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.remote.GetReceivedPhotosRemoteSource
 import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import kotlinx.coroutines.withContext
 import net.response.ReceivedPhotosResponse
 

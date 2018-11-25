@@ -12,7 +12,7 @@ import com.kirakishou.photoexchange.helper.database.source.local.TempFileLocalSo
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext

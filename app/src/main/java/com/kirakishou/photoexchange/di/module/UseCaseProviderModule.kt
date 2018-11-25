@@ -29,10 +29,16 @@ class UseCaseProviderModule {
 
   @Singleton
   @Provides
-  fun provideGetGalleryPhotosUseCase(getGalleryPhotosRepository: GetGalleryPhotosRepository,
+  fun provideGetGalleryPhotosUseCase(settingsRepository: SettingsRepository,
+                                     getGalleryPhotosRepository: GetGalleryPhotosRepository,
                                      timeUtils: TimeUtils,
                                      dispatchersProvider: DispatchersProvider): GetGalleryPhotosUseCase {
-    return GetGalleryPhotosUseCase(getGalleryPhotosRepository, timeUtils, dispatchersProvider)
+    return GetGalleryPhotosUseCase(
+      settingsRepository,
+      getGalleryPhotosRepository,
+      timeUtils,
+      dispatchersProvider
+    )
   }
 
   @Singleton
@@ -59,18 +65,30 @@ class UseCaseProviderModule {
 
   @Singleton
   @Provides
-  fun provideGetUploadedPhotosUseCase(getUploadedPhotosRepository: GetUploadedPhotosRepository,
+  fun provideGetUploadedPhotosUseCase(settingsRepository: SettingsRepository,
+                                      getUploadedPhotosRepository: GetUploadedPhotosRepository,
                                       timeUtils: TimeUtils,
                                       dispatchersProvider: DispatchersProvider): GetUploadedPhotosUseCase {
-    return GetUploadedPhotosUseCase(getUploadedPhotosRepository, timeUtils, dispatchersProvider)
+    return GetUploadedPhotosUseCase(
+      settingsRepository,
+      getUploadedPhotosRepository,
+      timeUtils,
+      dispatchersProvider
+    )
   }
 
   @Singleton
   @Provides
-  fun provideGetReceivedPhotosUseCase(getReceivedPhotosRepository: GetReceivedPhotosRepository,
+  fun provideGetReceivedPhotosUseCase(settingsRepository: SettingsRepository,
+                                      getReceivedPhotosRepository: GetReceivedPhotosRepository,
                                       timeUtils: TimeUtils,
                                       dispatchersProvider: DispatchersProvider): GetReceivedPhotosUseCase {
-    return GetReceivedPhotosUseCase(getReceivedPhotosRepository, timeUtils, dispatchersProvider)
+    return GetReceivedPhotosUseCase(
+      settingsRepository,
+      getReceivedPhotosRepository,
+      timeUtils,
+      dispatchersProvider
+    )
   }
 
   @Singleton
