@@ -175,8 +175,9 @@ class ReceivedPhotosFragment : BaseFragment(), StateEventListener<ReceivedPhotos
 
     receivedPhotosList.post {
       when (event) {
-        is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotoReceived -> {
-          adapter.addReceivedPhoto(event.receivedPhoto)
+        is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived -> {
+          //TODO:
+//          adapter.addReceivedPhoto(event.receivedPhoto)
         }
         is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
           //TODO: do nothing here???

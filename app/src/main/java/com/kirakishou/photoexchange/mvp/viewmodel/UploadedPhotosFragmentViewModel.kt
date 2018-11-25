@@ -14,6 +14,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.photo.QueuedUpPhoto
@@ -194,6 +195,29 @@ class UploadedPhotosFragmentViewModel(
       is Either.Error -> {
         throw result.error
       }
+    }
+  }
+
+  fun onUpdateReceiverInfo(uploadedPhotoNamesToUpdate: List<String>) {
+    if (uploadedPhotoNamesToUpdate.isEmpty()) {
+      return
+    }
+
+    withState { state ->
+      val newPhotos = mutableListOf<UploadedPhoto>()
+
+      for (uploadedPhotoName in uploadedPhotoNamesToUpdate) {
+        for (uploadedPhoto in state.uploadedPhotos) {
+          newPhotos += if (uploadedPhoto.photoName == uploadedPhotoName) {
+            uploadedPhoto.copy(hasReceiverInfo = true)
+          } else {
+            uploadedPhoto.copy()
+          }
+        }
+      }
+
+      setState { copy(uploadedPhotos = newPhotos) }
+      invalidate()
     }
   }
 

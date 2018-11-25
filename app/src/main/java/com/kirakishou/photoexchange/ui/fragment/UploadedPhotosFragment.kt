@@ -7,7 +7,6 @@ import com.airbnb.epoxy.AsyncEpoxyController
 import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.helper.PhotoSize
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
@@ -209,9 +208,9 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
       is UploadedPhotosFragmentEvent.GeneralEvents.OnPageSelected -> {
 //          viewModel.uploadedPhotosFragmentViewModel.viewState.reset()
       }
-      is UploadedPhotosFragmentEvent.GeneralEvents.PhotoReceived -> {
-        //TODO
-//          adapter.updateUploadedPhotoSetReceiverInfo(event.takenPhotoName)
+      is UploadedPhotosFragmentEvent.GeneralEvents.PhotosReceived -> {
+        val uploadedPhotoNamesList = event.receivedPhotos.map { it.second }
+        viewModel.uploadedPhotosFragmentViewModel.onUpdateReceiverInfo(uploadedPhotoNamesList)
       }
       is UploadedPhotosFragmentEvent.GeneralEvents.Invalidate -> {
         //FIXME: Hack to update the view after changing the state manually

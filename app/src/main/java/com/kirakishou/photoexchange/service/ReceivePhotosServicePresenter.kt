@@ -63,10 +63,7 @@ open class ReceivePhotosServicePresenter(
       return
     }
 
-    for ((receivedPhoto, takenPhotoName) in receivedPhotos) {
-      sendEvent(ReceivePhotoEvent.OnReceivedPhoto(receivedPhoto, takenPhotoName))
-    }
-
+    sendEvent(ReceivePhotoEvent.OnPhotosReceived(receivedPhotos))
     sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Success()))
   }
 
@@ -106,8 +103,7 @@ open class ReceivePhotosServicePresenter(
   }
 
   sealed class ReceivePhotoEvent {
-    class OnReceivedPhoto(val receivedPhoto: ReceivedPhoto,
-                          val takenPhotoName: String) : ReceivePhotoEvent()
+    class OnPhotosReceived(val receivedPhotos: List<Pair<ReceivedPhoto, String>>) : ReceivePhotoEvent()
     class OnError(val error: Throwable) : ReceivePhotoEvent()
     class OnNewNotification(val type: NotificationType) : ReceivePhotoEvent()
     class RemoveNotification : ReceivePhotoEvent()

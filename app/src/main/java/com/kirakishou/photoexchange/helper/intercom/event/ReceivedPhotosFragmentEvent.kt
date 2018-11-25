@@ -13,9 +13,7 @@ sealed class ReceivedPhotosFragmentEvent : BaseEvent {
   }
 
   sealed class ReceivePhotosEvent : ReceivedPhotosFragmentEvent() {
-    class PhotoReceived(val receivedPhoto: ReceivedPhoto,
-                        val takenPhotoName: String) : ReceivePhotosEvent()
-
+    class PhotosReceived(val receivedPhotos: List<Pair<ReceivedPhoto, String>>) : ReceivePhotosEvent()
     class OnFailed(val error: Throwable) : ReceivePhotosEvent()
   }
 }

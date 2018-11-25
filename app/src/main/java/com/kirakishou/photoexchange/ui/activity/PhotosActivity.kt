@@ -330,11 +330,11 @@ class PhotosActivity : BaseActivity(), PhotoUploadingCallback, ReceivePhotosServ
 
   override fun onReceivePhotoEvent(event: ReceivedPhotosFragmentEvent.ReceivePhotosEvent) {
     when (event) {
-      is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotoReceived -> {
+      is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived -> {
         viewModel.intercom.tell<UploadedPhotosFragment>()
-          .that(UploadedPhotosFragmentEvent.GeneralEvents.PhotoReceived(event.takenPhotoName))
+          .that(UploadedPhotosFragmentEvent.GeneralEvents.PhotosReceived(event.receivedPhotos))
         viewModel.intercom.tell<ReceivedPhotosFragment>()
-          .that(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotoReceived(event.receivedPhoto, event.takenPhotoName))
+          .that(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived(event.receivedPhotos))
         showPhotoAnswerFoundSnackbar()
       }
       is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
