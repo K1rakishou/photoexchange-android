@@ -119,14 +119,14 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
       when (state.uploadedPhotosRequest) {
         is Loading,
         is Success -> {
-          Timber.tag(TAG).d("Success uploaded photos")
-
           if (state.uploadedPhotosRequest is Loading) {
             Timber.tag(TAG).d("Loading uploaded photos")
 
             loadingRow {
               id("uploaded_photos_loading_row")
             }
+          } else {
+            Timber.tag(TAG).d("Success uploaded photos")
           }
 
           if (state.uploadedPhotos.isEmpty()) {

@@ -4,6 +4,7 @@ import androidx.fragment.app.FragmentActivity
 import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
 import com.kirakishou.photoexchange.helper.Either
+import com.kirakishou.photoexchange.helper.PhotoSize
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.extension.safe
@@ -41,6 +42,7 @@ class ReceivedPhotosFragmentViewModel(
   private val viewModelActor: SendChannel<ActorAction>
 
   var photosPerPage: Int = Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
+  var photoSize: PhotoSize = PhotoSize.Medium
 
   override val coroutineContext: CoroutineContext
     get() = job + dispatchersProvider.GENERAL()
@@ -65,6 +67,14 @@ class ReceivedPhotosFragmentViewModel(
     launch { viewModelActor.send(ActorAction.LoadReceivedPhotos) }
   }
 
+  fun resetState() {
+    setState { ReceivedPhotosFragmentState() }
+  }
+
+  fun swapPhotoAndMap() {
+    TODO()
+  }
+
   private suspend fun loadReceivedPhotosInternal() {
     withState { state ->
       if (state.receivedPhotosRequest is Loading) {
@@ -85,9 +95,11 @@ class ReceivedPhotosFragmentViewModel(
         }
 
         val receivedPhotos = request() ?: emptyList()
+        val isEndReached = receivedPhotos.isEmpty() || receivedPhotos.size % photosPerPage != 0
 
         setState {
           copy(
+            isEndReached = isEndReached,
             receivedPhotosRequest = request,
             receivedPhotos = receivedPhotos
           )
@@ -110,7 +122,10 @@ class ReceivedPhotosFragmentViewModel(
       is Either.Value -> {
         intercom.tell<UploadedPhotosFragment>()
           .to(UploadedPhotosFragmentEvent.GeneralEvents.UpdateReceiverInfo(result.value))
-        return result.value
+
+        return result.value.also { receivedPhotos ->
+          receivedPhotos.map { receivedPhoto -> receivedPhoto.copy(photoSize = photoSize) }
+        }
       }
       is Either.Error -> {
         throw result.error
