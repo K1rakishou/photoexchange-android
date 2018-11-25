@@ -203,9 +203,6 @@ class PhotosActivity : BaseActivity(), PhotoUploadingCallback, ReceivePhotosServ
     withContext(Dispatchers.Default) {
       viewModel.updateGpsPermissionGranted(granted)
     }
-
-    viewModel.intercom.tell<UploadedPhotosFragment>()
-      .to(UploadedPhotosFragmentEvent.GeneralEvents.AfterPermissionRequest())
   }
 
   private fun restoreUploadedPhotosFragmentFromViewState(savedInstanceState: Bundle?) {

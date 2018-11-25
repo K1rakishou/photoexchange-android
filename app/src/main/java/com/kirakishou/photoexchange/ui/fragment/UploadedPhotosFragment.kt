@@ -78,31 +78,6 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
   }
 
   private suspend fun initRx() {
-//    compositeDisposable += viewModel.uploadedPhotosFragmentViewModel.knownErrors
-//      .subscribe({ errorCode -> handleKnownErrors(errorCode) })
-//
-//    compositeDisposable += viewModel.uploadedPhotosFragmentViewModel.unknownErrors
-//      .subscribe({ error -> handleUnknownErrors(error) })
-//
-//    compositeDisposable += failedToUploadPhotoButtonClicksSubject
-//      .observeOn(AndroidSchedulers.mainThread())
-//      .subscribe({
-//        viewModel.intercom.tell<PhotosActivity>()
-//          .that(PhotosActivityEvent.FailedToUploadPhotoButtonClicked(it))
-//      }, { Timber.tag(TAG).e(it) })
-//
-//    compositeDisposable += loadMoreSubject
-//      .subscribe({ viewModel.uploadedPhotosFragmentViewModel.loadMorePhotos() })
-//
-//    compositeDisposable += scrollSubject
-//      .subscribeOn(Schedulers.io())
-//      .distinctUntilChanged()
-//      .throttleFirst(200, TimeUnit.MILLISECONDS)
-//      .subscribe({ isScrollingDown ->
-//        viewModel.intercom.tell<PhotosActivity>()
-//          .that(PhotosActivityEvent.ScrollEvent(isScrollingDown))
-//      })
-//
     launch {
       viewModel.intercom.uploadedPhotosFragmentEvents.listen().consumeEach { event ->
         onStateEvent(event)
@@ -233,25 +208,11 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
     }
 
     when (event) {
-      is UploadedPhotosFragmentEvent.GeneralEvents.ScrollToTop -> {
-//          uploadedPhotosList.scrollToPosition(0)
-      }
-      is UploadedPhotosFragmentEvent.GeneralEvents.AfterPermissionRequest -> {
-//          triggerPhotosLoading()
-      }
       is UploadedPhotosFragmentEvent.GeneralEvents.UpdateReceiverInfo -> {
-//          event.receivedPhotos.forEach {
-//            adapter.updateUploadedPhotoSetReceiverInfo(it.uploadedPhotoName)
-//          }
+        //TODO
       }
       is UploadedPhotosFragmentEvent.GeneralEvents.OnPageSelected -> {
 //          viewModel.uploadedPhotosFragmentViewModel.viewState.reset()
-      }
-      is UploadedPhotosFragmentEvent.GeneralEvents.ShowTakenPhotos -> {
-//          addTakenPhotosToAdapter(event.takenPhotos)
-      }
-      is UploadedPhotosFragmentEvent.GeneralEvents.ShowUploadedPhotos -> {
-//          addUploadedPhotosToAdapter(event.uploadedPhotos)
       }
       is UploadedPhotosFragmentEvent.GeneralEvents.PhotoReceived -> {
         //TODO
@@ -264,79 +225,6 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
       }
     }.safe
   }
-
-//  private fun addUploadedPhotosToAdapter(uploadedPhotos: List<UploadedPhoto>) {
-//    if (!isAdded) {
-//      return
-//    }
-//
-//    uploadedPhotosList.post {
-//      if (uploadedPhotos.isNotEmpty()) {
-//        adapter.addUploadedPhotos(uploadedPhotos)
-//      }
-//
-//      endlessScrollListener.pageLoaded()
-//
-//      if (adapter.getUploadedPhotosCount() == 0) {
-//        adapter.showMessageFooter("You have no uploaded photos")
-//        return@post
-//      }
-//
-//      if (uploadedPhotos.size < photosPerPage) {
-//        adapter.showMessageFooter("End of the list reached")
-//        endlessScrollListener.reachedEnd()
-//      }
-//    }
-//  }
-
-//  private fun addTakenPhotosToAdapter(takenPhotos: List<TakenPhoto>) {
-//    if (!isAdded) {
-//      return
-//    }
-//
-//    uploadedPhotosList.post {
-//      if (takenPhotos.isNotEmpty()) {
-//        adapter.clear()
-//        adapter.addTakenPhotos(takenPhotos)
-//      } else {
-//        adapter.showMessageFooter("You have no taken photos")
-//      }
-//    }
-//  }
-//
-//  private fun showProgressFooter() {
-//    if (!isAdded) {
-//      return
-//    }
-//
-//    uploadedPhotosList.post {
-//      adapter.showProgressFooter()
-//    }
-//  }
-//
-//  private fun hideProgressFooter() {
-//    if (!isAdded) {
-//      return
-//    }
-//
-//    uploadedPhotosList.post {
-//      adapter.clearFooter()
-//    }
-//  }
-
-//  private fun handleKnownErrors(errorCode: ErrorCode) {
-//    //TODO: do we even need this method?
-//    hideProgressFooter()
-//    adapter.updateAllPhotosState(PhotoState.FAILED_TO_UPLOAD)
-//    (activity as? PhotosActivity)?.showKnownErrorMessage(errorCode)
-//  }
-//
-//  private fun handleUnknownErrors(error: Throwable) {
-//    adapter.updateAllPhotosState(PhotoState.FAILED_TO_UPLOAD)
-//    (activity as? PhotosActivity)?.showUnknownErrorMessage(error)
-//
-//    Timber.tag(TAG).e(error)
-//  }
 
   override fun resolveDaggerDependency() {
     (requireActivity() as PhotosActivity).activityComponent
