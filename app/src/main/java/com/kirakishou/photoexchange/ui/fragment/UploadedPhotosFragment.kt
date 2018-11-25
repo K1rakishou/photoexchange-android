@@ -37,22 +37,9 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
 
   private val TAG = "UploadedPhotosFragment"
 
-  private val photoSize by lazy {
-    val density = requireContext().resources.displayMetrics.density
-
-    return@lazy if (density < 2.0) {
-      PhotoSize.Small
-    } else if (density >= 2.0 && density < 3.0) {
-      PhotoSize.Medium
-    } else {
-      PhotoSize.Big
-    }
-  }
-
   private val uploadedPhotoAdapterViewWidth = Constants.DEFAULT_ADAPTER_ITEM_WIDTH
-  private val columnsCount by lazy {
-    AndroidUtils.calculateNoOfColumns(requireContext(), uploadedPhotoAdapterViewWidth)
-  }
+  private val photoSize by lazy { AndroidUtils.figureOutPhotosSizes(requireContext()) }
+  private val columnsCount by lazy { AndroidUtils.calculateNoOfColumns(requireContext(), uploadedPhotoAdapterViewWidth) }
 
   override fun getFragmentLayoutId(): Int = R.layout.fragment_mvrx
 
