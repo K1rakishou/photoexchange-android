@@ -24,7 +24,6 @@ abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
   private val invalidationActor: SendChannel<Unit>
 
   protected val compositeDisposable = CompositeDisposable()
-  protected val clearOnPauseCompositeDisposable = CompositeDisposable()
   protected val compositeChannel = mutableListOf<ReceiveChannel<Any>>()
   protected lateinit var recyclerView: EpoxyRecyclerView
 
@@ -95,11 +94,6 @@ abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
     compositeChannel.clear()
 
     super.onDestroyView()
-  }
-
-  override fun onPause() {
-    super.onPause()
-    clearOnPauseCompositeDisposable.clear()
   }
 
   protected fun doInvalidate() {

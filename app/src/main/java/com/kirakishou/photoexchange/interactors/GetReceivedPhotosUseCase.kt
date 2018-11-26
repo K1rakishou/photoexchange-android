@@ -6,7 +6,7 @@ import com.kirakishou.photoexchange.helper.database.repository.GetReceivedPhotos
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.myRunCatching
 import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
 import kotlinx.coroutines.withContext
 import timber.log.Timber

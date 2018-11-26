@@ -14,7 +14,7 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.di.module.GlideApp
-import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 
 @ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT)
@@ -25,7 +25,6 @@ class ReceivedPhotoRow @JvmOverloads constructor(
 ) : LinearLayout(context, attrs, defStyleAttr) {
   private val photoView: ImageView
   private val staticMapView: ImageView
-  private val photoIdTextView: TextView
   private val clickView: ConstraintLayout
 
   init {
@@ -33,7 +32,6 @@ class ReceivedPhotoRow @JvmOverloads constructor(
 
     photoView = findViewById(R.id.photo_view)
     staticMapView = findViewById(R.id.static_map_view)
-    photoIdTextView = findViewById(R.id.photo_id_text_view)
     clickView = findViewById(R.id.click_view)
 
     orientation = VERTICAL
@@ -41,8 +39,6 @@ class ReceivedPhotoRow @JvmOverloads constructor(
 
   @ModelProp
   fun setPhoto(photo: ReceivedPhoto) {
-    photoIdTextView.text = photo.photoId.toString()
-
     if (photo.showPhoto) {
       staticMapView.visibility = View.GONE
       photoView.visibility = View.VISIBLE

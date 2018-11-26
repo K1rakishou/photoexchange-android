@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.helper.database.mapper
 
 import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
-import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import net.response.GetUploadedPhotosResponse
 
 object UploadedPhotosMapper {
@@ -14,7 +14,8 @@ object UploadedPhotosMapper {
           uploadedPhotoData.photoId,
           uploadedPhotoData.uploaderLon,
           uploadedPhotoData.uploaderLat,
-          uploadedPhotoData.hasReceiverInfo,
+          uploadedPhotoData.receiverInfoResponseData?.receiverLon,
+          uploadedPhotoData.receiverInfoResponseData?.receiverLat,
           uploadedPhotoData.uploadedOn,
           time
         )
@@ -27,12 +28,21 @@ object UploadedPhotosMapper {
 
     object ToObject {
       fun toUploadedPhoto(uploadedPhotoData: GetUploadedPhotosResponse.UploadedPhotoResponseData): UploadedPhoto {
+        val receiverInfo = if (uploadedPhotoData.receiverInfoResponseData == null) {
+          null
+        } else {
+          UploadedPhoto.ReceiverInfo(
+            uploadedPhotoData.receiverInfoResponseData!!.receiverLon,
+            uploadedPhotoData.receiverInfoResponseData!!.receiverLat
+          )
+        }
+
         return UploadedPhoto(
           uploadedPhotoData.photoId,
           uploadedPhotoData.photoName,
           uploadedPhotoData.uploaderLon,
           uploadedPhotoData.uploaderLat,
-          uploadedPhotoData.hasReceiverInfo,
+          receiverInfo,
           uploadedPhotoData.uploadedOn
         )
       }
@@ -46,12 +56,21 @@ object UploadedPhotosMapper {
   object FromEntity {
     object ToObject {
       fun toUploadedPhoto(uploadedPhotoEntity: UploadedPhotoEntity): UploadedPhoto {
+        val receiverInfo = if (uploadedPhotoEntity.receiverLon == null || uploadedPhotoEntity.receiverLat == null) {
+          null
+        } else {
+          UploadedPhoto.ReceiverInfo(
+            uploadedPhotoEntity.receiverLon!!,
+            uploadedPhotoEntity.receiverLat!!
+          )
+        }
+
         return UploadedPhoto(
           uploadedPhotoEntity.photoId!!,
           uploadedPhotoEntity.photoName,
           uploadedPhotoEntity.uploaderLon,
           uploadedPhotoEntity.uploaderLat,
-          uploadedPhotoEntity.hasReceiverInfo,
+          receiverInfo,
           uploadedPhotoEntity.uploadedOn!!
         )
       }
@@ -65,12 +84,11 @@ object UploadedPhotosMapper {
   object FromObject {
     object ToEntity {
       fun toUploadedPhotoEntity(photoId: Long, photoName: String, lon: Double, lat: Double, time: Long, uploadedOn: Long): UploadedPhotoEntity {
-        return UploadedPhotoEntity.create(
+        return UploadedPhotoEntity.createWithoutReceiverInfo(
           photoName,
           photoId,
           lon,
           lat,
-          false,
           uploadedOn,
           time
         )

@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.database.repository.ReceivePhotosRepository
 import com.kirakishou.photoexchange.mvp.model.FindPhotosData
-import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import core.ErrorCode
 
 open class ReceivePhotosUseCase(

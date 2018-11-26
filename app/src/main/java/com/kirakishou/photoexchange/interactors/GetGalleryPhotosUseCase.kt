@@ -6,7 +6,7 @@ import com.kirakishou.photoexchange.helper.database.repository.GetGalleryPhotosR
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.myRunCatching
 import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
 import kotlinx.coroutines.withContext
 import timber.log.Timber

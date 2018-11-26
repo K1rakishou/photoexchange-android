@@ -14,8 +14,8 @@ import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.photo.QueuedUpPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
@@ -123,13 +123,19 @@ class UploadedPhotosFragmentViewModel(
           Fail<List<TakenPhoto>>(error)
         }
 
+        val notUploadedPhotos = (request() ?: emptyList())
+        if (notUploadedPhotos.isEmpty() && state.takenPhotos.isEmpty()) {
+          loadUploadedPhotos()
+          return@launch
+        }
+
         setState {
           copy(
-            takenPhotos = state.takenPhotos + (request() ?: emptyList())
+            takenPhotos = state.takenPhotos + notUploadedPhotos
           )
         }
 
-        loadUploadedPhotos()
+        startUploadingService("There are queued up photos that need to be uploaded")
       }
     }
   }
@@ -154,14 +160,19 @@ class UploadedPhotosFragmentViewModel(
           Fail<List<UploadedPhoto>>(error)
         }
 
-        val uploadedPhotos = request() ?: emptyList()
-        val isEndReached = uploadedPhotos.isEmpty() || uploadedPhotos.size % photosPerPage != 0
+        val newUploadedPhotos = request() ?: emptyList()
+        val isEndReached = newUploadedPhotos.isEmpty() || newUploadedPhotos.size % photosPerPage != 0
+
+        val hasPhotosWithNoReceiver = newUploadedPhotos.any { it.receiverInfo == null }
+        if (hasPhotosWithNoReceiver) {
+          startReceivingService("There are photos with no receiver info")
+        }
 
         setState {
           copy(
             isEndReached = isEndReached,
             uploadedPhotosRequest = request,
-            uploadedPhotos = state.uploadedPhotos + uploadedPhotos
+            uploadedPhotos = state.uploadedPhotos + newUploadedPhotos
           )
         }
       }
@@ -175,35 +186,12 @@ class UploadedPhotosFragmentViewModel(
     val result = getUploadedPhotosUseCase.loadPageOfPhotos(lastUploadedOn, count)
     when (result) {
       is Either.Value -> {
-        return result.value.also { uploadedPhotos ->
-          uploadedPhotos.forEach { uploadedPhoto -> uploadedPhoto.photoSize = photoSize }
-        }
+        return result.value
+          .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
       }
       is Either.Error -> {
         throw result.error
       }
-    }
-  }
-
-  fun onUpdateReceiverInfo(receivedPhotos: List<ReceivedPhoto>) {
-    if (receivedPhotos.isEmpty()) {
-      return
-    }
-
-    withState { state ->
-      val newPhotos = mutableListOf<UploadedPhoto>()
-
-      for (receivedPhoto in receivedPhotos) {
-        for (uploadedPhoto in state.uploadedPhotos) {
-          newPhotos += if (uploadedPhoto.photoName == receivedPhoto.uploadedPhotoName) {
-            uploadedPhoto.copy(hasReceiverInfo = true)
-          } else {
-            uploadedPhoto.copy()
-          }
-        }
-      }
-
-      setState { copy(uploadedPhotos = newPhotos) }
     }
   }
 
@@ -257,29 +245,12 @@ class UploadedPhotosFragmentViewModel(
             return@withState
           }
 
-          val newPhoto = UploadedPhoto(
-            event.newPhotoId,
-            event.newPhotoName,
-            event.currentLocation.lon,
-            event.currentLocation.lat,
-            false,
-            event.uploadedOn,
-            photoSize
-          )
-
-          val newTakenPhotos = state.takenPhotos
-            .filter { it.id != event.photo.id }
-            .toMutableList()
-
-          val newUploadedPhotos = state.uploadedPhotos
-            .toMutableList()
-
-          newUploadedPhotos.add(0, newPhoto)
+          val newTakenPhotos = state.takenPhotos.toMutableList()
+          newTakenPhotos.removeAt(photoIndex)
 
           setState {
             copy(
-              takenPhotos = newTakenPhotos,
-              uploadedPhotos = newUploadedPhotos
+              takenPhotos = newTakenPhotos
             )
           }
         }
@@ -310,8 +281,67 @@ class UploadedPhotosFragmentViewModel(
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
         Timber.tag(TAG).d("OnEnd")
+
+        startReceivingService("Photos uploading done")
       }
     }.safe
+  }
+
+  fun onReceiveEvent(event: UploadedPhotosFragmentEvent.ReceivePhotosEvent) {
+    when (event) {
+      is UploadedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived -> {
+        if (event.receivedPhotos.isEmpty()) {
+          return
+        }
+
+        withState { state ->
+          val updatedPhotos = mutableListOf<UploadedPhoto>()
+
+          for (uploadedPhoto in state.uploadedPhotos) {
+            val exchangedPhoto = event.receivedPhotos
+              .firstOrNull { it.uploadedPhotoName == uploadedPhoto.photoName }
+
+            updatedPhotos += if (exchangedPhoto == null) {
+              uploadedPhoto.copy()
+            } else {
+              val receiverInfo = UploadedPhoto.ReceiverInfo(
+                exchangedPhoto.lon,
+                exchangedPhoto.lat
+              )
+
+              uploadedPhoto.copy(receiverInfo = receiverInfo)
+            }
+          }
+
+          setState { copy(uploadedPhotos = updatedPhotos) }
+        }
+      }
+      is UploadedPhotosFragmentEvent.ReceivePhotosEvent.NoPhotosReceived -> {
+
+      }
+      is UploadedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
+        event.error.printStackTrace()
+        Timber.tag(TAG).d("Error while trying to receive photos: (${event.error.message})")
+      }
+    }.safe
+
+    loadUploadedPhotos()
+  }
+
+  private fun startUploadingService(reason: String) {
+    intercom.tell<PhotosActivity>()
+      .to(PhotosActivityEvent.StartUploadingService(
+        PhotosActivityViewModel::class.java,
+        reason)
+      )
+  }
+
+  private fun startReceivingService(reason: String) {
+    intercom.tell<PhotosActivity>()
+      .to(PhotosActivityEvent.StartReceivingService(
+        PhotosActivityViewModel::class.java,
+        reason)
+      )
   }
 
   /**
@@ -323,7 +353,6 @@ class UploadedPhotosFragmentViewModel(
 
   override fun onCleared() {
     super.onCleared()
-    Timber.tag(TAG).d("onCleared()")
 
     compositeDisposable.dispose()
     job.cancel()

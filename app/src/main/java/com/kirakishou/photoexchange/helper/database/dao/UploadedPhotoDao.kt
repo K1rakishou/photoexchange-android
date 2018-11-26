@@ -4,7 +4,6 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
 
 @Dao
@@ -32,17 +31,25 @@ abstract class UploadedPhotoDao {
   abstract fun findMany(photoIds: List<Long>): List<UploadedPhotoEntity>
 
   @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
-    "WHERE ${UploadedPhotoEntity.HAS_RECEIVER_INFO_COLUMN} = ${MyDatabase.SQLITE_TRUE}")
+    "WHERE " +
+    " ${UploadedPhotoEntity.RECEIVER_LON_COLUMN} IS NOT NULL " +
+    "AND " +
+    " ${UploadedPhotoEntity.RECEIVER_LAT_COLUMN} IS NOT NULL")
   abstract fun findAllWithReceiverInfo(): List<UploadedPhotoEntity>
 
   @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
-    "WHERE ${UploadedPhotoEntity.HAS_RECEIVER_INFO_COLUMN} = ${MyDatabase.SQLITE_FALSE}")
+    "WHERE " +
+    " ${UploadedPhotoEntity.RECEIVER_LON_COLUMN} IS NULL " +
+    "AND " +
+    " ${UploadedPhotoEntity.RECEIVER_LAT_COLUMN} IS NULL")
   abstract fun findAllWithoutReceiverInfo(): List<UploadedPhotoEntity>
 
   @Query("UPDATE ${UploadedPhotoEntity.TABLE_NAME} " +
-    "SET ${UploadedPhotoEntity.HAS_RECEIVER_INFO_COLUMN} = ${MyDatabase.SQLITE_TRUE} " +
+    "SET " +
+    " ${UploadedPhotoEntity.RECEIVER_LON_COLUMN} = :receiverLon, " +
+    " ${UploadedPhotoEntity.RECEIVER_LAT_COLUMN} = :receiverLat " +
     "WHERE ${UploadedPhotoEntity.PHOTO_NAME_COLUMN} = :uploadedPhotoName")
-  abstract fun updateReceiverInfo(uploadedPhotoName: String): Int
+  abstract fun updateReceiverInfo(uploadedPhotoName: String, receiverLon: Double, receiverLat: Double): Int
 
   @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME}")
   abstract fun findAll(): List<UploadedPhotoEntity>

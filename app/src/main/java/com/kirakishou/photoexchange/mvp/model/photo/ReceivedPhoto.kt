@@ -1,9 +1,8 @@
-package com.kirakishou.photoexchange.mvp.model
+package com.kirakishou.photoexchange.mvp.model.photo
 
 import com.kirakishou.photoexchange.helper.PhotoSize
 
 data class ReceivedPhoto(
-  val photoId: Long,
   val uploadedPhotoName: String,
   val receivedPhotoName: String,
   val lon: Double,

@@ -8,8 +8,8 @@ import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoInf
 import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoLocalSource
 import com.kirakishou.photoexchange.helper.database.source.remote.GalleryPhotoInfoRemoteSource
 import com.kirakishou.photoexchange.helper.database.source.remote.GalleryPhotoRemoteSource
-import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
-import com.kirakishou.photoexchange.mvp.model.GalleryPhotoInfo
+import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhotoInfo
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import kotlinx.coroutines.withContext
 

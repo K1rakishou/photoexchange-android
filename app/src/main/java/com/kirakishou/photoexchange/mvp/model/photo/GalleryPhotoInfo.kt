@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.mvp.model
+package com.kirakishou.photoexchange.mvp.model.photo
 
 class GalleryPhotoInfo(
   val galleryPhotoId: Long,

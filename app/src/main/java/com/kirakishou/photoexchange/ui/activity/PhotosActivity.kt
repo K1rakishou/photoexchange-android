@@ -52,7 +52,6 @@ import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.rx2.consumeEach
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
@@ -112,10 +111,9 @@ class PhotosActivity : BaseActivity(), PhotoUploadingCallback, ReceivePhotosServ
   }
 
   override fun onActivityStart() {
-    launch {
-      initRx()
-      checkPermissions(savedInstanceState)
-    }
+    initRx()
+
+    launch { checkPermissions(savedInstanceState) }
   }
 
   override fun onActivityResume() {
@@ -136,7 +134,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingCallback, ReceivePhotosServ
     viewState.saveToBundle(outState)
   }
 
-  private suspend fun initRx() {
+  private fun initRx() {
     compositeDisposable += RxView.clicks(ivCloseActivityButton)
       .subscribeOn(AndroidSchedulers.mainThread())
       .debounceClicks()
@@ -158,11 +156,10 @@ class PhotosActivity : BaseActivity(), PhotoUploadingCallback, ReceivePhotosServ
       .doOnError { Timber.e(it) }
       .subscribe()
 
-    launch {
-      viewModel.intercom.photosActivityEvents.listen().consumeEach { event ->
-        onStateEvent(event)
-      }
-    }
+    compositeDisposable += viewModel.intercom.photosActivityEvents.listen()
+      .subscribe({ event ->
+        launch { onStateEvent(event) }
+      })
   }
 
   private suspend fun checkPermissions(savedInstanceState: Bundle?) {
@@ -332,13 +329,23 @@ class PhotosActivity : BaseActivity(), PhotoUploadingCallback, ReceivePhotosServ
     when (event) {
       is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived -> {
         viewModel.intercom.tell<UploadedPhotosFragment>()
-          .that(UploadedPhotosFragmentEvent.GeneralEvents.PhotosReceived(event.receivedPhotos))
+          .that(UploadedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived(event.receivedPhotos))
         viewModel.intercom.tell<ReceivedPhotosFragment>()
           .that(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived(event.receivedPhotos))
+
         showPhotoAnswerFoundSnackbar()
       }
+      is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.NoPhotosReceived -> {
+        viewModel.intercom.tell<UploadedPhotosFragment>()
+          .that(UploadedPhotosFragmentEvent.ReceivePhotosEvent.NoPhotosReceived())
+        viewModel.intercom.tell<ReceivedPhotosFragment>()
+          .that(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.NoPhotosReceived())
+      }
       is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
-        viewModel.intercom.tell<ReceivedPhotosFragment>().to(event)
+        viewModel.intercom.tell<UploadedPhotosFragment>()
+          .that(UploadedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed(event.error))
+        viewModel.intercom.tell<ReceivedPhotosFragment>()
+          .that(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed(event.error))
       }
     }.safe
   }

@@ -8,7 +8,7 @@ import com.kirakishou.photoexchange.helper.database.source.local.TakenPhotosLoca
 import com.kirakishou.photoexchange.helper.database.source.local.UploadPhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.remote.ReceivePhotosRemoteSource
 import com.kirakishou.photoexchange.interactors.ReceivePhotosUseCase
-import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.helper.exception.ApiErrorException
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import kotlinx.coroutines.withContext
@@ -38,12 +38,14 @@ class ReceivePhotosRepository(
       for (receivedPhoto in receivedPhotos) {
         try {
           updatePhotoReceiverInfo(receivedPhoto)
-        } catch (error: Exception) {
-          throw DatabaseException("Could not update uploaded photo's receiver info (${error.message})")
+        } catch (error: Throwable) {
+          Timber.tag(TAG).e(error)
+          throw error
         }
 
         val photoAnswer = ReceivedPhotosMapper.FromResponse
           .ReceivedPhotos.toReceivedPhoto(receivedPhoto)
+
         results += photoAnswer
       }
 
@@ -56,18 +58,22 @@ class ReceivePhotosRepository(
   ) {
     database.transactional {
       if (!receivePhotosLocalSource.save(receivedPhoto)) {
-        Timber.tag(TAG).w("Could not save photo with receivedPhotoName ${receivedPhoto.receivedPhotoName}")
-        return@transactional
+        throw DatabaseException("Could not save photo with receivedPhotoName ${receivedPhoto.receivedPhotoName}")
       }
 
-      if (!uploadedPhotosLocalSource.updateReceiverInfo(receivedPhoto.uploadedPhotoName)) {
-        Timber.tag(TAG).w("Could not update receiver info with uploadedPhotoName ${receivedPhoto.uploadedPhotoName}")
-        return@transactional
+      val updateResult = uploadedPhotosLocalSource.updateReceiverInfo(
+        receivedPhoto.uploadedPhotoName,
+        receivedPhoto.lon,
+        receivedPhoto.lat
+      )
+
+      if (!updateResult) {
+        throw DatabaseException("Could not update receiver info with uploadedPhotoName ${receivedPhoto.uploadedPhotoName}")
       }
 
       //TODO: is there any photo to delete to begin with? It should probably be deleted after uploading is done
       if (!takenPhotosLocalSource.deletePhotoByName(receivedPhoto.uploadedPhotoName)) {
-        Timber.tag(TAG).w("Could not delete taken photo with uploadedPhotoName ${receivedPhoto.uploadedPhotoName}")
+        throw DatabaseException("Could not delete taken photo with uploadedPhotoName ${receivedPhoto.uploadedPhotoName}")
       }
     }
   }

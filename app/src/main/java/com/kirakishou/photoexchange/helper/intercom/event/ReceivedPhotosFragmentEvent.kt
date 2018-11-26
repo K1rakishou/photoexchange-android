@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.helper.intercom.event
 
-import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 
 sealed class ReceivedPhotosFragmentEvent : BaseEvent {
   sealed class GeneralEvents : ReceivedPhotosFragmentEvent() {
@@ -10,6 +10,7 @@ sealed class ReceivedPhotosFragmentEvent : BaseEvent {
 
   sealed class ReceivePhotosEvent : ReceivedPhotosFragmentEvent() {
     class PhotosReceived(val receivedPhotos: List<ReceivedPhoto>) : ReceivePhotosEvent()
+    class NoPhotosReceived : ReceivePhotosEvent()
     class OnFailed(val error: Throwable) : ReceivePhotosEvent()
   }
 }

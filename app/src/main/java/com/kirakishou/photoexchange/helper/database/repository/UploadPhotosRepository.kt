@@ -12,6 +12,8 @@ import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.helper.exception.ApiErrorException
+import com.kirakishou.photoexchange.helper.exception.DatabaseException
+import com.kirakishou.photoexchange.interactors.ReceivePhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.other.LonLat
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import kotlinx.coroutines.channels.SendChannel
@@ -49,11 +51,11 @@ class UploadPhotosRepository(
         val result = try {
           uploadPhotosRemoteSource.uploadPhoto(photoFile.absolutePath, location, userId, photo.isPublic, photo, channel)
         } catch (error: ApiErrorException) {
-          throw UploadPhotosUseCase.PhotoUploadingException.ApiException(error.errorCode)
+          throw ApiErrorException(error.errorCode)
         }
 
         if (!updatePhotoAsUploaded(photo, result.photoId, result.photoName, location)) {
-          throw UploadPhotosUseCase.PhotoUploadingException.DatabaseException()
+          throw DatabaseException("Could not update photo as uploaded")
         }
 
         return@withContext result

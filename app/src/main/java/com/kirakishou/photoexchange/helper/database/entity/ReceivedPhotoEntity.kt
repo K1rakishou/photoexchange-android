@@ -9,11 +9,8 @@ import com.kirakishou.photoexchange.helper.database.entity.ReceivedPhotoEntity.C
 class ReceivedPhotoEntity(
 
   @PrimaryKey
-  @ColumnInfo(name = ID_COLUMN)
-  var id: Long? = null,
-
   @ColumnInfo(name = UPLOADED_PHOTO_NAME_COLUMN)
-  var uploadedPhotoName: String? = null,
+  var uploadedPhotoName: String = "",
 
   @ColumnInfo(name = RECEIVED_PHOTO_NAME_COLUMN)
   var receivedPhotoName: String? = null,
@@ -31,29 +28,18 @@ class ReceivedPhotoEntity(
   var insertedOn: Long? = null
 ) {
 
-  fun isEmpty(): Boolean {
-    return id == null
-  }
-
   companion object {
-
     fun empty(): ReceivedPhotoEntity {
       return ReceivedPhotoEntity()
     }
 
     fun create(uploadedPhotoName: String, receivedPhotoName: String,
                lon: Double = 0.0, lat: Double = 0.0, uploadedOn: Long, insertedOn: Long): ReceivedPhotoEntity {
-      return ReceivedPhotoEntity(null, uploadedPhotoName, receivedPhotoName, lon, lat, uploadedOn, insertedOn)
-    }
-
-    fun create(photoId: Long, uploadedPhotoName: String, receivedPhotoName: String,
-               lon: Double = 0.0, lat: Double = 0.0, uploadedOn: Long, insertedOn: Long): ReceivedPhotoEntity {
-      return ReceivedPhotoEntity(photoId, uploadedPhotoName, receivedPhotoName, lon, lat, uploadedOn, insertedOn)
+      return ReceivedPhotoEntity(uploadedPhotoName, receivedPhotoName, lon, lat, uploadedOn, insertedOn)
     }
 
     const val TABLE_NAME = "RECEIVED_PHOTO"
 
-    const val ID_COLUMN = "ID"
     const val UPLOADED_PHOTO_NAME_COLUMN = "UPLOADED_PHOTO_NAME"
     const val RECEIVED_PHOTO_NAME_COLUMN = "RECEIVED_PHOTO_NAME"
     const val LON_COLUMN = "LON"

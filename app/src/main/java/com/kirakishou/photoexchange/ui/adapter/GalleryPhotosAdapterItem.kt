@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.ui.adapter
 
-import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 
 sealed class GalleryPhotosAdapterItem : BaseAdapterItem() {
 

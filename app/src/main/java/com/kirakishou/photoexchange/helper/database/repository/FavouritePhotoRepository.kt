@@ -27,7 +27,7 @@ open class FavouritePhotoRepository(
 
       try {
         favouriteInDatabase(photoName, favouritePhotoResult)
-      } catch (error: Exception) {
+      } catch (error: Throwable) {
         throw DatabaseException(error.message)
       }
 
@@ -39,6 +39,7 @@ open class FavouritePhotoRepository(
     database.transactional {
       val galleryPhotoEntity = galleryPhotoLocalSource.findByPhotoName(photoName)
       if (galleryPhotoEntity == null) {
+        //TODO: should an exception be thrown here?
         return@transactional
       }
 
@@ -55,7 +56,9 @@ open class FavouritePhotoRepository(
         galleryPhotoInfoEntity.isFavourited = favouritePhotoResponseData.isFavourited
       }
 
-      galleryPhotoInfoLocalSource.save(galleryPhotoInfoEntity)
+      if (!galleryPhotoInfoLocalSource.save(galleryPhotoInfoEntity)) {
+        throw DatabaseException("Could not update gallery photo info ")
+      }
     }
   }
 }

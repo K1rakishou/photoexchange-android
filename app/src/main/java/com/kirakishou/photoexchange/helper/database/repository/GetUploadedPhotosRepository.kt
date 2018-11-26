@@ -4,7 +4,7 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersPro
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.source.local.UploadPhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.remote.GetUploadedPhotosRemoteSource
-import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -22,12 +22,12 @@ class GetUploadedPhotosRepository(
 
       val uploadedPhotos = getPageInternal(time, count, userId)
       val uploadedPhotosWithNoReceiver = uploadedPhotos
-        .filter { !it.hasReceiverInfo }
-        .sortedByDescending { it.photoId }
+        .filter { it.receiverInfo == null }
+        .sortedByDescending { it.uploadedOn }
 
       val uploadedPhotosWithReceiver = uploadedPhotos
-        .filter { it.hasReceiverInfo }
-        .sortedByDescending { it.photoId }
+        .filter { it.receiverInfo != null }
+        .sortedByDescending { it.uploadedOn }
 
       //we need to show photos without receiver first and after them photos with receiver
       return@withContext uploadedPhotosWithNoReceiver + uploadedPhotosWithReceiver
@@ -42,6 +42,9 @@ class GetUploadedPhotosRepository(
     }
 
     Timber.tag(TAG).d("Trying to find uploaded photos on the server")
+
+    //TODO: the method may be called AFTER a photo has been uploaded and it will contain receiveInfo
+    //so we need to check whether it contains it and if it does, we need to notify the ReceivedPhotosFragment about it
 
     val uploadedPhotos = getUploadedPhotosRemoteSource.getPage(userId, time, count)
     if (uploadedPhotos.isEmpty()) {

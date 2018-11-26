@@ -5,7 +5,7 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersPro
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
 import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
-import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import com.kirakishou.photoexchange.helper.exception.ApiErrorException
 import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import com.kirakishou.photoexchange.ui.viewstate.GalleryFragmentViewState
@@ -19,7 +19,6 @@ import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 
 class GalleryFragmentViewModel(
@@ -95,8 +94,6 @@ class GalleryFragmentViewModel(
   }
 
   fun onCleared() {
-    Timber.tag(TAG).d("onCleared()")
-
     compositeDisposable.dispose()
     job.cancel()
   }

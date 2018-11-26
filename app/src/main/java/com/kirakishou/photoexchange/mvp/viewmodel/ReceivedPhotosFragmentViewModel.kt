@@ -9,9 +9,10 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersPro
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
+import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetReceivedPhotosUseCase
-import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.viewmodel.state.ReceivedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
@@ -107,14 +108,14 @@ class ReceivedPhotosFragmentViewModel(
           Fail<List<ReceivedPhoto>>(error)
         }
 
-        val receivedPhotos = request() ?: emptyList()
-        val isEndReached = receivedPhotos.isEmpty() || receivedPhotos.size % photosPerPage != 0
+        val newReceivedPhotos = request() ?: emptyList()
+        val isEndReached = newReceivedPhotos.isEmpty() || newReceivedPhotos.size % photosPerPage != 0
 
         setState {
           copy(
             isEndReached = isEndReached,
             receivedPhotosRequest = request,
-            receivedPhotos = receivedPhotos
+            receivedPhotos = state.receivedPhotos + newReceivedPhotos
           )
         }
       }
@@ -129,7 +130,7 @@ class ReceivedPhotosFragmentViewModel(
     when (result) {
       is Either.Value -> {
         intercom.tell<UploadedPhotosFragment>()
-          .to(UploadedPhotosFragmentEvent.GeneralEvents.UpdateReceiverInfo(result.value))
+          .to(UploadedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived(result.value))
 
         return result.value.also { receivedPhotos ->
           receivedPhotos.map { receivedPhoto -> receivedPhoto.copy(photoSize = photoSize) }
@@ -141,13 +142,50 @@ class ReceivedPhotosFragmentViewModel(
     }
   }
 
+  fun onReceivePhotosEvent(event: ReceivedPhotosFragmentEvent.ReceivePhotosEvent) {
+    when (event) {
+      is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived -> {
+        withState { state ->
+          val updatedPhotos = state.receivedPhotos.toMutableList()
+
+          for (receivedPhoto in event.receivedPhotos) {
+            val photoIndex = state.receivedPhotos
+              .indexOfFirst { it.receivedPhotoName == receivedPhoto.receivedPhotoName }
+
+            if (photoIndex != -1) {
+              updatedPhotos[photoIndex] = receivedPhoto
+            } else {
+              updatedPhotos.add(receivedPhoto)
+            }
+          }
+
+          val updatedSortedPhotos = updatedPhotos
+            .sortedByDescending { it.uploadedOn }
+
+          setState {
+            copy(
+              receivedPhotosRequest = Success(updatedSortedPhotos),
+              receivedPhotos = updatedSortedPhotos
+            )
+          }
+        }
+      }
+      is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.NoPhotosReceived -> {
+        //TODO
+      }
+      is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
+        event.error.printStackTrace()
+        Timber.tag(TAG).d("Error while trying to receive photos: (${event.error.message})")
+      }
+    }.safe
+  }
+
   fun clear() {
     onCleared()
   }
 
   override fun onCleared() {
     super.onCleared()
-    Timber.tag(TAG).d("onCleared()")
 
     compositeDisposable.dispose()
     job.cancel()

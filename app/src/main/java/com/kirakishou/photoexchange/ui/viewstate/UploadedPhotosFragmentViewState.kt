@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.ui.viewstate
 
-import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 
 data class UploadedPhotosFragmentViewState(
   private var lastUploadedOn: Long = -1,

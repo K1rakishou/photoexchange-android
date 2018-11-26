@@ -71,7 +71,7 @@ class TakePhotoActivity : BaseActivity() {
   }
 
   override fun onActivityStart() {
-    launch { initRx() }
+    initRx()
   }
 
   override fun onActivityResume() {
@@ -92,7 +92,7 @@ class TakePhotoActivity : BaseActivity() {
     showAllPhotosButton.translationX = showAllPhotosButton.translationX + translationDelta
   }
 
-  private suspend fun initRx() {
+  private fun initRx() {
     compositeDisposable += viewModel.errorCodesSubject
       .subscribeOn(AndroidSchedulers.mainThread())
       .doOnNext { showErrorCodeToast(it) }

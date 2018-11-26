@@ -15,7 +15,7 @@ import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import com.kirakishou.photoexchange.helper.exception.ApiErrorException
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.other.Constants.DEFAULT_ADAPTER_ITEM_WIDTH
@@ -29,7 +29,6 @@ import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.rx2.consumeEach
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -87,45 +86,49 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
           .that(PhotosActivityEvent.ScrollEvent(isScrollingDown))
       })
 
-    viewModel.intercom.galleryFragmentEvents.listen().consumeEach { event ->
-      onStateEvent(event)
-    }
+    compositeDisposable += viewModel.intercom.galleryFragmentEvents.listen()
+      .subscribe({ event ->
+        launch { onStateEvent(event) }
+      })
 
-    adapterButtonClickSubject.consumeEach { buttonClickEvent ->
-      when (buttonClickEvent) {
-        is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.FavouriteClicked -> {
-          val result = viewModel.favouritePhoto(buttonClickEvent.photoName)
+    compositeDisposable += adapterButtonClickSubject
+      .subscribe({ buttonClickEvent ->
+        TODO()
+//        when (buttonClickEvent) {
 
-          //TODO: hide inside viewmodel
-          when (result) {
-            is Either.Value -> favouritePhoto(buttonClickEvent.photoName, result.value.isFavourited, result.value.favouritesCount)
-            is Either.Error -> {
-              when (result.error) {
-                is ApiErrorException -> handleKnownErrors(result.error.errorCode)
-                else -> handleUnknownErrors(result.error)
-              }
-            }
-          }
-        }
-        is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.ReportClicked -> {
-          val result = viewModel.reportPhoto(buttonClickEvent.photoName)
-
-          //TODO: hide inside viewmodel
-          when (result) {
-            is Either.Value -> reportPhoto(buttonClickEvent.photoName, result.value)
-            is Either.Error -> {
-              when (result.error) {
-                is ApiErrorException -> handleKnownErrors(result.error.errorCode)
-                else -> handleUnknownErrors(result.error)
-              }
-            }
-          }
-        }
-        is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.SwitchShowMapOrPhoto -> {
-          handleAdapterClick(buttonClickEvent)
-        }
-      }.safe
-    }
+//          is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.FavouriteClicked -> {
+//            val result = viewModel.favouritePhoto(buttonClickEvent.photoName)
+//
+//            //TODO: hide inside viewmodel
+//            when (result) {
+//              is Either.Value -> favouritePhoto(buttonClickEvent.photoName, result.value.isFavourited, result.value.favouritesCount)
+//              is Either.Error -> {
+//                when (result.error) {
+//                  is ApiErrorException -> handleKnownErrors(result.error.errorCode)
+//                  else -> handleUnknownErrors(result.error)
+//                }
+//              }
+//            }
+//          }
+//          is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.ReportClicked -> {
+//            val result = viewModel.reportPhoto(buttonClickEvent.photoName)
+//
+//            //TODO: hide inside viewmodel
+//            when (result) {
+//              is Either.Value -> reportPhoto(buttonClickEvent.photoName, result.value)
+//              is Either.Error -> {
+//                when (result.error) {
+//                  is ApiErrorException -> handleKnownErrors(result.error.errorCode)
+//                  else -> handleUnknownErrors(result.error)
+//                }
+//              }
+//            }
+//          }
+//          is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.SwitchShowMapOrPhoto -> {
+//            handleAdapterClick(buttonClickEvent)
+//          }
+//        }.safe
+      })
   }
 
   private fun initRecyclerView() {

@@ -3,7 +3,7 @@ package com.kirakishou.photoexchange.helper.database.source.local
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import net.response.GalleryPhotosResponse
 
 open class GalleryPhotoLocalSource(
