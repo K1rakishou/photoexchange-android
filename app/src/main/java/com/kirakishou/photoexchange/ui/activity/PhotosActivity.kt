@@ -112,10 +112,9 @@ class PhotosActivity : BaseActivity(), PhotoUploadingCallback, ReceivePhotosServ
   }
 
   override fun onActivityStart() {
-    launch {
-      initRx()
-      checkPermissions(savedInstanceState)
-    }
+    initRx()
+
+    launch { checkPermissions(savedInstanceState) }
   }
 
   override fun onActivityResume() {
@@ -136,7 +135,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingCallback, ReceivePhotosServ
     viewState.saveToBundle(outState)
   }
 
-  private suspend fun initRx() {
+  private fun initRx() {
     compositeDisposable += RxView.clicks(ivCloseActivityButton)
       .subscribeOn(AndroidSchedulers.mainThread())
       .debounceClicks()
@@ -158,11 +157,10 @@ class PhotosActivity : BaseActivity(), PhotoUploadingCallback, ReceivePhotosServ
       .doOnError { Timber.e(it) }
       .subscribe()
 
-    launch {
-      viewModel.intercom.photosActivityEvents.listen().consumeEach { event ->
-        onStateEvent(event)
-      }
-    }
+    compositeDisposable += viewModel.intercom.photosActivityEvents.listen()
+      .subscribe({ event ->
+        launch { onStateEvent(event) }
+      })
   }
 
   private suspend fun checkPermissions(savedInstanceState: Bundle?) {

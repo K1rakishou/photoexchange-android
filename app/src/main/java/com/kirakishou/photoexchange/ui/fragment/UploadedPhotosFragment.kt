@@ -52,15 +52,14 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
       doInvalidate()
     }
 
-    launch { initRx() }
+    initRx()
   }
 
-  private suspend fun initRx() {
-    launch {
-      viewModel.intercom.uploadedPhotosFragmentEvents.listen().consumeEach { event ->
-        onStateEvent(event)
-      }
-    }
+  private fun initRx() {
+    compositeDisposable += viewModel.intercom.uploadedPhotosFragmentEvents.listen()
+      .subscribe({ event ->
+        launch { onStateEvent(event) }
+      })
   }
 
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {

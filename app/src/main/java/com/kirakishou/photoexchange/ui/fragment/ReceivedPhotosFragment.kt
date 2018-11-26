@@ -62,10 +62,10 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
       doInvalidate()
     }
 
-    launch { initRx() }
+    initRx()
   }
 
-  private suspend fun initRx() {
+  private fun initRx() {
     compositeDisposable += scrollSubject
       .subscribeOn(Schedulers.io())
       .distinctUntilChanged()
@@ -75,11 +75,10 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
           .that(PhotosActivityEvent.ScrollEvent(isScrollingDown))
       })
 
-    launch {
-      viewModel.intercom.receivedPhotosFragmentEvents.listen().consumeEach { event ->
-        onStateEvent(event)
-      }
-    }
+    compositeDisposable += viewModel.intercom.receivedPhotosFragmentEvents.listen()
+      .subscribe({ event ->
+        launch { onStateEvent(event) }
+      })
   }
 
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {

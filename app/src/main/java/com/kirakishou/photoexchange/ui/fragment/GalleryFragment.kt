@@ -87,45 +87,49 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
           .that(PhotosActivityEvent.ScrollEvent(isScrollingDown))
       })
 
-    viewModel.intercom.galleryFragmentEvents.listen().consumeEach { event ->
-      onStateEvent(event)
-    }
+    compositeDisposable += viewModel.intercom.galleryFragmentEvents.listen()
+      .subscribe({ event ->
+        launch { onStateEvent(event) }
+      })
 
-    adapterButtonClickSubject.consumeEach { buttonClickEvent ->
-      when (buttonClickEvent) {
-        is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.FavouriteClicked -> {
-          val result = viewModel.favouritePhoto(buttonClickEvent.photoName)
+    compositeDisposable += adapterButtonClickSubject
+      .subscribe({ buttonClickEvent ->
+        TODO()
+//        when (buttonClickEvent) {
 
-          //TODO: hide inside viewmodel
-          when (result) {
-            is Either.Value -> favouritePhoto(buttonClickEvent.photoName, result.value.isFavourited, result.value.favouritesCount)
-            is Either.Error -> {
-              when (result.error) {
-                is ApiErrorException -> handleKnownErrors(result.error.errorCode)
-                else -> handleUnknownErrors(result.error)
-              }
-            }
-          }
-        }
-        is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.ReportClicked -> {
-          val result = viewModel.reportPhoto(buttonClickEvent.photoName)
-
-          //TODO: hide inside viewmodel
-          when (result) {
-            is Either.Value -> reportPhoto(buttonClickEvent.photoName, result.value)
-            is Either.Error -> {
-              when (result.error) {
-                is ApiErrorException -> handleKnownErrors(result.error.errorCode)
-                else -> handleUnknownErrors(result.error)
-              }
-            }
-          }
-        }
-        is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.SwitchShowMapOrPhoto -> {
-          handleAdapterClick(buttonClickEvent)
-        }
-      }.safe
-    }
+//          is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.FavouriteClicked -> {
+//            val result = viewModel.favouritePhoto(buttonClickEvent.photoName)
+//
+//            //TODO: hide inside viewmodel
+//            when (result) {
+//              is Either.Value -> favouritePhoto(buttonClickEvent.photoName, result.value.isFavourited, result.value.favouritesCount)
+//              is Either.Error -> {
+//                when (result.error) {
+//                  is ApiErrorException -> handleKnownErrors(result.error.errorCode)
+//                  else -> handleUnknownErrors(result.error)
+//                }
+//              }
+//            }
+//          }
+//          is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.ReportClicked -> {
+//            val result = viewModel.reportPhoto(buttonClickEvent.photoName)
+//
+//            //TODO: hide inside viewmodel
+//            when (result) {
+//              is Either.Value -> reportPhoto(buttonClickEvent.photoName, result.value)
+//              is Either.Error -> {
+//                when (result.error) {
+//                  is ApiErrorException -> handleKnownErrors(result.error.errorCode)
+//                  else -> handleUnknownErrors(result.error)
+//                }
+//              }
+//            }
+//          }
+//          is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.SwitchShowMapOrPhoto -> {
+//            handleAdapterClick(buttonClickEvent)
+//          }
+//        }.safe
+      })
   }
 
   private fun initRecyclerView() {
