@@ -147,7 +147,6 @@ class ReceivedPhotosFragmentViewModel(
 
   override fun onCleared() {
     super.onCleared()
-    Timber.tag(TAG).d("onCleared()")
 
     compositeDisposable.dispose()
     job.cancel()

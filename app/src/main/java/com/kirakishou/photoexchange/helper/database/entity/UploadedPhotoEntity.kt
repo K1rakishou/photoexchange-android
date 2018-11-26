@@ -4,7 +4,6 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity.Companion.TABLE_NAME
-import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 
 @Entity(tableName = TABLE_NAME)
 class UploadedPhotoEntity(

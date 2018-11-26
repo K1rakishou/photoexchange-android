@@ -190,24 +190,24 @@ class UploadedPhotosFragmentViewModel(
     }
 
     withState { state ->
-      val newPhotos = mutableListOf<UploadedPhoto>()
+      val updatedPhotos = mutableListOf<UploadedPhoto>()
 
-      for (receivedPhoto in receivedPhotos) {
-        for (uploadedPhoto in state.uploadedPhotos) {
-          newPhotos += if (uploadedPhoto.photoName == receivedPhoto.uploadedPhotoName) {
-            val receiverInfo = UploadedPhoto.ReceiverInfo(
-              receivedPhoto.lon,
-              receivedPhoto.lat
-            )
+      for (uploadedPhoto in state.uploadedPhotos) {
+        val exchangedPhoto = receivedPhotos.firstOrNull { it.uploadedPhotoName == uploadedPhoto.photoName }
 
-            uploadedPhoto.copy(receiverInfo = receiverInfo)
-          } else {
-            uploadedPhoto.copy()
-          }
+        updatedPhotos += if (exchangedPhoto == null) {
+          uploadedPhoto.copy()
+        } else {
+          val receiverInfo = UploadedPhoto.ReceiverInfo(
+            exchangedPhoto.lon,
+            exchangedPhoto.lat
+          )
+
+          uploadedPhoto.copy(receiverInfo = receiverInfo)
         }
       }
 
-      setState { copy(uploadedPhotos = newPhotos) }
+      setState { copy(uploadedPhotos = updatedPhotos) }
     }
   }
 
@@ -283,6 +283,7 @@ class UploadedPhotosFragmentViewModel(
           setState {
             copy(
               takenPhotos = newTakenPhotos,
+              uploadedPhotosRequest = Success(newUploadedPhotos),
               uploadedPhotos = newUploadedPhotos
             )
           }
@@ -327,7 +328,6 @@ class UploadedPhotosFragmentViewModel(
 
   override fun onCleared() {
     super.onCleared()
-    Timber.tag(TAG).d("onCleared()")
 
     compositeDisposable.dispose()
     job.cancel()

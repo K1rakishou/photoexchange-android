@@ -90,8 +90,8 @@ class ReceivedPhotosFragmentEpoxyController {
     when (error) {
       is EmptyUserIdException -> {
         textRow {
-          id("no_received_photos_message")
-          text("You have no received photos yet")
+          id("no_uploaded_photos_message")
+          text("You have to upload at least one photo first")
         }
       }
       else -> {

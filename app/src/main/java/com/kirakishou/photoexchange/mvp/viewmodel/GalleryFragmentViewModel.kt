@@ -95,8 +95,6 @@ class GalleryFragmentViewModel(
   }
 
   fun onCleared() {
-    Timber.tag(TAG).d("onCleared()")
-
     compositeDisposable.dispose()
     job.cancel()
   }

@@ -28,12 +28,21 @@ object UploadedPhotosMapper {
 
     object ToObject {
       fun toUploadedPhoto(uploadedPhotoData: GetUploadedPhotosResponse.UploadedPhotoResponseData): UploadedPhoto {
+        val receiverInfo = if (uploadedPhotoData.receiverInfoResponseData == null) {
+          null
+        } else {
+          UploadedPhoto.ReceiverInfo(
+            uploadedPhotoData.receiverInfoResponseData!!.receiverLon,
+            uploadedPhotoData.receiverInfoResponseData!!.receiverLat
+          )
+        }
+
         return UploadedPhoto(
           uploadedPhotoData.photoId,
           uploadedPhotoData.photoName,
           uploadedPhotoData.uploaderLon,
           uploadedPhotoData.uploaderLat,
-          null,
+          receiverInfo,
           uploadedPhotoData.uploadedOn
         )
       }
@@ -47,12 +56,21 @@ object UploadedPhotosMapper {
   object FromEntity {
     object ToObject {
       fun toUploadedPhoto(uploadedPhotoEntity: UploadedPhotoEntity): UploadedPhoto {
+        val receiverInfo = if (uploadedPhotoEntity.receiverLon == null || uploadedPhotoEntity.receiverLat == null) {
+          null
+        } else {
+          UploadedPhoto.ReceiverInfo(
+            uploadedPhotoEntity.receiverLon!!,
+            uploadedPhotoEntity.receiverLat!!
+          )
+        }
+
         return UploadedPhoto(
           uploadedPhotoEntity.photoId!!,
           uploadedPhotoEntity.photoName,
           uploadedPhotoEntity.uploaderLon,
           uploadedPhotoEntity.uploaderLat,
-          null,
+          receiverInfo,
           uploadedPhotoEntity.uploadedOn!!
         )
       }

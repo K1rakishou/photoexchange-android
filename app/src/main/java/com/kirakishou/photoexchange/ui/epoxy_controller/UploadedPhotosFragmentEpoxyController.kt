@@ -141,7 +141,7 @@ class UploadedPhotosFragmentEpoxyController {
       is EmptyUserIdException -> {
         textRow {
           id("no_uploaded_photos_message")
-          text("You have no uploaded photos yet")
+          text("You have to upload at least one photo first")
         }
       }
       else -> {
