@@ -63,10 +63,7 @@ open class ReceivePhotosServicePresenter(
       return
     }
 
-    if (receivedPhotos.isNotEmpty()) {
-      sendEvent(ReceivePhotoEvent.OnPhotosReceived(receivedPhotos))
-    }
-
+    sendEvent(ReceivePhotoEvent.OnPhotosReceived(receivedPhotos))
     sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Success()))
   }
 

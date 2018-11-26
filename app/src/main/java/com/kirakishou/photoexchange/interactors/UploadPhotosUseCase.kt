@@ -38,8 +38,6 @@ open class UploadPhotosUseCase(
   sealed class PhotoUploadingException : Exception() {
     class PhotoDoesNotExistOnDisk : PhotoUploadingException()
     class CouldNotRotatePhoto : PhotoUploadingException()
-    class DatabaseException : PhotoUploadingException()
-    class ApiException(val errorCode: ErrorCode) : PhotoUploadingException()
     class CouldNotUpdatePhotoState : PhotoUploadingException()
   }
 }

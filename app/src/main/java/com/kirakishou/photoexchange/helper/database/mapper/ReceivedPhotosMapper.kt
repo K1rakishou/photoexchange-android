@@ -9,7 +9,6 @@ object ReceivedPhotosMapper {
   object FromEntity {
     fun toReceivedPhoto(receivedPhotoEntity: ReceivedPhotoEntity): ReceivedPhoto {
       return ReceivedPhoto(
-        receivedPhotoEntity.id!!,
         receivedPhotoEntity.uploadedPhotoName!!,
         receivedPhotoEntity.receivedPhotoName!!,
         receivedPhotoEntity.lon!!,
@@ -27,7 +26,6 @@ object ReceivedPhotosMapper {
     object ReceivedPhotos {
       fun toReceivedPhoto(receivedPhotosResponse: ReceivedPhotosResponse.ReceivedPhotoResponseData): ReceivedPhoto {
         return ReceivedPhoto(
-          receivedPhotosResponse.photoId,
           receivedPhotosResponse.uploadedPhotoName,
           receivedPhotosResponse.receivedPhotoName,
           receivedPhotosResponse.lon,
@@ -42,7 +40,6 @@ object ReceivedPhotosMapper {
 
       fun toReceivedPhotoEntity(time: Long, receivedPhotosResponse: ReceivedPhotosResponse.ReceivedPhotoResponseData): ReceivedPhotoEntity {
         return ReceivedPhotoEntity.create(
-          receivedPhotosResponse.photoId,
           receivedPhotosResponse.uploadedPhotoName,
           receivedPhotosResponse.receivedPhotoName,
           receivedPhotosResponse.lon,
@@ -60,7 +57,6 @@ object ReceivedPhotosMapper {
     object GetReceivedPhotos {
       fun toReceivedPhoto(receivedPhotosResponse: ReceivedPhotosResponse.ReceivedPhotoResponseData): ReceivedPhoto {
         return ReceivedPhoto(
-          receivedPhotosResponse.photoId,
           receivedPhotosResponse.uploadedPhotoName,
           receivedPhotosResponse.receivedPhotoName,
           receivedPhotosResponse.lon,
@@ -75,7 +71,6 @@ object ReceivedPhotosMapper {
 
       fun toReceivedPhotoEntity(time: Long, receivedPhotosResponse: ReceivedPhotosResponse.ReceivedPhotoResponseData): ReceivedPhotoEntity {
         return ReceivedPhotoEntity.create(
-          receivedPhotosResponse.photoId,
           receivedPhotosResponse.uploadedPhotoName,
           receivedPhotosResponse.receivedPhotoName,
           receivedPhotosResponse.lon,

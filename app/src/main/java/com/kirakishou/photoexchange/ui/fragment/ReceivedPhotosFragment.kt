@@ -3,11 +3,9 @@ package com.kirakishou.photoexchange.ui.fragment
 
 import android.os.Bundle
 import android.view.View
-import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import butterknife.BindView
 import com.airbnb.epoxy.AsyncEpoxyController
-import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.extension.safe
@@ -19,10 +17,6 @@ import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
-import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapter
-import com.kirakishou.photoexchange.ui.adapter.epoxy.loadingRow
-import com.kirakishou.photoexchange.ui.adapter.epoxy.receivedPhotoRow
-import com.kirakishou.photoexchange.ui.adapter.epoxy.textRow
 import com.kirakishou.photoexchange.ui.epoxy_controller.ReceivedPhotosFragmentEpoxyController
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
@@ -49,7 +43,6 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
 
   private val controller = ReceivedPhotosFragmentEpoxyController()
   private val scrollSubject = PublishSubject.create<Boolean>()
-  private val adapterClicksSubject = PublishSubject.create<ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent>()
 
   private val receivedPhotoAdapterViewWidth = Constants.DEFAULT_ADAPTER_ITEM_WIDTH
   private val throttleTime = 200L
@@ -73,10 +66,6 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
   }
 
   private suspend fun initRx() {
-    compositeDisposable += adapterClicksSubject
-      .subscribeOn(AndroidSchedulers.mainThread())
-      .subscribe({ click -> handleAdapterClick(click) }, { Timber.tag(TAG).e(it) })
-
     compositeDisposable += scrollSubject
       .subscribeOn(Schedulers.io())
       .distinctUntilChanged()
@@ -97,18 +86,6 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
     controller.rebuild(requireContext(), this, viewModel.receivedPhotosFragmentViewModel)
   }
 
-  private fun handleAdapterClick(click: ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent) {
-    if (!isAdded) {
-      return
-    }
-
-    when (click) {
-      is ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent.SwitchShowMapOrPhoto -> {
-        switchShowMapOrPhoto(click.photoName)
-      }
-    }.safe
-  }
-
   override suspend fun onStateEvent(event: ReceivedPhotosFragmentEvent) {
     when (event) {
       is ReceivedPhotosFragmentEvent.GeneralEvents -> {
@@ -119,8 +96,7 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
         }
       }
       is ReceivedPhotosFragmentEvent.ReceivePhotosEvent -> {
-        //TODO: move to viewModel
-        onReceivePhotosEvent(event)
+        viewModel.receivedPhotosFragmentViewModel.onReceivePhotosEvent(event)
       }
     }.safe
   }
@@ -133,29 +109,6 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
       is ReceivedPhotosFragmentEvent.GeneralEvents.OnPageSelected -> {
       }
     }.safe
-  }
-
-  private fun onReceivePhotosEvent(event: ReceivedPhotosFragmentEvent.ReceivePhotosEvent) {
-    when (event) {
-      is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived -> {
-        //TODO:
-//          adapter.addReceivedPhoto(event.receivedPhoto)
-      }
-      is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
-        //TODO: do nothing here???
-      }
-    }.safe
-  }
-
-  private fun switchShowMapOrPhoto(photoName: String) {
-    if (!isAdded) {
-      return
-    }
-
-    receivedPhotosList.post {
-      //TODO
-//      adapter.switchShowMapOrPhoto(photoName)
-    }
   }
 
   override fun resolveDaggerDependency() {

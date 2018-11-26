@@ -43,7 +43,7 @@ class ReceivedPhotosFragmentEpoxyController {
             } else {
               state.receivedPhotos.forEach { photo ->
                 receivedPhotoRow {
-                  id("received_photo_${photo.photoId}")
+                  id("received_photo_${photo.receivedPhotoName}")
                   photo(photo)
                   callback { model, _, _, _ ->
                     viewModel.swapPhotoAndMap(model.photo().receivedPhotoName)

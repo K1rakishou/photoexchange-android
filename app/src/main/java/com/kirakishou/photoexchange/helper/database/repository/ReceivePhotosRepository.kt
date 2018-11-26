@@ -38,12 +38,14 @@ class ReceivePhotosRepository(
       for (receivedPhoto in receivedPhotos) {
         try {
           updatePhotoReceiverInfo(receivedPhoto)
-        } catch (error: Exception) {
-          throw DatabaseException("Could not update uploaded photo's receiver info (${error.message})")
+        } catch (error: Throwable) {
+          Timber.tag(TAG).e(error)
+          throw error
         }
 
         val photoAnswer = ReceivedPhotosMapper.FromResponse
           .ReceivedPhotos.toReceivedPhoto(receivedPhoto)
+
         results += photoAnswer
       }
 
@@ -56,8 +58,7 @@ class ReceivePhotosRepository(
   ) {
     database.transactional {
       if (!receivePhotosLocalSource.save(receivedPhoto)) {
-        Timber.tag(TAG).w("Could not save photo with receivedPhotoName ${receivedPhoto.receivedPhotoName}")
-        return@transactional
+        throw DatabaseException("Could not save photo with receivedPhotoName ${receivedPhoto.receivedPhotoName}")
       }
 
       val updateResult = uploadedPhotosLocalSource.updateReceiverInfo(
@@ -67,13 +68,12 @@ class ReceivePhotosRepository(
       )
 
       if (!updateResult) {
-        Timber.tag(TAG).w("Could not update receiver info with uploadedPhotoName ${receivedPhoto.uploadedPhotoName}")
-        return@transactional
+        throw DatabaseException("Could not update receiver info with uploadedPhotoName ${receivedPhoto.uploadedPhotoName}")
       }
 
       //TODO: is there any photo to delete to begin with? It should probably be deleted after uploading is done
       if (!takenPhotosLocalSource.deletePhotoByName(receivedPhoto.uploadedPhotoName)) {
-        Timber.tag(TAG).w("Could not delete taken photo with uploadedPhotoName ${receivedPhoto.uploadedPhotoName}")
+        throw DatabaseException("Could not delete taken photo with uploadedPhotoName ${receivedPhoto.uploadedPhotoName}")
       }
     }
   }

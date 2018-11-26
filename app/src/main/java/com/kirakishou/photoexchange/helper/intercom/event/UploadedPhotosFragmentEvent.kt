@@ -7,9 +7,13 @@ import java.lang.Exception
 
 sealed class UploadedPhotosFragmentEvent : BaseEvent {
   sealed class GeneralEvents : UploadedPhotosFragmentEvent() {
-    class UpdateReceiverInfo(val receivedPhotos: List<ReceivedPhoto>) : GeneralEvents()
     class OnPageSelected : GeneralEvents()
-    class PhotosReceived(val receivedPhotos: List<ReceivedPhoto>) : GeneralEvents()
+  }
+
+  sealed class ReceivePhotosEvent : UploadedPhotosFragmentEvent() {
+    class PhotosReceived(val receivedPhotos: List<ReceivedPhoto>) : ReceivePhotosEvent()
+    class NoPhotosReceived : ReceivePhotosEvent()
+    class OnFailed(val error: Throwable) : ReceivePhotosEvent()
   }
 
   sealed class PhotoUploadEvent : UploadedPhotosFragmentEvent() {

@@ -36,7 +36,6 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
 
   private val controller = UploadedPhotosFragmentEpoxyController()
   private val uploadedPhotoAdapterViewWidth = Constants.DEFAULT_ADAPTER_ITEM_WIDTH
-  private val intervalTime = 30L
 
   private val photoSize by lazy { AndroidUtils.figureOutPhotosSizes(requireContext()) }
   private val columnsCount by lazy { AndroidUtils.calculateNoOfColumns(requireContext(), uploadedPhotoAdapterViewWidth) }
@@ -49,26 +48,11 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
     viewModel.uploadedPhotosFragmentViewModel.photoSize = photoSize
     viewModel.uploadedPhotosFragmentViewModel.photosPerPage = columnsCount * Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
 
-    viewModel.uploadedPhotosFragmentViewModel.selectSubscribe(this, UploadedPhotosFragmentState::takenPhotos) {
-      startUploadingService()
-    }
-
-    viewModel.uploadedPhotosFragmentViewModel.selectSubscribe(this, UploadedPhotosFragmentState::uploadedPhotos) {
-      startReceivingService("Starting the service after a page of uploaded photos was loaded")
-    }
-
     viewModel.uploadedPhotosFragmentViewModel.subscribe(this, true) {
       doInvalidate()
     }
 
     launch { initRx() }
-  }
-
-  override fun onResume() {
-    super.onResume()
-
-    clearOnPauseCompositeDisposable += Flowable.interval(intervalTime, intervalTime, TimeUnit.SECONDS)
-      .subscribe({ startReceivingService("Periodic check of photos to receive") })
   }
 
   private suspend fun initRx() {
@@ -96,6 +80,9 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
       is UploadedPhotosFragmentEvent.PhotoUploadEvent -> {
         viewModel.uploadedPhotosFragmentViewModel.onUploadingEvent(event)
       }
+      is UploadedPhotosFragmentEvent.ReceivePhotosEvent -> {
+        viewModel.uploadedPhotosFragmentViewModel.onReceiveEvent(event)
+      }
     }.safe
   }
 
@@ -104,33 +91,7 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
       is UploadedPhotosFragmentEvent.GeneralEvents.OnPageSelected -> {
 //          viewModel.uploadedPhotosFragmentViewModel.viewState.reset()
       }
-      is UploadedPhotosFragmentEvent.GeneralEvents.UpdateReceiverInfo,
-      is UploadedPhotosFragmentEvent.GeneralEvents.PhotosReceived -> {
-        val receivedPhotos = when (event) {
-          is UploadedPhotosFragmentEvent.GeneralEvents.UpdateReceiverInfo -> event.receivedPhotos
-          is UploadedPhotosFragmentEvent.GeneralEvents.PhotosReceived -> event.receivedPhotos
-          else -> throw IllegalStateException("Event not supported (${event::class})")
-        }
-
-        viewModel.uploadedPhotosFragmentViewModel.onUpdateReceiverInfo(receivedPhotos)
-      }
     }.safe
-  }
-
-  private fun startReceivingService(reason: String) {
-    viewModel.intercom.tell<PhotosActivity>()
-      .to(PhotosActivityEvent.StartReceivingService(
-        PhotosActivityViewModel::class.java,
-        reason)
-      )
-  }
-
-  private fun startUploadingService() {
-    viewModel.intercom.tell<PhotosActivity>()
-      .to(PhotosActivityEvent.StartUploadingService(
-        PhotosActivityViewModel::class.java,
-        "There are queued up photos in the database")
-      )
   }
 
   override fun resolveDaggerDependency() {

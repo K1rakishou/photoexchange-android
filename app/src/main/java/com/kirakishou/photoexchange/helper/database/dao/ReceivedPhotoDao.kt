@@ -25,9 +25,9 @@ abstract class ReceivedPhotoDao {
   abstract fun findAll(): List<ReceivedPhotoEntity>
 
   @Query("SELECT * FROM ${ReceivedPhotoEntity.TABLE_NAME} " +
-    "WHERE ${ReceivedPhotoEntity.ID_COLUMN} IN (:receivedPhotoIdsList) " +
-    "ORDER BY ${ReceivedPhotoEntity.ID_COLUMN} DESC")
-  abstract fun findMany(receivedPhotoIdsList: List<Long>): List<ReceivedPhotoEntity>
+    "WHERE ${ReceivedPhotoEntity.RECEIVED_PHOTO_NAME_COLUMN} IN (:receivedPhotoNameList) " +
+    "ORDER BY ${ReceivedPhotoEntity.UPLOADED_ON_COLUMN } DESC")
+  abstract fun findMany(receivedPhotoNameList: List<Long>): List<ReceivedPhotoEntity>
 
   @Query("SELECT COUNT(*) FROM ${ReceivedPhotoEntity.TABLE_NAME}")
   abstract fun countAll(): Long

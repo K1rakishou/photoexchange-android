@@ -38,6 +38,7 @@ open class ReportPhotoRepository(
     database.transactional {
       val galleryPhotoEntity = galleryPhotoLocalSource.findByPhotoName(photoName)
       if (galleryPhotoEntity == null) {
+        //TODO: should an exception be thrown here?
         return@transactional
       }
 
@@ -54,7 +55,9 @@ open class ReportPhotoRepository(
         galleryPhotoInfoEntity.isReported = isReported
       }
 
-      galleryPhotoInfoLocalSource.save(galleryPhotoInfoEntity)
+      if (!galleryPhotoInfoLocalSource.save(galleryPhotoInfoEntity)) {
+        throw DatabaseException("Could not update gallery photo info")
+      }
     }
   }
 

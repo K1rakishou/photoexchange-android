@@ -332,13 +332,23 @@ class PhotosActivity : BaseActivity(), PhotoUploadingCallback, ReceivePhotosServ
     when (event) {
       is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived -> {
         viewModel.intercom.tell<UploadedPhotosFragment>()
-          .that(UploadedPhotosFragmentEvent.GeneralEvents.PhotosReceived(event.receivedPhotos))
+          .that(UploadedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived(event.receivedPhotos))
         viewModel.intercom.tell<ReceivedPhotosFragment>()
           .that(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived(event.receivedPhotos))
+
         showPhotoAnswerFoundSnackbar()
       }
+      is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.NoPhotosReceived -> {
+        viewModel.intercom.tell<UploadedPhotosFragment>()
+          .that(UploadedPhotosFragmentEvent.ReceivePhotosEvent.NoPhotosReceived())
+        viewModel.intercom.tell<ReceivedPhotosFragment>()
+          .that(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.NoPhotosReceived())
+      }
       is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
-        viewModel.intercom.tell<ReceivedPhotosFragment>().to(event)
+        viewModel.intercom.tell<UploadedPhotosFragment>()
+          .that(UploadedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed(event.error))
+        viewModel.intercom.tell<ReceivedPhotosFragment>()
+          .that(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed(event.error))
       }
     }.safe
   }

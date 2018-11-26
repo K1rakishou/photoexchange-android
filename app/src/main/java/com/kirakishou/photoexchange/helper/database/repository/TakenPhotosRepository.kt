@@ -144,19 +144,6 @@ open class TakenPhotosRepository(
     }
   }
 
-//  open suspend fun figureOutWhatPhotosToLoad(): PhotosToLoad {
-//    return withContext(coroutineContext) {
-//      val hasFailedToUploadPhotos = countAllByState(PhotoState.FAILED_TO_UPLOAD) > 0
-//      val hasQueuedUpPhotos = countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
-//
-//      if (hasFailedToUploadPhotos || hasQueuedUpPhotos) {
-//        return@withContext PhotosToLoad.QueuedUpAndFailed
-//      }
-//
-//      return@withContext PhotosToLoad.Uploaded
-//    }
-//  }
-
   open suspend fun countAllByState(state: PhotoState): Int {
     return withContext(coroutineContext) {
       return@withContext takenPhotoDao.countAllByState(state).toInt()
