@@ -29,7 +29,6 @@ import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.rx2.consumeEach
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject

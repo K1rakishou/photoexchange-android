@@ -18,13 +18,10 @@ import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.epoxy_controller.ReceivedPhotosFragmentEpoxyController
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.rx2.consumeEach
-import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
