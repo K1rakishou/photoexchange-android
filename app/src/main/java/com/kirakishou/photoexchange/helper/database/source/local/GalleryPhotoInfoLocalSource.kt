@@ -5,7 +5,7 @@ import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoInfoEntit
 import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosInfoMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.mvp.model.GalleryPhotoInfo
+import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhotoInfo
 import net.response.GalleryPhotoInfoResponse
 
 open class GalleryPhotoInfoLocalSource(

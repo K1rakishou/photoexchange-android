@@ -4,7 +4,7 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersPro
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.source.local.UploadPhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.remote.GetUploadedPhotosRemoteSource
-import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -22,11 +22,11 @@ class GetUploadedPhotosRepository(
 
       val uploadedPhotos = getPageInternal(time, count, userId)
       val uploadedPhotosWithNoReceiver = uploadedPhotos
-        .filter { !it.hasReceiverInfo }
+        .filter { it.receiverInfo == null }
         .sortedByDescending { it.photoId }
 
       val uploadedPhotosWithReceiver = uploadedPhotos
-        .filter { it.hasReceiverInfo }
+        .filter { it.receiverInfo != null }
         .sortedByDescending { it.photoId }
 
       //we need to show photos without receiver first and after them photos with receiver

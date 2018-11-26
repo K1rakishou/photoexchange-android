@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.ui.adapter
 
-import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 
 sealed class ReceivedPhotosAdapterItem : BaseAdapterItem() {
 

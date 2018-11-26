@@ -6,7 +6,7 @@ import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.source.local.ReceivePhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.UploadPhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.remote.GetReceivedPhotosRemoteSource
-import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import kotlinx.coroutines.withContext
 import net.response.ReceivedPhotosResponse
@@ -55,7 +55,13 @@ open class GetReceivedPhotosRepository(
   private suspend fun storeInDatabase(receivedPhotos: List<ReceivedPhotosResponse.ReceivedPhotoResponseData>): Boolean {
     return database.transactional {
       for (receivedPhoto in receivedPhotos) {
-        if (!uploadedPhotosLocalSource.updateReceiverInfo(receivedPhoto.uploadedPhotoName)) {
+        val updateResult = uploadedPhotosLocalSource.updateReceiverInfo(
+          receivedPhoto.uploadedPhotoName,
+          receivedPhoto.lon,
+          receivedPhoto.lat
+        )
+
+        if (!updateResult) {
           return@transactional false
         }
       }

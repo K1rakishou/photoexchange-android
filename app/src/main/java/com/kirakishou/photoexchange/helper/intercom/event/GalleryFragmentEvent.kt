@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.helper.intercom.event
 
-import com.kirakishou.photoexchange.mvp.model.GalleryPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 
 sealed class GalleryFragmentEvent : BaseEvent {
   sealed class GeneralEvents : GalleryFragmentEvent() {

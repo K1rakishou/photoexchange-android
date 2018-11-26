@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.helper.database.mapper
 
 import com.kirakishou.photoexchange.helper.database.entity.ReceivedPhotoEntity
-import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import net.response.ReceivedPhotosResponse
 
 object ReceivedPhotosMapper {

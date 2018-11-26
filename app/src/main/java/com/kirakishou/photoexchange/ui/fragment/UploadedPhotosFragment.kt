@@ -22,6 +22,7 @@ import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.adapter.epoxy.*
 import io.reactivex.Flowable
 import io.reactivex.rxkotlin.plusAssign
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.rx2.consumeEach
 import timber.log.Timber

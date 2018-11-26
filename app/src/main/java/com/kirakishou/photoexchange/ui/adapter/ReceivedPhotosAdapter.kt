@@ -8,7 +8,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import io.reactivex.subjects.PublishSubject
 
 class ReceivedPhotosAdapter(

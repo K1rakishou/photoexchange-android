@@ -14,8 +14,8 @@ import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 import com.kirakishou.photoexchange.mvp.model.photo.QueuedUpPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
@@ -175,9 +175,8 @@ class UploadedPhotosFragmentViewModel(
     val result = getUploadedPhotosUseCase.loadPageOfPhotos(lastUploadedOn, count)
     when (result) {
       is Either.Value -> {
-        return result.value.also { uploadedPhotos ->
-          uploadedPhotos.forEach { uploadedPhoto -> uploadedPhoto.photoSize = photoSize }
-        }
+        return result.value
+          .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
       }
       is Either.Error -> {
         throw result.error
@@ -196,7 +195,12 @@ class UploadedPhotosFragmentViewModel(
       for (receivedPhoto in receivedPhotos) {
         for (uploadedPhoto in state.uploadedPhotos) {
           newPhotos += if (uploadedPhoto.photoName == receivedPhoto.uploadedPhotoName) {
-            uploadedPhoto.copy(hasReceiverInfo = true)
+            val receiverInfo = UploadedPhoto.ReceiverInfo(
+              receivedPhoto.lon,
+              receivedPhoto.lat
+            )
+
+            uploadedPhoto.copy(receiverInfo = receiverInfo)
           } else {
             uploadedPhoto.copy()
           }
@@ -262,7 +266,7 @@ class UploadedPhotosFragmentViewModel(
             event.newPhotoName,
             event.currentLocation.lon,
             event.currentLocation.lat,
-            false,
+            null,
             event.uploadedOn,
             photoSize
           )

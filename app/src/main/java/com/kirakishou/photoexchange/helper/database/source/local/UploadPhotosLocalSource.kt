@@ -5,7 +5,7 @@ import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
 import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import net.response.GetUploadedPhotosResponse
 
 open class UploadPhotosLocalSource(
@@ -55,8 +55,8 @@ open class UploadPhotosLocalSource(
     return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.getPage(time, count))
   }
 
-  fun updateReceiverInfo(uploadedPhotoName: String): Boolean {
-    return uploadedPhotoDao.updateReceiverInfo(uploadedPhotoName) == 1
+  fun updateReceiverInfo(uploadedPhotoName: String, receiverLon: Double, receiverLat: Double): Boolean {
+    return uploadedPhotoDao.updateReceiverInfo(uploadedPhotoName, receiverLon, receiverLat) == 1
   }
 
   //TODO: tests

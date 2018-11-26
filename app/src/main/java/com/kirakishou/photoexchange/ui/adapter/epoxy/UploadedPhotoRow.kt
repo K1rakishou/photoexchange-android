@@ -13,7 +13,7 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.di.module.GlideApp
-import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.other.Constants
 
 @ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT)
@@ -42,13 +42,13 @@ class UploadedPhotoRow @JvmOverloads constructor(
   fun setPhoto(uploadedPhoto: UploadedPhoto) {
     val fullUrl = "${Constants.BASE_PHOTOS_URL}/${uploadedPhoto.photoName}/${uploadedPhoto.photoSize.value}"
 
-    val drawable = if (!uploadedPhoto.hasReceiverInfo) {
+    val drawable = if (uploadedPhoto.receiverInfo == null) {
       context.getDrawable(R.drawable.ic_done)
     } else {
       context.getDrawable(R.drawable.ic_done_all)
     }
 
-    val color = if (!uploadedPhoto.hasReceiverInfo) {
+    val color = if (uploadedPhoto.receiverInfo == null) {
       ColorDrawable(context.resources.getColor(R.color.photo_state_uploaded_color))
     } else {
       ColorDrawable(context.resources.getColor(R.color.photo_state_exchanged_color))

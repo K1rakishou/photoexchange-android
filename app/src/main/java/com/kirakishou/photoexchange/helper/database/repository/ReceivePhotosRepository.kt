@@ -8,7 +8,7 @@ import com.kirakishou.photoexchange.helper.database.source.local.TakenPhotosLoca
 import com.kirakishou.photoexchange.helper.database.source.local.UploadPhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.remote.ReceivePhotosRemoteSource
 import com.kirakishou.photoexchange.interactors.ReceivePhotosUseCase
-import com.kirakishou.photoexchange.mvp.model.ReceivedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.helper.exception.ApiErrorException
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import kotlinx.coroutines.withContext
@@ -60,7 +60,13 @@ class ReceivePhotosRepository(
         return@transactional
       }
 
-      if (!uploadedPhotosLocalSource.updateReceiverInfo(receivedPhoto.uploadedPhotoName)) {
+      val updateResult = uploadedPhotosLocalSource.updateReceiverInfo(
+        receivedPhoto.uploadedPhotoName,
+        receivedPhoto.lon,
+        receivedPhoto.lat
+      )
+
+      if (!updateResult) {
         Timber.tag(TAG).w("Could not update receiver info with uploadedPhotoName ${receivedPhoto.uploadedPhotoName}")
         return@transactional
       }

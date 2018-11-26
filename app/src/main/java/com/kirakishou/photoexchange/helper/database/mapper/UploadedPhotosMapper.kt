@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.helper.database.mapper
 
 import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
-import com.kirakishou.photoexchange.mvp.model.UploadedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import net.response.GetUploadedPhotosResponse
 
 object UploadedPhotosMapper {
@@ -14,7 +14,8 @@ object UploadedPhotosMapper {
           uploadedPhotoData.photoId,
           uploadedPhotoData.uploaderLon,
           uploadedPhotoData.uploaderLat,
-          uploadedPhotoData.hasReceiverInfo,
+          uploadedPhotoData.receiverInfoResponseData?.receiverLon,
+          uploadedPhotoData.receiverInfoResponseData?.receiverLat,
           uploadedPhotoData.uploadedOn,
           time
         )
@@ -32,7 +33,7 @@ object UploadedPhotosMapper {
           uploadedPhotoData.photoName,
           uploadedPhotoData.uploaderLon,
           uploadedPhotoData.uploaderLat,
-          uploadedPhotoData.hasReceiverInfo,
+          null,
           uploadedPhotoData.uploadedOn
         )
       }
@@ -51,7 +52,7 @@ object UploadedPhotosMapper {
           uploadedPhotoEntity.photoName,
           uploadedPhotoEntity.uploaderLon,
           uploadedPhotoEntity.uploaderLat,
-          uploadedPhotoEntity.hasReceiverInfo,
+          null,
           uploadedPhotoEntity.uploadedOn!!
         )
       }
@@ -65,12 +66,11 @@ object UploadedPhotosMapper {
   object FromObject {
     object ToEntity {
       fun toUploadedPhotoEntity(photoId: Long, photoName: String, lon: Double, lat: Double, time: Long, uploadedOn: Long): UploadedPhotoEntity {
-        return UploadedPhotoEntity.create(
+        return UploadedPhotoEntity.createWithoutReceiverInfo(
           photoName,
           photoId,
           lon,
           lat,
-          false,
           uploadedOn,
           time
         )

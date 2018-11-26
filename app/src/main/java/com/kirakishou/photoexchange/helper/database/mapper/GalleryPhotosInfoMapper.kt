@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.helper.database.mapper
 
 import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoInfoEntity
-import com.kirakishou.photoexchange.mvp.model.GalleryPhotoInfo
+import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhotoInfo
 import net.response.GalleryPhotoInfoResponse
 
 object GalleryPhotosInfoMapper {
