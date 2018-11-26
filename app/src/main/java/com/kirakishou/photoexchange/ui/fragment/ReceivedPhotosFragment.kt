@@ -23,6 +23,7 @@ import com.kirakishou.photoexchange.ui.adapter.ReceivedPhotosAdapter
 import com.kirakishou.photoexchange.ui.adapter.epoxy.loadingRow
 import com.kirakishou.photoexchange.ui.adapter.epoxy.receivedPhotoRow
 import com.kirakishou.photoexchange.ui.adapter.epoxy.textRow
+import com.kirakishou.photoexchange.ui.epoxy_controller.ReceivedPhotosFragmentEpoxyController
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
@@ -45,6 +46,8 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
   lateinit var viewModel: PhotosActivityViewModel
 
   private val TAG = "ReceivedPhotosFragment"
+
+  private val controller = ReceivedPhotosFragmentEpoxyController()
   private val scrollSubject = PublishSubject.create<Boolean>()
   private val adapterClicksSubject = PublishSubject.create<ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent>()
 
@@ -91,74 +94,7 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
   }
 
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
-    return@simpleController withState(viewModel.receivedPhotosFragmentViewModel) { state ->
-      when (state.receivedPhotosRequest) {
-        is Loading,
-        is Success -> {
-          if (state.receivedPhotosRequest is Loading) {
-            Timber.tag(TAG).d("Loading received photos")
-
-            loadingRow {
-              id("received_photos_loading_row")
-            }
-          } else {
-            Timber.tag(TAG).d("Success received photos")
-          }
-
-          if (state.receivedPhotos.isEmpty()) {
-            textRow {
-              id("no_received_photos")
-              text("You have no photos yet")
-            }
-          } else {
-            state.receivedPhotos.forEach { photo ->
-              receivedPhotoRow {
-                id("received_photo_${photo.photoId}")
-                photo(photo)
-                callback { model, _, _, _ ->
-                  viewModel.receivedPhotosFragmentViewModel.swapPhotoAndMap(model.photo().receivedPhotoName)
-                }
-              }
-            }
-
-            if (state.isEndReached) {
-              textRow {
-                id("list_end_footer_text")
-                text("End of the list reached.\nClick here to reload")
-                callback { _ ->
-                  Timber.tag(TAG).d("Reloading")
-                  viewModel.receivedPhotosFragmentViewModel.resetState()
-                }
-              }
-            } else {
-              loadingRow {
-                //we should change the id to trigger the binding
-                id("load_next_page_${state.receivedPhotos.size}")
-                onBind { _, _, _ -> viewModel.receivedPhotosFragmentViewModel.loadReceivedPhotos() }
-              }
-            }
-          }
-        }
-        is Fail -> {
-          Timber.tag(TAG).d("Fail uploaded photos")
-
-          textRow {
-            val exceptionMessage = state.receivedPhotosRequest.error.message ?: "Unknown error message"
-            Toast.makeText(requireContext(), "Exception message is: \"$exceptionMessage\"", Toast.LENGTH_LONG).show()
-
-            id("unknown_error")
-            text("Unknown error has occurred while trying to load photos from the database. \nClick here to retry")
-            callback { _ ->
-              Timber.tag(TAG).d("Reloading")
-              viewModel.receivedPhotosFragmentViewModel.resetState()
-            }
-          }
-        }
-        Uninitialized -> {
-          //do nothing
-        }
-      }.safe
-    }
+    controller.rebuild(requireContext(), this, viewModel.receivedPhotosFragmentViewModel)
   }
 
   private fun handleAdapterClick(click: ReceivedPhotosAdapter.ReceivedPhotosAdapterClickEvent) {
@@ -174,7 +110,6 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
   }
 
   override suspend fun onStateEvent(event: ReceivedPhotosFragmentEvent) {
-
     when (event) {
       is ReceivedPhotosFragmentEvent.GeneralEvents -> {
         kotlin.run {
