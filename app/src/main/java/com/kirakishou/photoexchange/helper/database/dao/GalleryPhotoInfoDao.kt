@@ -16,14 +16,12 @@ abstract class GalleryPhotoInfoDao {
   abstract fun saveMany(galleryPhotoInfoEntityList: List<GalleryPhotoInfoEntity>): Array<Long>
 
   @Query("SELECT * FROM ${GalleryPhotoInfoEntity.TABLE_NAME} " +
-    "WHERE ${GalleryPhotoInfoEntity.GALLERY_PHOTO_ID_COLUMN} = :galleryPhotoId")
-  abstract fun find(galleryPhotoId: Long): GalleryPhotoInfoEntity?
+    "WHERE ${GalleryPhotoInfoEntity.PHOTO_NAME_COLUMN} = :photoName")
+  abstract fun find(photoName: String): GalleryPhotoInfoEntity?
 
   @Query("SELECT * FROM ${GalleryPhotoInfoEntity.TABLE_NAME} " +
-    "WHERE " +
-    "${GalleryPhotoInfoEntity.GALLERY_PHOTO_ID_COLUMN} IN (:galleryPhotoIds) " +
-    "ORDER BY ${GalleryPhotoInfoEntity.GALLERY_PHOTO_ID_COLUMN} DESC")
-  abstract fun findMany(galleryPhotoIds: List<Long>): List<GalleryPhotoInfoEntity>
+    "WHERE ${GalleryPhotoInfoEntity.PHOTO_NAME_COLUMN} IN (:photoNameList) ")
+  abstract fun findMany(photoNameList: List<String>): List<GalleryPhotoInfoEntity>
 
   @Query("SELECT * FROM ${GalleryPhotoInfoEntity.TABLE_NAME}")
   abstract fun findAll(): List<GalleryPhotoInfoEntity>

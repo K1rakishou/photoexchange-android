@@ -8,11 +8,8 @@ import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoEntity.Co
 @Entity(tableName = TABLE_NAME)
 class GalleryPhotoEntity(
 
-  @PrimaryKey(autoGenerate = false)
-  @ColumnInfo(name = GALLERY_PHOTO_ID_COLUMN, index = true)
-  var galleryPhotoId: Long = 0L,
-
-  @ColumnInfo(name = PHOTO_NAME_COLUMN, index = true)
+  @PrimaryKey
+  @ColumnInfo(name = PHOTO_NAME_COLUMN)
   var photoName: String = "",
 
   @ColumnInfo(name = LON_COLUMN)
@@ -32,23 +29,22 @@ class GalleryPhotoEntity(
 ) {
 
   fun isEmpty(): Boolean {
-    return this.galleryPhotoId == -1L
+    return photoName == ""
   }
 
   companion object {
 
     fun empty(): GalleryPhotoEntity {
-      return GalleryPhotoEntity(-1L)
+      return GalleryPhotoEntity()
     }
 
-    fun create(id: Long, photoName: String, lon: Double, lat: Double, uploadedOn: Long,
+    fun create(photoName: String, lon: Double, lat: Double, uploadedOn: Long,
                favouritedCount: Long, insertedOn: Long): GalleryPhotoEntity {
-      return GalleryPhotoEntity(id, photoName, lon, lat, uploadedOn, favouritedCount, insertedOn)
+      return GalleryPhotoEntity(photoName, lon, lat, uploadedOn, favouritedCount, insertedOn)
     }
 
     const val TABLE_NAME = "GALLERY_PHOTOS"
 
-    const val GALLERY_PHOTO_ID_COLUMN = "GALLERY_PHOTO_ID"
     const val PHOTO_NAME_COLUMN = "PHOTO_NAME"
     const val LON_COLUMN = "LON"
     const val LAT_COLUMN = "LAT"

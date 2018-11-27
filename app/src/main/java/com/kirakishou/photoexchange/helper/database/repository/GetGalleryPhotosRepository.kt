@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
+import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosInfoMapper
@@ -27,18 +28,21 @@ open class GetGalleryPhotosRepository(
     return withContext(coroutineContext) {
       deleteOld()
 
-      val galleryPhotos = getPageOfGalleryPhotos(time, count)
-      val galleryPhotoIds = galleryPhotos.map { it.galleryPhotoId }
+      val galleryPhotos = getPageOfGalleryPhotos(time, count).toMutableList()
+      val galleryPhotosInfoList = getGalleryPhotosInfo(userId, galleryPhotos.map { it.photoName })
 
-      val galleryPhotosInfo = getGalleryPhotosInfo(userId, galleryPhotoIds)
+      if (galleryPhotosInfoList.isNotEmpty()) {
+        for ((index, galleryPhoto) in galleryPhotos.withIndex()) {
+          val newGalleryPhotoInfo = galleryPhotosInfoList
+            .firstOrNull { it.photoName == galleryPhoto.photoName }
+            ?: GalleryPhotoInfo.empty()
 
-      for (galleryPhoto in galleryPhotos) {
-        galleryPhoto.galleryPhotoInfo = galleryPhotosInfo
-          .firstOrNull { it.galleryPhotoId == galleryPhoto.galleryPhotoId }
+          galleryPhotos[index] = galleryPhoto.copy(galleryPhotoInfo = newGalleryPhotoInfo)
+        }
       }
 
       return@withContext galleryPhotos
-        .sortedByDescending { it.galleryPhotoId }
+        .sortedByDescending { it.uploadedOn }
     }
   }
 
@@ -69,14 +73,17 @@ open class GetGalleryPhotosRepository(
     return GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(galleryPhotos)
   }
 
-  private suspend fun getGalleryPhotosInfo(userId: String, galleryPhotoIds: List<Long>): List<GalleryPhotoInfo> {
-    val cachedGalleryPhotosInfo = galleryPhotoInfoLocalSource.findMany(galleryPhotoIds)
-    if (cachedGalleryPhotosInfo.size == galleryPhotoIds.size) {
+  private suspend fun getGalleryPhotosInfo(userId: String, photoNameList: List<String>): List<GalleryPhotoInfo> {
+    val cachedGalleryPhotosInfo = galleryPhotoInfoLocalSource.findMany(photoNameList)
+    if (cachedGalleryPhotosInfo.size == photoNameList.size) {
       return cachedGalleryPhotosInfo
     }
 
-    val requestString = galleryPhotoIds.joinToString()
+    val requestString = photoNameList.joinToString(separator = Constants.PHOTOS_SEPARATOR)
     val galleryPhotosInfo = galleryPhotoInfoRemoteSource.getGalleryPhotoInfo(userId, requestString)
+    if (galleryPhotosInfo.isEmpty()) {
+      return emptyList()
+    }
 
     if (!galleryPhotoInfoLocalSource.saveMany(galleryPhotosInfo)) {
       throw DatabaseException("Could not cache gallery photo info in the database")

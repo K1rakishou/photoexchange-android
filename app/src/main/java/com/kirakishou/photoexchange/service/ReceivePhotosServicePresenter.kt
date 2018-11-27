@@ -1,11 +1,13 @@
 package com.kirakishou.photoexchange.service
 
+import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.interactors.ReceivePhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.FindPhotosData
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
@@ -48,7 +50,15 @@ open class ReceivePhotosServicePresenter(
   }
 
   private suspend fun receivePhotosInternal() {
-    val photoData = formatRequestString()
+    val uploadedPhotos = uploadedPhotosRepository.findAllWithoutReceiverInfo()
+    if (uploadedPhotos.isEmpty()) {
+      Timber.tag(TAG).d("No photos without receiver info")
+      return
+    }
+
+    Timber.tag(TAG).d("Found ${uploadedPhotos.size} photos without receiver")
+
+    val photoData = formatRequestString(uploadedPhotos)
     if (photoData == null) {
       return
     }
@@ -57,7 +67,9 @@ open class ReceivePhotosServicePresenter(
 
     val receivedPhotos = try {
       receivePhotosUseCase.receivePhotos(photoData)
-    } catch (error: Exception) {
+    } catch (error: Throwable) {
+      Timber.tag(TAG).e(error)
+
       sendEvent(ReceivePhotoEvent.OnError(error))
       sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Error()))
       return
@@ -67,14 +79,8 @@ open class ReceivePhotosServicePresenter(
     sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Success()))
   }
 
-  private suspend fun formatRequestString(): FindPhotosData? {
-    val uploadedPhotos = uploadedPhotosRepository.findAllWithoutReceiverInfo()
-    if (uploadedPhotos.isEmpty()) {
-      Timber.tag(TAG).d("No photos without receiver info")
-      return null
-    }
-
-    val photoNames = uploadedPhotos.joinToString(",") { it.photoName }
+  private suspend fun formatRequestString(uploadedPhotos: List<UploadedPhoto>): FindPhotosData? {
+    val photoNames = uploadedPhotos.joinToString(Constants.PHOTOS_SEPARATOR) { it.photoName }
     val userId = settingsRepository.getUserId()
     if (userId.isEmpty()) {
       Timber.tag(TAG).d("UserId is empty")
@@ -99,7 +105,10 @@ open class ReceivePhotosServicePresenter(
 
   fun startPhotosReceiving() {
     Timber.tag(TAG).d("startPhotosReceiving called")
-    receiveActor.offer(Unit)
+
+    if (!receiveActor.offer(Unit)) {
+      Timber.tag(TAG).d("receiveActor is busy")
+    }
   }
 
   sealed class ReceivePhotoEvent {

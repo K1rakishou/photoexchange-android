@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
+import com.kirakishou.photoexchange.helper.PhotosVisibility
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.SettingEntity
@@ -29,17 +30,17 @@ open class SettingsRepository(
 
   suspend fun saveMakePublicFlag(makePublic: Boolean?) {
     withContext(coroutineContext) {
-      val value = MakePhotosPublicState.fromBoolean(makePublic).value.toString()
+      val value = PhotosVisibility.fromBoolean(makePublic).value.toString()
       settingsDao.insert(SettingEntity(MAKE_PHOTOS_PUBLIC_SETTING, value))
     }
   }
 
-  suspend fun getMakePublicFlag(): MakePhotosPublicState {
+  suspend fun getMakePublicFlag(): PhotosVisibility {
     return withContext(coroutineContext) {
       val result = settingsDao.findByName(MAKE_PHOTOS_PUBLIC_SETTING)
-        ?: return@withContext MakePhotosPublicState.Neither
+        ?: return@withContext PhotosVisibility.Neither
 
-      return@withContext MakePhotosPublicState.fromInt(result.settingValue?.toInt())
+      return@withContext PhotosVisibility.fromInt(result.settingValue?.toInt())
     }
   }
 
@@ -53,30 +54,6 @@ open class SettingsRepository(
     return withContext(coroutineContext) {
       return@withContext settingsDao.findByName(GPS_PERMISSION_GRANTED_SETTING)?.settingValue?.toBoolean()
         ?: false
-    }
-  }
-
-  enum class MakePhotosPublicState(val value: Int) {
-    AlwaysPublic(0),
-    AlwaysPrivate(1),
-    Neither(2);
-
-    companion object {
-      fun fromBoolean(makePublic: Boolean?): MakePhotosPublicState {
-        return when (makePublic) {
-          null -> Neither
-          true -> AlwaysPublic
-          false -> AlwaysPrivate
-        }
-      }
-
-      fun fromInt(value: Int?): MakePhotosPublicState {
-        return when (value) {
-          0 -> AlwaysPublic
-          1 -> AlwaysPrivate
-          else -> Neither
-        }
-      }
     }
   }
 

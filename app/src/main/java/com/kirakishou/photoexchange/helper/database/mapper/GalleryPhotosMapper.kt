@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.helper.database.mapper
 
 import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoEntity
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhotoInfo
 import net.response.GalleryPhotosResponse
 
 object GalleryPhotosMapper {
@@ -9,12 +10,12 @@ object GalleryPhotosMapper {
   object FromEntity {
     fun toGalleryPhoto(galleryPhotoEntity: GalleryPhotoEntity): GalleryPhoto {
       return GalleryPhoto(
-        galleryPhotoEntity.galleryPhotoId,
         galleryPhotoEntity.photoName,
         galleryPhotoEntity.lon,
         galleryPhotoEntity.lat,
         galleryPhotoEntity.uploadedOn,
-        galleryPhotoEntity.favouritedCount
+        galleryPhotoEntity.favouritedCount,
+        GalleryPhotoInfo.empty()
       )
     }
 
@@ -26,7 +27,6 @@ object GalleryPhotosMapper {
   object FromObject {
     fun toGalleryPhotoEntity(time: Long, galleryPhoto: GalleryPhoto): GalleryPhotoEntity {
       return GalleryPhotoEntity.create(
-        galleryPhoto.galleryPhotoId,
         galleryPhoto.photoName,
         galleryPhoto.lon,
         galleryPhoto.lat,
@@ -45,12 +45,12 @@ object GalleryPhotosMapper {
     object ToObject {
       fun toGalleryPhoto(galleryPhotoResponseData: GalleryPhotosResponse.GalleryPhotoResponseData): GalleryPhoto {
         return GalleryPhoto(
-          galleryPhotoResponseData.id,
           galleryPhotoResponseData.photoName,
           galleryPhotoResponseData.lon,
           galleryPhotoResponseData.lat,
           galleryPhotoResponseData.uploadedOn,
-          galleryPhotoResponseData.favouritesCount
+          galleryPhotoResponseData.favouritesCount,
+          GalleryPhotoInfo.empty()
         )
       }
 
@@ -62,7 +62,6 @@ object GalleryPhotosMapper {
     object ToEntity {
       fun toGalleryPhotoEntity(time: Long, galleryPhotoResponseData: GalleryPhotosResponse.GalleryPhotoResponseData): GalleryPhotoEntity {
         return GalleryPhotoEntity.create(
-          galleryPhotoResponseData.id,
           galleryPhotoResponseData.photoName,
           galleryPhotoResponseData.lon,
           galleryPhotoResponseData.lat,

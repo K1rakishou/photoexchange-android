@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.mvp.model.other
+package com.kirakishou.photoexchange.helper
 
 /**
  * Created by kirakishou on 11/3/2017.

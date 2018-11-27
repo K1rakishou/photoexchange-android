@@ -15,7 +15,7 @@ import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.location.LocationService
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
-import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
+import com.kirakishou.photoexchange.ui.callback.PhotoUploadingServiceCallback
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import kotlinx.coroutines.CoroutineScope
@@ -46,7 +46,7 @@ class UploadPhotoService : Service(), CoroutineScope {
   private val binder = UploadPhotosBinder()
   private val compositeDisposable = CompositeDisposable()
 
-  private var callback = WeakReference<PhotoUploadingCallback>(null)
+  private var callback = WeakReference<PhotoUploadingServiceCallback>(null)
   private val NOTIFICATION_ID = 1
   private val CHANNEL_ID = "1"
   private val CHANNED_NAME = "name"
@@ -58,8 +58,6 @@ class UploadPhotoService : Service(), CoroutineScope {
 
   override fun onCreate() {
     super.onCreate()
-    Timber.tag(TAG).d("UploadPhotoService started")
-
     job = Job()
 
     resolveDaggerDependency()
@@ -78,18 +76,14 @@ class UploadPhotoService : Service(), CoroutineScope {
 
     job.cancel()
     compositeDisposable.clear()
-
-    Timber.tag(TAG).d("UploadPhotoService destroyed")
   }
 
-  fun attachCallback(_callback: WeakReference<PhotoUploadingCallback>) {
-    Timber.tag(TAG).d("attachCallback")
+  fun attachCallback(_callback: WeakReference<PhotoUploadingServiceCallback>) {
     callback = _callback
   }
 
   fun detachCallback() {
-    Timber.tag(TAG).d("detachCallback")
-    callback = WeakReference<PhotoUploadingCallback>(null)
+    callback = WeakReference<PhotoUploadingServiceCallback>(null)
   }
 
   fun startPhotosUploading() {

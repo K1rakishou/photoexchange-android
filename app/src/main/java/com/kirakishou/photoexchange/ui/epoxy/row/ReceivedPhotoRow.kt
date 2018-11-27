@@ -1,11 +1,10 @@
-package com.kirakishou.photoexchange.ui.adapter.epoxy
+package com.kirakishou.photoexchange.ui.epoxy.row
 
 import android.content.Context
 import android.util.AttributeSet
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.airbnb.epoxy.CallbackProp
 import com.airbnb.epoxy.ModelProp
@@ -15,7 +14,7 @@ import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.di.module.GlideApp
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.other.Constants
+import com.kirakishou.photoexchange.helper.Constants
 
 @ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT)
 class ReceivedPhotoRow @JvmOverloads constructor(

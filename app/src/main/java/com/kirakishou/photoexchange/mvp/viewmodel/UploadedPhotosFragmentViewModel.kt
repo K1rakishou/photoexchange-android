@@ -4,19 +4,19 @@ import androidx.fragment.app.FragmentActivity
 import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
 import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.helper.PhotoSize
+import com.kirakishou.photoexchange.mvp.model.PhotoSize
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
-import com.kirakishou.photoexchange.mvp.model.other.Constants
+import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.mvp.model.photo.QueuedUpPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
@@ -38,7 +38,8 @@ class UploadedPhotosFragmentViewModel(
   initialState: UploadedPhotosFragmentState,
   private val intercom: PhotosActivityViewModelIntercom,
   private val takenPhotosRepository: TakenPhotosRepository,
-  private val settingsRepository: SettingsRepository,
+  private val uploadedPhotosRepository: UploadedPhotosRepository,
+  private val receivedPhotosRepository: ReceivedPhotosRepository,
   private val getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
   private val dispatchersProvider: DispatchersProvider
 ) : BaseMvRxViewModel<UploadedPhotosFragmentState>(initialState, BuildConfig.DEBUG), CoroutineScope {
@@ -230,7 +231,12 @@ class UploadedPhotosFragmentViewModel(
             state.takenPhotos.toMutableList()
           }
 
-          newPhotos.add(photoIndex, UploadingPhoto.fromMyPhoto(event.photo, event.progress))
+          if (photoIndex != -1) {
+            newPhotos.add(photoIndex, UploadingPhoto.fromMyPhoto(event.photo, event.progress))
+          } else {
+            newPhotos.add(0, UploadingPhoto.fromMyPhoto(event.photo, event.progress))
+          }
+
           setState { copy(takenPhotos = newPhotos) }
         }
       }
@@ -248,9 +254,23 @@ class UploadedPhotosFragmentViewModel(
           val newTakenPhotos = state.takenPhotos.toMutableList()
           newTakenPhotos.removeAt(photoIndex)
 
+          val newUploadedPhotos = state.uploadedPhotos.toMutableList()
+          val newUploadedPhoto = UploadedPhoto(
+            event.newPhotoId,
+            event.newPhotoName,
+            event.currentLocation.lon,
+            event.currentLocation.lat,
+            null,
+            event.uploadedOn
+          )
+
+          newUploadedPhotos.add(newUploadedPhoto)
+          newUploadedPhotos.sortByDescending { it.uploadedOn }
+
           setState {
             copy(
-              takenPhotos = newTakenPhotos
+              takenPhotos = newTakenPhotos,
+              uploadedPhotos = newUploadedPhotos
             )
           }
         }
@@ -282,12 +302,22 @@ class UploadedPhotosFragmentViewModel(
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
         Timber.tag(TAG).d("OnEnd")
 
-        startReceivingService("Photos uploading done")
+        launch {
+          // if we can't start a service to receive photos (not enough photos uploaded) -
+          // show already uploaded photos
+          if (!startReceivingService("Photos uploading done")) {
+            loadUploadedPhotos()
+          }
+        }
+
+        Unit
       }
     }.safe
   }
 
   fun onReceiveEvent(event: UploadedPhotosFragmentEvent.ReceivePhotosEvent) {
+    Timber.tag(TAG).d("onReceiveEvent")
+
     when (event) {
       is UploadedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived -> {
         if (event.receivedPhotos.isEmpty()) {
@@ -336,12 +366,22 @@ class UploadedPhotosFragmentViewModel(
       )
   }
 
-  private fun startReceivingService(reason: String) {
+  private suspend fun startReceivingService(reason: String): Boolean {
+    val uploadedPhotosCount = uploadedPhotosRepository.count()
+    val receivedPhotosCount = receivedPhotosRepository.count()
+
+    val canReceivePhotos = uploadedPhotosCount > receivedPhotosCount
+    if (!canReceivePhotos) {
+      return false
+    }
+
     intercom.tell<PhotosActivity>()
       .to(PhotosActivityEvent.StartReceivingService(
         PhotosActivityViewModel::class.java,
         reason)
       )
+
+    return true
   }
 
   /**

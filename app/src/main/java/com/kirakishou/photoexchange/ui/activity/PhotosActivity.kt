@@ -26,7 +26,6 @@ import com.kirakishou.photoexchange.helper.extension.debounceClicks
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
-import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
@@ -36,10 +35,9 @@ import com.kirakishou.photoexchange.service.ReceivePhotosService
 import com.kirakishou.photoexchange.service.ReceivePhotosServiceConnection
 import com.kirakishou.photoexchange.service.UploadPhotoService
 import com.kirakishou.photoexchange.service.UploadPhotoServiceConnection
-import com.kirakishou.photoexchange.ui.callback.PhotoUploadingCallback
+import com.kirakishou.photoexchange.ui.callback.PhotoUploadingServiceCallback
 import com.kirakishou.photoexchange.ui.callback.ReceivePhotosServiceCallback
 import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
-import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
 import com.kirakishou.photoexchange.ui.viewstate.PhotosActivityViewState
@@ -58,7 +56,7 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 
-class PhotosActivity : BaseActivity(), PhotoUploadingCallback, ReceivePhotosServiceCallback,
+class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePhotosServiceCallback,
   PopupMenu.OnMenuItemClickListener, StateEventListener<PhotosActivityEvent>, IntercomListener {
 
   @BindView(R.id.root_layout)
@@ -97,14 +95,13 @@ class PhotosActivity : BaseActivity(), PhotoUploadingCallback, ReceivePhotosServ
   private lateinit var uploadPhotosServiceConnection: UploadPhotoServiceConnection
 
   private val adapter = FragmentTabsPager(supportFragmentManager)
-  private var savedInstanceState: Bundle? = null
   private var viewState = PhotosActivityViewState()
   private val permissionManager = PermissionManager()
 
   override fun getContentView(): Int = R.layout.activity_all_photos
 
   override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
-    this.savedInstanceState = savedInstanceState
+    viewState = PhotosActivityViewState().also { it.loadFromBundle(savedInstanceState) }
 
     receivePhotosServiceConnection = ReceivePhotosServiceConnection(this)
     uploadPhotosServiceConnection = UploadPhotoServiceConnection(this)
@@ -113,7 +110,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingCallback, ReceivePhotosServ
   override fun onActivityStart() {
     initRx()
 
-    launch { checkPermissions(savedInstanceState) }
+    launch { checkPermissions() }
   }
 
   override fun onActivityResume() {
@@ -162,7 +159,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingCallback, ReceivePhotosServ
       })
   }
 
-  private suspend fun checkPermissions(savedInstanceState: Bundle?) {
+  private suspend fun checkPermissions() {
     val requestedPermissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
     permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
       val index = permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -176,44 +173,35 @@ class PhotosActivity : BaseActivity(), PhotoUploadingCallback, ReceivePhotosServ
         granted = false
 
         if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-          launch { showGpsRationaleDialog(savedInstanceState) }
+          launch { showGpsRationaleDialog() }
           return@askForPermission
         }
       }
 
-      launch { onPermissionsCallback(savedInstanceState, granted) }
+      launch { onPermissionsCallback(granted) }
     }
   }
 
-  private suspend fun showGpsRationaleDialog(savedInstanceState: Bundle?) {
+  private suspend fun showGpsRationaleDialog() {
     GpsRationaleDialog(this).show(this, {
-      checkPermissions(savedInstanceState)
+      checkPermissions()
     }, {
-      onPermissionsCallback(savedInstanceState, false)
+      onPermissionsCallback(false)
     })
   }
 
-  private suspend fun onPermissionsCallback(savedInstanceState: Bundle?, granted: Boolean) {
+  private suspend fun onPermissionsCallback(granted: Boolean) {
     initViews()
-    restoreUploadedPhotosFragmentFromViewState(savedInstanceState)
 
-    withContext(Dispatchers.Default) {
-      viewModel.updateGpsPermissionGranted(granted)
-    }
-  }
-
-  private fun restoreUploadedPhotosFragmentFromViewState(savedInstanceState: Bundle?) {
-    viewState = PhotosActivityViewState().also {
-      it.loadFromBundle(savedInstanceState)
-    }
-
-    if (viewState.lastOpenedTab != 0) {
-      viewPager.currentItem = viewState.lastOpenedTab
-    }
+    viewModel.updateGpsPermissionGranted(granted)
   }
 
   private fun initViews() {
     initTabs()
+
+    if (viewState.lastOpenedTab != 0) {
+      viewPager.currentItem = viewState.lastOpenedTab
+    }
   }
 
   private fun initTabs() {
@@ -239,21 +227,6 @@ class PhotosActivity : BaseActivity(), PhotoUploadingCallback, ReceivePhotosServ
 
       override fun onPageSelected(position: Int) {
         viewPager.currentItem = position
-
-        when (position) {
-          UPLOADED_PHOTOS_TAB_INDEX -> {
-            viewModel.intercom.tell<UploadedPhotosFragment>()
-              .to(UploadedPhotosFragmentEvent.GeneralEvents.OnPageSelected())
-          }
-          RECEIVED_PHOTOS_TAB_INDEX -> {
-            viewModel.intercom.tell<ReceivedPhotosFragment>()
-              .to(ReceivedPhotosFragmentEvent.GeneralEvents.OnPageSelected())
-          }
-          GALLERY_PHOTOS_TAB_INDEX -> {
-            viewModel.intercom.tell<GalleryFragment>()
-              .to(GalleryFragmentEvent.GeneralEvents.OnPageSelected())
-          }
-        }
       }
     })
 
@@ -419,27 +392,6 @@ class PhotosActivity : BaseActivity(), PhotoUploadingCallback, ReceivePhotosServ
     } else {
       Timber.tag(TAG).d("(callerClass = $callerClass, reason = $reason) Already connected, force startPhotosUploading")
       uploadPhotosServiceConnection.startPhotosUploading()
-    }
-  }
-
-  fun showKnownErrorMessage(errorCode: ErrorCode) {
-    showErrorCodeToast(errorCode)
-  }
-
-  fun showUnknownErrorMessage(error: Throwable) {
-    when (error) {
-      is CompositeException -> {
-        for (exception in error.exceptions) {
-          Timber.e(error)
-          showToast(error.message, Toast.LENGTH_LONG)
-        }
-      }
-
-      else -> {
-        Timber.e(error)
-        showToast(error.message
-          ?: getString(R.string.unknown_error_exception_text), Toast.LENGTH_LONG)
-      }
     }
   }
 

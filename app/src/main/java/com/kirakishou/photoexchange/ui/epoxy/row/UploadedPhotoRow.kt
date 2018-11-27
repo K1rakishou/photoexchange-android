@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.ui.adapter.epoxy
+package com.kirakishou.photoexchange.ui.epoxy.row
 
 import android.content.Context
 import android.graphics.drawable.ColorDrawable
@@ -14,7 +14,7 @@ import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.di.module.GlideApp
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
-import com.kirakishou.photoexchange.mvp.model.other.Constants
+import com.kirakishou.photoexchange.helper.Constants
 
 @ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT)
 class UploadedPhotoRow @JvmOverloads constructor(

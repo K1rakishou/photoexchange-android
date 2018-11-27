@@ -12,7 +12,7 @@ import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.helper.exception.ApiErrorException
-import com.kirakishou.photoexchange.mvp.model.other.LonLat
+import com.kirakishou.photoexchange.helper.LonLat
 import com.nhaarman.mockito_kotlin.any
 import core.ErrorCode
 import kotlinx.coroutines.channels.Channel

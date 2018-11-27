@@ -5,7 +5,7 @@ import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerPro
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.interactors.RestoreAccountUseCase
-import com.kirakishou.photoexchange.mvp.model.other.Constants.DOMAIN_NAME
+import com.kirakishou.photoexchange.helper.Constants.DOMAIN_NAME
 
 class SettingsActivityViewModel(
   private val settingsRepository: SettingsRepository,

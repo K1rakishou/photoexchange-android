@@ -8,7 +8,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragment
 import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.other.LonLat
+import com.kirakishou.photoexchange.helper.LonLat
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
@@ -167,7 +167,10 @@ open class UploadPhotoServicePresenter(
 
   fun uploadPhotos(location: LonLat) {
     Timber.tag(TAG).d("uploadPhotos called")
-    uploadingActor.offer(location)
+
+    if (!uploadingActor.offer(location)) {
+      Timber.tag(TAG).d("uploadingActor is busy")
+    }
   }
 
   fun cancelPhotoUploading(photoId: Long) {

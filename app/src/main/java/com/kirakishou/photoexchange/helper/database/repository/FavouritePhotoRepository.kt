@@ -9,6 +9,7 @@ import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoLoc
 import com.kirakishou.photoexchange.helper.database.source.remote.FavouritePhotoRemoteSource
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
+import com.kirakishou.photoexchange.mvp.model.FavouritePhotoActionResult
 import kotlinx.coroutines.withContext
 import java.lang.Exception
 
@@ -21,7 +22,7 @@ open class FavouritePhotoRepository(
   dispatchersProvider: DispatchersProvider
 ) : BaseRepository(dispatchersProvider) {
 
-  open suspend fun favouritePhoto(userId: String, photoName: String): FavouritePhotoResponseData {
+  open suspend fun favouritePhoto(userId: String, photoName: String): FavouritePhotoActionResult {
     return withContext(coroutineContext) {
       val favouritePhotoResult = favouritePhotoRemoteSource.favouritePhoto(userId, photoName)
 
@@ -31,7 +32,11 @@ open class FavouritePhotoRepository(
         throw DatabaseException(error.message)
       }
 
-      return@withContext favouritePhotoResult
+      return@withContext FavouritePhotoActionResult(
+        photoName,
+        favouritePhotoResult.isFavourited,
+        favouritePhotoResult.favouritesCount
+      )
     }
   }
 
@@ -43,10 +48,10 @@ open class FavouritePhotoRepository(
         return@transactional
       }
 
-      var galleryPhotoInfoEntity = galleryPhotoInfoLocalSource.findById(galleryPhotoEntity.galleryPhotoId)
+      var galleryPhotoInfoEntity = galleryPhotoInfoLocalSource.find(galleryPhotoEntity.photoName)
       if (galleryPhotoInfoEntity == null) {
         galleryPhotoInfoEntity = GalleryPhotoInfoEntity.create(
-          galleryPhotoEntity.galleryPhotoId,
+          galleryPhotoEntity.photoName,
           favouritePhotoResponseData.isFavourited,
           favouritePhotoResponseData.favouritesCount,
           false,

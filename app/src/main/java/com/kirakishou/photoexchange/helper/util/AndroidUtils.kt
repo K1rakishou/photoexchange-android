@@ -8,7 +8,7 @@ import android.os.Looper
 import android.util.DisplayMetrics
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
-import com.kirakishou.photoexchange.helper.PhotoSize
+import com.kirakishou.photoexchange.mvp.model.PhotoSize
 import timber.log.Timber
 
 

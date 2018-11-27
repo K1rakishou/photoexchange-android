@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.di.module
 
 import com.kirakishou.photoexchange.helper.api.ApiService
-import com.kirakishou.photoexchange.mvp.model.other.Constants
+import com.kirakishou.photoexchange.helper.Constants
 import dagger.Module
 import dagger.Provides
 import okhttp3.OkHttpClient

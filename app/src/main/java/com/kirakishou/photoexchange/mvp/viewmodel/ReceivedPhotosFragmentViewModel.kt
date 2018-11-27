@@ -4,16 +4,15 @@ import androidx.fragment.app.FragmentActivity
 import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
 import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.helper.PhotoSize
+import com.kirakishou.photoexchange.mvp.model.PhotoSize
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetReceivedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.other.Constants
+import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.mvp.viewmodel.state.ReceivedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
@@ -32,7 +31,6 @@ import kotlin.coroutines.CoroutineContext
 class ReceivedPhotosFragmentViewModel(
   initialState: ReceivedPhotosFragmentState,
   private val intercom: PhotosActivityViewModelIntercom,
-  private val settingsRepository: SettingsRepository,
   private val getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
   private val dispatchersProvider: DispatchersProvider
 ) : BaseMvRxViewModel<ReceivedPhotosFragmentState>(initialState, BuildConfig.DEBUG), CoroutineScope {
@@ -57,6 +55,8 @@ class ReceivedPhotosFragmentViewModel(
 
         when (action) {
           ActorAction.LoadReceivedPhotos -> loadReceivedPhotosInternal()
+          ActorAction.ResetState -> resetStateInternal()
+          is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.receivedPhotoName)
         }.safe
       }
     }
@@ -69,10 +69,14 @@ class ReceivedPhotosFragmentViewModel(
   }
 
   fun resetState() {
-    setState { ReceivedPhotosFragmentState() }
+    launch { viewModelActor.send(ActorAction.ResetState) }
   }
 
   fun swapPhotoAndMap(receivedPhotoName: String) {
+    launch { viewModelActor.send(ActorAction.SwapPhotoAndMap(receivedPhotoName)) }
+  }
+
+  private fun swapPhotoAndMapInternal(receivedPhotoName: String) {
     withState { state ->
       val photoIndex = state.receivedPhotos.indexOfFirst { it.receivedPhotoName == receivedPhotoName }
       if (photoIndex == -1) {
@@ -88,6 +92,11 @@ class ReceivedPhotosFragmentViewModel(
 
       setState { copy(receivedPhotos = updatedPhotos) }
     }
+  }
+
+  private fun resetStateInternal() {
+    setState { ReceivedPhotosFragmentState() }
+    launch { viewModelActor.send(ActorAction.LoadReceivedPhotos) }
   }
 
   private suspend fun loadReceivedPhotosInternal() {
@@ -193,6 +202,8 @@ class ReceivedPhotosFragmentViewModel(
 
   sealed class ActorAction {
     object LoadReceivedPhotos : ActorAction()
+    object ResetState : ActorAction()
+    class SwapPhotoAndMap(val receivedPhotoName: String) : ActorAction()
   }
 
   companion object : MvRxViewModelFactory<ReceivedPhotosFragmentState> {

@@ -13,8 +13,7 @@ import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.helper.exception.ApiErrorException
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
-import com.kirakishou.photoexchange.interactors.ReceivePhotosUseCase
-import com.kirakishou.photoexchange.mvp.model.other.LonLat
+import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.withContext

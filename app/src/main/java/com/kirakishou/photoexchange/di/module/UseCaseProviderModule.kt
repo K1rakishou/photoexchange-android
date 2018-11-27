@@ -43,16 +43,26 @@ class UseCaseProviderModule {
 
   @Singleton
   @Provides
-  fun provideReportPhotoUseCase(reportPhotoRepository: ReportPhotoRepository,
+  fun provideReportPhotoUseCase(settingsRepository: SettingsRepository,
+                                reportPhotoRepository: ReportPhotoRepository,
                                 dispatchersProvider: DispatchersProvider): ReportPhotoUseCase {
-    return ReportPhotoUseCase(reportPhotoRepository, dispatchersProvider)
+    return ReportPhotoUseCase(
+      settingsRepository,
+      reportPhotoRepository,
+      dispatchersProvider
+    )
   }
 
   @Singleton
   @Provides
-  fun provideFavouritePhotoUseCase(favouritePhotoRepository: FavouritePhotoRepository,
+  fun provideFavouritePhotoUseCase(settingsRepository: SettingsRepository,
+                                   favouritePhotoRepository: FavouritePhotoRepository,
                                    dispatchersProvider: DispatchersProvider): FavouritePhotoUseCase {
-    return FavouritePhotoUseCase(favouritePhotoRepository, dispatchersProvider)
+    return FavouritePhotoUseCase(
+      settingsRepository,
+      favouritePhotoRepository,
+      dispatchersProvider
+    )
   }
 
   @Singleton

@@ -23,8 +23,6 @@ open class GetGalleryPhotosUseCase(
     lastUploadedOn: Long,
     count: Int
   ): Either<Exception, List<GalleryPhoto>> {
-    Timber.tag(TAG).d("sending loadPageOfPhotos request...")
-
     return withContext(coroutineContext) {
       return@withContext myRunCatching {
         val time = if (lastUploadedOn != -1L) {

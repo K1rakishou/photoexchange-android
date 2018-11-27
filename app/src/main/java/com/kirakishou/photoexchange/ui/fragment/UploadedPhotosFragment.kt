@@ -4,25 +4,21 @@ import android.os.Bundle
 import android.view.View
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.kirakishou.fixmypc.photoexchange.R
-import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvp.model.other.Constants
+import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
-import com.kirakishou.photoexchange.ui.epoxy_controller.UploadedPhotosFragmentEpoxyController
+import com.kirakishou.photoexchange.ui.epoxy.controller.UploadedPhotosFragmentEpoxyController
 import io.reactivex.rxkotlin.plusAssign
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 
 class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPhotosFragmentEvent>, IntercomListener {
-
-  @Inject
-  lateinit var imageLoader: ImageLoader
 
   @Inject
   lateinit var viewModel: PhotosActivityViewModel
@@ -47,6 +43,11 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
       doInvalidate()
     }
 
+    swipeRefreshLayout.setOnRefreshListener {
+      swipeRefreshLayout.isRefreshing = false
+      viewModel.uploadedPhotosFragmentViewModel.resetState()
+    }
+
     initRx()
   }
 
@@ -64,11 +65,7 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
   override suspend fun onStateEvent(event: UploadedPhotosFragmentEvent) {
     when (event) {
       is UploadedPhotosFragmentEvent.GeneralEvents -> {
-        kotlin.run {
-          if (isAdded) {
-            onUiEvent(event)
-          }
-        }
+        onUiEvent(event)
       }
 
       is UploadedPhotosFragmentEvent.PhotoUploadEvent -> {
@@ -81,11 +78,11 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
   }
 
   private suspend fun onUiEvent(event: UploadedPhotosFragmentEvent.GeneralEvents) {
-    when (event) {
-      is UploadedPhotosFragmentEvent.GeneralEvents.OnPageSelected -> {
-//          viewModel.uploadedPhotosFragmentViewModel.viewState.reset()
-      }
-    }.safe
+    if (!isAdded) {
+      return
+    }
+
+    //no events for now
   }
 
   override fun resolveDaggerDependency() {

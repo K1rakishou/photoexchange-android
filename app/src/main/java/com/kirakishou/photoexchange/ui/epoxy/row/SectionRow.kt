@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.ui.adapter.epoxy
+package com.kirakishou.photoexchange.ui.epoxy.row
 
 import android.content.Context
 import android.util.AttributeSet

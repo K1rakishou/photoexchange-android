@@ -19,17 +19,13 @@ abstract class GalleryPhotoDao {
   abstract fun getPage(time: Long, count: Int): List<GalleryPhotoEntity>
 
   @Query("SELECT * FROM ${GalleryPhotoEntity.TABLE_NAME} " +
-    "WHERE ${GalleryPhotoEntity.GALLERY_PHOTO_ID_COLUMN} = :galleryPhotoId")
-  abstract fun findById(galleryPhotoId: Long): GalleryPhotoEntity?
-
-  @Query("SELECT * FROM ${GalleryPhotoEntity.TABLE_NAME} " +
-    "WHERE ${GalleryPhotoEntity.GALLERY_PHOTO_ID_COLUMN} IN (:galleryPhotoIds) " +
-    "ORDER BY ${GalleryPhotoEntity.GALLERY_PHOTO_ID_COLUMN} DESC")
-  abstract fun findMany(galleryPhotoIds: List<Long>): List<GalleryPhotoEntity>
-
-  @Query("SELECT * FROM ${GalleryPhotoEntity.TABLE_NAME} " +
     "WHERE ${GalleryPhotoEntity.PHOTO_NAME_COLUMN} = :photoName")
-  abstract fun findByPhotoName(photoName: String): GalleryPhotoEntity?
+  abstract fun find(photoName: String): GalleryPhotoEntity?
+
+  @Query("SELECT * FROM ${GalleryPhotoEntity.TABLE_NAME} " +
+    "WHERE ${GalleryPhotoEntity.PHOTO_NAME_COLUMN} IN (:photoNameList) " +
+    "ORDER BY ${GalleryPhotoEntity.UPLOADED_ON_COLUMN} DESC")
+  abstract fun findMany(photoNameList: List<String>): List<GalleryPhotoEntity>
 
   @Query("UPDATE ${GalleryPhotoEntity.TABLE_NAME} " +
     "SET ${GalleryPhotoEntity.FAVOURITED_COUNT_COLUMN} = :favouritesCount " +

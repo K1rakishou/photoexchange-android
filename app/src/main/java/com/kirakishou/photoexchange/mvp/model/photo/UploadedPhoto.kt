@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.mvp.model.photo
 
-import com.kirakishou.photoexchange.helper.PhotoSize
+import com.kirakishou.photoexchange.mvp.model.PhotoSize
 
 data class UploadedPhoto(
   val photoId: Long,

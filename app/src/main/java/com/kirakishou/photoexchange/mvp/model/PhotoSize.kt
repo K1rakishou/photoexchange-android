@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.helper
+package com.kirakishou.photoexchange.mvp.model
 
 enum class PhotoSize(val value: String) {
   Big("b"),
