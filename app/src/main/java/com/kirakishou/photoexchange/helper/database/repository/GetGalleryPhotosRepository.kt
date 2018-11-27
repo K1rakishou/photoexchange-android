@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
+import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosInfoMapper
@@ -28,15 +29,16 @@ open class GetGalleryPhotosRepository(
       deleteOld()
 
       val galleryPhotos = getPageOfGalleryPhotos(time, count).toMutableList()
-      val galleryPhotoIds = galleryPhotos.map { it.galleryPhotoId }
+      val galleryPhotosInfoList = getGalleryPhotosInfo(userId, galleryPhotos.map { it.galleryPhotoId })
 
-      val galleryPhotosInfoList = getGalleryPhotosInfo(userId, galleryPhotoIds)
+      if (galleryPhotosInfoList.isNotEmpty()) {
+        for ((index, galleryPhoto) in galleryPhotos.withIndex()) {
+          val newGalleryPhotoInfo = galleryPhotosInfoList
+            .firstOrNull { it.galleryPhotoId == galleryPhoto.galleryPhotoId }
+            ?: GalleryPhotoInfo.empty()
 
-      for ((index, galleryPhoto) in galleryPhotos.withIndex()) {
-        val newGalleryPhotoInfo = galleryPhotosInfoList
-          .firstOrNull { it.galleryPhotoId == galleryPhoto.galleryPhotoId }
-
-        galleryPhotos[index] = galleryPhoto.copy(galleryPhotoInfo = newGalleryPhotoInfo)
+          galleryPhotos[index] = galleryPhoto.copy(galleryPhotoInfo = newGalleryPhotoInfo)
+        }
       }
 
       return@withContext galleryPhotos
@@ -77,8 +79,11 @@ open class GetGalleryPhotosRepository(
       return cachedGalleryPhotosInfo
     }
 
-    val requestString = galleryPhotoIds.joinToString()
+    val requestString = galleryPhotoIds.joinToString(separator = Constants.PHOTOS_SEPARATOR)
     val galleryPhotosInfo = galleryPhotoInfoRemoteSource.getGalleryPhotoInfo(userId, requestString)
+    if (galleryPhotosInfo.isEmpty()) {
+      return emptyList()
+    }
 
     if (!galleryPhotoInfoLocalSource.saveMany(galleryPhotosInfo)) {
       throw DatabaseException("Could not cache gallery photo info in the database")

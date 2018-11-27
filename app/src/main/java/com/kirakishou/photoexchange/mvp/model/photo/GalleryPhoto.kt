@@ -9,6 +9,7 @@ data class GalleryPhoto(
   val lat: Double,
   val uploadedOn: Long,
   val favouritesCount: Long,
-  val galleryPhotoInfo: GalleryPhotoInfo? = null,
+  val galleryPhotoInfo: GalleryPhotoInfo,
+  val showPhoto: Boolean = true,
   val photoSize: PhotoSize = PhotoSize.Medium
 )

@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.service
 
+import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
@@ -79,7 +80,7 @@ open class ReceivePhotosServicePresenter(
   }
 
   private suspend fun formatRequestString(uploadedPhotos: List<UploadedPhoto>): FindPhotosData? {
-    val photoNames = uploadedPhotos.joinToString(",") { it.photoName }
+    val photoNames = uploadedPhotos.joinToString(Constants.PHOTOS_SEPARATOR) { it.photoName }
     val userId = settingsRepository.getUserId()
     if (userId.isEmpty()) {
       Timber.tag(TAG).d("UserId is empty")

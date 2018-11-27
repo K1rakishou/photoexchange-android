@@ -7,9 +7,9 @@ import com.airbnb.mvrx.*
 import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.mvp.viewmodel.ReceivedPhotosFragmentViewModel
-import com.kirakishou.photoexchange.ui.adapter.epoxy.loadingRow
-import com.kirakishou.photoexchange.ui.adapter.epoxy.receivedPhotoRow
-import com.kirakishou.photoexchange.ui.adapter.epoxy.textRow
+import com.kirakishou.photoexchange.ui.epoxy.row.loadingRow
+import com.kirakishou.photoexchange.ui.epoxy.row.receivedPhotoRow
+import com.kirakishou.photoexchange.ui.epoxy.row.textRow
 import timber.log.Timber
 
 class ReceivedPhotosFragmentEpoxyController {

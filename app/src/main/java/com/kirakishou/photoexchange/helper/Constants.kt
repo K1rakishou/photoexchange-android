@@ -15,7 +15,7 @@ object Constants {
   const val DATABASE_NAME = "photoexchange_db"
   const val DOMAIN_NAME = "photoexchange.io"
 
-  const val PHOTOS_DELIMITER = ","
+  const val PHOTOS_SEPARATOR = ","
   const val DEFAULT_ADAPTER_ITEM_WIDTH = 288
   const val DEFAULT_PHOTOS_PER_PAGE_COUNT = 5
 

@@ -27,9 +27,7 @@ class PhotosActivityViewModelFactory
   val settingsRepository: SettingsRepository,
   val takenPhotosRepository: TakenPhotosRepository,
   val uploadedPhotosRepository: UploadedPhotosRepository,
-  val receivedPhotosRepository: ReceivedPhotosRepository,
-  val reportPhotoUseCase: ReportPhotoUseCase,
-  val favouritePhotoUseCase: FavouritePhotoUseCase
+  val receivedPhotosRepository: ReceivedPhotosRepository
 ) : ViewModelProvider.Factory {
 
   @Suppress("UNCHECKED_CAST")
@@ -42,9 +40,7 @@ class PhotosActivityViewModelFactory
       settingsRepository,
       takenPhotosRepository,
       uploadedPhotosRepository,
-      receivedPhotosRepository,
-      reportPhotoUseCase,
-      favouritePhotoUseCase
+      receivedPhotosRepository
     ) as T
   }
 }

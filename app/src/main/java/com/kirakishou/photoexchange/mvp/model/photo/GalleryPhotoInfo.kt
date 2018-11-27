@@ -1,9 +1,9 @@
 package com.kirakishou.photoexchange.mvp.model.photo
 
-class GalleryPhotoInfo(
+data class GalleryPhotoInfo(
   val galleryPhotoId: Long,
-  var isFavourited: Boolean,
-  var isReported: Boolean
+  val isFavourited: Boolean,
+  val isReported: Boolean
 ) {
 
   fun isEmpty(): Boolean {

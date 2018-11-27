@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.helper.database.mapper
 
 import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoEntity
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhotoInfo
 import net.response.GalleryPhotosResponse
 
 object GalleryPhotosMapper {
@@ -14,7 +15,8 @@ object GalleryPhotosMapper {
         galleryPhotoEntity.lon,
         galleryPhotoEntity.lat,
         galleryPhotoEntity.uploadedOn,
-        galleryPhotoEntity.favouritedCount
+        galleryPhotoEntity.favouritedCount,
+        GalleryPhotoInfo.empty()
       )
     }
 
@@ -50,7 +52,8 @@ object GalleryPhotosMapper {
           galleryPhotoResponseData.lon,
           galleryPhotoResponseData.lat,
           galleryPhotoResponseData.uploadedOn,
-          galleryPhotoResponseData.favouritesCount
+          galleryPhotoResponseData.favouritesCount,
+          GalleryPhotoInfo.empty()
         )
       }
 

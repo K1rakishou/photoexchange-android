@@ -3,20 +3,17 @@ package com.kirakishou.photoexchange.ui.fragment
 
 import android.os.Bundle
 import android.view.View
-import androidx.recyclerview.widget.RecyclerView
-import butterknife.BindView
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.kirakishou.fixmypc.photoexchange.R
-import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.helper.extension.safe
+import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
+import com.kirakishou.photoexchange.ui.epoxy.controller.GalleryFragmentEpoxyController
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
@@ -26,17 +23,12 @@ import javax.inject.Inject
 
 class GalleryFragment : BaseMvRxFragment(), StateEventListener<GalleryFragmentEvent>, IntercomListener {
 
-  @BindView(R.id.gallery_photos_list)
-  lateinit var galleryPhotosList: RecyclerView
-
-  @Inject
-  lateinit var imageLoader: ImageLoader
-
   @Inject
   lateinit var viewModel: PhotosActivityViewModel
 
   private val TAG = "GalleryFragment"
 
+  private val controller = GalleryFragmentEpoxyController()
   private val galleryPhotoAdapterViewWidth = Constants.DEFAULT_ADAPTER_ITEM_WIDTH
 
   private val photoSize by lazy { AndroidUtils.figureOutPhotosSizes(requireContext()) }
@@ -78,69 +70,17 @@ class GalleryFragment : BaseMvRxFragment(), StateEventListener<GalleryFragmentEv
       .subscribe({ event ->
         launch { onStateEvent(event) }
       })
-
-    TODO()
-//    compositeDisposable += adapterButtonClickSubject
-//      .subscribe({ buttonClickEvent ->
-//
-//        when (buttonClickEvent) {
-//          is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.FavouriteClicked -> {
-//            val result = viewModel.favouritePhoto(buttonClickEvent.photoName)
-//
-//            //TODO: hide inside viewmodel
-//            when (result) {
-//              is Either.Value -> favouritePhoto(buttonClickEvent.photoName, result.value.isFavourited, result.value.favouritesCount)
-//              is Either.Error -> {
-//                when (result.error) {
-//                  is ApiErrorException -> handleKnownErrors(result.error.errorCode)
-//                  else -> handleUnknownErrors(result.error)
-//                }
-//              }
-//            }
-//          }
-//          is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.ReportClicked -> {
-//            val result = viewModel.reportPhoto(buttonClickEvent.photoName)
-//
-//            //TODO: hide inside viewmodel
-//            when (result) {
-//              is Either.Value -> reportPhoto(buttonClickEvent.photoName, result.value)
-//              is Either.Error -> {
-//                when (result.error) {
-//                  is ApiErrorException -> handleKnownErrors(result.error.errorCode)
-//                  else -> handleUnknownErrors(result.error)
-//                }
-//              }
-//            }
-//          }
-//          is GalleryPhotosAdapter.GalleryPhotosAdapterButtonClickEvent.SwitchShowMapOrPhoto -> {
-//            handleAdapterClick(buttonClickEvent)
-//          }
-//        }.safe
-//      })
   }
 
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
-    TODO()
+    controller.rebuild(requireContext(), this, viewModel.galleryFragmentViewModel)
   }
 
   override suspend fun onStateEvent(event: GalleryFragmentEvent) {
     if (!isAdded) {
       return
     }
-
-    TODO()
-//    when (event) {
-//      is GalleryFragmentEvent.GeneralEvents -> {
-//        onUiEvent(event)
-//      }
-//    }.safe
   }
-
-//  private fun onUiEvent(event: GalleryFragmentEvent.GeneralEvents) {
-//    if (!isAdded) {
-//      return
-//    }
-//  }
 
   override fun resolveDaggerDependency() {
     (requireActivity() as PhotosActivity).activityComponent

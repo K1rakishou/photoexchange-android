@@ -10,7 +10,7 @@ import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.UploadedPhotosFragmentViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
-import com.kirakishou.photoexchange.ui.adapter.epoxy.*
+import com.kirakishou.photoexchange.ui.epoxy.row.*
 import timber.log.Timber
 
 class UploadedPhotosFragmentEpoxyController {

@@ -160,7 +160,7 @@ class GetUploadedPhotosUseCaseTest {
       GetUploadedPhotosResponse.UploadedPhotoData(9L, "777", 99.4, 99.4, false, 999L)
     )
 
-    val photoIdsJoined = notCachedPhotoIds.joinToString(Constants.PHOTOS_DELIMITER)
+    val photoIdsJoined = notCachedPhotoIds.joinToString(Constants.PHOTOS_SEPARATOR)
 
     Mockito.`when`(apiClient.getUploadedPhotoIds(userId, lastId, photosPerPage))
       .thenReturn(Single.just(GetUploadedPhotoIdsResponse.success(photoIds)))

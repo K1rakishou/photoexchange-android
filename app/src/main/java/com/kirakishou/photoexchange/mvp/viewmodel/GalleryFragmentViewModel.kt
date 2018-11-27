@@ -10,8 +10,15 @@ import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.Constants
+import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
+import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
+import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
+import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
+import com.kirakishou.photoexchange.mvp.model.FavouritePhotoActionResult
+import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhotoInfo
 import com.kirakishou.photoexchange.mvp.viewmodel.state.GalleryFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
+import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -27,6 +34,8 @@ class GalleryFragmentViewModel(
   initialState: GalleryFragmentState,
   private val intercom: PhotosActivityViewModelIntercom,
   private val getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
+  private val favouritePhotoUseCase: FavouritePhotoUseCase,
+  private val reportPhotoUseCase: ReportPhotoUseCase,
   private val dispatchersProvider: DispatchersProvider
 ) : BaseMvRxViewModel<GalleryFragmentState>(initialState), CoroutineScope {
   private val TAG = "GalleryFragmentViewModel"
@@ -51,6 +60,9 @@ class GalleryFragmentViewModel(
         when (action) {
           ActorAction.LoadGalleryPhotos -> loadGalleryPhotosInternal()
           ActorAction.ResetState -> resetStateInternal()
+          is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.galleryPhotoName)
+          is ActorAction.ReportPhoto -> reportPhotoInternal(action.galleryPhotoName)
+          is ActorAction.FavouritePhoto -> favouritePhotoInternal(action.galleryPhotoName)
         }.safe
       }
     }
@@ -64,6 +76,104 @@ class GalleryFragmentViewModel(
 
   fun loadGalleryPhotos() {
     launch { viewModelActor.send(ActorAction.LoadGalleryPhotos) }
+  }
+
+  fun swapPhotoAndMap(photoName: String) {
+    launch { viewModelActor.send(ActorAction.SwapPhotoAndMap(photoName)) }
+  }
+
+  fun favouritePhoto(photoName: String) {
+    launch { viewModelActor.send(ActorAction.FavouritePhoto(photoName)) }
+  }
+
+  fun reportPhotos(photoName: String) {
+    launch { viewModelActor.send(ActorAction.ReportPhoto(photoName)) }
+  }
+
+  private fun reportPhotoInternal(photoName: String) {
+
+  }
+
+  private fun favouritePhotoInternal(photoName: String) {
+    withState { state ->
+      launch {
+        setState { copy(isFavouriteRequestActive = true) }
+
+        val result = try {
+          Success(doFavouritePhoto(photoName))
+        } catch (error: Throwable) {
+          Fail<FavouritePhotoActionResult>(error)
+        }
+
+        if (result is Fail) {
+          if (result.error is EmptyUserIdException) {
+            val updatedPhotos = state.galleryPhotos
+              .map { it.copy(galleryPhotoInfo = GalleryPhotoInfo.empty()) }
+
+            setState {
+              copy(
+                isFavouriteRequestActive = false,
+                galleryPhotos = updatedPhotos
+              )
+            }
+
+            return@launch
+          }
+
+          val message = "Could not favourite photo, error is \"${result.error.message
+            ?: "Unknown error"}\""
+
+          setState { copy(isFavouriteRequestActive = false) }
+
+          intercom.tell<GalleryFragment>()
+            .to(GalleryFragmentEvent.GeneralEvents.ShowToast(message))
+          return@launch
+        }
+
+        val photoIndex = state.galleryPhotos
+          .indexOfFirst { it.photoName == photoName }
+        if (photoIndex == -1) {
+          return@launch
+        }
+
+        val favouriteResult = result()!!
+        val updatedPhotos = state.galleryPhotos.toMutableList()
+        val galleryPhoto = updatedPhotos[photoIndex]
+
+        val updatedPhotoInfo = updatedPhotos[photoIndex].galleryPhotoInfo
+          .copy(isFavourited = favouriteResult.isFavourited)
+
+        updatedPhotos[photoIndex] = galleryPhoto.copy(
+          favouritesCount = favouriteResult.favouritesCount,
+          galleryPhotoInfo = updatedPhotoInfo
+        )
+
+        setState {
+          copy(
+            isFavouriteRequestActive = false,
+            galleryPhotos = updatedPhotos
+          )
+        }
+      }
+    }
+  }
+
+  private fun swapPhotoAndMapInternal(photoName: String) {
+    withState { state ->
+      val photoIndex = state.galleryPhotos.indexOfFirst { it.photoName == photoName }
+      if (photoIndex == -1) {
+        return@withState
+      }
+
+      val oldShowPhoto = state.galleryPhotos[photoIndex].showPhoto
+      val updatedPhoto = state.galleryPhotos[photoIndex]
+        .copy(showPhoto = !oldShowPhoto)
+
+      val updatedPhotos = state.galleryPhotos.toMutableList()
+      updatedPhotos[photoIndex] = updatedPhoto
+
+      setState { copy(galleryPhotos = updatedPhotos) }
+    }
   }
 
   private fun resetStateInternal() {
@@ -103,6 +213,18 @@ class GalleryFragmentViewModel(
     }
   }
 
+  private suspend fun doFavouritePhoto(photoName: String): FavouritePhotoActionResult {
+    val result = favouritePhotoUseCase.favouritePhoto(photoName)
+    return when (result) {
+      is Either.Value -> {
+        result.value
+      }
+      is Either.Error -> {
+        throw result.error
+      }
+    }
+  }
+
   private suspend fun loadPageOfGalleryPhotos(
     lastUploadedOn: Long,
     count: Int
@@ -134,6 +256,9 @@ class GalleryFragmentViewModel(
   sealed class ActorAction {
     object LoadGalleryPhotos : ActorAction()
     object ResetState : ActorAction()
+    class SwapPhotoAndMap(val galleryPhotoName: String) : ActorAction()
+    class ReportPhoto(val galleryPhotoName: String) : ActorAction()
+    class FavouritePhoto(val galleryPhotoName: String) : ActorAction()
   }
 
   companion object : MvRxViewModelFactory<GalleryFragmentState> {

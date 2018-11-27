@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.ui.adapter.epoxy
+package com.kirakishou.photoexchange.ui.epoxy.row
 
 import android.content.Context
 import android.graphics.drawable.ColorDrawable
@@ -10,6 +10,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatButton
 import androidx.cardview.widget.CardView
+import com.airbnb.epoxy.CallbackProp
 import com.airbnb.epoxy.ModelProp
 import com.airbnb.epoxy.ModelView
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -18,11 +19,10 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.di.module.GlideApp
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
-import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
 import java.lang.IllegalStateException
 
 @ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT)
-class UploadingPhotoRow @JvmOverloads constructor(
+class QueuedUpPhotoRow @JvmOverloads constructor(
   context: Context,
   attrs: AttributeSet? = null,
   defStyleAttr: Int = 0
@@ -45,14 +45,14 @@ class UploadingPhotoRow @JvmOverloads constructor(
     cancelButton = findViewById(R.id.cancel_button)
 
     orientation = VERTICAL
-    loadingProgress.isIndeterminate = false
-    cancelButton.isEnabled = false
+    loadingProgress.isIndeterminate = true
+    cancelButton.isEnabled = true
   }
 
   @ModelProp
-  fun photo(photo: UploadingPhoto) {
-    if (photo.photoState != PhotoState.PHOTO_UPLOADING) {
-      throw IllegalStateException("photo state should be PHOTO_UPLOADING but actually is (${photo.photoState})")
+  fun photo(photo: TakenPhoto) {
+    if (photo.photoState != PhotoState.PHOTO_QUEUED_UP) {
+      throw IllegalStateException("photo state should be PHOTO_QUEUED_UP not (${photo.photoState})")
     }
 
     photoUploadingStateIndicator.background = ColorDrawable(context.resources.getColor(R.color.photo_state_uploading_color))
@@ -68,12 +68,8 @@ class UploadingPhotoRow @JvmOverloads constructor(
     }
   }
 
-  @ModelProp
-  fun setProgress(progress: Int) {
-    if (loadingProgress.isIndeterminate) {
-      loadingProgress.isIndeterminate = false
-    }
-
-    loadingProgress.progress = progress
+  @CallbackProp
+  fun setCallback(listener: OnClickListener?) {
+    cancelButton.setOnClickListener(listener)
   }
 }

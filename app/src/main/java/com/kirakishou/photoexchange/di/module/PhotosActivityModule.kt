@@ -94,11 +94,15 @@ open class PhotosActivityModule(
   fun provideGalleryFragmentViewModel(intercom: PhotosActivityViewModelIntercom,
                                       viewState: GalleryFragmentState,
                                       galleryPhotosUseCase: GetGalleryPhotosUseCase,
+                                      favouritePhotoUseCase: FavouritePhotoUseCase,
+                                      reportPhotoUseCase: ReportPhotoUseCase,
                                       dispatchersProvider: DispatchersProvider): GalleryFragmentViewModel {
     return GalleryFragmentViewModel(
       viewState,
       intercom,
       galleryPhotosUseCase,
+      favouritePhotoUseCase,
+      reportPhotoUseCase,
       dispatchersProvider
     )
   }
@@ -112,9 +116,7 @@ open class PhotosActivityModule(
                               settingsRepository: SettingsRepository,
                               takenPhotosRepository: TakenPhotosRepository,
                               uploadedPhotosRepository: UploadedPhotosRepository,
-                              receivedPhotosRepository: ReceivedPhotosRepository,
-                              reportPhotoUseCase: ReportPhotoUseCase,
-                              favouritePhotoUseCase: FavouritePhotoUseCase): PhotosActivityViewModelFactory {
+                              receivedPhotosRepository: ReceivedPhotosRepository): PhotosActivityViewModelFactory {
     return PhotosActivityViewModelFactory(
       uploadedPhotosFragmentViewModel,
       receivedPhotosFragmentViewModel,
@@ -123,9 +125,8 @@ open class PhotosActivityModule(
       settingsRepository,
       takenPhotosRepository,
       uploadedPhotosRepository,
-      receivedPhotosRepository,
-      reportPhotoUseCase,
-      favouritePhotoUseCase)
+      receivedPhotosRepository
+    )
   }
 
   @PerActivity
