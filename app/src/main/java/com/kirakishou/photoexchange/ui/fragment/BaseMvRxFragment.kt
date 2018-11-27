@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.CallSuper
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.airbnb.epoxy.EpoxyController
 import com.airbnb.epoxy.EpoxyRecyclerView
@@ -26,6 +27,7 @@ abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
   protected val compositeDisposable = CompositeDisposable()
   protected val compositeChannel = mutableListOf<ReceiveChannel<Any>>()
   protected lateinit var recyclerView: EpoxyRecyclerView
+  protected lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
   override val coroutineContext: CoroutineContext
     get() = job + Dispatchers.Main
@@ -52,6 +54,13 @@ abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
         throw IllegalStateException("BaseMvRxFragment requires fragment to contain " +
           "RecyclerView with id = R.id.recycler_view!")
       }
+
+      val srl = findViewById<SwipeRefreshLayout>(R.id.swipe_refresh_layout)
+      if (srl == null) {
+        throw IllegalStateException("Fragment should contain swipeRefreshLayout")
+      }
+
+      swipeRefreshLayout = srl
 
       recyclerView = recyclerViewInstance.apply {
         epoxyController.spanCount = spanCount

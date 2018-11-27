@@ -57,6 +57,8 @@ class ReceivedPhotosFragmentViewModel(
 
         when (action) {
           ActorAction.LoadReceivedPhotos -> loadReceivedPhotosInternal()
+          ActorAction.ResetState -> resetStateInternal()
+          is ActorAction.SwapPhotoAndMapInternal -> swapPhotoAndMapInternal(action.receivedPhotoName)
         }.safe
       }
     }
@@ -69,11 +71,14 @@ class ReceivedPhotosFragmentViewModel(
   }
 
   fun resetState() {
-    setState { ReceivedPhotosFragmentState() }
-    launch { viewModelActor.send(ActorAction.LoadReceivedPhotos) }
+    launch { viewModelActor.send(ActorAction.ResetState) }
   }
 
   fun swapPhotoAndMap(receivedPhotoName: String) {
+    launch { viewModelActor.send(ActorAction.SwapPhotoAndMapInternal(receivedPhotoName)) }
+  }
+
+  private fun swapPhotoAndMapInternal(receivedPhotoName: String) {
     withState { state ->
       val photoIndex = state.receivedPhotos.indexOfFirst { it.receivedPhotoName == receivedPhotoName }
       if (photoIndex == -1) {
@@ -89,6 +94,11 @@ class ReceivedPhotosFragmentViewModel(
 
       setState { copy(receivedPhotos = updatedPhotos) }
     }
+  }
+
+  private fun resetStateInternal() {
+    setState { ReceivedPhotosFragmentState() }
+    launch { viewModelActor.send(ActorAction.LoadReceivedPhotos) }
   }
 
   private suspend fun loadReceivedPhotosInternal() {
@@ -194,6 +204,8 @@ class ReceivedPhotosFragmentViewModel(
 
   sealed class ActorAction {
     object LoadReceivedPhotos : ActorAction()
+    object ResetState : ActorAction()
+    class SwapPhotoAndMapInternal(val receivedPhotoName: String) : ActorAction()
   }
 
   companion object : MvRxViewModelFactory<ReceivedPhotosFragmentState> {

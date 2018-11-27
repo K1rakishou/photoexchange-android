@@ -55,6 +55,7 @@ open class ReceivePhotosServicePresenter(
       return
     }
 
+    Timber.tag(TAG).d("Found ${uploadedPhotos.size} photos without receiver")
 
     val photoData = formatRequestString(uploadedPhotos)
     if (photoData == null) {
@@ -75,8 +76,6 @@ open class ReceivePhotosServicePresenter(
 
     sendEvent(ReceivePhotoEvent.OnPhotosReceived(receivedPhotos))
     sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Success()))
-
-    receivePhotosInternal()
   }
 
   private suspend fun formatRequestString(uploadedPhotos: List<UploadedPhoto>): FindPhotosData? {
