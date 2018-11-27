@@ -1,12 +1,12 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
+import com.kirakishou.photoexchange.helper.PhotosVisibility
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.ui.fragment.AddToGalleryDialogFragment
 import io.reactivex.subjects.PublishSubject
-import timber.log.Timber
 
 /**
  * Created by kirakishou on 3/9/2018.
@@ -41,7 +41,7 @@ class ViewTakenPhotoActivityViewModel(
     settingsRepository.saveMakePublicFlag(makePublic)
   }
 
-  suspend fun getMakePublicFlag():SettingsRepository.MakePhotosPublicState {
+  suspend fun getMakePublicFlag(): PhotosVisibility {
     return settingsRepository.getMakePublicFlag()
   }
 }

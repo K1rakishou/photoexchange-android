@@ -15,7 +15,7 @@ import butterknife.BindView
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.PhotosVisibility
 import com.kirakishou.photoexchange.helper.extension.debounceClicks
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.ViewTakenPhotoActivityViewModel
@@ -36,8 +36,8 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
   @BindView(R.id.fab_close_activity)
   lateinit var fabCloseActivity: FloatingActionButton
 
-  @BindView(R.id.fab_send_photo)
-  lateinit var fabSendPhoto: FloatingActionButton
+  @BindView(R.id.fab_queue_up_photo)
+  lateinit var fabQueueUpPhoto: FloatingActionButton
 
   @Inject
   lateinit var imageLoader: ImageLoader
@@ -62,6 +62,16 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
   override fun onFragmentViewDestroy() {
   }
 
+  private fun initViews() {
+    imageLoader.loadPhotoFromDiskInto(takenPhoto.getFile(), ivPhotoView)
+
+    fabCloseActivity.scaleX = 0f
+    fabCloseActivity.scaleY = 0f
+
+    fabQueueUpPhoto.scaleX = 0f
+    fabQueueUpPhoto.scaleY = 0f
+  }
+
   private fun initRx() {
     compositeDisposable += RxView.clicks(fabCloseActivity)
       .subscribeOn(AndroidSchedulers.mainThread())
@@ -70,33 +80,25 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
       .doOnError { Timber.tag(TAG).e(it) }
       .subscribe()
 
-    fabSendPhoto.setOnClickListener {
-      launch {
-        viewModel.queueUpTakenPhoto(takenPhoto.id)
-        val makePublicFlag = viewModel.getMakePublicFlag()
-
-        when (makePublicFlag) {
-          SettingsRepository.MakePhotosPublicState.AlwaysPublic,
-          SettingsRepository.MakePhotosPublicState.AlwaysPrivate -> {
-            val makePublic = makePublicFlag == SettingsRepository.MakePhotosPublicState.AlwaysPublic
-            viewModel.addToGalleryFragmentResult.onNext(AddToGalleryDialogFragment.FragmentResult(false, makePublic))
-          }
-          SettingsRepository.MakePhotosPublicState.Neither -> {
-            (requireActivity() as ViewTakenPhotoActivity).showDialogFragment()
-          }
-        }
-      }
+    fabQueueUpPhoto.setOnClickListener {
+      launch { queueUpPhoto() }
     }
   }
 
-  private fun initViews() {
-    imageLoader.loadPhotoFromDiskInto(takenPhoto.getFile(), ivPhotoView)
+  private suspend fun queueUpPhoto() {
+    viewModel.queueUpTakenPhoto(takenPhoto.id)
+    val makePublicFlag = viewModel.getMakePublicFlag()
 
-    fabCloseActivity.scaleX = 0f
-    fabCloseActivity.scaleY = 0f
-
-    fabSendPhoto.scaleX = 0f
-    fabSendPhoto.scaleY = 0f
+    when (makePublicFlag) {
+      PhotosVisibility.AlwaysPublic,
+      PhotosVisibility.AlwaysPrivate -> {
+        val makePublic = makePublicFlag == PhotosVisibility.AlwaysPublic
+        viewModel.addToGalleryFragmentResult.onNext(AddToGalleryDialogFragment.FragmentResult(false, makePublic))
+      }
+      PhotosVisibility.Neither -> {
+        (requireActivity() as ViewTakenPhotoActivity).showDialogFragment()
+      }
+    }
   }
 
   fun animateAppear() {
@@ -109,10 +111,10 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
       val animation2 = ObjectAnimator.ofFloat(fabCloseActivity, View.SCALE_Y, 0f, 1f)
       animation2.setInterpolator(OvershootInterpolator())
 
-      val animation3 = ObjectAnimator.ofFloat(fabSendPhoto, View.SCALE_X, 0f, 1f)
+      val animation3 = ObjectAnimator.ofFloat(fabQueueUpPhoto, View.SCALE_X, 0f, 1f)
       animation3.setInterpolator(OvershootInterpolator())
 
-      val animation4 = ObjectAnimator.ofFloat(fabSendPhoto, View.SCALE_Y, 0f, 1f)
+      val animation4 = ObjectAnimator.ofFloat(fabQueueUpPhoto, View.SCALE_Y, 0f, 1f)
       animation4.setInterpolator(OvershootInterpolator())
 
       set.playTogether(animation1, animation2, animation3, animation4)
@@ -132,10 +134,10 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
       val animation2 = ObjectAnimator.ofFloat(fabCloseActivity, View.SCALE_Y, 1f, 0f)
       animation2.setInterpolator(AnticipateInterpolator())
 
-      val animation3 = ObjectAnimator.ofFloat(fabSendPhoto, View.SCALE_X, 1f, 0f)
+      val animation3 = ObjectAnimator.ofFloat(fabQueueUpPhoto, View.SCALE_X, 1f, 0f)
       animation3.setInterpolator(AnticipateInterpolator())
 
-      val animation4 = ObjectAnimator.ofFloat(fabSendPhoto, View.SCALE_Y, 1f, 0f)
+      val animation4 = ObjectAnimator.ofFloat(fabQueueUpPhoto, View.SCALE_Y, 1f, 0f)
       animation4.setInterpolator(AnticipateInterpolator())
 
       set.playTogether(animation1, animation2, animation3, animation4)
