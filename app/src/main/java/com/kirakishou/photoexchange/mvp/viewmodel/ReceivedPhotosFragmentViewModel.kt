@@ -70,6 +70,7 @@ class ReceivedPhotosFragmentViewModel(
 
   fun resetState() {
     setState { ReceivedPhotosFragmentState() }
+    launch { viewModelActor.send(ActorAction.LoadReceivedPhotos) }
   }
 
   fun swapPhotoAndMap(receivedPhotoName: String) {

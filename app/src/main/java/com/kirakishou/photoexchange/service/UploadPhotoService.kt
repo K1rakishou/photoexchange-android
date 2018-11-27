@@ -58,8 +58,6 @@ class UploadPhotoService : Service(), CoroutineScope {
 
   override fun onCreate() {
     super.onCreate()
-    Timber.tag(TAG).d("UploadPhotoService started")
-
     job = Job()
 
     resolveDaggerDependency()
@@ -78,17 +76,13 @@ class UploadPhotoService : Service(), CoroutineScope {
 
     job.cancel()
     compositeDisposable.clear()
-
-    Timber.tag(TAG).d("UploadPhotoService destroyed")
   }
 
   fun attachCallback(_callback: WeakReference<PhotoUploadingCallback>) {
-    Timber.tag(TAG).d("attachCallback")
     callback = _callback
   }
 
   fun detachCallback() {
-    Timber.tag(TAG).d("detachCallback")
     callback = WeakReference<PhotoUploadingCallback>(null)
   }
 

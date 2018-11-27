@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRep
 import com.kirakishou.photoexchange.interactors.ReceivePhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.FindPhotosData
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
@@ -48,7 +49,14 @@ open class ReceivePhotosServicePresenter(
   }
 
   private suspend fun receivePhotosInternal() {
-    val photoData = formatRequestString()
+    val uploadedPhotos = uploadedPhotosRepository.findAllWithoutReceiverInfo()
+    if (uploadedPhotos.isEmpty()) {
+      Timber.tag(TAG).d("No photos without receiver info")
+      return
+    }
+
+
+    val photoData = formatRequestString(uploadedPhotos)
     if (photoData == null) {
       return
     }
@@ -57,7 +65,9 @@ open class ReceivePhotosServicePresenter(
 
     val receivedPhotos = try {
       receivePhotosUseCase.receivePhotos(photoData)
-    } catch (error: Exception) {
+    } catch (error: Throwable) {
+      Timber.tag(TAG).e(error)
+
       sendEvent(ReceivePhotoEvent.OnError(error))
       sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Error()))
       return
@@ -65,15 +75,11 @@ open class ReceivePhotosServicePresenter(
 
     sendEvent(ReceivePhotoEvent.OnPhotosReceived(receivedPhotos))
     sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Success()))
+
+    receivePhotosInternal()
   }
 
-  private suspend fun formatRequestString(): FindPhotosData? {
-    val uploadedPhotos = uploadedPhotosRepository.findAllWithoutReceiverInfo()
-    if (uploadedPhotos.isEmpty()) {
-      Timber.tag(TAG).d("No photos without receiver info")
-      return null
-    }
-
+  private suspend fun formatRequestString(uploadedPhotos: List<UploadedPhoto>): FindPhotosData? {
     val photoNames = uploadedPhotos.joinToString(",") { it.photoName }
     val userId = settingsRepository.getUserId()
     if (userId.isEmpty()) {
@@ -99,7 +105,10 @@ open class ReceivePhotosServicePresenter(
 
   fun startPhotosReceiving() {
     Timber.tag(TAG).d("startPhotosReceiving called")
-    receiveActor.offer(Unit)
+
+    if (!receiveActor.offer(Unit)) {
+      Timber.tag(TAG).d("receiveActor is busy")
+    }
   }
 
   sealed class ReceivePhotoEvent {

@@ -53,14 +53,16 @@ open class PhotosActivityModule(
   fun provideUploadedPhotosFragmentViewModel(intercom: PhotosActivityViewModelIntercom,
                                              viewState: UploadedPhotosFragmentState,
                                              takenPhotosRepository: TakenPhotosRepository,
-                                             settingsRepository: SettingsRepository,
+                                             uploadedPhotosRepository: UploadedPhotosRepository,
+                                             receivedPhotosRepository: ReceivedPhotosRepository,
                                              getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
                                              dispatchersProvider: DispatchersProvider): UploadedPhotosFragmentViewModel {
     return UploadedPhotosFragmentViewModel(
       viewState,
       intercom,
       takenPhotosRepository,
-      settingsRepository,
+      uploadedPhotosRepository,
+      receivedPhotosRepository,
       getUploadedPhotosUseCase,
       dispatchersProvider
     )

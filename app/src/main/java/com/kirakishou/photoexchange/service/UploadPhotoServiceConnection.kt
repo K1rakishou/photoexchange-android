@@ -41,25 +41,17 @@ class UploadPhotoServiceConnection(
 
   private fun onUploadingServiceConnected(_service: IBinder) {
     if (compareAndSet(false, true)) {
-      Timber.tag(tag).d("+++ onUploadingServiceConnected")
-
       uploadPhotoService = (_service as UploadPhotoService.UploadPhotosBinder).getService()
       uploadPhotoService!!.attachCallback(WeakReference(activity))
       startPhotosUploading()
-    } else {
-      Timber.tag(tag).d("+++ onUploadingServiceConnected already connected")
     }
   }
 
   fun onUploadingServiceDisconnected() {
     if (compareAndSet(true, false)) {
-      Timber.tag(tag).d("--- onUploadingServiceDisconnected")
-
       uploadPhotoService?.detachCallback()
       activity.unbindService(this)
       uploadPhotoService = null
-    } else {
-      Timber.tag(tag).d("--- onUploadingServiceDisconnected already disconnected")
     }
   }
 }

@@ -38,8 +38,6 @@ class ReceivePhotosService : Service() {
 
   override fun onCreate() {
     super.onCreate()
-    Timber.tag(TAG).d("ReceivePhotosService started")
-
     resolveDaggerDependency()
     startForeground(NOTIFICATION_ID, createInitialNotification())
 
@@ -49,8 +47,6 @@ class ReceivePhotosService : Service() {
 
   override fun onDestroy() {
     super.onDestroy()
-    Timber.tag(TAG).d("ReceivePhotosService destroyed")
-
     removeNotification()
     presenter.onDetach()
     detachCallback()
@@ -99,8 +95,6 @@ class ReceivePhotosService : Service() {
   }
 
   private fun stopService() {
-    Timber.tag(TAG).d("Stopping service")
-
     stopForeground(true)
     stopSelf()
   }

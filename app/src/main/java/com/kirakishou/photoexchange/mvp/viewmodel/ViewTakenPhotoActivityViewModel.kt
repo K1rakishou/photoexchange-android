@@ -22,8 +22,6 @@ class ViewTakenPhotoActivityViewModel(
   val addToGalleryFragmentResult = PublishSubject.create<AddToGalleryDialogFragment.FragmentResult>().toSerialized()
 
   override fun onCleared() {
-    Timber.tag(TAG).d("onCleared()")
-
     super.onCleared()
   }
 

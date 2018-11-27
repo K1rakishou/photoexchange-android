@@ -39,64 +39,61 @@ class UploadedPhotosFragmentEpoxyController {
     uploadedPhotosRequest: Async<List<UploadedPhoto>>,
     context: Context
   ) {
-    when (uploadedPhotosRequest) {
-      is Loading,
-      is Success -> {
-        if (uploadedPhotosRequest is Loading) {
-          Timber.tag(TAG).d("Loading uploaded photos")
+    if (uploadedPhotosRequest is Loading) {
+      if (state.uploadedPhotos.isEmpty()) {
+        Timber.tag(TAG).d("Loading uploaded photos")
 
-          loadingRow {
-            id("uploaded_photos_loading_row")
-          }
-        } else {
-          Timber.tag(TAG).d("Success uploaded photos")
+        loadingRow {
+          id("uploaded_photos_loading_row")
         }
 
-        if (state.uploadedPhotos.isEmpty()) {
+        return
+      }
+    }
+
+    if (uploadedPhotosRequest is Success) {
+      if (state.uploadedPhotos.isEmpty()) {
+        textRow {
+          id("no_uploaded_photos")
+          text("You have no photos yet")
+        }
+      } else {
+        sectionRow {
+          id("uploaded_photos_section")
+          text("Uploaded photos")
+        }
+
+        state.uploadedPhotos.forEach { photo ->
+          uploadedPhotoRow {
+            id("uploaded_photo_${photo.photoName}")
+            photo(photo)
+          }
+        }
+
+        if (state.isEndReached) {
           textRow {
-            id("no_uploaded_photos")
-            text("You have no photos yet")
+            id("list_end_footer_text")
+            text("End of the list reached.\nClick here to reload")
+            callback { _ ->
+              Timber.tag(TAG).d("Reloading")
+              viewModel.resetState()
+            }
           }
         } else {
-          sectionRow {
-            id("uploaded_photos_section")
-            text("Uploaded photos")
-          }
-
-          state.uploadedPhotos.forEach { photo ->
-            uploadedPhotoRow {
-              id("uploaded_photo_${photo.photoId}")
-              photo(photo)
-            }
-          }
-
-          if (state.isEndReached) {
-            textRow {
-              id("list_end_footer_text")
-              text("End of the list reached.\nClick here to reload")
-              callback { _ ->
-                Timber.tag(TAG).d("Reloading")
-                viewModel.resetState()
-              }
-            }
-          } else {
-            loadingRow {
-              //we should change the id to trigger the binding
-              id("load_next_page_${state.uploadedPhotos.size}")
-              onBind { _, _, _ -> viewModel.loadUploadedPhotos() }
-            }
+          loadingRow {
+            //we should change the id to trigger the binding
+            id("load_next_page_${state.uploadedPhotos.size}")
+            onBind { _, _, _ -> viewModel.loadUploadedPhotos() }
           }
         }
       }
-      is Fail -> {
-        Timber.tag(TAG).d("Fail uploaded photos")
+    }
 
-        buildErrorNotification(uploadedPhotosRequest.error, context, viewModel)
-      }
-      is Uninitialized -> {
-        //do nothing
-      }
-    }.safe
+    if (uploadedPhotosRequest is Fail) {
+      Timber.tag(TAG).d("Fail uploaded photos")
+
+      buildErrorNotification(uploadedPhotosRequest.error, context, viewModel)
+    }
   }
 
   private fun AsyncEpoxyController.buildTakenPhotos(
