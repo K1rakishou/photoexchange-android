@@ -229,9 +229,6 @@ class GalleryFragment : BaseFragment(), StateEventListener<GalleryFragmentEvent>
         is GalleryFragmentEvent.GeneralEvents.HideProgressFooter -> {
           hideProgressFooter()
         }
-        is GalleryFragmentEvent.GeneralEvents.OnPageSelected -> {
-          viewModel.galleryFragmentViewModel.viewState.reset()
-        }
         is GalleryFragmentEvent.GeneralEvents.PageIsLoading -> {
         }
         is GalleryFragmentEvent.GeneralEvents.ShowGalleryPhotos -> {

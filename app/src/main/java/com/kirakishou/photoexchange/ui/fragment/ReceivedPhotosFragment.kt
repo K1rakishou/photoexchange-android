@@ -90,11 +90,7 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
   override suspend fun onStateEvent(event: ReceivedPhotosFragmentEvent) {
     when (event) {
       is ReceivedPhotosFragmentEvent.GeneralEvents -> {
-        kotlin.run {
-          if (isAdded) {
-            onUiEvent(event)
-          }
-        }
+        onUiEvent(event)
       }
       is ReceivedPhotosFragmentEvent.ReceivePhotosEvent -> {
         viewModel.receivedPhotosFragmentViewModel.onReceivePhotosEvent(event)
@@ -103,11 +99,13 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
   }
 
   private suspend fun onUiEvent(event: ReceivedPhotosFragmentEvent.GeneralEvents) {
+    if (!isAdded) {
+      return
+    }
+
     when (event) {
       is ReceivedPhotosFragmentEvent.GeneralEvents.ScrollToTop -> {
         recyclerView.scrollToPosition(0)
-      }
-      is ReceivedPhotosFragmentEvent.GeneralEvents.OnPageSelected -> {
       }
     }.safe
   }

@@ -7,7 +7,6 @@ import java.lang.Exception
 
 sealed class UploadedPhotosFragmentEvent : BaseEvent {
   sealed class GeneralEvents : UploadedPhotosFragmentEvent() {
-    class OnPageSelected : GeneralEvents()
   }
 
   sealed class ReceivePhotosEvent : UploadedPhotosFragmentEvent() {
