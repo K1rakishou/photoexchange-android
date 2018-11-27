@@ -13,7 +13,7 @@ import com.kirakishou.photoexchange.di.module.ApplicationModule
 import com.kirakishou.photoexchange.di.module.DatabaseModule
 import com.kirakishou.photoexchange.di.module.NetworkModule
 import com.kirakishou.photoexchange.di.module.SchedulerProviderModule
-import com.kirakishou.photoexchange.mvp.model.other.Constants
+import com.kirakishou.photoexchange.helper.Constants
 import io.fabric.sdk.android.Fabric
 import com.crashlytics.android.core.CrashlyticsCore
 import com.facebook.stetho.Stetho

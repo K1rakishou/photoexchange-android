@@ -3,21 +3,18 @@ package com.kirakishou.photoexchange.ui.fragment
 
 import android.os.Bundle
 import android.view.View
-import androidx.recyclerview.widget.RecyclerView
-import butterknife.BindView
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.kirakishou.fixmypc.photoexchange.R
-import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvp.model.other.Constants
+import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
-import com.kirakishou.photoexchange.ui.epoxy_controller.ReceivedPhotosFragmentEpoxyController
+import com.kirakishou.photoexchange.ui.epoxy.controller.ReceivedPhotosFragmentEpoxyController
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
@@ -26,12 +23,6 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPhotosFragmentEvent>, IntercomListener {
-
-  @BindView(R.id.received_photos_list)
-  lateinit var receivedPhotosList: RecyclerView
-
-  @Inject
-  lateinit var imageLoader: ImageLoader
 
   @Inject
   lateinit var viewModel: PhotosActivityViewModel

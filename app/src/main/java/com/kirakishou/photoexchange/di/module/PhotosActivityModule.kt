@@ -15,6 +15,7 @@ import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.ReceivedPhotosFragmentViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.UploadedPhotosFragmentViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.PhotosActivityViewModelFactory
+import com.kirakishou.photoexchange.mvp.viewmodel.state.GalleryFragmentState
 import com.kirakishou.photoexchange.mvp.viewmodel.state.ReceivedPhotosFragmentState
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
@@ -50,6 +51,12 @@ open class PhotosActivityModule(
 
   @PerActivity
   @Provides
+  fun provideGalleryFragmentState(): GalleryFragmentState {
+    return GalleryFragmentState()
+  }
+
+  @PerActivity
+  @Provides
   fun provideUploadedPhotosFragmentViewModel(intercom: PhotosActivityViewModelIntercom,
                                              viewState: UploadedPhotosFragmentState,
                                              takenPhotosRepository: TakenPhotosRepository,
@@ -72,13 +79,11 @@ open class PhotosActivityModule(
   @Provides
   fun provideReceivedPhotosFragmentViewModel(intercom: PhotosActivityViewModelIntercom,
                                              viewState: ReceivedPhotosFragmentState,
-                                             settingsRepository: SettingsRepository,
                                              getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
                                              dispatchersProvider: DispatchersProvider): ReceivedPhotosFragmentViewModel {
     return ReceivedPhotosFragmentViewModel(
       viewState,
       intercom,
-      settingsRepository,
       getReceivedPhotosUseCase,
       dispatchersProvider
     )
@@ -86,9 +91,13 @@ open class PhotosActivityModule(
 
   @PerActivity
   @Provides
-  fun provideGalleryFragmentViewModel(galleryPhotosUseCase: GetGalleryPhotosUseCase,
+  fun provideGalleryFragmentViewModel(intercom: PhotosActivityViewModelIntercom,
+                                      viewState: GalleryFragmentState,
+                                      galleryPhotosUseCase: GetGalleryPhotosUseCase,
                                       dispatchersProvider: DispatchersProvider): GalleryFragmentViewModel {
     return GalleryFragmentViewModel(
+      viewState,
+      intercom,
       galleryPhotosUseCase,
       dispatchersProvider
     )

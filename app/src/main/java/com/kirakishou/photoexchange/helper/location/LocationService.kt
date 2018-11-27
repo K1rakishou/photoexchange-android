@@ -4,7 +4,7 @@ import android.content.Context
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.extension.seconds
-import com.kirakishou.photoexchange.mvp.model.other.LonLat
+import com.kirakishou.photoexchange.helper.LonLat
 import io.reactivex.Observable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.rx2.awaitFirst

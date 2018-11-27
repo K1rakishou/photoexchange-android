@@ -29,17 +29,12 @@ class PhotosActivityViewModel(
   private val reportPhotoUseCase: ReportPhotoUseCase,
   private val favouritePhotoUseCase: FavouritePhotoUseCase
 ) : BaseViewModel() {
-
   private val TAG = "PhotosActivityViewModel"
-
-  init {
-    galleryFragmentViewModel.intercom = intercom
-  }
 
   override fun onCleared() {
     uploadedPhotosFragmentViewModel.clear()
     receivedPhotosFragmentViewModel.clear()
-    galleryFragmentViewModel.onCleared()
+    galleryFragmentViewModel.clear()
 
     super.onCleared()
   }

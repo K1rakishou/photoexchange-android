@@ -11,10 +11,10 @@ import com.kirakishou.photoexchange.helper.database.source.remote.*
 import com.kirakishou.photoexchange.helper.util.BitmapUtils
 import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.mvp.model.other.Constants.GALLERY_PHOTOS_CACHE_MAX_LIVE_TIME
-import com.kirakishou.photoexchange.mvp.model.other.Constants.GALLERY_PHOTOS_INFO_CACHE_MAX_LIVE_TIME
-import com.kirakishou.photoexchange.mvp.model.other.Constants.RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME
-import com.kirakishou.photoexchange.mvp.model.other.Constants.UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME
+import com.kirakishou.photoexchange.helper.Constants.GALLERY_PHOTOS_CACHE_MAX_LIVE_TIME
+import com.kirakishou.photoexchange.helper.Constants.GALLERY_PHOTOS_INFO_CACHE_MAX_LIVE_TIME
+import com.kirakishou.photoexchange.helper.Constants.RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME
+import com.kirakishou.photoexchange.helper.Constants.UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME
 import dagger.Module
 import dagger.Provides
 import javax.inject.Named

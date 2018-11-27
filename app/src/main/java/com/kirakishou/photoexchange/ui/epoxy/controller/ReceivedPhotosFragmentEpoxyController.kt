@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.ui.epoxy_controller
+package com.kirakishou.photoexchange.ui.epoxy.controller
 
 import android.content.Context
 import android.widget.Toast

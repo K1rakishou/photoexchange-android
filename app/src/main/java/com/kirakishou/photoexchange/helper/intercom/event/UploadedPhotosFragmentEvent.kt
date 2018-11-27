@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.helper.intercom.event
 
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
-import com.kirakishou.photoexchange.mvp.model.other.LonLat
+import com.kirakishou.photoexchange.helper.LonLat
 import java.lang.Exception
 
 sealed class UploadedPhotosFragmentEvent : BaseEvent {

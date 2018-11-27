@@ -1,19 +1,21 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
+import androidx.fragment.app.FragmentActivity
+import com.airbnb.mvrx.*
 import com.kirakishou.photoexchange.helper.Either
+import com.kirakishou.photoexchange.mvp.model.PhotoSize
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
-import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
-import com.kirakishou.photoexchange.helper.exception.ApiErrorException
-import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
-import com.kirakishou.photoexchange.ui.viewstate.GalleryFragmentViewState
-import core.ErrorCode
+import com.kirakishou.photoexchange.helper.extension.safe
+import com.kirakishou.photoexchange.helper.Constants
+import com.kirakishou.photoexchange.mvp.viewmodel.state.GalleryFragmentState
+import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
@@ -22,79 +24,124 @@ import kotlinx.coroutines.launch
 import kotlin.coroutines.CoroutineContext
 
 class GalleryFragmentViewModel(
+  initialState: GalleryFragmentState,
+  private val intercom: PhotosActivityViewModelIntercom,
   private val getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
   private val dispatchersProvider: DispatchersProvider
-) : CoroutineScope {
+) : BaseMvRxViewModel<GalleryFragmentState>(initialState), CoroutineScope {
   private val TAG = "GalleryFragmentViewModel"
 
   private val compositeDisposable = CompositeDisposable()
   private val job = Job()
+  private val viewModelActor: SendChannel<ActorAction>
 
-  lateinit var intercom: PhotosActivityViewModelIntercom
-  lateinit var actor: SendChannel<Unit>
-
-  val viewState = GalleryFragmentViewState()
-  val knownErrors = PublishSubject.create<ErrorCode>()
-  val unknownErrors = PublishSubject.create<Throwable>()
+  var photosPerPage: Int = Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
+  var photoSize: PhotoSize = PhotoSize.Medium
 
   override val coroutineContext: CoroutineContext
     get() = job + dispatchersProvider.GENERAL()
 
   init {
-    actor = actor(capacity = 1) {
-      consumeEach {
+    viewModelActor = actor(capacity = Channel.UNLIMITED) {
+      consumeEach { action ->
         if (!isActive) {
           return@consumeEach
         }
 
-        try {
-          intercom.tell<GalleryFragment>()
-            .to(GalleryFragmentEvent.GeneralEvents.PageIsLoading())
-
-          val photos = loadPageOfGalleryPhotos(viewState.getLastUploadedOn(), viewState.count)
-
-          intercom.tell<GalleryFragment>()
-            .to(GalleryFragmentEvent.GeneralEvents.ShowGalleryPhotos(photos))
-        } catch (error: Throwable) {
-          if (error is ApiErrorException) {
-            knownErrors.onNext(error.errorCode)
-          } else {
-            unknownErrors.onNext(error)
-          }
-        }
+        when (action) {
+          ActorAction.LoadGalleryPhotos -> loadGalleryPhotosInternal()
+          ActorAction.ResetState -> resetStateInternal()
+        }.safe
       }
     }
 
-    launch { actor.send(Unit) }
+    loadGalleryPhotos()
   }
 
-  fun loadMorePhotos() {
-    actor.offer(Unit)
+  fun resetState() {
+    launch { viewModelActor.send(ActorAction.ResetState) }
+  }
+
+  fun loadGalleryPhotos() {
+    launch { viewModelActor.send(ActorAction.LoadGalleryPhotos) }
+  }
+
+  private fun resetStateInternal() {
+    setState { GalleryFragmentState() }
+    launch { viewModelActor.send(ActorAction.LoadGalleryPhotos) }
+  }
+
+  private fun loadGalleryPhotosInternal() {
+    withState { state ->
+      if (state.galleryPhotosRequest is Loading) {
+        return@withState
+      }
+
+      launch {
+        val lastUploadedOn = state.galleryPhotos
+          .lastOrNull()
+          ?.uploadedOn
+          ?: -1L
+
+        val request = try {
+          Success(loadPageOfGalleryPhotos(lastUploadedOn, photosPerPage))
+        } catch (error: Throwable) {
+          Fail<List<GalleryPhoto>>(error)
+        }
+
+        val newGalleryPhotos = request() ?: emptyList()
+        val isEndReached = newGalleryPhotos.isEmpty() || newGalleryPhotos.size % photosPerPage != 0
+
+        setState {
+          copy(
+            isEndReached = isEndReached,
+            galleryPhotosRequest = request,
+            galleryPhotos = state.galleryPhotos + newGalleryPhotos
+          )
+        }
+      }
+    }
   }
 
   private suspend fun loadPageOfGalleryPhotos(
     lastUploadedOn: Long,
     count: Int
   ): List<GalleryPhoto> {
-    intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.GeneralEvents.ShowProgressFooter())
-
-    try {
-      val result = getGalleryPhotosUseCase.loadPageOfPhotos(lastUploadedOn, count)
-      when (result) {
-        is Either.Value -> {
-          return result.value
-        }
-        is Either.Error -> {
-          throw result.error
+    val result = getGalleryPhotosUseCase.loadPageOfPhotos(lastUploadedOn, count)
+    when (result) {
+      is Either.Value -> {
+        return result.value.also { galleryPhotos ->
+          galleryPhotos.map { galleryPhoto -> galleryPhoto.copy(photoSize = photoSize) }
         }
       }
-    } finally {
-      intercom.tell<GalleryFragment>().to(GalleryFragmentEvent.GeneralEvents.HideProgressFooter())
+      is Either.Error -> {
+        throw result.error
+      }
     }
   }
 
-  fun onCleared() {
+  fun clear() {
+    onCleared()
+  }
+
+  override fun onCleared() {
+    super.onCleared()
+
     compositeDisposable.dispose()
     job.cancel()
+  }
+
+  sealed class ActorAction {
+    object LoadGalleryPhotos : ActorAction()
+    object ResetState : ActorAction()
+  }
+
+  companion object : MvRxViewModelFactory<GalleryFragmentState> {
+    override fun create(
+      activity: FragmentActivity,
+      state: GalleryFragmentState
+    ): BaseMvRxViewModel<GalleryFragmentState> {
+      return (activity as PhotosActivity).viewModel.galleryFragmentViewModel
+    }
   }
 }

@@ -4,7 +4,7 @@ import androidx.fragment.app.FragmentActivity
 import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
 import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.helper.PhotoSize
+import com.kirakishou.photoexchange.mvp.model.PhotoSize
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
@@ -16,7 +16,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragment
 import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
-import com.kirakishou.photoexchange.mvp.model.other.Constants
+import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.mvp.model.photo.QueuedUpPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto

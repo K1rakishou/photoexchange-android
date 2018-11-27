@@ -1,11 +1,10 @@
-package com.kirakishou.photoexchange.ui.epoxy_controller
+package com.kirakishou.photoexchange.ui.epoxy.controller
 
 import android.content.Context
 import android.widget.Toast
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.airbnb.mvrx.*
 import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
-import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto

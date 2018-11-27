@@ -2,9 +2,8 @@ package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.database.repository.UploadPhotosRepository
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
-import com.kirakishou.photoexchange.mvp.model.other.LonLat
+import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
-import core.ErrorCode
 import kotlinx.coroutines.channels.SendChannel
 import timber.log.Timber
 

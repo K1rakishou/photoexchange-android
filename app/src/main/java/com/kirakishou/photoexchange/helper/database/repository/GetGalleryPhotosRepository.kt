@@ -27,14 +27,16 @@ open class GetGalleryPhotosRepository(
     return withContext(coroutineContext) {
       deleteOld()
 
-      val galleryPhotos = getPageOfGalleryPhotos(time, count)
+      val galleryPhotos = getPageOfGalleryPhotos(time, count).toMutableList()
       val galleryPhotoIds = galleryPhotos.map { it.galleryPhotoId }
 
-      val galleryPhotosInfo = getGalleryPhotosInfo(userId, galleryPhotoIds)
+      val galleryPhotosInfoList = getGalleryPhotosInfo(userId, galleryPhotoIds)
 
-      for (galleryPhoto in galleryPhotos) {
-        galleryPhoto.galleryPhotoInfo = galleryPhotosInfo
+      for ((index, galleryPhoto) in galleryPhotos.withIndex()) {
+        val newGalleryPhotoInfo = galleryPhotosInfoList
           .firstOrNull { it.galleryPhotoId == galleryPhoto.galleryPhotoId }
+
+        galleryPhotos[index] = galleryPhoto.copy(galleryPhotoInfo = newGalleryPhotoInfo)
       }
 
       return@withContext galleryPhotos

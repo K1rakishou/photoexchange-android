@@ -4,16 +4,15 @@ import androidx.fragment.app.FragmentActivity
 import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
 import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.helper.PhotoSize
+import com.kirakishou.photoexchange.mvp.model.PhotoSize
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetReceivedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.other.Constants
+import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.mvp.viewmodel.state.ReceivedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
@@ -32,7 +31,6 @@ import kotlin.coroutines.CoroutineContext
 class ReceivedPhotosFragmentViewModel(
   initialState: ReceivedPhotosFragmentState,
   private val intercom: PhotosActivityViewModelIntercom,
-  private val settingsRepository: SettingsRepository,
   private val getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
   private val dispatchersProvider: DispatchersProvider
 ) : BaseMvRxViewModel<ReceivedPhotosFragmentState>(initialState, BuildConfig.DEBUG), CoroutineScope {
