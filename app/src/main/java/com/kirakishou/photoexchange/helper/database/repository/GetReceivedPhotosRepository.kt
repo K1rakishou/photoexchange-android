@@ -66,7 +66,8 @@ open class GetReceivedPhotosRepository(
         )
 
         if (!updateResult) {
-          throw DatabaseException("Could not update receiver info for uploaded photo")
+          //no uploaded photo in cached in the database by this name, skip it
+          continue
         }
       }
 

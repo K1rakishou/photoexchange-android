@@ -61,15 +61,13 @@ class ReceivePhotosRepository(
         throw DatabaseException("Could not save photo with receivedPhotoName ${receivedPhoto.receivedPhotoName}")
       }
 
-      val updateResult = uploadedPhotosLocalSource.updateReceiverInfo(
+      //we don't need to check the result here because it can be deleted at any time
+      //and if it were deleted and updateReceiverInfo returns false we can ignore it
+      uploadedPhotosLocalSource.updateReceiverInfo(
         receivedPhoto.uploadedPhotoName,
         receivedPhoto.lon,
         receivedPhoto.lat
       )
-
-      if (!updateResult) {
-        throw DatabaseException("Could not update receiver info with uploadedPhotoName ${receivedPhoto.uploadedPhotoName}")
-      }
 
       //TODO: is there any photo to delete to begin with? It should probably be deleted after uploading is done
       if (!takenPhotosLocalSource.deletePhotoByName(receivedPhoto.uploadedPhotoName)) {

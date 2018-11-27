@@ -50,40 +50,38 @@ class UploadedPhotosFragmentEpoxyController {
       }
     }
 
-    if (uploadedPhotosRequest is Success) {
-      if (state.uploadedPhotos.isEmpty()) {
+    if (state.uploadedPhotos.isEmpty()) {
+      textRow {
+        id("no_uploaded_photos")
+        text("You have no photos yet")
+      }
+    } else {
+      sectionRow {
+        id("uploaded_photos_section")
+        text("Uploaded photos")
+      }
+
+      state.uploadedPhotos.forEach { photo ->
+        uploadedPhotoRow {
+          id("uploaded_photo_${photo.photoName}")
+          photo(photo)
+        }
+      }
+
+      if (state.isEndReached) {
         textRow {
-          id("no_uploaded_photos")
-          text("You have no photos yet")
+          id("list_end_footer_text")
+          text("End of the list reached.\nClick here to reload")
+          callback { _ ->
+            Timber.tag(TAG).d("Reloading")
+            viewModel.resetState()
+          }
         }
       } else {
-        sectionRow {
-          id("uploaded_photos_section")
-          text("Uploaded photos")
-        }
-
-        state.uploadedPhotos.forEach { photo ->
-          uploadedPhotoRow {
-            id("uploaded_photo_${photo.photoName}")
-            photo(photo)
-          }
-        }
-
-        if (state.isEndReached) {
-          textRow {
-            id("list_end_footer_text")
-            text("End of the list reached.\nClick here to reload")
-            callback { _ ->
-              Timber.tag(TAG).d("Reloading")
-              viewModel.resetState()
-            }
-          }
-        } else {
-          loadingRow {
-            //we should change the id to trigger the binding
-            id("load_next_page_${state.uploadedPhotos.size}")
-            onBind { _, _, _ -> viewModel.loadUploadedPhotos() }
-          }
+        loadingRow {
+          //we should change the id to trigger the binding
+          id("load_next_page_${state.uploadedPhotos.size}")
+          onBind { _, _, _ -> viewModel.loadUploadedPhotos() }
         }
       }
     }

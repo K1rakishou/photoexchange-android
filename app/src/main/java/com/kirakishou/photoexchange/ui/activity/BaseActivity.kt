@@ -35,7 +35,7 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
   protected val unknownErrorsSubject = PublishSubject.create<Throwable>()
   protected val compositeDisposable = CompositeDisposable()
 
-  private lateinit var job: Job
+  private val job = Job()
   private var unBinder: Unbinder? = null
 
   override val coroutineContext: CoroutineContext
@@ -54,8 +54,6 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
 
   override fun onStart() {
     super.onStart()
-
-    job = Job()
 
     compositeDisposable += unknownErrorsSubject
       .observeOn(AndroidSchedulers.mainThread())
