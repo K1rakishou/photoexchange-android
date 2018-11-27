@@ -42,10 +42,10 @@ open class ReportPhotoRepository(
         return@transactional
       }
 
-      var galleryPhotoInfoEntity = galleryPhotoInfoLocalSource.findById(galleryPhotoEntity.galleryPhotoId)
+      var galleryPhotoInfoEntity = galleryPhotoInfoLocalSource.find(galleryPhotoEntity.photoName)
       if (galleryPhotoInfoEntity == null) {
         galleryPhotoInfoEntity = GalleryPhotoInfoEntity.create(
-          galleryPhotoEntity.galleryPhotoId,
+          galleryPhotoEntity.photoName,
           false,
           0,
           isReported,

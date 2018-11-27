@@ -10,7 +10,7 @@ object GalleryPhotosInfoMapper {
     object ToEntity {
       fun toGalleryPhotoInfoEntity(time: Long, galleryPhotoInfoResponseData: GalleryPhotoInfoResponse.GalleryPhotosInfoResponseData): GalleryPhotoInfoEntity {
         return GalleryPhotoInfoEntity.create(
-          galleryPhotoInfoResponseData.id,
+          galleryPhotoInfoResponseData.photoName,
           galleryPhotoInfoResponseData.isFavourited,
           //TODO
           0L,
@@ -30,7 +30,7 @@ object GalleryPhotosInfoMapper {
     object ToObject {
       fun toGalleryPhotoInfo(galleryPhotoInfoResponseData: GalleryPhotoInfoResponse.GalleryPhotosInfoResponseData): GalleryPhotoInfo {
         return GalleryPhotoInfo(
-          galleryPhotoInfoResponseData.id,
+          galleryPhotoInfoResponseData.photoName,
           galleryPhotoInfoResponseData.isFavourited,
           galleryPhotoInfoResponseData.isReported
         )
@@ -51,7 +51,7 @@ object GalleryPhotosInfoMapper {
       }
 
       return GalleryPhotoInfo(
-        galleryPhotoInfoEntity.galleryPhotoId,
+        galleryPhotoInfoEntity.photoName,
         galleryPhotoInfoEntity.isFavourited,
         galleryPhotoInfoEntity.isReported
       )

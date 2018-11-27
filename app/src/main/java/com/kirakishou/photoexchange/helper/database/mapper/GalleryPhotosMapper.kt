@@ -10,7 +10,6 @@ object GalleryPhotosMapper {
   object FromEntity {
     fun toGalleryPhoto(galleryPhotoEntity: GalleryPhotoEntity): GalleryPhoto {
       return GalleryPhoto(
-        galleryPhotoEntity.galleryPhotoId,
         galleryPhotoEntity.photoName,
         galleryPhotoEntity.lon,
         galleryPhotoEntity.lat,
@@ -28,7 +27,6 @@ object GalleryPhotosMapper {
   object FromObject {
     fun toGalleryPhotoEntity(time: Long, galleryPhoto: GalleryPhoto): GalleryPhotoEntity {
       return GalleryPhotoEntity.create(
-        galleryPhoto.galleryPhotoId,
         galleryPhoto.photoName,
         galleryPhoto.lon,
         galleryPhoto.lat,
@@ -47,7 +45,6 @@ object GalleryPhotosMapper {
     object ToObject {
       fun toGalleryPhoto(galleryPhotoResponseData: GalleryPhotosResponse.GalleryPhotoResponseData): GalleryPhoto {
         return GalleryPhoto(
-          galleryPhotoResponseData.id,
           galleryPhotoResponseData.photoName,
           galleryPhotoResponseData.lon,
           galleryPhotoResponseData.lat,
@@ -65,7 +62,6 @@ object GalleryPhotosMapper {
     object ToEntity {
       fun toGalleryPhotoEntity(time: Long, galleryPhotoResponseData: GalleryPhotosResponse.GalleryPhotoResponseData): GalleryPhotoEntity {
         return GalleryPhotoEntity.create(
-          galleryPhotoResponseData.id,
           galleryPhotoResponseData.photoName,
           galleryPhotoResponseData.lon,
           galleryPhotoResponseData.lat,

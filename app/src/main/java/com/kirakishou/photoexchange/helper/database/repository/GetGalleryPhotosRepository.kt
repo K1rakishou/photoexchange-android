@@ -29,12 +29,12 @@ open class GetGalleryPhotosRepository(
       deleteOld()
 
       val galleryPhotos = getPageOfGalleryPhotos(time, count).toMutableList()
-      val galleryPhotosInfoList = getGalleryPhotosInfo(userId, galleryPhotos.map { it.galleryPhotoId })
+      val galleryPhotosInfoList = getGalleryPhotosInfo(userId, galleryPhotos.map { it.photoName })
 
       if (galleryPhotosInfoList.isNotEmpty()) {
         for ((index, galleryPhoto) in galleryPhotos.withIndex()) {
           val newGalleryPhotoInfo = galleryPhotosInfoList
-            .firstOrNull { it.galleryPhotoId == galleryPhoto.galleryPhotoId }
+            .firstOrNull { it.photoName == galleryPhoto.photoName }
             ?: GalleryPhotoInfo.empty()
 
           galleryPhotos[index] = galleryPhoto.copy(galleryPhotoInfo = newGalleryPhotoInfo)
@@ -42,7 +42,7 @@ open class GetGalleryPhotosRepository(
       }
 
       return@withContext galleryPhotos
-        .sortedByDescending { it.galleryPhotoId }
+        .sortedByDescending { it.uploadedOn }
     }
   }
 
@@ -73,13 +73,13 @@ open class GetGalleryPhotosRepository(
     return GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(galleryPhotos)
   }
 
-  private suspend fun getGalleryPhotosInfo(userId: String, galleryPhotoIds: List<Long>): List<GalleryPhotoInfo> {
-    val cachedGalleryPhotosInfo = galleryPhotoInfoLocalSource.findMany(galleryPhotoIds)
-    if (cachedGalleryPhotosInfo.size == galleryPhotoIds.size) {
+  private suspend fun getGalleryPhotosInfo(userId: String, photoNameList: List<String>): List<GalleryPhotoInfo> {
+    val cachedGalleryPhotosInfo = galleryPhotoInfoLocalSource.findMany(photoNameList)
+    if (cachedGalleryPhotosInfo.size == photoNameList.size) {
       return cachedGalleryPhotosInfo
     }
 
-    val requestString = galleryPhotoIds.joinToString(separator = Constants.PHOTOS_SEPARATOR)
+    val requestString = photoNameList.joinToString(separator = Constants.PHOTOS_SEPARATOR)
     val galleryPhotosInfo = galleryPhotoInfoRemoteSource.getGalleryPhotoInfo(userId, requestString)
     if (galleryPhotosInfo.isEmpty()) {
       return emptyList()

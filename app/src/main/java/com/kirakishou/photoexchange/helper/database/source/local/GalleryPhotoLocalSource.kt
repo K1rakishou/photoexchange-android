@@ -25,7 +25,7 @@ open class GalleryPhotoLocalSource(
   }
 
   open fun findByPhotoName(photoName: String): GalleryPhoto? {
-    val galleryPhotoEntity = galleryPhotoDao.findByPhotoName(photoName)
+    val galleryPhotoEntity = galleryPhotoDao.find(photoName)
     if (galleryPhotoEntity == null) {
       return null
     }
@@ -33,8 +33,8 @@ open class GalleryPhotoLocalSource(
     return GalleryPhotosMapper.FromEntity.toGalleryPhoto(galleryPhotoEntity)
   }
 
-  open fun findMany(galleryPhotoIds: List<Long>): List<GalleryPhoto> {
-    return GalleryPhotosMapper.FromEntity.toGalleryPhotos(galleryPhotoDao.findMany(galleryPhotoIds))
+  open fun findMany(photoNameList: List<String>): List<GalleryPhoto> {
+    return GalleryPhotosMapper.FromEntity.toGalleryPhotos(galleryPhotoDao.findMany(photoNameList))
   }
 
   open fun findAllPhotos(): List<GalleryPhoto> {

@@ -8,9 +8,9 @@ import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoInfoEntit
 @Entity(tableName = TABLE_NAME)
 class GalleryPhotoInfoEntity(
 
-  @PrimaryKey(autoGenerate = false)
-  @ColumnInfo(name = GALLERY_PHOTO_ID_COLUMN, index = true)
-  var galleryPhotoId: Long = 0L,
+  @PrimaryKey
+  @ColumnInfo(name = PHOTO_NAME_COLUMN)
+  var photoName: String = "",
 
   @ColumnInfo(name = IS_FAVOURITED_COLUMN)
   var isFavourited: Boolean = false,
@@ -26,24 +26,24 @@ class GalleryPhotoInfoEntity(
 ) {
 
   fun isEmpty(): Boolean {
-    return this.galleryPhotoId == -1L
+    return photoName == ""
   }
 
   companion object {
 
     fun empty(): GalleryPhotoInfoEntity {
-      return GalleryPhotoInfoEntity(-1L)
+      return GalleryPhotoInfoEntity("")
     }
 
     fun create(
-      id: Long,
+      photoName: String,
       isFavourited: Boolean,
       favouritesCount: Long,
       isReported: Boolean,
       insertedOn: Long
     ): GalleryPhotoInfoEntity {
       return GalleryPhotoInfoEntity(
-        id,
+        photoName,
         isFavourited,
         favouritesCount,
         isReported,
@@ -53,7 +53,7 @@ class GalleryPhotoInfoEntity(
 
     const val TABLE_NAME = "GALLERY_PHOTO_INFO"
 
-    const val GALLERY_PHOTO_ID_COLUMN = "GALLERY_PHOTO_ID"
+    const val PHOTO_NAME_COLUMN = "PHOTO_NAME"
     const val FAVOURITES_COUNT = "FAVOURITES_COUNT"
     const val IS_FAVOURITED_COLUMN = "IS_FAVOURITED"
     const val IS_REPORTED_COLUMN = "IS_REPORTED"

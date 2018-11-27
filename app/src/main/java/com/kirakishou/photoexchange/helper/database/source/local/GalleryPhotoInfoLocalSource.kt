@@ -31,14 +31,12 @@ open class GalleryPhotoInfoLocalSource(
     return galleryPhotoInfoDao.saveMany(galleryPhotoInfoEntityList).size == galleryPhotoInfoList.size
   }
 
-  open fun findMany(
-    galleryPhotoIds: List<Long>
-  ): List<GalleryPhotoInfo> {
-    return GalleryPhotosInfoMapper.ToObject.toGalleryPhotoInfoList(galleryPhotoInfoDao.findMany(galleryPhotoIds))
+  open fun find(photoName: String): GalleryPhotoInfoEntity? {
+    return galleryPhotoInfoDao.find(photoName)
   }
 
-  open fun findById(galleryPhotoId: Long): GalleryPhotoInfoEntity? {
-    return galleryPhotoInfoDao.find(galleryPhotoId)
+  open fun findMany(photoNameList: List<String>): List<GalleryPhotoInfo> {
+    return GalleryPhotosInfoMapper.ToObject.toGalleryPhotoInfoList(galleryPhotoInfoDao.findMany(photoNameList))
   }
 
   fun deleteOld() {
