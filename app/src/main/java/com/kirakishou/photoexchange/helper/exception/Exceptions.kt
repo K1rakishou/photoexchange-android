@@ -7,3 +7,4 @@ class ApiErrorException(val errorCode: ErrorCode) : Exception("Request status is
 class BadServerResponse : Exception("Server returned bad response.")
 class ConnectionError(message: String?) : Exception(message)
 class DatabaseException(message: String?) : Exception(message)
+class FirebaseException(message: String?) : Exception(message)
