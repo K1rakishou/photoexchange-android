@@ -180,7 +180,15 @@ open class ApiClientImpl
     return response.accountExists
   }
 
-  override suspend fun updateFirebaseToken(userId: String, token: String): Boolean {
-    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+  override suspend fun updateFirebaseToken(userId: String, token: String) {
+    UpdateFirebaseTokenRequest(
+      userId,
+      token,
+      apiService,
+      jsonConverter,
+      dispatchersProvider
+    ).execute()
+
+    //no response data
   }
 }

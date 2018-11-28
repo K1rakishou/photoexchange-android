@@ -49,5 +49,5 @@ interface ApiClient {
   suspend fun checkAccountExists(userId: String): Boolean
 
   @Throws(ApiErrorException::class)
-  suspend fun updateFirebaseToken(userId: String, token: String): Boolean
+  suspend fun updateFirebaseToken(userId: String, token: String)
 }

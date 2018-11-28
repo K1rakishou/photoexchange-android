@@ -27,9 +27,9 @@ open class SettingsRepository(
     }
   }
 
-  open suspend fun saveFirebaseToken(token: String?): Boolean {
+  open suspend fun saveFirebaseToken(newToken: String?): Boolean {
     return withContext(coroutineContext) {
-      return@withContext settingsDao.insert(SettingEntity(FIREBASE_TOKEN, token)) > 0
+      return@withContext settingsDao.insert(SettingEntity(FIREBASE_TOKEN, newToken)) > 0
     }
   }
 
