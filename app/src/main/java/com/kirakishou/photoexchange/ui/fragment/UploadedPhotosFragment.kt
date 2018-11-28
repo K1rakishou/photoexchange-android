@@ -15,6 +15,7 @@ import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.epoxy.controller.UploadedPhotosFragmentEpoxyController
 import io.reactivex.rxkotlin.plusAssign
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 
@@ -53,9 +54,10 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
 
   private fun initRx() {
     compositeDisposable += viewModel.intercom.uploadedPhotosFragmentEvents.listen()
-      .subscribe({ event ->
-        launch { onStateEvent(event) }
-      })
+      .subscribe(
+        { event -> launch { onStateEvent(event) } },
+        { error -> Timber.tag(TAG).e(error) }
+      )
   }
 
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
