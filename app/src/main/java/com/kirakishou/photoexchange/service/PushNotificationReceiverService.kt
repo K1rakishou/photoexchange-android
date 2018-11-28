@@ -3,7 +3,6 @@ package com.kirakishou.photoexchange.service
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.kirakishou.photoexchange.PhotoExchangeApplication
-import com.kirakishou.photoexchange.di.module.PushNotificationReceiverServiceModule
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.interactors.UpdateFirebaseTokenUseCase
@@ -21,7 +20,6 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
     super.onCreate()
 
     (application as PhotoExchangeApplication).applicationComponent
-      .plus(PushNotificationReceiverServiceModule())
       .inject(this)
   }
 

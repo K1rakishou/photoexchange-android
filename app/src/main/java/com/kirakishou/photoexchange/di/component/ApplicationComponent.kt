@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.di.component
 
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.*
+import com.kirakishou.photoexchange.service.PushNotificationReceiverService
 import dagger.Component
 import javax.inject.Singleton
 
@@ -25,6 +26,7 @@ import javax.inject.Singleton
 ])
 interface ApplicationComponent {
   fun inject(application: PhotoExchangeApplication)
+  fun inject(pushNotificationReceiverService: PushNotificationReceiverService)
 
   fun plus(takePhotoActivityModule: TakePhotoActivityModule): TakePhotoActivityComponent
   fun plus(viewTakenPhotoActivityModule: ViewTakenPhotoActivityModule): ViewTakenPhotoActivityComponent
@@ -32,5 +34,4 @@ interface ApplicationComponent {
   fun plus(uploadPhotoServiceModule: UploadPhotoServiceModule): UploadPhotoServiceComponent
   fun plus(receivePhotosServiceModule: ReceivePhotosServiceModule): ReceivePhotosServiceComponent
   fun plus(settingsActivityModule: SettingsActivityModule): SettingsActivityComponent
-  fun plus(pushNotificationReceiverServiceModule: PushNotificationReceiverServiceModule): PushNotificationReceiverServiceComponent
 }

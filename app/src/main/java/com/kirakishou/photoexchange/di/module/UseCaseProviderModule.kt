@@ -4,6 +4,7 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.*
+import com.kirakishou.photoexchange.helper.database.source.remote.FirebaseRemoteSource
 import com.kirakishou.photoexchange.helper.util.BitmapUtils
 import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
@@ -115,6 +116,20 @@ class UseCaseProviderModule {
       settingsRepository,
       uploadedPhotosRepository,
       receivedPhotosRepository,
+      dispatchersProvider
+    )
+  }
+
+  @Singleton
+  @Provides
+  fun provideUpdateFirebaseTokenUseCase(apiClient: ApiClient,
+                                        settingsRepository: SettingsRepository,
+                                        firebaseRemoteSource: FirebaseRemoteSource,
+                                        dispatchersProvider: DispatchersProvider): UpdateFirebaseTokenUseCase {
+    return UpdateFirebaseTokenUseCase(
+      settingsRepository,
+      firebaseRemoteSource,
+      apiClient,
       dispatchersProvider
     )
   }
