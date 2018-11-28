@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.di.module
 
 import androidx.room.Room
 import android.content.Context
+import com.google.firebase.iid.FirebaseInstanceId
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
@@ -34,6 +35,12 @@ open class DatabaseModule(
   open fun provideDatabase(context: Context): MyDatabase {
     return Room.databaseBuilder(context, MyDatabase::class.java, dbName)
       .build()
+  }
+
+  @Singleton
+  @Provides
+  fun provideFirebaseInstanceId(): FirebaseInstanceId {
+    return FirebaseInstanceId.getInstance()
   }
 
   @Singleton
@@ -87,6 +94,12 @@ open class DatabaseModule(
   /**
    * Remote Sources
    * */
+
+  @Singleton
+  @Provides
+  fun provideFirebaseRemoteSource(firebaseInstanceId: FirebaseInstanceId): FirebaseRemoteSource {
+    return FirebaseRemoteSource(firebaseInstanceId)
+  }
 
   @Singleton
   @Provides

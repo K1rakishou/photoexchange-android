@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.helper.api
 import io.reactivex.Single
 import net.request.FavouritePhotoPacket
 import net.request.ReportPhotoPacket
+import net.request.UpdateFirebaseTokenPacket
 import net.response.*
 import okhttp3.MultipartBody
 import retrofit2.Response
@@ -51,4 +52,7 @@ interface ApiService {
 
   @GET("/v1/api/check_account_exists/{user_id}")
   fun checkAccountExists(@Path("user_id") userId: String): Single<Response<CheckAccountExistsResponse>>
+
+  @POST("/v1/api/update_token")
+  fun updateFirebaseToken(@Body packet: UpdateFirebaseTokenPacket): Single<Response<UpdateFirebaseTokenResponse>>
 }

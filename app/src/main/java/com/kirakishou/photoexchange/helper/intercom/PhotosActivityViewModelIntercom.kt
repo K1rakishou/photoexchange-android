@@ -6,7 +6,7 @@ import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
 import io.reactivex.Observable
-import io.reactivex.subjects.UnicastSubject
+import io.reactivex.subjects.PublishSubject
 
 class PhotosActivityViewModelIntercom {
   val photosActivityEvents = PhotosActivityEvents()
@@ -25,7 +25,7 @@ class PhotosActivityViewModelIntercom {
   }
 
   class PhotosActivityEvents : AbstractIntercom<PhotosActivityEvent> {
-    private val photosActivityViewStateSubject = UnicastSubject.create<PhotosActivityEvent>().toSerialized()
+    private val photosActivityViewStateSubject = PublishSubject.create<PhotosActivityEvent>().toSerialized()
 
     override fun listen(): Observable<PhotosActivityEvent> {
       return photosActivityViewStateSubject
@@ -41,7 +41,7 @@ class PhotosActivityViewModelIntercom {
   }
 
   class UploadedPhotosFragmentEvents : AbstractIntercom<UploadedPhotosFragmentEvent> {
-    private val uploadedPhotosFragmentViewStateSubject = UnicastSubject.create<UploadedPhotosFragmentEvent>().toSerialized()
+    private val uploadedPhotosFragmentViewStateSubject = PublishSubject.create<UploadedPhotosFragmentEvent>().toSerialized()
 
     override fun listen(): Observable<UploadedPhotosFragmentEvent> {
       return uploadedPhotosFragmentViewStateSubject
@@ -57,7 +57,7 @@ class PhotosActivityViewModelIntercom {
   }
 
   class ReceivedPhotosFragmentEvents : AbstractIntercom<ReceivedPhotosFragmentEvent> {
-    private val receivedPhotosFragmentViewStateSubject = UnicastSubject.create<ReceivedPhotosFragmentEvent>().toSerialized()
+    private val receivedPhotosFragmentViewStateSubject = PublishSubject.create<ReceivedPhotosFragmentEvent>().toSerialized()
 
     override fun listen(): Observable<ReceivedPhotosFragmentEvent> {
       return receivedPhotosFragmentViewStateSubject
@@ -73,7 +73,7 @@ class PhotosActivityViewModelIntercom {
   }
 
   class GalleryFragmentEvents : AbstractIntercom<GalleryFragmentEvent> {
-    private val galleryFragmentViewStateSubject = UnicastSubject.create<GalleryFragmentEvent>().toSerialized()
+    private val galleryFragmentViewStateSubject = PublishSubject.create<GalleryFragmentEvent>().toSerialized()
 
     override fun listen(): Observable<GalleryFragmentEvent> {
       return galleryFragmentViewStateSubject

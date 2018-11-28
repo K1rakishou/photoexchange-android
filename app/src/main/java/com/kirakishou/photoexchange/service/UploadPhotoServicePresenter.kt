@@ -9,6 +9,9 @@ import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.helper.LonLat
+import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
+import com.kirakishou.photoexchange.interactors.UpdateFirebaseTokenUseCase
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
@@ -25,9 +28,11 @@ import kotlin.coroutines.CoroutineContext
  * Created by kirakishou on 3/17/2018.
  */
 open class UploadPhotoServicePresenter(
+  private val settingsRepository: SettingsRepository,
   private val takenPhotosRepository: TakenPhotosRepository,
   private val uploadPhotosUseCase: UploadPhotosUseCase,
   private val getUserIdUseCase: GetUserIdUseCase,
+  private val updateFirebaseTokenUseCase: UpdateFirebaseTokenUseCase,
   private val dispatchersProvider: DispatchersProvider
 ) : CoroutineScope {
   private val TAG = "UploadPhotoServicePresenter"
@@ -65,7 +70,16 @@ open class UploadPhotoServicePresenter(
     updateServiceNotification(NotificationType.Uploading)
 
     try {
+      //we need to get the userId first because this operation will create a default account on the server
       val userId = getUserId()
+      if (userId.isEmpty()) {
+        throw EmptyUserIdException()
+      }
+
+      val token = settingsRepository.getFirebaseToken()
+      if (token.isEmpty()) {
+        updateFirebaseToken()
+      }
 
       val hasErrors = doUploading(userId, location)
       if (!hasErrors) {
@@ -144,6 +158,17 @@ open class UploadPhotoServicePresenter(
       is UploadPhotoServicePresenter.NotificationType.Error -> {
         sendEvent(UploadPhotoEvent.OnNewNotification(NotificationType.Error(serviceNotification.errorMessage)))
       }
+    }.safe
+  }
+
+  private suspend fun updateFirebaseToken() {
+    val result = updateFirebaseTokenUseCase.updateFirebaseToken()
+
+    when (result) {
+      is Either.Value -> {
+        //do nothing
+      }
+      is Either.Error -> throw result.error
     }.safe
   }
 

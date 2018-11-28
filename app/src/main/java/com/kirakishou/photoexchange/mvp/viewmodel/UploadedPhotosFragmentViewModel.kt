@@ -71,6 +71,8 @@ class UploadedPhotosFragmentViewModel(
       }
     }
 
+    //FIXME: probably should call this after the permission check.
+    //Otherwise this leads to starting the uploading server before the recycler view has been initialized
     loadQueuedUpPhotos()
   }
 

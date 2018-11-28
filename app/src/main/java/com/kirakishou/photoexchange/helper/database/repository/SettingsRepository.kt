@@ -23,8 +23,19 @@ open class SettingsRepository(
 
   open suspend fun getUserId(): String {
     return withContext(coroutineContext) {
-      return@withContext settingsDao.findByName(USER_ID_SETTING)?.settingValue
-        ?: ""
+      return@withContext settingsDao.findByName(USER_ID_SETTING)?.settingValue ?: ""
+    }
+  }
+
+  open suspend fun saveFirebaseToken(newToken: String?): Boolean {
+    return withContext(coroutineContext) {
+      return@withContext settingsDao.insert(SettingEntity(FIREBASE_TOKEN, newToken)) > 0
+    }
+  }
+
+  open suspend fun getFirebaseToken(): String {
+    return withContext(coroutineContext) {
+      return@withContext settingsDao.findByName(FIREBASE_TOKEN)?.settingValue ?: ""
     }
   }
 
@@ -59,6 +70,7 @@ open class SettingsRepository(
 
   companion object {
     const val USER_ID_SETTING = "USER_ID"
+    const val FIREBASE_TOKEN = "FIREBASE_TOKEN"
     const val MAKE_PHOTOS_PUBLIC_SETTING = "MAKE_PHOTOS_PUBLIC"
     const val GPS_PERMISSION_GRANTED_SETTING = "GPS_PERMISSION_GRANTED"
   }

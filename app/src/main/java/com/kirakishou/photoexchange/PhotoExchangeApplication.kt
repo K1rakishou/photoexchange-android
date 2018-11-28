@@ -17,6 +17,7 @@ import com.kirakishou.photoexchange.helper.Constants
 import io.fabric.sdk.android.Fabric
 import com.crashlytics.android.core.CrashlyticsCore
 import com.facebook.stetho.Stetho
+import com.google.firebase.FirebaseApp
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
 
 
@@ -47,6 +48,7 @@ open class PhotoExchangeApplication : Application() {
   }
 
   open fun init() {
+    FirebaseApp.initializeApp(this)
     Stetho.initializeWithDefaults(this)
 
     initCrashlytics()
