@@ -70,14 +70,15 @@ open class UploadPhotoServicePresenter(
     updateServiceNotification(NotificationType.Uploading)
 
     try {
-      val token = settingsRepository.getFirebaseToken()
-      if (token.isEmpty()) {
-        updateFirebaseToken()
-      }
-
+      //we need to get the userId first because this operation will create a default account on the server
       val userId = getUserId()
       if (userId.isEmpty()) {
         throw EmptyUserIdException()
+      }
+
+      val token = settingsRepository.getFirebaseToken()
+      if (token.isEmpty()) {
+        updateFirebaseToken()
       }
 
       val hasErrors = doUploading(userId, location)
