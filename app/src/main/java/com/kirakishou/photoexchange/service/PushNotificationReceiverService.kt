@@ -7,9 +7,22 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import javax.inject.Inject
+import android.app.NotificationManager
+import android.app.NotificationChannel
+import android.os.Build
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import androidx.core.app.NotificationCompat
+import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.ui.activity.PhotosActivity
+
 
 class PushNotificationReceiverService : FirebaseMessagingService() {
   private val TAG = "PushNotificationReceiverService"
+  private val NOTIFICATION_ID = 3
+  private val CHANNEL_ID by lazy { getString(R.string.default_notification_channel_id) }
+  private val CHANNED_NAME = "name"
 
   @Inject
   lateinit var settingsRepository: SettingsRepository
@@ -29,7 +42,17 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
       return
     }
 
-    //TODO: create notification
+    val photoExchanged = try {
+      remoteMessage.data[photoExchangedFlag]?.toBoolean()
+    } catch (error: Throwable) {
+      null
+    }
+
+    if (photoExchanged != null && photoExchanged) {
+      Timber.tag(TAG).d("Some photo has been exchanged")
+
+      showNotification()
+    }
   }
 
   override fun onNewToken(token: String?) {
@@ -45,9 +68,58 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
         if (!settingsRepository.saveNewFirebaseToken(token)) {
           throw RuntimeException("Could not update new firebase token")
         }
+
+        Timber.tag(TAG).d("Successfully updated firebase token")
       } catch (error: Throwable) {
         Timber.tag(TAG).e(error, "Could not update new firebase token")
       }
     }
+  }
+
+  private fun showNotification() {
+    val intent = Intent(this, PhotosActivity::class.java).apply {
+      addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+    }
+
+    val pendingIntent = PendingIntent.getActivity(
+      this,
+      0,
+      intent,
+      PendingIntent.FLAG_ONE_SHOT
+    )
+
+    val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
+      .setSmallIcon(android.R.drawable.stat_sys_download_done)
+      .setContentTitle("You got a new photo from someone")
+      .setAutoCancel(true)
+      .setContentIntent(pendingIntent)
+
+    val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      val channel = NotificationChannel(
+        CHANNEL_ID,
+        CHANNED_NAME,
+        NotificationManager.IMPORTANCE_DEFAULT
+      )
+
+      channel.enableLights(true)
+      channel.vibrationPattern = vibrationPattern
+
+      notificationManager.createNotificationChannel(channel)
+    }
+
+    notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build())
+  }
+
+  companion object {
+    private val vibrationPattern = LongArray(4).apply {
+      this[0] = 0L
+      this[1] = 300L
+      this[2] = 200L
+      this[3] = 300L
+    }
+
+    const val photoExchangedFlag = "photo_exchanged"
   }
 }

@@ -74,6 +74,7 @@ class TakePhotoActivity : BaseActivity() {
     initRx()
   }
 
+  //FIXME: this is bad. Should move it to onActivityStart
   override fun onActivityResume() {
     checkPermissions()
   }

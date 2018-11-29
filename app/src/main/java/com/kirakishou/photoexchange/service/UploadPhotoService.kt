@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.IBinder
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
+import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.UploadPhotoServiceModule
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
@@ -48,7 +49,7 @@ class UploadPhotoService : Service(), CoroutineScope {
 
   private var callback = WeakReference<PhotoUploadingServiceCallback>(null)
   private val NOTIFICATION_ID = 1
-  private val CHANNEL_ID = "1"
+  private val CHANNEL_ID by lazy { getString(R.string.default_notification_channel_id) }
   private val CHANNED_NAME = "name"
 
   lateinit var job: Job
@@ -205,7 +206,7 @@ class UploadPhotoService : Service(), CoroutineScope {
         .setSmallIcon(android.R.drawable.stat_sys_upload)
         .setWhen(System.currentTimeMillis())
         .setContentIntent(getNotificationIntent())
-        .setAutoCancel(false)
+        .setAutoCancel(true)
         .setOngoing(true)
         .build()
     } else {
@@ -215,7 +216,7 @@ class UploadPhotoService : Service(), CoroutineScope {
         .setSmallIcon(android.R.drawable.stat_sys_upload)
         .setWhen(System.currentTimeMillis())
         .setContentIntent(getNotificationIntent())
-        .setAutoCancel(false)
+        .setAutoCancel(true)
         .setOngoing(true)
         .build()
     }
@@ -230,7 +231,7 @@ class UploadPhotoService : Service(), CoroutineScope {
         .setContentText("Uploading photo...")
         .setWhen(System.currentTimeMillis())
         .setContentIntent(getNotificationIntent())
-        .setAutoCancel(false)
+        .setAutoCancel(true)
         .setOngoing(true)
         .build()
     } else {
@@ -239,7 +240,7 @@ class UploadPhotoService : Service(), CoroutineScope {
         .setContentText("Uploading photo...")
         .setWhen(System.currentTimeMillis())
         .setContentIntent(getNotificationIntent())
-        .setAutoCancel(false)
+        .setAutoCancel(true)
         .setOngoing(true)
         .build()
     }
@@ -248,8 +249,11 @@ class UploadPhotoService : Service(), CoroutineScope {
   @RequiresApi(Build.VERSION_CODES.O)
   private fun createNotificationChannelIfNotExists() {
     if (getNotificationManager().getNotificationChannel(CHANNEL_ID) == null) {
-      val notificationChannel = NotificationChannel(CHANNEL_ID, CHANNED_NAME,
-        NotificationManager.IMPORTANCE_LOW)
+      val notificationChannel = NotificationChannel(
+        CHANNEL_ID,
+        CHANNED_NAME,
+        NotificationManager.IMPORTANCE_LOW
+      )
 
       notificationChannel.enableLights(false)
       notificationChannel.enableVibration(false)
@@ -263,7 +267,6 @@ class UploadPhotoService : Service(), CoroutineScope {
     val notificationIntent = Intent(this, PhotosActivity::class.java)
     notificationIntent.action = Intent.ACTION_MAIN
     notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER)
-    //notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
     return PendingIntent.getActivity(
       this,
@@ -296,19 +299,6 @@ class UploadPhotoService : Service(), CoroutineScope {
   inner class UploadPhotosBinder : Binder() {
     fun getService(): UploadPhotoService {
       return this@UploadPhotoService
-    }
-  }
-
-  companion object {
-    //TODO: probably delete
-    fun isRunning(context: Context): Boolean {
-      val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
-      for (service in manager!!.getRunningServices(Integer.MAX_VALUE)) {
-        if (UploadPhotoService::class.java.name == service.service.className) {
-          return true
-        }
-      }
-      return false
     }
   }
 }
