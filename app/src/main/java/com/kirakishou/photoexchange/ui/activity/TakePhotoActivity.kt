@@ -72,14 +72,11 @@ class TakePhotoActivity : BaseActivity() {
 
   override fun onActivityStart() {
     initRx()
-  }
-
-  //FIXME: this is bad. Should move it to onActivityStart
-  override fun onActivityResume() {
     checkPermissions()
   }
 
-  override fun onActivityPause() {
+  override fun onPause() {
+    super.onPause()
     cameraProvider.stopCamera()
   }
 

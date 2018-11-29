@@ -79,6 +79,7 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
   private fun showNotification() {
     val intent = Intent(this, PhotosActivity::class.java).apply {
       addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+      putExtra(PhotosActivity.extraNewPhotoNotificationReceived, true)
     }
 
     val pendingIntent = PendingIntent.getActivity(

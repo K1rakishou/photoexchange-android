@@ -63,18 +63,6 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
     onActivityStart()
   }
 
-  override fun onResume() {
-    super.onResume()
-
-    onActivityResume()
-  }
-
-  override fun onPause() {
-    super.onPause()
-
-    onActivityPause()
-  }
-
   override fun onStop() {
     onActivityStop()
 
@@ -138,7 +126,5 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
   protected abstract fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent)
   protected abstract fun onActivityStart()
   protected abstract fun onActivityStop()
-  protected abstract fun onActivityResume()
-  protected abstract fun onActivityPause()
   protected abstract fun resolveDaggerDependency()
 }
