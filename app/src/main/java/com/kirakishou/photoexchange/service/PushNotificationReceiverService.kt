@@ -16,6 +16,7 @@ import android.content.Intent
 import androidx.core.app.NotificationCompat
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
+import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
 
 
 class PushNotificationReceiverService : FirebaseMessagingService() {
@@ -77,15 +78,18 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
   }
 
   private fun showNotification() {
-    val intent = Intent(this, PhotosActivity::class.java).apply {
+    val backIntent = Intent(this, TakePhotoActivity::class.java).apply {
       addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+    }
+
+    val intent = Intent(this, PhotosActivity::class.java).apply {
       putExtra(PhotosActivity.extraNewPhotoNotificationReceived, true)
     }
 
-    val pendingIntent = PendingIntent.getActivity(
+    val pendingIntent = PendingIntent.getActivities(
       this,
       0,
-      intent,
+      arrayOf(backIntent, intent),
       PendingIntent.FLAG_ONE_SHOT
     )
 
