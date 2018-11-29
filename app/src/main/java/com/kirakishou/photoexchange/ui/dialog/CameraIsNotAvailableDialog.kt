@@ -20,7 +20,6 @@ class CameraIsNotAvailableDialog(
                     onNegativeCallback: (suspend () -> Unit)?) {
     checkNotNull(onPositiveCallback)
 
-    //TODO: change this to homemade dialog and get rid of the MaterialDialogs dependency
     MaterialDialog(context)
       .title(text = "Camera is not available")
       .message(text = "It looks like your device does not support camera. This app cannot work without a camera.")

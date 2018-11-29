@@ -6,14 +6,16 @@ import android.animation.ObjectAnimator
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import androidx.core.app.ActivityCompat
 import android.view.View
+import android.view.ViewAnimationUtils
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AccelerateInterpolator
+import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.core.animation.addListener
+import androidx.core.app.ActivityCompat
 import butterknife.BindView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
@@ -28,13 +30,13 @@ import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.ui.dialog.AppCannotWorkWithoutCameraPermissionDialog
 import com.kirakishou.photoexchange.ui.dialog.CameraIsNotAvailableDialog
 import com.kirakishou.photoexchange.ui.dialog.CameraRationaleDialog
+import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
 import io.fotoapparat.view.CameraView
 import io.reactivex.Completable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.lang.Exception
 import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity() {
@@ -47,6 +49,9 @@ class TakePhotoActivity : BaseActivity() {
 
   @BindView(R.id.take_photo_button)
   lateinit var takePhotoButton: FloatingActionButton
+
+  @BindView(R.id.circular_reveal_view)
+  lateinit var circularRevealView: View
 
   @Inject
   lateinit var viewModel: TakePhotoActivityViewModel
@@ -67,18 +72,16 @@ class TakePhotoActivity : BaseActivity() {
   override fun getContentView(): Int = R.layout.activity_take_photo
 
   override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
-    initViews()
   }
 
   override fun onActivityStart() {
+    initViews()
     initRx()
-  }
-
-  override fun onActivityResume() {
     checkPermissions()
   }
 
-  override fun onActivityPause() {
+  override fun onPause() {
+    super.onPause()
     cameraProvider.stopCamera()
   }
 
@@ -90,6 +93,8 @@ class TakePhotoActivity : BaseActivity() {
 
     takePhotoButton.translationY = takePhotoButton.translationY + translationDelta
     showAllPhotosButton.translationX = showAllPhotosButton.translationX + translationDelta
+
+    circularRevealView.visibility = View.GONE
   }
 
   private fun initRx() {
@@ -102,6 +107,8 @@ class TakePhotoActivity : BaseActivity() {
       vibrator.vibrate(this, VIBRATION_TIME_MS)
 
       launch {
+        animateCameraViewHide()
+
         try {
           val takenPhoto = takePhoto()
           if (takenPhoto == null) {
@@ -110,7 +117,6 @@ class TakePhotoActivity : BaseActivity() {
           }
 
           onPhotoTaken(takenPhoto)
-
         } catch (error: Exception) {
           onShowToast(error.message)
         }
@@ -125,16 +131,36 @@ class TakePhotoActivity : BaseActivity() {
       .subscribe()
   }
 
+  private fun animateCameraViewHide() {
+    val cx = (takePhotoButton.x + (takePhotoButton.measuredWidth / 2)).toInt()
+    val cy = (takePhotoButton.y + (takePhotoButton.measuredHeight / 2)).toInt()
+
+    val finalRadius = Math.max(cameraView.width, cameraView.height) / 2
+    val anim = ViewAnimationUtils.createCircularReveal(circularRevealView, cx, cy, 0f, finalRadius.toFloat())
+
+    (takePhotoButton as ImageView).visibility = View.GONE
+    circularRevealView.visibility = View.VISIBLE
+    showAllPhotosButton.visibility = View.GONE
+
+    anim.duration = 100
+    anim.start()
+  }
+
   private fun checkPermissions() {
-    val requestedPermissions = arrayOf(Manifest.permission.CAMERA)
+    val requestedPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION)
 
     permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
-      val index = permissions.indexOf(Manifest.permission.CAMERA)
-      if (index == -1) {
+      val cameraIndex = permissions.indexOf(Manifest.permission.CAMERA)
+      if (cameraIndex == -1) {
         throw RuntimeException("Couldn't find Manifest.permission.CAMERA in result permissions")
       }
 
-      if (grantResults[index] == PackageManager.PERMISSION_DENIED) {
+      val gpsIndex = permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)
+      if (gpsIndex == -1) {
+        throw RuntimeException("Couldn't find Manifest.permission.ACCESS_FINE_LOCATION in result permissions")
+      }
+
+      if (grantResults[cameraIndex] == PackageManager.PERMISSION_DENIED) {
         if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
           launch { showCameraRationaleDialog() }
         } else {
@@ -145,7 +171,21 @@ class TakePhotoActivity : BaseActivity() {
         return@askForPermission
       }
 
-      launch { onPermissionCallback() }
+      var granted = true
+
+      if (grantResults[gpsIndex] == PackageManager.PERMISSION_DENIED) {
+        granted = false
+
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+          launch { showGpsRationaleDialog() }
+          return@askForPermission
+        }
+      }
+
+      launch {
+        viewModel.updateGpsPermissionGranted(granted)
+        onPermissionCallback()
+      }
     }
   }
 
@@ -167,6 +207,14 @@ class TakePhotoActivity : BaseActivity() {
     }
 
     cameraProvider.startCamera()
+  }
+
+  private suspend fun showGpsRationaleDialog() {
+    GpsRationaleDialog(this).show(this, {
+      checkPermissions()
+    }, {
+      onPermissionCallback()
+    })
   }
 
   private suspend fun showAppCannotWorkWithoutCameraPermissionDialog() {

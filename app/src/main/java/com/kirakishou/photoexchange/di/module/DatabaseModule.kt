@@ -101,54 +101,6 @@ open class DatabaseModule(
     return FirebaseRemoteSource(firebaseInstanceId)
   }
 
-  @Singleton
-  @Provides
-  open fun provideGalleryPhotoRemoteSource(apiClient: ApiClient): GalleryPhotoRemoteSource {
-    return GalleryPhotoRemoteSource(apiClient)
-  }
-
-  @Singleton
-  @Provides
-  open fun provideGalleryPhotoInfoRemoteSource(apiClient: ApiClient): GalleryPhotoInfoRemoteSource {
-    return GalleryPhotoInfoRemoteSource(apiClient)
-  }
-
-  @Singleton
-  @Provides
-  open fun provideFavouritePhotoRemoteSource(apiClient: ApiClient): FavouritePhotoRemoteSource {
-    return FavouritePhotoRemoteSource(apiClient)
-  }
-
-  @Singleton
-  @Provides
-  open fun provideReportPhotoRemoteSource(apiClient: ApiClient): ReportPhotoRemoteSource {
-    return ReportPhotoRemoteSource(apiClient)
-  }
-
-  @Singleton
-  @Provides
-  open fun provideGetReceivedPhotosRemoteSource(apiClient: ApiClient): GetReceivedPhotosRemoteSource {
-    return GetReceivedPhotosRemoteSource(apiClient)
-  }
-
-  @Singleton
-  @Provides
-  open fun provideUploadPhotosRemoteSource(apiClient: ApiClient): UploadPhotosRemoteSource {
-    return UploadPhotosRemoteSource(apiClient)
-  }
-
-  @Singleton
-  @Provides
-  open fun provideReceivePhotosRemoteSource(apiClient: ApiClient): ReceivePhotosRemoteSource {
-    return ReceivePhotosRemoteSource(apiClient)
-  }
-
-  @Singleton
-  @Provides
-  open fun provideGetUploadedPhotosRemoteSource(apiClient: ApiClient): GetUploadedPhotosRemoteSource {
-    return GetUploadedPhotosRemoteSource(apiClient)
-  }
-
   /**
    * Repositories
    * */
@@ -191,16 +143,14 @@ open class DatabaseModule(
   @Singleton
   @Provides
   open fun provideGalleryPhotoRepository(database: MyDatabase,
-                                         galleryPhotoRemoteSource: GalleryPhotoRemoteSource,
+                                         apiClient: ApiClient,
                                          galleryPhotoLocalSource: GalleryPhotoLocalSource,
-                                         galleryPhotoInfoRemoteSource: GalleryPhotoInfoRemoteSource,
                                          galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
                                          dispatchersProvider: DispatchersProvider): GetGalleryPhotosRepository {
     return GetGalleryPhotosRepository(
       database,
-      galleryPhotoRemoteSource,
+      apiClient,
       galleryPhotoLocalSource,
-      galleryPhotoInfoRemoteSource,
       galleryPhotoInfoLocalSource,
       dispatchersProvider
     )
@@ -221,14 +171,14 @@ open class DatabaseModule(
   @Provides
   open fun provideFavouritePhotoRepository(database: MyDatabase,
                                            timeUtils: TimeUtils,
-                                           favouritePhotoRemoteSource: FavouritePhotoRemoteSource,
+                                           apiClient: ApiClient,
                                            galleryPhotoLocalSource: GalleryPhotoLocalSource,
                                            galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
                                            dispatchersProvider: DispatchersProvider): FavouritePhotoRepository {
     return FavouritePhotoRepository(
       database,
       timeUtils,
-      favouritePhotoRemoteSource,
+      apiClient,
       galleryPhotoLocalSource,
       galleryPhotoInfoLocalSource,
       dispatchersProvider
@@ -239,14 +189,14 @@ open class DatabaseModule(
   @Provides
   open fun provideReportPhotoRepository(database: MyDatabase,
                                         timeUtils: TimeUtils,
-                                        reportPhotoRemoteSource: ReportPhotoRemoteSource,
+                                        apiClient: ApiClient,
                                         galleryPhotoLocalSource: GalleryPhotoLocalSource,
                                         galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
                                         dispatchersProvider: DispatchersProvider): ReportPhotoRepository {
     return ReportPhotoRepository(
       database,
       timeUtils,
-      reportPhotoRemoteSource,
+      apiClient,
       galleryPhotoLocalSource,
       galleryPhotoInfoLocalSource,
       dispatchersProvider
@@ -256,13 +206,13 @@ open class DatabaseModule(
   @Singleton
   @Provides
   open fun provideGetReceivedPhotosRepository(database: MyDatabase,
-                                              getReceivedPhotosRemoteSource: GetReceivedPhotosRemoteSource,
+                                              apiClient: ApiClient,
                                               receivePhotosLocalSource: ReceivePhotosLocalSource,
                                               uploadedPhotosLocalSource: UploadPhotosLocalSource,
                                               dispatchersProvider: DispatchersProvider): GetReceivedPhotosRepository {
     return GetReceivedPhotosRepository(
       database,
-      getReceivedPhotosRemoteSource,
+      apiClient,
       receivePhotosLocalSource,
       uploadedPhotosLocalSource,
       dispatchersProvider
@@ -276,7 +226,7 @@ open class DatabaseModule(
                                          bitmapUtils: BitmapUtils,
                                          fileUtils: FileUtils,
                                          takenPhotosLocalSource: TakenPhotosLocalSource,
-                                         uploadPhotosRemoteSource: UploadPhotosRemoteSource,
+                                         apiClient: ApiClient,
                                          uploadPhotosLocalSource: UploadPhotosLocalSource,
                                          dispatchersProvider: DispatchersProvider): UploadPhotosRepository {
     return UploadPhotosRepository(
@@ -285,7 +235,7 @@ open class DatabaseModule(
       bitmapUtils,
       fileUtils,
       takenPhotosLocalSource,
-      uploadPhotosRemoteSource,
+      apiClient,
       uploadPhotosLocalSource,
       dispatchersProvider
     )
@@ -301,14 +251,14 @@ open class DatabaseModule(
   @Singleton
   @Provides
   open fun provideReceivePhotosRepository(database: MyDatabase,
-                                          receivePhotosRemoteSource: ReceivePhotosRemoteSource,
+                                          apiClient: ApiClient,
                                           receivePhotosLocalSource: ReceivePhotosLocalSource,
                                           uploadedPhotosLocalSource: UploadPhotosLocalSource,
                                           takenPhotosLocalSource: TakenPhotosLocalSource,
                                           dispatchersProvider: DispatchersProvider): ReceivePhotosRepository {
     return ReceivePhotosRepository(
       database,
-      receivePhotosRemoteSource,
+      apiClient,
       receivePhotosLocalSource,
       uploadedPhotosLocalSource,
       takenPhotosLocalSource,
@@ -319,11 +269,11 @@ open class DatabaseModule(
   @Singleton
   @Provides
   open fun provideGetUploadedPhotosRepository(uploadedPhotosLocalSource: UploadPhotosLocalSource,
-                                              getUploadedPhotosRemoteSource: GetUploadedPhotosRemoteSource,
+                                              apiClient: ApiClient,
                                               dispatchersProvider: DispatchersProvider): GetUploadedPhotosRepository {
     return GetUploadedPhotosRepository(
       uploadedPhotosLocalSource,
-      getUploadedPhotosRemoteSource,
+      apiClient,
       dispatchersProvider
     )
   }

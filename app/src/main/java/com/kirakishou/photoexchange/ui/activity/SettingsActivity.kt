@@ -100,12 +100,6 @@ class SettingsActivity : BaseActivity() {
   override fun onActivityStart() {
   }
 
-  override fun onActivityResume() {
-  }
-
-  override fun onActivityPause() {
-  }
-
   override fun onActivityStop() {
   }
 

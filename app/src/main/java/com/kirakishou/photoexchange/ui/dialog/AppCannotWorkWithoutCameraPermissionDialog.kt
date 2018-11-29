@@ -19,7 +19,6 @@ class AppCannotWorkWithoutCameraPermissionDialog(
                     onNegativeCallback: (suspend () -> Unit)?) {
     checkNotNull(onPositiveCallback)
 
-    //TODO: change this to homemade dialog and get rid of the MaterialDialogs dependency
     MaterialDialog(context)
       .title(text = "Error")
       .message(text = "This app cannon work without a camera permission")

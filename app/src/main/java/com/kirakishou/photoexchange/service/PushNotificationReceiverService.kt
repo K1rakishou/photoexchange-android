@@ -3,24 +3,27 @@ package com.kirakishou.photoexchange.service
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.kirakishou.photoexchange.PhotoExchangeApplication
-import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
-import com.kirakishou.photoexchange.helper.extension.safe
-import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
-import com.kirakishou.photoexchange.interactors.UpdateFirebaseTokenUseCase
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import javax.inject.Inject
+import android.app.NotificationManager
+import android.app.NotificationChannel
+import android.os.Build
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import androidx.core.app.NotificationCompat
+import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.ui.activity.PhotosActivity
+import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
+
 
 class PushNotificationReceiverService : FirebaseMessagingService() {
   private val TAG = "PushNotificationReceiverService"
-
-  @Inject
-  lateinit var updateFirebaseTokenUseCase: UpdateFirebaseTokenUseCase
-
-  @Inject
-  lateinit var getUserIdUseCase: GetUserIdUseCase
+  private val NOTIFICATION_ID = 3
+  private val CHANNEL_ID by lazy { getString(R.string.default_notification_channel_id) }
+  private val CHANNED_NAME = "name"
 
   @Inject
   lateinit var settingsRepository: SettingsRepository
@@ -40,16 +43,19 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
       return
     }
 
-    //TODO: create notification
+    val photoExchanged = try {
+      remoteMessage.data[photoExchangedFlag]?.toBoolean()
+    } catch (error: Throwable) {
+      null
+    }
+
+    if (photoExchanged != null && photoExchanged) {
+      Timber.tag(TAG).d("Some photo has been exchanged")
+
+      showNotification()
+    }
   }
 
-  //TODO:
-  // Probably will have to rewrite this because right now this method makes two http-requests and they may fail
-  // or the user may try to upload photo before these two request have been completed.
-  // What I need to do here is to just store the need token in the database, then upon uploading
-  // I should check whether this token differs from the  other token (that is being stored in another
-  // database column) and if they are - that means that we got new token and I should update token on the server.
-  // if they are the same - then nothing need to be done.
   override fun onNewToken(token: String?) {
     Timber.tag(TAG).d("onNewToken called")
 
@@ -60,34 +66,65 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
 
     runBlocking {
       try {
-        //we need to get the userId first because this operation will create a default account on the server
-        val userId = getUserId()
-        if (userId.isEmpty()) {
-          throw EmptyUserIdException()
+        if (!settingsRepository.saveNewFirebaseToken(token)) {
+          throw RuntimeException("Could not update new firebase token")
         }
 
-        updateFirebaseToken(token)
+        Timber.tag(TAG).d("Successfully updated firebase token")
       } catch (error: Throwable) {
-        Timber.tag(TAG).e(error, "Could not update firebase token")
+        Timber.tag(TAG).e(error, "Could not update new firebase token")
       }
     }
   }
 
-  private suspend fun updateFirebaseToken(newToken: String) {
-    val result = updateFirebaseTokenUseCase.updateFirebaseToken(newToken)
+  private fun showNotification() {
+    val backIntent = Intent(this, TakePhotoActivity::class.java).apply {
+      addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+    }
 
-    when (result) {
-      is Either.Value -> Timber.tag(TAG).d("Successfully updated token")
-      is Either.Error -> throw result.error
-    }.safe
+    val intent = Intent(this, PhotosActivity::class.java).apply {
+      putExtra(PhotosActivity.extraNewPhotoNotificationReceived, true)
+    }
+
+    val pendingIntent = PendingIntent.getActivities(
+      this,
+      0,
+      arrayOf(backIntent, intent),
+      PendingIntent.FLAG_ONE_SHOT
+    )
+
+    val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
+      .setSmallIcon(android.R.drawable.stat_sys_download_done)
+      .setContentTitle("You got a new photo from someone")
+      .setAutoCancel(true)
+      .setContentIntent(pendingIntent)
+
+    val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      val channel = NotificationChannel(
+        CHANNEL_ID,
+        CHANNED_NAME,
+        NotificationManager.IMPORTANCE_DEFAULT
+      )
+
+      channel.enableLights(true)
+      channel.vibrationPattern = vibrationPattern
+
+      notificationManager.createNotificationChannel(channel)
+    }
+
+    notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build())
   }
 
-  private suspend fun getUserId(): String {
-    val result = getUserIdUseCase.getUserId()
+  companion object {
+    private val vibrationPattern = LongArray(4).apply {
+      this[0] = 0L
+      this[1] = 300L
+      this[2] = 200L
+      this[3] = 300L
+    }
 
-    when (result) {
-      is Either.Value -> return result.value
-      is Either.Error -> throw result.error
-    }.safe
+    const val photoExchangedFlag = "photo_exchanged"
   }
 }

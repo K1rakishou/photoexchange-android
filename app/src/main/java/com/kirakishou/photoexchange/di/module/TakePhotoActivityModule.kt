@@ -5,6 +5,7 @@ import android.content.Context
 import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.helper.CameraProvider
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.TakePhotoActivityViewModelFactory
@@ -24,20 +25,31 @@ open class TakePhotoActivityModule(
   @PerActivity
   @Provides
   open fun provideViewModelFactory(schedulerProvider: SchedulerProvider,
-                                   takenPhotosRepository: TakenPhotosRepository): TakePhotoActivityViewModelFactory {
-    return TakePhotoActivityViewModelFactory(takenPhotosRepository, schedulerProvider)
+                                   takenPhotosRepository: TakenPhotosRepository,
+                                   settingsRepository: SettingsRepository): TakePhotoActivityViewModelFactory {
+    return TakePhotoActivityViewModelFactory(
+      takenPhotosRepository,
+      schedulerProvider,
+      settingsRepository
+    )
   }
 
   @PerActivity
   @Provides
   open fun provideViewModel(viewModelFactory: TakePhotoActivityViewModelFactory): TakePhotoActivityViewModel {
-    return ViewModelProviders.of(activity, viewModelFactory).get(TakePhotoActivityViewModel::class.java)
+    return ViewModelProviders.of(
+      activity,
+      viewModelFactory).get(TakePhotoActivityViewModel::class.java
+    )
   }
 
   @PerActivity
   @Provides
   open fun provideCameraProvider(context: Context,
                                  takenPhotosRepository: TakenPhotosRepository): CameraProvider {
-    return CameraProvider(context, takenPhotosRepository)
+    return CameraProvider(
+      context,
+      takenPhotosRepository
+    )
   }
 }

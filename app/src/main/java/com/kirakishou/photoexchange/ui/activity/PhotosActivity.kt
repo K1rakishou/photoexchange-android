@@ -105,23 +105,35 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
     receivePhotosServiceConnection = ReceivePhotosServiceConnection(this)
     uploadPhotosServiceConnection = UploadPhotoServiceConnection(this)
+
+    if (intent.getBooleanExtra(extraNewPhotoNotificationReceived, false)) {
+      onNewPhotoNotification()
+    }
   }
 
   override fun onActivityStart() {
     initRx()
-
-    launch { checkPermissions() }
-  }
-
-  override fun onActivityResume() {
-  }
-
-  override fun onActivityPause() {
+    initViews()
   }
 
   override fun onActivityStop() {
     receivePhotosServiceConnection.onFindingServiceDisconnected()
     uploadPhotosServiceConnection.onUploadingServiceDisconnected()
+  }
+
+  override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+
+    if (intent.getBooleanExtra(extraNewPhotoNotificationReceived, false)) {
+      onNewPhotoNotification()
+    }
+  }
+
+  private fun onNewPhotoNotification() {
+    viewModel.uploadedPhotosFragmentViewModel.resetState()
+    viewModel.receivedPhotosFragmentViewModel.resetState()
+
+    switchToTab(RECEIVED_PHOTOS_TAB_INDEX)
   }
 
   override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
@@ -139,6 +151,9 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       .doOnError { Timber.e(it) }
       .subscribe()
 
+    //FIXME:
+    // this will finish the app without going back to TakePhotoActivity when the app is killed, the user
+    // receives push notification and he clicks it
     compositeDisposable += RxView.clicks(takePhotoButton)
       .subscribeOn(AndroidSchedulers.mainThread())
       .debounceClicks()
@@ -159,48 +174,11 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       })
   }
 
-  private suspend fun checkPermissions() {
-    val requestedPermissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
-    permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
-      val index = permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)
-      if (index == -1) {
-        throw RuntimeException("Couldn't find Manifest.permission.CAMERA in result permissions")
-      }
-
-      var granted = true
-
-      if (grantResults[index] == PackageManager.PERMISSION_DENIED) {
-        granted = false
-
-        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-          launch { showGpsRationaleDialog() }
-          return@askForPermission
-        }
-      }
-
-      launch { onPermissionsCallback(granted) }
-    }
-  }
-
-  private suspend fun showGpsRationaleDialog() {
-    GpsRationaleDialog(this).show(this, {
-      checkPermissions()
-    }, {
-      onPermissionsCallback(false)
-    })
-  }
-
-  private suspend fun onPermissionsCallback(granted: Boolean) {
-    initViews()
-
-    viewModel.updateGpsPermissionGranted(granted)
-  }
-
   private fun initViews() {
     initTabs()
 
     if (viewState.lastOpenedTab != 0) {
-      viewPager.currentItem = viewState.lastOpenedTab
+      switchToTab(viewState.lastOpenedTab)
     }
   }
 
@@ -326,9 +304,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   private fun showPhotoAnswerFoundSnackbar() {
     Snackbar.make(rootLayout, getString(R.string.photo_has_been_received_snackbar_text), Snackbar.LENGTH_LONG)
       .setAction(getString(R.string.show_snackbar_action_text), {
-        if (viewPager.currentItem != RECEIVED_PHOTOS_TAB_INDEX) {
-          viewPager.currentItem = RECEIVED_PHOTOS_TAB_INDEX
-        }
+        switchToTab(RECEIVED_PHOTOS_TAB_INDEX)
 
         compositeDisposable += Single.timer(FRAGMENT_SCROLL_DELAY_MS, TimeUnit.MILLISECONDS)
           .subscribeOn(Schedulers.io())
@@ -342,8 +318,10 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       }).show()
   }
 
-  fun showToast(message: String, duration: Int) {
-    onShowToast(message, duration)
+  private fun switchToTab(tabIndex: Int) {
+    if (viewPager.currentItem != tabIndex) {
+      viewPager.currentItem = tabIndex
+    }
   }
 
   override fun onRequestPermissionsResult(
@@ -398,5 +376,9 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   override fun resolveDaggerDependency() {
     activityComponent
       .inject(this)
+  }
+
+  companion object {
+    const val extraNewPhotoNotificationReceived = "new_photo_notification_received"
   }
 }

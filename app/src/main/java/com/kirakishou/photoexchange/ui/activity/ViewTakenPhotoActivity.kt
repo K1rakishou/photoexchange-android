@@ -44,12 +44,6 @@ class ViewTakenPhotoActivity : BaseActivity() {
     launch { initRx() }
   }
 
-  override fun onActivityResume() {
-  }
-
-  override fun onActivityPause() {
-  }
-
   override fun onActivityStop() {
   }
 

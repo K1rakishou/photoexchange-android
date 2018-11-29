@@ -40,4 +40,5 @@
     <string name="show_snackbar_action_text">SHOW</string>
     <string name="unknown_error_exception_text">Unknown error (exception)</string>
     <string name="tap_to_copy_user_id_message">Tap to copy user id to clipboard</string>
+    <string name="default_notification_channel_id">1</string>
 </resources>

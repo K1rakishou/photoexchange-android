@@ -1,9 +1,9 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
+import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.source.local.UploadPhotosLocalSource
-import com.kirakishou.photoexchange.helper.database.source.remote.GetUploadedPhotosRemoteSource
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import kotlinx.coroutines.withContext
@@ -11,7 +11,7 @@ import timber.log.Timber
 
 class GetUploadedPhotosRepository(
   private val uploadedPhotosLocalSource: UploadPhotosLocalSource,
-  private val getUploadedPhotosRemoteSource: GetUploadedPhotosRemoteSource,
+  private val apiClient: ApiClient,
   dispatchersProvider: DispatchersProvider
 ) : BaseRepository(dispatchersProvider) {
   private val TAG = "GetUploadedPhotosRepository"
@@ -46,7 +46,7 @@ class GetUploadedPhotosRepository(
     //TODO: the method may be called AFTER a photo has been uploaded and it will contain receiveInfo
     //so we need to check whether it contains it and if it does, we need to notify the ReceivedPhotosFragment about it
 
-    val uploadedPhotos = getUploadedPhotosRemoteSource.getPage(userId, time, count)
+    val uploadedPhotos = apiClient.getPageOfUploadedPhotos(userId, time, count)
     if (uploadedPhotos.isEmpty()) {
       Timber.tag(TAG).d("No uploaded photos were found on the server")
       return emptyList()

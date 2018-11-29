@@ -8,19 +8,18 @@ import android.os.Build
 import android.os.IBinder
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
+import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.ReceivePhotosServiceModule
+import com.kirakishou.photoexchange.helper.extension.safe
+import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.callback.ReceivePhotosServiceCallback
 import io.reactivex.disposables.CompositeDisposable
-import timber.log.Timber
+import io.reactivex.rxkotlin.plusAssign
 import java.lang.ref.WeakReference
 import javax.inject.Inject
-import android.app.ActivityManager
-import com.kirakishou.photoexchange.helper.extension.safe
-import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
-import io.reactivex.rxkotlin.plusAssign
 
 class ReceivePhotosService : Service() {
 
@@ -33,7 +32,7 @@ class ReceivePhotosService : Service() {
   private val binder = ReceivePhotosBinder()
   private var callback = WeakReference<ReceivePhotosServiceCallback>(null)
   private val NOTIFICATION_ID = 2
-  private val CHANNEL_ID = "1"
+  private val CHANNEL_ID by lazy { getString(R.string.default_notification_channel_id) }
   private val CHANNED_NAME = "name"
 
   override fun onCreate() {
@@ -176,7 +175,7 @@ class ReceivePhotosService : Service() {
         .setSmallIcon(android.R.drawable.stat_sys_download)
         .setWhen(System.currentTimeMillis())
         .setContentIntent(getNotificationIntent())
-        .setAutoCancel(false)
+        .setAutoCancel(true)
         .setOngoing(true)
         .build()
     } else {
@@ -201,7 +200,7 @@ class ReceivePhotosService : Service() {
         .setContentText("Looking for photo answer...")
         .setWhen(System.currentTimeMillis())
         .setContentIntent(getNotificationIntent())
-        .setAutoCancel(false)
+        .setAutoCancel(true)
         .setOngoing(true)
         .build()
     } else {
@@ -210,7 +209,7 @@ class ReceivePhotosService : Service() {
         .setContentText("Looking for photo answer...")
         .setWhen(System.currentTimeMillis())
         .setContentIntent(getNotificationIntent())
-        .setAutoCancel(false)
+        .setAutoCancel(true)
         .setOngoing(true)
         .build()
     }
@@ -219,8 +218,11 @@ class ReceivePhotosService : Service() {
   @RequiresApi(Build.VERSION_CODES.O)
   private fun createNotificationChannelIfNotExists() {
     if (getNotificationManager().getNotificationChannel(CHANNEL_ID) == null) {
-      val notificationChannel = NotificationChannel(CHANNEL_ID, CHANNED_NAME,
-        NotificationManager.IMPORTANCE_LOW)
+      val notificationChannel = NotificationChannel(
+        CHANNEL_ID,
+        CHANNED_NAME,
+        NotificationManager.IMPORTANCE_LOW
+      )
 
       notificationChannel.enableLights(false)
       notificationChannel.enableVibration(false)
@@ -234,7 +236,6 @@ class ReceivePhotosService : Service() {
     val notificationIntent = Intent(this, PhotosActivity::class.java)
     notificationIntent.action = Intent.ACTION_MAIN
     notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER)
-    //notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
     return PendingIntent.getActivity(
       this,
@@ -267,19 +268,6 @@ class ReceivePhotosService : Service() {
   inner class ReceivePhotosBinder : Binder() {
     fun getService(): ReceivePhotosService {
       return this@ReceivePhotosService
-    }
-  }
-
-  companion object {
-    //TODO: probably delete
-    fun isRunning(context: Context): Boolean {
-      val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
-      for (service in manager!!.getRunningServices(Integer.MAX_VALUE)) {
-        if (ReceivePhotosService::class.java.name == service.service.className) {
-          return true
-        }
-      }
-      return false
     }
   }
 }
