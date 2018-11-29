@@ -28,6 +28,7 @@ import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.ui.dialog.AppCannotWorkWithoutCameraPermissionDialog
 import com.kirakishou.photoexchange.ui.dialog.CameraIsNotAvailableDialog
 import com.kirakishou.photoexchange.ui.dialog.CameraRationaleDialog
+import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
 import io.fotoapparat.view.CameraView
 import io.reactivex.Completable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -124,15 +125,20 @@ class TakePhotoActivity : BaseActivity() {
   }
 
   private fun checkPermissions() {
-    val requestedPermissions = arrayOf(Manifest.permission.CAMERA)
+    val requestedPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION)
 
     permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
-      val index = permissions.indexOf(Manifest.permission.CAMERA)
-      if (index == -1) {
+      val cameraIndex = permissions.indexOf(Manifest.permission.CAMERA)
+      if (cameraIndex == -1) {
         throw RuntimeException("Couldn't find Manifest.permission.CAMERA in result permissions")
       }
 
-      if (grantResults[index] == PackageManager.PERMISSION_DENIED) {
+      val gpsIndex = permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)
+      if (gpsIndex == -1) {
+        throw RuntimeException("Couldn't find Manifest.permission.ACCESS_FINE_LOCATION in result permissions")
+      }
+
+      if (grantResults[cameraIndex] == PackageManager.PERMISSION_DENIED) {
         if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
           launch { showCameraRationaleDialog() }
         } else {
@@ -143,7 +149,21 @@ class TakePhotoActivity : BaseActivity() {
         return@askForPermission
       }
 
-      launch { onPermissionCallback() }
+      var granted = true
+
+      if (grantResults[gpsIndex] == PackageManager.PERMISSION_DENIED) {
+        granted = false
+
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+          launch { showGpsRationaleDialog() }
+          return@askForPermission
+        }
+      }
+
+      launch {
+        viewModel.updateGpsPermissionGranted(granted)
+        onPermissionCallback()
+      }
     }
   }
 
@@ -165,6 +185,14 @@ class TakePhotoActivity : BaseActivity() {
     }
 
     cameraProvider.startCamera()
+  }
+
+  private suspend fun showGpsRationaleDialog() {
+    GpsRationaleDialog(this).show(this, {
+      checkPermissions()
+    }, {
+      onPermissionCallback()
+    })
   }
 
   private suspend fun showAppCannotWorkWithoutCameraPermissionDialog() {

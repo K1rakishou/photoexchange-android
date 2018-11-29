@@ -113,8 +113,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
   override fun onActivityStart() {
     initRx()
-
-    launch { checkPermissions() }
+    initViews()
   }
 
   override fun onActivityStop() {
@@ -173,43 +172,6 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       .subscribe({ event ->
         launch { onStateEvent(event) }
       })
-  }
-
-  private suspend fun checkPermissions() {
-    val requestedPermissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
-    permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
-      val index = permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)
-      if (index == -1) {
-        throw RuntimeException("Couldn't find Manifest.permission.CAMERA in result permissions")
-      }
-
-      var granted = true
-
-      if (grantResults[index] == PackageManager.PERMISSION_DENIED) {
-        granted = false
-
-        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-          launch { showGpsRationaleDialog() }
-          return@askForPermission
-        }
-      }
-
-      launch { onPermissionsCallback(granted) }
-    }
-  }
-
-  private suspend fun showGpsRationaleDialog() {
-    GpsRationaleDialog(this).show(this, {
-      checkPermissions()
-    }, {
-      onPermissionsCallback(false)
-    })
-  }
-
-  private suspend fun onPermissionsCallback(granted: Boolean) {
-    initViews()
-
-    viewModel.updateGpsPermissionGranted(granted)
   }
 
   private fun initViews() {

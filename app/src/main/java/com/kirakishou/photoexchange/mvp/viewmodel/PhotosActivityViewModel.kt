@@ -40,8 +40,4 @@ class PhotosActivityViewModel(
 
     return uploadedPhotosCount > receivedPhotosCount
   }
-
-  suspend fun updateGpsPermissionGranted(granted: Boolean) {
-    settingsRepository.updateGpsPermissionGranted(granted)
-  }
 }
