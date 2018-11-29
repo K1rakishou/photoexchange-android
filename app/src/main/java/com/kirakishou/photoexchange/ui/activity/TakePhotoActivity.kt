@@ -6,14 +6,16 @@ import android.animation.ObjectAnimator
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import androidx.core.app.ActivityCompat
 import android.view.View
+import android.view.ViewAnimationUtils
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AccelerateInterpolator
+import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.core.animation.addListener
+import androidx.core.app.ActivityCompat
 import butterknife.BindView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
@@ -35,7 +37,6 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.lang.Exception
 import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity() {
@@ -48,6 +49,9 @@ class TakePhotoActivity : BaseActivity() {
 
   @BindView(R.id.take_photo_button)
   lateinit var takePhotoButton: FloatingActionButton
+
+  @BindView(R.id.circular_reveal_view)
+  lateinit var circularRevealView: View
 
   @Inject
   lateinit var viewModel: TakePhotoActivityViewModel
@@ -68,10 +72,10 @@ class TakePhotoActivity : BaseActivity() {
   override fun getContentView(): Int = R.layout.activity_take_photo
 
   override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
-    initViews()
   }
 
   override fun onActivityStart() {
+    initViews()
     initRx()
     checkPermissions()
   }
@@ -89,6 +93,8 @@ class TakePhotoActivity : BaseActivity() {
 
     takePhotoButton.translationY = takePhotoButton.translationY + translationDelta
     showAllPhotosButton.translationX = showAllPhotosButton.translationX + translationDelta
+
+    circularRevealView.visibility = View.GONE
   }
 
   private fun initRx() {
@@ -101,6 +107,8 @@ class TakePhotoActivity : BaseActivity() {
       vibrator.vibrate(this, VIBRATION_TIME_MS)
 
       launch {
+        animateCameraViewHide()
+
         try {
           val takenPhoto = takePhoto()
           if (takenPhoto == null) {
@@ -109,7 +117,6 @@ class TakePhotoActivity : BaseActivity() {
           }
 
           onPhotoTaken(takenPhoto)
-
         } catch (error: Exception) {
           onShowToast(error.message)
         }
@@ -122,6 +129,21 @@ class TakePhotoActivity : BaseActivity() {
       .doOnNext { runActivity(PhotosActivity::class.java) }
       .doOnError { Timber.tag(TAG).e(it) }
       .subscribe()
+  }
+
+  private fun animateCameraViewHide() {
+    val cx = (takePhotoButton.x + (takePhotoButton.measuredWidth / 2)).toInt()
+    val cy = (takePhotoButton.y + (takePhotoButton.measuredHeight / 2)).toInt()
+
+    val finalRadius = Math.max(cameraView.width, cameraView.height) / 2
+    val anim = ViewAnimationUtils.createCircularReveal(circularRevealView, cx, cy, 0f, finalRadius.toFloat())
+
+    (takePhotoButton as ImageView).visibility = View.GONE
+    circularRevealView.visibility = View.VISIBLE
+    showAllPhotosButton.visibility = View.GONE
+
+    anim.duration = 100
+    anim.start()
   }
 
   private fun checkPermissions() {
