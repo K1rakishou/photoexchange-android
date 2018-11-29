@@ -18,11 +18,11 @@ class GpsRationaleDialog(
     checkNotNull(onPositiveCallback)
     checkNotNull(onNegativeCallback)
 
-    //TODO: change this to homemade dialog and get rid of the MaterialDialogs dependency
     MaterialDialog(context)
       .title(text = "Why do we need gps permission?")
       .message(text = "We need gps permission so other people can see where the photo was taken from. " +
-        "But you can safely disable gps and all photos will be sent without the location")
+        "This is not a required permission so you can disable it. " +
+        "Other people won't be able to see where your photos were taken.")
       .negativeButton(text = "Do not allow") {
         coroutineScope.launch { onNegativeCallback.invoke() }
       }

@@ -16,7 +16,6 @@ class DeletePhotoConfirmationDialog(
                     onNegativeCallback: (suspend () -> Unit)?) {
     checkNotNull(onPositiveCallback)
 
-    //TODO: change this to homemade dialog and get rid of the MaterialDialogs dependency
     MaterialDialog(context)
       .title(text = "Confirmation required")
       .message(text = "Are you sure you want to delete this photo?")

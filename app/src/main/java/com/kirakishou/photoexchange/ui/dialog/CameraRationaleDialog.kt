@@ -20,10 +20,9 @@ class CameraRationaleDialog(
     checkNotNull(onPositiveCallback)
     checkNotNull(onNegativeCallback)
 
-    //TODO: change this to homemade dialog and get rid of the MaterialDialogs dependency
     MaterialDialog(context)
       .title(text = "Why do we need camera permission?")
-      .message(text = "We need camera permission so you can take a photo that will be sent to someone else.")
+      .message(text = "We need camera permission so you can take a photo that will be sent to someone else. This app cannot work without the camera permission")
       .cancelable(false)
       .negativeButton(text = "Close app") {
         coroutineScope.launch { onNegativeCallback.invoke() }
