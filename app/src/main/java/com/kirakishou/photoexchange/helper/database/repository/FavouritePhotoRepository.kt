@@ -1,22 +1,21 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
+import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.api.response.FavouritePhotoResponseData
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoInfoEntity
 import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoInfoLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoLocalSource
-import com.kirakishou.photoexchange.helper.database.source.remote.FavouritePhotoRemoteSource
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.mvp.model.FavouritePhotoActionResult
 import kotlinx.coroutines.withContext
-import java.lang.Exception
 
 open class FavouritePhotoRepository(
   private val database: MyDatabase,
   private val timeUtils: TimeUtils,
-  private val favouritePhotoRemoteSource: FavouritePhotoRemoteSource,
+  private val apiClient: ApiClient,
   private val galleryPhotoLocalSource: GalleryPhotoLocalSource,
   private val galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
   dispatchersProvider: DispatchersProvider
@@ -24,7 +23,7 @@ open class FavouritePhotoRepository(
 
   open suspend fun favouritePhoto(userId: String, photoName: String): FavouritePhotoActionResult {
     return withContext(coroutineContext) {
-      val favouritePhotoResult = favouritePhotoRemoteSource.favouritePhoto(userId, photoName)
+      val favouritePhotoResult = apiClient.favouritePhoto(userId, photoName)
 
       try {
         favouriteInDatabase(photoName, favouritePhotoResult)

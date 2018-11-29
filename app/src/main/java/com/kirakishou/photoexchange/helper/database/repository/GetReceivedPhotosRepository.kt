@@ -1,11 +1,11 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
+import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.source.local.ReceivePhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.UploadPhotosLocalSource
-import com.kirakishou.photoexchange.helper.database.source.remote.GetReceivedPhotosRemoteSource
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import kotlinx.coroutines.withContext
@@ -14,7 +14,7 @@ import timber.log.Timber
 
 open class GetReceivedPhotosRepository(
   private val database: MyDatabase,
-  private val getReceivedPhotosRemoteSource: GetReceivedPhotosRemoteSource,
+  private val apiClient: ApiClient,
   private val receivedPhotosLocalSource: ReceivePhotosLocalSource,
   private val uploadedPhotosLocalSource: UploadPhotosLocalSource,
   dispatchersProvider: DispatchersProvider
@@ -41,7 +41,7 @@ open class GetReceivedPhotosRepository(
       return pageOfReceivedPhotos
     }
 
-    val receivedPhotos = getReceivedPhotosRemoteSource.getReceivedPhotos(userId, lastUploadedOn, count)
+    val receivedPhotos = apiClient.getReceivedPhotos(userId, lastUploadedOn, count)
     if (receivedPhotos.isEmpty()) {
       return pageOfReceivedPhotos
     }

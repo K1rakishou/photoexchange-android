@@ -1,11 +1,11 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
+import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoInfoEntity
 import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoInfoLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoLocalSource
-import com.kirakishou.photoexchange.helper.database.source.remote.ReportPhotoRemoteSource
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import kotlinx.coroutines.withContext
@@ -14,7 +14,7 @@ import java.lang.Exception
 open class ReportPhotoRepository(
   private val database: MyDatabase,
   private val timeUtils: TimeUtils,
-  private val reportPhotoRemoteSource: ReportPhotoRemoteSource,
+  private val apiClient: ApiClient,
   private val galleryPhotoLocalSource: GalleryPhotoLocalSource,
   private val galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
   dispatchersProvider: DispatchersProvider
@@ -22,7 +22,7 @@ open class ReportPhotoRepository(
 
   open suspend fun reportPhoto(userId: String, photoName: String): Boolean {
     return withContext(coroutineContext) {
-      val isReported = reportPhotoRemoteSource.reportPhoto(userId, photoName)
+      val isReported = apiClient.reportPhoto(userId, photoName)
 
       try {
         reportInDatabase(photoName, isReported)

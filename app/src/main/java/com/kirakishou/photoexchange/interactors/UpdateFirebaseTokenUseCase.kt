@@ -21,35 +21,43 @@ open class UpdateFirebaseTokenUseCase(
 ) : BaseUseCase(dispatchersProvider) {
   private val TAG = "UpdateFirebaseTokenUseCase"
 
-  open suspend fun updateFirebaseToken(): Either<Exception, String> {
+  open suspend fun updateFirebaseTokenIfNecessary(): Either<Exception, String> {
     return withContext(coroutineContext) {
       return@withContext myRunCatching {
-        val newToken = try {
-          firebaseRemoteSource.getTokenAsync().await()
-        } catch (error: Throwable) {
-          throw FirebaseException(error.message)
+        val newToken = settingsRepository.getNewFirebaseToken()
+        val regularToken = settingsRepository.getFirebaseToken()
+
+        //both tokens must be not empty, new token must be equal to regular token
+        //otherwise we need to update token
+        if (newToken.isNotEmpty() && regularToken.isNotEmpty() && newToken == regularToken) {
+          return@myRunCatching regularToken
         }
 
-        return@myRunCatching updateTokenInternal(newToken)
+        return@myRunCatching updateFirebaseTokenInternal(newToken)
       }
     }
   }
 
-  open suspend fun updateFirebaseToken(newToken: String?): Either<Exception, String> {
-    return withContext(coroutineContext) {
-      return@withContext myRunCatching {
-        return@myRunCatching updateTokenInternal(newToken)
-      }
+  private suspend fun updateFirebaseTokenInternal(newToken: String): String {
+    //always retrieve fresh token from the firebase instead of reading it from the database
+    val freshToken = try {
+      firebaseRemoteSource.getTokenAsync().await()
+    } catch (error: Throwable) {
+      throw FirebaseException(error.message)
     }
-  }
 
-  private suspend fun updateTokenInternal(newToken: String?): String {
-    if (newToken.isNullOrEmpty()) {
+    if (freshToken.isNullOrEmpty()) {
       throw FirebaseException("Token is empty or null!")
     }
 
-    if (!settingsRepository.saveFirebaseToken(newToken)) {
-      throw DatabaseException("Could not store new firebase token")
+    //update both the regular firebase token and the new one since we have just retrieved
+    //the latest token directly from the firebase
+    if (!settingsRepository.saveFirebaseToken(freshToken)) {
+      throw DatabaseException("Could not update firebase firebase token")
+    }
+
+    if (!settingsRepository.saveNewFirebaseToken(freshToken)) {
+      throw DatabaseException("Could not update new firebase firebase token")
     }
 
     val userId = settingsRepository.getUserId()
@@ -62,13 +70,18 @@ open class UpdateFirebaseTokenUseCase(
     } catch (error: ApiErrorException) {
       Timber.tag(TAG).e(error)
 
+      //reset both tokens when unknown error occurred
       if (!settingsRepository.saveFirebaseToken(null)) {
+        throw DatabaseException("Could not reset firebase token")
+      }
+
+      if (!settingsRepository.saveNewFirebaseToken(null)) {
         throw DatabaseException("Could not reset firebase token")
       }
 
       throw error
     }
 
-    return newToken!!
+    return newToken
   }
 }

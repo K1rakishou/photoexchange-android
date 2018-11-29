@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.helper.database.source.remote
 
 import com.google.firebase.iid.FirebaseInstanceId
+import com.kirakishou.photoexchange.helper.Constants
 import kotlinx.coroutines.CompletableDeferred
 
 class FirebaseRemoteSource(
@@ -15,7 +16,7 @@ class FirebaseRemoteSource(
      * and all users with this token won't receive any push notifications
      * */
     if (!isGoogleServicesAvailable()) {
-      result.complete(NO_GOOGLE_PLAY_SERVICES_DEFAULT_TOKEN)
+      result.complete(Constants.NO_GOOGLE_PLAY_SERVICES_DEFAULT_TOKEN)
     } else {
       firebaseInstanceId.instanceId.addOnCompleteListener { task ->
         if (!task.isSuccessful) {
@@ -33,9 +34,5 @@ class FirebaseRemoteSource(
   private fun isGoogleServicesAvailable(): Boolean {
     //TODO:
     return true
-  }
-
-  companion object {
-    const val NO_GOOGLE_PLAY_SERVICES_DEFAULT_TOKEN = "NO_GOOGLE_PLAY_SERVICES_DEFAULT_TOKEN"
   }
 }

@@ -1,12 +1,12 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
+import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.source.local.ReceivePhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.TakenPhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.UploadPhotosLocalSource
-import com.kirakishou.photoexchange.helper.database.source.remote.ReceivePhotosRemoteSource
 import com.kirakishou.photoexchange.interactors.ReceivePhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.helper.exception.ApiErrorException
@@ -17,7 +17,7 @@ import timber.log.Timber
 
 class ReceivePhotosRepository(
   private val database: MyDatabase,
-  private val receivePhotosRemoteSource: ReceivePhotosRemoteSource,
+  private val apiClient: ApiClient,
   private val receivePhotosLocalSource: ReceivePhotosLocalSource,
   private val uploadedPhotosLocalSource: UploadPhotosLocalSource,
   private val takenPhotosLocalSource: TakenPhotosLocalSource,
@@ -28,7 +28,7 @@ class ReceivePhotosRepository(
   suspend fun receivePhotos(userId: String, photoNames: String): List<ReceivedPhoto> {
     return withContext(coroutineContext) {
       val receivedPhotos = try {
-        receivePhotosRemoteSource.receivePhotos(userId, photoNames)
+        apiClient.receivePhotos(userId, photoNames)
       } catch (error: ApiErrorException) {
         throw ReceivePhotosUseCase.ReceivePhotosServiceException.ApiException(error.errorCode)
       }

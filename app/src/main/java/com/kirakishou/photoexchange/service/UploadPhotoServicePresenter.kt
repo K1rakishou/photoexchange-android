@@ -162,7 +162,7 @@ open class UploadPhotoServicePresenter(
   }
 
   private suspend fun updateFirebaseToken() {
-    val result = updateFirebaseTokenUseCase.updateFirebaseToken()
+    val result = updateFirebaseTokenUseCase.updateFirebaseTokenIfNecessary()
 
     when (result) {
       is Either.Value -> {

@@ -14,6 +14,7 @@ object Constants {
   const val BASE_STATIC_MAP_URL = "${BASE_URL}v1/api/get_static_map"
   const val DATABASE_NAME = "photoexchange_db"
   const val DOMAIN_NAME = "photoexchange.io"
+  const val NO_GOOGLE_PLAY_SERVICES_DEFAULT_TOKEN = "NO_GOOGLE_PLAY_SERVICES_DEFAULT_TOKEN"
 
   const val PHOTOS_SEPARATOR = ","
   const val DEFAULT_ADAPTER_ITEM_WIDTH = 288

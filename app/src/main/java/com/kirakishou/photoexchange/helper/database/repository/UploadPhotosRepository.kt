@@ -4,7 +4,6 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersPro
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.source.local.TakenPhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.UploadPhotosLocalSource
-import com.kirakishou.photoexchange.helper.database.source.remote.UploadPhotosRemoteSource
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.BitmapUtils
 import com.kirakishou.photoexchange.helper.util.FileUtils
@@ -14,6 +13,7 @@ import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.helper.exception.ApiErrorException
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.helper.LonLat
+import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.withContext
@@ -24,7 +24,7 @@ class UploadPhotosRepository(
   private val bitmapUtils: BitmapUtils,
   private val fileUtils: FileUtils,
   private val takenPhotosLocalSource: TakenPhotosLocalSource,
-  private val uploadPhotosRemoteSource: UploadPhotosRemoteSource,
+  private val apiClient: ApiClient,
   private val uploadPhotosLocalSource: UploadPhotosLocalSource,
   dispatchersProvider: DispatchersProvider
 ) : BaseRepository(dispatchersProvider) {
@@ -48,7 +48,7 @@ class UploadPhotosRepository(
         }
 
         val result = try {
-          uploadPhotosRemoteSource.uploadPhoto(photoFile.absolutePath, location, userId, photo.isPublic, photo, channel)
+          apiClient.uploadPhoto(photoFile.absolutePath, location, userId, photo.isPublic, photo, channel)
         } catch (error: ApiErrorException) {
           throw ApiErrorException(error.errorCode)
         }

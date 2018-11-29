@@ -1,14 +1,13 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
 import com.kirakishou.photoexchange.helper.Constants
+import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosInfoMapper
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosMapper
 import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoInfoLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoLocalSource
-import com.kirakishou.photoexchange.helper.database.source.remote.GalleryPhotoInfoRemoteSource
-import com.kirakishou.photoexchange.helper.database.source.remote.GalleryPhotoRemoteSource
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhotoInfo
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
@@ -16,9 +15,8 @@ import kotlinx.coroutines.withContext
 
 open class GetGalleryPhotosRepository(
   private val database: MyDatabase,
-  private val galleryPhotoRemoteSource: GalleryPhotoRemoteSource,
+  private val apiClient: ApiClient,
   private val galleryPhotoLocalSource: GalleryPhotoLocalSource,
-  private val galleryPhotoInfoRemoteSource: GalleryPhotoInfoRemoteSource,
   private val galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
   dispatchersProvider: DispatchersProvider
 ) : BaseRepository(dispatchersProvider) {
@@ -61,7 +59,7 @@ open class GetGalleryPhotosRepository(
     }
 
     //otherwise reload the page from the server
-    val galleryPhotos = galleryPhotoRemoteSource.getPageOfGalleryPhotos(time, count)
+    val galleryPhotos = apiClient.getPageOfGalleryPhotos(time, count)
     if (galleryPhotos.isEmpty()) {
       return cachedGalleryPhotos
     }
@@ -80,7 +78,7 @@ open class GetGalleryPhotosRepository(
     }
 
     val requestString = photoNameList.joinToString(separator = Constants.PHOTOS_SEPARATOR)
-    val galleryPhotosInfo = galleryPhotoInfoRemoteSource.getGalleryPhotoInfo(userId, requestString)
+    val galleryPhotosInfo = apiClient.getGalleryPhotoInfo(userId, requestString)
     if (galleryPhotosInfo.isEmpty()) {
       return emptyList()
     }
