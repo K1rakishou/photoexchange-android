@@ -91,7 +91,7 @@ class GalleryFragmentViewModel(
   }
 
   private fun reportPhotoInternal(photoName: String) {
-
+    //TODO
   }
 
   private fun favouritePhotoInternal(photoName: String) {
@@ -100,7 +100,12 @@ class GalleryFragmentViewModel(
         setState { copy(isFavouriteRequestActive = true) }
 
         val result = try {
-          Success(doFavouritePhoto(photoName))
+          val result = favouritePhotoUseCase.favouritePhoto(photoName)
+          if (result is Either.Error)  {
+            throw result.error
+          }
+
+          Success((result as Either.Value).value)
         } catch (error: Throwable) {
           Fail<FavouritePhotoActionResult>(error)
         }
@@ -194,13 +199,22 @@ class GalleryFragmentViewModel(
           ?: -1L
 
         val request = try {
-          Success(loadPageOfGalleryPhotos(lastUploadedOn, photosPerPage))
+          val result = getGalleryPhotosUseCase.loadPageOfPhotos(lastUploadedOn, photosPerPage)
+          if (result is Either.Error) {
+            throw result.error
+          }
+
+          result as Either.Value
+          val galleryPhotos = result.value
+            .map { galleryPhoto -> galleryPhoto.copy(photoSize = photoSize) }
+
+          Success(galleryPhotos)
         } catch (error: Throwable) {
           Fail<List<GalleryPhoto>>(error)
         }
 
         val newGalleryPhotos = request() ?: emptyList()
-        val isEndReached = newGalleryPhotos.isEmpty() || newGalleryPhotos.size % photosPerPage != 0
+        val isEndReached = newGalleryPhotos.size < photosPerPage
 
         setState {
           copy(
@@ -209,35 +223,6 @@ class GalleryFragmentViewModel(
             galleryPhotos = state.galleryPhotos + newGalleryPhotos
           )
         }
-      }
-    }
-  }
-
-  private suspend fun doFavouritePhoto(photoName: String): FavouritePhotoActionResult {
-    val result = favouritePhotoUseCase.favouritePhoto(photoName)
-    return when (result) {
-      is Either.Value -> {
-        result.value
-      }
-      is Either.Error -> {
-        throw result.error
-      }
-    }
-  }
-
-  private suspend fun loadPageOfGalleryPhotos(
-    lastUploadedOn: Long,
-    count: Int
-  ): List<GalleryPhoto> {
-    val result = getGalleryPhotosUseCase.loadPageOfPhotos(lastUploadedOn, count)
-    when (result) {
-      is Either.Value -> {
-        return result.value.also { galleryPhotos ->
-          galleryPhotos.map { galleryPhoto -> galleryPhoto.copy(photoSize = photoSize) }
-        }
-      }
-      is Either.Error -> {
-        throw result.error
       }
     }
   }

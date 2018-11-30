@@ -92,6 +92,7 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
     when (event) {
       UploadedPhotosFragmentEvent.GeneralEvents.FetchFreshPhotos -> {
         Timber.tag(TAG).d("FetchFreshPhotos received, lifecycle = ${lifecycle.getCurrentLifecycle()}")
+        viewModel.uploadedPhotosFragmentViewModel.fetchFreshPhotos()
       }
     }.safe
   }

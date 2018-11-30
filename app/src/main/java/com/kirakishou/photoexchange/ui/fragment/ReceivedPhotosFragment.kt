@@ -106,6 +106,7 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
       }
       ReceivedPhotosFragmentEvent.GeneralEvents.FetchFreshPhotos -> {
         Timber.tag(TAG).d("FetchFreshPhotos received, lifecycle = ${lifecycle.getCurrentLifecycle()}")
+        viewModel.receivedPhotosFragmentViewModel.fetchFreshPhotos()
       }
     }.safe
   }

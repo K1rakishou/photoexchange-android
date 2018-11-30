@@ -67,12 +67,11 @@ class UploadedPhotosFragmentViewModel(
           is ActorAction.CancelPhotoUploading -> cancelPhotoUploadingInternal(action.photoId)
           ActorAction.LoadQueuedUpPhotos -> loadQueuedUpPhotosInternal()
           ActorAction.LoadUploadedPhotos -> loadUploadedPhotosInternal()
+          ActorAction.FetchFreshPhotos -> fetchFreshPhotosInternal()
         }.safe
       }
     }
 
-    //FIXME: probably should call this after the permission check.
-    //Otherwise this leads to starting the uploading server before the recycler view has been initialized
     loadQueuedUpPhotos()
   }
 
@@ -90,6 +89,15 @@ class UploadedPhotosFragmentViewModel(
 
   fun loadUploadedPhotos() {
     launch { viewModelActor.send(ActorAction.LoadUploadedPhotos) }
+  }
+
+  fun fetchFreshPhotos() {
+    launch { viewModelActor.send(ActorAction.FetchFreshPhotos) }
+  }
+
+  private fun fetchFreshPhotosInternal() {
+    // should we fetch fresh photos if we have queued up photos? Probably yes,
+    // but we should not show them until we have no queued up photos
   }
 
   private fun resetStateInternal() {
@@ -158,13 +166,23 @@ class UploadedPhotosFragmentViewModel(
         setState { copy(uploadedPhotosRequest = Loading()) }
 
         val request = try {
-          Success(loadPageOfUploadedPhotos(lastUploadedOn, photosPerPage))
+          val result = getUploadedPhotosUseCase.loadPageOfPhotos(lastUploadedOn, photosPerPage)
+          if (result is Either.Error) {
+            throw result.error
+          }
+
+          result as Either.Value
+
+          val uploadedPhotos = result.value
+            .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
+
+          Success(uploadedPhotos)
         } catch (error: Throwable) {
           Fail<List<UploadedPhoto>>(error)
         }
 
         val newUploadedPhotos = request() ?: emptyList()
-        val isEndReached = newUploadedPhotos.isEmpty() || newUploadedPhotos.size % photosPerPage != 0
+        val isEndReached = newUploadedPhotos.size < photosPerPage
 
         val hasPhotosWithNoReceiver = newUploadedPhotos.any { it.receiverInfo == null }
         if (hasPhotosWithNoReceiver) {
@@ -178,22 +196,6 @@ class UploadedPhotosFragmentViewModel(
             uploadedPhotos = state.uploadedPhotos + newUploadedPhotos
           )
         }
-      }
-    }
-  }
-
-  private suspend fun loadPageOfUploadedPhotos(
-    lastUploadedOn: Long,
-    count: Int
-  ): List<UploadedPhoto> {
-    val result = getUploadedPhotosUseCase.loadPageOfPhotos(lastUploadedOn, count)
-    when (result) {
-      is Either.Value -> {
-        return result.value
-          .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
-      }
-      is Either.Error -> {
-        throw result.error
       }
     }
   }
@@ -405,6 +407,7 @@ class UploadedPhotosFragmentViewModel(
     class CancelPhotoUploading(val photoId: Long) : ActorAction()
     object LoadQueuedUpPhotos : ActorAction()
     object LoadUploadedPhotos : ActorAction()
+    object FetchFreshPhotos : ActorAction()
   }
 
   companion object : MvRxViewModelFactory<UploadedPhotosFragmentState> {
