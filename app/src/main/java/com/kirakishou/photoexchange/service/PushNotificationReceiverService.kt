@@ -21,7 +21,6 @@ import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
 
 class PushNotificationReceiverService : FirebaseMessagingService() {
   private val TAG = "PushNotificationReceiverService"
-  private val NOTIFICATION_ID = 3
   private val CHANNEL_ID by lazy { getString(R.string.default_notification_channel_id) }
   private val CHANNED_NAME = "name"
 
@@ -53,6 +52,7 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
       Timber.tag(TAG).d("Some photo has been exchanged")
 
       showNotification()
+      sendPhotoReceivedBroadcast()
     }
   }
 
@@ -77,13 +77,25 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
     }
   }
 
+  private fun sendPhotoReceivedBroadcast() {
+    Timber.tag(TAG).d("sendPhotoReceivedBroadcast called")
+
+    val intent = Intent().apply {
+      action = PhotosActivity.newPhotoReceivedAction
+    }
+
+    sendBroadcast(intent)
+  }
+
   private fun showNotification() {
+    Timber.tag(TAG).d("showNotification called")
+
     val backIntent = Intent(this, TakePhotoActivity::class.java).apply {
       addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
     }
 
     val intent = Intent(this, PhotosActivity::class.java).apply {
-      putExtra(PhotosActivity.extraNewPhotoNotificationReceived, true)
+      putExtra(PhotosActivity.extraNewPhotoReceived, true)
     }
 
     val pendingIntent = PendingIntent.getActivities(
@@ -126,5 +138,6 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
     }
 
     const val photoExchangedFlag = "photo_exchanged"
+    const val NOTIFICATION_ID = 3
   }
 }

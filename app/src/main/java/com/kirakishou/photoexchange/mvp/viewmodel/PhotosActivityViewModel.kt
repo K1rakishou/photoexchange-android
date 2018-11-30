@@ -40,4 +40,8 @@ class PhotosActivityViewModel(
 
     return uploadedPhotosCount > receivedPhotosCount
   }
+
+  fun getFreshPhotos() {
+    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+  }
 }

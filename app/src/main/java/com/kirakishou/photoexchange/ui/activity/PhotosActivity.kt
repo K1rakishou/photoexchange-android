@@ -1,18 +1,17 @@
 package com.kirakishou.photoexchange.ui.activity
 
-import android.Manifest
+import android.app.NotificationManager
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
+import android.content.IntentFilter
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.view.MenuItem
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.PopupMenu
-import android.widget.Toast
 import androidx.coordinatorlayout.widget.CoordinatorLayout
-import androidx.core.app.ActivityCompat
 import androidx.viewpager.widget.ViewPager
 import butterknife.BindView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -31,26 +30,19 @@ import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
-import com.kirakishou.photoexchange.service.ReceivePhotosService
-import com.kirakishou.photoexchange.service.ReceivePhotosServiceConnection
-import com.kirakishou.photoexchange.service.UploadPhotoService
-import com.kirakishou.photoexchange.service.UploadPhotoServiceConnection
+import com.kirakishou.photoexchange.service.*
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingServiceCallback
 import com.kirakishou.photoexchange.ui.callback.ReceivePhotosServiceCallback
-import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
 import com.kirakishou.photoexchange.ui.viewstate.PhotosActivityViewState
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
-import core.ErrorCode
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.exceptions.CompositeException
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -87,6 +79,8 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
   private val TAG = "PhotosActivity"
   private val FRAGMENT_SCROLL_DELAY_MS = 250L
+  private val NOTIFICATION_CANCEL_DELAY_MS = 100L
+
   private val UPLOADED_PHOTOS_TAB_INDEX = 0
   private val RECEIVED_PHOTOS_TAB_INDEX = 1
   private val GALLERY_PHOTOS_TAB_INDEX = 2
@@ -98,6 +92,34 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   private var viewState = PhotosActivityViewState()
   private val permissionManager = PermissionManager()
 
+  /**
+   * When we receive a push notification we show a notification and send a broadcast to the activity.
+   * If this activity is dead - then the user will see the notification.
+   * But if it's not then we don't need to show the notification. What we need to do instead is automatically
+   * fetch fresh data from the server. So upon receiving this broadcast we firstly cancel the notification and
+   * then fetch fresh data.
+   * */
+  private val notificationBroadcastReceiver = object : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+      Timber.tag(TAG).d("Received new broadcast with action ${intent.action}")
+
+      if (intent.action == null || intent.action != newPhotoReceivedAction) {
+        return
+      }
+
+      launch {
+        //add slight delay here to ensure that "notificationManager.cancel" is called AFTER
+        //the notification has been shown
+        delay(NOTIFICATION_CANCEL_DELAY_MS)
+
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(PushNotificationReceiverService.NOTIFICATION_ID)
+      }
+
+      viewModel.getFreshPhotos()
+    }
+  }
+
   override fun getContentView(): Int = R.layout.activity_all_photos
 
   override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
@@ -106,12 +128,14 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
     receivePhotosServiceConnection = ReceivePhotosServiceConnection(this)
     uploadPhotosServiceConnection = UploadPhotoServiceConnection(this)
 
-    if (intent.getBooleanExtra(extraNewPhotoNotificationReceived, false)) {
+    if (intent.getBooleanExtra(extraNewPhotoReceived, false)) {
       onNewPhotoNotification()
     }
   }
 
   override fun onActivityStart() {
+    registerReceiver(notificationBroadcastReceiver, IntentFilter(newPhotoReceivedAction))
+
     initRx()
     initViews()
   }
@@ -119,12 +143,14 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   override fun onActivityStop() {
     receivePhotosServiceConnection.onFindingServiceDisconnected()
     uploadPhotosServiceConnection.onUploadingServiceDisconnected()
+
+    unregisterReceiver(notificationBroadcastReceiver)
   }
 
   override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
 
-    if (intent.getBooleanExtra(extraNewPhotoNotificationReceived, false)) {
+    if (intent.getBooleanExtra(extraNewPhotoReceived, false)) {
       onNewPhotoNotification()
     }
   }
@@ -379,6 +405,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   companion object {
-    const val extraNewPhotoNotificationReceived = "new_photo_notification_received"
+    const val extraNewPhotoReceived = "new_photo_received"
+    const val newPhotoReceivedAction = "com.kirakishou.photoexchange.NEW_PHOTO_RECEIVED"
   }
 }
