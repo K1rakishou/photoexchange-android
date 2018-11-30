@@ -10,10 +10,12 @@ import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.helper.Constants
+import com.kirakishou.photoexchange.helper.RxLifecycle
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.epoxy.controller.UploadedPhotosFragmentEpoxyController
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.rxkotlin.zipWith
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -54,6 +56,9 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
 
   private fun initRx() {
     compositeDisposable += viewModel.intercom.uploadedPhotosFragmentEvents.listen()
+      .zipWith(lifecycle.getLifecycleObservable())
+      .filter { (_, lifecycle) -> lifecycle.isAtLeast(RxLifecycle.FragmentState.Created) }
+      .map { (event, _) -> event }
       .subscribe(
         { event -> launch { onStateEvent(event) } },
         { error -> Timber.tag(TAG).e(error) }
@@ -84,7 +89,11 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
       return
     }
 
-    //no events for now
+    when (event) {
+      UploadedPhotosFragmentEvent.GeneralEvents.FetchFreshPhotos -> {
+        Timber.tag(TAG).d("FetchFreshPhotos received, lifecycle = ${lifecycle.getCurrentLifecycle()}")
+      }
+    }.safe
   }
 
   override fun resolveDaggerDependency() {

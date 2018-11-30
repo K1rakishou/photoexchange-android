@@ -12,13 +12,16 @@ import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.helper.Constants
+import com.kirakishou.photoexchange.helper.RxLifecycle
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.epoxy.controller.ReceivedPhotosFragmentEpoxyController
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -69,6 +72,9 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
       })
 
     compositeDisposable += viewModel.intercom.receivedPhotosFragmentEvents.listen()
+      .zipWith(lifecycle.getLifecycleObservable())
+      .filter { (_, lifecycle) -> lifecycle.isAtLeast(RxLifecycle.FragmentState.Created) }
+      .map { (event, _) -> event }
       .subscribe({ event ->
         launch { onStateEvent(event) }
       })
@@ -97,6 +103,9 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
     when (event) {
       is ReceivedPhotosFragmentEvent.GeneralEvents.ScrollToTop -> {
         recyclerView.scrollToPosition(0)
+      }
+      ReceivedPhotosFragmentEvent.GeneralEvents.FetchFreshPhotos -> {
+        Timber.tag(TAG).d("FetchFreshPhotos received, lifecycle = ${lifecycle.getCurrentLifecycle()}")
       }
     }.safe
   }

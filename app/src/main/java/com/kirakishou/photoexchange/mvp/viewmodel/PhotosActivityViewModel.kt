@@ -5,7 +5,12 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
+import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
+import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
+import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
+import timber.log.Timber
 
 /**
  * Created by kirakishou on 3/11/2018.
@@ -41,7 +46,12 @@ class PhotosActivityViewModel(
     return uploadedPhotosCount > receivedPhotosCount
   }
 
-  fun getFreshPhotos() {
-    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+  fun fetchFreshPhotos() {
+    Timber.tag(TAG).d("fetchFreshPhotos called")
+
+    intercom.tell<UploadedPhotosFragment>()
+      .to(UploadedPhotosFragmentEvent.GeneralEvents.FetchFreshPhotos)
+    intercom.tell<ReceivedPhotosFragment>()
+      .to(ReceivedPhotosFragmentEvent.GeneralEvents.FetchFreshPhotos)
   }
 }

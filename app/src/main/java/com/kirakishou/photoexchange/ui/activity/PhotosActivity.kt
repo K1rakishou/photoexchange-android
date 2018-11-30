@@ -116,7 +116,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
         notificationManager.cancel(PushNotificationReceiverService.NOTIFICATION_ID)
       }
 
-      viewModel.getFreshPhotos()
+      viewModel.fetchFreshPhotos()
     }
   }
 
