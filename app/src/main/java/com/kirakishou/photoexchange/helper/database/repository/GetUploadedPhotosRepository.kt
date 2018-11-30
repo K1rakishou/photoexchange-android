@@ -18,8 +18,6 @@ class GetUploadedPhotosRepository(
 
   suspend fun getPage(userId: String, time: Long, count: Int): List<UploadedPhoto> {
     return withContext(coroutineContext) {
-      uploadedPhotosLocalSource.deleteOldPhotos()
-
       val uploadedPhotos = getPageInternal(time, count, userId)
       val uploadedPhotosWithNoReceiver = uploadedPhotos
         .filter { it.receiverInfo == null }

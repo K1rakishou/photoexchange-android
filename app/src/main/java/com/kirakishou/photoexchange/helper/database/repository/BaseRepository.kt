@@ -10,6 +10,6 @@ abstract class BaseRepository(
 ) : CoroutineScope {
   private val job = Job()
 
-  override val coroutineContext: CoroutineContext
+  final override val coroutineContext: CoroutineContext
     get() = job + dispatchersProvider.DB()
 }

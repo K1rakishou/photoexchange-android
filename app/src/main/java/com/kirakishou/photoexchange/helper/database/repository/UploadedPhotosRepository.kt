@@ -1,14 +1,17 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
+import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
+import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import kotlinx.coroutines.withContext
 
 open class UploadedPhotosRepository(
   private val database: MyDatabase,
+  private val timeUtils: TimeUtils,
   dispatchersProvider: DispatchersProvider
 ) : BaseRepository(dispatchersProvider) {
   private val TAG = "UploadedPhotosRepository"
@@ -55,6 +58,13 @@ open class UploadedPhotosRepository(
   suspend fun deleteAll() {
     withContext(coroutineContext) {
       uploadedPhotoDao.deleteAll()
+    }
+  }
+
+  suspend fun deleteOldPhotos() {
+    return withContext(coroutineContext) {
+      val now = timeUtils.getTimeFast()
+      uploadedPhotoDao.deleteOlderThan(now - Constants.UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME)
     }
   }
 }

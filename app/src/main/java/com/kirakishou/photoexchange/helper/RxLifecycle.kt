@@ -1,33 +1,47 @@
 package com.kirakishou.photoexchange.helper
 
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.OnLifecycleEvent
 import io.reactivex.Observable
 import io.reactivex.subjects.BehaviorSubject
 
-class RxLifecycle {
+class RxLifecycle : LifecycleObserver {
   private val lifecycleSubject = BehaviorSubject.createDefault(FragmentLifecycle.onDestroy)
 
-  fun getLifecycle(): Observable<FragmentLifecycle> = lifecycleSubject
+  fun start(lifecycleOwner: LifecycleOwner) = lifecycleOwner.lifecycle.addObserver(this)
+  fun stop(lifecycleOwner: LifecycleOwner) = lifecycleOwner.lifecycle.removeObserver(this)
 
+  fun getLifecycleObservable(): Observable<FragmentLifecycle> = lifecycleSubject
+  fun getCurrentLifecycle(): FragmentLifecycle = lifecycleSubject.value!!
+
+  @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
   fun onCreate() {
     lifecycleSubject.onNext(FragmentLifecycle.onCreate)
   }
 
+  @OnLifecycleEvent(Lifecycle.Event.ON_START)
   fun onStart() {
     lifecycleSubject.onNext(FragmentLifecycle.onStop)
   }
 
+  @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
   fun onResume() {
     lifecycleSubject.onNext(FragmentLifecycle.onResume)
   }
 
+  @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
   fun onPause() {
     lifecycleSubject.onNext(FragmentLifecycle.onPause)
   }
 
+  @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
   fun onStop() {
     lifecycleSubject.onNext(FragmentLifecycle.onStop)
   }
 
+  @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
   fun onDestroy() {
     lifecycleSubject.onNext(FragmentLifecycle.onDestroy)
   }

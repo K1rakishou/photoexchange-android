@@ -29,4 +29,7 @@ abstract class GalleryPhotoInfoDao {
   @Query("DELETE FROM ${GalleryPhotoInfoEntity.TABLE_NAME} " +
     "WHERE ${GalleryPhotoInfoEntity.INSERTED_ON_COLUMN} < :time")
   abstract fun deleteOlderThan(time: Long)
+
+  @Query("DELETE FROM ${GalleryPhotoInfoEntity.TABLE_NAME}")
+  abstract fun deleteAll()
 }

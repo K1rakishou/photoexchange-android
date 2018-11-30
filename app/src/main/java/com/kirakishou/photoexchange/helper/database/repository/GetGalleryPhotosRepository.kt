@@ -24,8 +24,6 @@ open class GetGalleryPhotosRepository(
 
   suspend fun getPage(userId: String, time: Long, count: Int): List<GalleryPhoto> {
     return withContext(coroutineContext) {
-      deleteOld()
-
       val galleryPhotos = getPageOfGalleryPhotos(time, count).toMutableList()
       val galleryPhotosInfoList = getGalleryPhotosInfo(userId, galleryPhotos.map { it.photoName })
 
@@ -41,13 +39,6 @@ open class GetGalleryPhotosRepository(
 
       return@withContext galleryPhotos
         .sortedByDescending { it.uploadedOn }
-    }
-  }
-
-  private suspend fun deleteOld() {
-    database.transactional {
-      galleryPhotoLocalSource.deleteOld()
-      galleryPhotoInfoLocalSource.deleteOld()
     }
   }
 

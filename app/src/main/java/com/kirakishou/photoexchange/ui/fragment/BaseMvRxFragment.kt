@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.ui.fragment
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -13,6 +14,7 @@ import com.airbnb.epoxy.EpoxyRecyclerView
 import com.airbnb.mvrx.BaseMvRxFragment
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
 import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.helper.RxLifecycle
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
@@ -20,12 +22,13 @@ import kotlin.coroutines.CoroutineContext
 
 abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
   private val spanCount = 1
-  private val job = Job()
 
   private val invalidationActor: SendChannel<Unit>
 
   protected val compositeDisposable = CompositeDisposable()
-  protected val compositeChannel = mutableListOf<ReceiveChannel<Any>>()
+  protected val lifecycle = RxLifecycle()
+
+  private val job = Job()
   protected lateinit var recyclerView: EpoxyRecyclerView
   protected lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
@@ -44,6 +47,19 @@ abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
         postInvalidate()
       }
     }
+  }
+
+  override fun onAttach(context: Context?) {
+    super.onAttach(context)
+
+    lifecycle.start(this)
+  }
+
+  override fun onDetach() {
+    super.onDetach()
+
+    job.cancel()
+    lifecycle.stop(this)
   }
 
   @CallSuper
@@ -98,9 +114,6 @@ abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
 
     compositeDisposable.clear()
     job.cancel()
-
-    compositeChannel.forEach { it.cancel() }
-    compositeChannel.clear()
 
     super.onDestroyView()
   }

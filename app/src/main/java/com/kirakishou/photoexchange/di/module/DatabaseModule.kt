@@ -58,28 +58,28 @@ open class DatabaseModule(
   @Provides
   open fun provideGalleryPhotoLocalSource(database: MyDatabase,
                                           timeUtils: TimeUtils): GalleryPhotoLocalSource {
-    return GalleryPhotoLocalSource(database, timeUtils, GALLERY_PHOTOS_CACHE_MAX_LIVE_TIME)
+    return GalleryPhotoLocalSource(database, timeUtils)
   }
 
   @Singleton
   @Provides
   open fun provideGalleryPhotoInfoLocalSource(database: MyDatabase,
                                               timeUtils: TimeUtils): GalleryPhotoInfoLocalSource {
-    return GalleryPhotoInfoLocalSource(database, timeUtils, GALLERY_PHOTOS_INFO_CACHE_MAX_LIVE_TIME)
+    return GalleryPhotoInfoLocalSource(database, timeUtils)
   }
 
   @Singleton
   @Provides
   open fun provideReceivePhotosLocalSource(database: MyDatabase,
                                            timeUtils: TimeUtils): ReceivePhotosLocalSource {
-    return ReceivePhotosLocalSource(database, timeUtils, RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME)
+    return ReceivePhotosLocalSource(database, timeUtils)
   }
 
   @Singleton
   @Provides
   open fun provideUploadPhotosLocalSource(database: MyDatabase,
                                           timeUtils: TimeUtils): UploadPhotosLocalSource {
-    return UploadPhotosLocalSource(database, timeUtils, UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME)
+    return UploadPhotosLocalSource(database, timeUtils)
   }
 
   @Singleton
@@ -163,6 +163,7 @@ open class DatabaseModule(
                                           dispatchersProvider: DispatchersProvider): UploadedPhotosRepository {
     return UploadedPhotosRepository(
       database,
+      timeUtils,
       dispatchersProvider
     )
   }
@@ -274,6 +275,18 @@ open class DatabaseModule(
     return GetUploadedPhotosRepository(
       uploadedPhotosLocalSource,
       apiClient,
+      dispatchersProvider
+    )
+  }
+
+  @Singleton
+  @Provides
+  open fun provideGalleryPhotosRepository(database: MyDatabase,
+                                          timeUtils: TimeUtils,
+                                          dispatchersProvider: DispatchersProvider): GalleryPhotosRepository {
+    return GalleryPhotosRepository(
+      database,
+      timeUtils,
       dispatchersProvider
     )
   }

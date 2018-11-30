@@ -13,6 +13,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragment
 import com.kirakishou.photoexchange.interactors.GetReceivedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.helper.Constants
+import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.mvp.viewmodel.state.ReceivedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
@@ -31,6 +32,7 @@ import kotlin.coroutines.CoroutineContext
 class ReceivedPhotosFragmentViewModel(
   initialState: ReceivedPhotosFragmentState,
   private val intercom: PhotosActivityViewModelIntercom,
+  private val receivedPhotosRepository: ReceivedPhotosRepository,
   private val getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
   private val dispatchersProvider: DispatchersProvider
 ) : BaseMvRxViewModel<ReceivedPhotosFragmentState>(initialState, BuildConfig.DEBUG), CoroutineScope {
@@ -55,8 +57,9 @@ class ReceivedPhotosFragmentViewModel(
 
         when (action) {
           ActorAction.LoadReceivedPhotos -> loadReceivedPhotosInternal()
-          ActorAction.ResetState -> resetStateInternal()
+          is ActorAction.ResetState -> resetStateInternal(action.clearCache)
           is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.receivedPhotoName)
+          ActorAction.FetchFreshPhotos -> fetchFreshPhotosInternal()
         }.safe
       }
     }
@@ -68,12 +71,20 @@ class ReceivedPhotosFragmentViewModel(
     launch { viewModelActor.send(ActorAction.LoadReceivedPhotos) }
   }
 
-  fun resetState() {
-    launch { viewModelActor.send(ActorAction.ResetState) }
+  fun resetState(clearCache: Boolean = false) {
+    launch { viewModelActor.send(ActorAction.ResetState(clearCache)) }
   }
 
   fun swapPhotoAndMap(receivedPhotoName: String) {
     launch { viewModelActor.send(ActorAction.SwapPhotoAndMap(receivedPhotoName)) }
+  }
+
+  fun fetchFreshPhotos() {
+    launch { viewModelActor.send(ActorAction.FetchFreshPhotos) }
+  }
+
+  private fun fetchFreshPhotosInternal() {
+    //TODO
   }
 
   private fun swapPhotoAndMapInternal(receivedPhotoName: String) {
@@ -94,9 +105,15 @@ class ReceivedPhotosFragmentViewModel(
     }
   }
 
-  private fun resetStateInternal() {
-    setState { ReceivedPhotosFragmentState() }
-    launch { viewModelActor.send(ActorAction.LoadReceivedPhotos) }
+  private fun resetStateInternal(clearCache: Boolean) {
+    launch {
+      if (clearCache) {
+        receivedPhotosRepository.deleteAll()
+      }
+
+      setState { ReceivedPhotosFragmentState() }
+      viewModelActor.send(ActorAction.LoadReceivedPhotos)
+    }
   }
 
   private suspend fun loadReceivedPhotosInternal() {
@@ -112,13 +129,29 @@ class ReceivedPhotosFragmentViewModel(
           ?: -1L
 
         val request = try {
-          Success(loadPageOfReceivedPhotos(lastUploadedOn, photosPerPage))
+          receivedPhotosRepository.deleteOldPhotos()
+
+          val result = getReceivedPhotosUseCase.loadPageOfPhotos(lastUploadedOn, photosPerPage)
+          if (result is Either.Error) {
+            throw result.error
+          }
+
+          result as Either.Value
+
+          intercom.tell<UploadedPhotosFragment>()
+            .to(UploadedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived(result.value))
+
+          val receivedPhotos = result.value.also { receivedPhotos ->
+            receivedPhotos.map { receivedPhoto -> receivedPhoto.copy(photoSize = photoSize) }
+          }
+
+          Success(receivedPhotos)
         } catch (error: Throwable) {
           Fail<List<ReceivedPhoto>>(error)
         }
 
         val newReceivedPhotos = request() ?: emptyList()
-        val isEndReached = newReceivedPhotos.isEmpty() || newReceivedPhotos.size % photosPerPage != 0
+        val isEndReached = newReceivedPhotos.size < photosPerPage
 
         setState {
           copy(
@@ -127,26 +160,6 @@ class ReceivedPhotosFragmentViewModel(
             receivedPhotos = state.receivedPhotos + newReceivedPhotos
           )
         }
-      }
-    }
-  }
-
-  private suspend fun loadPageOfReceivedPhotos(
-    lastUploadedOn: Long,
-    photosPerPage: Int
-  ): List<ReceivedPhoto> {
-    val result = getReceivedPhotosUseCase.loadPageOfPhotos(lastUploadedOn, photosPerPage)
-    when (result) {
-      is Either.Value -> {
-        intercom.tell<UploadedPhotosFragment>()
-          .to(UploadedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived(result.value))
-
-        return result.value.also { receivedPhotos ->
-          receivedPhotos.map { receivedPhoto -> receivedPhoto.copy(photoSize = photoSize) }
-        }
-      }
-      is Either.Error -> {
-        throw result.error
       }
     }
   }
@@ -202,8 +215,9 @@ class ReceivedPhotosFragmentViewModel(
 
   sealed class ActorAction {
     object LoadReceivedPhotos : ActorAction()
-    object ResetState : ActorAction()
+    class ResetState(val clearCache: Boolean) : ActorAction()
     class SwapPhotoAndMap(val receivedPhotoName: String) : ActorAction()
+    object FetchFreshPhotos : ActorAction()
   }
 
   companion object : MvRxViewModelFactory<ReceivedPhotosFragmentState> {

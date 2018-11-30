@@ -10,8 +10,7 @@ import net.response.GetUploadedPhotosResponse
 
 open class UploadPhotosLocalSource(
   private val database: MyDatabase,
-  private val timeUtils: TimeUtils,
-  private val uploadedPhotoMaxCacheLiveTime: Long
+  private val timeUtils: TimeUtils
 ) {
   private val uploadedPhotoDao = database.uploadedPhotoDao()
 
@@ -58,11 +57,4 @@ open class UploadPhotosLocalSource(
   fun updateReceiverInfo(uploadedPhotoName: String, receiverLon: Double, receiverLat: Double): Boolean {
     return uploadedPhotoDao.updateReceiverInfo(uploadedPhotoName, receiverLon, receiverLat) == 1
   }
-
-  //TODO: tests
-  open fun deleteOldPhotos() {
-    val now = timeUtils.getTimeFast()
-    uploadedPhotoDao.deleteOlderThan(now - uploadedPhotoMaxCacheLiveTime)
-  }
-
 }

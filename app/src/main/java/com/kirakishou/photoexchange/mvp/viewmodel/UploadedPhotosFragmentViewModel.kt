@@ -17,6 +17,7 @@ import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.helper.Constants
+import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.mvp.model.photo.QueuedUpPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
@@ -63,21 +64,20 @@ class UploadedPhotosFragmentViewModel(
         }
 
         when (action) {
-          ActorAction.ResetState -> resetStateInternal()
+          is ActorAction.ResetState -> resetStateInternal(action.clearCache)
           is ActorAction.CancelPhotoUploading -> cancelPhotoUploadingInternal(action.photoId)
           ActorAction.LoadQueuedUpPhotos -> loadQueuedUpPhotosInternal()
           ActorAction.LoadUploadedPhotos -> loadUploadedPhotosInternal()
+          ActorAction.FetchFreshPhotos -> fetchFreshPhotosInternal()
         }.safe
       }
     }
 
-    //FIXME: probably should call this after the permission check.
-    //Otherwise this leads to starting the uploading server before the recycler view has been initialized
     loadQueuedUpPhotos()
   }
 
-  fun resetState() {
-    launch { viewModelActor.send(ActorAction.ResetState) }
+  fun resetState(clearCache: Boolean = false) {
+    launch { viewModelActor.send(ActorAction.ResetState(clearCache)) }
   }
 
   fun cancelPhotoUploading(photoId: Long) {
@@ -92,18 +92,51 @@ class UploadedPhotosFragmentViewModel(
     launch { viewModelActor.send(ActorAction.LoadUploadedPhotos) }
   }
 
-  private fun resetStateInternal() {
-    setState { UploadedPhotosFragmentState() }
-    launch { loadQueuedUpPhotos() }
+  fun fetchFreshPhotos() {
+    launch { viewModelActor.send(ActorAction.FetchFreshPhotos) }
+  }
+
+  private fun fetchFreshPhotosInternal() {
+    launch {
+      //if we are trying to fetch fresh photos and the database is empty - start normal photos loading
+      val uploadedPhotosCount = uploadedPhotosRepository.count()
+      if (uploadedPhotosCount == 0) {
+        loadQueuedUpPhotos()
+        return@launch
+      }
+
+
+    }
+    //TODO
+  }
+
+  private fun resetStateInternal(clearCache: Boolean) {
+    launch {
+      if (clearCache) {
+        uploadedPhotosRepository.deleteAll()
+      }
+
+      setState { UploadedPhotosFragmentState() }
+      loadQueuedUpPhotos()
+    }
   }
 
   private fun cancelPhotoUploadingInternal(photoId: Long) {
     launch {
-      if (takenPhotosRepository.findById(photoId) == null) {
+      try {
+        if (takenPhotosRepository.findById(photoId) == null) {
+          return@launch
+        }
+
+        if (!takenPhotosRepository.deletePhotoById(photoId)) {
+          throw DatabaseException("Could not delete photo with id ${photoId}")
+        }
+      } catch (error: Throwable) {
+        Timber.tag(TAG).e(error)
+
+        //TODO: show a toast that we could not cancel the photo
         return@launch
       }
-
-      takenPhotosRepository.deletePhotoById(photoId)
 
       intercom.tell<PhotosActivity>()
         .to(PhotosActivityEvent.CancelPhotoUploading(photoId))
@@ -158,13 +191,25 @@ class UploadedPhotosFragmentViewModel(
         setState { copy(uploadedPhotosRequest = Loading()) }
 
         val request = try {
-          Success(loadPageOfUploadedPhotos(lastUploadedOn, photosPerPage))
+          uploadedPhotosRepository.deleteOldPhotos()
+
+          val result = getUploadedPhotosUseCase.loadPageOfPhotos(lastUploadedOn, photosPerPage)
+          if (result is Either.Error) {
+            throw result.error
+          }
+
+          result as Either.Value
+
+          val uploadedPhotos = result.value
+            .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
+
+          Success(uploadedPhotos)
         } catch (error: Throwable) {
           Fail<List<UploadedPhoto>>(error)
         }
 
         val newUploadedPhotos = request() ?: emptyList()
-        val isEndReached = newUploadedPhotos.isEmpty() || newUploadedPhotos.size % photosPerPage != 0
+        val isEndReached = newUploadedPhotos.size < photosPerPage
 
         val hasPhotosWithNoReceiver = newUploadedPhotos.any { it.receiverInfo == null }
         if (hasPhotosWithNoReceiver) {
@@ -178,22 +223,6 @@ class UploadedPhotosFragmentViewModel(
             uploadedPhotos = state.uploadedPhotos + newUploadedPhotos
           )
         }
-      }
-    }
-  }
-
-  private suspend fun loadPageOfUploadedPhotos(
-    lastUploadedOn: Long,
-    count: Int
-  ): List<UploadedPhoto> {
-    val result = getUploadedPhotosUseCase.loadPageOfPhotos(lastUploadedOn, count)
-    when (result) {
-      is Either.Value -> {
-        return result.value
-          .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
-      }
-      is Either.Error -> {
-        throw result.error
       }
     }
   }
@@ -401,10 +430,11 @@ class UploadedPhotosFragmentViewModel(
   }
 
   sealed class ActorAction {
-    object ResetState : ActorAction()
+    class ResetState(val clearCache: Boolean) : ActorAction()
     class CancelPhotoUploading(val photoId: Long) : ActorAction()
     object LoadQueuedUpPhotos : ActorAction()
     object LoadUploadedPhotos : ActorAction()
+    object FetchFreshPhotos : ActorAction()
   }
 
   companion object : MvRxViewModelFactory<UploadedPhotosFragmentState> {

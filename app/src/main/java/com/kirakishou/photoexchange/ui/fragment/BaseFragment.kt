@@ -23,9 +23,9 @@ import kotlin.coroutines.CoroutineContext
 
 abstract class BaseFragment : Fragment(), CoroutineScope {
   protected val compositeDisposable = CompositeDisposable()
-  private lateinit var job: Job
+  protected val lifecycle = RxLifecycle()
+  private val job = Job()
 
-  protected lateinit var lifecycle: RxLifecycle
   private lateinit var unBinder: Unbinder
 
   override val coroutineContext: CoroutineContext
@@ -34,13 +34,21 @@ abstract class BaseFragment : Fragment(), CoroutineScope {
   override fun onAttach(context: Context?) {
     super.onAttach(context)
 
-    job = Job()
-    lifecycle = RxLifecycle()
+    lifecycle.start(this)
+  }
+
+  override fun onDetach() {
+    super.onDetach()
+
+    job.cancel()
+    compositeDisposable.clear()
+    lifecycle.stop(this)
+
+    PhotoExchangeApplication.watch(this, this::class.simpleName)
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    lifecycle.onCreate()
     retainInstance = false
   }
 
@@ -55,12 +63,6 @@ abstract class BaseFragment : Fragment(), CoroutineScope {
     return root
   }
 
-  override fun onStart() {
-    super.onStart()
-
-    lifecycle.onStart()
-  }
-
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
 
@@ -68,40 +70,11 @@ abstract class BaseFragment : Fragment(), CoroutineScope {
     onFragmentViewCreated(savedInstanceState)
   }
 
-  override fun onResume() {
-    super.onResume()
-    lifecycle.onResume()
-  }
-
-  override fun onPause() {
-    super.onPause()
-    lifecycle.onPause()
-  }
-
   override fun onDestroyView() {
     super.onDestroyView()
 
     onFragmentViewDestroy()
     unBinder.unbind()
-  }
-
-  override fun onStop() {
-    super.onStop()
-    lifecycle.onStop()
-  }
-
-  override fun onDestroy() {
-    super.onDestroy()
-    lifecycle.onDestroy()
-  }
-
-  override fun onDetach() {
-    super.onDetach()
-
-    job.cancel()
-    compositeDisposable.clear()
-
-    PhotoExchangeApplication.watch(this, this::class.simpleName)
   }
 
   protected abstract fun getContentView(): Int

@@ -17,7 +17,6 @@ open class GetUploadedPhotosUseCase(
   private val timeUtils: TimeUtils,
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
-
   private val TAG = "GetUploadedPhotosUseCase"
 
   open suspend fun loadPageOfPhotos(
