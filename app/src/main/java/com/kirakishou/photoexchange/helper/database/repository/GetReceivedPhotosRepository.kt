@@ -27,8 +27,6 @@ open class GetReceivedPhotosRepository(
     count: Int
   ): List<ReceivedPhoto> {
     return withContext(coroutineContext) {
-      receivedPhotosLocalSource.deleteOldPhotos()
-
       val receivedPhotos = getPageInternal(userId, lastUploadedOn, count)
       return@withContext receivedPhotos
         .sortedByDescending { it.uploadedOn }

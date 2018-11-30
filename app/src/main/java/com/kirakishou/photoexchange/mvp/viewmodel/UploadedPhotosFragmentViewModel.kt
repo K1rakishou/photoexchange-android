@@ -17,6 +17,7 @@ import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.helper.Constants
+import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.mvp.model.photo.QueuedUpPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
@@ -63,7 +64,7 @@ class UploadedPhotosFragmentViewModel(
         }
 
         when (action) {
-          ActorAction.ResetState -> resetStateInternal()
+          is ActorAction.ResetState -> resetStateInternal(action.clearCache)
           is ActorAction.CancelPhotoUploading -> cancelPhotoUploadingInternal(action.photoId)
           ActorAction.LoadQueuedUpPhotos -> loadQueuedUpPhotosInternal()
           ActorAction.LoadUploadedPhotos -> loadUploadedPhotosInternal()
@@ -75,8 +76,8 @@ class UploadedPhotosFragmentViewModel(
     loadQueuedUpPhotos()
   }
 
-  fun resetState() {
-    launch { viewModelActor.send(ActorAction.ResetState) }
+  fun resetState(clearCache: Boolean = false) {
+    launch { viewModelActor.send(ActorAction.ResetState(clearCache)) }
   }
 
   fun cancelPhotoUploading(photoId: Long) {
@@ -96,22 +97,46 @@ class UploadedPhotosFragmentViewModel(
   }
 
   private fun fetchFreshPhotosInternal() {
-    // should we fetch fresh photos if we have queued up photos? Probably yes,
-    // but we should not show them until we have no queued up photos
+    launch {
+      //if we are trying to fetch fresh photos and the database is empty - start normal photos loading
+      val uploadedPhotosCount = uploadedPhotosRepository.count()
+      if (uploadedPhotosCount == 0) {
+        loadQueuedUpPhotos()
+        return@launch
+      }
+
+
+    }
+    //TODO
   }
 
-  private fun resetStateInternal() {
-    setState { UploadedPhotosFragmentState() }
-    launch { loadQueuedUpPhotos() }
+  private fun resetStateInternal(clearCache: Boolean) {
+    launch {
+      if (clearCache) {
+        uploadedPhotosRepository.deleteAll()
+      }
+
+      setState { UploadedPhotosFragmentState() }
+      loadQueuedUpPhotos()
+    }
   }
 
   private fun cancelPhotoUploadingInternal(photoId: Long) {
     launch {
-      if (takenPhotosRepository.findById(photoId) == null) {
+      try {
+        if (takenPhotosRepository.findById(photoId) == null) {
+          return@launch
+        }
+
+        if (!takenPhotosRepository.deletePhotoById(photoId)) {
+          throw DatabaseException("Could not delete photo with id ${photoId}")
+        }
+      } catch (error: Throwable) {
+        Timber.tag(TAG).e(error)
+
+        //TODO: show a toast that we could not cancel the photo
         return@launch
       }
-
-      takenPhotosRepository.deletePhotoById(photoId)
 
       intercom.tell<PhotosActivity>()
         .to(PhotosActivityEvent.CancelPhotoUploading(photoId))
@@ -166,6 +191,8 @@ class UploadedPhotosFragmentViewModel(
         setState { copy(uploadedPhotosRequest = Loading()) }
 
         val request = try {
+          uploadedPhotosRepository.deleteOldPhotos()
+
           val result = getUploadedPhotosUseCase.loadPageOfPhotos(lastUploadedOn, photosPerPage)
           if (result is Either.Error) {
             throw result.error
@@ -403,7 +430,7 @@ class UploadedPhotosFragmentViewModel(
   }
 
   sealed class ActorAction {
-    object ResetState : ActorAction()
+    class ResetState(val clearCache: Boolean) : ActorAction()
     class CancelPhotoUploading(val photoId: Long) : ActorAction()
     object LoadQueuedUpPhotos : ActorAction()
     object LoadUploadedPhotos : ActorAction()

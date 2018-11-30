@@ -38,4 +38,7 @@ abstract class GalleryPhotoDao {
 
   @Query("SELECT * FROM ${GalleryPhotoEntity.TABLE_NAME}")
   abstract fun findAll(): List<GalleryPhotoEntity>
+
+  @Query("DELETE FROM ${GalleryPhotoEntity.TABLE_NAME}")
+  abstract fun deleteAll()
 }

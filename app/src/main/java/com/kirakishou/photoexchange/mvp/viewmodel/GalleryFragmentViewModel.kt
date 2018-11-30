@@ -10,6 +10,7 @@ import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.Constants
+import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotosRepository
 import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
 import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
@@ -33,6 +34,7 @@ import kotlin.coroutines.CoroutineContext
 class GalleryFragmentViewModel(
   initialState: GalleryFragmentState,
   private val intercom: PhotosActivityViewModelIntercom,
+  private val galleryPhotosRepository: GalleryPhotosRepository,
   private val getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
   private val favouritePhotoUseCase: FavouritePhotoUseCase,
   private val reportPhotoUseCase: ReportPhotoUseCase,
@@ -59,7 +61,7 @@ class GalleryFragmentViewModel(
 
         when (action) {
           ActorAction.LoadGalleryPhotos -> loadGalleryPhotosInternal()
-          ActorAction.ResetState -> resetStateInternal()
+          is ActorAction.ResetState -> resetStateInternal(action.clearCache)
           is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.galleryPhotoName)
           is ActorAction.ReportPhoto -> reportPhotoInternal(action.galleryPhotoName)
           is ActorAction.FavouritePhoto -> favouritePhotoInternal(action.galleryPhotoName)
@@ -70,8 +72,8 @@ class GalleryFragmentViewModel(
     loadGalleryPhotos()
   }
 
-  fun resetState() {
-    launch { viewModelActor.send(ActorAction.ResetState) }
+  fun resetState(clearCache: Boolean = false) {
+    launch { viewModelActor.send(ActorAction.ResetState(clearCache)) }
   }
 
   fun loadGalleryPhotos() {
@@ -95,6 +97,30 @@ class GalleryFragmentViewModel(
   }
 
   private fun favouritePhotoInternal(photoName: String) {
+    fun onFail(result: Fail<FavouritePhotoActionResult>, state: GalleryFragmentState) {
+      if (result.error is EmptyUserIdException) {
+        val updatedPhotos = state.galleryPhotos
+          .map { it.copy(galleryPhotoInfo = GalleryPhotoInfo.empty()) }
+
+        setState {
+          copy(
+            isFavouriteRequestActive = false,
+            galleryPhotos = updatedPhotos
+          )
+        }
+
+        return
+      }
+
+      val message = "Could not favourite photo, error is \"${result.error.message
+        ?: "Unknown error"}\""
+
+      setState { copy(isFavouriteRequestActive = false) }
+
+      intercom.tell<GalleryFragment>()
+        .to(GalleryFragmentEvent.GeneralEvents.ShowToast(message))
+    }
+
     withState { state ->
       launch {
         setState { copy(isFavouriteRequestActive = true) }
@@ -111,27 +137,7 @@ class GalleryFragmentViewModel(
         }
 
         if (result is Fail) {
-          if (result.error is EmptyUserIdException) {
-            val updatedPhotos = state.galleryPhotos
-              .map { it.copy(galleryPhotoInfo = GalleryPhotoInfo.empty()) }
-
-            setState {
-              copy(
-                isFavouriteRequestActive = false,
-                galleryPhotos = updatedPhotos
-              )
-            }
-
-            return@launch
-          }
-
-          val message = "Could not favourite photo, error is \"${result.error.message
-            ?: "Unknown error"}\""
-
-          setState { copy(isFavouriteRequestActive = false) }
-
-          intercom.tell<GalleryFragment>()
-            .to(GalleryFragmentEvent.GeneralEvents.ShowToast(message))
+          onFail(result, state)
           return@launch
         }
 
@@ -181,9 +187,15 @@ class GalleryFragmentViewModel(
     }
   }
 
-  private fun resetStateInternal() {
-    setState { GalleryFragmentState() }
-    launch { viewModelActor.send(ActorAction.LoadGalleryPhotos) }
+  private fun resetStateInternal(clearCache: Boolean) {
+    launch {
+      if (clearCache) {
+        galleryPhotosRepository.deleteAll()
+      }
+
+      setState { GalleryFragmentState() }
+      viewModelActor.send(ActorAction.LoadGalleryPhotos)
+    }
   }
 
   private fun loadGalleryPhotosInternal() {
@@ -199,6 +211,8 @@ class GalleryFragmentViewModel(
           ?: -1L
 
         val request = try {
+          galleryPhotosRepository.deleteOldPhotos()
+
           val result = getGalleryPhotosUseCase.loadPageOfPhotos(lastUploadedOn, photosPerPage)
           if (result is Either.Error) {
             throw result.error
@@ -240,7 +254,7 @@ class GalleryFragmentViewModel(
 
   sealed class ActorAction {
     object LoadGalleryPhotos : ActorAction()
-    object ResetState : ActorAction()
+    class ResetState(val clearCache: Boolean) : ActorAction()
     class SwapPhotoAndMap(val galleryPhotoName: String) : ActorAction()
     class ReportPhoto(val galleryPhotoName: String) : ActorAction()
     class FavouritePhoto(val galleryPhotoName: String) : ActorAction()

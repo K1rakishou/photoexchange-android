@@ -79,6 +79,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
   private val TAG = "PhotosActivity"
   private val FRAGMENT_SCROLL_DELAY_MS = 250L
+  private val SWITCH_FRAGMENT_DELAY = 250L
   private val NOTIFICATION_CANCEL_DELAY_MS = 100L
 
   private val UPLOADED_PHOTOS_TAB_INDEX = 0
@@ -114,9 +115,9 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(PushNotificationReceiverService.NOTIFICATION_ID)
-      }
 
-      viewModel.fetchFreshPhotos()
+        viewModel.fetchFreshPhotos()
+      }
     }
   }
 
@@ -156,10 +157,13 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   private fun onNewPhotoNotification() {
-    viewModel.uploadedPhotosFragmentViewModel.resetState()
-    viewModel.receivedPhotosFragmentViewModel.resetState()
+    launch {
+      //wait some time before fragments are loaded
+      delay(SWITCH_FRAGMENT_DELAY)
 
-    switchToTab(RECEIVED_PHOTOS_TAB_INDEX)
+      viewModel.fetchFreshPhotos()
+      switchToTab(RECEIVED_PHOTOS_TAB_INDEX)
+    }
   }
 
   override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {

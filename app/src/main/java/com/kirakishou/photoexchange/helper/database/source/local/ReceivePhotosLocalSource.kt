@@ -10,8 +10,7 @@ import net.response.ReceivedPhotosResponse
 
 class ReceivePhotosLocalSource(
   private val database: MyDatabase,
-  private val timeUtils: TimeUtils,
-  private val receivedPhotoMaxCacheLiveTime: Long
+  private val timeUtils: TimeUtils
 ) {
   private val receivedPhotosDao = database.receivedPhotoDao()
 
@@ -36,11 +35,4 @@ class ReceivePhotosLocalSource(
   fun findAll(): List<ReceivedPhotoEntity> {
       return receivedPhotosDao.findAll()
   }
-
-  //TODO: tests
-  fun deleteOldPhotos() {
-    val now = timeUtils.getTimeFast()
-    receivedPhotosDao.deleteOlderThan(now - receivedPhotoMaxCacheLiveTime)
-  }
-
 }

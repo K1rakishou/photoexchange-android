@@ -8,8 +8,7 @@ import net.response.GalleryPhotosResponse
 
 open class GalleryPhotoLocalSource(
   private val database: MyDatabase,
-  private val timeUtils: TimeUtils,
-  private val galleryPhotoCacheMaxLiveTime: Long
+  private val timeUtils: TimeUtils
 ) {
   private val TAG = "GalleryPhotoLocalSource"
   private val galleryPhotoDao = database.galleryPhotoDao()
@@ -39,10 +38,5 @@ open class GalleryPhotoLocalSource(
 
   open fun findAllPhotos(): List<GalleryPhoto> {
     return GalleryPhotosMapper.FromEntity.toGalleryPhotos(galleryPhotoDao.findAll())
-  }
-
-  fun deleteOld() {
-    val now = timeUtils.getTimeFast()
-    galleryPhotoDao.deleteOlderThan(now - galleryPhotoCacheMaxLiveTime)
   }
 }

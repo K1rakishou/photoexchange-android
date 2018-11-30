@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
+import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.isSuccess
@@ -43,5 +44,10 @@ open class ReceivedPhotosRepository(
     withContext(coroutineContext) {
       receivedPhotosDao.deleteAll()
     }
+  }
+
+  fun deleteOldPhotos() {
+    val now = timeUtils.getTimeFast()
+    receivedPhotosDao.deleteOlderThan(now - Constants.RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME)
   }
 }
