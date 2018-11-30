@@ -111,6 +111,8 @@ class TempFileLocalSource(
     tempFiles.forEach { oldFile ->
       if (tempFilesDao.deleteForReal(oldFile.id!!).isSuccess()) {
         filesOnDisk += oldFile.asFile()
+      } else {
+        Timber.tag(TAG).w("Could not delete ${oldFile.filePath} from tempFiles table")
       }
     }
 

@@ -14,6 +14,7 @@ import io.fotoapparat.view.CameraView
 import timber.log.Timber
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 /**
@@ -80,9 +81,10 @@ open class CameraProvider(
     Timber.tag(TAG).d("after cleanup")
 
     val tempFile = takenPhotosRepository.createTempFile()
-    val takePhotoStatus = takePhotoInternal(tempFile)
 
-    if (!takePhotoStatus) {
+    try {
+      takePhotoInternal(tempFile)
+    } catch (error: Throwable) {
       Timber.tag(TAG).d("takePhotoInternal returned false")
 
       takenPhotosRepository.markDeletedById(tempFile)
@@ -104,7 +106,7 @@ open class CameraProvider(
     return takenPhoto
   }
 
-  private suspend fun takePhotoInternal(tempFile: TempFileEntity): Boolean {
+  private suspend fun takePhotoInternal(tempFile: TempFileEntity) {
     if (!isAvailable()) {
       throw CameraIsNotAvailable("Camera is not supported by this device")
     }
@@ -113,7 +115,7 @@ open class CameraProvider(
       throw CameraIsNotStartedException("Camera is not started")
     }
 
-    Timber.tag(tag).d("Taking photo...")
+    Timber.tag(tag).d("Taking a photo...")
 
     return suspendCoroutine { continuation ->
       try {
@@ -123,11 +125,11 @@ open class CameraProvider(
           .saveToFile(file)
           .whenAvailable {
             Timber.tag(tag).d("Photo has been taken")
-            continuation.resume(true)
+            continuation.resume(Unit)
           }
       } catch (error: Throwable) {
         Timber.e(error)
-        continuation.resume(false)
+        continuation.resumeWithException(error)
       }
     }
   }
