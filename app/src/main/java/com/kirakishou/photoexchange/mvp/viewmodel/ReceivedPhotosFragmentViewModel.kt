@@ -96,7 +96,7 @@ class ReceivedPhotosFragmentViewModel(
     withState { state ->
       val photoIndex = state.receivedPhotos.indexOfFirst { it.receivedPhotoName == photoExchangedData.receivedPhotoName }
       if (photoIndex != -1) {
-        //photos is already shown
+        //photo is already shown
         return@withState
       }
 
@@ -113,7 +113,9 @@ class ReceivedPhotosFragmentViewModel(
       val updatedPhotos = state.receivedPhotos.toMutableList() + newPhoto
       val sortedPhotos = updatedPhotos.sortedByDescending { it.uploadedOn }
 
+      //show a snackbar telling user that we got a photo
       intercom.tell<PhotosActivity>().to(PhotosActivityEvent.OnNewPhotoReceived)
+
       setState { copy(receivedPhotos = sortedPhotos) }
     }
   }
@@ -123,7 +125,7 @@ class ReceivedPhotosFragmentViewModel(
      * Combines old receivedPhotos with the fresh ones and also counts how many of the fresh photos were
      * truly fresh (e.g. receivedPhotos didn't contain them yet or it did but without receiverInfo)
      * */
-    fun combinePhotos(
+    suspend fun combinePhotos(
       freshPhotos: List<ReceivedPhoto>,
       receivedPhotos: List<ReceivedPhoto>
     ): Pair<MutableList<ReceivedPhoto>, Int> {
@@ -131,8 +133,7 @@ class ReceivedPhotosFragmentViewModel(
       var freshPhotosCount = 0
 
       for (freshPhoto in freshPhotos) {
-        val uploadedPhotoIndex = updatedPhotos.indexOfFirst { it.uploadedPhotoName == freshPhoto.uploadedPhotoName }
-        if (uploadedPhotoIndex == -1) {
+        if (!receivedPhotosRepository.contains(freshPhoto.uploadedPhotoName)) {
           //if we don't have this photo yet - add it to the list
           updatedPhotos += freshPhoto
           ++freshPhotosCount
@@ -168,7 +169,6 @@ class ReceivedPhotosFragmentViewModel(
           return@launch
         }
 
-        //FIXME: should do this with the photos from the database not the state
         val (combinedPhotos, freshPhotosCount) = combinePhotos(freshPhotos, state.receivedPhotos)
         if (freshPhotosCount == 0) {
           //Should this even happen? We are supposed to have new photos if this method was called.

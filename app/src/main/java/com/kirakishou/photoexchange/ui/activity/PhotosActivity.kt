@@ -165,12 +165,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   private fun onNewPhotoNotification(photoExchangedData: PhotoExchangedData) {
-    launch {
-      //wait some time before fragments are loaded
-      delay(SWITCH_FRAGMENT_DELAY)
-
-      viewModel.addReceivedPhoto(photoExchangedData)
-    }
+    launch { viewModel.addReceivedPhoto(photoExchangedData) }
   }
 
   override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {

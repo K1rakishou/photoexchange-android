@@ -35,6 +35,12 @@ open class ReceivedPhotosRepository(
     }
   }
 
+  suspend fun contains(uploadedPhotoName: String): Boolean {
+    return withContext(coroutineContext) {
+      return@withContext receivedPhotosDao.findByUploadedPhotoName(uploadedPhotoName) != null
+    }
+  }
+
   suspend fun findMany(receivedPhotoIds: List<Long>): MutableList<ReceivedPhoto> {
     return withContext(coroutineContext) {
       return@withContext ReceivedPhotosMapper.FromEntity
@@ -48,8 +54,10 @@ open class ReceivedPhotosRepository(
     }
   }
 
-  fun deleteOldPhotos() {
-    val now = timeUtils.getTimeFast()
-    receivedPhotosDao.deleteOlderThan(now - Constants.RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME)
+  suspend fun deleteOldPhotos() {
+    withContext(coroutineContext) {
+      val now = timeUtils.getTimeFast()
+      receivedPhotosDao.deleteOlderThan(now - Constants.RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME)
+    }
   }
 }

@@ -25,6 +25,10 @@ abstract class ReceivedPhotoDao {
   abstract fun findAll(): List<ReceivedPhotoEntity>
 
   @Query("SELECT * FROM ${ReceivedPhotoEntity.TABLE_NAME} " +
+    "WHERE ${ReceivedPhotoEntity.UPLOADED_PHOTO_NAME_COLUMN} = :uploadedPhotoName")
+  abstract fun findByUploadedPhotoName(uploadedPhotoName: String): ReceivedPhotoEntity?
+
+  @Query("SELECT * FROM ${ReceivedPhotoEntity.TABLE_NAME} " +
     "WHERE ${ReceivedPhotoEntity.RECEIVED_PHOTO_NAME_COLUMN} IN (:receivedPhotoNameList) " +
     "ORDER BY ${ReceivedPhotoEntity.UPLOADED_ON_COLUMN } DESC")
   abstract fun findMany(receivedPhotoNameList: List<Long>): List<ReceivedPhotoEntity>
