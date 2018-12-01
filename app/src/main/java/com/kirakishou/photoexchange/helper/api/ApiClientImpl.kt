@@ -152,7 +152,7 @@ open class ApiClientImpl
     return response.uploadedPhotos
   }
 
-  override suspend fun getReceivedPhotos(
+  override suspend fun getPageOfReceivedPhotos(
     userId: String,
     lastUploadedOn: Long,
     count: Int

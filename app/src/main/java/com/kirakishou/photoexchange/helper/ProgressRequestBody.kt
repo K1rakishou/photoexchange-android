@@ -19,6 +19,7 @@ class ProgressRequestBody(
   private val photo: TakenPhoto,
   private val channel: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
 ) : RequestBody() {
+  private val TAG = "ProgressRequestBody"
   private val defaultBufferSize = 4096
   private val maxPercent = 100
   private val percentStep = 10

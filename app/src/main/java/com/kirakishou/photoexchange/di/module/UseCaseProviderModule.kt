@@ -105,17 +105,11 @@ class UseCaseProviderModule {
   @Singleton
   @Provides
   fun provideRestoreAccountUseCase(apiClient: ApiClient,
-                                   database: MyDatabase,
-                                   settingsRepository: SettingsRepository,
-                                   uploadedPhotosRepository: UploadedPhotosRepository,
-                                   receivedPhotosRepository: ReceivedPhotosRepository,
+                                   restoreAccountRepository: RestoreAccountRepository,
                                    dispatchersProvider: DispatchersProvider): RestoreAccountUseCase {
     return RestoreAccountUseCase(
       apiClient,
-      database,
-      settingsRepository,
-      uploadedPhotosRepository,
-      receivedPhotosRepository,
+      restoreAccountRepository,
       dispatchersProvider
     )
   }

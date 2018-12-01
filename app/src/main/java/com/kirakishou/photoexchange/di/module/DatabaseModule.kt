@@ -290,4 +290,32 @@ open class DatabaseModule(
       dispatchersProvider
     )
   }
+
+  @Singleton
+  @Provides
+  open fun provideStorePhotoFromPushNotificationRepository(database: MyDatabase,
+                                                           timeUtils: TimeUtils,
+                                                           dispatchersProvider: DispatchersProvider): StorePhotoFromPushNotificationRepository {
+    return StorePhotoFromPushNotificationRepository(
+      database,
+      timeUtils,
+      dispatchersProvider
+    )
+  }
+
+  @Singleton
+  @Provides
+  open fun provideRestoreAccountRepository(database: MyDatabase,
+                                           settingsRepository: SettingsRepository,
+                                           uploadedPhotosRepository: UploadedPhotosRepository,
+                                           receivedPhotosRepository: ReceivedPhotosRepository,
+                                           dispatchersProvider: DispatchersProvider): RestoreAccountRepository {
+    return RestoreAccountRepository(
+      database,
+      settingsRepository,
+      uploadedPhotosRepository,
+      receivedPhotosRepository,
+      dispatchersProvider
+    )
+  }
 }

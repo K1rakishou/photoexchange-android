@@ -10,8 +10,10 @@ import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
 import com.kirakishou.photoexchange.interactors.UpdateFirebaseTokenUseCase
+import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
@@ -107,13 +109,16 @@ open class UploadPhotoServicePresenter(
     var hasErrors = false
 
     for (photo in queuedUpPhotos) {
+      Timber.tag(TAG).d("Uploading photo with id: ${photo.id} and name ${photo.photoName}")
+
       if (photosToCancel.contains(photo.id)) {
-        if (takenPhotosRepository.findById(photo.id) != null) {
-          takenPhotosRepository.deletePhotoById(photo.id)
+        Timber.tag(TAG).d("Photo uploading has been canceled for photo with id: ${photo.id} and name ${photo.photoName}")
+
+        if (cancelPhotoUploading(photo)) {
+          //if there were a photo in the database - notify the UI about it's deletion too
           eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoCanceled(photo))
         }
 
-        photosToCancel.remove(photo.id)
         continue
       }
 
@@ -129,18 +134,36 @@ open class UploadPhotoServicePresenter(
           result.uploadedOn,
           currentLocation)
         )
+
+        Timber.tag(TAG).d("Successfully uploaded photo with id: ${photo.id} and name ${photo.photoName}")
       } catch (error: Exception) {
-        Timber.tag(TAG).e(error)
+        Timber.tag(TAG).e("Failed to upload photo  with id: ${photo.id} and name ${photo.photoName}", error)
 
         hasErrors = true
-
         takenPhotosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_QUEUED_UP)
         eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUploadPhoto(photo))
       }
     }
 
+    Timber.tag(TAG).d("Done uploading photos")
     eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd())
     return hasErrors
+  }
+
+  /**
+   * Returns true if photo existed in the database and was deleted
+   * */
+  private suspend fun cancelPhotoUploading(photo: TakenPhoto): Boolean {
+    if (takenPhotosRepository.findById(photo.id) != null) {
+      if (!takenPhotosRepository.deletePhotoById(photo.id)) {
+        throw DatabaseException("Could not delete photo with name ${photo.photoName} and if ${photo.id}")
+      }
+
+      return true
+    }
+
+    photosToCancel.remove(photo.id)
+    return false
   }
 
   private fun sendEvent(event: UploadPhotoEvent) {

@@ -23,7 +23,7 @@ import kotlin.coroutines.CoroutineContext
 
 abstract class BaseFragment : Fragment(), CoroutineScope {
   protected val compositeDisposable = CompositeDisposable()
-  protected val lifecycle = RxLifecycle()
+  protected val lifecycle = RxLifecycle(this)
   private val job = Job()
 
   private lateinit var unBinder: Unbinder
@@ -34,7 +34,7 @@ abstract class BaseFragment : Fragment(), CoroutineScope {
   override fun onAttach(context: Context?) {
     super.onAttach(context)
 
-    lifecycle.start(this)
+    lifecycle.start()
   }
 
   override fun onDetach() {
@@ -42,7 +42,7 @@ abstract class BaseFragment : Fragment(), CoroutineScope {
 
     job.cancel()
     compositeDisposable.clear()
-    lifecycle.stop(this)
+    lifecycle.stop()
 
     PhotoExchangeApplication.watch(this, this::class.simpleName)
   }

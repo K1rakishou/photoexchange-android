@@ -1,22 +1,25 @@
 package com.kirakishou.photoexchange.service
 
-import com.google.firebase.messaging.FirebaseMessagingService
-import com.google.firebase.messaging.RemoteMessage
-import com.kirakishou.photoexchange.PhotoExchangeApplication
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import kotlinx.coroutines.runBlocking
-import timber.log.Timber
-import javax.inject.Inject
-import android.app.NotificationManager
 import android.app.NotificationChannel
-import android.os.Build
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
+import android.os.Bundle
 import androidx.core.app.NotificationCompat
+import com.google.firebase.messaging.FirebaseMessagingService
+import com.google.firebase.messaging.RemoteMessage
 import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.PhotoExchangeApplication
+import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.database.repository.StorePhotoFromPushNotificationRepository
+import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
+import kotlinx.coroutines.runBlocking
+import timber.log.Timber
+import javax.inject.Inject
 
 
 class PushNotificationReceiverService : FirebaseMessagingService() {
@@ -26,6 +29,9 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
 
   @Inject
   lateinit var settingsRepository: SettingsRepository
+
+  @Inject
+  lateinit var storePhotoFromPushNotificationRepository: StorePhotoFromPushNotificationRepository
 
   override fun onCreate() {
     super.onCreate()
@@ -42,17 +48,25 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
       return
     }
 
-    val photoExchanged = try {
-      remoteMessage.data[photoExchangedFlag]?.toBoolean()
+    val photoExchangedData = try {
+      extractData(remoteMessage)
     } catch (error: Throwable) {
+      Timber.tag(TAG).e(error)
       null
     }
 
-    if (photoExchanged != null && photoExchanged) {
-      Timber.tag(TAG).d("Some photo has been exchanged")
+    if (photoExchangedData != null) {
+      Timber.tag(TAG).d("Got new photo from someone")
 
-      showNotification()
-      sendPhotoReceivedBroadcast()
+      runBlocking {
+        if (!storePhotoFromPushNotificationRepository.storePhotoFromPushNotification(photoExchangedData)) {
+          Timber.tag(TAG).w("Could not store photoExchangedData")
+          return@runBlocking
+        }
+
+        showNotification(photoExchangedData)
+        sendPhotoReceivedBroadcast(photoExchangedData)
+      }
     }
   }
 
@@ -77,17 +91,53 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
     }
   }
 
-  private fun sendPhotoReceivedBroadcast() {
+  private fun extractData(remoteMessage: RemoteMessage): PhotoExchangedData? {
+    val data = remoteMessage.data
+
+    val uploadedPhotoName = data.get(PhotoExchangedData.uploadedPhotoNameField)
+    if (uploadedPhotoName.isNullOrEmpty()) {
+      return null
+    }
+
+    val receivedPhotoName = data.get(PhotoExchangedData.receivedPhotoNameField)
+    if (receivedPhotoName.isNullOrEmpty()) {
+      return null
+    }
+
+    val receiverLon = data.get(PhotoExchangedData.receiverLonField)?.toDoubleOrNull()
+      ?: return null
+
+    val receiverLat = data.get(PhotoExchangedData.receiverLatField)?.toDoubleOrNull()
+      ?: return null
+
+    val uploadedOn = data.get(PhotoExchangedData.uploadedOnField)?.toLongOrNull()
+      ?: return null
+
+    return PhotoExchangedData(
+      uploadedPhotoName,
+      receivedPhotoName,
+      receiverLon,
+      receiverLat,
+      uploadedOn
+    )
+  }
+
+  private fun sendPhotoReceivedBroadcast(photoExchangedData: PhotoExchangedData) {
     Timber.tag(TAG).d("sendPhotoReceivedBroadcast called")
 
     val intent = Intent().apply {
       action = PhotosActivity.newPhotoReceivedAction
+
+      val bundle = Bundle()
+      photoExchangedData.toBundle(bundle)
+
+      putExtra(PhotosActivity.receivedPhotoExtra, bundle)
     }
 
     sendBroadcast(intent)
   }
 
-  private fun showNotification() {
+  private fun showNotification(photoExchangedData: PhotoExchangedData) {
     Timber.tag(TAG).d("showNotification called")
 
     val backIntent = Intent(this, TakePhotoActivity::class.java).apply {
@@ -95,7 +145,10 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
     }
 
     val intent = Intent(this, PhotosActivity::class.java).apply {
-      putExtra(PhotosActivity.extraNewPhotoReceived, true)
+      val bundle = Bundle()
+      photoExchangedData.toBundle(bundle)
+
+      putExtra(PhotosActivity.receivedPhotoExtra, bundle)
     }
 
     val pendingIntent = PendingIntent.getActivities(
@@ -137,7 +190,6 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
       this[3] = 300L
     }
 
-    const val photoExchangedFlag = "photo_exchanged"
     const val NOTIFICATION_ID = 3
   }
 }

@@ -2,12 +2,12 @@ package com.kirakishou.photoexchange.helper.database
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.dao.*
 import com.kirakishou.photoexchange.helper.database.entity.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
+import kotlinx.coroutines.withContext
 
 /**
  * Created by kirakishou on 9/12/2017.
@@ -34,14 +34,14 @@ abstract class MyDatabase : RoomDatabase() {
   abstract fun uploadedPhotoDao(): UploadedPhotoDao
 
   open suspend fun <T> transactional(func: suspend () -> T): T {
-    mutex.withLock {
+    return mutex.withLock {
       beginTransaction()
 
       try {
         val result = func()
         setTransactionSuccessful()
 
-        return result
+        return@withLock result
       } finally {
         endTransaction()
       }

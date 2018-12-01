@@ -29,6 +29,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
+import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.service.*
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingServiceCallback
@@ -44,6 +45,7 @@ import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.lang.IllegalStateException
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -80,7 +82,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   private val TAG = "PhotosActivity"
   private val FRAGMENT_SCROLL_DELAY_MS = 250L
   private val SWITCH_FRAGMENT_DELAY = 250L
-  private val NOTIFICATION_CANCEL_DELAY_MS = 100L
+  private val NOTIFICATION_CANCEL_DELAY_MS = 25L
 
   private val UPLOADED_PHOTOS_TAB_INDEX = 0
   private val RECEIVED_PHOTOS_TAB_INDEX = 1
@@ -96,9 +98,8 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   /**
    * When we receive a push notification we show a notification and send a broadcast to the activity.
    * If this activity is dead - then the user will see the notification.
-   * But if it's not then we don't need to show the notification. What we need to do instead is automatically
-   * fetch fresh data from the server. So upon receiving this broadcast we firstly cancel the notification and
-   * then fetch fresh data.
+   * But if it's not then we don't need to show the notification. What we need to do instead is to
+   * automatically add this photo receivedPhotos and update uploadedPhoto with the same name.
    * */
   private val notificationBroadcastReceiver = object : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -106,6 +107,12 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
       if (intent.action == null || intent.action != newPhotoReceivedAction) {
         return
+      }
+
+      val bundle = intent.extras?.getBundle(PhotosActivity.receivedPhotoExtra)
+      val photoExchangedData = PhotoExchangedData.fromBundle(bundle)
+      if (photoExchangedData == null) {
+        throw IllegalStateException("photoExchangedData should not be null!")
       }
 
       launch {
@@ -116,7 +123,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(PushNotificationReceiverService.NOTIFICATION_ID)
 
-        viewModel.fetchFreshPhotos()
+        onNewPhotoNotification(photoExchangedData)
       }
     }
   }
@@ -129,8 +136,17 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
     receivePhotosServiceConnection = ReceivePhotosServiceConnection(this)
     uploadPhotosServiceConnection = UploadPhotoServiceConnection(this)
 
-    if (intent.getBooleanExtra(extraNewPhotoReceived, false)) {
-      onNewPhotoNotification()
+    onNewIntent(intent)
+  }
+
+  override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+
+    val bundle = intent.extras?.getBundle(PhotosActivity.receivedPhotoExtra)
+    val photoExchangedData = PhotoExchangedData.fromBundle(bundle)
+
+    if (photoExchangedData != null) {
+      onNewPhotoNotification(photoExchangedData)
     }
   }
 
@@ -148,22 +164,8 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
     unregisterReceiver(notificationBroadcastReceiver)
   }
 
-  override fun onNewIntent(intent: Intent) {
-    super.onNewIntent(intent)
-
-    if (intent.getBooleanExtra(extraNewPhotoReceived, false)) {
-      onNewPhotoNotification()
-    }
-  }
-
-  private fun onNewPhotoNotification() {
-    launch {
-      //wait some time before fragments are loaded
-      delay(SWITCH_FRAGMENT_DELAY)
-
-      viewModel.fetchFreshPhotos()
-      switchToTab(RECEIVED_PHOTOS_TAB_INDEX)
-    }
+  private fun onNewPhotoNotification(photoExchangedData: PhotoExchangedData) {
+    launch { viewModel.addReceivedPhoto(photoExchangedData) }
   }
 
   override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {
@@ -181,9 +183,6 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       .doOnError { Timber.e(it) }
       .subscribe()
 
-    //FIXME:
-    // this will finish the app without going back to TakePhotoActivity when the app is killed, the user
-    // receives push notification and he clicks it
     compositeDisposable += RxView.clicks(takePhotoButton)
       .subscribeOn(AndroidSchedulers.mainThread())
       .debounceClicks()
@@ -299,6 +298,8 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       is PhotosActivityEvent.CancelPhotoUploading -> {
         uploadPhotosServiceConnection.cancelPhotoUploading(event.photoId)
       }
+
+      PhotosActivityEvent.OnNewPhotoReceived -> showPhotoAnswerFoundSnackbar()
     }.safe
   }
 
@@ -409,7 +410,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   companion object {
-    const val extraNewPhotoReceived = "new_photo_received"
+    const val receivedPhotoExtra = "received_photo_extra"
     const val newPhotoReceivedAction = "com.kirakishou.photoexchange.NEW_PHOTO_RECEIVED"
   }
 }

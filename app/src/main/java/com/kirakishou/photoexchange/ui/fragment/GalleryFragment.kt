@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.ui.fragment
 
 import android.os.Bundle
 import android.view.View
+import androidx.lifecycle.Lifecycle
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.Constants
@@ -15,6 +16,7 @@ import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.epoxy.controller.GalleryFragmentEpoxyController
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.rxkotlin.zipWith
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.launch

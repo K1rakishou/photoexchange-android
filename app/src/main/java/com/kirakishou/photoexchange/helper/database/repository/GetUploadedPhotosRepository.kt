@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
+import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
@@ -16,46 +17,68 @@ class GetUploadedPhotosRepository(
 ) : BaseRepository(dispatchersProvider) {
   private val TAG = "GetUploadedPhotosRepository"
 
-  suspend fun getPage(userId: String, time: Long, count: Int): List<UploadedPhoto> {
+  /**
+   * This method skips the database cache
+   * */
+  suspend fun getFresh(time: Long, count: Int, userId: String): Paged<UploadedPhoto> {
     return withContext(coroutineContext) {
-      val uploadedPhotos = getPageInternal(time, count, userId)
-      val uploadedPhotosWithNoReceiver = uploadedPhotos
-        .filter { it.receiverInfo == null }
-        .sortedByDescending { it.uploadedOn }
+      //get a page of fresh photos from the server
+      val uploadedPhotos = apiClient.getPageOfUploadedPhotos(userId, time, count)
+      if (uploadedPhotos.isEmpty()) {
+        Timber.tag(TAG).d("No uploaded photos were found on the server")
+        return@withContext Paged(emptyList<UploadedPhoto>(), true)
+      }
 
-      val uploadedPhotosWithReceiver = uploadedPhotos
-        .filter { it.receiverInfo != null }
-        .sortedByDescending { it.uploadedOn }
+      if (!uploadedPhotosLocalSource.saveMany(uploadedPhotos)) {
+        throw DatabaseException("Could not cache uploaded photos in the database")
+      }
 
-      //we need to show photos without receiver first and after them photos with receiver
-      return@withContext uploadedPhotosWithNoReceiver + uploadedPhotosWithReceiver
+      val mappedPhotos = UploadedPhotosMapper.FromResponse.ToObject
+        .toUploadedPhotos(uploadedPhotos)
+
+      val photos = splitPhotos(mappedPhotos)
+      return@withContext Paged(photos, photos.size < count)
     }
   }
 
-  private suspend fun getPageInternal(time: Long, count: Int, userId: String): List<UploadedPhoto> {
-    val pageOfUploadedPhotos = uploadedPhotosLocalSource.getPage(time, count)
-    if (pageOfUploadedPhotos.size == count) {
-      Timber.tag(TAG).d("Found enough uploaded photos in the database")
-      return pageOfUploadedPhotos
+  /**
+   * This method includes photos from the database cache
+   * */
+  suspend fun getPage(time: Long, count: Int, userId: String): Paged<UploadedPhoto> {
+    return withContext(coroutineContext) {
+      val pageOfUploadedPhotos = uploadedPhotosLocalSource.getPage(time, count)
+      if (pageOfUploadedPhotos.size == count) {
+        Timber.tag(TAG).d("Found enough uploaded photos in the database")
+        return@withContext Paged(pageOfUploadedPhotos, pageOfUploadedPhotos.size < count)
+      }
+
+      val uploadedPhotos = apiClient.getPageOfUploadedPhotos(userId, time, count)
+      if (uploadedPhotos.isEmpty()) {
+        Timber.tag(TAG).d("No uploaded photos were found on the server")
+        return@withContext Paged(pageOfUploadedPhotos, true)
+      }
+
+      if (!uploadedPhotosLocalSource.saveMany(uploadedPhotos)) {
+        throw DatabaseException("Could not cache uploaded photos in the database")
+      }
+
+      val mappedPhotos = UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhotos(uploadedPhotos)
+      val photos = splitPhotos(mappedPhotos)
+
+      return@withContext Paged(photos, photos.size < count)
     }
+  }
 
-    Timber.tag(TAG).d("Trying to find uploaded photos on the server")
+  private fun splitPhotos(uploadedPhotos: List<UploadedPhoto>): List<UploadedPhoto> {
+    val uploadedPhotosWithNoReceiver = uploadedPhotos
+      .filter { it.receiverInfo == null }
+      .sortedByDescending { it.uploadedOn }
 
-    //TODO: the method may be called AFTER a photo has been uploaded and it will contain receiveInfo
-    //so we need to check whether it contains it and if it does, we need to notify the ReceivedPhotosFragment about it
+    val uploadedPhotosWithReceiver = uploadedPhotos
+      .filter { it.receiverInfo != null }
+      .sortedByDescending { it.uploadedOn }
 
-    val uploadedPhotos = apiClient.getPageOfUploadedPhotos(userId, time, count)
-    if (uploadedPhotos.isEmpty()) {
-      Timber.tag(TAG).d("No uploaded photos were found on the server")
-      return emptyList()
-    }
-
-    Timber.tag(TAG).d("Found ${uploadedPhotos.size} uploaded photos on the server")
-
-    if (!uploadedPhotosLocalSource.saveMany(uploadedPhotos)) {
-      throw DatabaseException("Could not cache uploaded photos in the database")
-    }
-
-    return UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhotos(uploadedPhotos)
+    //we need to show photos without receiver first and after them photos with receiver
+    return uploadedPhotosWithNoReceiver + uploadedPhotosWithReceiver
   }
 }

@@ -17,7 +17,10 @@ import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.helper.Constants
+import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.util.TimeUtils
+import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import com.kirakishou.photoexchange.mvp.model.photo.QueuedUpPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
@@ -42,6 +45,7 @@ class UploadedPhotosFragmentViewModel(
   private val uploadedPhotosRepository: UploadedPhotosRepository,
   private val receivedPhotosRepository: ReceivedPhotosRepository,
   private val getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
+  private val timeUtils: TimeUtils,
   private val dispatchersProvider: DispatchersProvider
 ) : BaseMvRxViewModel<UploadedPhotosFragmentState>(initialState, BuildConfig.DEBUG), CoroutineScope {
   private val TAG = "UploadedPhotosFragmentViewModel"
@@ -69,6 +73,7 @@ class UploadedPhotosFragmentViewModel(
           ActorAction.LoadQueuedUpPhotos -> loadQueuedUpPhotosInternal()
           ActorAction.LoadUploadedPhotos -> loadUploadedPhotosInternal()
           ActorAction.FetchFreshPhotos -> fetchFreshPhotosInternal()
+          is ActorAction.OnNewPhotoReceived -> onNewPhotoReceivedInternal(action.photoExchangedData)
         }.safe
       }
     }
@@ -96,18 +101,113 @@ class UploadedPhotosFragmentViewModel(
     launch { viewModelActor.send(ActorAction.FetchFreshPhotos) }
   }
 
-  private fun fetchFreshPhotosInternal() {
-    launch {
-      //if we are trying to fetch fresh photos and the database is empty - start normal photos loading
-      val uploadedPhotosCount = uploadedPhotosRepository.count()
-      if (uploadedPhotosCount == 0) {
-        loadQueuedUpPhotos()
-        return@launch
+  fun onNewPhotoReceived(photoExchangedData: PhotoExchangedData) {
+    launch { viewModelActor.send(ActorAction.OnNewPhotoReceived(photoExchangedData)) }
+  }
+
+  private fun onNewPhotoReceivedInternal(photoExchangedData: PhotoExchangedData) {
+    withState { state ->
+      val photoIndex = state.uploadedPhotos
+        .indexOfFirst { it.photoName == photoExchangedData.uploadedPhotoName }
+      if (photoIndex == -1) {
+        //nothing to update
+        return@withState
       }
 
+      val updatedPhotos = state.uploadedPhotos.toMutableList()
+      val receiverInfo = UploadedPhoto.ReceiverInfo(photoExchangedData.lon, photoExchangedData.lat)
+      val updatedPhoto = updatedPhotos[photoIndex]
+        .copy(receiverInfo = receiverInfo)
 
+      updatedPhotos.removeAt(photoIndex)
+      updatedPhotos.add(photoIndex, updatedPhoto)
+
+      setState { copy(uploadedPhotos = updatedPhotos) }
     }
-    //TODO
+  }
+
+
+  private fun fetchFreshPhotosInternal() {
+    /**
+     * Combines old uploadedPhotos with the fresh ones and also counts how many of the fresh photos were
+     * truly fresh (e.g. uploadedPhotos didn't contain them yet or it did but without receiverInfo)
+     * */
+    suspend fun combinePhotos(
+      freshPhotos: List<UploadedPhoto>,
+      uploadedPhotos: List<UploadedPhoto>
+    ): Pair<MutableList<UploadedPhoto>, Int> {
+      val updatedPhotos = uploadedPhotos.toMutableList()
+      //how much photos were updated
+      var freshPhotosCount = 0
+
+      for (freshPhoto in freshPhotos) {
+        if (uploadedPhotosRepository.contains(freshPhoto.photoName)) {
+          //if we don't have this photo yet - add it to the list
+          updatedPhotos += freshPhoto
+          ++freshPhotosCount
+          continue
+        }
+
+        val uploadedPhotoIndex = updatedPhotos.indexOfFirst { it.photoName == freshPhoto.photoName }
+        if (uploadedPhotoIndex != -1) {
+          val uploadedPhoto = uploadedPhotos[uploadedPhotoIndex]
+
+          //if we already have this photo but old photo has no receiverInfo and the new one has
+          if (uploadedPhoto.receiverInfo == null && freshPhoto.receiverInfo != null) {
+            //replace it with the newer one
+            updatedPhotos.removeAt(uploadedPhotoIndex)
+            updatedPhotos += freshPhoto
+
+            ++freshPhotosCount
+          }
+        }
+      }
+
+      return updatedPhotos to freshPhotosCount
+    }
+
+    //TODO: should we run this method if uploadedPhotosRequest is in the Failed or Loading state?
+    withState { state ->
+      launch {
+        //if we are trying to fetch fresh photos and there are no uploadedPhotos - start normal photos loading
+        if (state.uploadedPhotos.isEmpty()) {
+          loadQueuedUpPhotos()
+          return@launch
+        }
+
+        val freshPhotos = try {
+          getUploadedPhotosUseCase.loadFreshPhotos(timeUtils.getTimeFast(), photosPerPage)
+        } catch (error: Throwable) {
+          Timber.tag(TAG).e(error)
+
+          //TODO: show some kind of message here?
+          return@launch
+        }
+
+        val (combinedPhotos, freshPhotosCount) = combinePhotos(freshPhotos.page, state.uploadedPhotos)
+        if (freshPhotosCount == 0) {
+          //Should this even happen? We are supposed to have new photos if this method was called.
+          //Update: Yes this can happen! When user has more than "photosPerPage" uploaded photos without receiverInfo
+
+          Timber.tag(TAG).d("combinePhotos returned 0 freshPhotosCount!")
+          return@launch
+        }
+
+        if (freshPhotosCount >= photosPerPage) {
+          //this means that there are probably even more photos that this user has not seen yet
+          //so we have no other option but to clear database cache and reload everything
+
+          Timber.tag(TAG).d("combinePhotos method more or the same amount of freshPhotos that we have requested")
+          resetState(true)
+          return@launch
+        }
+
+        val sortedPhotos = combinedPhotos
+          .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
+          .sortedByDescending { it.uploadedOn }
+        setState { copy(uploadedPhotos = sortedPhotos) }
+      }
+    }
   }
 
   private fun resetStateInternal(clearCache: Boolean) {
@@ -192,29 +292,20 @@ class UploadedPhotosFragmentViewModel(
 
         val request = try {
           uploadedPhotosRepository.deleteOldPhotos()
-
-          val result = getUploadedPhotosUseCase.loadPageOfPhotos(lastUploadedOn, photosPerPage)
-          if (result is Either.Error) {
-            throw result.error
-          }
-
-          result as Either.Value
-
-          val uploadedPhotos = result.value
-            .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
-
-          Success(uploadedPhotos)
+          Success(getUploadedPhotosUseCase.loadPageOfPhotos(lastUploadedOn, photosPerPage))
         } catch (error: Throwable) {
-          Fail<List<UploadedPhoto>>(error)
+          Fail<Paged<UploadedPhoto>>(error)
         }
 
-        val newUploadedPhotos = request() ?: emptyList()
-        val isEndReached = newUploadedPhotos.size < photosPerPage
+        val oldPhotoNameSet = state.uploadedPhotos
+          .map { it.photoName }
+          .toSet()
 
-        val hasPhotosWithNoReceiver = newUploadedPhotos.any { it.receiverInfo == null }
-        if (hasPhotosWithNoReceiver) {
-          startReceivingService("There are photos with no receiver info")
-        }
+        val newUploadedPhotos = (request()?.page ?: emptyList())
+          .filterNot { oldPhotoNameSet.contains(it.photoName) }
+          .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
+
+        val isEndReached = request()?.isEnd ?: false
 
         setState {
           copy(
@@ -307,6 +398,8 @@ class UploadedPhotosFragmentViewModel(
         }
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUploadPhoto -> {
+        Timber.tag(TAG).d("OnFailedToUploadPhoto")
+
         withState { state ->
           val photoIndex = state.takenPhotos.indexOfFirst { it.id == event.photo.id }
           val newPhotos = if (photoIndex != -1) {
@@ -320,9 +413,12 @@ class UploadedPhotosFragmentViewModel(
         }
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoCanceled -> {
+        Timber.tag(TAG).d("OnPhotoCanceled")
         cancelPhotoUploading(event.photo.id)
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnError -> {
+        Timber.tag(TAG).d("OnError")
+
         withState { state ->
           val newPhotos = state.takenPhotos
             .map { takenPhoto -> QueuedUpPhoto.fromTakenPhoto(takenPhoto) }
@@ -332,16 +428,6 @@ class UploadedPhotosFragmentViewModel(
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
         Timber.tag(TAG).d("OnEnd")
-
-        launch {
-          // if we can't start a service to receive photos (not enough photos uploaded) -
-          // show already uploaded photos
-          if (!startReceivingService("Photos uploading done")) {
-            loadUploadedPhotos()
-          }
-        }
-
-        Unit
       }
     }.safe
   }
@@ -397,24 +483,6 @@ class UploadedPhotosFragmentViewModel(
       )
   }
 
-  private suspend fun startReceivingService(reason: String): Boolean {
-    val uploadedPhotosCount = uploadedPhotosRepository.count()
-    val receivedPhotosCount = receivedPhotosRepository.count()
-
-    val canReceivePhotos = uploadedPhotosCount > receivedPhotosCount
-    if (!canReceivePhotos) {
-      return false
-    }
-
-    intercom.tell<PhotosActivity>()
-      .to(PhotosActivityEvent.StartReceivingService(
-        PhotosActivityViewModel::class.java,
-        reason)
-      )
-
-    return true
-  }
-
   /**
    * Called when parent's viewModel onClear method is called
    * */
@@ -435,6 +503,7 @@ class UploadedPhotosFragmentViewModel(
     object LoadQueuedUpPhotos : ActorAction()
     object LoadUploadedPhotos : ActorAction()
     object FetchFreshPhotos : ActorAction()
+    class OnNewPhotoReceived(val photoExchangedData: PhotoExchangedData) : ActorAction()
   }
 
   companion object : MvRxViewModelFactory<UploadedPhotosFragmentState> {
