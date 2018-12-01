@@ -32,9 +32,11 @@ open class DatabaseModule(
 
   @Singleton
   @Provides
-  open fun provideDatabase(context: Context): MyDatabase {
+  open fun provideDatabase(context: Context,
+                           dispatchersProvider: DispatchersProvider): MyDatabase {
     return Room.databaseBuilder(context, MyDatabase::class.java, dbName)
       .build()
+      .also { it.dispatchersProvider = dispatchersProvider }
   }
 
   @Singleton
@@ -287,6 +289,36 @@ open class DatabaseModule(
     return GalleryPhotosRepository(
       database,
       timeUtils,
+      dispatchersProvider
+    )
+  }
+
+  @Singleton
+  @Provides
+  open fun provideStorePhotoFromPushNotificationRepository(database: MyDatabase,
+                                                           uploadedPhotosRepository: UploadedPhotosRepository,
+                                                           receivedPhotosRepository: ReceivedPhotosRepository,
+                                                           dispatchersProvider: DispatchersProvider): StorePhotoFromPushNotificationRepository {
+    return StorePhotoFromPushNotificationRepository(
+      database,
+      uploadedPhotosRepository,
+      receivedPhotosRepository,
+      dispatchersProvider
+    )
+  }
+
+  @Singleton
+  @Provides
+  open fun provideRestoreAccountRepository(database: MyDatabase,
+                                           settingsRepository: SettingsRepository,
+                                           uploadedPhotosRepository: UploadedPhotosRepository,
+                                           receivedPhotosRepository: ReceivedPhotosRepository,
+                                           dispatchersProvider: DispatchersProvider): RestoreAccountRepository {
+    return RestoreAccountRepository(
+      database,
+      settingsRepository,
+      uploadedPhotosRepository,
+      receivedPhotosRepository,
       dispatchersProvider
     )
   }

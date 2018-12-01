@@ -7,8 +7,8 @@ import com.kirakishou.photoexchange.helper.database.entity.ReceivedPhotoEntity
 import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
+import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
-import com.kirakishou.photoexchange.service.PushNotificationReceiverService
 import kotlinx.coroutines.withContext
 import net.response.ReceivedPhotosResponse
 
@@ -29,7 +29,7 @@ open class ReceivedPhotosRepository(
     }
   }
 
-  suspend fun save(photoExchangedData: PushNotificationReceiverService.PhotoExchangedData): Boolean {
+  suspend fun save(photoExchangedData: PhotoExchangedData): Boolean {
     return withContext(coroutineContext) {
       val now = timeUtils.getTimeFast()
 

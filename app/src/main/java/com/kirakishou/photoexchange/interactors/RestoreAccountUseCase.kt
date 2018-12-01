@@ -3,20 +3,14 @@ package com.kirakishou.photoexchange.interactors
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
-import com.kirakishou.photoexchange.helper.myRunCatching
+import com.kirakishou.photoexchange.helper.database.repository.RestoreAccountRepository
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.myRunCatching
 import kotlinx.coroutines.withContext
 
 open class RestoreAccountUseCase(
   private val apiClient: ApiClient,
-  private val database: MyDatabase,
-  private val settingsRepository: SettingsRepository,
-  private val uploadedPhotosRepository: UploadedPhotosRepository,
-  private val receivedPhotosRepository: ReceivedPhotosRepository,
+  private val restoreAccountRepository: RestoreAccountRepository,
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
 
@@ -28,7 +22,7 @@ open class RestoreAccountUseCase(
           return@myRunCatching false
         }
 
-        val transactionResult = cleanDatabase(oldUserId)
+        val transactionResult = restoreAccountRepository.cleanDatabase(oldUserId)
         if (!transactionResult) {
           throw DatabaseException("Could not clean database")
         }
@@ -38,16 +32,4 @@ open class RestoreAccountUseCase(
     }
   }
 
-  private suspend fun cleanDatabase(oldUserId: String): Boolean {
-    return database.transactional {
-      if (!settingsRepository.saveUserId(oldUserId)) {
-        return@transactional false
-      }
-
-      uploadedPhotosRepository.deleteAll()
-      receivedPhotosRepository.deleteAll()
-
-      return@transactional true
-    }
-  }
 }

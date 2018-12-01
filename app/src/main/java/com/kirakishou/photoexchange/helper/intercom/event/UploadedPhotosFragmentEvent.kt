@@ -3,11 +3,12 @@ package com.kirakishou.photoexchange.helper.intercom.event
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.helper.LonLat
+import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import java.lang.Exception
 
 sealed class UploadedPhotosFragmentEvent : BaseEvent {
   sealed class GeneralEvents : UploadedPhotosFragmentEvent() {
-    object FetchFreshPhotos : GeneralEvents()
+    class OnNewPhotoNotificationReceived(val photoExchangedData: PhotoExchangedData) : GeneralEvents()
   }
 
   sealed class ReceivePhotosEvent : UploadedPhotosFragmentEvent() {

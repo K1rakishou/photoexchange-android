@@ -10,4 +10,6 @@ sealed class PhotosActivityEvent : BaseEvent {
   class CancelPhotoUploading(val photoId: Long) : PhotosActivityEvent()
 
   class ScrollEvent(val isScrollingDown: Boolean) : PhotosActivityEvent()
+
+  object OnNewPhotoReceived : PhotosActivityEvent()
 }

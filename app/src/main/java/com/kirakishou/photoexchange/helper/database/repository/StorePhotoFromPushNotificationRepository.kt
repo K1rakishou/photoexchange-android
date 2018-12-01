@@ -1,23 +1,21 @@
-package com.kirakishou.photoexchange.interactors
+package com.kirakishou.photoexchange.helper.database.repository
 
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
-import com.kirakishou.photoexchange.service.PushNotificationReceiverService
+import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
-open class StorePhotoFromPushNotificationUseCase(
+class StorePhotoFromPushNotificationRepository(
   private val database: MyDatabase,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
   private val receivedPhotosRepository: ReceivedPhotosRepository,
   dispatchersProvider: DispatchersProvider
-) : BaseUseCase(dispatchersProvider) {
-  private val TAG = "StorePhotoFromPushNotificationUseCase"
+) : BaseRepository(dispatchersProvider) {
+  private val TAG = "StorePhotoFromPushNotificationRepository"
 
-  open suspend fun storePhoto(photoExchangedData: PushNotificationReceiverService.PhotoExchangedData): Boolean {
+  suspend fun storePhotoFromPushNotification(photoExchangedData: PhotoExchangedData): Boolean {
     return withContext(coroutineContext) {
       try {
         database.transactional {
@@ -43,5 +41,4 @@ open class StorePhotoFromPushNotificationUseCase(
       }
     }
   }
-
 }

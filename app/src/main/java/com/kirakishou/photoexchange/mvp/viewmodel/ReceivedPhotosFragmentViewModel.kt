@@ -14,6 +14,8 @@ import com.kirakishou.photoexchange.interactors.GetReceivedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
+import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
+import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import com.kirakishou.photoexchange.mvp.viewmodel.state.ReceivedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
@@ -60,6 +62,7 @@ class ReceivedPhotosFragmentViewModel(
           is ActorAction.ResetState -> resetStateInternal(action.clearCache)
           is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.receivedPhotoName)
           ActorAction.FetchFreshPhotos -> fetchFreshPhotosInternal()
+          is ActorAction.OnNewPhotoReceived -> onNewPhotoReceivedInternal(action.photoExchangedData)
         }.safe
       }
     }
@@ -81,6 +84,36 @@ class ReceivedPhotosFragmentViewModel(
 
   fun fetchFreshPhotos() {
     launch { viewModelActor.send(ActorAction.FetchFreshPhotos) }
+  }
+
+  fun onNewPhotoReceived(photoExchangedData: PhotoExchangedData) {
+    launch { viewModelActor.send(ActorAction.OnNewPhotoReceived(photoExchangedData)) }
+  }
+
+  private fun onNewPhotoReceivedInternal(photoExchangedData: PhotoExchangedData) {
+    withState { state ->
+      val photoIndex = state.receivedPhotos.indexOfFirst { it.receivedPhotoName == photoExchangedData.receivedPhotoName }
+      if (photoIndex != -1) {
+        //photos is already shown
+        return@withState
+      }
+
+      val newPhoto = ReceivedPhoto(
+        photoExchangedData.uploadedPhotoName,
+        photoExchangedData.receivedPhotoName,
+        photoExchangedData.lon,
+        photoExchangedData.lat,
+        photoExchangedData.uploadedOn,
+        true,
+        photoSize
+      )
+
+      val updatedPhotos = state.receivedPhotos.toMutableList() + newPhoto
+      val sortedPhotos = updatedPhotos.sortedByDescending { it.uploadedOn }
+
+      intercom.tell<PhotosActivity>().to(PhotosActivityEvent.OnNewPhotoReceived)
+      setState { copy(receivedPhotos = sortedPhotos) }
+    }
   }
 
   private fun fetchFreshPhotosInternal() {
@@ -218,6 +251,7 @@ class ReceivedPhotosFragmentViewModel(
     class ResetState(val clearCache: Boolean) : ActorAction()
     class SwapPhotoAndMap(val receivedPhotoName: String) : ActorAction()
     object FetchFreshPhotos : ActorAction()
+    class OnNewPhotoReceived(val photoExchangedData: PhotoExchangedData) : ActorAction()
   }
 
   companion object : MvRxViewModelFactory<ReceivedPhotosFragmentState> {

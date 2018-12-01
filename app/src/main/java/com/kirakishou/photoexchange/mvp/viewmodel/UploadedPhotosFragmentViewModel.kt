@@ -19,6 +19,7 @@ import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.helper.util.TimeUtils
+import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import com.kirakishou.photoexchange.mvp.model.photo.QueuedUpPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
@@ -71,6 +72,7 @@ class UploadedPhotosFragmentViewModel(
           ActorAction.LoadQueuedUpPhotos -> loadQueuedUpPhotosInternal()
           ActorAction.LoadUploadedPhotos -> loadUploadedPhotosInternal()
           ActorAction.FetchFreshPhotos -> fetchFreshPhotosInternal()
+          is ActorAction.OnNewPhotoReceived -> onNewPhotoReceivedInternal(action.photoExchangedData)
         }.safe
       }
     }
@@ -97,6 +99,32 @@ class UploadedPhotosFragmentViewModel(
   fun fetchFreshPhotos() {
     launch { viewModelActor.send(ActorAction.FetchFreshPhotos) }
   }
+
+  fun onNewPhotoReceived(photoExchangedData: PhotoExchangedData) {
+    launch { viewModelActor.send(ActorAction.OnNewPhotoReceived(photoExchangedData)) }
+  }
+
+  private fun onNewPhotoReceivedInternal(photoExchangedData: PhotoExchangedData) {
+    withState { state ->
+      val photoIndex = state.uploadedPhotos
+        .indexOfFirst { it.photoName == photoExchangedData.uploadedPhotoName }
+      if (photoIndex == -1) {
+        //nothing to update
+        return@withState
+      }
+
+      val updatedPhotos = state.uploadedPhotos.toMutableList()
+      val receiverInfo = UploadedPhoto.ReceiverInfo(photoExchangedData.lon, photoExchangedData.lat)
+      val updatedPhoto = updatedPhotos[photoIndex]
+        .copy(receiverInfo = receiverInfo)
+
+      updatedPhotos.removeAt(photoIndex)
+      updatedPhotos.add(photoIndex, updatedPhoto)
+
+      setState { copy(uploadedPhotos = updatedPhotos) }
+    }
+  }
+
 
   private fun fetchFreshPhotosInternal() {
     /**
@@ -491,6 +519,7 @@ class UploadedPhotosFragmentViewModel(
     object LoadQueuedUpPhotos : ActorAction()
     object LoadUploadedPhotos : ActorAction()
     object FetchFreshPhotos : ActorAction()
+    class OnNewPhotoReceived(val photoExchangedData: PhotoExchangedData) : ActorAction()
   }
 
   companion object : MvRxViewModelFactory<UploadedPhotosFragmentState> {

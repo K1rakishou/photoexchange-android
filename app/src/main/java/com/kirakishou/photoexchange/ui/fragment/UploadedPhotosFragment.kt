@@ -2,7 +2,6 @@ package com.kirakishou.photoexchange.ui.fragment
 
 import android.os.Bundle
 import android.view.View
-import androidx.lifecycle.Lifecycle
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.extension.safe
@@ -11,12 +10,10 @@ import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.helper.Constants
-import com.kirakishou.photoexchange.helper.RxLifecycle
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.epoxy.controller.UploadedPhotosFragmentEpoxyController
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.rxkotlin.zipWith
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -88,9 +85,9 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
     }
 
     when (event) {
-      UploadedPhotosFragmentEvent.GeneralEvents.FetchFreshPhotos -> {
-        Timber.tag(TAG).d("FetchFreshPhotos received, currentState = ${lifecycle.getCurrentState()}")
-        viewModel.uploadedPhotosFragmentViewModel.fetchFreshPhotos()
+      is UploadedPhotosFragmentEvent.GeneralEvents.OnNewPhotoNotificationReceived -> {
+        Timber.tag(TAG).d("OnNewPhotoNotificationReceived, currentState = ${lifecycle.getCurrentState()}")
+        viewModel.uploadedPhotosFragmentViewModel.onNewPhotoReceived(event.photoExchangedData)
       }
     }.safe
   }

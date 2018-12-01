@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRep
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
+import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
@@ -46,12 +47,12 @@ class PhotosActivityViewModel(
     return uploadedPhotosCount > receivedPhotosCount
   }
 
-  fun fetchFreshPhotos() {
-    Timber.tag(TAG).d("fetchFreshPhotos called")
+  fun addReceivedPhoto(photoExchangedData: PhotoExchangedData) {
+    Timber.tag(TAG).d("addReceivedPhoto called")
 
     intercom.tell<UploadedPhotosFragment>()
-      .to(UploadedPhotosFragmentEvent.GeneralEvents.FetchFreshPhotos)
+      .to(UploadedPhotosFragmentEvent.GeneralEvents.OnNewPhotoNotificationReceived(photoExchangedData))
     intercom.tell<ReceivedPhotosFragment>()
-      .to(ReceivedPhotosFragmentEvent.GeneralEvents.FetchFreshPhotos)
+      .to(ReceivedPhotosFragmentEvent.GeneralEvents.OnNewPhotoNotificationReceived(photoExchangedData))
   }
 }
