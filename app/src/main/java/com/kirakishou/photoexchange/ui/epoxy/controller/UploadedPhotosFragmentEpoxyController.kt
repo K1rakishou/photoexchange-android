@@ -4,6 +4,7 @@ import android.content.Context
 import android.widget.Toast
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.airbnb.mvrx.*
+import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
@@ -35,7 +36,7 @@ class UploadedPhotosFragmentEpoxyController {
   private fun AsyncEpoxyController.buildUploadedPhotos(
     state: UploadedPhotosFragmentState,
     viewModel: UploadedPhotosFragmentViewModel,
-    uploadedPhotosRequest: Async<List<UploadedPhoto>>,
+    uploadedPhotosRequest: Async<Paged<UploadedPhoto>>,
     context: Context
   ) {
     if (uploadedPhotosRequest is Loading) {

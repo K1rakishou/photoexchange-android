@@ -23,6 +23,12 @@ open class UploadedPhotosRepository(
     }
   }
 
+  suspend fun contains(photoName: String): Boolean {
+    return withContext(coroutineContext) {
+      return@withContext uploadedPhotoDao.findByPhotoName(photoName) != null
+    }
+  }
+
   open suspend fun findMany(photoIds: List<Long>): List<UploadedPhoto> {
     return withContext(coroutineContext) {
       return@withContext UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.findMany(photoIds))

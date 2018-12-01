@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
+import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
@@ -19,13 +20,13 @@ class GetUploadedPhotosRepository(
   /**
    * This method skips the database cache
    * */
-  suspend fun getFresh(time: Long, count: Int, userId: String): List<UploadedPhoto> {
+  suspend fun getFresh(time: Long, count: Int, userId: String): Paged<UploadedPhoto> {
     return withContext(coroutineContext) {
       //get a page of fresh photos from the server
       val uploadedPhotos = apiClient.getPageOfUploadedPhotos(userId, time, count)
       if (uploadedPhotos.isEmpty()) {
         Timber.tag(TAG).d("No uploaded photos were found on the server")
-        return@withContext emptyList<UploadedPhoto>()
+        return@withContext Paged(emptyList<UploadedPhoto>(), true)
       }
 
       if (!uploadedPhotosLocalSource.saveMany(uploadedPhotos)) {
@@ -35,25 +36,26 @@ class GetUploadedPhotosRepository(
       val mappedPhotos = UploadedPhotosMapper.FromResponse.ToObject
         .toUploadedPhotos(uploadedPhotos)
 
-      return@withContext splitPhotos(mappedPhotos)
+      val photos = splitPhotos(mappedPhotos)
+      return@withContext Paged(photos, photos.size < count)
     }
   }
 
   /**
    * This method includes photos from the database cache
    * */
-  suspend fun getPage(time: Long, count: Int, userId: String): List<UploadedPhoto> {
+  suspend fun getPage(time: Long, count: Int, userId: String): Paged<UploadedPhoto> {
     return withContext(coroutineContext) {
       val pageOfUploadedPhotos = uploadedPhotosLocalSource.getPage(time, count)
       if (pageOfUploadedPhotos.size == count) {
         Timber.tag(TAG).d("Found enough uploaded photos in the database")
-        return@withContext pageOfUploadedPhotos
+        return@withContext Paged(pageOfUploadedPhotos, pageOfUploadedPhotos.size < count)
       }
 
       val uploadedPhotos = apiClient.getPageOfUploadedPhotos(userId, time, count)
       if (uploadedPhotos.isEmpty()) {
         Timber.tag(TAG).d("No uploaded photos were found on the server")
-        return@withContext emptyList<UploadedPhoto>()
+        return@withContext Paged(pageOfUploadedPhotos, true)
       }
 
       if (!uploadedPhotosLocalSource.saveMany(uploadedPhotos)) {
@@ -61,7 +63,9 @@ class GetUploadedPhotosRepository(
       }
 
       val mappedPhotos = UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhotos(uploadedPhotos)
-      return@withContext splitPhotos(mappedPhotos)
+      val photos = splitPhotos(mappedPhotos)
+
+      return@withContext Paged(photos, photos.size < count)
     }
   }
 

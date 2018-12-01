@@ -17,6 +17,7 @@ import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.helper.Constants
+import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
@@ -131,7 +132,7 @@ class UploadedPhotosFragmentViewModel(
      * Combines old uploadedPhotos with the fresh ones and also counts how many of the fresh photos were
      * truly fresh (e.g. uploadedPhotos didn't contain them yet or it did but without receiverInfo)
      * */
-    fun combinePhotos(
+    suspend fun combinePhotos(
       freshPhotos: List<UploadedPhoto>,
       uploadedPhotos: List<UploadedPhoto>
     ): Pair<MutableList<UploadedPhoto>, Int> {
@@ -140,24 +141,25 @@ class UploadedPhotosFragmentViewModel(
       var freshPhotosCount = 0
 
       for (freshPhoto in freshPhotos) {
-        val uploadedPhotoIndex = updatedPhotos.indexOfFirst { it.photoName == freshPhoto.photoName }
-        if (uploadedPhotoIndex == -1) {
+        if (uploadedPhotosRepository.contains(freshPhoto.photoName)) {
           //if we don't have this photo yet - add it to the list
           updatedPhotos += freshPhoto
           ++freshPhotosCount
           continue
         }
 
-        val uploadedPhoto = updatedPhotos[uploadedPhotoIndex]
+        val uploadedPhotoIndex = updatedPhotos.indexOfFirst { it.photoName == freshPhoto.photoName }
+        if (uploadedPhotoIndex != -1) {
+          val uploadedPhoto = uploadedPhotos[uploadedPhotoIndex]
 
-        //if we already have this photo but old photo has no receiverInfo and the new one has
-        if (uploadedPhoto.receiverInfo == null && freshPhoto.receiverInfo != null) {
-          //add this photo to the list
+          //if we already have this photo but old photo has no receiverInfo and the new one has
+          if (uploadedPhoto.receiverInfo == null && freshPhoto.receiverInfo != null) {
+            //replace it with the newer one
+            updatedPhotos.removeAt(uploadedPhotoIndex)
+            updatedPhotos += freshPhoto
 
-          updatedPhotos.removeAt(uploadedPhotoIndex)
-          updatedPhotos += freshPhoto
-
-          ++freshPhotosCount
+            ++freshPhotosCount
+          }
         }
       }
 
@@ -174,15 +176,7 @@ class UploadedPhotosFragmentViewModel(
         }
 
         val freshPhotos = try {
-          val result = getUploadedPhotosUseCase.loadFreshPhotos(timeUtils.getTimeFast(), photosPerPage)
-          if (result is Either.Error) {
-            throw result.error
-          }
-
-          result as Either.Value
-
-          result.value
-            .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
+          getUploadedPhotosUseCase.loadFreshPhotos(timeUtils.getTimeFast(), photosPerPage)
         } catch (error: Throwable) {
           Timber.tag(TAG).e(error)
 
@@ -190,14 +184,12 @@ class UploadedPhotosFragmentViewModel(
           return@launch
         }
 
-        //FIXME: should do this with the photos from the database not the state
-        val (combinedPhotos, freshPhotosCount) = combinePhotos(freshPhotos, state.uploadedPhotos)
+        val (combinedPhotos, freshPhotosCount) = combinePhotos(freshPhotos.page, state.uploadedPhotos)
         if (freshPhotosCount == 0) {
           //Should this even happen? We are supposed to have new photos if this method was called.
           //Update: Yes this can happen! When user has more than "photosPerPage" uploaded photos without receiverInfo
 
           Timber.tag(TAG).d("combinePhotos returned 0 freshPhotosCount!")
-          resetState(true)
           return@launch
         }
 
@@ -210,7 +202,9 @@ class UploadedPhotosFragmentViewModel(
           return@launch
         }
 
-        val sortedPhotos = combinedPhotos.sortedByDescending { it.uploadedOn }
+        val sortedPhotos = combinedPhotos
+          .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
+          .sortedByDescending { it.uploadedOn }
         setState { copy(uploadedPhotos = sortedPhotos) }
       }
     }
@@ -298,30 +292,20 @@ class UploadedPhotosFragmentViewModel(
 
         val request = try {
           uploadedPhotosRepository.deleteOldPhotos()
-
-          val result = getUploadedPhotosUseCase.loadPageOfPhotos(lastUploadedOn, photosPerPage)
-          if (result is Either.Error) {
-            throw result.error
-          }
-
-          result as Either.Value
-
-          val uploadedPhotos = result.value
-            .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
-
-          Success(uploadedPhotos)
+          Success(getUploadedPhotosUseCase.loadPageOfPhotos(lastUploadedOn, photosPerPage))
         } catch (error: Throwable) {
-          Fail<List<UploadedPhoto>>(error)
+          Fail<Paged<UploadedPhoto>>(error)
         }
 
         val oldPhotoNameSet = state.uploadedPhotos
           .map { it.photoName }
           .toSet()
 
-        val newUploadedPhotos = (request() ?: emptyList())
+        val newUploadedPhotos = (request()?.page ?: emptyList())
           .filterNot { oldPhotoNameSet.contains(it.photoName) }
+          .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
 
-        val isEndReached = newUploadedPhotos.size < photosPerPage
+        val isEndReached = request()?.isEnd ?: false
 
         setState {
           copy(

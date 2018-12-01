@@ -1,14 +1,12 @@
 package com.kirakishou.photoexchange.interactors
 
-import com.kirakishou.photoexchange.helper.Either
+import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.GetUploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
-import com.kirakishou.photoexchange.helper.myRunCatching
+import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
-import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
@@ -23,28 +21,24 @@ open class GetUploadedPhotosUseCase(
   open suspend fun loadPageOfPhotos(
     lastUploadedOn: Long,
     count: Int
-  ): Either<Exception, List<UploadedPhoto>> {
+  ): Paged<UploadedPhoto> {
     return withContext(coroutineContext) {
-      return@withContext myRunCatching {
-        Timber.tag(TAG).d("loadPageOfPhotos called")
+      Timber.tag(TAG).d("loadPageOfPhotos called")
 
-        val (time, userId) = getParameters(lastUploadedOn)
-        return@myRunCatching getUploadedPhotosRepository.getPage(time, count, userId)
-      }
+      val (time, userId) = getParameters(lastUploadedOn)
+      return@withContext getUploadedPhotosRepository.getPage(time, count, userId)
     }
   }
 
   open suspend fun loadFreshPhotos(
     lastUploadedOn: Long,
     count: Int
-  ): Either<Exception, List<UploadedPhoto>> {
+  ): Paged<UploadedPhoto> {
     return withContext(coroutineContext) {
-      return@withContext myRunCatching {
-        Timber.tag(TAG).d("loadFreshPhotos called")
+      Timber.tag(TAG).d("loadFreshPhotos called")
 
-        val (time, userId) = getParameters(lastUploadedOn)
-        return@myRunCatching getUploadedPhotosRepository.getFresh(time, count, userId)
-      }
+      val (time, userId) = getParameters(lastUploadedOn)
+      return@withContext getUploadedPhotosRepository.getFresh(time, count, userId)
     }
   }
 

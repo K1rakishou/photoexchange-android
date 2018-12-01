@@ -78,12 +78,14 @@ open class PhotosActivityModule(
   @Provides
   fun provideReceivedPhotosFragmentViewModel(intercom: PhotosActivityViewModelIntercom,
                                              viewState: ReceivedPhotosFragmentState,
+                                             timeUtils: TimeUtils,
                                              receivedPhotosRepository: ReceivedPhotosRepository,
                                              getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
                                              dispatchersProvider: DispatchersProvider): ReceivedPhotosFragmentViewModel {
     return ReceivedPhotosFragmentViewModel(
       viewState,
       intercom,
+      timeUtils,
       receivedPhotosRepository,
       getReceivedPhotosUseCase,
       dispatchersProvider
