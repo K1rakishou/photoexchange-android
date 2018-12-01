@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.ui.fragment
 
 import android.os.Bundle
 import android.view.View
+import androidx.lifecycle.Lifecycle
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.extension.safe
@@ -56,9 +57,6 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
 
   private fun initRx() {
     compositeDisposable += viewModel.intercom.uploadedPhotosFragmentEvents.listen()
-      .zipWith(lifecycle.getLifecycleObservable())
-      .filter { (_, lifecycle) -> lifecycle.isAtLeast(RxLifecycle.FragmentState.Created) }
-      .map { (event, _) -> event }
       .subscribe(
         { event -> launch { onStateEvent(event) } },
         { error -> Timber.tag(TAG).e(error) }
@@ -91,7 +89,7 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
 
     when (event) {
       UploadedPhotosFragmentEvent.GeneralEvents.FetchFreshPhotos -> {
-        Timber.tag(TAG).d("FetchFreshPhotos received, lifecycle = ${lifecycle.getCurrentLifecycle()}")
+        Timber.tag(TAG).d("FetchFreshPhotos received, currentState = ${lifecycle.getCurrentState()}")
         viewModel.uploadedPhotosFragmentViewModel.fetchFreshPhotos()
       }
     }.safe

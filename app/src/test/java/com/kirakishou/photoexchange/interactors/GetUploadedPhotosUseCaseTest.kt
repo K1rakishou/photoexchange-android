@@ -12,7 +12,7 @@ import org.mockito.Mockito
 
 class GetUploadedPhotosUseCaseTest {
 
-  lateinit var database: MyDatabase
+  /*lateinit var database: MyDatabase
   lateinit var apiClient: ApiClient
   lateinit var timeUtils: TimeUtils
   lateinit var dispatchersProvider: DispatchersProvider
@@ -40,7 +40,7 @@ class GetUploadedPhotosUseCaseTest {
 
   }
 
-  /*@Test
+  @Test
   fun `should return EitherError with errorCode when server did not return ok`() {
     val userId = "123"
     val lastId = 1000L

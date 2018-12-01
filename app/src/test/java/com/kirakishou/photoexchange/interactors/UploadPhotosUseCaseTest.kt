@@ -29,7 +29,7 @@ import java.lang.RuntimeException
 
 class UploadPhotosUseCaseTest {
 
-  lateinit var database: MyDatabase
+  /*lateinit var database: MyDatabase
   lateinit var takenPhotosRepository: TakenPhotosRepository
   lateinit var uploadedPhotosRepository: UploadedPhotosRepository
   lateinit var apiClient: ApiClient
@@ -388,7 +388,7 @@ class UploadPhotosUseCaseTest {
 
       Mockito.verify(fileUtils, Mockito.times(1)).deleteFile(rotatedPhotoFileMock)
     }
-  }
+  }*/
 }
 
 

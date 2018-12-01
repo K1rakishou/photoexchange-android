@@ -12,7 +12,7 @@ class UploadPhotoServiceConnection(
   val activity: PhotosActivity
 ) : AtomicBoolean(false), ServiceConnection {
 
-  private val tag = "UploadPhotoServiceConnection"
+  private val TAG = "UploadPhotoServiceConnection"
   private var uploadPhotoService: UploadPhotoService? = null
 
   override fun onServiceConnected(className: ComponentName, _service: IBinder) {
@@ -20,6 +20,7 @@ class UploadPhotoServiceConnection(
   }
 
   override fun onServiceDisconnected(className: ComponentName) {
+    Timber.tag(TAG).d("onServiceDisconnected called")
     onUploadingServiceDisconnected()
   }
 

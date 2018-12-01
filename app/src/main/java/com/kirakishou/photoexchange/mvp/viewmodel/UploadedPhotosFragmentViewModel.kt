@@ -283,9 +283,14 @@ class UploadedPhotosFragmentViewModel(
           Fail<List<UploadedPhoto>>(error)
         }
 
-        val newUploadedPhotos = request() ?: emptyList()
-        val isEndReached = newUploadedPhotos.size < photosPerPage
+        val oldPhotoNameSet = state.uploadedPhotos
+          .map { it.photoName }
+          .toSet()
 
+        val newUploadedPhotos = (request() ?: emptyList())
+          .filterNot { oldPhotoNameSet.contains(it.photoName) }
+
+        val isEndReached = newUploadedPhotos.size < photosPerPage
         val hasPhotosWithNoReceiver = newUploadedPhotos.any { it.receiverInfo == null }
         if (hasPhotosWithNoReceiver) {
           startReceivingService("There are photos with no receiver info")
@@ -412,16 +417,6 @@ class UploadedPhotosFragmentViewModel(
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
         Timber.tag(TAG).d("OnEnd")
-
-        launch {
-          // if we can't start a service to receive photos (not enough photos uploaded) -
-          // show already uploaded photos
-          if (!startReceivingService("Photos uploading done")) {
-            loadUploadedPhotos()
-          }
-        }
-
-        Unit
       }
     }.safe
   }

@@ -23,7 +23,7 @@ import java.lang.Exception
 
 class GetGalleryPhotosUseCaseTest {
 
-  lateinit var database: MyDatabase
+  /*lateinit var database: MyDatabase
   lateinit var apiClient: ApiClient
   lateinit var timeUtils: TimeUtils
   lateinit var dispatchersProvider: DispatchersProvider
@@ -244,7 +244,7 @@ class GetGalleryPhotosUseCaseTest {
       Mockito.verifyNoMoreInteractions(getGalleryPhotosRepository)
       Mockito.verifyNoMoreInteractions(apiClient)
     }
-  }
+  }*/
 }
 
 

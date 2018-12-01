@@ -26,7 +26,7 @@ abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
   private val invalidationActor: SendChannel<Unit>
 
   protected val compositeDisposable = CompositeDisposable()
-  protected val lifecycle = RxLifecycle()
+  protected val lifecycle = RxLifecycle(this)
 
   private val job = Job()
   protected lateinit var recyclerView: EpoxyRecyclerView
@@ -52,14 +52,14 @@ abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
   override fun onAttach(context: Context?) {
     super.onAttach(context)
 
-    lifecycle.start(this)
+    lifecycle.start()
   }
 
   override fun onDetach() {
     super.onDetach()
 
     job.cancel()
-    lifecycle.stop(this)
+    lifecycle.stop()
   }
 
   @CallSuper
