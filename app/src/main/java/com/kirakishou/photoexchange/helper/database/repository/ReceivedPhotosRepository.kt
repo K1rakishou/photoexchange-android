@@ -3,10 +3,12 @@ package com.kirakishou.photoexchange.helper.database.repository
 import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
+import com.kirakishou.photoexchange.helper.database.entity.ReceivedPhotoEntity
 import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
+import com.kirakishou.photoexchange.service.PushNotificationReceiverService
 import kotlinx.coroutines.withContext
 import net.response.ReceivedPhotosResponse
 
@@ -24,6 +26,23 @@ open class ReceivedPhotosRepository(
       return@withContext receivedPhotosDao.save(ReceivedPhotosMapper.FromResponse.ReceivedPhotos
         .toReceivedPhotoEntity(now, receivedPhoto))
         .isSuccess()
+    }
+  }
+
+  suspend fun save(photoExchangedData: PushNotificationReceiverService.PhotoExchangedData): Boolean {
+    return withContext(coroutineContext) {
+      val now = timeUtils.getTimeFast()
+
+      val receivedPhotoEntity = ReceivedPhotoEntity(
+        photoExchangedData.uploadedPhotoName,
+        photoExchangedData.receivedPhotoName,
+        photoExchangedData.lon,
+        photoExchangedData.lat,
+        photoExchangedData.uploadedOn,
+        now
+      )
+
+      return@withContext receivedPhotosDao.save(receivedPhotoEntity).isSuccess()
     }
   }
 

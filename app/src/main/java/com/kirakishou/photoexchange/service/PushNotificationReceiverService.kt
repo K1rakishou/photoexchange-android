@@ -1,22 +1,23 @@
 package com.kirakishou.photoexchange.service
 
-import com.google.firebase.messaging.FirebaseMessagingService
-import com.google.firebase.messaging.RemoteMessage
-import com.kirakishou.photoexchange.PhotoExchangeApplication
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import kotlinx.coroutines.runBlocking
-import timber.log.Timber
-import javax.inject.Inject
-import android.app.NotificationManager
 import android.app.NotificationChannel
-import android.os.Build
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.core.app.NotificationCompat
+import com.google.firebase.messaging.FirebaseMessagingService
+import com.google.firebase.messaging.RemoteMessage
 import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.PhotoExchangeApplication
+import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.interactors.StorePhotoFromPushNotificationUseCase
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
+import kotlinx.coroutines.runBlocking
+import timber.log.Timber
+import javax.inject.Inject
 
 
 class PushNotificationReceiverService : FirebaseMessagingService() {
@@ -26,6 +27,9 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
 
   @Inject
   lateinit var settingsRepository: SettingsRepository
+
+  @Inject
+  lateinit var storePhotoFromPushNotificationUseCase: StorePhotoFromPushNotificationUseCase
 
   override fun onCreate() {
     super.onCreate()
@@ -42,17 +46,25 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
       return
     }
 
-    val photoExchanged = try {
-      remoteMessage.data[photoExchangedFlag]?.toBoolean()
+    val photoExchangedData = try {
+      extractData(remoteMessage)
     } catch (error: Throwable) {
+      Timber.tag(TAG).e(error)
       null
     }
 
-    if (photoExchanged != null && photoExchanged) {
-      Timber.tag(TAG).d("Some photo has been exchanged")
+    if (photoExchangedData != null) {
+      Timber.tag(TAG).d("Got new photo from someone")
 
-      showNotification()
-      sendPhotoReceivedBroadcast()
+      runBlocking {
+        if (!storePhotoInDatabase(photoExchangedData)) {
+          Timber.tag(TAG).w("Could not store photoExchangedData")
+          return@runBlocking
+        }
+
+        showNotification()
+        sendPhotoReceivedBroadcast()
+      }
     }
   }
 
@@ -75,6 +87,41 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
         Timber.tag(TAG).e(error, "Could not update new firebase token")
       }
     }
+  }
+
+  private suspend fun storePhotoInDatabase(photoExchangedData: PhotoExchangedData): Boolean {
+    return storePhotoFromPushNotificationUseCase.storePhoto(photoExchangedData)
+  }
+
+  private fun extractData(remoteMessage: RemoteMessage): PhotoExchangedData? {
+    val data = remoteMessage.data
+
+    val uploadedPhotoName = data.get(uploadedPhotoNameField)
+    if (uploadedPhotoName.isNullOrEmpty()) {
+      return null
+    }
+
+    val receivedPhotoName = data.get(receivedPhotoNameField)
+    if (receivedPhotoName.isNullOrEmpty()) {
+      return null
+    }
+
+    val receiverLon = data.get(receiverLonField)?.toDoubleOrNull()
+      ?: return null
+
+    val receiverLat = data.get(receiverLatField)?.toDoubleOrNull()
+      ?: return null
+
+    val uploadedOn = data.get(uploadedOnField)?.toLongOrNull()
+      ?: return null
+
+    return PhotoExchangedData(
+      uploadedPhotoName,
+      receivedPhotoName,
+      receiverLon,
+      receiverLat,
+      uploadedOn
+    )
   }
 
   private fun sendPhotoReceivedBroadcast() {
@@ -129,6 +176,14 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
     notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build())
   }
 
+  data class PhotoExchangedData(
+    val uploadedPhotoName: String,
+    val receivedPhotoName: String,
+    val lon: Double,
+    val lat: Double,
+    val uploadedOn: Long
+  )
+
   companion object {
     private val vibrationPattern = LongArray(4).apply {
       this[0] = 0L
@@ -137,7 +192,11 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
       this[3] = 300L
     }
 
-    const val photoExchangedFlag = "photo_exchanged"
+    const val uploadedPhotoNameField = "uploaded_photo_name"
+    const val receivedPhotoNameField = "received_photo_name"
+    const val receiverLonField = "lon"
+    const val receiverLatField = "lat"
+    const val uploadedOnField = "uploaded_on"
     const val NOTIFICATION_ID = 3
   }
 }

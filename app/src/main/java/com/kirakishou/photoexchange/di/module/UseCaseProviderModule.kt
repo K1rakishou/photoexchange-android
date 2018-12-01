@@ -133,4 +133,18 @@ class UseCaseProviderModule {
       dispatchersProvider
     )
   }
+
+  @Singleton
+  @Provides
+  fun provideStorePhotoFromPushNotificationUseCase(database: MyDatabase,
+                                                   uploadedPhotosRepository: UploadedPhotosRepository,
+                                                   receivedPhotosRepository: ReceivedPhotosRepository,
+                                                   dispatchersProvider: DispatchersProvider): StorePhotoFromPushNotificationUseCase {
+    return StorePhotoFromPushNotificationUseCase(
+      database,
+      uploadedPhotosRepository,
+      receivedPhotosRepository,
+      dispatchersProvider
+    )
+  }
 }
