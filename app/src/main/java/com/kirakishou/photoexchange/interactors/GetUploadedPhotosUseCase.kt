@@ -26,7 +26,7 @@ open class GetUploadedPhotosUseCase(
   ): Either<Exception, List<UploadedPhoto>> {
     return withContext(coroutineContext) {
       return@withContext myRunCatching {
-        Timber.tag(TAG).d("loadPageOfPhotosIncludingCache called")
+        Timber.tag(TAG).d("loadPageOfPhotos called")
 
         val (time, userId) = getParameters(lastUploadedOn)
         return@myRunCatching getUploadedPhotosRepository.getPage(time, count, userId)
@@ -40,7 +40,7 @@ open class GetUploadedPhotosUseCase(
   ): Either<Exception, List<UploadedPhoto>> {
     return withContext(coroutineContext) {
       return@withContext myRunCatching {
-        Timber.tag(TAG).d("loadPageOfPhotosSkippingCache called")
+        Timber.tag(TAG).d("loadFreshPhotos called")
 
         val (time, userId) = getParameters(lastUploadedOn)
         return@myRunCatching getUploadedPhotosRepository.getFresh(time, count, userId)

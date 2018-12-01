@@ -15,6 +15,7 @@ import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
+import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import com.kirakishou.photoexchange.mvp.viewmodel.state.ReceivedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
@@ -34,6 +35,7 @@ import kotlin.coroutines.CoroutineContext
 class ReceivedPhotosFragmentViewModel(
   initialState: ReceivedPhotosFragmentState,
   private val intercom: PhotosActivityViewModelIntercom,
+  private val timeUtils: TimeUtils,
   private val receivedPhotosRepository: ReceivedPhotosRepository,
   private val getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
   private val dispatchersProvider: DispatchersProvider
@@ -117,7 +119,79 @@ class ReceivedPhotosFragmentViewModel(
   }
 
   private fun fetchFreshPhotosInternal() {
-    //TODO
+    /**
+     * Combines old receivedPhotos with the fresh ones and also counts how many of the fresh photos were
+     * truly fresh (e.g. receivedPhotos didn't contain them yet or it did but without receiverInfo)
+     * */
+    fun combinePhotos(
+      freshPhotos: List<ReceivedPhoto>,
+      receivedPhotos: List<ReceivedPhoto>
+    ): Pair<MutableList<ReceivedPhoto>, Int> {
+      val updatedPhotos = receivedPhotos.toMutableList()
+      var freshPhotosCount = 0
+
+      for (freshPhoto in freshPhotos) {
+        val uploadedPhotoIndex = updatedPhotos.indexOfFirst { it.uploadedPhotoName == freshPhoto.uploadedPhotoName }
+        if (uploadedPhotoIndex == -1) {
+          //if we don't have this photo yet - add it to the list
+          updatedPhotos += freshPhoto
+          ++freshPhotosCount
+        }
+      }
+
+      return updatedPhotos to freshPhotosCount
+    }
+
+    //TODO: should we run this method if receivedPhotosRequest is in the Failed or Loading state?
+    withState { state ->
+      launch {
+        //if we are trying to fetch fresh photos and there are no uploadedPhotos - start normal photos loading
+        if (state.receivedPhotos.isEmpty()) {
+          loadReceivedPhotos()
+          return@launch
+        }
+
+        val freshPhotos = try {
+          val result = getReceivedPhotosUseCase.loadFreshPhotos(timeUtils.getTimeFast(), photosPerPage)
+          if (result is Either.Error) {
+            throw result.error
+          }
+
+          result as Either.Value
+
+          result.value
+            .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
+        } catch (error: Throwable) {
+          Timber.tag(TAG).e(error)
+
+          //TODO: show some kind of message here?
+          return@launch
+        }
+
+        //FIXME: should do this with the photos from the database not the state
+        val (combinedPhotos, freshPhotosCount) = combinePhotos(freshPhotos, state.receivedPhotos)
+        if (freshPhotosCount == 0) {
+          //Should this even happen? We are supposed to have new photos if this method was called.
+          //Update: Yes this can happen! When user has more than "photosPerPage" fresh received photos
+
+          Timber.tag(TAG).d("combinePhotos returned 0 freshPhotosCount!")
+          resetState(true)
+          return@launch
+        }
+
+        if (freshPhotosCount >= photosPerPage) {
+          //this means that there are probably even more photos that this user has not seen yet
+          //so we have no other option but to clear database cache and reload everything
+
+          Timber.tag(TAG).d("combinePhotos method more or the same amount of freshPhotos that we have requested")
+          resetState(true)
+          return@launch
+        }
+
+        val sortedPhotos = combinedPhotos.sortedByDescending { it.uploadedOn }
+        setState { copy(receivedPhotos = sortedPhotos) }
+      }
+    }
   }
 
   private fun swapPhotoAndMapInternal(receivedPhotoName: String) {

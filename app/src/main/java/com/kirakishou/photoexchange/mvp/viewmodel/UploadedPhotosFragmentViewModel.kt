@@ -194,7 +194,7 @@ class UploadedPhotosFragmentViewModel(
         val (combinedPhotos, freshPhotosCount) = combinePhotos(freshPhotos, state.uploadedPhotos)
         if (freshPhotosCount == 0) {
           //Should this even happen? We are supposed to have new photos if this method was called.
-          //Update: Yes this can happen! When user has more that "photosPerPage" uploaded photos without receiverInfo
+          //Update: Yes this can happen! When user has more than "photosPerPage" uploaded photos without receiverInfo
 
           Timber.tag(TAG).d("combinePhotos returned 0 freshPhotosCount!")
           resetState(true)

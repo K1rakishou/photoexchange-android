@@ -17,28 +17,47 @@ open class GetReceivedPhotosUseCase(
   private val timeUtils: TimeUtils,
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
-
   private val TAG = "GetReceivedPhotosUseCase"
 
-  suspend fun loadPageOfPhotos(
+  open suspend fun loadPageOfPhotos(
     lastUploadedOn: Long,
     count: Int
   ): Either<Exception, List<ReceivedPhoto>> {
     return withContext(coroutineContext) {
       return@withContext myRunCatching {
-        val time = if (lastUploadedOn != -1L) {
-          lastUploadedOn
-        } else {
-          timeUtils.getTimeFast()
-        }
+        Timber.tag(TAG).d("loadPageOfPhotos called")
 
-        val userId = settingsRepository.getUserId()
-        if (userId.isEmpty()) {
-          throw EmptyUserIdException()
-        }
-
+        val (time, userId) = getParameters(lastUploadedOn)
         return@myRunCatching getReceivedPhotosRepository.getPage(userId, time, count)
       }
     }
+  }
+
+  open suspend fun loadFreshPhotos(
+    lastUploadedOn: Long,
+    count: Int
+  ): Either<Exception, List<ReceivedPhoto>> {
+    return withContext(coroutineContext) {
+      return@withContext myRunCatching {
+        Timber.tag(TAG).d("loadPageOfPhotos called")
+
+        val (time, userId) = getParameters(lastUploadedOn)
+        return@myRunCatching getReceivedPhotosRepository.getFresh(userId, time, count)
+      }
+    }
+  }
+
+  private suspend fun getParameters(lastUploadedOn: Long): Pair<Long, String> {
+    val time = if (lastUploadedOn != -1L) {
+      lastUploadedOn
+    } else {
+      timeUtils.getTimeFast()
+    }
+
+    val userId = settingsRepository.getUserId()
+    if (userId.isEmpty()) {
+      throw EmptyUserIdException()
+    }
+    return Pair(time, userId)
   }
 }
