@@ -29,23 +29,6 @@ open class ReceivedPhotosRepository(
     }
   }
 
-  suspend fun save(photoExchangedData: PhotoExchangedData): Boolean {
-    return withContext(coroutineContext) {
-      val now = timeUtils.getTimeFast()
-
-      val receivedPhotoEntity = ReceivedPhotoEntity(
-        photoExchangedData.uploadedPhotoName,
-        photoExchangedData.receivedPhotoName,
-        photoExchangedData.lon,
-        photoExchangedData.lat,
-        photoExchangedData.uploadedOn,
-        now
-      )
-
-      return@withContext receivedPhotosDao.save(receivedPhotoEntity).isSuccess()
-    }
-  }
-
   suspend fun count(): Int {
     return withContext(coroutineContext) {
       return@withContext receivedPhotosDao.countAll().toInt()

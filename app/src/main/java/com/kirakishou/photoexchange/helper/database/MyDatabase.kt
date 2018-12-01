@@ -24,7 +24,6 @@ import kotlinx.coroutines.withContext
 ], version = 1)
 abstract class MyDatabase : RoomDatabase() {
   private val mutex = Mutex()
-  lateinit var dispatchersProvider: DispatchersProvider
 
   abstract fun takenPhotoDao(): TakenPhotoDao
   abstract fun tempFileDao(): TempFileDao
@@ -35,20 +34,16 @@ abstract class MyDatabase : RoomDatabase() {
   abstract fun uploadedPhotoDao(): UploadedPhotoDao
 
   open suspend fun <T> transactional(func: suspend () -> T): T {
-    //Ensure that all transactions run on the database dispatcher.
-    //Otherwise they may hang forever!!!
-    return withContext(dispatchersProvider.DB()) {
-      return@withContext mutex.withLock {
-        beginTransaction()
+    return mutex.withLock {
+      beginTransaction()
 
-        try {
-          val result = func()
-          setTransactionSuccessful()
+      try {
+        val result = func()
+        setTransactionSuccessful()
 
-          return@withLock result
-        } finally {
-          endTransaction()
-        }
+        return@withLock result
+      } finally {
+        endTransaction()
       }
     }
   }

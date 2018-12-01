@@ -109,7 +109,8 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
         return
       }
 
-      val photoExchangedData = PhotoExchangedData.fromBundle(intent.extras)
+      val bundle = intent.extras?.getBundle(PhotosActivity.receivedPhotoExtra)
+      val photoExchangedData = PhotoExchangedData.fromBundle(bundle)
       if (photoExchangedData == null) {
         throw IllegalStateException("photoExchangedData should not be null!")
       }
@@ -141,8 +142,8 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
 
-    val photoExchangedData = PhotoExchangedData
-      .fromBundle(intent.extras)
+    val bundle = intent.extras?.getBundle(PhotosActivity.receivedPhotoExtra)
+    val photoExchangedData = PhotoExchangedData.fromBundle(bundle)
 
     if (photoExchangedData != null) {
       onNewPhotoNotification(photoExchangedData)
@@ -169,7 +170,6 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       delay(SWITCH_FRAGMENT_DELAY)
 
       viewModel.addReceivedPhoto(photoExchangedData)
-      switchToTab(RECEIVED_PHOTOS_TAB_INDEX)
     }
   }
 

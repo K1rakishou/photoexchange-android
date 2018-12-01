@@ -67,10 +67,4 @@ open class UploadedPhotosRepository(
       uploadedPhotoDao.deleteOlderThan(now - Constants.UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME)
     }
   }
-
-  suspend fun updateReceiverInfo(uploadedPhotoName: String, lon: Double, lat: Double): Boolean {
-    return withContext(coroutineContext) {
-      return@withContext uploadedPhotoDao.updateReceiverInfo(uploadedPhotoName, lon, lat) == 1
-    }
-  }
 }
