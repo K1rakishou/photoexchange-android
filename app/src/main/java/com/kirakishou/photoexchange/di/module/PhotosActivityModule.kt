@@ -5,6 +5,7 @@ import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
+import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.interactors.*
 import com.kirakishou.photoexchange.mvp.viewmodel.GalleryFragmentViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
@@ -59,6 +60,7 @@ open class PhotosActivityModule(
                                              uploadedPhotosRepository: UploadedPhotosRepository,
                                              receivedPhotosRepository: ReceivedPhotosRepository,
                                              getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
+                                             timeUtils: TimeUtils,
                                              dispatchersProvider: DispatchersProvider): UploadedPhotosFragmentViewModel {
     return UploadedPhotosFragmentViewModel(
       viewState,
@@ -67,6 +69,7 @@ open class PhotosActivityModule(
       uploadedPhotosRepository,
       receivedPhotosRepository,
       getUploadedPhotosUseCase,
+      timeUtils,
       dispatchersProvider
     )
   }

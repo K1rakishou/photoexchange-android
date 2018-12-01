@@ -74,6 +74,7 @@ class RxLifecycle : LifecycleObserver {
       }
     }
 
+    //FIXME: does not work when currentState == onResume and desiredState == onCreate
     fun isAtLeast(desiredState: FragmentState): Boolean {
       return getCurrentState() >= desiredState
     }

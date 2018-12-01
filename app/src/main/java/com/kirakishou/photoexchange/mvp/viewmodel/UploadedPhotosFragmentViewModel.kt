@@ -18,6 +18,7 @@ import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.QueuedUpPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
@@ -42,6 +43,7 @@ class UploadedPhotosFragmentViewModel(
   private val uploadedPhotosRepository: UploadedPhotosRepository,
   private val receivedPhotosRepository: ReceivedPhotosRepository,
   private val getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
+  private val timeUtils: TimeUtils,
   private val dispatchersProvider: DispatchersProvider
 ) : BaseMvRxViewModel<UploadedPhotosFragmentState>(initialState, BuildConfig.DEBUG), CoroutineScope {
   private val TAG = "UploadedPhotosFragmentViewModel"
@@ -97,17 +99,90 @@ class UploadedPhotosFragmentViewModel(
   }
 
   private fun fetchFreshPhotosInternal() {
-    launch {
-      //if we are trying to fetch fresh photos and the database is empty - start normal photos loading
-      val uploadedPhotosCount = uploadedPhotosRepository.count()
-      if (uploadedPhotosCount == 0) {
-        loadQueuedUpPhotos()
-        return@launch
+    /**
+     * Combines old uploadedPhotos with the fresh ones and also counts how many of the fresh photos were
+     * truly fresh (e.g. uploadedPhotos didn't contain them yet or it did but without receiverInfo)
+     * */
+    fun combinePhotos(
+      freshPhotos: List<UploadedPhoto>,
+      uploadedPhotos: List<UploadedPhoto>
+    ): Pair<MutableList<UploadedPhoto>, Int> {
+      val updatedPhotos = uploadedPhotos.toMutableList()
+      //how much photos were updated
+      var freshPhotosCount = 0
+
+      for (freshPhoto in freshPhotos) {
+        val uploadedPhotoIndex = updatedPhotos.indexOfFirst { it.photoName == freshPhoto.photoName }
+        if (uploadedPhotoIndex == -1) {
+          //if we don't have this photo yet - add it to the list
+          updatedPhotos += freshPhoto
+          ++freshPhotosCount
+          continue
+        }
+
+        val uploadedPhoto = updatedPhotos[uploadedPhotoIndex]
+
+        //if we already have this photo but old photo has no receiverInfo and the new one has
+        if (uploadedPhoto.receiverInfo == null && freshPhoto.receiverInfo != null) {
+          //add this photo to the list
+
+          updatedPhotos.removeAt(uploadedPhotoIndex)
+          updatedPhotos += freshPhoto
+
+          ++freshPhotosCount
+        }
       }
 
-
+      return updatedPhotos to freshPhotosCount
     }
-    //TODO
+
+    //TODO: should we run this method if uploadedPhotosRequest is in the Failed or Loading state?
+    withState { state ->
+      launch {
+        //if we are trying to fetch fresh photos and there are no uploadedPhotos - start normal photos loading
+        if (state.uploadedPhotos.isEmpty()) {
+          loadQueuedUpPhotos()
+          return@launch
+        }
+
+        val freshPhotos = try {
+          val result = getUploadedPhotosUseCase.loadFreshPhotos(timeUtils.getTimeFast(), photosPerPage)
+          if (result is Either.Error) {
+            throw result.error
+          }
+
+          result as Either.Value
+
+          result.value
+            .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
+        } catch (error: Throwable) {
+          Timber.tag(TAG).e(error)
+
+          //TODO: show some kind of message here?
+          return@launch
+        }
+
+        val (combinedPhotos, freshPhotosCount) = combinePhotos(freshPhotos, state.uploadedPhotos)
+        if (freshPhotosCount == 0) {
+          //should this even happen? We are supposed to have new photos if this method was called
+
+          Timber.tag(TAG).d("loadFreshPhotos returned no photos!")
+          return@launch
+        }
+
+        if (freshPhotosCount >= photosPerPage) {
+          //this means that there are probably even more photos that this user has not seen yet
+          //so we have no other option but to clear database cache and reload everything
+
+          Timber.tag(TAG).d("updatePhotos method returned ${freshPhotosCount} that is greater or equals to requested amount")
+          resetState(true)
+          return@launch
+        }
+
+        val sortedPhotos = combinedPhotos.sortedByDescending { it.uploadedOn }
+        setState { copy(uploadedPhotos = sortedPhotos) }
+      }
+    }
   }
 
   private fun resetStateInternal(clearCache: Boolean) {
@@ -307,6 +382,8 @@ class UploadedPhotosFragmentViewModel(
         }
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUploadPhoto -> {
+        Timber.tag(TAG).d("OnFailedToUploadPhoto")
+
         withState { state ->
           val photoIndex = state.takenPhotos.indexOfFirst { it.id == event.photo.id }
           val newPhotos = if (photoIndex != -1) {
@@ -320,9 +397,12 @@ class UploadedPhotosFragmentViewModel(
         }
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoCanceled -> {
+        Timber.tag(TAG).d("OnPhotoCanceled")
         cancelPhotoUploading(event.photo.id)
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnError -> {
+        Timber.tag(TAG).d("OnError")
+
         withState { state ->
           val newPhotos = state.takenPhotos
             .map { takenPhoto -> QueuedUpPhoto.fromTakenPhoto(takenPhoto) }

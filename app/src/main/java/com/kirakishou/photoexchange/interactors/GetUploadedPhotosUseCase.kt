@@ -4,6 +4,7 @@ import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.GetUploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.myRunCatching
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
@@ -25,19 +26,40 @@ open class GetUploadedPhotosUseCase(
   ): Either<Exception, List<UploadedPhoto>> {
     return withContext(coroutineContext) {
       return@withContext myRunCatching {
-        val time = if (lastUploadedOn != -1L) {
-          lastUploadedOn
-        } else {
-          timeUtils.getTimeFast()
-        }
+        Timber.tag(TAG).d("loadPageOfPhotosIncludingCache called")
 
-        val userId = settingsRepository.getUserId()
-        if (userId.isEmpty()) {
-          throw EmptyUserIdException()
-        }
-
-        return@myRunCatching getUploadedPhotosRepository.getPage(userId, time, count)
+        val (time, userId) = getParameters(lastUploadedOn)
+        return@myRunCatching getUploadedPhotosRepository.getPage(time, count, userId)
       }
     }
+  }
+
+  open suspend fun loadFreshPhotos(
+    lastUploadedOn: Long,
+    count: Int
+  ): Either<Exception, List<UploadedPhoto>> {
+    return withContext(coroutineContext) {
+      return@withContext myRunCatching {
+        Timber.tag(TAG).d("loadPageOfPhotosSkippingCache called")
+
+        val (time, userId) = getParameters(lastUploadedOn)
+        return@myRunCatching getUploadedPhotosRepository.getFresh(time, count, userId)
+      }
+    }
+  }
+
+  private suspend fun getParameters(lastUploadedOn: Long): Pair<Long, String> {
+    val time = if (lastUploadedOn != -1L) {
+      lastUploadedOn
+    } else {
+      timeUtils.getTimeFast()
+    }
+
+    val userId = settingsRepository.getUserId()
+    if (userId.isEmpty()) {
+      throw EmptyUserIdException()
+    }
+
+    return Pair(time, userId)
   }
 }
