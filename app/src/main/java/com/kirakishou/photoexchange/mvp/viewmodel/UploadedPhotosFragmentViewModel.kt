@@ -294,10 +294,6 @@ class UploadedPhotosFragmentViewModel(
           .filterNot { oldPhotoNameSet.contains(it.photoName) }
 
         val isEndReached = newUploadedPhotos.size < photosPerPage
-        val hasPhotosWithNoReceiver = newUploadedPhotos.any { it.receiverInfo == null }
-        if (hasPhotosWithNoReceiver) {
-          startReceivingService("There are photos with no receiver info")
-        }
 
         setState {
           copy(
@@ -473,24 +469,6 @@ class UploadedPhotosFragmentViewModel(
         PhotosActivityViewModel::class.java,
         reason)
       )
-  }
-
-  private suspend fun startReceivingService(reason: String): Boolean {
-    val uploadedPhotosCount = uploadedPhotosRepository.count()
-    val receivedPhotosCount = receivedPhotosRepository.count()
-
-    val canReceivePhotos = uploadedPhotosCount > receivedPhotosCount
-    if (!canReceivePhotos) {
-      return false
-    }
-
-    intercom.tell<PhotosActivity>()
-      .to(PhotosActivityEvent.StartReceivingService(
-        PhotosActivityViewModel::class.java,
-        reason)
-      )
-
-    return true
   }
 
   /**
