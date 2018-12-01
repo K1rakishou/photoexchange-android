@@ -162,11 +162,14 @@ class UploadedPhotosFragmentViewModel(
           return@launch
         }
 
+        //FIXME: should do this with the photos from the database not the state
         val (combinedPhotos, freshPhotosCount) = combinePhotos(freshPhotos, state.uploadedPhotos)
         if (freshPhotosCount == 0) {
-          //should this even happen? We are supposed to have new photos if this method was called
+          //Should this even happen? We are supposed to have new photos if this method was called.
+          //Update: Yes this can happen! When user has more that "photosPerPage" uploaded photos without receiverInfo
 
-          Timber.tag(TAG).d("loadFreshPhotos returned no photos!")
+          Timber.tag(TAG).d("combinePhotos returned 0 freshPhotosCount!")
+          resetState(true)
           return@launch
         }
 
@@ -174,7 +177,7 @@ class UploadedPhotosFragmentViewModel(
           //this means that there are probably even more photos that this user has not seen yet
           //so we have no other option but to clear database cache and reload everything
 
-          Timber.tag(TAG).d("updatePhotos method returned ${freshPhotosCount} that is greater or equals to requested amount")
+          Timber.tag(TAG).d("combinePhotos method more or the same amount of freshPhotos that we have requested")
           resetState(true)
           return@launch
         }
