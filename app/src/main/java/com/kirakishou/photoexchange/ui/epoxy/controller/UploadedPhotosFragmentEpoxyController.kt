@@ -4,6 +4,7 @@ import android.content.Context
 import android.widget.Toast
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.airbnb.mvrx.*
+import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
 import com.kirakishou.photoexchange.mvp.model.PhotoState
@@ -25,19 +26,19 @@ class UploadedPhotosFragmentEpoxyController {
     withState(viewModel) { state ->
       controller.apply {
         if (state.takenPhotos.isNotEmpty()) {
-          buildTakenPhotos(state, viewModel)
+          buildTakenPhotos(context, state, viewModel)
         }
 
-        buildUploadedPhotos(state, viewModel, state.uploadedPhotosRequest, context)
+        buildUploadedPhotos(context, state, viewModel, state.uploadedPhotosRequest)
       }
     }
   }
 
   private fun AsyncEpoxyController.buildUploadedPhotos(
+    context: Context,
     state: UploadedPhotosFragmentState,
     viewModel: UploadedPhotosFragmentViewModel,
-    uploadedPhotosRequest: Async<Paged<UploadedPhoto>>,
-    context: Context
+    uploadedPhotosRequest: Async<Paged<UploadedPhoto>>
   ) {
     if (uploadedPhotosRequest is Loading) {
       if (state.uploadedPhotos.isEmpty()) {
@@ -52,14 +53,15 @@ class UploadedPhotosFragmentEpoxyController {
     }
 
     if (state.uploadedPhotos.isEmpty()) {
+      //TODO: probably should also check here whether we have queued up photos
       textRow {
         id("no_uploaded_photos")
-        text("You have no photos yet")
+        text(context.getString(R.string.you_have_no_photos_yet))
       }
     } else {
       sectionRow {
         id("uploaded_photos_section")
-        text("Uploaded photos")
+        text(context.getString(R.string.uploaded_photos_text))
       }
 
       state.uploadedPhotos.forEach { photo ->
@@ -72,7 +74,7 @@ class UploadedPhotosFragmentEpoxyController {
       if (state.isEndReached) {
         textRow {
           id("list_end_footer_text")
-          text("End of the list reached.\nClick here to reload")
+          text(context.getString(R.string.end_of_list_reached_text))
           callback { _ ->
             Timber.tag(TAG).d("Reloading")
             viewModel.resetState()
@@ -95,12 +97,13 @@ class UploadedPhotosFragmentEpoxyController {
   }
 
   private fun AsyncEpoxyController.buildTakenPhotos(
+    context: Context,
     state: UploadedPhotosFragmentState,
     viewModel: UploadedPhotosFragmentViewModel
   ) {
     sectionRow {
       id("queued_up_and_uploading_photos_section")
-      text("Uploading photos")
+      text(context.getString(R.string.uploading_photos_text))
     }
 
     state.takenPhotos.forEach { photo ->
@@ -145,10 +148,10 @@ class UploadedPhotosFragmentEpoxyController {
           Toast.makeText(context, "Exception message is: \"$exceptionMessage\"", Toast.LENGTH_LONG).show()
 
           id("unknown_error")
-          text("Unknown error has occurred while trying to load photos from the database. \nClick here to retry")
+          text(context.getString(R.string.unknown_error_while_trying_to_load_photos_text))
           callback { _ ->
             Timber.tag(TAG).d("Reloading")
-            viewModel.resetState()
+            viewModel.resetState(true)
           }
         }
       }
