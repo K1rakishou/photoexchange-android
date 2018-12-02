@@ -90,7 +90,7 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
     }.safe
   }
 
-  private suspend fun onUiEvent(event: ReceivedPhotosFragmentEvent.GeneralEvents) {
+  private fun onUiEvent(event: ReceivedPhotosFragmentEvent.GeneralEvents) {
     if (!isAdded) {
       return
     }

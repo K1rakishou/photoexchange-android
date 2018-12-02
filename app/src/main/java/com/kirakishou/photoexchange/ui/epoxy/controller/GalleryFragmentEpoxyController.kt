@@ -4,6 +4,7 @@ import android.content.Context
 import android.widget.Toast
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.airbnb.mvrx.*
+import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.mvp.viewmodel.GalleryFragmentViewModel
 import com.kirakishou.photoexchange.ui.epoxy.row.galleryPhotoRow
@@ -37,15 +38,15 @@ class GalleryFragmentEpoxyController {
             if (state.galleryPhotos.isEmpty()) {
               textRow {
                 id("no_gallery_photos")
-                text("The gallery is empty")
+                text(context.getString(R.string.the_gallery_is_empty_text))
               }
             } else {
               state.galleryPhotos.forEach { photo ->
                 galleryPhotoRow {
                   id("gallery_photo_${photo.photoName}")
                   photo(photo)
-                  favouriteButtonEnabled(state.isFavouriteRequestActive)
-                  reportButtonEnabled(state.isReportRequestActive)
+                  favouriteButtonEnabled(state.favouritedPhotos.contains(photo.photoName))
+                  reportButtonEnabled(state.reportedPhotos.contains(photo.photoName))
                   clickViewCallback { model, _, _, _ ->
                     viewModel.swapPhotoAndMap(model.photo().photoName)
                   }
@@ -61,7 +62,7 @@ class GalleryFragmentEpoxyController {
               if (state.isEndReached) {
                 textRow {
                   id("list_end_footer_text")
-                  text("End of the list reached.\nClick here to reload")
+                  text(context.getString(R.string.end_of_list_reached_text))
                   callback { _ ->
                     Timber.tag(TAG).d("Reloading")
                     viewModel.resetState()
@@ -99,10 +100,10 @@ class GalleryFragmentEpoxyController {
       Toast.makeText(context, "Exception message is: \"$exceptionMessage\"", Toast.LENGTH_LONG).show()
 
       id("unknown_error")
-      text("Unknown error has occurred while trying to load photos from the database. \nClick here to retry")
+      text(context.getString(R.string.unknown_error_while_trying_to_load_photos_text))
       callback { _ ->
         Timber.tag(TAG).d("Reloading")
-        viewModel.resetState()
+        viewModel.resetState(true)
       }
     }
   }

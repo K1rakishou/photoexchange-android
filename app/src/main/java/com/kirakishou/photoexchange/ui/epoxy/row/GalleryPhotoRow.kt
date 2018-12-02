@@ -16,6 +16,7 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.di.module.GlideApp
 import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhotoInfo
 
 @ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT)
 class GalleryPhotoRow @JvmOverloads constructor(
@@ -54,7 +55,7 @@ class GalleryPhotoRow @JvmOverloads constructor(
     if (photo.showPhoto) {
       showPhotoHideMap()
 
-      if (photo.galleryPhotoInfo != null) {
+      if (photo.galleryPhotoInfo.type == GalleryPhotoInfo.Type.Normal) {
         showControls()
 
         if (photo.galleryPhotoInfo.isFavourited) {

@@ -4,6 +4,7 @@ import android.content.Context
 import android.widget.Toast
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.airbnb.mvrx.*
+import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.mvp.viewmodel.ReceivedPhotosFragmentViewModel
@@ -38,7 +39,7 @@ class ReceivedPhotosFragmentEpoxyController {
             if (state.receivedPhotos.isEmpty()) {
               textRow {
                 id("no_received_photos")
-                text("You have no photos yet")
+                text(context.getString(R.string.you_have_no_photos_yet))
               }
             } else {
               state.receivedPhotos.forEach { photo ->
@@ -54,7 +55,7 @@ class ReceivedPhotosFragmentEpoxyController {
               if (state.isEndReached) {
                 textRow {
                   id("list_end_footer_text")
-                  text("End of the list reached.\nClick here to reload")
+                  text(context.getString(R.string.end_of_list_reached_text))
                   callback { _ ->
                     Timber.tag(TAG).d("Reloading")
                     viewModel.resetState()
@@ -100,10 +101,10 @@ class ReceivedPhotosFragmentEpoxyController {
           Toast.makeText(context, "Exception message is: \"$exceptionMessage\"", Toast.LENGTH_LONG).show()
 
           id("unknown_error")
-          text("Unknown error has occurred while trying to load photos from the database. \nClick here to retry")
+          text(context.getString(R.string.unknown_error_while_trying_to_load_photos_text))
           callback { _ ->
             Timber.tag(TAG).d("Reloading")
-            viewModel.resetState()
+            viewModel.resetState(true)
           }
         }
       }

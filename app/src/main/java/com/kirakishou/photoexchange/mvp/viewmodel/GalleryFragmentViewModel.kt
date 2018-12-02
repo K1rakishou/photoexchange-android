@@ -2,24 +2,20 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 
 import androidx.fragment.app.FragmentActivity
 import com.airbnb.mvrx.*
-import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.mvp.model.PhotoSize
-import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
-import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
-import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
-import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.Constants
+import com.kirakishou.photoexchange.helper.Paged
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotosRepository
-import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
-import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
+import com.kirakishou.photoexchange.helper.extension.safe
+import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
+import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
+import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
 import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
-import com.kirakishou.photoexchange.mvp.model.FavouritePhotoActionResult
-import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhotoInfo
+import com.kirakishou.photoexchange.mvp.model.PhotoSize
+import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.state.GalleryFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
-import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -29,6 +25,7 @@ import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 
 class GalleryFragmentViewModel(
@@ -93,61 +90,89 @@ class GalleryFragmentViewModel(
   }
 
   private fun reportPhotoInternal(photoName: String) {
-    //TODO
-  }
-
-  private fun favouritePhotoInternal(photoName: String) {
-    fun onFail(result: Fail<FavouritePhotoActionResult>, state: GalleryFragmentState) {
-      if (result.error is EmptyUserIdException) {
-        val updatedPhotos = state.galleryPhotos
-          .map { it.copy(galleryPhotoInfo = GalleryPhotoInfo.empty()) }
-
-        setState {
-          copy(
-            isFavouriteRequestActive = false,
-            galleryPhotos = updatedPhotos
-          )
-        }
-
-        return
+    fun updateIsPhotoReported(state: GalleryFragmentState, photoName: String) {
+      if (state.reportedPhotos.contains(photoName)) {
+        setState { copy(favouritedPhotos = state.reportedPhotos - photoName) }
+      } else {
+        setState { copy(favouritedPhotos = state.reportedPhotos + photoName) }
       }
+    }
 
-      val message = "Could not favourite photo, error is \"${result.error.message
-        ?: "Unknown error"}\""
+    fun onFail(state: GalleryFragmentState, photoName: String, error: Throwable) {
+      updateIsPhotoReported(state, photoName)
 
-      setState { copy(isFavouriteRequestActive = false) }
-
-      intercom.tell<GalleryFragment>()
-        .to(GalleryFragmentEvent.GeneralEvents.ShowToast(message))
+      val message = "Could not report photo, error is \"${error.message ?: "Unknown error"}\""
+      intercom.tell<PhotosActivity>()
+        .to(PhotosActivityEvent.ShowToast(message))
     }
 
     withState { state ->
       launch {
-        setState { copy(isFavouriteRequestActive = true) }
+        updateIsPhotoReported(state, photoName)
 
-        val result = try {
-          val result = favouritePhotoUseCase.favouritePhoto(photoName)
-          if (result is Either.Error)  {
-            throw result.error
-          }
-
-          Success((result as Either.Value).value)
+        val reportResult = try {
+          reportPhotoUseCase.reportPhoto(photoName)
         } catch (error: Throwable) {
-          Fail<FavouritePhotoActionResult>(error)
-        }
+          Timber.tag(TAG).e(error)
 
-        if (result is Fail) {
-          onFail(result, state)
+          onFail(state, photoName, error)
           return@launch
         }
 
-        val photoIndex = state.galleryPhotos
-          .indexOfFirst { it.photoName == photoName }
+        val photoIndex = state.galleryPhotos.indexOfFirst { it.photoName == photoName }
         if (photoIndex == -1) {
           return@launch
         }
 
-        val favouriteResult = result()!!
+        val updatedPhotos = state.galleryPhotos.toMutableList()
+        val galleryPhoto = updatedPhotos[photoIndex]
+
+        val updatedPhotoInfo = updatedPhotos[photoIndex].galleryPhotoInfo
+          .copy(isReported = reportResult)
+
+        updatedPhotos[photoIndex] = galleryPhoto
+          .copy(galleryPhotoInfo = updatedPhotoInfo)
+
+        setState { copy(galleryPhotos = updatedPhotos) }
+      }
+    }
+  }
+
+  private fun favouritePhotoInternal(photoName: String) {
+    fun updateIsPhotoFavourited(state: GalleryFragmentState, photoName: String) {
+      if (state.favouritedPhotos.contains(photoName)) {
+        setState { copy(favouritedPhotos = state.favouritedPhotos - photoName) }
+      } else {
+        setState { copy(favouritedPhotos = state.favouritedPhotos + photoName) }
+      }
+    }
+
+    fun onFail(state: GalleryFragmentState, photoName: String, error: Throwable) {
+      updateIsPhotoFavourited(state, photoName)
+
+      val message = "Could not favourite photo, error is \"${error.message ?: "Unknown error"}\""
+      intercom.tell<PhotosActivity>()
+        .to(PhotosActivityEvent.ShowToast(message))
+    }
+
+    withState { state ->
+      launch {
+        updateIsPhotoFavourited(state, photoName)
+
+        val favouriteResult = try {
+          favouritePhotoUseCase.favouritePhoto(photoName)
+        } catch (error: Throwable) {
+          Timber.tag(TAG).e(error)
+
+          onFail(state, photoName, error)
+          return@launch
+        }
+
+        val photoIndex = state.galleryPhotos.indexOfFirst { it.photoName == photoName }
+        if (photoIndex == -1) {
+          return@launch
+        }
+
         val updatedPhotos = state.galleryPhotos.toMutableList()
         val galleryPhoto = updatedPhotos[photoIndex]
 
@@ -159,12 +184,7 @@ class GalleryFragmentViewModel(
           galleryPhotoInfo = updatedPhotoInfo
         )
 
-        setState {
-          copy(
-            isFavouriteRequestActive = false,
-            galleryPhotos = updatedPhotos
-          )
-        }
+        setState { copy(galleryPhotos = updatedPhotos) }
       }
     }
   }
@@ -212,23 +232,15 @@ class GalleryFragmentViewModel(
 
         val request = try {
           galleryPhotosRepository.deleteOldPhotos()
-
-          val result = getGalleryPhotosUseCase.loadPageOfPhotos(lastUploadedOn, photosPerPage)
-          if (result is Either.Error) {
-            throw result.error
-          }
-
-          result as Either.Value
-          val galleryPhotos = result.value
-            .map { galleryPhoto -> galleryPhoto.copy(photoSize = photoSize) }
-
-          Success(galleryPhotos)
+          Success(getGalleryPhotosUseCase.loadPageOfPhotos(lastUploadedOn, photosPerPage))
         } catch (error: Throwable) {
-          Fail<List<GalleryPhoto>>(error)
+          Fail<Paged<GalleryPhoto>>(error)
         }
 
-        val newGalleryPhotos = request() ?: emptyList()
-        val isEndReached = newGalleryPhotos.size < photosPerPage
+        val newGalleryPhotos = (request()?.page ?: emptyList())
+          .map { galleryPhoto -> galleryPhoto.copy(photoSize = photoSize) }
+
+        val isEndReached = request()?.isEnd ?: false
 
         setState {
           copy(

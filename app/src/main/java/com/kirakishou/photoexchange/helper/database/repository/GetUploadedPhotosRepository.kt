@@ -25,12 +25,12 @@ class GetUploadedPhotosRepository(
       //get a page of fresh photos from the server
       val uploadedPhotos = apiClient.getPageOfUploadedPhotos(userId, time, count)
       if (uploadedPhotos.isEmpty()) {
-        Timber.tag(TAG).d("No uploaded photos were found on the server")
+        Timber.tag(TAG).d("No fresh uploaded photos were found on the server")
         return@withContext Paged(emptyList<UploadedPhoto>(), true)
       }
 
       if (!uploadedPhotosLocalSource.saveMany(uploadedPhotos)) {
-        throw DatabaseException("Could not cache uploaded photos in the database")
+        throw DatabaseException("Could not cache fresh uploaded photos in the database")
       }
 
       val mappedPhotos = UploadedPhotosMapper.FromResponse.ToObject
@@ -49,7 +49,7 @@ class GetUploadedPhotosRepository(
       val pageOfUploadedPhotos = uploadedPhotosLocalSource.getPage(time, count)
       if (pageOfUploadedPhotos.size == count) {
         Timber.tag(TAG).d("Found enough uploaded photos in the database")
-        return@withContext Paged(pageOfUploadedPhotos, pageOfUploadedPhotos.size < count)
+        return@withContext Paged(pageOfUploadedPhotos, false)
       }
 
       val uploadedPhotos = apiClient.getPageOfUploadedPhotos(userId, time, count)
@@ -58,6 +58,7 @@ class GetUploadedPhotosRepository(
         return@withContext Paged(pageOfUploadedPhotos, true)
       }
 
+      //TODO: filter out duplicates here?
       if (!uploadedPhotosLocalSource.saveMany(uploadedPhotos)) {
         throw DatabaseException("Could not cache uploaded photos in the database")
       }

@@ -1,11 +1,9 @@
 package com.kirakishou.photoexchange.interactors
 
-import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.ReportPhotoRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
-import com.kirakishou.photoexchange.helper.myRunCatching
 import kotlinx.coroutines.withContext
 
 open class ReportPhotoUseCase(
@@ -17,16 +15,14 @@ open class ReportPhotoUseCase(
 
   suspend fun reportPhoto(
     photoName: String
-  ): Either<Exception, Boolean> {
+  ): Boolean {
     return withContext(coroutineContext) {
-      return@withContext myRunCatching {
-        val userId = settingsRepository.getUserId()
-        if (userId.isEmpty()) {
-          throw EmptyUserIdException()
-        }
-
-        return@myRunCatching reportPhotoRepository.reportPhoto(userId, photoName)
+      val userId = settingsRepository.getUserId()
+      if (userId.isEmpty()) {
+        throw EmptyUserIdException()
       }
+
+      return@withContext reportPhotoRepository.reportPhoto(userId, photoName)
     }
   }
 }

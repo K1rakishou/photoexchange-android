@@ -32,6 +32,7 @@ class GalleryFragment : BaseMvRxFragment(), StateEventListener<GalleryFragmentEv
 
   private val controller = GalleryFragmentEpoxyController()
   private val galleryPhotoAdapterViewWidth = Constants.DEFAULT_ADAPTER_ITEM_WIDTH
+  private val recyclerViewScrollEventsThrottleTimeMs = 200L
 
   private val photoSize by lazy { AndroidUtils.figureOutPhotosSizes(requireContext()) }
   private val columnsCount by lazy { AndroidUtils.calculateNoOfColumns(requireContext(), galleryPhotoAdapterViewWidth) }
@@ -62,7 +63,7 @@ class GalleryFragment : BaseMvRxFragment(), StateEventListener<GalleryFragmentEv
     compositeDisposable += scrollSubject
       .subscribeOn(Schedulers.io())
       .distinctUntilChanged()
-      .throttleFirst(200, TimeUnit.MILLISECONDS)
+      .throttleFirst(recyclerViewScrollEventsThrottleTimeMs, TimeUnit.MILLISECONDS)
       .subscribe({ isScrollingDown ->
         viewModel.intercom.tell<PhotosActivity>()
           .that(PhotosActivityEvent.ScrollEvent(isScrollingDown))
