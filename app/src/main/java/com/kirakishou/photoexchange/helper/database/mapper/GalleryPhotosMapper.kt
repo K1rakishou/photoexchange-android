@@ -15,7 +15,7 @@ object GalleryPhotosMapper {
         galleryPhotoEntity.lat,
         galleryPhotoEntity.uploadedOn,
         galleryPhotoEntity.favouritedCount,
-        GalleryPhotoInfo.empty()
+        GalleryPhotoInfo.empty(galleryPhotoEntity.photoName)
       )
     }
 
@@ -50,7 +50,7 @@ object GalleryPhotosMapper {
           galleryPhotoResponseData.lat,
           galleryPhotoResponseData.uploadedOn,
           galleryPhotoResponseData.favouritesCount,
-          GalleryPhotoInfo.empty()
+          GalleryPhotoInfo.empty(galleryPhotoResponseData.photoName)
         )
       }
 

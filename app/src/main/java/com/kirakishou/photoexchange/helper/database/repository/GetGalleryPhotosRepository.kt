@@ -27,13 +27,15 @@ open class GetGalleryPhotosRepository(
   suspend fun getPage(userId: String, time: Long, count: Int): Paged<GalleryPhoto> {
     return withContext(coroutineContext) {
       val pageOfGalleryPhotos = getPageOfGalleryPhotos(time, count)
-      val galleryPhotosInfoList = getGalleryPhotosInfo(userId, pageOfGalleryPhotos.page.map { it.photoName })
-      val updatedPhotos = mutableListOf<GalleryPhoto>()
 
+      val photoNameList = pageOfGalleryPhotos.page.map { it.photoName }
+      val galleryPhotosInfoList = getGalleryPhotosInfo(userId, photoNameList)
+
+      val updatedPhotos = mutableListOf<GalleryPhoto>()
       for (galleryPhoto in pageOfGalleryPhotos.page) {
         val newGalleryPhotoInfo = galleryPhotosInfoList
           .firstOrNull { it.photoName == galleryPhoto.photoName }
-          ?: GalleryPhotoInfo.empty()
+          ?: GalleryPhotoInfo(galleryPhoto.photoName, false, false, GalleryPhotoInfo.Type.Normal)
 
         updatedPhotos += galleryPhoto.copy(galleryPhotoInfo = newGalleryPhotoInfo)
       }
@@ -71,7 +73,9 @@ open class GetGalleryPhotosRepository(
 
   private suspend fun getGalleryPhotosInfo(userId: String, photoNameList: List<String>): List<GalleryPhotoInfo> {
     if (userId.isEmpty()) {
-      return emptyList()
+      Timber.tag(TAG).d("UserId is empty")
+      return photoNameList.
+        map { photoName -> GalleryPhotoInfo(photoName, false, false, GalleryPhotoInfo.Type.NoUserId) }
     }
 
     val cachedGalleryPhotosInfo = galleryPhotoInfoLocalSource.findMany(photoNameList)
