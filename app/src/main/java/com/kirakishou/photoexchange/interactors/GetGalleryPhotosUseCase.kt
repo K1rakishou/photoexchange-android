@@ -28,11 +28,8 @@ open class GetGalleryPhotosUseCase(
         timeUtils.getTimeFast()
       }
 
+      //empty userId is allowed here since we need it only when fetching galleryPhotoInfo
       val userId = settingsRepository.getUserId()
-      if (userId.isEmpty()) {
-        throw EmptyUserIdException()
-      }
-
       return@withContext getGalleryPhotosRepository.getPage(userId, time, count)
     }
   }

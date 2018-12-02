@@ -13,6 +13,7 @@ import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhotoInfo
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 
 open class GetGalleryPhotosRepository(
   private val database: MyDatabase,
@@ -29,14 +30,12 @@ open class GetGalleryPhotosRepository(
       val galleryPhotosInfoList = getGalleryPhotosInfo(userId, pageOfGalleryPhotos.page.map { it.photoName })
       val updatedPhotos = mutableListOf<GalleryPhoto>()
 
-      if (galleryPhotosInfoList.isNotEmpty()) {
-        for (galleryPhoto in pageOfGalleryPhotos.page) {
-          val newGalleryPhotoInfo = galleryPhotosInfoList
-            .firstOrNull { it.photoName == galleryPhoto.photoName }
-            ?: GalleryPhotoInfo.empty()
+      for (galleryPhoto in pageOfGalleryPhotos.page) {
+        val newGalleryPhotoInfo = galleryPhotosInfoList
+          .firstOrNull { it.photoName == galleryPhoto.photoName }
+          ?: GalleryPhotoInfo.empty()
 
-          updatedPhotos += galleryPhoto.copy(galleryPhotoInfo = newGalleryPhotoInfo)
-        }
+        updatedPhotos += galleryPhoto.copy(galleryPhotoInfo = newGalleryPhotoInfo)
       }
 
       val sortedPhotos = updatedPhotos
@@ -50,12 +49,14 @@ open class GetGalleryPhotosRepository(
     //if we found exactly the same amount of gallery photos that was requested - return them
     val cachedGalleryPhotos = galleryPhotoLocalSource.getPage(time, count)
     if (cachedGalleryPhotos.size == count) {
+      Timber.tag(TAG).d("Found enough gallery photos in the database")
       return Paged(cachedGalleryPhotos, false)
     }
 
     //otherwise reload the page from the server
     val galleryPhotos = apiClient.getPageOfGalleryPhotos(time, count)
     if (galleryPhotos.isEmpty()) {
+      Timber.tag(TAG).d("No gallery photos were found on the server")
       return Paged(cachedGalleryPhotos, true)
     }
 
@@ -69,14 +70,20 @@ open class GetGalleryPhotosRepository(
   }
 
   private suspend fun getGalleryPhotosInfo(userId: String, photoNameList: List<String>): List<GalleryPhotoInfo> {
+    if (userId.isEmpty()) {
+      return emptyList()
+    }
+
     val cachedGalleryPhotosInfo = galleryPhotoInfoLocalSource.findMany(photoNameList)
     if (cachedGalleryPhotosInfo.size == photoNameList.size) {
+      Timber.tag(TAG).d("Found enough gallery photo infos in the database")
       return cachedGalleryPhotosInfo
     }
 
     val requestString = photoNameList.joinToString(separator = Constants.PHOTOS_SEPARATOR)
     val galleryPhotosInfo = apiClient.getGalleryPhotoInfo(userId, requestString)
     if (galleryPhotosInfo.isEmpty()) {
+      Timber.tag(TAG).d("No gallery photo info were found on the server")
       return emptyList()
     }
 

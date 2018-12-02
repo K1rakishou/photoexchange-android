@@ -54,7 +54,7 @@ class GalleryPhotoRow @JvmOverloads constructor(
     if (photo.showPhoto) {
       showPhotoHideMap()
 
-      if (photo.galleryPhotoInfo != null) {
+      if (!photo.galleryPhotoInfo.isEmpty()) {
         showControls()
 
         if (photo.galleryPhotoInfo.isFavourited) {
