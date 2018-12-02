@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
 import com.kirakishou.photoexchange.helper.Constants
+import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
@@ -22,44 +23,49 @@ open class GetGalleryPhotosRepository(
 ) : BaseRepository(dispatchersProvider) {
   private val TAG = "GetGalleryPhotosRepository"
 
-  suspend fun getPage(userId: String, time: Long, count: Int): List<GalleryPhoto> {
+  suspend fun getPage(userId: String, time: Long, count: Int): Paged<GalleryPhoto> {
     return withContext(coroutineContext) {
-      val galleryPhotos = getPageOfGalleryPhotos(time, count).toMutableList()
-      val galleryPhotosInfoList = getGalleryPhotosInfo(userId, galleryPhotos.map { it.photoName })
+      val pageOfGalleryPhotos = getPageOfGalleryPhotos(time, count)
+      val galleryPhotosInfoList = getGalleryPhotosInfo(userId, pageOfGalleryPhotos.page.map { it.photoName })
+      val updatedPhotos = mutableListOf<GalleryPhoto>()
 
       if (galleryPhotosInfoList.isNotEmpty()) {
-        for ((index, galleryPhoto) in galleryPhotos.withIndex()) {
+        for (galleryPhoto in pageOfGalleryPhotos.page) {
           val newGalleryPhotoInfo = galleryPhotosInfoList
             .firstOrNull { it.photoName == galleryPhoto.photoName }
             ?: GalleryPhotoInfo.empty()
 
-          galleryPhotos[index] = galleryPhoto.copy(galleryPhotoInfo = newGalleryPhotoInfo)
+          updatedPhotos += galleryPhoto.copy(galleryPhotoInfo = newGalleryPhotoInfo)
         }
       }
 
-      return@withContext galleryPhotos
+      val sortedPhotos = updatedPhotos
         .sortedByDescending { it.uploadedOn }
+
+      return@withContext Paged(sortedPhotos, pageOfGalleryPhotos.isEnd)
     }
   }
 
-  private suspend fun getPageOfGalleryPhotos(time: Long, count: Int): List<GalleryPhoto> {
+  private suspend fun getPageOfGalleryPhotos(time: Long, count: Int): Paged<GalleryPhoto> {
     //if we found exactly the same amount of gallery photos that was requested - return them
     val cachedGalleryPhotos = galleryPhotoLocalSource.getPage(time, count)
     if (cachedGalleryPhotos.size == count) {
-      return cachedGalleryPhotos
+      return Paged(cachedGalleryPhotos, false)
     }
 
     //otherwise reload the page from the server
     val galleryPhotos = apiClient.getPageOfGalleryPhotos(time, count)
     if (galleryPhotos.isEmpty()) {
-      return cachedGalleryPhotos
+      return Paged(cachedGalleryPhotos, true)
     }
 
+    //TODO: filter out duplicates here?
     if (!galleryPhotoLocalSource.saveMany(galleryPhotos)) {
       throw DatabaseException("Could not cache gallery photos in the database")
     }
 
-    return GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(galleryPhotos)
+    val mappedPhotos = GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(galleryPhotos)
+    return Paged(mappedPhotos, mappedPhotos.size < count)
   }
 
   private suspend fun getGalleryPhotosInfo(userId: String, photoNameList: List<String>): List<GalleryPhotoInfo> {

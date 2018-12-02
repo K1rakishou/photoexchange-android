@@ -2,21 +2,18 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 
 import androidx.fragment.app.FragmentActivity
 import com.airbnb.mvrx.*
-import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.mvp.model.PhotoSize
-import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
-import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
-import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
-import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.Constants
+import com.kirakishou.photoexchange.helper.Paged
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotosRepository
-import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
+import com.kirakishou.photoexchange.helper.extension.safe
+import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
 import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
+import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
 import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
-import com.kirakishou.photoexchange.mvp.model.FavouritePhotoActionResult
-import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhotoInfo
+import com.kirakishou.photoexchange.mvp.model.PhotoSize
+import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.state.GalleryFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
@@ -192,23 +189,15 @@ class GalleryFragmentViewModel(
 
         val request = try {
           galleryPhotosRepository.deleteOldPhotos()
-
-          val result = getGalleryPhotosUseCase.loadPageOfPhotos(lastUploadedOn, photosPerPage)
-          if (result is Either.Error) {
-            throw result.error
-          }
-
-          result as Either.Value
-          val galleryPhotos = result.value
-            .map { galleryPhoto -> galleryPhoto.copy(photoSize = photoSize) }
-
-          Success(galleryPhotos)
+          Success(getGalleryPhotosUseCase.loadPageOfPhotos(lastUploadedOn, photosPerPage))
         } catch (error: Throwable) {
-          Fail<List<GalleryPhoto>>(error)
+          Fail<Paged<GalleryPhoto>>(error)
         }
 
-        val newGalleryPhotos = request() ?: emptyList()
-        val isEndReached = newGalleryPhotos.size < photosPerPage
+        val newGalleryPhotos = (request()?.page ?: emptyList())
+          .map { galleryPhoto -> galleryPhoto.copy(photoSize = photoSize) }
+
+        val isEndReached = request()?.isEnd ?: false
 
         setState {
           copy(
