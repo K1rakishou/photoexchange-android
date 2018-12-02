@@ -93,10 +93,10 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   private val permissionManager = PermissionManager()
 
   /**
-   * When we receive a push notification we show a notification and send a broadcast to the activity.
+   * When we receive a push notification we show a notification and send a broadcast to this activity.
    * If this activity is dead - then the user will see the notification.
    * But if it's not then we don't need to show the notification. What we need to do instead is to
-   * automatically add this photo receivedPhotos and update uploadedPhoto with the same name.
+   * automatically add this photo to receivedPhotos and update uploadedPhoto with the same name.
    * */
   private val notificationBroadcastReceiver = object : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -272,7 +272,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       is PhotosActivityEvent.StartUploadingService -> {
         val hasPhotosToUpload = viewModel.checkHasPhotosToUpload()
         if (hasPhotosToUpload) {
-          bindUploadingService(event.callerClass, event.reason, true)
+          bindUploadingService(event.callerClass, event.reason)
         } else {
           //do nothing
         }
@@ -280,7 +280,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       is PhotosActivityEvent.StartReceivingService -> {
         val hasPhotosToReceive = viewModel.checkCanReceivePhotos()
         if (hasPhotosToReceive) {
-          bindReceivingService(event.callerClass, event.reason, true)
+          bindReceivingService(event.callerClass, event.reason)
         } else {
           //do nothing
         }
@@ -295,7 +295,6 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       is PhotosActivityEvent.CancelPhotoUploading -> {
         uploadPhotosServiceConnection.cancelPhotoUploading(event.photoId)
       }
-
       PhotosActivityEvent.OnNewPhotoReceived -> showPhotoAnswerFoundSnackbar()
     }.safe
   }
@@ -360,16 +359,13 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
   private fun bindReceivingService(
     callerClass: Class<*>,
-    reason: String,
-    start: Boolean = true
+    reason: String
   ) {
     if (!receivePhotosServiceConnection.isConnected()) {
-      Timber.tag(TAG).d("(callerClass = $callerClass, reason = $reason) bindReceivingService, start = $start")
+      Timber.tag(TAG).d("(callerClass = $callerClass, reason = $reason) bindReceivingService")
 
       val serviceIntent = Intent(applicationContext, ReceivePhotosService::class.java)
-      if (start) {
-        startService(serviceIntent)
-      }
+      startService(serviceIntent)
 
       bindService(serviceIntent, receivePhotosServiceConnection, Context.BIND_AUTO_CREATE)
     } else {
@@ -380,16 +376,13 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
   private fun bindUploadingService(
     callerClass: Class<*>,
-    reason: String,
-    start: Boolean = true
+    reason: String
   ) {
     if (!uploadPhotosServiceConnection.isConnected()) {
-      Timber.tag(TAG).d("(callerClass = $callerClass, reason = $reason) bindUploadingService, start = $start")
+      Timber.tag(TAG).d("(callerClass = $callerClass, reason = $reason) bindUploadingService")
 
       val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
-      if (start) {
-        startService(serviceIntent)
-      }
+      startService(serviceIntent)
 
       bindService(serviceIntent, uploadPhotosServiceConnection, Context.BIND_AUTO_CREATE)
     } else {

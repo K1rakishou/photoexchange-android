@@ -29,6 +29,7 @@ import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 
 class GalleryFragmentViewModel(
@@ -97,47 +98,32 @@ class GalleryFragmentViewModel(
   }
 
   private fun favouritePhotoInternal(photoName: String) {
-    fun onFail(result: Fail<FavouritePhotoActionResult>, state: GalleryFragmentState) {
-      if (result.error is EmptyUserIdException) {
-        val updatedPhotos = state.galleryPhotos
-          .map { it.copy(galleryPhotoInfo = GalleryPhotoInfo.empty()) }
-
-        setState {
-          copy(
-            isFavouriteRequestActive = false,
-            galleryPhotos = updatedPhotos
-          )
-        }
-
-        return
+    fun updateIsPhotosFavourited(state: GalleryFragmentState, photoName: String) {
+      if (state.favouritedPhotos.contains(photoName)) {
+        setState { copy(favouritedPhotos = state.favouritedPhotos - photoName) }
+      } else {
+        setState { copy(favouritedPhotos = state.favouritedPhotos + photoName) }
       }
+    }
 
-      val message = "Could not favourite photo, error is \"${result.error.message
-        ?: "Unknown error"}\""
+    fun onFail(state: GalleryFragmentState, photoName: String, error: Throwable) {
+      updateIsPhotosFavourited(state, photoName)
 
-      setState { copy(isFavouriteRequestActive = false) }
-
+      val message = "Could not favourite photo, error is \"${error.message ?: "Unknown error"}\""
       intercom.tell<GalleryFragment>()
         .to(GalleryFragmentEvent.GeneralEvents.ShowToast(message))
     }
 
     withState { state ->
       launch {
-        setState { copy(isFavouriteRequestActive = true) }
+        updateIsPhotosFavourited(state, photoName)
 
-        val result = try {
-          val result = favouritePhotoUseCase.favouritePhoto(photoName)
-          if (result is Either.Error)  {
-            throw result.error
-          }
-
-          Success((result as Either.Value).value)
+        val favouriteResult = try {
+          favouritePhotoUseCase.favouritePhoto(photoName)
         } catch (error: Throwable) {
-          Fail<FavouritePhotoActionResult>(error)
-        }
+          Timber.tag(TAG).e(error)
 
-        if (result is Fail) {
-          onFail(result, state)
+          onFail(state, photoName, error)
           return@launch
         }
 
@@ -147,7 +133,6 @@ class GalleryFragmentViewModel(
           return@launch
         }
 
-        val favouriteResult = result()!!
         val updatedPhotos = state.galleryPhotos.toMutableList()
         val galleryPhoto = updatedPhotos[photoIndex]
 
@@ -159,12 +144,7 @@ class GalleryFragmentViewModel(
           galleryPhotoInfo = updatedPhotoInfo
         )
 
-        setState {
-          copy(
-            isFavouriteRequestActive = false,
-            galleryPhotos = updatedPhotos
-          )
-        }
+        setState { copy(galleryPhotos = updatedPhotos) }
       }
     }
   }

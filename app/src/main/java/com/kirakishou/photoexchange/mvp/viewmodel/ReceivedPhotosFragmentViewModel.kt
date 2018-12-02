@@ -114,7 +114,8 @@ class ReceivedPhotosFragmentViewModel(
       val sortedPhotos = updatedPhotos.sortedByDescending { it.uploadedOn }
 
       //show a snackbar telling user that we got a photo
-      intercom.tell<PhotosActivity>().to(PhotosActivityEvent.OnNewPhotoReceived)
+      intercom.tell<PhotosActivity>()
+        .that(PhotosActivityEvent.OnNewPhotoReceived)
 
       setState { copy(receivedPhotos = sortedPhotos) }
     }

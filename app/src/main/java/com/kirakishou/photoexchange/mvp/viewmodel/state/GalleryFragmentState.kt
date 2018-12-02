@@ -6,8 +6,8 @@ import com.airbnb.mvrx.Uninitialized
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 
 data class GalleryFragmentState(
-  val isFavouriteRequestActive: Boolean = false,
-  val isReportRequestActive: Boolean = false,
+  val favouritedPhotos: Set<String> = hashSetOf(),
+  val reportedPhotos: Set<String> = hashSetOf(),
 
   val isEndReached: Boolean = false,
   val galleryPhotos: List<GalleryPhoto> = emptyList(),
