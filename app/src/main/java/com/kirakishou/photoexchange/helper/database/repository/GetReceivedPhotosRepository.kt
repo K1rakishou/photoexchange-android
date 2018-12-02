@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
+import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
@@ -24,13 +25,13 @@ open class GetReceivedPhotosRepository(
   /**
    * This method skips the database cache
    * */
-  open suspend fun getFresh(userId: String, time: Long, count: Int): List<ReceivedPhoto> {
+  open suspend fun getFresh(userId: String, time: Long, count: Int): Paged<ReceivedPhoto> {
     return withContext(coroutineContext) {
       //get a page of fresh photos from the server
       val receivedPhotos = apiClient.getPageOfReceivedPhotos(userId, time, count)
       if (receivedPhotos.isEmpty()) {
         Timber.tag(TAG).d("No fresh received photos were found on the server")
-        return@withContext emptyList<ReceivedPhoto>()
+        return@withContext Paged(emptyList<ReceivedPhoto>(), true)
       }
 
       try {
@@ -40,26 +41,28 @@ open class GetReceivedPhotosRepository(
         throw error
       }
 
-      return@withContext ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhotos(receivedPhotos)
+      val mappedPhotos = ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhotos(receivedPhotos)
         .sortedByDescending { it.uploadedOn }
+
+      return@withContext Paged(mappedPhotos, mappedPhotos.size < count)
     }
   }
 
   /**
    * This method includes photos from the database cache
    * */
-  open suspend fun getPage(userId: String, lastUploadedOn: Long, count: Int): List<ReceivedPhoto> {
+  open suspend fun getPage(userId: String, lastUploadedOn: Long, count: Int): Paged<ReceivedPhoto> {
     return withContext(coroutineContext) {
       val pageOfReceivedPhotos = receivedPhotosLocalSource.getPageOfReceivedPhotos(lastUploadedOn, count)
       if (pageOfReceivedPhotos.size == count) {
         Timber.tag(TAG).d("Found enough received photos in the database")
-        return@withContext pageOfReceivedPhotos
+        return@withContext Paged(pageOfReceivedPhotos, false)
       }
 
       val receivedPhotos = apiClient.getPageOfReceivedPhotos(userId, lastUploadedOn, count)
       if (receivedPhotos.isEmpty()) {
         Timber.tag(TAG).d("No received photos were found on the server")
-        return@withContext pageOfReceivedPhotos
+        return@withContext Paged(pageOfReceivedPhotos, true)
       }
 
       try {
@@ -69,8 +72,10 @@ open class GetReceivedPhotosRepository(
         throw error
       }
 
-      return@withContext ReceivedPhotosMapper.FromResponse.GetReceivedPhotos.toReceivedPhotos(receivedPhotos)
+      val mappedPhotos = ReceivedPhotosMapper.FromResponse.GetReceivedPhotos.toReceivedPhotos(receivedPhotos)
         .sortedByDescending { it.uploadedOn }
+
+      return@withContext Paged(mappedPhotos, mappedPhotos.size < count)
     }
   }
 
