@@ -123,7 +123,7 @@ class ReceivedPhotosFragmentViewModel(
   private fun fetchFreshPhotosInternal() {
     /**
      * Combines old receivedPhotos with the fresh ones and also counts how many of the fresh photos were
-     * truly fresh (e.g. receivedPhotos didn't contain them yet or it did but without receiverInfo)
+     * truly fresh (e.g. receivedPhotos didn't contain them yet)
      * */
     suspend fun combinePhotos(
       freshPhotos: List<ReceivedPhoto>,

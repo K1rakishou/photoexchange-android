@@ -38,15 +38,12 @@ import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
 import com.kirakishou.photoexchange.ui.viewstate.PhotosActivityViewState
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
-import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.lang.IllegalStateException
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 
@@ -80,7 +77,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   private val TAG = "PhotosActivity"
-  private val FRAGMENT_SCROLL_DELAY_MS = 250L
+  private val FRAGMENT_SWITCH_ANIMATION_DELAY_MS = 250L
   private val SWITCH_FRAGMENT_DELAY = 250L
   private val NOTIFICATION_CANCEL_DELAY_MS = 25L
 
@@ -335,17 +332,14 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   private fun showPhotoAnswerFoundSnackbar() {
     Snackbar.make(rootLayout, getString(R.string.photo_has_been_received_snackbar_text), Snackbar.LENGTH_LONG)
       .setAction(getString(R.string.show_snackbar_action_text), {
-        switchToTab(RECEIVED_PHOTOS_TAB_INDEX)
+        launch {
+          switchToTab(RECEIVED_PHOTOS_TAB_INDEX)
 
-        compositeDisposable += Single.timer(FRAGMENT_SCROLL_DELAY_MS, TimeUnit.MILLISECONDS)
-          .subscribeOn(Schedulers.io())
-          .observeOn(AndroidSchedulers.mainThread())
-          .doOnSuccess {
-            viewModel.intercom.tell<ReceivedPhotosFragment>()
-              .to(ReceivedPhotosFragmentEvent.GeneralEvents.ScrollToTop())
-          }
-          .doOnError { Timber.e(it) }
-          .subscribe()
+          //wait some time before fragments switching animation is done
+          delay(FRAGMENT_SWITCH_ANIMATION_DELAY_MS)
+          viewModel.intercom.tell<ReceivedPhotosFragment>()
+            .to(ReceivedPhotosFragmentEvent.GeneralEvents.ScrollToTop())
+        }
       }).show()
   }
 
