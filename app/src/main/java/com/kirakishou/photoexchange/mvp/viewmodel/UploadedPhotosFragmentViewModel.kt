@@ -180,7 +180,9 @@ class UploadedPhotosFragmentViewModel(
         } catch (error: Throwable) {
           Timber.tag(TAG).e(error)
 
-          //TODO: show some kind of message here?
+          val message = "Error has occurred while trying to fetch fresh photos. \nError message: ${error.message ?: "Unknown error message"}"
+          intercom.tell<PhotosActivity>()
+            .to(PhotosActivityEvent.ShowToast(message))
           return@launch
         }
 
@@ -234,7 +236,9 @@ class UploadedPhotosFragmentViewModel(
       } catch (error: Throwable) {
         Timber.tag(TAG).e(error)
 
-        //TODO: show a toast that we could not cancel the photo
+        val message = "Error has occurred while trying to cancel photo uploading. \nError message: ${error.message ?: "Unknown error message"}"
+        intercom.tell<PhotosActivity>()
+          .to(PhotosActivityEvent.ShowToast(message))
         return@launch
       }
 
@@ -464,7 +468,7 @@ class UploadedPhotosFragmentViewModel(
         }
       }
       is UploadedPhotosFragmentEvent.ReceivePhotosEvent.NoPhotosReceived -> {
-
+        //do nothing?
       }
       is UploadedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
         event.error.printStackTrace()

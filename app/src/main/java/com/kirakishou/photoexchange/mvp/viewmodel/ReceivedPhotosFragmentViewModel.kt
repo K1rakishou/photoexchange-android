@@ -159,7 +159,9 @@ class ReceivedPhotosFragmentViewModel(
         } catch (error: Throwable) {
           Timber.tag(TAG).e(error)
 
-          //TODO: show some kind of message here?
+          val message = "Error has occurred while trying to fetch fresh photos. \nError message: ${error.message ?: "Unknown error message"}"
+          intercom.tell<PhotosActivity>()
+            .to(PhotosActivityEvent.ShowToast(message))
           return@launch
         }
 
@@ -289,7 +291,7 @@ class ReceivedPhotosFragmentViewModel(
         }
       }
       is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.NoPhotosReceived -> {
-        //TODO
+        //do nothing?
       }
       is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
         event.error.printStackTrace()

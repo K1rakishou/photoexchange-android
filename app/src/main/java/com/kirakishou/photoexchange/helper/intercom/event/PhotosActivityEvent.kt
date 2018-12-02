@@ -12,4 +12,5 @@ sealed class PhotosActivityEvent : BaseEvent {
   class ScrollEvent(val isScrollingDown: Boolean) : PhotosActivityEvent()
 
   object OnNewPhotoReceived : PhotosActivityEvent()
+  class ShowToast(val message: String) : PhotosActivityEvent()
 }

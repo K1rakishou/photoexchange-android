@@ -8,7 +8,7 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersPro
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotosRepository
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
-import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
+import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
 import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
@@ -16,7 +16,6 @@ import com.kirakishou.photoexchange.mvp.model.PhotoSize
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.state.GalleryFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
-import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -107,8 +106,8 @@ class GalleryFragmentViewModel(
       updateIsPhotosFavourited(state, photoName)
 
       val message = "Could not favourite photo, error is \"${error.message ?: "Unknown error"}\""
-      intercom.tell<GalleryFragment>()
-        .to(GalleryFragmentEvent.GeneralEvents.ShowToast(message))
+      intercom.tell<PhotosActivity>()
+        .to(PhotosActivityEvent.ShowToast(message))
     }
 
     withState { state ->

@@ -296,6 +296,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
         uploadPhotosServiceConnection.cancelPhotoUploading(event.photoId)
       }
       PhotosActivityEvent.OnNewPhotoReceived -> showPhotoAnswerFoundSnackbar()
+      is PhotosActivityEvent.ShowToast -> onShowToast(event.message)
     }.safe
   }
 
