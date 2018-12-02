@@ -39,7 +39,7 @@ open class GetReceivedPhotosUseCase(
   ): Either<Exception, List<ReceivedPhoto>> {
     return withContext(coroutineContext) {
       return@withContext myRunCatching {
-        Timber.tag(TAG).d("loadPageOfPhotos called")
+        Timber.tag(TAG).d("loadFreshPhotos called")
 
         val (time, userId) = getParameters(lastUploadedOn)
         return@myRunCatching getReceivedPhotosRepository.getFresh(userId, time, count)

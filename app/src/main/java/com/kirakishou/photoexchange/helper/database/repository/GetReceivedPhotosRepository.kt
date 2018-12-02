@@ -29,7 +29,7 @@ open class GetReceivedPhotosRepository(
       //get a page of fresh photos from the server
       val receivedPhotos = apiClient.getPageOfReceivedPhotos(userId, time, count)
       if (receivedPhotos.isEmpty()) {
-        Timber.tag(TAG).d("No received photos were found on the server")
+        Timber.tag(TAG).d("No fresh received photos were found on the server")
         return@withContext emptyList<ReceivedPhoto>()
       }
 
@@ -52,11 +52,13 @@ open class GetReceivedPhotosRepository(
     return withContext(coroutineContext) {
       val pageOfReceivedPhotos = receivedPhotosLocalSource.getPageOfReceivedPhotos(lastUploadedOn, count)
       if (pageOfReceivedPhotos.size == count) {
+        Timber.tag(TAG).d("Found enough received photos in the database")
         return@withContext pageOfReceivedPhotos
       }
 
       val receivedPhotos = apiClient.getPageOfReceivedPhotos(userId, lastUploadedOn, count)
       if (receivedPhotos.isEmpty()) {
+        Timber.tag(TAG).d("No received photos were found on the server")
         return@withContext pageOfReceivedPhotos
       }
 

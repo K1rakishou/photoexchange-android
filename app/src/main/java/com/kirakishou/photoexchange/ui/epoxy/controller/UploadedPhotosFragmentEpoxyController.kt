@@ -53,10 +53,11 @@ class UploadedPhotosFragmentEpoxyController {
     }
 
     if (state.uploadedPhotos.isEmpty()) {
-      //TODO: probably should also check here whether we have queued up photos
-      textRow {
-        id("no_uploaded_photos")
-        text(context.getString(R.string.you_have_no_photos_yet))
+      if (state.takenPhotos.isEmpty()) {
+        textRow {
+          id("no_uploaded_photos")
+          text(context.getString(R.string.you_have_no_photos_yet))
+        }
       }
     } else {
       sectionRow {

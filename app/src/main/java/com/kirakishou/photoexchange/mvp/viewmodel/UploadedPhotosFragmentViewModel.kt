@@ -197,7 +197,7 @@ class UploadedPhotosFragmentViewModel(
           //this means that there are probably even more photos that this user has not seen yet
           //so we have no other option but to clear database cache and reload everything
 
-          Timber.tag(TAG).d("combinePhotos method more or the same amount of freshPhotos that we have requested")
+          Timber.tag(TAG).d("combinePhotos returned more or the same amount of freshPhotos that we have requested")
           resetState(true)
           return@launch
         }
