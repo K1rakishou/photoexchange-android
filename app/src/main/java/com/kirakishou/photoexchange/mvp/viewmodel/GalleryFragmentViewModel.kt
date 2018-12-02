@@ -90,11 +90,56 @@ class GalleryFragmentViewModel(
   }
 
   private fun reportPhotoInternal(photoName: String) {
-    //TODO
+    fun updateIsPhotoReported(state: GalleryFragmentState, photoName: String) {
+      if (state.reportedPhotos.contains(photoName)) {
+        setState { copy(favouritedPhotos = state.reportedPhotos - photoName) }
+      } else {
+        setState { copy(favouritedPhotos = state.reportedPhotos + photoName) }
+      }
+    }
+
+    fun onFail(state: GalleryFragmentState, photoName: String, error: Throwable) {
+      updateIsPhotoReported(state, photoName)
+
+      val message = "Could not report photo, error is \"${error.message ?: "Unknown error"}\""
+      intercom.tell<PhotosActivity>()
+        .to(PhotosActivityEvent.ShowToast(message))
+    }
+
+    withState { state ->
+      launch {
+        updateIsPhotoReported(state, photoName)
+
+        val reportResult = try {
+          reportPhotoUseCase.reportPhoto(photoName)
+        } catch (error: Throwable) {
+          Timber.tag(TAG).e(error)
+
+          onFail(state, photoName, error)
+          return@launch
+        }
+
+        val photoIndex = state.galleryPhotos.indexOfFirst { it.photoName == photoName }
+        if (photoIndex == -1) {
+          return@launch
+        }
+
+        val updatedPhotos = state.galleryPhotos.toMutableList()
+        val galleryPhoto = updatedPhotos[photoIndex]
+
+        val updatedPhotoInfo = updatedPhotos[photoIndex].galleryPhotoInfo
+          .copy(isReported = reportResult)
+
+        updatedPhotos[photoIndex] = galleryPhoto
+          .copy(galleryPhotoInfo = updatedPhotoInfo)
+
+        setState { copy(galleryPhotos = updatedPhotos) }
+      }
+    }
   }
 
   private fun favouritePhotoInternal(photoName: String) {
-    fun updateIsPhotosFavourited(state: GalleryFragmentState, photoName: String) {
+    fun updateIsPhotoFavourited(state: GalleryFragmentState, photoName: String) {
       if (state.favouritedPhotos.contains(photoName)) {
         setState { copy(favouritedPhotos = state.favouritedPhotos - photoName) }
       } else {
@@ -103,7 +148,7 @@ class GalleryFragmentViewModel(
     }
 
     fun onFail(state: GalleryFragmentState, photoName: String, error: Throwable) {
-      updateIsPhotosFavourited(state, photoName)
+      updateIsPhotoFavourited(state, photoName)
 
       val message = "Could not favourite photo, error is \"${error.message ?: "Unknown error"}\""
       intercom.tell<PhotosActivity>()
@@ -112,7 +157,7 @@ class GalleryFragmentViewModel(
 
     withState { state ->
       launch {
-        updateIsPhotosFavourited(state, photoName)
+        updateIsPhotoFavourited(state, photoName)
 
         val favouriteResult = try {
           favouritePhotoUseCase.favouritePhoto(photoName)
@@ -123,8 +168,7 @@ class GalleryFragmentViewModel(
           return@launch
         }
 
-        val photoIndex = state.galleryPhotos
-          .indexOfFirst { it.photoName == photoName }
+        val photoIndex = state.galleryPhotos.indexOfFirst { it.photoName == photoName }
         if (photoIndex == -1) {
           return@launch
         }
