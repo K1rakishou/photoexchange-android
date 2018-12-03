@@ -9,6 +9,7 @@ data class UploadedPhoto(
   val uploaderLat: Double,
   val receiverInfo: ReceiverInfo?,
   val uploadedOn: Long,
+  val showPhoto: Boolean = true,
   val photoSize: PhotoSize = PhotoSize.Medium
 ) {
 
@@ -17,13 +18,14 @@ data class UploadedPhoto(
   }
 
   data class ReceiverInfo(
+    val receiverPhotoName: String,
     val receiverLon: Double,
     val receiverLat: Double
   )
 
   companion object {
     fun empty(): UploadedPhoto {
-      return UploadedPhoto(-1L, "", 0.0, 0.0, null, -1L, PhotoSize.Medium)
+      return UploadedPhoto(-1L, "", 0.0, 0.0, null, -1L, true, PhotoSize.Medium)
     }
   }
 }

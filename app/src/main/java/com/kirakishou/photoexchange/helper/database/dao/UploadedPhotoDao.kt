@@ -47,9 +47,15 @@ abstract class UploadedPhotoDao {
   @Query("UPDATE ${UploadedPhotoEntity.TABLE_NAME} " +
     "SET " +
     " ${UploadedPhotoEntity.RECEIVER_LON_COLUMN} = :receiverLon, " +
-    " ${UploadedPhotoEntity.RECEIVER_LAT_COLUMN} = :receiverLat " +
+    " ${UploadedPhotoEntity.RECEIVER_LAT_COLUMN} = :receiverLat, " +
+    " ${UploadedPhotoEntity.RECEIVER_PHOTO_NAME_COLUMN} = :receivedPhotoName " +
     "WHERE ${UploadedPhotoEntity.PHOTO_NAME_COLUMN} = :uploadedPhotoName")
-  abstract fun updateReceiverInfo(uploadedPhotoName: String, receiverLon: Double, receiverLat: Double): Int
+  abstract fun updateReceiverInfo(
+    uploadedPhotoName: String,
+    receivedPhotoName: String,
+    receiverLon: Double,
+    receiverLat: Double
+  ): Int
 
   @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME}")
   abstract fun findAll(): List<UploadedPhotoEntity>

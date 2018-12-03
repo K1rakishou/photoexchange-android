@@ -80,6 +80,7 @@ open class GetReceivedPhotosRepository(
       for (receivedPhoto in receivedPhotos) {
         val updateResult = uploadedPhotosLocalSource.updateReceiverInfo(
           receivedPhoto.uploadedPhotoName,
+          receivedPhoto.receivedPhotoName,
           receivedPhoto.lon,
           receivedPhoto.lat
         )

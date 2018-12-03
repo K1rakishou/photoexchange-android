@@ -74,6 +74,7 @@ class UploadedPhotosFragmentViewModel(
           ActorAction.LoadUploadedPhotos -> loadUploadedPhotosInternal()
           ActorAction.FetchFreshPhotos -> fetchFreshPhotosInternal()
           is ActorAction.OnNewPhotoReceived -> onNewPhotoReceivedInternal(action.photoExchangedData)
+          is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.photoName)
         }.safe
       }
     }
@@ -105,6 +106,34 @@ class UploadedPhotosFragmentViewModel(
     launch { viewModelActor.send(ActorAction.OnNewPhotoReceived(photoExchangedData)) }
   }
 
+  fun swapPhotoAndMap(photoName: String) {
+    launch { viewModelActor.send(ActorAction.SwapPhotoAndMap(photoName)) }
+  }
+
+  private fun swapPhotoAndMapInternal(uploadedPhotoName: String) {
+    withState { state ->
+      val photoIndex = state.uploadedPhotos.indexOfFirst { it.photoName == uploadedPhotoName }
+      if (photoIndex == -1) {
+        return@withState
+      }
+
+      if (state.uploadedPhotos[photoIndex].receiverInfo == null) {
+        intercom.tell<PhotosActivity>().to(PhotosActivityEvent
+          .ShowToast("Still looking for your photo..."))
+        return@withState
+      }
+
+      val oldShowPhoto = state.uploadedPhotos[photoIndex].showPhoto
+      val updatedPhoto = state.uploadedPhotos[photoIndex]
+        .copy(showPhoto = !oldShowPhoto)
+
+      val updatedPhotos = state.uploadedPhotos.toMutableList()
+      updatedPhotos[photoIndex] = updatedPhoto
+
+      setState { copy(uploadedPhotos = updatedPhotos) }
+    }
+  }
+
   private fun onNewPhotoReceivedInternal(photoExchangedData: PhotoExchangedData) {
     withState { state ->
       val photoIndex = state.uploadedPhotos
@@ -115,7 +144,12 @@ class UploadedPhotosFragmentViewModel(
       }
 
       val updatedPhotos = state.uploadedPhotos.toMutableList()
-      val receiverInfo = UploadedPhoto.ReceiverInfo(photoExchangedData.lon, photoExchangedData.lat)
+      val receiverInfo = UploadedPhoto.ReceiverInfo(
+        photoExchangedData.receivedPhotoName,
+        photoExchangedData.lon,
+        photoExchangedData.lat
+      )
+
       val updatedPhoto = updatedPhotos[photoIndex]
         .copy(receiverInfo = receiverInfo)
 
@@ -464,6 +498,7 @@ class UploadedPhotosFragmentViewModel(
               uploadedPhoto.copy()
             } else {
               val receiverInfo = UploadedPhoto.ReceiverInfo(
+                exchangedPhoto.receivedPhotoName,
                 exchangedPhoto.lon,
                 exchangedPhoto.lat
               )
@@ -516,6 +551,7 @@ class UploadedPhotosFragmentViewModel(
     object LoadUploadedPhotos : ActorAction()
     object FetchFreshPhotos : ActorAction()
     class OnNewPhotoReceived(val photoExchangedData: PhotoExchangedData) : ActorAction()
+    class SwapPhotoAndMap(val photoName: String) : ActorAction()
   }
 
   companion object : MvRxViewModelFactory<UploadedPhotosFragmentState> {

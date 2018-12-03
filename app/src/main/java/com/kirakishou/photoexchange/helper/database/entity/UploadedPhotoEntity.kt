@@ -21,6 +21,9 @@ class UploadedPhotoEntity(
   @ColumnInfo(name = UPLOADER_LAT_COLUMN)
   var uploaderLat: Double = 0.0,
 
+  @ColumnInfo(name = RECEIVER_PHOTO_NAME_COLUMN)
+  var receiverPhotoName: String? = null,
+
   @ColumnInfo(name = RECEIVER_LON_COLUMN)
   var receiverLon: Double? = null,
 
@@ -58,6 +61,7 @@ class UploadedPhotoEntity(
         lat,
         null,
         null,
+        null,
         uploadedOn,
         insertedOn
       )
@@ -67,6 +71,7 @@ class UploadedPhotoEntity(
                takenPhotoId: Long,
                lon: Double,
                lat: Double,
+               receiverPhotoName: String?,
                receiverLon: Double?,
                receiverLat: Double?,
                uploadedOn: Long,
@@ -77,6 +82,7 @@ class UploadedPhotoEntity(
         takenPhotoId,
         lon,
         lat,
+        receiverPhotoName,
         receiverLon,
         receiverLat,
         uploadedOn,
@@ -90,6 +96,7 @@ class UploadedPhotoEntity(
     const val PHOTO_NAME_COLUMN = "PHOTO_NAME"
     const val UPLOADER_LON_COLUMN = "UPLOADER_LON"
     const val UPLOADER_LAT_COLUMN = "UPLOADER_LAT"
+    const val RECEIVER_PHOTO_NAME_COLUMN = "RECEIVER_PHOTO_NAME"
     const val RECEIVER_LON_COLUMN = "RECEIVER_LON"
     const val RECEIVER_LAT_COLUMN = "RECEIVER_LAT"
     const val UPLOADED_ON_COLUMN = "UPLOADED_ON"
