@@ -17,8 +17,6 @@ class TakePhotoActivityViewModel(
 
   private val TAG = "TakePhotoActivityViewModel"
 
-  val errorCodesSubject = PublishSubject.create<ErrorCode>().toSerialized()
-
   override fun onCleared() {
     super.onCleared()
   }

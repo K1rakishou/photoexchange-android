@@ -98,11 +98,6 @@ class TakePhotoActivity : BaseActivity() {
   }
 
   private fun initRx() {
-    compositeDisposable += viewModel.errorCodesSubject
-      .subscribeOn(AndroidSchedulers.mainThread())
-      .doOnNext { showErrorCodeToast(it) }
-      .subscribe()
-
     takePhotoButton.setOnClickListener {
       vibrator.vibrate(this, VIBRATION_TIME_MS)
 

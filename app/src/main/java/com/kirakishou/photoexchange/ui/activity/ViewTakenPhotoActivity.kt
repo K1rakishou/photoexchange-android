@@ -48,14 +48,14 @@ class ViewTakenPhotoActivity : BaseActivity() {
   }
 
   private suspend fun initRx() {
-    launch {
-      //TODO: remove
-      viewModel.addToGalleryFragmentResult.consumeEach { fragmentResult ->
-        onBackPressedInternal().await()
-        onAddToGalleryFragmentResult(fragmentResult)
-        onPhotoUpdated()
-      }
-    }
+    compositeDisposable += viewModel.addToGalleryFragmentResult
+      .subscribe({ fragmentResult ->
+        launch {
+          onBackPressedInternal().await()
+          onAddToGalleryFragmentResult(fragmentResult)
+          onPhotoUpdated()
+        }
+      })
   }
 
   private fun showViewTakenPhotoFragment(intent: Intent) {
@@ -78,7 +78,8 @@ class ViewTakenPhotoActivity : BaseActivity() {
 
   private suspend fun onAddToGalleryFragmentResult(fragmentResult: AddToGalleryDialogFragment.FragmentResult) {
     viewModel.saveMakePublicFlag(fragmentResult.rememberChoice, fragmentResult.makePublic)
-    viewModel.updateSetIsPhotoPublic(takenPhoto.id)
+
+    viewModel.updateSetIsPhotoPublic(takenPhoto.id, fragmentResult.makePublic)
   }
 
   override fun onBackPressed() {

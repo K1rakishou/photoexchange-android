@@ -115,13 +115,6 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
     }
   }
 
-  fun showErrorCodeToast(errorCode: ErrorCode) {
-    val errorMessage = errorCode.getErrorMessage()
-
-    Timber.tag(TAG).e(errorMessage)
-    onShowToast(errorMessage, Toast.LENGTH_SHORT)
-  }
-
   protected abstract fun getContentView(): Int
   protected abstract fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent)
   protected abstract fun onActivityStart()

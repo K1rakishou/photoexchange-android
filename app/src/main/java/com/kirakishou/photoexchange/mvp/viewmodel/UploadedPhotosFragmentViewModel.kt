@@ -414,6 +414,9 @@ class UploadedPhotosFragmentViewModel(
 
           newPhotos.add(photoIndex, QueuedUpPhoto.fromTakenPhoto(event.photo))
           setState { copy(takenPhotos = newPhotos) }
+
+          intercom.tell<PhotosActivity>()
+            .to(PhotosActivityEvent.ShowToast("Failed to upload photo"))
         }
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoCanceled -> {
