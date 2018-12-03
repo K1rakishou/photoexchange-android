@@ -42,8 +42,6 @@ open class GetReceivedPhotosRepository(
       }
 
       val mappedPhotos = ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhotos(receivedPhotos)
-        .sortedByDescending { it.uploadedOn }
-
       return@withContext Paged(mappedPhotos, mappedPhotos.size < count)
     }
   }
@@ -73,8 +71,6 @@ open class GetReceivedPhotosRepository(
       }
 
       val mappedPhotos = ReceivedPhotosMapper.FromResponse.GetReceivedPhotos.toReceivedPhotos(receivedPhotos)
-        .sortedByDescending { it.uploadedOn }
-
       return@withContext Paged(mappedPhotos, mappedPhotos.size < count)
     }
   }

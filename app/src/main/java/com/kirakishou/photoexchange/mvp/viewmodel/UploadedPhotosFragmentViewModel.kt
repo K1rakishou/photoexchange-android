@@ -305,9 +305,10 @@ class UploadedPhotosFragmentViewModel(
           .map { it.photoName }
           .toSet()
 
-        val newUploadedPhotos = (request()?.page ?: emptyList())
+        val newUploadedPhotos = (request()?.page ?: emptyList()) + state.uploadedPhotos
           .filterNot { oldPhotoNameSet.contains(it.photoName) }
           .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
+          .sortedByDescending { it.uploadedOn }
 
         val isEndReached = request()?.isEnd ?: false
 
@@ -315,7 +316,7 @@ class UploadedPhotosFragmentViewModel(
           copy(
             isEndReached = isEndReached,
             uploadedPhotosRequest = request,
-            uploadedPhotos = state.uploadedPhotos + newUploadedPhotos
+            uploadedPhotos = newUploadedPhotos
           )
         }
       }

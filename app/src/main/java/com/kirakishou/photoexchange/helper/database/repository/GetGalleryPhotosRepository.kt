@@ -49,10 +49,7 @@ open class GetGalleryPhotosRepository(
         updatedPhotos += galleryPhoto.copy(galleryPhotoInfo = newGalleryPhotoInfo)
       }
 
-      val sortedPhotos = updatedPhotos
-        .sortedByDescending { it.uploadedOn }
-
-      return@withContext Paged(sortedPhotos, pageOfGalleryPhotos.isEnd)
+      return@withContext Paged(updatedPhotos, pageOfGalleryPhotos.isEnd)
     }
   }
 

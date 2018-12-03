@@ -112,7 +112,8 @@ class ReceivedPhotosFragmentViewModel(
       )
 
       val updatedPhotos = state.receivedPhotos.toMutableList() + newPhoto
-      val sortedPhotos = updatedPhotos.sortedByDescending { it.uploadedOn }
+      val sortedPhotos = updatedPhotos
+        .sortedByDescending { it.uploadedOn }
 
       //show a snackbar telling user that we got a photo
       intercom.tell<PhotosActivity>()
@@ -185,8 +186,8 @@ class ReceivedPhotosFragmentViewModel(
         }
 
         val sortedPhotos = combinedPhotos
-          .sortedByDescending { it.uploadedOn }
           .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
+          .sortedByDescending { it.uploadedOn }
         setState { copy(receivedPhotos = sortedPhotos) }
       }
     }
@@ -247,15 +248,17 @@ class ReceivedPhotosFragmentViewModel(
           Fail<Paged<ReceivedPhoto>>(error)
         }
 
-        val newReceivedPhotos = (request()?.page ?: emptyList())
+        val newReceivedPhotos = (request()?.page ?: emptyList()) + state.receivedPhotos
           .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
+          .sortedByDescending { it.uploadedOn }
+
         val isEndReached = request()?.isEnd ?: false
 
         setState {
           copy(
             isEndReached = isEndReached,
             receivedPhotosRequest = request,
-            receivedPhotos = state.receivedPhotos + newReceivedPhotos
+            receivedPhotos = newReceivedPhotos
           )
         }
       }
