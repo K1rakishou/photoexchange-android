@@ -17,19 +17,20 @@ open class GetGalleryPhotosUseCase(
   private val TAG = "GetGalleryPhotosUseCase"
 
   open suspend fun loadPageOfPhotos(
-    lastUploadedOn: Long,
+    firstUploadedOn: Long,
+    lastUploadedOnParam: Long,
     count: Int
   ): Paged<GalleryPhoto> {
     return withContext(coroutineContext) {
-      val time = if (lastUploadedOn != -1L) {
-        lastUploadedOn
+      val lastUploadedOn = if (lastUploadedOnParam != -1L) {
+        lastUploadedOnParam
       } else {
         timeUtils.getTimeFast()
       }
 
       //empty userId is allowed here since we need it only when fetching galleryPhotoInfo
       val userId = settingsRepository.getUserId()
-      return@withContext getGalleryPhotosRepository.getPage(userId, time, count)
+      return@withContext getGalleryPhotosRepository.getPage(userId, firstUploadedOn, lastUploadedOn, count)
     }
   }
 }

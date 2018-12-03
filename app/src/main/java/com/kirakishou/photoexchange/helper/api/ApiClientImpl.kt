@@ -191,4 +191,15 @@ open class ApiClientImpl
 
     //no response data
   }
+
+  override suspend fun hasFreshGalleryPhotos(time: Long): Int {
+    val response = HasFreshGalleryPhotosRequest(
+      time,
+      apiService,
+      jsonConverter,
+      dispatchersProvider
+    ).execute()
+
+    return response.freshGalleryPhotosCount
+  }
 }

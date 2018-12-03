@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.helper.database.source.local
 
+import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoInfoEntity
 import com.kirakishou.photoexchange.helper.database.isSuccess
@@ -36,5 +37,14 @@ open class GalleryPhotoInfoLocalSource(
 
   open fun findMany(photoNameList: List<String>): List<GalleryPhotoInfo> {
     return GalleryPhotosInfoMapper.ToObject.toGalleryPhotoInfoList(galleryPhotoInfoDao.findMany(photoNameList))
+  }
+
+  open fun deleteOldPhotos() {
+    val now = timeUtils.getTimeFast()
+    galleryPhotoInfoDao.deleteOlderThan(now - Constants.GALLERY_PHOTOS_INFO_CACHE_MAX_LIVE_TIME)
+  }
+
+  open fun deleteAll() {
+    galleryPhotoInfoDao.deleteAll()
   }
 }

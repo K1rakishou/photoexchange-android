@@ -144,12 +144,14 @@ open class DatabaseModule(
   @Provides
   open fun provideGalleryPhotoRepository(database: MyDatabase,
                                          apiClient: ApiClient,
+                                         timeUtils: TimeUtils,
                                          galleryPhotoLocalSource: GalleryPhotoLocalSource,
                                          galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
                                          dispatchersProvider: DispatchersProvider): GetGalleryPhotosRepository {
     return GetGalleryPhotosRepository(
       database,
       apiClient,
+      timeUtils,
       galleryPhotoLocalSource,
       galleryPhotoInfoLocalSource,
       dispatchersProvider
@@ -283,10 +285,14 @@ open class DatabaseModule(
   @Provides
   open fun provideGalleryPhotosRepository(database: MyDatabase,
                                           timeUtils: TimeUtils,
+                                          galleryPhotoLocalSource: GalleryPhotoLocalSource,
+                                          galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
                                           dispatchersProvider: DispatchersProvider): GalleryPhotosRepository {
     return GalleryPhotosRepository(
       database,
       timeUtils,
+      galleryPhotoLocalSource,
+      galleryPhotoInfoLocalSource,
       dispatchersProvider
     )
   }

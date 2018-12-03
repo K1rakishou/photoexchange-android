@@ -55,4 +55,7 @@ interface ApiService {
 
   @POST("/v1/api/update_token")
   fun updateFirebaseToken(@Body packet: UpdateFirebaseTokenPacket): Single<Response<UpdateFirebaseTokenResponse>>
+
+  @GET("/v1/api/has_fresh_gallery_photos/{time}")
+  fun hasFreshGalleryPhotos(@Path("time") time: Long): Single<Response<HasFreshGalleryPhotosResponse>>
 }
