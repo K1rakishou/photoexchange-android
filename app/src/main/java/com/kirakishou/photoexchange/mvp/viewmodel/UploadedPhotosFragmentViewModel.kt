@@ -141,7 +141,7 @@ class UploadedPhotosFragmentViewModel(
       var freshPhotosCount = 0
 
       for (freshPhoto in freshPhotos) {
-        if (uploadedPhotosRepository.contains(freshPhoto.photoName)) {
+        if (!uploadedPhotosRepository.contains(freshPhoto.photoName)) {
           //if we don't have this photo yet - add it to the list
           updatedPhotos += freshPhoto
           ++freshPhotosCount
