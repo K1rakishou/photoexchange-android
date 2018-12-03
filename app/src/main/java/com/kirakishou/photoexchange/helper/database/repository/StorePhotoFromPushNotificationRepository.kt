@@ -29,6 +29,7 @@ class StorePhotoFromPushNotificationRepository(
 
           val result = updateReceiverInfo(
             photoExchangedData.uploadedPhotoName,
+            photoExchangedData.receivedPhotoName,
             photoExchangedData.lon,
             photoExchangedData.lat
           )
@@ -61,7 +62,12 @@ class StorePhotoFromPushNotificationRepository(
       return receivedPhotosDao.save(receivedPhotoEntity).isSuccess()
   }
 
-  private fun updateReceiverInfo(uploadedPhotoName: String, lon: Double, lat: Double): Boolean {
-      return uploadedPhotoDao.updateReceiverInfo(uploadedPhotoName, lon, lat) == 1
+  private fun updateReceiverInfo(
+    uploadedPhotoName: String,
+    receivedPhotoName: String,
+    lon: Double,
+    lat: Double
+  ): Boolean {
+      return uploadedPhotoDao.updateReceiverInfo(uploadedPhotoName, receivedPhotoName, lon, lat) == 1
   }
 }

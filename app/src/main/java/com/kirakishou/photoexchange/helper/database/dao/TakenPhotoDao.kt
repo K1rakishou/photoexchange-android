@@ -99,6 +99,11 @@ abstract class TakenPhotoDao {
   abstract fun updateSetPhotoPublic(photoId: Long): Int
 
   @Query("UPDATE ${TakenPhotoEntity.TABLE_NAME} " +
+    "SET ${TakenPhotoEntity.IS_PUBLIC_COLUMN} = ${MyDatabase.SQLITE_FALSE} " +
+    "WHERE ${TakenPhotoEntity.ID_COLUMN} = :photoId")
+  abstract fun updateSetPhotoPrivate(photoId: Long): Int
+
+  @Query("UPDATE ${TakenPhotoEntity.TABLE_NAME} " +
     "SET " +
     " ${TakenPhotoEntity.LON_COLUMN} = :lon, " +
     " ${TakenPhotoEntity.LAT_COLUMN} = :lat " +

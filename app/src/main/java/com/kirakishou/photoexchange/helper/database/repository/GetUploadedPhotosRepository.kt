@@ -73,11 +73,9 @@ class GetUploadedPhotosRepository(
   private fun splitPhotos(uploadedPhotos: List<UploadedPhoto>): List<UploadedPhoto> {
     val uploadedPhotosWithNoReceiver = uploadedPhotos
       .filter { it.receiverInfo == null }
-      .sortedByDescending { it.uploadedOn }
 
     val uploadedPhotosWithReceiver = uploadedPhotos
       .filter { it.receiverInfo != null }
-      .sortedByDescending { it.uploadedOn }
 
     //we need to show photos without receiver first and after them photos with receiver
     return uploadedPhotosWithNoReceiver + uploadedPhotosWithReceiver

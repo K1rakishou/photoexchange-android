@@ -65,6 +65,7 @@ class ReceivePhotosRepository(
       //and if it were deleted and updateReceiverInfo returns false we can ignore it
       uploadedPhotosLocalSource.updateReceiverInfo(
         receivedPhoto.uploadedPhotoName,
+        receivedPhoto.receivedPhotoName,
         receivedPhoto.lon,
         receivedPhoto.lat
       )

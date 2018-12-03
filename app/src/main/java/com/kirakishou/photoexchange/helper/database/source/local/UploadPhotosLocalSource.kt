@@ -54,7 +54,17 @@ open class UploadPhotosLocalSource(
     return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.getPage(time, count))
   }
 
-  fun updateReceiverInfo(uploadedPhotoName: String, receiverLon: Double, receiverLat: Double): Boolean {
-    return uploadedPhotoDao.updateReceiverInfo(uploadedPhotoName, receiverLon, receiverLat) == 1
+  fun updateReceiverInfo(
+    uploadedPhotoName: String,
+    receivedPhotoName: String,
+    receiverLon: Double,
+    receiverLat: Double
+  ): Boolean {
+    return uploadedPhotoDao.updateReceiverInfo(
+      uploadedPhotoName,
+      receivedPhotoName,
+      receiverLon,
+      receiverLat
+    ) == 1
   }
 }

@@ -20,7 +20,7 @@ abstract class BaseRequest<T>(
 ) : CoroutineScope {
   private val job = Job()
 
-  override val coroutineContext: CoroutineContext
+  final override val coroutineContext: CoroutineContext
     get() = job + dispatchersProvider.NETWORK()
 
   abstract suspend fun execute(): T
@@ -36,7 +36,7 @@ abstract class BaseRequest<T>(
 
         //may happen in some rare cases (like when client and server have endpoints with different parameters)
         if (error?.errorCode == null) {
-          throw BadServerResponse()
+          throw BadServerResponse(response.code())
         } else {
           //server returned non-zero status
           throw ApiErrorException(ErrorCode.fromInt(error.errorCode))

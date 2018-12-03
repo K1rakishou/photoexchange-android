@@ -53,7 +53,7 @@ class ReceivedPhotoRow @JvmOverloads constructor(
       staticMapView.visibility = View.VISIBLE
       photoView.visibility = View.GONE
 
-      val fullUrl = "${Constants.BASE_STATIC_MAP_URL}/${photo.receivedPhotoName}"
+      val fullUrl = "${Constants.BASE_STATIC_MAP_URL}/${photo.uploadedPhotoName}"
 
       GlideApp.with(context)
         .load(fullUrl)

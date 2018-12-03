@@ -69,6 +69,7 @@ class UploadedPhotosFragmentEpoxyController {
         uploadedPhotoRow {
           id("uploaded_photo_${photo.photoName}")
           photo(photo)
+          callback { model, _, _, _ -> viewModel.swapPhotoAndMap(model.photo().photoName) }
         }
       }
 

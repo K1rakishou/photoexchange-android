@@ -5,13 +5,14 @@ import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragment
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.helper.exception.ApiErrorException
 import com.kirakishou.photoexchange.helper.LonLat
+import com.kirakishou.photoexchange.helper.exception.ConnectionError
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import kotlinx.coroutines.channels.SendChannel
 import net.response.*
 
 interface ApiClient {
 
-  @Throws(ApiErrorException::class)
+  @Throws(ApiErrorException::class, ConnectionError::class)
   suspend fun uploadPhoto(
     photoFilePath: String,
     location: LonLat,
@@ -21,33 +22,36 @@ interface ApiClient {
     channel: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
   ): UploadPhotosUseCase.UploadPhotoResult
 
-  @Throws(ApiErrorException::class)
+  @Throws(ApiErrorException::class, ConnectionError::class)
   suspend fun receivePhotos(userId: String, photoNames: String): List<ReceivedPhotosResponse.ReceivedPhotoResponseData>
 
-  @Throws(ApiErrorException::class)
+  @Throws(ApiErrorException::class, ConnectionError::class)
   suspend fun getPageOfGalleryPhotos(lastUploadedOn: Long, count: Int): List<GalleryPhotosResponse.GalleryPhotoResponseData>
 
-  @Throws(ApiErrorException::class)
+  @Throws(ApiErrorException::class, ConnectionError::class)
   suspend fun getGalleryPhotoInfo(userId: String, galleryPhotoIds: String): List<GalleryPhotoInfoResponse.GalleryPhotosInfoResponseData>
 
-  @Throws(ApiErrorException::class)
+  @Throws(ApiErrorException::class, ConnectionError::class)
   suspend fun favouritePhoto(userId: String, photoName: String): FavouritePhotoResponseData
 
-  @Throws(ApiErrorException::class)
+  @Throws(ApiErrorException::class, ConnectionError::class)
   suspend fun reportPhoto(userId: String, photoName: String): Boolean
 
-  @Throws(ApiErrorException::class)
+  @Throws(ApiErrorException::class, ConnectionError::class)
   suspend fun getUserId(): String
 
-  @Throws(ApiErrorException::class)
+  @Throws(ApiErrorException::class, ConnectionError::class)
   suspend fun getPageOfUploadedPhotos(userId: String, lastUploadedOn: Long, count: Int): List<GetUploadedPhotosResponse.UploadedPhotoResponseData>
 
-  @Throws(ApiErrorException::class)
+  @Throws(ApiErrorException::class, ConnectionError::class)
   suspend fun getPageOfReceivedPhotos(userId: String, lastUploadedOn: Long, count: Int): List<ReceivedPhotosResponse.ReceivedPhotoResponseData>
 
-  @Throws(ApiErrorException::class)
+  @Throws(ApiErrorException::class, ConnectionError::class)
   suspend fun checkAccountExists(userId: String): Boolean
 
-  @Throws(ApiErrorException::class)
+  @Throws(ApiErrorException::class, ConnectionError::class)
   suspend fun updateFirebaseToken(userId: String, token: String)
+
+  @Throws(ApiErrorException::class, ConnectionError::class)
+  suspend fun hasFreshGalleryPhotos(time: Long): Int
 }

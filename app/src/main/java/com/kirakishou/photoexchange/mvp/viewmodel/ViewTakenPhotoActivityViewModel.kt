@@ -29,8 +29,8 @@ class ViewTakenPhotoActivityViewModel(
     return takenPhotosRepository.updatePhotoState(takenPhotoId, PhotoState.PHOTO_QUEUED_UP)
   }
 
-  suspend fun updateSetIsPhotoPublic(takenPhotoId: Long): Boolean {
-    return takenPhotosRepository.updateMakePhotoPublic(takenPhotoId)
+  suspend fun updateSetIsPhotoPublic(takenPhotoId: Long, makePublic: Boolean): Boolean {
+    return takenPhotosRepository.updateMakePhotoPublic(takenPhotoId, makePublic)
   }
 
   suspend fun saveMakePublicFlag(rememberChoice: Boolean, makePublic: Boolean) {

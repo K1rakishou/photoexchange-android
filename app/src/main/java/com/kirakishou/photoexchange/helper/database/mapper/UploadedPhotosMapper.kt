@@ -14,6 +14,7 @@ object UploadedPhotosMapper {
           uploadedPhotoData.photoId,
           uploadedPhotoData.uploaderLon,
           uploadedPhotoData.uploaderLat,
+          uploadedPhotoData.receiverInfoResponseData?.receiverPhotoName,
           uploadedPhotoData.receiverInfoResponseData?.receiverLon,
           uploadedPhotoData.receiverInfoResponseData?.receiverLat,
           uploadedPhotoData.uploadedOn,
@@ -32,6 +33,7 @@ object UploadedPhotosMapper {
           null
         } else {
           UploadedPhoto.ReceiverInfo(
+            uploadedPhotoData.receiverInfoResponseData!!.receiverPhotoName,
             uploadedPhotoData.receiverInfoResponseData!!.receiverLon,
             uploadedPhotoData.receiverInfoResponseData!!.receiverLat
           )
@@ -60,6 +62,7 @@ object UploadedPhotosMapper {
           null
         } else {
           UploadedPhoto.ReceiverInfo(
+            uploadedPhotoEntity.receiverPhotoName!!,
             uploadedPhotoEntity.receiverLon!!,
             uploadedPhotoEntity.receiverLat!!
           )

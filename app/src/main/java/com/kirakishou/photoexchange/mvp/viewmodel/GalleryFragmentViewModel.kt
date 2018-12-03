@@ -58,7 +58,7 @@ class GalleryFragmentViewModel(
 
         when (action) {
           ActorAction.LoadGalleryPhotos -> loadGalleryPhotosInternal()
-          is ActorAction.ResetState -> resetStateInternal(action.clearCache)
+          is ActorAction.ResetState -> resetStateInternal()
           is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.galleryPhotoName)
           is ActorAction.ReportPhoto -> reportPhotoInternal(action.galleryPhotoName)
           is ActorAction.FavouritePhoto -> favouritePhotoInternal(action.galleryPhotoName)
@@ -69,8 +69,8 @@ class GalleryFragmentViewModel(
     loadGalleryPhotos()
   }
 
-  fun resetState(clearCache: Boolean = false) {
-    launch { viewModelActor.send(ActorAction.ResetState(clearCache)) }
+  fun resetState() {
+    launch { viewModelActor.send(ActorAction.ResetState) }
   }
 
   fun loadGalleryPhotos() {
@@ -207,12 +207,8 @@ class GalleryFragmentViewModel(
     }
   }
 
-  private fun resetStateInternal(clearCache: Boolean) {
+  private fun resetStateInternal() {
     launch {
-      if (clearCache) {
-        galleryPhotosRepository.deleteAll()
-      }
-
       setState { GalleryFragmentState() }
       viewModelActor.send(ActorAction.LoadGalleryPhotos)
     }
@@ -230,15 +226,20 @@ class GalleryFragmentViewModel(
           ?.uploadedOn
           ?: -1L
 
+        val firstUploadedOn = state.galleryPhotos
+          .firstOrNull()
+          ?.uploadedOn
+          ?: -1L
+
         val request = try {
-          galleryPhotosRepository.deleteOldPhotos()
-          Success(getGalleryPhotosUseCase.loadPageOfPhotos(lastUploadedOn, photosPerPage))
+          Success(getGalleryPhotosUseCase.loadPageOfPhotos(firstUploadedOn, lastUploadedOn, photosPerPage))
         } catch (error: Throwable) {
           Fail<Paged<GalleryPhoto>>(error)
         }
 
-        val newGalleryPhotos = (request()?.page ?: emptyList())
+        val newGalleryPhotos = ((request()?.page ?: emptyList()) + state.galleryPhotos)
           .map { galleryPhoto -> galleryPhoto.copy(photoSize = photoSize) }
+          .sortedByDescending { it.uploadedOn }
 
         val isEndReached = request()?.isEnd ?: false
 
@@ -246,7 +247,7 @@ class GalleryFragmentViewModel(
           copy(
             isEndReached = isEndReached,
             galleryPhotosRequest = request,
-            galleryPhotos = state.galleryPhotos + newGalleryPhotos
+            galleryPhotos = newGalleryPhotos
           )
         }
       }
@@ -266,7 +267,7 @@ class GalleryFragmentViewModel(
 
   sealed class ActorAction {
     object LoadGalleryPhotos : ActorAction()
-    class ResetState(val clearCache: Boolean) : ActorAction()
+    object ResetState : ActorAction()
     class SwapPhotoAndMap(val galleryPhotoName: String) : ActorAction()
     class ReportPhoto(val galleryPhotoName: String) : ActorAction()
     class FavouritePhoto(val galleryPhotoName: String) : ActorAction()

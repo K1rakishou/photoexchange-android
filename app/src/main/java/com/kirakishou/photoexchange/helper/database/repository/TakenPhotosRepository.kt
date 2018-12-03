@@ -81,9 +81,13 @@ open class TakenPhotosRepository(
     }
   }
 
-  suspend fun updateMakePhotoPublic(takenPhotoId: Long): Boolean {
+  suspend fun updateMakePhotoPublic(takenPhotoId: Long, makePublic: Boolean): Boolean {
     return withContext(coroutineContext) {
-      return@withContext takenPhotoDao.updateSetPhotoPublic(takenPhotoId) == 1
+      if (makePublic) {
+        return@withContext takenPhotoDao.updateSetPhotoPublic(takenPhotoId) == 1
+      } else {
+        return@withContext takenPhotoDao.updateSetPhotoPrivate(takenPhotoId) == 1
+      }
     }
   }
 
