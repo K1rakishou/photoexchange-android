@@ -248,7 +248,7 @@ class ReceivedPhotosFragmentViewModel(
           Fail<Paged<ReceivedPhoto>>(error)
         }
 
-        val newReceivedPhotos = (request()?.page ?: emptyList()) + state.receivedPhotos
+        val newReceivedPhotos = ((request()?.page ?: emptyList()) + state.receivedPhotos)
           .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
           .sortedByDescending { it.uploadedOn }
 

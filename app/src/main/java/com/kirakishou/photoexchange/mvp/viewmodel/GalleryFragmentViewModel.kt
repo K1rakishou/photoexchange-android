@@ -237,7 +237,7 @@ class GalleryFragmentViewModel(
           Fail<Paged<GalleryPhoto>>(error)
         }
 
-        val newGalleryPhotos = (request()?.page ?: emptyList()) + state.galleryPhotos
+        val newGalleryPhotos = ((request()?.page ?: emptyList()) + state.galleryPhotos)
           .map { galleryPhoto -> galleryPhoto.copy(photoSize = photoSize) }
           .sortedByDescending { it.uploadedOn }
 

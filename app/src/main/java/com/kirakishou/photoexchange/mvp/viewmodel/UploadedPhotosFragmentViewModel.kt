@@ -180,7 +180,8 @@ class UploadedPhotosFragmentViewModel(
         } catch (error: Throwable) {
           Timber.tag(TAG).e(error)
 
-          val message = "Error has occurred while trying to fetch fresh photos. \nError message: ${error.message ?: "Unknown error message"}"
+          val message = "Error has occurred while trying to fetch fresh photos. \nError message: ${error.message
+            ?: "Unknown error message"}"
           intercom.tell<PhotosActivity>()
             .to(PhotosActivityEvent.ShowToast(message))
           return@launch
@@ -236,7 +237,8 @@ class UploadedPhotosFragmentViewModel(
       } catch (error: Throwable) {
         Timber.tag(TAG).e(error)
 
-        val message = "Error has occurred while trying to cancel photo uploading. \nError message: ${error.message ?: "Unknown error message"}"
+        val message = "Error has occurred while trying to cancel photo uploading. \nError message: ${error.message
+          ?: "Unknown error message"}"
         intercom.tell<PhotosActivity>()
           .to(PhotosActivityEvent.ShowToast(message))
         return@launch
@@ -305,9 +307,11 @@ class UploadedPhotosFragmentViewModel(
           .map { it.photoName }
           .toSet()
 
-        val newUploadedPhotos = (request()?.page ?: emptyList()) + state.uploadedPhotos
+        val newUploadedPhotos = (request()?.page ?: emptyList())
           .filterNot { oldPhotoNameSet.contains(it.photoName) }
           .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
+
+        val sortedPhotos = (newUploadedPhotos + state.uploadedPhotos)
           .sortedByDescending { it.uploadedOn }
 
         val isEndReached = request()?.isEnd ?: false
@@ -316,7 +320,7 @@ class UploadedPhotosFragmentViewModel(
           copy(
             isEndReached = isEndReached,
             uploadedPhotosRequest = request,
-            uploadedPhotos = newUploadedPhotos
+            uploadedPhotos = sortedPhotos
           )
         }
       }
