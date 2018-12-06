@@ -25,6 +25,7 @@ import com.kirakishou.photoexchange.helper.extension.debounceClicks
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
+import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
@@ -34,6 +35,7 @@ import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.service.*
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingServiceCallback
 import com.kirakishou.photoexchange.ui.callback.ReceivePhotosServiceCallback
+import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
 import com.kirakishou.photoexchange.ui.viewstate.PhotosActivityViewState
@@ -295,8 +297,9 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       is PhotosActivityEvent.CancelPhotoUploading -> {
         uploadPhotosServiceConnection.cancelPhotoUploading(event.photoId)
       }
-      PhotosActivityEvent.OnNewPhotoReceived -> showPhotoAnswerFoundSnackbar()
+      PhotosActivityEvent.OnNewPhotoReceived -> showNewPhotoHasBeenReceivedSnackbar()
       is PhotosActivityEvent.ShowToast -> onShowToast(event.message)
+      is PhotosActivityEvent.OnNewGalleryPhotos -> showNewGalleryPhotosSnackbar(event.count)
     }.safe
   }
 
@@ -312,7 +315,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
         viewModel.intercom.tell<ReceivedPhotosFragment>()
           .that(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived(event.receivedPhotos))
 
-        showPhotoAnswerFoundSnackbar()
+        showNewPhotoHasBeenReceivedSnackbar()
       }
       is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.NoPhotosReceived -> {
         viewModel.intercom.tell<UploadedPhotosFragment>()
@@ -329,7 +332,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
     }.safe
   }
 
-  private fun showPhotoAnswerFoundSnackbar() {
+  private fun showNewPhotoHasBeenReceivedSnackbar() {
     Snackbar.make(rootLayout, getString(R.string.photo_has_been_received_snackbar_text), Snackbar.LENGTH_LONG)
       .setAction(getString(R.string.show_snackbar_action_text), {
         launch {
@@ -339,6 +342,20 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
           delay(FRAGMENT_SWITCH_ANIMATION_DELAY_MS)
           viewModel.intercom.tell<ReceivedPhotosFragment>()
             .to(ReceivedPhotosFragmentEvent.GeneralEvents.ScrollToTop())
+        }
+      }).show()
+  }
+
+  private fun showNewGalleryPhotosSnackbar(count: Int) {
+    Snackbar.make(rootLayout, "You have ${count} new gallery photos", Snackbar.LENGTH_LONG)
+      .setAction(getString(R.string.show_snackbar_action_text), {
+        launch {
+          switchToTab(GALLERY_PHOTOS_TAB_INDEX)
+
+          //wait some time before fragments switching animation is done
+          delay(FRAGMENT_SWITCH_ANIMATION_DELAY_MS)
+          viewModel.intercom.tell<GalleryFragment>()
+            .to(GalleryFragmentEvent.GeneralEvents.ScrollToTop)
         }
       }).show()
   }

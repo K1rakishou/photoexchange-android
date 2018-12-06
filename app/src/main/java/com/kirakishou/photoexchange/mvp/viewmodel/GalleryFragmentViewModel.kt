@@ -246,9 +246,17 @@ class GalleryFragmentViewModel(
           Fail<Paged<GalleryPhoto>>(error)
         }
 
-        val newPhotos = (request()?.page ?: emptyList())
+        val newPageOfPhotos = (request()?.page ?: emptyList())
+
+        if (firstUploadedOn != -1L) {
+          val newPhotosCount = newPageOfPhotos.count { it.uploadedOn > firstUploadedOn }
+          if (newPhotosCount > 0) {
+            intercom.tell<PhotosActivity>().to(PhotosActivityEvent.OnNewGalleryPhotos(newPhotosCount))
+          }
+        }
+
         val newGalleryPhotos = state.galleryPhotos
-          .filterDuplicatesWith(newPhotos) { it.photoName }
+          .filterDuplicatesWith(newPageOfPhotos) { it.photoName }
           .map { galleryPhoto -> galleryPhoto.copy(photoSize = photoSize) }
           .sortedByDescending { it.uploadedOn }
 
