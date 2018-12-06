@@ -30,7 +30,6 @@ open class GetGalleryPhotosRepository(
   private val TAG = "GetGalleryPhotosRepository"
 
   private var lastTimeFreshPhotosCheck = 0L
-  private val timeToSubOnEveryUserRefreshRequest = TimeUnit.MINUTES.toMillis(2)
   private val fiveMinutes = TimeUnit.MINUTES.toMillis(5)
 
   suspend fun getPage(
@@ -42,7 +41,7 @@ open class GetGalleryPhotosRepository(
   ): Paged<GalleryPhoto> {
     return withContext(coroutineContext) {
       if (forced) {
-        decreaseTimer()
+        resetTimer()
       }
 
       val pageOfGalleryPhotos = getPageOfGalleryPhotos(firstUploadedOn, lastUploadedOn, count)
@@ -63,11 +62,8 @@ open class GetGalleryPhotosRepository(
     }
   }
 
-  private fun decreaseTimer() {
-    lastTimeFreshPhotosCheck -= timeToSubOnEveryUserRefreshRequest
-    if (lastTimeFreshPhotosCheck < 0) {
-      lastTimeFreshPhotosCheck = 0
-    }
+  private fun resetTimer() {
+    lastTimeFreshPhotosCheck = 0
   }
 
   private suspend fun getPageOfGalleryPhotos(

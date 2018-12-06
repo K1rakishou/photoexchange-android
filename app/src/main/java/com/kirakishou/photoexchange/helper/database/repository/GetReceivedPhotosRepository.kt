@@ -28,7 +28,6 @@ open class GetReceivedPhotosRepository(
   private val TAG = "GetReceivedPhotosRepository"
 
   private var lastTimeFreshPhotosCheck = 0L
-  private val timeToSubOnEveryUserRefreshRequest = TimeUnit.MINUTES.toMillis(2)
   private val fiveMinutes = TimeUnit.MINUTES.toMillis(5)
 
   open suspend fun getPage(
@@ -40,7 +39,7 @@ open class GetReceivedPhotosRepository(
   ): Paged<ReceivedPhoto> {
     return withContext(coroutineContext) {
       if (forced) {
-        decreaseTimer()
+        resetTimer()
       }
 
       return@withContext pagedApiUtils.getPageOfPhotos(
@@ -65,11 +64,8 @@ open class GetReceivedPhotosRepository(
     }
   }
 
-  private fun decreaseTimer() {
-    lastTimeFreshPhotosCheck -= timeToSubOnEveryUserRefreshRequest
-    if (lastTimeFreshPhotosCheck < 0) {
-      lastTimeFreshPhotosCheck = 0
-    }
+  private fun resetTimer() {
+    lastTimeFreshPhotosCheck = 0
   }
 
   private fun getFromCacheInternal(lastUploadedOn: Long, count: Int): Paged<ReceivedPhoto> {
