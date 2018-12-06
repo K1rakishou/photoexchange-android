@@ -3,6 +3,7 @@ package com.kirakishou.photoexchange.interactors
 import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.GetReceivedPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
 import com.kirakishou.photoexchange.helper.util.TimeUtils
@@ -12,6 +13,7 @@ import timber.log.Timber
 
 open class GetReceivedPhotosUseCase(
   private val settingsRepository: SettingsRepository,
+  private val receivedPhotosRepository: ReceivedPhotosRepository,
   private val getReceivedPhotosRepository: GetReceivedPhotosRepository,
   private val timeUtils: TimeUtils,
   dispatchersProvider: DispatchersProvider
@@ -19,26 +21,23 @@ open class GetReceivedPhotosUseCase(
   private val TAG = "GetReceivedPhotosUseCase"
 
   open suspend fun loadPageOfPhotos(
-    lastUploadedOn: Long,
-    count: Int
-  ): Paged<ReceivedPhoto> {
-    return withContext(coroutineContext) {
-      Timber.tag(TAG).d("loadPageOfPhotos called")
-
-      val (time, userId) = getParameters(lastUploadedOn)
-      return@withContext getReceivedPhotosRepository.getPage(userId, time, count)
-    }
-  }
-
-  open suspend fun loadFreshPhotos(
-    lastUploadedOn: Long,
+    forced: Boolean,
+    firstUploadedOn: Long,
+    lastUploadedOnParam: Long,
     count: Int
   ): Paged<ReceivedPhoto> {
     return withContext(coroutineContext) {
       Timber.tag(TAG).d("loadFreshPhotos called")
+      val (lastUploadedOn, userId) = getParameters(lastUploadedOnParam)
 
-      val (time, userId) = getParameters(lastUploadedOn)
-      return@withContext getReceivedPhotosRepository.getFresh(userId, time, count)
+      receivedPhotosRepository.deleteOldPhotos()
+      return@withContext getReceivedPhotosRepository.getPage(
+        forced,
+        firstUploadedOn,
+        lastUploadedOn,
+        userId,
+        count
+      )
     }
   }
 
@@ -53,6 +52,7 @@ open class GetReceivedPhotosUseCase(
     if (userId.isEmpty()) {
       throw EmptyUserIdException()
     }
+
     return Pair(time, userId)
   }
 }

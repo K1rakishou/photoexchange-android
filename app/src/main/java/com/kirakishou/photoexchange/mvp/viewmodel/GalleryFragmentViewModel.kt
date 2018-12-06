@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotosRepository
+import com.kirakishou.photoexchange.helper.extension.filterDuplicatesWith
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
@@ -57,7 +58,7 @@ class GalleryFragmentViewModel(
         }
 
         when (action) {
-          ActorAction.LoadGalleryPhotos -> loadGalleryPhotosInternal()
+          is ActorAction.LoadGalleryPhotos -> loadGalleryPhotosInternal(action.forced)
           is ActorAction.ResetState -> resetStateInternal()
           is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.galleryPhotoName)
           is ActorAction.ReportPhoto -> reportPhotoInternal(action.galleryPhotoName)
@@ -66,15 +67,15 @@ class GalleryFragmentViewModel(
       }
     }
 
-    loadGalleryPhotos()
+    loadGalleryPhotos(false)
   }
 
   fun resetState() {
     launch { viewModelActor.send(ActorAction.ResetState) }
   }
 
-  fun loadGalleryPhotos() {
-    launch { viewModelActor.send(ActorAction.LoadGalleryPhotos) }
+  fun loadGalleryPhotos(forced: Boolean) {
+    launch { viewModelActor.send(ActorAction.LoadGalleryPhotos(forced)) }
   }
 
   fun swapPhotoAndMap(photoName: String) {
@@ -210,34 +211,44 @@ class GalleryFragmentViewModel(
   private fun resetStateInternal() {
     launch {
       setState { GalleryFragmentState() }
-      viewModelActor.send(ActorAction.LoadGalleryPhotos)
+      viewModelActor.send(ActorAction.LoadGalleryPhotos(false))
     }
   }
 
-  private fun loadGalleryPhotosInternal() {
+  private fun loadGalleryPhotosInternal(forced: Boolean) {
     withState { state ->
       if (state.galleryPhotosRequest is Loading) {
         return@withState
       }
 
       launch {
-        val lastUploadedOn = state.galleryPhotos
-          .lastOrNull()
-          ?.uploadedOn
-          ?: -1L
-
         val firstUploadedOn = state.galleryPhotos
           .firstOrNull()
           ?.uploadedOn
           ?: -1L
 
+        val lastUploadedOn = state.galleryPhotos
+          .lastOrNull()
+          ?.uploadedOn
+          ?: -1L
+
         val request = try {
-          Success(getGalleryPhotosUseCase.loadPageOfPhotos(firstUploadedOn, lastUploadedOn, photosPerPage))
+          val photos = getGalleryPhotosUseCase.loadPageOfPhotos(
+            forced,
+            firstUploadedOn,
+            lastUploadedOn,
+            photosPerPage
+          )
+
+          Success(photos)
         } catch (error: Throwable) {
+          Timber.tag(TAG).e(error)
           Fail<Paged<GalleryPhoto>>(error)
         }
 
-        val newGalleryPhotos = ((request()?.page ?: emptyList()) + state.galleryPhotos)
+        val newPhotos = (request()?.page ?: emptyList())
+        val newGalleryPhotos = state.galleryPhotos
+          .filterDuplicatesWith(newPhotos) { it.photoName }
           .map { galleryPhoto -> galleryPhoto.copy(photoSize = photoSize) }
           .sortedByDescending { it.uploadedOn }
 
@@ -266,7 +277,7 @@ class GalleryFragmentViewModel(
   }
 
   sealed class ActorAction {
-    object LoadGalleryPhotos : ActorAction()
+    class LoadGalleryPhotos(val forced: Boolean) : ActorAction()
     object ResetState : ActorAction()
     class SwapPhotoAndMap(val galleryPhotoName: String) : ActorAction()
     class ReportPhoto(val galleryPhotoName: String) : ActorAction()

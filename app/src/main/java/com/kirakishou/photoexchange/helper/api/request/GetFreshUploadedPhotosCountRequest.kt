@@ -6,18 +6,19 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersPro
 import com.kirakishou.photoexchange.helper.exception.ConnectionError
 import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import kotlinx.coroutines.rx2.await
-import net.response.HasFreshGalleryPhotosResponse
+import net.response.GetFreshPhotosCountResponse
 
-class HasFreshGalleryPhotosRequest(
+class GetFreshUploadedPhotosCountRequest(
+  private val userId: String,
   private val time: Long,
   private val apiService: ApiService,
   private val jsonConverter: JsonConverter,
   dispatchersProvider: DispatchersProvider
-) : BaseRequest<HasFreshGalleryPhotosResponse>(dispatchersProvider) {
+) : BaseRequest<GetFreshPhotosCountResponse>(dispatchersProvider) {
 
-  override suspend fun execute(): HasFreshGalleryPhotosResponse {
+  override suspend fun execute(): GetFreshPhotosCountResponse {
     val response = try {
-      apiService.hasFreshGalleryPhotos(time).await()
+      apiService.getFreshUploadedPhotosCount(userId, time).await()
     } catch (error: Exception) {
       throw ConnectionError(error.message)
     }

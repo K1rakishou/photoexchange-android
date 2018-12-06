@@ -113,7 +113,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.5'
     implementation 'androidx.core:core-ktx:1.0.1'
     implementation 'org.osmdroid:osmdroid-android:6.0.2'
-    implementation 'com.github.K1rakishou:photoexchange-common:a4195e5a9d'
+    implementation 'com.github.K1rakishou:photoexchange-common:ee1230ad5b'
 
     debugImplementation 'com.squareup.leakcanary:leakcanary-android:1.6.2'
     releaseImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.6.2'

@@ -9,69 +9,97 @@ import com.kirakishou.photoexchange.helper.database.source.local.ReceivePhotosLo
 import com.kirakishou.photoexchange.helper.database.source.local.UploadPhotosLocalSource
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.util.PagedApiUtils
+import com.kirakishou.photoexchange.helper.util.TimeUtils
 import kotlinx.coroutines.withContext
 import net.response.ReceivedPhotosResponse
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 
 open class GetReceivedPhotosRepository(
   private val database: MyDatabase,
   private val apiClient: ApiClient,
+  private val timeUtils: TimeUtils,
+  private val pagedApiUtils: PagedApiUtils,
   private val receivedPhotosLocalSource: ReceivePhotosLocalSource,
   private val uploadedPhotosLocalSource: UploadPhotosLocalSource,
   dispatchersProvider: DispatchersProvider
 ) : BaseRepository(dispatchersProvider) {
   private val TAG = "GetReceivedPhotosRepository"
 
-  /**
-   * This method skips the database cache
-   * */
-  open suspend fun getFresh(userId: String, time: Long, count: Int): Paged<ReceivedPhoto> {
+  private var lastTimeFreshPhotosCheck = 0L
+  private val timeToSubOnEveryUserRefreshRequest = TimeUnit.MINUTES.toMillis(2)
+  private val fiveMinutes = TimeUnit.MINUTES.toMillis(5)
+
+  open suspend fun getPage(
+    forced: Boolean,
+    firstUploadedOnParam: Long,
+    lastUploadedOnParam: Long,
+    userIdParam: String,
+    countParam: Int
+  ): Paged<ReceivedPhoto> {
     return withContext(coroutineContext) {
-      //get a page of fresh photos from the server
-      val receivedPhotos = apiClient.getPageOfReceivedPhotos(userId, time, count)
-      if (receivedPhotos.isEmpty()) {
-        Timber.tag(TAG).d("No fresh received photos were found on the server")
-        return@withContext Paged(emptyList<ReceivedPhoto>(), true)
+      if (forced) {
+        decreaseTimer()
       }
 
-      try {
+      return@withContext pagedApiUtils.getPageOfPhotos(
+        "received_photos",
+        firstUploadedOnParam,
+        lastUploadedOnParam,
+        countParam,
+        userIdParam, { firstUploadedOn ->
+        getFreshPhotosCount(firstUploadedOn)
+      }, { lastUploadedOn, count ->
+        getFromCacheInternal(lastUploadedOn, count)
+      }, { userId, lastUploadedOn, count ->
+        apiClient.getPageOfReceivedPhotos(userId!!, lastUploadedOn, count)
+      }, {
+        deleteAll()
+      }, { receivedPhotos ->
         storeInDatabase(receivedPhotos)
-      } catch (error: Throwable) {
-        Timber.tag(TAG).e(error)
-        throw error
-      }
-
-      val mappedPhotos = ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhotos(receivedPhotos)
-      return@withContext Paged(mappedPhotos, mappedPhotos.size < count)
+        true
+      }, { responseData ->
+        ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhotos(responseData)
+      })
     }
   }
 
-  /**
-   * This method includes photos from the database cache
-   * */
-  open suspend fun getPage(userId: String, lastUploadedOn: Long, count: Int): Paged<ReceivedPhoto> {
-    return withContext(coroutineContext) {
-      val pageOfReceivedPhotos = receivedPhotosLocalSource.getPageOfReceivedPhotos(lastUploadedOn, count)
-      if (pageOfReceivedPhotos.size == count) {
-        Timber.tag(TAG).d("Found enough received photos in the database")
-        return@withContext Paged(pageOfReceivedPhotos, false)
-      }
+  private fun decreaseTimer() {
+    lastTimeFreshPhotosCheck -= timeToSubOnEveryUserRefreshRequest
+    if (lastTimeFreshPhotosCheck < 0) {
+      lastTimeFreshPhotosCheck = 0
+    }
+  }
 
-      val receivedPhotos = apiClient.getPageOfReceivedPhotos(userId, lastUploadedOn, count)
-      if (receivedPhotos.isEmpty()) {
-        Timber.tag(TAG).d("No received photos were found on the server")
-        return@withContext Paged(pageOfReceivedPhotos, true)
-      }
+  private fun getFromCacheInternal(lastUploadedOn: Long, count: Int): Paged<ReceivedPhoto> {
+    //if there is no internet - search only in the database
+    val cachedGalleryPhotos = receivedPhotosLocalSource.getPage(lastUploadedOn, count)
+    return if (cachedGalleryPhotos.size == count) {
+      Timber.tag(TAG).d("Found enough gallery photos in the database")
+      Paged(cachedGalleryPhotos, false)
+    } else {
+      Timber.tag(TAG).d("Found not enough gallery photos in the database")
+      Paged(cachedGalleryPhotos, cachedGalleryPhotos.size < count)
+    }
+  }
 
-      try {
-        storeInDatabase(receivedPhotos)
-      } catch (error: Throwable) {
-        Timber.tag(TAG).e(error)
-        throw error
-      }
+  private suspend fun getFreshPhotosCount(firstUploadedOn: Long): Int {
+    val now = timeUtils.getTimeFast()
 
-      val mappedPhotos = ReceivedPhotosMapper.FromResponse.GetReceivedPhotos.toReceivedPhotos(receivedPhotos)
-      return@withContext Paged(mappedPhotos, mappedPhotos.size < count)
+    //if five minutes has passed since we last checked fresh photos count - check again
+    return if (now - lastTimeFreshPhotosCheck >= fiveMinutes) {
+      lastTimeFreshPhotosCheck = now
+      apiClient.getFreshGalleryPhotosCount(firstUploadedOn)
+    } else {
+      0
+    }
+  }
+
+  //may hang
+  private suspend fun deleteAll() {
+    database.transactional {
+      receivedPhotosLocalSource.deleteAll()
     }
   }
 

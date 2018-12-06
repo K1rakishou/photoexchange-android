@@ -66,13 +66,14 @@ class GalleryFragmentEpoxyController {
                   callback { _ ->
                     Timber.tag(TAG).d("Reloading")
                     viewModel.resetState()
+                    viewModel.loadGalleryPhotos(false)
                   }
                 }
               } else {
                 loadingRow {
                   //we should change the id to trigger the binding
                   id("load_next_page_${state.galleryPhotos.size}")
-                  onBind { _, _, _ -> viewModel.loadGalleryPhotos() }
+                  onBind { _, _, _ -> viewModel.loadGalleryPhotos(false) }
                 }
               }
             }
@@ -104,6 +105,7 @@ class GalleryFragmentEpoxyController {
       callback { _ ->
         Timber.tag(TAG).d("Reloading")
         viewModel.resetState()
+        viewModel.loadGalleryPhotos(false)
       }
     }
   }

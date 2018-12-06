@@ -67,4 +67,8 @@ open class UploadPhotosLocalSource(
       receiverLat
     ) == 1
   }
+
+  fun deleteAll() {
+    uploadedPhotoDao.deleteAll()
+  }
 }
