@@ -19,6 +19,7 @@ import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.extension.filterDuplicatesWith
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import com.kirakishou.photoexchange.mvp.model.photo.QueuedUpPhoto
@@ -71,8 +72,7 @@ class UploadedPhotosFragmentViewModel(
           is ActorAction.ResetState -> resetStateInternal(action.clearCache)
           is ActorAction.CancelPhotoUploading -> cancelPhotoUploadingInternal(action.photoId)
           ActorAction.LoadQueuedUpPhotos -> loadQueuedUpPhotosInternal()
-          ActorAction.LoadUploadedPhotos -> loadUploadedPhotosInternal()
-          ActorAction.FetchFreshPhotos -> fetchFreshPhotosInternal()
+          is ActorAction.LoadUploadedPhotos -> loadUploadedPhotosInternal(action.forced)
           is ActorAction.OnNewPhotoReceived -> onNewPhotoReceivedInternal(action.photoExchangedData)
           is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.photoName)
         }.safe
@@ -80,6 +80,10 @@ class UploadedPhotosFragmentViewModel(
     }
 
     loadQueuedUpPhotos()
+  }
+
+  fun loadQueuedUpPhotos() {
+    launch { viewModelActor.send(ActorAction.LoadQueuedUpPhotos) }
   }
 
   fun resetState(clearCache: Boolean = false) {
@@ -90,16 +94,8 @@ class UploadedPhotosFragmentViewModel(
     launch { viewModelActor.send(ActorAction.CancelPhotoUploading(photoId)) }
   }
 
-  fun loadQueuedUpPhotos() {
-    launch { viewModelActor.send(ActorAction.LoadQueuedUpPhotos) }
-  }
-
-  fun loadUploadedPhotos() {
-    launch { viewModelActor.send(ActorAction.LoadUploadedPhotos) }
-  }
-
-  fun fetchFreshPhotos() {
-    launch { viewModelActor.send(ActorAction.FetchFreshPhotos) }
+  fun loadUploadedPhotos(forced: Boolean) {
+    launch { viewModelActor.send(ActorAction.LoadUploadedPhotos(forced)) }
   }
 
   fun onNewPhotoReceived(photoExchangedData: PhotoExchangedData) {
@@ -160,93 +156,6 @@ class UploadedPhotosFragmentViewModel(
     }
   }
 
-
-  private fun fetchFreshPhotosInternal() {
-    /**
-     * Combines old uploadedPhotos with the fresh ones and also counts how many of the fresh photos were
-     * truly fresh (e.g. uploadedPhotos didn't contain them yet or it did but without receiverInfo)
-     * */
-    suspend fun combinePhotos(
-      freshPhotos: List<UploadedPhoto>,
-      uploadedPhotos: List<UploadedPhoto>
-    ): Pair<MutableList<UploadedPhoto>, Int> {
-      val updatedPhotos = uploadedPhotos.toMutableList()
-      //how much photos were updated
-      var freshPhotosCount = 0
-
-      for (freshPhoto in freshPhotos) {
-        if (!uploadedPhotosRepository.contains(freshPhoto.photoName)) {
-          //if we don't have this photo yet - add it to the list
-          updatedPhotos += freshPhoto
-          ++freshPhotosCount
-          continue
-        }
-
-        val uploadedPhotoIndex = updatedPhotos.indexOfFirst { it.photoName == freshPhoto.photoName }
-        if (uploadedPhotoIndex != -1) {
-          val uploadedPhoto = uploadedPhotos[uploadedPhotoIndex]
-
-          //if we already have this photo but old photo has no receiverInfo and the new one has
-          if (uploadedPhoto.receiverInfo == null && freshPhoto.receiverInfo != null) {
-            //replace it with the newer one
-            updatedPhotos.removeAt(uploadedPhotoIndex)
-            updatedPhotos += freshPhoto
-
-            ++freshPhotosCount
-          }
-        }
-      }
-
-      return updatedPhotos to freshPhotosCount
-    }
-
-    //TODO: should we run this method if uploadedPhotosRequest is in the Failed or Loading state?
-    withState { state ->
-      launch {
-        //if we are trying to fetch fresh photos and there are no uploadedPhotos - start normal photos loading
-        if (state.uploadedPhotos.isEmpty()) {
-          loadQueuedUpPhotos()
-          return@launch
-        }
-
-        val freshPhotos = try {
-          getUploadedPhotosUseCase.loadFreshPhotos(timeUtils.getTimeFast(), photosPerPage)
-        } catch (error: Throwable) {
-          Timber.tag(TAG).e(error)
-
-          val message = "Error has occurred while trying to fetch fresh photos. \nError message: ${error.message
-            ?: "Unknown error message"}"
-          intercom.tell<PhotosActivity>()
-            .to(PhotosActivityEvent.ShowToast(message))
-          return@launch
-        }
-
-        val (combinedPhotos, freshPhotosCount) = combinePhotos(freshPhotos.page, state.uploadedPhotos)
-        if (freshPhotosCount == 0) {
-          //Should this even happen? We are supposed to have new photos if this method was called.
-          //Update: Yes this can happen! When user has more than "photosPerPage" uploaded photos without receiverInfo
-
-          Timber.tag(TAG).d("combinePhotos returned 0 freshPhotosCount!")
-          return@launch
-        }
-
-        if (freshPhotosCount >= photosPerPage) {
-          //this means that there are probably even more photos that this user has not seen yet
-          //so we have no other option but to clear database cache and reload everything
-
-          Timber.tag(TAG).d("combinePhotos returned more or the same amount of freshPhotos that we have requested")
-          resetState(true)
-          return@launch
-        }
-
-        val sortedPhotos = combinedPhotos
-          .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
-          .sortedByDescending { it.uploadedOn }
-        setState { copy(uploadedPhotos = sortedPhotos) }
-      }
-    }
-  }
-
   private fun resetStateInternal(clearCache: Boolean) {
     launch {
       if (clearCache) {
@@ -301,7 +210,7 @@ class UploadedPhotosFragmentViewModel(
 
         val notUploadedPhotos = (request() ?: emptyList())
         if (notUploadedPhotos.isEmpty() && state.takenPhotos.isEmpty()) {
-          loadUploadedPhotos()
+          loadUploadedPhotos(false)
           return@launch
         }
 
@@ -316,13 +225,18 @@ class UploadedPhotosFragmentViewModel(
     }
   }
 
-  private fun loadUploadedPhotosInternal() {
+  private fun loadUploadedPhotosInternal(forced: Boolean) {
     withState { state ->
       if (state.uploadedPhotosRequest is Loading) {
         return@withState
       }
 
       launch {
+        val firstUploadedOn = state.uploadedPhotos
+          .firstOrNull()
+          ?.uploadedOn
+          ?: -1L
+
         val lastUploadedOn = state.uploadedPhotos
           .lastOrNull()
           ?.uploadedOn
@@ -331,21 +245,23 @@ class UploadedPhotosFragmentViewModel(
         setState { copy(uploadedPhotosRequest = Loading()) }
 
         val request = try {
-          uploadedPhotosRepository.deleteOldPhotos()
-          Success(getUploadedPhotosUseCase.loadPageOfPhotos(lastUploadedOn, photosPerPage))
+          val photos = getUploadedPhotosUseCase.loadPageOfPhotos(
+            forced,
+            firstUploadedOn,
+            lastUploadedOn,
+            photosPerPage
+          )
+
+          Success(photos)
         } catch (error: Throwable) {
+          Timber.tag(TAG).e(error)
           Fail<Paged<UploadedPhoto>>(error)
         }
 
-        val oldPhotoNameSet = state.uploadedPhotos
-          .map { it.photoName }
-          .toSet()
-
-        val newUploadedPhotos = (request()?.page ?: emptyList())
-          .filterNot { oldPhotoNameSet.contains(it.photoName) }
+        val newPhotos = (request()?.page ?: emptyList())
+        val newUploadedPhotos = state.uploadedPhotos
+          .filterDuplicatesWith(newPhotos) { it.photoName }
           .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
-
-        val sortedPhotos = (newUploadedPhotos + state.uploadedPhotos)
           .sortedByDescending { it.uploadedOn }
 
         val isEndReached = request()?.isEnd ?: false
@@ -354,7 +270,7 @@ class UploadedPhotosFragmentViewModel(
           copy(
             isEndReached = isEndReached,
             uploadedPhotosRequest = request,
-            uploadedPhotos = sortedPhotos
+            uploadedPhotos = newUploadedPhotos
           )
         }
       }
@@ -519,7 +435,7 @@ class UploadedPhotosFragmentViewModel(
       }
     }.safe
 
-    loadUploadedPhotos()
+    loadUploadedPhotos(false)
   }
 
   private fun startUploadingService(reason: String) {
@@ -548,8 +464,7 @@ class UploadedPhotosFragmentViewModel(
     class ResetState(val clearCache: Boolean) : ActorAction()
     class CancelPhotoUploading(val photoId: Long) : ActorAction()
     object LoadQueuedUpPhotos : ActorAction()
-    object LoadUploadedPhotos : ActorAction()
-    object FetchFreshPhotos : ActorAction()
+    class LoadUploadedPhotos(val forced: Boolean) : ActorAction()
     class OnNewPhotoReceived(val photoExchangedData: PhotoExchangedData) : ActorAction()
     class SwapPhotoAndMap(val photoName: String) : ActorAction()
   }

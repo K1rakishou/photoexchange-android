@@ -192,14 +192,38 @@ open class ApiClientImpl
     //no response data
   }
 
-  override suspend fun hasFreshGalleryPhotos(time: Long): Int {
-    val response = HasFreshGalleryPhotosRequest(
+  override suspend fun getFreshUploadedPhotosCount(userId: String, time: Long): Int {
+    val response = GetFreshUploadedPhotosCountRequest(
+      userId,
       time,
       apiService,
       jsonConverter,
       dispatchersProvider
     ).execute()
 
-    return response.freshGalleryPhotosCount
+    return response.freshPhotosCount
+  }
+
+  override suspend fun getFreshReceivedPhotosCount(userId: String, time: Long): Int {
+    val response = GetFreshReceivedPhotosCountRequest(
+      userId,
+      time,
+      apiService,
+      jsonConverter,
+      dispatchersProvider
+    ).execute()
+
+    return response.freshPhotosCount
+  }
+
+  override suspend fun getFreshGalleryPhotosCount(time: Long): Int {
+    val response = GetFreshGalleryPhotosCountRequest(
+      time,
+      apiService,
+      jsonConverter,
+      dispatchersProvider
+    ).execute()
+
+    return response.freshPhotosCount
   }
 }

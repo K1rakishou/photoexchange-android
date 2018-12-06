@@ -65,7 +65,7 @@ class ReceivedPhotosFragmentEpoxyController {
                 loadingRow {
                   //we should change the id to trigger the binding
                   id("load_next_page_${state.receivedPhotos.size}")
-                  onBind { _, _, _ -> viewModel.loadReceivedPhotos() }
+                  onBind { _, _, _ -> viewModel.loadReceivedPhotos(false) }
                 }
               }
             }

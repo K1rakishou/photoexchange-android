@@ -16,6 +16,7 @@ import com.kirakishou.photoexchange.helper.Constants.GALLERY_PHOTOS_CACHE_MAX_LI
 import com.kirakishou.photoexchange.helper.Constants.GALLERY_PHOTOS_INFO_CACHE_MAX_LIVE_TIME
 import com.kirakishou.photoexchange.helper.Constants.RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME
 import com.kirakishou.photoexchange.helper.Constants.UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME
+import com.kirakishou.photoexchange.helper.util.PagedApiUtils
 import dagger.Module
 import dagger.Provides
 import javax.inject.Named
@@ -145,6 +146,7 @@ open class DatabaseModule(
   open fun provideGalleryPhotoRepository(database: MyDatabase,
                                          apiClient: ApiClient,
                                          timeUtils: TimeUtils,
+                                         pagedApiUtils: PagedApiUtils,
                                          galleryPhotoLocalSource: GalleryPhotoLocalSource,
                                          galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
                                          dispatchersProvider: DispatchersProvider): GetGalleryPhotosRepository {
@@ -152,6 +154,7 @@ open class DatabaseModule(
       database,
       apiClient,
       timeUtils,
+      pagedApiUtils,
       galleryPhotoLocalSource,
       galleryPhotoInfoLocalSource,
       dispatchersProvider
@@ -210,12 +213,16 @@ open class DatabaseModule(
   @Provides
   open fun provideGetReceivedPhotosRepository(database: MyDatabase,
                                               apiClient: ApiClient,
+                                              timeUtils: TimeUtils,
+                                              pagedApiUtils: PagedApiUtils,
                                               receivePhotosLocalSource: ReceivePhotosLocalSource,
                                               uploadedPhotosLocalSource: UploadPhotosLocalSource,
                                               dispatchersProvider: DispatchersProvider): GetReceivedPhotosRepository {
     return GetReceivedPhotosRepository(
       database,
       apiClient,
+      timeUtils,
+      pagedApiUtils,
       receivePhotosLocalSource,
       uploadedPhotosLocalSource,
       dispatchersProvider
@@ -271,12 +278,18 @@ open class DatabaseModule(
 
   @Singleton
   @Provides
-  open fun provideGetUploadedPhotosRepository(uploadedPhotosLocalSource: UploadPhotosLocalSource,
+  open fun provideGetUploadedPhotosRepository(database: MyDatabase,
                                               apiClient: ApiClient,
+                                              timeUtils: TimeUtils,
+                                              pagedApiUtils: PagedApiUtils,
+                                              uploadedPhotosLocalSource: UploadPhotosLocalSource,
                                               dispatchersProvider: DispatchersProvider): GetUploadedPhotosRepository {
     return GetUploadedPhotosRepository(
-      uploadedPhotosLocalSource,
+      database,
       apiClient,
+      timeUtils,
+      pagedApiUtils,
+      uploadedPhotosLocalSource,
       dispatchersProvider
     )
   }

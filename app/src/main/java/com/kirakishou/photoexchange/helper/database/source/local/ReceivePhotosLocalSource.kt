@@ -28,11 +28,15 @@ class ReceivePhotosLocalSource(
       .size == receivedPhotos.size
   }
 
-  fun getPageOfReceivedPhotos(lastUploadedOn: Long, count: Int): List<ReceivedPhoto> {
+  fun getPage(lastUploadedOn: Long, count: Int): List<ReceivedPhoto> {
     return ReceivedPhotosMapper.FromEntity.toReceivedPhotos(receivedPhotosDao.getPage(lastUploadedOn, count))
   }
 
   fun findAll(): List<ReceivedPhotoEntity> {
       return receivedPhotosDao.findAll()
+  }
+
+  fun deleteAll() {
+    receivedPhotosDao.deleteAll()
   }
 }

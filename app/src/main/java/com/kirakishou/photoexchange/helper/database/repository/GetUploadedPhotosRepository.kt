@@ -3,81 +3,115 @@ package com.kirakishou.photoexchange.helper.database.repository
 import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
+import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.source.local.UploadPhotosLocalSource
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
-import com.kirakishou.photoexchange.helper.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.util.PagedApiUtils
+import com.kirakishou.photoexchange.helper.util.TimeUtils
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 
 class GetUploadedPhotosRepository(
-  private val uploadedPhotosLocalSource: UploadPhotosLocalSource,
+  private val database: MyDatabase,
   private val apiClient: ApiClient,
+  private val timeUtils: TimeUtils,
+  private val pagedApiUtils: PagedApiUtils,
+  private val uploadedPhotosLocalSource: UploadPhotosLocalSource,
   dispatchersProvider: DispatchersProvider
 ) : BaseRepository(dispatchersProvider) {
   private val TAG = "GetUploadedPhotosRepository"
 
-  /**
-   * This method skips the database cache
-   * */
-  suspend fun getFresh(time: Long, count: Int, userId: String): Paged<UploadedPhoto> {
+  private var lastTimeFreshPhotosCheck = 0L
+  private val fiveMinutes = TimeUnit.MINUTES.toMillis(5)
+
+  suspend fun getPage(
+    forced: Boolean,
+    firstUploadedOn: Long,
+    lastUploadedOn: Long,
+    userId: String,
+    count: Int
+  ): Paged<UploadedPhoto> {
     return withContext(coroutineContext) {
-      //get a page of fresh photos from the server
-      val uploadedPhotos = apiClient.getPageOfUploadedPhotos(userId, time, count)
-      if (uploadedPhotos.isEmpty()) {
-        Timber.tag(TAG).d("No fresh uploaded photos were found on the server")
-        return@withContext Paged(emptyList<UploadedPhoto>(), true)
+      if (forced) {
+        resetTimer()
       }
 
-      if (!uploadedPhotosLocalSource.saveMany(uploadedPhotos)) {
-        throw DatabaseException("Could not cache fresh uploaded photos in the database")
-      }
-
-      val mappedPhotos = UploadedPhotosMapper.FromResponse.ToObject
-        .toUploadedPhotos(uploadedPhotos)
-
-      val photos = splitPhotos(mappedPhotos)
-      return@withContext Paged(photos, photos.size < count)
+      val uploadedPhotosPage = getPageOfUploadedPhotos(firstUploadedOn, lastUploadedOn, userId, count)
+      return@withContext splitPhotos(uploadedPhotosPage)
     }
   }
 
-  /**
-   * This method includes photos from the database cache
-   * */
-  suspend fun getPage(time: Long, count: Int, userId: String): Paged<UploadedPhoto> {
-    return withContext(coroutineContext) {
-      val pageOfUploadedPhotos = uploadedPhotosLocalSource.getPage(time, count)
-      if (pageOfUploadedPhotos.size == count) {
-        Timber.tag(TAG).d("Found enough uploaded photos in the database")
-        return@withContext Paged(pageOfUploadedPhotos, false)
-      }
+  private fun resetTimer() {
+    lastTimeFreshPhotosCheck = 0
+  }
 
-      val uploadedPhotos = apiClient.getPageOfUploadedPhotos(userId, time, count)
-      if (uploadedPhotos.isEmpty()) {
-        Timber.tag(TAG).d("No uploaded photos were found on the server")
-        return@withContext Paged(pageOfUploadedPhotos, true)
-      }
+  private suspend fun getPageOfUploadedPhotos(
+    firstUploadedOnParam: Long,
+    lastUploadedOnParam: Long,
+    userIdParam: String,
+    countParam: Int
+  ): Paged<UploadedPhoto> {
+    return pagedApiUtils.getPageOfPhotos(
+      "uploaded_photos",
+      firstUploadedOnParam,
+      lastUploadedOnParam,
+      countParam,
+      userIdParam, { firstUploadedOn ->
+      getFreshPhotosCount(firstUploadedOn)
+    }, { lastUploadedOn, count ->
+      getFromCacheInternal(lastUploadedOn, count)
+    }, { userId, lastUploadedOn, count ->
+      apiClient.getPageOfUploadedPhotos(userId!!, lastUploadedOn, count)
+    }, {
+      deleteAll()
+    }, { uploadedPhotos ->
+      uploadedPhotosLocalSource.saveMany(uploadedPhotos)
+    }, { responseData ->
+      UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhotos(responseData)
+    })
+  }
 
-      //TODO: filter out duplicates here?
-      if (!uploadedPhotosLocalSource.saveMany(uploadedPhotos)) {
-        throw DatabaseException("Could not cache uploaded photos in the database")
-      }
+  private suspend fun getFreshPhotosCount(firstUploadedOn: Long): Int {
+    val now = timeUtils.getTimeFast()
 
-      val mappedPhotos = UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhotos(uploadedPhotos)
-      val photos = splitPhotos(mappedPhotos)
-
-      return@withContext Paged(photos, photos.size < count)
+    //if five minutes has passed since we last checked fresh photos count - check again
+    return if (now - lastTimeFreshPhotosCheck >= fiveMinutes) {
+      lastTimeFreshPhotosCheck = now
+      apiClient.getFreshGalleryPhotosCount(firstUploadedOn)
+    } else {
+      0
     }
   }
 
-  private fun splitPhotos(uploadedPhotos: List<UploadedPhoto>): List<UploadedPhoto> {
-    val uploadedPhotosWithNoReceiver = uploadedPhotos
+  private fun getFromCacheInternal(lastUploadedOn: Long, count: Int): Paged<UploadedPhoto> {
+    //if there is no internet - search only in the database
+    val cachedGalleryPhotos = uploadedPhotosLocalSource.getPage(lastUploadedOn, count)
+    return if (cachedGalleryPhotos.size == count) {
+      Timber.tag(TAG).d("Found enough gallery photos in the database")
+      Paged(cachedGalleryPhotos, false)
+    } else {
+      Timber.tag(TAG).d("Found not enough gallery photos in the database")
+      Paged(cachedGalleryPhotos, cachedGalleryPhotos.size < count)
+    }
+  }
+
+  //may hang
+  private suspend fun deleteAll() {
+    database.transactional {
+      uploadedPhotosLocalSource.deleteAll()
+    }
+  }
+
+  private fun splitPhotos(uploadedPhotosPage: Paged<UploadedPhoto>): Paged<UploadedPhoto> {
+    val uploadedPhotosWithNoReceiver = uploadedPhotosPage.page
       .filter { it.receiverInfo == null }
 
-    val uploadedPhotosWithReceiver = uploadedPhotos
+    val uploadedPhotosWithReceiver = uploadedPhotosPage.page
       .filter { it.receiverInfo != null }
 
     //we need to show photos without receiver first and after them photos with receiver
-    return uploadedPhotosWithNoReceiver + uploadedPhotosWithReceiver
+    return Paged(uploadedPhotosWithNoReceiver + uploadedPhotosWithReceiver, uploadedPhotosPage.isEnd)
   }
 }

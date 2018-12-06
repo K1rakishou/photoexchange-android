@@ -4,6 +4,7 @@ import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.GetUploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
@@ -12,6 +13,7 @@ import timber.log.Timber
 
 open class GetUploadedPhotosUseCase(
   private val settingsRepository: SettingsRepository,
+  private val uploadedPhotosRepository: UploadedPhotosRepository,
   private val getUploadedPhotosRepository: GetUploadedPhotosRepository,
   private val timeUtils: TimeUtils,
   dispatchersProvider: DispatchersProvider
@@ -19,26 +21,23 @@ open class GetUploadedPhotosUseCase(
   private val TAG = "GetUploadedPhotosUseCase"
 
   open suspend fun loadPageOfPhotos(
-    lastUploadedOn: Long,
+    forced: Boolean,
+    firstUploadedOn: Long,
+    lastUploadedOnParam: Long,
     count: Int
   ): Paged<UploadedPhoto> {
     return withContext(coroutineContext) {
       Timber.tag(TAG).d("loadPageOfPhotos called")
+      val (lastUploadedOn, userId) = getParameters(lastUploadedOnParam)
 
-      val (time, userId) = getParameters(lastUploadedOn)
-      return@withContext getUploadedPhotosRepository.getPage(time, count, userId)
-    }
-  }
-
-  open suspend fun loadFreshPhotos(
-    lastUploadedOn: Long,
-    count: Int
-  ): Paged<UploadedPhoto> {
-    return withContext(coroutineContext) {
-      Timber.tag(TAG).d("loadFreshPhotos called")
-
-      val (time, userId) = getParameters(lastUploadedOn)
-      return@withContext getUploadedPhotosRepository.getFresh(time, count, userId)
+      uploadedPhotosRepository.deleteOldPhotos()
+      return@withContext getUploadedPhotosRepository.getPage(
+        forced,
+        firstUploadedOn,
+        lastUploadedOn,
+        userId,
+        count
+      )
     }
   }
 

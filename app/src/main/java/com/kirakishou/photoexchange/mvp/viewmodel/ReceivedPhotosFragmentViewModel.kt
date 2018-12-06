@@ -15,6 +15,7 @@ import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
+import com.kirakishou.photoexchange.helper.extension.filterDuplicatesWith
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
@@ -61,20 +62,19 @@ class ReceivedPhotosFragmentViewModel(
         }
 
         when (action) {
-          ActorAction.LoadReceivedPhotos -> loadReceivedPhotosInternal()
+          is ActorAction.LoadReceivedPhotos -> loadReceivedPhotosInternal(action.forced)
           is ActorAction.ResetState -> resetStateInternal(action.clearCache)
           is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.receivedPhotoName)
-          ActorAction.FetchFreshPhotos -> fetchFreshPhotosInternal()
           is ActorAction.OnNewPhotoReceived -> onNewPhotoReceivedInternal(action.photoExchangedData)
         }.safe
       }
     }
 
-    loadReceivedPhotos()
+    loadReceivedPhotos(false)
   }
 
-  fun loadReceivedPhotos() {
-    launch { viewModelActor.send(ActorAction.LoadReceivedPhotos) }
+  fun loadReceivedPhotos(forced: Boolean) {
+    launch { viewModelActor.send(ActorAction.LoadReceivedPhotos(forced)) }
   }
 
   fun resetState(clearCache: Boolean = false) {
@@ -83,10 +83,6 @@ class ReceivedPhotosFragmentViewModel(
 
   fun swapPhotoAndMap(receivedPhotoName: String) {
     launch { viewModelActor.send(ActorAction.SwapPhotoAndMap(receivedPhotoName)) }
-  }
-
-  fun fetchFreshPhotos() {
-    launch { viewModelActor.send(ActorAction.FetchFreshPhotos) }
   }
 
   fun onNewPhotoReceived(photoExchangedData: PhotoExchangedData) {
@@ -123,75 +119,6 @@ class ReceivedPhotosFragmentViewModel(
     }
   }
 
-  private fun fetchFreshPhotosInternal() {
-    /**
-     * Combines old receivedPhotos with the fresh ones and also counts how many of the fresh photos were
-     * truly fresh (e.g. receivedPhotos didn't contain them yet)
-     * */
-    suspend fun combinePhotos(
-      freshPhotos: List<ReceivedPhoto>,
-      receivedPhotos: List<ReceivedPhoto>
-    ): Pair<MutableList<ReceivedPhoto>, Int> {
-      val updatedPhotos = receivedPhotos.toMutableList()
-      var freshPhotosCount = 0
-
-      for (freshPhoto in freshPhotos) {
-        if (!receivedPhotosRepository.contains(freshPhoto.uploadedPhotoName)) {
-          //if we don't have this photo yet - add it to the list
-          updatedPhotos += freshPhoto
-          ++freshPhotosCount
-        }
-      }
-
-      return updatedPhotos to freshPhotosCount
-    }
-
-    //TODO: should we run this method if receivedPhotosRequest is in the Failed or Loading state?
-    withState { state ->
-      launch {
-        //if we are trying to fetch fresh photos and there are no uploadedPhotos - start normal photos loading
-        if (state.receivedPhotos.isEmpty()) {
-          loadReceivedPhotos()
-          return@launch
-        }
-
-        val freshPhotos = try {
-          getReceivedPhotosUseCase.loadFreshPhotos(timeUtils.getTimeFast(), photosPerPage)
-        } catch (error: Throwable) {
-          Timber.tag(TAG).e(error)
-
-          val message = "Error has occurred while trying to fetch fresh photos. \nError message: ${error.message ?: "Unknown error message"}"
-          intercom.tell<PhotosActivity>()
-            .to(PhotosActivityEvent.ShowToast(message))
-          return@launch
-        }
-
-        val (combinedPhotos, freshPhotosCount) = combinePhotos(freshPhotos.page, state.receivedPhotos)
-        if (freshPhotosCount == 0) {
-          //Should this even happen? We are supposed to have new photos if this method was called.
-          //Update: Yes this can happen! When user has more than "photosPerPage" fresh received photos
-
-          Timber.tag(TAG).d("combinePhotos returned 0 freshPhotosCount!")
-          resetState(true)
-          return@launch
-        }
-
-        if (freshPhotosCount >= photosPerPage) {
-          //this means that there are probably even more photos that this user has not seen yet
-          //so we have no other option but to clear database cache and reload everything
-
-          Timber.tag(TAG).d("combinePhotos method more or the same amount of freshPhotos that we have requested")
-          resetState(true)
-          return@launch
-        }
-
-        val sortedPhotos = combinedPhotos
-          .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
-          .sortedByDescending { it.uploadedOn }
-        setState { copy(receivedPhotos = sortedPhotos) }
-      }
-    }
-  }
 
   private fun swapPhotoAndMapInternal(receivedPhotoName: String) {
     withState { state ->
@@ -218,17 +145,22 @@ class ReceivedPhotosFragmentViewModel(
       }
 
       setState { ReceivedPhotosFragmentState() }
-      viewModelActor.send(ActorAction.LoadReceivedPhotos)
+      viewModelActor.send(ActorAction.LoadReceivedPhotos(false))
     }
   }
 
-  private suspend fun loadReceivedPhotosInternal() {
+  private suspend fun loadReceivedPhotosInternal(forced: Boolean) {
     withState { state ->
       if (state.receivedPhotosRequest is Loading) {
         return@withState
       }
 
       launch {
+        val firstUploadedOn = state.receivedPhotos
+          .firstOrNull()
+          ?.uploadedOn
+          ?: -1L
+
         val lastUploadedOn = state.receivedPhotos
           .lastOrNull()
           ?.uploadedOn
@@ -237,18 +169,25 @@ class ReceivedPhotosFragmentViewModel(
         setState { copy(receivedPhotosRequest = Loading()) }
 
         val request = try {
-          receivedPhotosRepository.deleteOldPhotos()
-          val receivedPhotos = getReceivedPhotosUseCase.loadPageOfPhotos(lastUploadedOn, photosPerPage)
+          val receivedPhotos = getReceivedPhotosUseCase.loadPageOfPhotos(
+            forced,
+            firstUploadedOn,
+            lastUploadedOn,
+            photosPerPage
+          )
 
           intercom.tell<UploadedPhotosFragment>()
             .to(UploadedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived(receivedPhotos.page.map { it }))
 
           Success(receivedPhotos)
         } catch (error: Throwable) {
+          Timber.tag(TAG).e(error)
           Fail<Paged<ReceivedPhoto>>(error)
         }
 
-        val newReceivedPhotos = ((request()?.page ?: emptyList()) + state.receivedPhotos)
+        val newPhotos = (request()?.page ?: emptyList())
+        val newReceivedPhotos = state.receivedPhotos
+          .filterDuplicatesWith(newPhotos) { it.uploadedPhotoName }
           .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
           .sortedByDescending { it.uploadedOn }
 
@@ -315,10 +254,9 @@ class ReceivedPhotosFragmentViewModel(
   }
 
   sealed class ActorAction {
-    object LoadReceivedPhotos : ActorAction()
+    class LoadReceivedPhotos(val forced: Boolean) : ActorAction()
     class ResetState(val clearCache: Boolean) : ActorAction()
     class SwapPhotoAndMap(val receivedPhotoName: String) : ActorAction()
-    object FetchFreshPhotos : ActorAction()
     class OnNewPhotoReceived(val photoExchangedData: PhotoExchangedData) : ActorAction()
   }
 

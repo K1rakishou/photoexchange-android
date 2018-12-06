@@ -9,32 +9,41 @@ import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosInfoMapp
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosMapper
 import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoInfoLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoLocalSource
-import com.kirakishou.photoexchange.helper.exception.ConnectionError
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhotoInfo
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.util.PagedApiUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import kotlinx.coroutines.withContext
-import net.response.GalleryPhotosResponse
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 
 open class GetGalleryPhotosRepository(
   private val database: MyDatabase,
   private val apiClient: ApiClient,
   private val timeUtils: TimeUtils,
+  private val pagedApiUtils: PagedApiUtils,
   private val galleryPhotoLocalSource: GalleryPhotoLocalSource,
   private val galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
   dispatchersProvider: DispatchersProvider
 ) : BaseRepository(dispatchersProvider) {
   private val TAG = "GetGalleryPhotosRepository"
 
+  private var lastTimeFreshPhotosCheck = 0L
+  private val fiveMinutes = TimeUnit.MINUTES.toMillis(5)
+
   suspend fun getPage(
+    forced: Boolean,
     userId: String,
     firstUploadedOn: Long,
     lastUploadedOn: Long,
     count: Int
   ): Paged<GalleryPhoto> {
     return withContext(coroutineContext) {
+      if (forced) {
+        resetTimer()
+      }
+
       val pageOfGalleryPhotos = getPageOfGalleryPhotos(firstUploadedOn, lastUploadedOn, count)
 
       val photoNameList = pageOfGalleryPhotos.page.map { it.photoName }
@@ -53,67 +62,48 @@ open class GetGalleryPhotosRepository(
     }
   }
 
+  private fun resetTimer() {
+    lastTimeFreshPhotosCheck = 0
+  }
+
   private suspend fun getPageOfGalleryPhotos(
-    firstUploadedOn: Long,
-    lastUploadedOn: Long,
-    count: Int
+    firstUploadedOnParam: Long,
+    lastUploadedOnParam: Long,
+    countParam: Int
   ): Paged<GalleryPhoto> {
-    val freshPhotosCount = try {
-      //firstUploadedOn == -1L means that we have not fetched any photos from the server yet so
-      //there is no point in checking whether there are fresh photos
-      if (firstUploadedOn == -1L) {
-        0
-      } else {
-        apiClient.hasFreshGalleryPhotos(firstUploadedOn)
-      }
-    } catch (error: ConnectionError) {
-      Timber.tag(TAG).e(error)
-
-      //do not attempt to get photos from the server when there is no internet connection
-      -1
-    }
-
-    val galleryPhotos = if (freshPhotosCount == -1) {
-      return getFromCacheInternal(lastUploadedOn, count)
-    } else if (freshPhotosCount in 0..count) {
-      if (freshPhotosCount == 0) {
-        //if there are no fresh photos then we can check the cache
-        val fromCache = getFromCacheInternal(lastUploadedOn, count)
-        if (fromCache.page.size == count) {
-          //if enough photos were found in the cache - return them
-          return fromCache
-        }
-
-        //if there are no fresh photos and not enough photos were found in the cache -
-        //get fresh page from the server
-        apiClient.getPageOfGalleryPhotos(lastUploadedOn, count)
-      } else {
-        //otherwise get fresh photos AND the next page and then combine them
-        val photos = mutableListOf<GalleryPhotosResponse.GalleryPhotoResponseData>()
-
-        photos += apiClient.getPageOfGalleryPhotos(timeUtils.getTimeFast(), freshPhotosCount)
-        photos += apiClient.getPageOfGalleryPhotos(lastUploadedOn, count)
-
-        photos
-      }
-    } else {
-      //if there are more fresh photos than we have requested - invalidate database cache
-      //and start loading photos from the first page
-      deleteAll()
+    return pagedApiUtils.getPageOfPhotos(
+      "gallery_photos",
+      firstUploadedOnParam,
+      lastUploadedOnParam,
+      countParam,
+      null, { firstUploadedOn ->
+      getFreshPhotosCount(firstUploadedOn)
+    }, { lastUploadedOn, count ->
+      getFromCacheInternal(lastUploadedOn, count)
+    }, { _, lastUploadedOn, count ->
       apiClient.getPageOfGalleryPhotos(lastUploadedOn, count)
-    }
+    }, {
+      deleteAll()
+    }, { galleryPhotos ->
+      galleryPhotoLocalSource.saveMany(galleryPhotos)
+    }, { responseData ->
+      GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(responseData)
+    })
+  }
 
-    if (galleryPhotos.isEmpty()) {
-      Timber.tag(TAG).d("No gallery photos were found on the server")
-      return Paged(emptyList(), true)
-    }
+  private suspend fun getFreshPhotosCount(firstUploadedOn: Long): Int {
+    val now = timeUtils.getTimeFast()
 
-    if (!galleryPhotoLocalSource.saveMany(galleryPhotos)) {
-      throw DatabaseException("Could not cache gallery photos in the database")
-    }
+    //if five minutes has passed since we last checked fresh photos count - check again
+    return if (now - lastTimeFreshPhotosCheck >= fiveMinutes) {
+      Timber.tag(TAG).d("Enough time has passed since last request")
 
-    val mappedPhotos = GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(galleryPhotos)
-    return Paged(mappedPhotos, galleryPhotos.size < count)
+      lastTimeFreshPhotosCheck = now
+      apiClient.getFreshGalleryPhotosCount(firstUploadedOn)
+    } else {
+      Timber.tag(TAG).d("Not enough time has passed since last request: ${now - lastTimeFreshPhotosCheck} ms")
+      0
+    }
   }
 
   private fun getFromCacheInternal(lastUploadedOn: Long, count: Int): Paged<GalleryPhoto> {

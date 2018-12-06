@@ -25,4 +25,11 @@ class UtilsModule {
   fun provideFileUtils(): FileUtils {
     return FileUtilsImpl()
   }
+
+  @Provides
+  @Singleton
+  fun providePagedApiUtils(timeUtils: TimeUtils): PagedApiUtils {
+    return PagedApiUtilsImpl(timeUtils)
+  }
+
 }

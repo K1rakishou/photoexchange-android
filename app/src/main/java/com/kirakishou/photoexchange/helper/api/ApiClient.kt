@@ -53,5 +53,11 @@ interface ApiClient {
   suspend fun updateFirebaseToken(userId: String, token: String)
 
   @Throws(ApiErrorException::class, ConnectionError::class)
-  suspend fun hasFreshGalleryPhotos(time: Long): Int
+  suspend fun getFreshUploadedPhotosCount(userId: String, time: Long): Int
+
+  @Throws(ApiErrorException::class, ConnectionError::class)
+  suspend fun getFreshReceivedPhotosCount(userId: String, time: Long): Int
+
+  @Throws(ApiErrorException::class, ConnectionError::class)
+  suspend fun getFreshGalleryPhotosCount(time: Long): Int
 }
