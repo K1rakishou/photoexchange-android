@@ -44,12 +44,6 @@ open class ReceivedPhotosRepository(
     }
   }
 
-  suspend fun deleteOldPhotos() {
-    withContext(coroutineContext) {
-      receivedPhotosLocalSource.deleteOldPhotos()
-    }
-  }
-
   suspend fun deleteAll() {
     withContext(coroutineContext) {
       receivedPhotosLocalSource.deleteAll()

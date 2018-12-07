@@ -9,10 +9,7 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.helper.database.source.local.*
 import com.kirakishou.photoexchange.helper.database.source.remote.*
-import com.kirakishou.photoexchange.helper.util.BitmapUtils
-import com.kirakishou.photoexchange.helper.util.FileUtils
-import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.helper.util.PagedApiUtils
+import com.kirakishou.photoexchange.helper.util.*
 import dagger.Module
 import dagger.Provides
 import javax.inject.Named
@@ -143,6 +140,7 @@ open class DatabaseModule(
                                          apiClient: ApiClient,
                                          timeUtils: TimeUtils,
                                          pagedApiUtils: PagedApiUtils,
+                                         netUtils: NetUtils,
                                          galleryPhotoLocalSource: GalleryPhotoLocalSource,
                                          galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
                                          dispatchersProvider: DispatchersProvider): GetGalleryPhotosRepository {
@@ -151,6 +149,7 @@ open class DatabaseModule(
       apiClient,
       timeUtils,
       pagedApiUtils,
+      netUtils,
       galleryPhotoLocalSource,
       galleryPhotoInfoLocalSource,
       dispatchersProvider

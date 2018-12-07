@@ -12,6 +12,7 @@ import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoLoc
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhotoInfo
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.helper.util.PagedApiUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import kotlinx.coroutines.withContext
@@ -23,6 +24,7 @@ open class GetGalleryPhotosRepository(
   private val apiClient: ApiClient,
   private val timeUtils: TimeUtils,
   private val pagedApiUtils: PagedApiUtils,
+  private val netUtils: NetUtils,
   private val galleryPhotoLocalSource: GalleryPhotoLocalSource,
   private val galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
   dispatchersProvider: DispatchersProvider
@@ -84,6 +86,8 @@ open class GetGalleryPhotosRepository(
       apiClient.getPageOfGalleryPhotos(lastUploadedOn, count)
     }, {
       deleteAll()
+    }, {
+      deleteOld()
     }, { galleryPhotos ->
       galleryPhotoLocalSource.saveMany(galleryPhotos)
     }, { responseData ->
@@ -118,11 +122,17 @@ open class GetGalleryPhotosRepository(
     }
   }
 
-  //may hang
   private suspend fun deleteAll() {
     database.transactional {
       galleryPhotoLocalSource.deleteAll()
       galleryPhotoInfoLocalSource.deleteAll()
+    }
+  }
+
+  private suspend fun deleteOld() {
+    database.transactional {
+      galleryPhotoLocalSource.deleteOldPhotos()
+      galleryPhotoInfoLocalSource.deleteOldPhotoInfos()
     }
   }
 
@@ -133,6 +143,11 @@ open class GetGalleryPhotosRepository(
     }
 
     val cachedGalleryPhotosInfo = galleryPhotoInfoLocalSource.findMany(photoNameList)
+    //if there is no wifi - don't even try to access network
+    if (!netUtils.allowedToAccessNetwork()) {
+      return cachedGalleryPhotosInfo
+    }
+
     if (cachedGalleryPhotosInfo.size == photoNameList.size) {
       Timber.tag(TAG).d("Found enough gallery photo infos in the database")
       return cachedGalleryPhotosInfo

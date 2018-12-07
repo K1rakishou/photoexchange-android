@@ -49,10 +49,6 @@ open class UploadedPhotosRepository(
     }
   }
 
-  suspend fun deleteOldPhotos() {
-    return uploadedPhotosLocalSource.deleteOldPhotos()
-  }
-
   suspend fun deleteAll() {
     withContext(coroutineContext) {
       uploadedPhotosLocalSource.deleteAll()

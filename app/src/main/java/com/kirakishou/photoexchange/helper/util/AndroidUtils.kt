@@ -32,6 +32,10 @@ object AndroidUtils {
     return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
   }
 
+  fun isMarshmallowOrHigher(): Boolean {
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+  }
+
   fun pxToSp(context: Context, px: Float): Float {
     val scaledDensity = context.resources.displayMetrics.scaledDensity
     return px / scaledDensity

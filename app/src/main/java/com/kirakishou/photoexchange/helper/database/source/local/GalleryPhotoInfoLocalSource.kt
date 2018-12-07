@@ -39,7 +39,7 @@ open class GalleryPhotoInfoLocalSource(
     return GalleryPhotosInfoMapper.ToObject.toGalleryPhotoInfoList(galleryPhotoInfoDao.findMany(photoNameList))
   }
 
-  open fun deleteOldPhotos() {
+  open fun deleteOldPhotoInfos() {
     val now = timeUtils.getTimeFast()
     galleryPhotoInfoDao.deleteOlderThan(now - Constants.GALLERY_PHOTOS_INFO_CACHE_MAX_LIVE_TIME)
   }

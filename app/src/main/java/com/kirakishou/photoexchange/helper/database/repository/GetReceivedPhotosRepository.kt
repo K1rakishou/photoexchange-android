@@ -55,6 +55,8 @@ open class GetReceivedPhotosRepository(
         apiClient.getPageOfReceivedPhotos(userId!!, lastUploadedOn, count)
       }, {
         deleteAll()
+      }, {
+        deleteOld()
       }, { receivedPhotos ->
         storeInDatabase(receivedPhotos)
         true
@@ -92,10 +94,15 @@ open class GetReceivedPhotosRepository(
     }
   }
 
-  //may hang
   private suspend fun deleteAll() {
     database.transactional {
       receivedPhotosLocalSource.deleteAll()
+    }
+  }
+
+  private suspend fun deleteOld() {
+    database.transactional {
+      receivedPhotosLocalSource.deleteOldPhotos()
     }
   }
 

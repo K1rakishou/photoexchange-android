@@ -13,7 +13,6 @@ import timber.log.Timber
 
 open class GetReceivedPhotosUseCase(
   private val settingsRepository: SettingsRepository,
-  private val receivedPhotosRepository: ReceivedPhotosRepository,
   private val getReceivedPhotosRepository: GetReceivedPhotosRepository,
   private val timeUtils: TimeUtils,
   dispatchersProvider: DispatchersProvider
@@ -30,7 +29,6 @@ open class GetReceivedPhotosUseCase(
       Timber.tag(TAG).d("loadFreshPhotos called")
       val (lastUploadedOn, userId) = getParameters(lastUploadedOnParam)
 
-      receivedPhotosRepository.deleteOldPhotos()
       return@withContext getReceivedPhotosRepository.getPage(
         forced,
         firstUploadedOn,

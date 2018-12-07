@@ -6,7 +6,9 @@ import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.photoexchange.di.module.GlideApp
+import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoSize
+import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 
@@ -16,8 +18,11 @@ import javax.inject.Inject
  */
 class ImageLoader
 @Inject constructor(
-  private val context: Context
+  private val context: Context,
+  private val netUtils: NetUtils
 ) {
+  private val TAG = "ImageLoader"
+
   private val photoSize by lazy {
     val density = context.resources.displayMetrics.density
 
@@ -54,6 +59,20 @@ class ImageLoader
   fun loadPhotoFromNetInto(photoName: String, view: ImageView) {
     val fullUrl = "${Constants.BASE_PHOTOS_URL}/${photoName}/${photoSize.value}"
 
+    if (!netUtils.allowedToAccessNetwork()) {
+      //TODO: load default "no wifi" image
+      Timber.tag(TAG).d("No wifi")
+
+      GlideApp.with(context)
+        .load(fullUrl)
+        .onlyRetrieveFromCache(true)
+        .placeholder(createProgressDrawable())
+        .apply(RequestOptions().centerCrop())
+        .into(view)
+
+      return
+    }
+
     GlideApp.with(context)
       .load(fullUrl)
       .placeholder(createProgressDrawable())
@@ -64,6 +83,20 @@ class ImageLoader
 
   fun loadStaticMapImageFromNetInto(photoName: String, view: ImageView) {
     val fullUrl = "${Constants.BASE_STATIC_MAP_URL}/${photoName}"
+
+    if (!netUtils.allowedToAccessNetwork()) {
+      //TODO: load default "no wifi" image
+      Timber.tag(TAG).d("No wifi")
+
+      GlideApp.with(context)
+        .load(fullUrl)
+        .onlyRetrieveFromCache(true)
+        .placeholder(createProgressDrawable())
+        .apply(RequestOptions().centerCrop())
+        .into(view)
+
+      return
+    }
 
     GlideApp.with(context)
       .load(fullUrl)

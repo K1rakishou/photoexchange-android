@@ -77,13 +77,11 @@ class UseCaseProviderModule {
   @Singleton
   @Provides
   fun provideGetUploadedPhotosUseCase(settingsRepository: SettingsRepository,
-                                      uploadedPhotosRepository: UploadedPhotosRepository,
                                       getUploadedPhotosRepository: GetUploadedPhotosRepository,
                                       timeUtils: TimeUtils,
                                       dispatchersProvider: DispatchersProvider): GetUploadedPhotosUseCase {
     return GetUploadedPhotosUseCase(
       settingsRepository,
-      uploadedPhotosRepository,
       getUploadedPhotosRepository,
       timeUtils,
       dispatchersProvider
@@ -93,13 +91,11 @@ class UseCaseProviderModule {
   @Singleton
   @Provides
   fun provideGetReceivedPhotosUseCase(settingsRepository: SettingsRepository,
-                                      receivePhotosRepository: ReceivedPhotosRepository,
                                       getReceivedPhotosRepository: GetReceivedPhotosRepository,
                                       timeUtils: TimeUtils,
                                       dispatchersProvider: DispatchersProvider): GetReceivedPhotosUseCase {
     return GetReceivedPhotosUseCase(
       settingsRepository,
-      receivePhotosRepository,
       getReceivedPhotosRepository,
       timeUtils,
       dispatchersProvider
