@@ -59,7 +59,7 @@ class ImageLoader
   fun loadPhotoFromNetInto(photoName: String, view: ImageView) {
     val fullUrl = "${Constants.BASE_PHOTOS_URL}/${photoName}/${photoSize.value}"
 
-    if (!netUtils.allowedToAccessNetwork()) {
+    if (!netUtils.canLoadImages()) {
       //TODO: load default "no wifi" image
       Timber.tag(TAG).d("No wifi")
 
@@ -84,7 +84,7 @@ class ImageLoader
   fun loadStaticMapImageFromNetInto(photoName: String, view: ImageView) {
     val fullUrl = "${Constants.BASE_STATIC_MAP_URL}/${photoName}"
 
-    if (!netUtils.allowedToAccessNetwork()) {
+    if (!netUtils.canLoadImages()) {
       //TODO: load default "no wifi" image
       Timber.tag(TAG).d("No wifi")
 

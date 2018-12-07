@@ -107,7 +107,7 @@ class PagedApiUtilsImpl(
     tag: String,
     getFreshPhotosCountFunc: suspend (Long) -> Int
   ): FreshPhotosCountRequestResult {
-    if (!netUtils.allowedToAccessNetwork()) {
+    if (!netUtils.canAccessNetwork()) {
       return FreshPhotosCountRequestResult.NoInternet
     }
 

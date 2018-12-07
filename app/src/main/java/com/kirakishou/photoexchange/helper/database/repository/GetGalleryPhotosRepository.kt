@@ -46,9 +46,14 @@ open class GetGalleryPhotosRepository(
         resetTimer()
       }
 
-      val pageOfGalleryPhotos = getPageOfGalleryPhotos(firstUploadedOn, lastUploadedOn, count)
+      val pageOfGalleryPhotos = getPageOfGalleryPhotos(
+        firstUploadedOn,
+        lastUploadedOn,
+        count
+      )
 
-      val photoNameList = pageOfGalleryPhotos.page.map { it.photoName }
+      val photoNameList = pageOfGalleryPhotos.page
+        .map { it.photoName }
       val galleryPhotosInfoList = getGalleryPhotosInfo(userId, photoNameList)
 
       val updatedPhotos = mutableListOf<GalleryPhoto>()
@@ -136,15 +141,20 @@ open class GetGalleryPhotosRepository(
     }
   }
 
-  private suspend fun getGalleryPhotosInfo(userId: String, photoNameList: List<String>): List<GalleryPhotoInfo> {
+  private suspend fun getGalleryPhotosInfo(
+    userId: String,
+    photoNameList: List<String>
+  ): List<GalleryPhotoInfo> {
     if (userId.isEmpty()) {
       Timber.tag(TAG).d("UserId is empty")
-      return photoNameList.map { photoName -> GalleryPhotoInfo(photoName, false, false, GalleryPhotoInfo.Type.NoUserId) }
+      return photoNameList
+        .map { photoName -> GalleryPhotoInfo(photoName, false, false, GalleryPhotoInfo.Type.NoUserId) }
     }
 
     val cachedGalleryPhotosInfo = galleryPhotoInfoLocalSource.findMany(photoNameList)
-    //if there is no wifi - don't even try to access network
-    if (!netUtils.allowedToAccessNetwork()) {
+    if (!netUtils.canAccessNetwork()) {
+      //if there is no wifi and we can't access network without wifi
+      // - use whatever there is in the cache
       return cachedGalleryPhotosInfo
     }
 
