@@ -4,7 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
-import com.kirakishou.photoexchange.di.module.ViewTakenPhotoActivityModule
+import com.kirakishou.photoexchange.di.module.activity.ViewTakenPhotoActivityModule
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.ViewTakenPhotoActivityViewModel
 import com.kirakishou.photoexchange.ui.fragment.AddToGalleryDialogFragment
@@ -14,7 +14,6 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.rx2.await
-import kotlinx.coroutines.rx2.consumeEach
 import timber.log.Timber
 import javax.inject.Inject
 

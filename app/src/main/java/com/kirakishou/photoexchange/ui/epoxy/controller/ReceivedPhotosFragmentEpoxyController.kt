@@ -1,19 +1,24 @@
 package com.kirakishou.photoexchange.ui.epoxy.controller
 
 import android.content.Context
+import android.widget.ImageView
 import android.widget.Toast
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
 import com.kirakishou.photoexchange.helper.extension.safe
+import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.ReceivedPhotosFragmentViewModel
 import com.kirakishou.photoexchange.ui.epoxy.row.loadingRow
 import com.kirakishou.photoexchange.ui.epoxy.row.receivedPhotoRow
 import com.kirakishou.photoexchange.ui.epoxy.row.textRow
 import timber.log.Timber
 
-class ReceivedPhotosFragmentEpoxyController {
+class ReceivedPhotosFragmentEpoxyController(
+  private val imageLoader: ImageLoader
+) : BaseEpoxyController() {
   private val TAG = "ReceivedPhotosFragmentEpoxyController"
 
   fun rebuild(
@@ -48,6 +53,9 @@ class ReceivedPhotosFragmentEpoxyController {
                   photo(photo)
                   callback { model, _, _, _ ->
                     viewModel.swapPhotoAndMap(model.photo().receivedPhotoName)
+                  }
+                  onBind { model, view, _ ->
+                    loadPhotoOrImage(model.photo(), view.photoView, view.staticMapView)
                   }
                 }
               }
@@ -108,6 +116,14 @@ class ReceivedPhotosFragmentEpoxyController {
           }
         }
       }
+    }
+  }
+
+  private fun loadPhotoOrImage(photo: ReceivedPhoto, photoView: ImageView, mapView: ImageView) {
+    if (photo.showPhoto) {
+      imageLoader.loadPhotoFromNetInto(photo.receivedPhotoName, photoView)
+    } else {
+      imageLoader.loadStaticMapImageFromNetInto(photo.uploadedPhotoName, mapView)
     }
   }
 }

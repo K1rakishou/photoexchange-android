@@ -10,7 +10,7 @@ import androidx.appcompat.widget.AppCompatButton
 import butterknife.BindView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
-import com.kirakishou.photoexchange.di.module.SettingsActivityModule
+import com.kirakishou.photoexchange.di.module.activity.SettingsActivityModule
 import com.kirakishou.photoexchange.mvp.viewmodel.SettingsActivityViewModel
 import com.kirakishou.photoexchange.ui.dialog.EnterOldUserIdDialog
 import kotlinx.coroutines.launch

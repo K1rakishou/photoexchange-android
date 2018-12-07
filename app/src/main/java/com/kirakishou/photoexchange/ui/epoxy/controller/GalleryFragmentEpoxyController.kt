@@ -1,18 +1,25 @@
 package com.kirakishou.photoexchange.ui.epoxy.controller
 
 import android.content.Context
+import android.widget.ImageView
 import android.widget.Toast
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.extension.safe
+import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.GalleryFragmentViewModel
 import com.kirakishou.photoexchange.ui.epoxy.row.galleryPhotoRow
 import com.kirakishou.photoexchange.ui.epoxy.row.loadingRow
 import com.kirakishou.photoexchange.ui.epoxy.row.textRow
 import timber.log.Timber
+import javax.inject.Inject
 
-class GalleryFragmentEpoxyController {
+class GalleryFragmentEpoxyController
+@Inject constructor(
+  private val imageLoader: ImageLoader
+) : BaseEpoxyController() {
   private val TAG = "GalleryFragmentEpoxyController"
 
   fun rebuild(
@@ -55,6 +62,9 @@ class GalleryFragmentEpoxyController {
                   }
                   reportButtonCallback { model, _, _, _ ->
                     viewModel.reportPhotos(model.photo().photoName)
+                  }
+                  onBind { model, view, _ ->
+                    loadPhotoOrImage(model.photo(), view.photoView, view.staticMapView)
                   }
                 }
               }
@@ -107,6 +117,14 @@ class GalleryFragmentEpoxyController {
         viewModel.resetState()
         viewModel.loadGalleryPhotos(false)
       }
+    }
+  }
+
+  private fun loadPhotoOrImage(photo: GalleryPhoto, photoView: ImageView, mapView: ImageView) {
+    if (photo.showPhoto) {
+      imageLoader.loadPhotoFromNetInto(photo.photoName, photoView)
+    } else {
+      imageLoader.loadStaticMapImageFromNetInto(photo.photoName, mapView)
     }
   }
 }

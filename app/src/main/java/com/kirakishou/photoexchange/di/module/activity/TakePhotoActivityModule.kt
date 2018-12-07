@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.di.module
+package com.kirakishou.photoexchange.di.module.activity
 
 import androidx.lifecycle.ViewModelProviders
 import android.content.Context
@@ -39,8 +39,8 @@ open class TakePhotoActivityModule(
   open fun provideViewModel(viewModelFactory: TakePhotoActivityViewModelFactory): TakePhotoActivityViewModel {
     return ViewModelProviders.of(
       activity,
-      viewModelFactory).get(TakePhotoActivityViewModel::class.java
-    )
+      viewModelFactory
+    ).get(TakePhotoActivityViewModel::class.java)
   }
 
   @PerActivity

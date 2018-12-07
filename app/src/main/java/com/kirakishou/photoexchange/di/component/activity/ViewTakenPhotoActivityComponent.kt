@@ -1,6 +1,6 @@
-package com.kirakishou.photoexchange.di.component
+package com.kirakishou.photoexchange.di.component.activity
 
-import com.kirakishou.photoexchange.di.module.ViewTakenPhotoActivityModule
+import com.kirakishou.photoexchange.di.module.activity.ViewTakenPhotoActivityModule
 import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity
 import com.kirakishou.photoexchange.ui.fragment.AddToGalleryDialogFragment
