@@ -28,7 +28,6 @@ open class TakenPhotosRepository(
   dispatchersProvider: DispatchersProvider
 ) : BaseRepository(dispatchersProvider) {
   private val TAG = "TakenPhotosRepository"
-  private val takenPhotoDao = database.takenPhotoDao()
 
   init {
     runBlocking(coroutineContext) {
@@ -54,7 +53,7 @@ open class TakenPhotosRepository(
 
       val transactionResult = database.transactional {
         val myPhotoEntity = TakenPhotoEntity.create(tempFile.id!!, false, timeUtils.getTimeFast())
-        val insertedPhotoId = takenPhotoDao.insert(myPhotoEntity)
+        val insertedPhotoId = takenPhotosLocalSource.save(myPhotoEntity)
 
         if (insertedPhotoId.isFail()) {
           return@transactional false
@@ -84,9 +83,9 @@ open class TakenPhotosRepository(
   suspend fun updateMakePhotoPublic(takenPhotoId: Long, makePublic: Boolean): Boolean {
     return withContext(coroutineContext) {
       if (makePublic) {
-        return@withContext takenPhotoDao.updateSetPhotoPublic(takenPhotoId) == 1
+        return@withContext takenPhotosLocalSource.updateSetPhotoPublic(takenPhotoId)
       } else {
-        return@withContext takenPhotoDao.updateSetPhotoPrivate(takenPhotoId) == 1
+        return@withContext takenPhotosLocalSource.updateSetPhotoPrivate(takenPhotoId)
       }
     }
   }
@@ -97,14 +96,14 @@ open class TakenPhotosRepository(
         return@withContext
       }
 
-      val allPhotosWithEmptyLocation = takenPhotoDao.findAllWithEmptyLocation()
+      val allPhotosWithEmptyLocation = takenPhotosLocalSource.findAllWithEmptyLocation()
       if (allPhotosWithEmptyLocation.isEmpty()) {
         return@withContext
       }
 
       database.transactional {
         for (photo in allPhotosWithEmptyLocation) {
-          if (takenPhotoDao.updatePhotoLocation(photo.id!!, location.lon, location.lat) != 1) {
+          if (!takenPhotosLocalSource.updatePhotoLocation(photo.id!!, location.lon, location.lat)) {
             return@transactional false
           }
         }
@@ -116,13 +115,13 @@ open class TakenPhotosRepository(
 
   suspend fun hasPhotosWithEmptyLocation(): Boolean {
     return withContext(coroutineContext) {
-      return@withContext takenPhotoDao.findAllWithEmptyLocation().isNotEmpty()
+      return@withContext takenPhotosLocalSource.findAllWithEmptyLocation().isNotEmpty()
     }
   }
 
   suspend fun findById(id: Long): TakenPhoto? {
     return withContext(coroutineContext) {
-      val myPhotoEntity = takenPhotoDao.findById(id) ?: TakenPhotoEntity.empty()
+      val myPhotoEntity = takenPhotosLocalSource.findById(id)
       val tempFileEntity = tempFileLocalSource.findById(id)
 
       return@withContext TakenPhotosMapper.toTakenPhoto(myPhotoEntity, tempFileEntity)
@@ -132,7 +131,7 @@ open class TakenPhotosRepository(
   suspend fun findAll(): List<TakenPhoto> {
     return withContext(coroutineContext) {
       val allMyPhotos = arrayListOf<TakenPhoto>()
-      val allMyPhotoEntities = takenPhotoDao.findAll()
+      val allMyPhotoEntities = takenPhotosLocalSource.findAll()
 
       for (myPhotoEntity in allMyPhotoEntities) {
         myPhotoEntity.id?.let { myPhotoId ->
@@ -150,20 +149,20 @@ open class TakenPhotosRepository(
 
   open suspend fun countAllByState(state: PhotoState): Int {
     return withContext(coroutineContext) {
-      return@withContext takenPhotoDao.countAllByState(state).toInt()
+      return@withContext takenPhotosLocalSource.countAllByState(state)
     }
   }
 
   open suspend fun updateStates(oldState: PhotoState, newState: PhotoState) {
     withContext(coroutineContext) {
-      takenPhotoDao.updateStates(oldState, newState)
+      takenPhotosLocalSource.updateStates(oldState, newState)
     }
   }
 
   open suspend fun findAllByState(state: PhotoState): List<TakenPhoto> {
     return withContext(coroutineContext) {
       val resultList = mutableListOf<TakenPhoto>()
-      val allPhotoReadyToUploading = takenPhotoDao.findAllWithState(state)
+      val allPhotoReadyToUploading = takenPhotosLocalSource.findAllWithState(state)
 
       for (photo in allPhotoReadyToUploading) {
         val tempFileEntity = tempFileLocalSource.findById(photo.id!!)
@@ -184,13 +183,17 @@ open class TakenPhotosRepository(
         return@withContext true
       }
 
-      return@withContext takenPhotosLocalSource.deletePhotoById(takenPhoto.id)
+      return@withContext database.transactional {
+        takenPhotosLocalSource.deletePhotoById(takenPhoto.id)
+      }
     }
   }
 
   suspend fun deletePhotoById(photoId: Long): Boolean {
     return withContext(coroutineContext) {
-      takenPhotosLocalSource.deletePhotoById(photoId)
+      return@withContext  database.transactional {
+        takenPhotosLocalSource.deletePhotoById(photoId)
+      }
     }
   }
 
@@ -202,15 +205,17 @@ open class TakenPhotosRepository(
 
   suspend fun loadNotUploadedPhotos(): List<TakenPhoto> {
     return withContext(coroutineContext) {
-      val stillUploadingPhotos = findAllByState(PhotoState.PHOTO_UPLOADING)
+      database.transactional {
+        val stillUploadingPhotos = findAllByState(PhotoState.PHOTO_UPLOADING)
 
-      for (photo in stillUploadingPhotos) {
-        if (!photo.fileExists()) {
-          takenPhotosLocalSource.deletePhotoById(photo.id)
-          continue
+        for (photo in stillUploadingPhotos) {
+          if (!photo.fileExists()) {
+            takenPhotosLocalSource.deletePhotoById(photo.id)
+            continue
+          }
+
+          takenPhotosLocalSource.updatePhotoState(photo.id, PhotoState.PHOTO_QUEUED_UP)
         }
-
-        takenPhotosLocalSource.updatePhotoState(photo.id, PhotoState.PHOTO_QUEUED_UP)
       }
 
       return@withContext findAllByState(PhotoState.PHOTO_QUEUED_UP)
@@ -222,7 +227,7 @@ open class TakenPhotosRepository(
     withContext(coroutineContext) {
       database.transactional {
         //we need to delete all photos with state PHOTO_TAKEN because at this step they are being considered corrupted
-        val myPhotosList = takenPhotoDao.findAllWithState(PhotoState.PHOTO_TAKEN)
+        val myPhotosList = takenPhotosLocalSource.findAllWithState(PhotoState.PHOTO_TAKEN)
         for (myPhoto in myPhotosList) {
           if (!takenPhotosLocalSource.deletePhotoById(myPhoto.id!!)) {
             throw DatabaseException("Could not delete photo with id ${myPhoto.id!!}")

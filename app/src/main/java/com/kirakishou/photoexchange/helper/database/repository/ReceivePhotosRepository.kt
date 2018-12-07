@@ -4,7 +4,7 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
-import com.kirakishou.photoexchange.helper.database.source.local.ReceivePhotosLocalSource
+import com.kirakishou.photoexchange.helper.database.source.local.ReceivedPhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.TakenPhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.UploadPhotosLocalSource
 import com.kirakishou.photoexchange.interactors.ReceivePhotosUseCase
@@ -18,7 +18,7 @@ import timber.log.Timber
 class ReceivePhotosRepository(
   private val database: MyDatabase,
   private val apiClient: ApiClient,
-  private val receivePhotosLocalSource: ReceivePhotosLocalSource,
+  private val receivedPhotosLocalSource: ReceivedPhotosLocalSource,
   private val uploadedPhotosLocalSource: UploadPhotosLocalSource,
   private val takenPhotosLocalSource: TakenPhotosLocalSource,
   dispatchersProvider: DispatchersProvider
@@ -57,7 +57,7 @@ class ReceivePhotosRepository(
     receivedPhoto: ReceivedPhotosResponse.ReceivedPhotoResponseData
   ) {
     database.transactional {
-      if (!receivePhotosLocalSource.save(receivedPhoto)) {
+      if (!receivedPhotosLocalSource.save(receivedPhoto)) {
         throw DatabaseException("Could not save photo with receivedPhotoName ${receivedPhoto.receivedPhotoName}")
       }
 

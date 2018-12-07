@@ -32,7 +32,6 @@ import kotlin.coroutines.CoroutineContext
 class GalleryFragmentViewModel(
   initialState: GalleryFragmentState,
   private val intercom: PhotosActivityViewModelIntercom,
-  private val galleryPhotosRepository: GalleryPhotosRepository,
   private val getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
   private val favouritePhotoUseCase: FavouritePhotoUseCase,
   private val reportPhotoUseCase: ReportPhotoUseCase,

@@ -12,10 +12,6 @@ import com.kirakishou.photoexchange.helper.database.source.remote.*
 import com.kirakishou.photoexchange.helper.util.BitmapUtils
 import com.kirakishou.photoexchange.helper.util.FileUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.helper.Constants.GALLERY_PHOTOS_CACHE_MAX_LIVE_TIME
-import com.kirakishou.photoexchange.helper.Constants.GALLERY_PHOTOS_INFO_CACHE_MAX_LIVE_TIME
-import com.kirakishou.photoexchange.helper.Constants.RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME
-import com.kirakishou.photoexchange.helper.Constants.UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME
 import com.kirakishou.photoexchange.helper.util.PagedApiUtils
 import dagger.Module
 import dagger.Provides
@@ -72,8 +68,8 @@ open class DatabaseModule(
   @Singleton
   @Provides
   open fun provideReceivePhotosLocalSource(database: MyDatabase,
-                                           timeUtils: TimeUtils): ReceivePhotosLocalSource {
-    return ReceivePhotosLocalSource(database, timeUtils)
+                                           timeUtils: TimeUtils): ReceivedPhotosLocalSource {
+    return ReceivedPhotosLocalSource(database, timeUtils)
   }
 
   @Singleton
@@ -132,11 +128,11 @@ open class DatabaseModule(
   @Singleton
   @Provides
   open fun provideReceivedPhotoRepository(database: MyDatabase,
-                                          timeUtils: TimeUtils,
+                                          receivedPhotosLocalSource: ReceivedPhotosLocalSource,
                                           dispatchersProvider: DispatchersProvider): ReceivedPhotosRepository {
     return ReceivedPhotosRepository(
       database,
-      timeUtils,
+      receivedPhotosLocalSource,
       dispatchersProvider
     )
   }
@@ -164,11 +160,11 @@ open class DatabaseModule(
   @Singleton
   @Provides
   open fun provideUploadedPhotoRepository(database: MyDatabase,
-                                          timeUtils: TimeUtils,
+                                          uploadedPhotosLocalSource: UploadPhotosLocalSource,
                                           dispatchersProvider: DispatchersProvider): UploadedPhotosRepository {
     return UploadedPhotosRepository(
       database,
-      timeUtils,
+      uploadedPhotosLocalSource,
       dispatchersProvider
     )
   }
@@ -215,7 +211,7 @@ open class DatabaseModule(
                                               apiClient: ApiClient,
                                               timeUtils: TimeUtils,
                                               pagedApiUtils: PagedApiUtils,
-                                              receivePhotosLocalSource: ReceivePhotosLocalSource,
+                                              receivedPhotosLocalSource: ReceivedPhotosLocalSource,
                                               uploadedPhotosLocalSource: UploadPhotosLocalSource,
                                               dispatchersProvider: DispatchersProvider): GetReceivedPhotosRepository {
     return GetReceivedPhotosRepository(
@@ -223,7 +219,7 @@ open class DatabaseModule(
       apiClient,
       timeUtils,
       pagedApiUtils,
-      receivePhotosLocalSource,
+      receivedPhotosLocalSource,
       uploadedPhotosLocalSource,
       dispatchersProvider
     )
@@ -262,14 +258,14 @@ open class DatabaseModule(
   @Provides
   open fun provideReceivePhotosRepository(database: MyDatabase,
                                           apiClient: ApiClient,
-                                          receivePhotosLocalSource: ReceivePhotosLocalSource,
+                                          receivedPhotosLocalSource: ReceivedPhotosLocalSource,
                                           uploadedPhotosLocalSource: UploadPhotosLocalSource,
                                           takenPhotosLocalSource: TakenPhotosLocalSource,
                                           dispatchersProvider: DispatchersProvider): ReceivePhotosRepository {
     return ReceivePhotosRepository(
       database,
       apiClient,
-      receivePhotosLocalSource,
+      receivedPhotosLocalSource,
       uploadedPhotosLocalSource,
       takenPhotosLocalSource,
       dispatchersProvider
@@ -313,11 +309,13 @@ open class DatabaseModule(
   @Singleton
   @Provides
   open fun provideStorePhotoFromPushNotificationRepository(database: MyDatabase,
-                                                           timeUtils: TimeUtils,
+                                                           receivedPhotosLocalSource: ReceivedPhotosLocalSource,
+                                                           uploadedPhotosLocalSource: UploadPhotosLocalSource,
                                                            dispatchersProvider: DispatchersProvider): StorePhotoFromPushNotificationRepository {
     return StorePhotoFromPushNotificationRepository(
       database,
-      timeUtils,
+      receivedPhotosLocalSource,
+      uploadedPhotosLocalSource,
       dispatchersProvider
     )
   }
