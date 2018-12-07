@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.di.module
+package com.kirakishou.photoexchange.di.module.service
 
 import com.kirakishou.photoexchange.di.scope.PerService
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider

@@ -24,9 +24,9 @@ class UploadedPhotoRow @JvmOverloads constructor(
   attrs: AttributeSet? = null,
   defStyleAttr: Int = 0
 ) : LinearLayout(context, attrs, defStyleAttr) {
+  val photoView: ImageView
+  val staticMapView: ImageView
   private val photoIdTextView: TextView
-  private val photoView: ImageView
-  private val staticMapView: ImageView
   private val photoUploadingStateIndicator: View
   private val receivedIconImageView: ImageView
   private val clickView: ConstraintLayout
@@ -66,25 +66,9 @@ class UploadedPhotoRow @JvmOverloads constructor(
     if (uploadedPhoto.showPhoto) {
       staticMapView.visibility = View.GONE
       photoView.visibility = View.VISIBLE
-
-      val fullUrl = "${Constants.BASE_PHOTOS_URL}/${uploadedPhoto.photoName}/${uploadedPhoto.photoSize.value}"
-
-      GlideApp.with(context)
-        .load(fullUrl)
-        .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-        .apply(RequestOptions().centerCrop())
-        .into(photoView)
     } else {
       staticMapView.visibility = View.VISIBLE
       photoView.visibility = View.GONE
-
-      val fullUrl = "${Constants.BASE_STATIC_MAP_URL}/${uploadedPhoto.receiverInfo!!.receiverPhotoName}"
-
-      GlideApp.with(context)
-        .load(fullUrl)
-        .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-        .apply(RequestOptions().centerCrop())
-        .into(staticMapView)
     }
   }
 

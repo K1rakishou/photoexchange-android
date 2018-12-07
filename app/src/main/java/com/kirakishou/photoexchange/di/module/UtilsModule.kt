@@ -1,5 +1,7 @@
 package com.kirakishou.photoexchange.di.module
 
+import android.content.Context
+import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.util.*
 import dagger.Module
 import dagger.Provides
@@ -28,8 +30,21 @@ class UtilsModule {
 
   @Provides
   @Singleton
-  fun providePagedApiUtils(timeUtils: TimeUtils): PagedApiUtils {
-    return PagedApiUtilsImpl(timeUtils)
+  fun provideNetUtils(context: Context,
+                      settingsRepository: SettingsRepository): NetUtils {
+    return NetUtilsImpl(
+      context,
+      settingsRepository
+    )
   }
 
+  @Provides
+  @Singleton
+  fun providePagedApiUtils(timeUtils: TimeUtils,
+                           netUtils: NetUtils): PagedApiUtils {
+    return PagedApiUtilsImpl(
+      timeUtils,
+      netUtils
+    )
+  }
 }

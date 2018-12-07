@@ -1,10 +1,12 @@
 package com.kirakishou.photoexchange.ui.epoxy.controller
 
 import android.content.Context
+import android.widget.ImageView
 import android.widget.Toast
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
 import com.kirakishou.photoexchange.mvp.model.PhotoState
@@ -15,7 +17,9 @@ import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentSt
 import com.kirakishou.photoexchange.ui.epoxy.row.*
 import timber.log.Timber
 
-class UploadedPhotosFragmentEpoxyController {
+class UploadedPhotosFragmentEpoxyController(
+  private val imageLoader: ImageLoader
+) : BaseEpoxyController() {
   private val TAG = "UploadedPhotosFragmentEpoxyController"
 
   fun rebuild(
@@ -70,6 +74,9 @@ class UploadedPhotosFragmentEpoxyController {
           id("uploaded_photo_${photo.photoName}")
           photo(photo)
           callback { model, _, _, _ -> viewModel.swapPhotoAndMap(model.photo().photoName) }
+          onBind { model, view, _ ->
+            loadPhotoOrImage(model.photo(), view.photoView, view.staticMapView)
+          }
         }
       }
 
@@ -117,6 +124,11 @@ class UploadedPhotosFragmentEpoxyController {
             id("queued_up_photo_${photo.id}")
             photo(photo)
             callback { _ -> viewModel.cancelPhotoUploading(photo.id) }
+            onBind { model, view, _ ->
+              model.photo().photoTempFile?.let { file ->
+                imageLoader.loadPhotoFromDiskInto(file, view.photoView)
+              }
+            }
           }
         }
         PhotoState.PHOTO_UPLOADING -> {
@@ -126,6 +138,11 @@ class UploadedPhotosFragmentEpoxyController {
             id("uploading_photo_${photo.id}")
             photo(uploadingPhoto)
             progress(uploadingPhoto.progress)
+            onBind { model, view, _ ->
+              model.photo().photoTempFile?.let { file ->
+                imageLoader.loadPhotoFromDiskInto(file, view.photoView)
+              }
+            }
           }
         }
       }
@@ -157,6 +174,14 @@ class UploadedPhotosFragmentEpoxyController {
           }
         }
       }
+    }
+  }
+
+  private fun loadPhotoOrImage(photo: UploadedPhoto, photoView: ImageView, mapView: ImageView) {
+    if (photo.showPhoto) {
+      imageLoader.loadPhotoFromNetInto(photo.photoName, photoView)
+    } else {
+      imageLoader.loadStaticMapImageFromNetInto(photo.receiverInfo!!.receiverPhotoName, mapView)
     }
   }
 }

@@ -2,17 +2,15 @@ package com.kirakishou.photoexchange.helper
 
 import android.content.Context
 import android.widget.ImageView
-import com.bumptech.glide.load.DataSource
+import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.load.engine.GlideException
-import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.photoexchange.di.module.GlideApp
-import io.reactivex.Single
+import com.kirakishou.photoexchange.helper.util.NetUtils
+import com.kirakishou.photoexchange.mvp.model.PhotoSize
+import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
-import com.bumptech.glide.request.target.Target
-import com.kirakishou.photoexchange.mvp.model.PhotoSize
 
 
 /**
@@ -20,8 +18,11 @@ import com.kirakishou.photoexchange.mvp.model.PhotoSize
  */
 class ImageLoader
 @Inject constructor(
-  private val context: Context
+  private val context: Context,
+  private val netUtils: NetUtils
 ) {
+  private val TAG = "ImageLoader"
+
   private val photoSize by lazy {
     val density = context.resources.displayMetrics.density
 
@@ -34,8 +35,13 @@ class ImageLoader
     }
   }
 
-  private val basePhotosUrl = "${Constants.BASE_URL}v1/api/get_photo"
-  private val baseStaticMapUrl = "${Constants.BASE_URL}v1/api/get_static_map"
+  private fun createProgressDrawable(): CircularProgressDrawable {
+    return CircularProgressDrawable(context).apply {
+      strokeWidth = 10f
+      centerRadius = 50f
+      start()
+    }
+  }
 
   fun loadPhotoFromDiskInto(imageFile: File, view: ImageView) {
     GlideApp.with(context)
@@ -51,43 +57,52 @@ class ImageLoader
    * But in some rare cases (when photo could not be pre-loaded for some reason) this method will make a request to the server
    * */
   fun loadPhotoFromNetInto(photoName: String, view: ImageView) {
-    val fullUrl = "$basePhotosUrl/$photoName/${photoSize.value}"
+    val fullUrl = "${Constants.BASE_PHOTOS_URL}/${photoName}/${photoSize.value}"
+
+    if (!netUtils.canLoadImages()) {
+      //TODO: load default "no wifi" image
+      Timber.tag(TAG).d("No wifi")
+
+      GlideApp.with(context)
+        .load(fullUrl)
+        .onlyRetrieveFromCache(true)
+        .placeholder(createProgressDrawable())
+        .apply(RequestOptions().centerCrop())
+        .into(view)
+
+      return
+    }
 
     GlideApp.with(context)
       .load(fullUrl)
+      .placeholder(createProgressDrawable())
       .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
       .apply(RequestOptions().centerCrop())
       .into(view)
   }
 
   fun loadStaticMapImageFromNetInto(photoName: String, view: ImageView) {
-    val fullUrl = "$baseStaticMapUrl/$photoName"
+    val fullUrl = "${Constants.BASE_STATIC_MAP_URL}/${photoName}"
+
+    if (!netUtils.canLoadImages()) {
+      //TODO: load default "no wifi" image
+      Timber.tag(TAG).d("No wifi")
+
+      GlideApp.with(context)
+        .load(fullUrl)
+        .onlyRetrieveFromCache(true)
+        .placeholder(createProgressDrawable())
+        .apply(RequestOptions().centerCrop())
+        .into(view)
+
+      return
+    }
 
     GlideApp.with(context)
       .load(fullUrl)
+      .placeholder(createProgressDrawable())
       .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
       .apply(RequestOptions().centerCrop())
       .into(view)
-  }
-
-  fun preloadImageFromNetAsync(photoName: String): Single<Boolean> {
-    return Single.create { emitter ->
-      val fullUrl = "$basePhotosUrl/$photoName/${photoSize.value}"
-
-      GlideApp.with(context)
-        .download(fullUrl)
-        .listener(object : RequestListener<File> {
-          override fun onLoadFailed(error: GlideException?, model: Any?, target: Target<File>?, isFirstResource: Boolean): Boolean {
-            emitter.onSuccess(false)
-            return false
-          }
-
-          override fun onResourceReady(resource: File, model: Any?, target: Target<File>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
-            emitter.onSuccess(true)
-            return false
-          }
-        })
-        .preload()
-    }
   }
 }

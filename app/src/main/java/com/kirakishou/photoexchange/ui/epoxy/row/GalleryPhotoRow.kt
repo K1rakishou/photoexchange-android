@@ -24,9 +24,9 @@ class GalleryPhotoRow @JvmOverloads constructor(
   attrs: AttributeSet? = null,
   defStyleAttr: Int = 0
 ) : LinearLayout(context, attrs, defStyleAttr) {
+  val photoView: ImageView
+  val staticMapView: ImageView
   private val clickView: ConstraintLayout
-  private val photoView: ImageView
-  private val staticMapView: ImageView
   private val photoButtonsHolder: LinearLayout
   private val favouriteButton: LinearLayout
   private val favouriteIcon: ImageView
@@ -56,29 +56,15 @@ class GalleryPhotoRow @JvmOverloads constructor(
       showPhotoHideMap()
 
       if (photo.galleryPhotoInfo.type == GalleryPhotoInfo.Type.Normal) {
-        showControls()
-
-        if (photo.galleryPhotoInfo.isFavourited) {
-          favouriteIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_favorite))
-        } else {
-          favouriteIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_favorite_border))
-        }
-
-        if (photo.galleryPhotoInfo.isReported) {
-          reportIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_reported))
-        } else {
-          reportIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_report_border))
-        }
+        showControls(photo)
       } else {
         hideControls()
       }
     } else {
       showMapHidePhoto()
-      loadStaticMap(photo)
     }
 
     favouritesCount.text = photo.favouritesCount.toString()
-    loadGalleryPhoto(photo)
   }
 
   @ModelProp
@@ -106,34 +92,28 @@ class GalleryPhotoRow @JvmOverloads constructor(
     reportButton.setOnClickListener(listener)
   }
 
-  private fun showControls() {
+  private fun showControls(photo: GalleryPhoto) {
     photoButtonsHolder.visibility = View.VISIBLE
     favouriteButton.isClickable = true
     reportButton.isClickable = true
+
+    if (photo.galleryPhotoInfo.isFavourited) {
+      favouriteIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_favorite))
+    } else {
+      favouriteIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_favorite_border))
+    }
+
+    if (photo.galleryPhotoInfo.isReported) {
+      reportIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_reported))
+    } else {
+      reportIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_report_border))
+    }
   }
 
   private fun hideControls() {
     photoButtonsHolder.visibility = View.GONE
     favouriteButton.isClickable = false
     reportButton.isClickable = false
-  }
-
-  private fun loadGalleryPhoto(photo: GalleryPhoto) {
-    val fullUrl = "${Constants.BASE_PHOTOS_URL}/${photo.photoName}/${photo.photoSize.value}"
-    GlideApp.with(context)
-      .load(fullUrl)
-      .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-      .apply(RequestOptions().centerCrop())
-      .into(photoView)
-  }
-
-  private fun loadStaticMap(photo: GalleryPhoto) {
-    val fullUrl = "${Constants.BASE_STATIC_MAP_URL}/${photo.photoName}"
-    GlideApp.with(context)
-      .load(fullUrl)
-      .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-      .apply(RequestOptions().centerCrop())
-      .into(staticMapView)
   }
 
   private fun showPhotoHideMap() {

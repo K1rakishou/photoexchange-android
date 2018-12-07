@@ -66,6 +66,8 @@ class GetUploadedPhotosRepository(
       apiClient.getPageOfUploadedPhotos(userId!!, lastUploadedOn, count)
     }, {
       deleteAll()
+    }, {
+      deleteOld()
     }, { uploadedPhotos ->
       uploadedPhotosLocalSource.saveMany(uploadedPhotos)
     }, { responseData ->
@@ -97,10 +99,15 @@ class GetUploadedPhotosRepository(
     }
   }
 
-  //may hang
   private suspend fun deleteAll() {
     database.transactional {
       uploadedPhotosLocalSource.deleteAll()
+    }
+  }
+
+  private suspend fun deleteOld() {
+    database.transactional {
+      uploadedPhotosLocalSource.deleteOldPhotos()
     }
   }
 

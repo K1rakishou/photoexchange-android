@@ -12,6 +12,7 @@ import io.fotoapparat.selector.highestResolution
 import io.fotoapparat.selector.manualJpegQuality
 import io.fotoapparat.view.CameraView
 import timber.log.Timber
+import java.lang.RuntimeException
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -55,20 +56,22 @@ open class CameraProvider(
   }
 
   fun startCamera() {
-    if (!isStarted()) {
-      if (camera != null) {
-        camera!!.start()
-        isStarted.set(true)
+    if (!isStarted.getAndSet(true)) {
+      if (camera == null) {
+        throw RuntimeException("Camera is null")
       }
+
+      camera!!.start()
     }
   }
 
   fun stopCamera() {
-    if (isStarted()) {
-      isStarted.set(false)
-      if (camera != null) {
-        camera!!.stop()
+    if (isStarted.getAndSet(false)) {
+      if (camera == null) {
+        throw RuntimeException("Camera is null")
       }
+
+      camera!!.stop()
     }
   }
 

@@ -5,7 +5,7 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
-import com.kirakishou.photoexchange.helper.database.source.local.ReceivePhotosLocalSource
+import com.kirakishou.photoexchange.helper.database.source.local.ReceivedPhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.UploadPhotosLocalSource
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
@@ -21,7 +21,7 @@ open class GetReceivedPhotosRepository(
   private val apiClient: ApiClient,
   private val timeUtils: TimeUtils,
   private val pagedApiUtils: PagedApiUtils,
-  private val receivedPhotosLocalSource: ReceivePhotosLocalSource,
+  private val receivedPhotosLocalSource: ReceivedPhotosLocalSource,
   private val uploadedPhotosLocalSource: UploadPhotosLocalSource,
   dispatchersProvider: DispatchersProvider
 ) : BaseRepository(dispatchersProvider) {
@@ -55,6 +55,8 @@ open class GetReceivedPhotosRepository(
         apiClient.getPageOfReceivedPhotos(userId!!, lastUploadedOn, count)
       }, {
         deleteAll()
+      }, {
+        deleteOld()
       }, { receivedPhotos ->
         storeInDatabase(receivedPhotos)
         true
@@ -92,10 +94,15 @@ open class GetReceivedPhotosRepository(
     }
   }
 
-  //may hang
   private suspend fun deleteAll() {
     database.transactional {
       receivedPhotosLocalSource.deleteAll()
+    }
+  }
+
+  private suspend fun deleteOld() {
+    database.transactional {
+      receivedPhotosLocalSource.deleteOldPhotos()
     }
   }
 

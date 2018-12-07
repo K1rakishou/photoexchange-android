@@ -1,6 +1,6 @@
-package com.kirakishou.photoexchange.di.component
+package com.kirakishou.photoexchange.di.component.activity
 
-import com.kirakishou.photoexchange.di.module.TakePhotoActivityModule
+import com.kirakishou.photoexchange.di.module.activity.TakePhotoActivityModule
 import com.kirakishou.photoexchange.di.module.VibratorModule
 import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity

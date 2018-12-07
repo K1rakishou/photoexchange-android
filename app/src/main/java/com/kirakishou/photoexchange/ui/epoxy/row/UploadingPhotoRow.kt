@@ -26,8 +26,8 @@ class UploadingPhotoRow @JvmOverloads constructor(
   attrs: AttributeSet? = null,
   defStyleAttr: Int = 0
 ) : LinearLayout(context, attrs, defStyleAttr) {
+  val photoView: ImageView
   private val photoIdTextView: TextView
-  private val photoView: ImageView
   private val uploadingMessageHolderView: CardView
   private val loadingProgress: ProgressBar
   private val photoUploadingStateIndicator: View
@@ -56,15 +56,6 @@ class UploadingPhotoRow @JvmOverloads constructor(
 
     photoUploadingStateIndicator.background = ColorDrawable(context.resources.getColor(R.color.photo_state_uploading_color))
     uploadingMessageHolderView.visibility = View.VISIBLE
-
-    photo.photoTempFile?.let { photoFile ->
-      GlideApp.with(context)
-        //we do not need to cache this image
-        .applyDefaultRequestOptions(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.NONE))
-        .load(photoFile)
-        .apply(RequestOptions().centerCrop())
-        .into(photoView)
-    }
   }
 
   @ModelProp

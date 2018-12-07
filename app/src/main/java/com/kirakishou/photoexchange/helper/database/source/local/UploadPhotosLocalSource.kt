@@ -1,11 +1,13 @@
 package com.kirakishou.photoexchange.helper.database.source.local
 
+import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
 import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
+import kotlinx.coroutines.withContext
 import net.response.GetUploadedPhotosResponse
 
 open class UploadPhotosLocalSource(
@@ -41,7 +43,9 @@ open class UploadPhotosLocalSource(
     val now = timeUtils.getTimeFast()
 
     for (uploadedPhotoData in uploadedPhotoDataList) {
-      val photo = UploadedPhotosMapper.FromResponse.ToEntity.toUploadedPhotoEntity(now, uploadedPhotoData)
+      val photo = UploadedPhotosMapper.FromResponse.ToEntity
+        .toUploadedPhotoEntity(now, uploadedPhotoData)
+
       if (!save(photo)) {
         return false
       }
@@ -50,8 +54,39 @@ open class UploadPhotosLocalSource(
     return true
   }
 
+  fun count(): Int {
+    return uploadedPhotoDao.count().toInt()
+  }
+
+  fun contains(photoName: String): Boolean {
+    return uploadedPhotoDao.findByPhotoName(photoName) != null
+  }
+
+  fun findMany(photoIds: List<Long>): List<UploadedPhoto> {
+    val photos = uploadedPhotoDao.findMany(photoIds)
+    return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(photos)
+  }
+
+  fun findAll(): List<UploadedPhoto> {
+    val photos = uploadedPhotoDao.findAll()
+    return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(photos)
+  }
+
+  fun findAllWithReceiverInfo(): List<UploadedPhoto> {
+    val entities = uploadedPhotoDao.findAllWithReceiverInfo()
+    return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(entities)
+  }
+
+  fun findAllWithoutReceiverInfo(): List<UploadedPhoto> {
+    val entities = uploadedPhotoDao.findAllWithoutReceiverInfo()
+    return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(entities)
+  }
+
   fun getPage(time: Long, count: Int): List<UploadedPhoto> {
-    return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(uploadedPhotoDao.getPage(time, count))
+    val photos = uploadedPhotoDao.getPage(time, count)
+
+    return UploadedPhotosMapper.FromEntity.ToObject
+      .toUploadedPhotos(photos)
   }
 
   fun updateReceiverInfo(
@@ -70,5 +105,10 @@ open class UploadPhotosLocalSource(
 
   fun deleteAll() {
     uploadedPhotoDao.deleteAll()
+  }
+
+  fun deleteOldPhotos() {
+    val now = timeUtils.getTimeFast()
+    uploadedPhotoDao.deleteOlderThan(now - Constants.UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME)
   }
 }

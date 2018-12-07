@@ -12,6 +12,7 @@ import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoLoc
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhotoInfo
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.helper.util.PagedApiUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import kotlinx.coroutines.withContext
@@ -23,6 +24,7 @@ open class GetGalleryPhotosRepository(
   private val apiClient: ApiClient,
   private val timeUtils: TimeUtils,
   private val pagedApiUtils: PagedApiUtils,
+  private val netUtils: NetUtils,
   private val galleryPhotoLocalSource: GalleryPhotoLocalSource,
   private val galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
   dispatchersProvider: DispatchersProvider
@@ -44,9 +46,14 @@ open class GetGalleryPhotosRepository(
         resetTimer()
       }
 
-      val pageOfGalleryPhotos = getPageOfGalleryPhotos(firstUploadedOn, lastUploadedOn, count)
+      val pageOfGalleryPhotos = getPageOfGalleryPhotos(
+        firstUploadedOn,
+        lastUploadedOn,
+        count
+      )
 
-      val photoNameList = pageOfGalleryPhotos.page.map { it.photoName }
+      val photoNameList = pageOfGalleryPhotos.page
+        .map { it.photoName }
       val galleryPhotosInfoList = getGalleryPhotosInfo(userId, photoNameList)
 
       val updatedPhotos = mutableListOf<GalleryPhoto>()
@@ -84,6 +91,8 @@ open class GetGalleryPhotosRepository(
       apiClient.getPageOfGalleryPhotos(lastUploadedOn, count)
     }, {
       deleteAll()
+    }, {
+      deleteOld()
     }, { galleryPhotos ->
       galleryPhotoLocalSource.saveMany(galleryPhotos)
     }, { responseData ->
@@ -118,7 +127,6 @@ open class GetGalleryPhotosRepository(
     }
   }
 
-  //may hang
   private suspend fun deleteAll() {
     database.transactional {
       galleryPhotoLocalSource.deleteAll()
@@ -126,13 +134,30 @@ open class GetGalleryPhotosRepository(
     }
   }
 
-  private suspend fun getGalleryPhotosInfo(userId: String, photoNameList: List<String>): List<GalleryPhotoInfo> {
+  private suspend fun deleteOld() {
+    database.transactional {
+      galleryPhotoLocalSource.deleteOldPhotos()
+      galleryPhotoInfoLocalSource.deleteOldPhotoInfos()
+    }
+  }
+
+  private suspend fun getGalleryPhotosInfo(
+    userId: String,
+    photoNameList: List<String>
+  ): List<GalleryPhotoInfo> {
     if (userId.isEmpty()) {
       Timber.tag(TAG).d("UserId is empty")
-      return photoNameList.map { photoName -> GalleryPhotoInfo(photoName, false, false, GalleryPhotoInfo.Type.NoUserId) }
+      return photoNameList
+        .map { photoName -> GalleryPhotoInfo(photoName, false, false, GalleryPhotoInfo.Type.NoUserId) }
     }
 
     val cachedGalleryPhotosInfo = galleryPhotoInfoLocalSource.findMany(photoNameList)
+    if (!netUtils.canAccessNetwork()) {
+      //if there is no wifi and we can't access network without wifi
+      // - use whatever there is in the cache
+      return cachedGalleryPhotosInfo
+    }
+
     if (cachedGalleryPhotosInfo.size == photoNameList.size) {
       Timber.tag(TAG).d("Found enough gallery photo infos in the database")
       return cachedGalleryPhotosInfo

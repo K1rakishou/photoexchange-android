@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
+import com.kirakishou.photoexchange.helper.NetworkAccessLevel
 import com.kirakishou.photoexchange.helper.PhotosVisibility
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
@@ -57,10 +58,10 @@ open class SettingsRepository(
     }
   }
 
-  suspend fun saveMakePublicFlag(makePublic: Boolean?) {
-    withContext(coroutineContext) {
+  suspend fun saveMakePublicFlag(makePublic: Boolean?): Boolean {
+    return withContext(coroutineContext) {
       val value = PhotosVisibility.fromBoolean(makePublic).value.toString()
-      settingsDao.insert(SettingEntity(MAKE_PHOTOS_PUBLIC_SETTING, value))
+      return@withContext settingsDao.insert(SettingEntity(MAKE_PHOTOS_PUBLIC_SETTING, value)) > 0
     }
   }
 
@@ -73,16 +74,31 @@ open class SettingsRepository(
     }
   }
 
-  suspend fun updateGpsPermissionGranted(granted: Boolean) {
-    withContext(coroutineContext) {
-      settingsDao.insert(SettingEntity(GPS_PERMISSION_GRANTED_SETTING, granted.toString()))
+  suspend fun updateGpsPermissionGranted(granted: Boolean): Boolean {
+    return withContext(coroutineContext) {
+      return@withContext settingsDao.insert(SettingEntity(GPS_PERMISSION_GRANTED_SETTING, granted.toString())) > 0
     }
   }
 
   suspend fun isGpsPermissionGranted(): Boolean {
     return withContext(coroutineContext) {
-      return@withContext settingsDao.findByName(GPS_PERMISSION_GRANTED_SETTING)?.settingValue?.toBoolean()
-        ?: false
+      return@withContext settingsDao.findByName(GPS_PERMISSION_GRANTED_SETTING)
+        ?.settingValue?.toBoolean() ?: false
+    }
+  }
+
+  suspend fun setNetworkAccessLevel(level: NetworkAccessLevel): Boolean {
+    return withContext(coroutineContext) {
+      return@withContext settingsDao.insert(SettingEntity(NETWORK_ACCESS_LEVEL_SETTING, level.value.toString())) > 0
+    }
+  }
+
+  suspend fun getNetworkAccessLevel(): NetworkAccessLevel {
+    return withContext(coroutineContext) {
+      val value = settingsDao.findByName(NETWORK_ACCESS_LEVEL_SETTING)
+        ?.settingValue?.toIntOrNull()
+
+      return@withContext NetworkAccessLevel.fromInt(value)
     }
   }
 
@@ -105,7 +121,9 @@ open class SettingsRepository(
      * FirebaseToken is a token that we use for all requests
      * */
     const val FIREBASE_TOKEN = "FIREBASE_TOKEN"
+
     const val MAKE_PHOTOS_PUBLIC_SETTING = "MAKE_PHOTOS_PUBLIC"
     const val GPS_PERMISSION_GRANTED_SETTING = "GPS_PERMISSION_GRANTED"
+    const val NETWORK_ACCESS_LEVEL_SETTING = "NETWORK_ACCESS_LEVEL"
   }
 }

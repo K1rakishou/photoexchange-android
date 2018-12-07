@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.view.View
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.di.module.fragment.ReceivedPhotosFragmentModule
+import com.kirakishou.photoexchange.di.module.fragment.UploadedPhotosFragmentModule
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
@@ -28,9 +30,16 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
   @Inject
   lateinit var viewModel: PhotosActivityViewModel
 
+  @Inject
+  lateinit var controller: ReceivedPhotosFragmentEpoxyController
+
+  private val fragmentComponent by lazy {
+    (requireActivity() as PhotosActivity).activityComponent
+      .plus(ReceivedPhotosFragmentModule())
+  }
+
   private val TAG = "ReceivedPhotosFragment"
 
-  private val controller = ReceivedPhotosFragmentEpoxyController()
   private val scrollSubject = PublishSubject.create<Boolean>()
 
   private val receivedPhotoAdapterViewWidth = Constants.DEFAULT_ADAPTER_ITEM_WIDTH
@@ -107,8 +116,7 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
   }
 
   override fun resolveDaggerDependency() {
-    (requireActivity() as PhotosActivity).activityComponent
-      .inject(this)
+    fragmentComponent.inject(this)
   }
 
   companion object {

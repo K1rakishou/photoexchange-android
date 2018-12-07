@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.View
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.di.module.fragment.GalleryFragmentModule
 import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
@@ -27,9 +28,15 @@ class GalleryFragment : BaseMvRxFragment(), StateEventListener<GalleryFragmentEv
   @Inject
   lateinit var viewModel: PhotosActivityViewModel
 
-  private val TAG = "GalleryFragment"
+  @Inject
+  lateinit var controller: GalleryFragmentEpoxyController
 
-  private val controller = GalleryFragmentEpoxyController()
+  private val fragmentComponent by lazy {
+    (requireActivity() as PhotosActivity).activityComponent
+      .plus(GalleryFragmentModule())
+  }
+
+  private val TAG = "GalleryFragment"
   private val galleryPhotoAdapterViewWidth = Constants.DEFAULT_ADAPTER_ITEM_WIDTH
   private val recyclerViewScrollEventsThrottleTimeMs = 200L
 
@@ -56,6 +63,12 @@ class GalleryFragment : BaseMvRxFragment(), StateEventListener<GalleryFragmentEv
     }
 
     launch { initRx() }
+  }
+
+  override fun onDestroyView() {
+    super.onDestroyView()
+
+    controller.destroy()
   }
 
   private suspend fun initRx() {
@@ -91,8 +104,7 @@ class GalleryFragment : BaseMvRxFragment(), StateEventListener<GalleryFragmentEv
   }
 
   override fun resolveDaggerDependency() {
-    (requireActivity() as PhotosActivity).activityComponent
-      .inject(this)
+    fragmentComponent.inject(this)
   }
 
   companion object {

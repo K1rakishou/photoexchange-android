@@ -1,4 +1,4 @@
-package com.kirakishou.photoexchange.di.module
+package com.kirakishou.photoexchange.di.module.activity
 
 import androidx.lifecycle.ViewModelProviders
 import com.kirakishou.photoexchange.di.scope.PerActivity

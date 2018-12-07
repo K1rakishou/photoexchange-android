@@ -4,12 +4,13 @@ import android.os.Bundle
 import android.view.View
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.di.module.fragment.UploadedPhotosFragmentModule
+import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.epoxy.controller.UploadedPhotosFragmentEpoxyController
@@ -24,9 +25,16 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
   @Inject
   lateinit var viewModel: PhotosActivityViewModel
 
+  @Inject
+  lateinit var controller: UploadedPhotosFragmentEpoxyController
+
+  private val fragmentComponent by lazy {
+    (requireActivity() as PhotosActivity).activityComponent
+      .plus(UploadedPhotosFragmentModule())
+  }
+
   private val TAG = "UploadedPhotosFragment"
 
-  private val controller = UploadedPhotosFragmentEpoxyController()
   private val uploadedPhotoAdapterViewWidth = Constants.DEFAULT_ADAPTER_ITEM_WIDTH
 
   private val photoSize by lazy { AndroidUtils.figureOutPhotosSizes(requireContext()) }
@@ -93,8 +101,7 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
   }
 
   override fun resolveDaggerDependency() {
-    (requireActivity() as PhotosActivity).activityComponent
-      .inject(this)
+    fragmentComponent.inject(this)
   }
 
   companion object {
