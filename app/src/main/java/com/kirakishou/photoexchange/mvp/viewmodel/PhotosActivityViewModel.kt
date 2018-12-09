@@ -5,12 +5,16 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
+import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
+import com.kirakishou.photoexchange.interactors.BlacklistPhotoUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 /**
@@ -24,7 +28,8 @@ class PhotosActivityViewModel(
   private val settingsRepository: SettingsRepository,
   private val takenPhotosRepository: TakenPhotosRepository,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
-  private val receivedPhotosRepository: ReceivedPhotosRepository
+  private val receivedPhotosRepository: ReceivedPhotosRepository,
+  private val blacklistPhotoUseCase: BlacklistPhotoUseCase
 ) : BaseViewModel() {
   private val TAG = "PhotosActivityViewModel"
 
@@ -55,4 +60,16 @@ class PhotosActivityViewModel(
     intercom.tell<ReceivedPhotosFragment>()
       .to(ReceivedPhotosFragmentEvent.GeneralEvents.OnNewPhotoNotificationReceived(photoExchangedData))
   }
+
+  fun deleteAndBlacklistPhoto(photoName: String) {
+    launch {
+      blacklistPhotoUseCase.blacklistPhoto(photoName)
+
+      intercom.tell<ReceivedPhotosFragment>()
+        .to(ReceivedPhotosFragmentEvent.GeneralEvents.RemovePhoto(photoName))
+      intercom.tell<GalleryFragment>()
+        .to(GalleryFragmentEvent.GeneralEvents.RemovePhoto(photoName))
+    }
+  }
+
 }

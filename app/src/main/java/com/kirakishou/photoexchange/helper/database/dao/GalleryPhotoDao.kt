@@ -41,4 +41,8 @@ abstract class GalleryPhotoDao {
 
   @Query("DELETE FROM ${GalleryPhotoEntity.TABLE_NAME}")
   abstract fun deleteAll()
+
+  @Query("DELETE FROM ${GalleryPhotoEntity.TABLE_NAME} " +
+    "WHERE ${GalleryPhotoEntity.PHOTO_NAME_COLUMN} = :photoName")
+  abstract fun deleteByPhotoName(photoName: String)
 }

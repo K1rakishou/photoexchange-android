@@ -36,6 +36,7 @@ import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.service.*
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingServiceCallback
 import com.kirakishou.photoexchange.ui.callback.ReceivePhotosServiceCallback
+import com.kirakishou.photoexchange.ui.dialog.DeletePhotoConfirmationDialog
 import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
@@ -301,6 +302,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       PhotosActivityEvent.OnNewPhotoReceived -> showNewPhotoHasBeenReceivedSnackbar()
       is PhotosActivityEvent.ShowToast -> onShowToast(event.message)
       is PhotosActivityEvent.OnNewGalleryPhotos -> showNewGalleryPhotosSnackbar(event.count)
+      is PhotosActivityEvent.ShowDeletePhotoDialog -> showDeletePhotoDialog(event.photoName)
     }.safe
   }
 
@@ -359,6 +361,12 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
             .to(GalleryFragmentEvent.GeneralEvents.ScrollToTop)
         }
       }).show()
+  }
+
+  private fun showDeletePhotoDialog(photoName: String) {
+    DeletePhotoConfirmationDialog().show(this@PhotosActivity) {
+      viewModel.deleteAndBlacklistPhoto(photoName)
+    }
   }
 
   private fun switchToTab(tabIndex: Int) {

@@ -13,6 +13,6 @@ sealed class PhotosActivityEvent : BaseEvent {
 
   object OnNewPhotoReceived : PhotosActivityEvent()
   class OnNewGalleryPhotos(val count: Int) : PhotosActivityEvent()
-
   class ShowToast(val message: String) : PhotosActivityEvent()
+  class ShowDeletePhotoDialog(val photoName: String) : PhotosActivityEvent()
 }

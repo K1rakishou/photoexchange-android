@@ -7,6 +7,7 @@ sealed class ReceivedPhotosFragmentEvent : BaseEvent {
   sealed class GeneralEvents : ReceivedPhotosFragmentEvent() {
     class ScrollToTop : GeneralEvents()
     class OnNewPhotoNotificationReceived(val photoExchangedData: PhotoExchangedData) : GeneralEvents()
+    class RemovePhoto(val photoName: String) : GeneralEvents()
   }
 
   sealed class ReceivePhotosEvent : ReceivedPhotosFragmentEvent() {

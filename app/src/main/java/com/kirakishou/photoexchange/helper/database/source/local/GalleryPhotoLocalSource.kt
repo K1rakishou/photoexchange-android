@@ -49,4 +49,8 @@ open class GalleryPhotoLocalSource(
   open fun deleteAll() {
     galleryPhotoDao.deleteAll()
   }
+
+  fun deleteByPhotoName(photoName: String) {
+    galleryPhotoDao.deleteByPhotoName(photoName)
+  }
 }

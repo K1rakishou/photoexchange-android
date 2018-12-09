@@ -79,4 +79,8 @@ class ReceivedPhotosLocalSource(
   fun deleteAll() {
     receivedPhotosDao.deleteAll()
   }
+
+  fun deleteByPhotoName(photoName: String) {
+    receivedPhotosDao.deleteByPhotoName(photoName)
+  }
 }
