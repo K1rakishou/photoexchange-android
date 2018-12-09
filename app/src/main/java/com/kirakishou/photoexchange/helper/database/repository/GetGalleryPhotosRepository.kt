@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersPro
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosInfoMapper
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosMapper
+import com.kirakishou.photoexchange.helper.database.source.local.BlacklistedPhotoLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoInfoLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoLocalSource
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
@@ -16,6 +17,7 @@ import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.helper.util.PagedApiUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import kotlinx.coroutines.withContext
+import net.response.GalleryPhotosResponse
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
@@ -27,6 +29,7 @@ open class GetGalleryPhotosRepository(
   private val netUtils: NetUtils,
   private val galleryPhotoLocalSource: GalleryPhotoLocalSource,
   private val galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
+  private val blacklistedPhotoLocalSource: BlacklistedPhotoLocalSource,
   dispatchersProvider: DispatchersProvider
 ) : BaseRepository(dispatchersProvider) {
   private val TAG = "GetGalleryPhotosRepository"
@@ -94,6 +97,8 @@ open class GetGalleryPhotosRepository(
     }, {
       deleteOld()
     }, { galleryPhotos ->
+      filterBlacklistedPhotos(galleryPhotos)
+    }, { galleryPhotos ->
       galleryPhotoLocalSource.saveMany(galleryPhotos)
     }, { responseData ->
       GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(responseData)
@@ -138,6 +143,16 @@ open class GetGalleryPhotosRepository(
     database.transactional {
       galleryPhotoLocalSource.deleteOldPhotos()
       galleryPhotoInfoLocalSource.deleteOldPhotoInfos()
+    }
+  }
+
+  private suspend fun filterBlacklistedPhotos(
+    receivedPhotos: List<GalleryPhotosResponse.GalleryPhotoResponseData>
+  ): List<GalleryPhotosResponse.GalleryPhotoResponseData> {
+    return withContext(coroutineContext) {
+      return@withContext blacklistedPhotoLocalSource.filterBlacklistedPhotos(receivedPhotos) {
+        it.photoName
+      }
     }
   }
 

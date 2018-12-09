@@ -5,7 +5,6 @@ import com.airbnb.mvrx.*
 import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotosRepository
 import com.kirakishou.photoexchange.helper.extension.filterDuplicatesWith
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
@@ -60,8 +59,9 @@ class GalleryFragmentViewModel(
           is ActorAction.LoadGalleryPhotos -> loadGalleryPhotosInternal(action.forced)
           is ActorAction.ResetState -> resetStateInternal()
           is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.galleryPhotoName)
-          is ActorAction.ReportPhoto -> reportPhotoInternal(action.galleryPhotoName)
           is ActorAction.FavouritePhoto -> favouritePhotoInternal(action.galleryPhotoName)
+          is ActorAction.ReportPhoto -> reportPhotoInternal(action.galleryPhotoName)
+          is ActorAction.RemovePhoto -> removePhotoInternal(action.photoName)
         }.safe
       }
     }
@@ -87,6 +87,26 @@ class GalleryFragmentViewModel(
 
   fun reportPhotos(photoName: String) {
     launch { viewModelActor.send(ActorAction.ReportPhoto(photoName)) }
+  }
+
+  fun removePhoto(photoName: String) {
+    launch { viewModelActor.send(ActorAction.RemovePhoto(photoName)) }
+  }
+
+  private fun removePhotoInternal(photoName: String) {
+    withState { state ->
+      val photoIndex = state.galleryPhotos.indexOfFirst { it.photoName == photoName }
+      if (photoIndex == -1) {
+        //nothing to remove
+        return@withState
+      }
+
+      val updatedPhotos = state.galleryPhotos.toMutableList().apply {
+        removeAt(photoIndex)
+      }
+
+      setState { copy(galleryPhotos = updatedPhotos) }
+    }
   }
 
   private fun reportPhotoInternal(photoName: String) {
@@ -132,6 +152,9 @@ class GalleryFragmentViewModel(
 
         updatedPhotos[photoIndex] = galleryPhoto
           .copy(galleryPhotoInfo = updatedPhotoInfo)
+
+        intercom.tell<PhotosActivity>()
+          .to(PhotosActivityEvent.ShowDeletePhotoDialog(photoName))
 
         setState { copy(galleryPhotos = updatedPhotos) }
       }
@@ -289,6 +312,7 @@ class GalleryFragmentViewModel(
     class SwapPhotoAndMap(val galleryPhotoName: String) : ActorAction()
     class ReportPhoto(val galleryPhotoName: String) : ActorAction()
     class FavouritePhoto(val galleryPhotoName: String) : ActorAction()
+    class RemovePhoto(val photoName: String) : ActorAction()
   }
 
   companion object : MvRxViewModelFactory<GalleryFragmentState> {

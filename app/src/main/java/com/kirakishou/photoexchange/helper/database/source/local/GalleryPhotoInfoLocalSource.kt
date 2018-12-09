@@ -16,7 +16,6 @@ open class GalleryPhotoInfoLocalSource(
   private val TAG = "GalleryPhotoInfoLocalSource"
   private val galleryPhotoInfoDao = database.galleryPhotoInfoDao()
 
-
   fun save(galleryPhotoInfoEntity: GalleryPhotoInfoEntity): Boolean {
     return galleryPhotoInfoDao.save(galleryPhotoInfoEntity).isSuccess()
   }
@@ -46,5 +45,9 @@ open class GalleryPhotoInfoLocalSource(
 
   open fun deleteAll() {
     galleryPhotoInfoDao.deleteAll()
+  }
+
+  fun deleteByPhotoName(photoName: String) {
+    galleryPhotoInfoDao.deleteByPhotoName(photoName)
   }
 }

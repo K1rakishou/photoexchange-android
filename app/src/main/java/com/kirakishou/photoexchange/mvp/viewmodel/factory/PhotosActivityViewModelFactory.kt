@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
+import com.kirakishou.photoexchange.interactors.BlacklistPhotoUseCase
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
 import com.kirakishou.photoexchange.mvp.viewmodel.GalleryFragmentViewModel
@@ -27,7 +28,8 @@ class PhotosActivityViewModelFactory
   val settingsRepository: SettingsRepository,
   val takenPhotosRepository: TakenPhotosRepository,
   val uploadedPhotosRepository: UploadedPhotosRepository,
-  val receivedPhotosRepository: ReceivedPhotosRepository
+  val receivedPhotosRepository: ReceivedPhotosRepository,
+  val blacklistPhotoUseCase: BlacklistPhotoUseCase
 ) : ViewModelProvider.Factory {
 
   @Suppress("UNCHECKED_CAST")
@@ -40,7 +42,8 @@ class PhotosActivityViewModelFactory
       settingsRepository,
       takenPhotosRepository,
       uploadedPhotosRepository,
-      receivedPhotosRepository
+      receivedPhotosRepository,
+      blacklistPhotoUseCase
     ) as T
   }
 }

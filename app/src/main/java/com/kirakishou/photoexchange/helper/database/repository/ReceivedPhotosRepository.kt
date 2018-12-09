@@ -44,9 +44,16 @@ open class ReceivedPhotosRepository(
     }
   }
 
+  suspend fun deleteByPhotoName(photoName: String) {
+    withContext(coroutineContext) {
+      receivedPhotosLocalSource.deleteByPhotoName(photoName)
+    }
+  }
+
   suspend fun deleteAll() {
     withContext(coroutineContext) {
       receivedPhotosLocalSource.deleteAll()
     }
   }
+
 }

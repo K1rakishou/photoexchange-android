@@ -20,7 +20,8 @@ import kotlinx.coroutines.withContext
   ReceivedPhotoEntity::class,
   GalleryPhotoEntity::class,
   GalleryPhotoInfoEntity::class,
-  UploadedPhotoEntity::class
+  UploadedPhotoEntity::class,
+  BlacklistedPhotoEntity::class
 ], version = 1)
 abstract class MyDatabase : RoomDatabase() {
   private val mutex = Mutex()
@@ -32,6 +33,7 @@ abstract class MyDatabase : RoomDatabase() {
   abstract fun galleryPhotoDao(): GalleryPhotoDao
   abstract fun galleryPhotoInfoDao(): GalleryPhotoInfoDao
   abstract fun uploadedPhotoDao(): UploadedPhotoDao
+  abstract fun blacklistedPhotoDao(): BlacklistedPhotoDao
 
   open suspend fun <T> transactional(func: suspend () -> T): T {
     return mutex.withLock {

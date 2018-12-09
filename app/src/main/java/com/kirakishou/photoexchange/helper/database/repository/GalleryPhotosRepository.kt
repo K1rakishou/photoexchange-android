@@ -13,4 +13,9 @@ class GalleryPhotosRepository(
   private val galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
   dispatchersProvider: DispatchersProvider
 ) : BaseRepository(dispatchersProvider) {
+
+  fun deleteByPhotoName(photoName: String) {
+    galleryPhotoLocalSource.deleteByPhotoName(photoName)
+    galleryPhotoInfoLocalSource.deleteByPhotoName(photoName)
+  }
 }

@@ -66,6 +66,7 @@ class ReceivedPhotosFragmentViewModel(
           is ActorAction.ResetState -> resetStateInternal(action.clearCache)
           is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.receivedPhotoName)
           is ActorAction.OnNewPhotoReceived -> onNewPhotoReceivedInternal(action.photoExchangedData)
+          is ActorAction.RemovePhoto -> removePhotoInternal(action.photoName)
         }.safe
       }
     }
@@ -87,6 +88,27 @@ class ReceivedPhotosFragmentViewModel(
 
   fun onNewPhotoReceived(photoExchangedData: PhotoExchangedData) {
     launch { viewModelActor.send(ActorAction.OnNewPhotoReceived(photoExchangedData)) }
+  }
+
+  fun removePhoto(photoName: String) {
+    launch { viewModelActor.send(ActorAction.RemovePhoto(photoName)) }
+  }
+
+  private fun removePhotoInternal(photoName: String) {
+    withState { state ->
+      //FIXME: maybe receivedPhotoName here is wrong
+      val photoIndex = state.receivedPhotos.indexOfFirst { it.receivedPhotoName == photoName }
+      if (photoIndex == -1) {
+        //nothing to remove
+        return@withState
+      }
+
+      val updatedPhotos = state.receivedPhotos.toMutableList().apply {
+        removeAt(photoIndex)
+      }
+
+      setState { copy(receivedPhotos = updatedPhotos) }
+    }
   }
 
   private fun onNewPhotoReceivedInternal(photoExchangedData: PhotoExchangedData) {
@@ -258,6 +280,7 @@ class ReceivedPhotosFragmentViewModel(
     class ResetState(val clearCache: Boolean) : ActorAction()
     class SwapPhotoAndMap(val receivedPhotoName: String) : ActorAction()
     class OnNewPhotoReceived(val photoExchangedData: PhotoExchangedData) : ActorAction()
+    class RemovePhoto(val photoName: String) : ActorAction()
   }
 
   companion object : MvRxViewModelFactory<ReceivedPhotosFragmentState> {

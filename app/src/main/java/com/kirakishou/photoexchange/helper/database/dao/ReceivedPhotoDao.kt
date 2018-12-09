@@ -42,4 +42,8 @@ abstract class ReceivedPhotoDao {
 
   @Query("DELETE FROM ${ReceivedPhotoEntity.TABLE_NAME}")
   abstract fun deleteAll()
+
+  @Query("DELETE FROM ${ReceivedPhotoEntity.TABLE_NAME} " +
+    "WHERE ${ReceivedPhotoEntity.RECEIVED_PHOTO_NAME_COLUMN} = :photoName")
+  abstract fun deleteByPhotoName(photoName: String)
 }

@@ -100,6 +100,9 @@ class GalleryFragment : BaseMvRxFragment(), StateEventListener<GalleryFragmentEv
       GalleryFragmentEvent.GeneralEvents.ScrollToTop -> {
         recyclerView.scrollToPosition(0)
       }
+      is GalleryFragmentEvent.GeneralEvents.RemovePhoto -> {
+        viewModel.galleryFragmentViewModel.removePhoto(event.photoName)
+      }
     }.safe
   }
 
