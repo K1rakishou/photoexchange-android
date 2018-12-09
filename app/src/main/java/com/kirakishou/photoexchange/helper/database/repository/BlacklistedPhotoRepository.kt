@@ -2,18 +2,29 @@ package com.kirakishou.photoexchange.helper.database.repository
 
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.source.local.BlacklistedPhotoLocalSource
+import kotlinx.coroutines.withContext
 
 class BlacklistedPhotoRepository(
   private val blacklistedPhotoLocalSource: BlacklistedPhotoLocalSource,
   dispatchersProvider: DispatchersProvider
 ) : BaseRepository(dispatchersProvider) {
 
-  fun ban(photoName: String): Boolean {
-    return blacklistedPhotoLocalSource.ban(photoName)
+  suspend fun blacklist(photoName: String): Boolean {
+    return withContext(coroutineContext) {
+      return@withContext blacklistedPhotoLocalSource.blacklist(photoName)
+    }
   }
 
-  fun isBanned(photoName: String): Boolean {
-    return blacklistedPhotoLocalSource.isBanned(photoName)
+  suspend fun isBlacklisted(photoName: String): Boolean {
+    return withContext(coroutineContext) {
+      return@withContext blacklistedPhotoLocalSource.isBlacklisted(photoName)
+    }
+  }
+
+  suspend fun <T> filterBlacklistedPhotos(photos: List<T>, nameSelector: (T) -> String): List<T> {
+    return withContext(coroutineContext) {
+      return@withContext blacklistedPhotoLocalSource.filterBlacklistedPhotos(photos, nameSelector)
+    }
   }
 
 }

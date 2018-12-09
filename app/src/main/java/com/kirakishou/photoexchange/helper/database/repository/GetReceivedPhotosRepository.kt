@@ -5,6 +5,7 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
+import com.kirakishou.photoexchange.helper.database.source.local.BlacklistedPhotoLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.ReceivedPhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.UploadPhotosLocalSource
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
@@ -23,6 +24,7 @@ open class GetReceivedPhotosRepository(
   private val pagedApiUtils: PagedApiUtils,
   private val receivedPhotosLocalSource: ReceivedPhotosLocalSource,
   private val uploadedPhotosLocalSource: UploadPhotosLocalSource,
+  private val blacklistedPhotoLocalSource: BlacklistedPhotoLocalSource,
   dispatchersProvider: DispatchersProvider
 ) : BaseRepository(dispatchersProvider) {
   private val TAG = "GetReceivedPhotosRepository"
@@ -48,7 +50,7 @@ open class GetReceivedPhotosRepository(
         lastUploadedOnParam,
         countParam,
         userIdParam, { firstUploadedOn ->
-        getFreshPhotosCount(firstUploadedOn)
+        getFreshPhotosCount(userIdParam, firstUploadedOn)
       }, { lastUploadedOn, count ->
         getFromCacheInternal(lastUploadedOn, count)
       }, { userId, lastUploadedOn, count ->
@@ -57,6 +59,8 @@ open class GetReceivedPhotosRepository(
         deleteAll()
       }, {
         deleteOld()
+      }, { receivedPhotos ->
+        filterBlacklistedPhotos(receivedPhotos)
       }, { receivedPhotos ->
         storeInDatabase(receivedPhotos)
         true
@@ -72,23 +76,23 @@ open class GetReceivedPhotosRepository(
 
   private fun getFromCacheInternal(lastUploadedOn: Long, count: Int): Paged<ReceivedPhoto> {
     //if there is no internet - search only in the database
-    val cachedGalleryPhotos = receivedPhotosLocalSource.getPage(lastUploadedOn, count)
-    return if (cachedGalleryPhotos.size == count) {
-      Timber.tag(TAG).d("Found enough gallery photos in the database")
-      Paged(cachedGalleryPhotos, false)
+    val cachedReceivedPhotos = receivedPhotosLocalSource.getPage(lastUploadedOn, count)
+    return if (cachedReceivedPhotos.size == count) {
+      Timber.tag(TAG).d("Found enough received photos in the database")
+      Paged(cachedReceivedPhotos, false)
     } else {
-      Timber.tag(TAG).d("Found not enough gallery photos in the database")
-      Paged(cachedGalleryPhotos, cachedGalleryPhotos.size < count)
+      Timber.tag(TAG).d("Found not enough received photos in the database")
+      Paged(cachedReceivedPhotos, cachedReceivedPhotos.size < count)
     }
   }
 
-  private suspend fun getFreshPhotosCount(firstUploadedOn: Long): Int {
+  private suspend fun getFreshPhotosCount(userId: String, firstUploadedOn: Long): Int {
     val now = timeUtils.getTimeFast()
 
     //if five minutes has passed since we last checked fresh photos count - check again
     return if (now - lastTimeFreshPhotosCheck >= fiveMinutes) {
       lastTimeFreshPhotosCheck = now
-      apiClient.getFreshGalleryPhotosCount(firstUploadedOn)
+      apiClient.getFreshReceivedPhotosCount(userId, firstUploadedOn)
     } else {
       0
     }
@@ -103,6 +107,16 @@ open class GetReceivedPhotosRepository(
   private suspend fun deleteOld() {
     database.transactional {
       receivedPhotosLocalSource.deleteOldPhotos()
+    }
+  }
+
+  private suspend fun filterBlacklistedPhotos(
+    receivedPhotos: List<ReceivedPhotosResponse.ReceivedPhotoResponseData>
+  ): List<ReceivedPhotosResponse.ReceivedPhotoResponseData> {
+    return withContext(coroutineContext) {
+      return@withContext blacklistedPhotoLocalSource.filterBlacklistedPhotos(receivedPhotos) {
+        it.receivedPhotoName
+      }
     }
   }
 

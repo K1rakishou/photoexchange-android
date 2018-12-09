@@ -15,6 +15,7 @@ interface PagedApiUtils {
     getPageOfPhotosFunc: suspend (String?, Long, Int) -> List<R>,
     clearCacheFunc: suspend () -> Unit,
     deleteOldFunc: suspend () -> Unit,
+    filterBannedPhotosFunc: suspend (List<R>) -> List<R>,
     cachePhotosFunc: suspend (List<R>) -> Boolean,
     mapperFunc: suspend (List<R>) -> List<T>
   ): Paged<T>

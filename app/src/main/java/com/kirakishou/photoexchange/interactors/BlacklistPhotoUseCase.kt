@@ -19,8 +19,8 @@ class BlacklistPhotoUseCase(
   suspend fun blacklistPhoto(photoName: String) {
     withContext(coroutineContext) {
       database.transactional {
-        if (!blacklistedPhotoRepository.ban(photoName)) {
-          throw DatabaseException("Could not ban photo ${photoName}")
+        if (!blacklistedPhotoRepository.blacklist(photoName)) {
+          throw DatabaseException("Could not blacklist photo ${photoName}")
         }
 
         receivedPhotosRepository.deleteByPhotoName(photoName)

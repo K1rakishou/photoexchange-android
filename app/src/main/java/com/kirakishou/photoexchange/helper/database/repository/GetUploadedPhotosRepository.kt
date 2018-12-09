@@ -5,11 +5,13 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
+import com.kirakishou.photoexchange.helper.database.source.local.BlacklistedPhotoLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.UploadPhotosLocalSource
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.helper.util.PagedApiUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import kotlinx.coroutines.withContext
+import net.response.GetUploadedPhotosResponse
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
@@ -19,6 +21,7 @@ class GetUploadedPhotosRepository(
   private val timeUtils: TimeUtils,
   private val pagedApiUtils: PagedApiUtils,
   private val uploadedPhotosLocalSource: UploadPhotosLocalSource,
+  private val blacklistedPhotoLocalSource: BlacklistedPhotoLocalSource,
   dispatchersProvider: DispatchersProvider
 ) : BaseRepository(dispatchersProvider) {
   private val TAG = "GetUploadedPhotosRepository"
@@ -59,7 +62,7 @@ class GetUploadedPhotosRepository(
       lastUploadedOnParam,
       countParam,
       userIdParam, { firstUploadedOn ->
-      getFreshPhotosCount(firstUploadedOn)
+      getFreshPhotosCount(userIdParam, firstUploadedOn)
     }, { lastUploadedOn, count ->
       getFromCacheInternal(lastUploadedOn, count)
     }, { userId, lastUploadedOn, count ->
@@ -69,19 +72,21 @@ class GetUploadedPhotosRepository(
     }, {
       deleteOld()
     }, { uploadedPhotos ->
+      filterBlacklistedPhotos(uploadedPhotos)
+    }, { uploadedPhotos ->
       uploadedPhotosLocalSource.saveMany(uploadedPhotos)
     }, { responseData ->
       UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhotos(responseData)
     })
   }
 
-  private suspend fun getFreshPhotosCount(firstUploadedOn: Long): Int {
+  private suspend fun getFreshPhotosCount(userId: String, firstUploadedOn: Long): Int {
     val now = timeUtils.getTimeFast()
 
     //if five minutes has passed since we last checked fresh photos count - check again
     return if (now - lastTimeFreshPhotosCheck >= fiveMinutes) {
       lastTimeFreshPhotosCheck = now
-      apiClient.getFreshGalleryPhotosCount(firstUploadedOn)
+      apiClient.getFreshUploadedPhotosCount(userId, firstUploadedOn)
     } else {
       0
     }
@@ -89,13 +94,13 @@ class GetUploadedPhotosRepository(
 
   private fun getFromCacheInternal(lastUploadedOn: Long, count: Int): Paged<UploadedPhoto> {
     //if there is no internet - search only in the database
-    val cachedGalleryPhotos = uploadedPhotosLocalSource.getPage(lastUploadedOn, count)
-    return if (cachedGalleryPhotos.size == count) {
-      Timber.tag(TAG).d("Found enough gallery photos in the database")
-      Paged(cachedGalleryPhotos, false)
+    val cachedUploadedPhotos = uploadedPhotosLocalSource.getPage(lastUploadedOn, count)
+    return if (cachedUploadedPhotos.size == count) {
+      Timber.tag(TAG).d("Found enough uploaded photos in the database")
+      Paged(cachedUploadedPhotos, false)
     } else {
-      Timber.tag(TAG).d("Found not enough gallery photos in the database")
-      Paged(cachedGalleryPhotos, cachedGalleryPhotos.size < count)
+      Timber.tag(TAG).d("Found not enough uploaded photos in the database")
+      Paged(cachedUploadedPhotos, cachedUploadedPhotos.size < count)
     }
   }
 
@@ -108,6 +113,16 @@ class GetUploadedPhotosRepository(
   private suspend fun deleteOld() {
     database.transactional {
       uploadedPhotosLocalSource.deleteOldPhotos()
+    }
+  }
+
+  private suspend fun filterBlacklistedPhotos(
+    receivedPhotos: List<GetUploadedPhotosResponse.UploadedPhotoResponseData>
+  ): List<GetUploadedPhotosResponse.UploadedPhotoResponseData> {
+    return withContext(coroutineContext) {
+      return@withContext blacklistedPhotoLocalSource.filterBlacklistedPhotos(receivedPhotos) {
+        it.photoName
+      }
     }
   }
 

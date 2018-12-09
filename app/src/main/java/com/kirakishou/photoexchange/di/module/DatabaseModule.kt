@@ -153,6 +153,7 @@ open class DatabaseModule(
                                          netUtils: NetUtils,
                                          galleryPhotoLocalSource: GalleryPhotoLocalSource,
                                          galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
+                                         blacklistedPhotoLocalSource: BlacklistedPhotoLocalSource,
                                          dispatchersProvider: DispatchersProvider): GetGalleryPhotosRepository {
     return GetGalleryPhotosRepository(
       database,
@@ -162,6 +163,7 @@ open class DatabaseModule(
       netUtils,
       galleryPhotoLocalSource,
       galleryPhotoInfoLocalSource,
+      blacklistedPhotoLocalSource,
       dispatchersProvider
     )
   }
@@ -222,6 +224,7 @@ open class DatabaseModule(
                                               pagedApiUtils: PagedApiUtils,
                                               receivedPhotosLocalSource: ReceivedPhotosLocalSource,
                                               uploadedPhotosLocalSource: UploadPhotosLocalSource,
+                                              blacklistedPhotoLocalSource: BlacklistedPhotoLocalSource,
                                               dispatchersProvider: DispatchersProvider): GetReceivedPhotosRepository {
     return GetReceivedPhotosRepository(
       database,
@@ -230,6 +233,7 @@ open class DatabaseModule(
       pagedApiUtils,
       receivedPhotosLocalSource,
       uploadedPhotosLocalSource,
+      blacklistedPhotoLocalSource,
       dispatchersProvider
     )
   }
@@ -288,6 +292,7 @@ open class DatabaseModule(
                                               timeUtils: TimeUtils,
                                               pagedApiUtils: PagedApiUtils,
                                               uploadedPhotosLocalSource: UploadPhotosLocalSource,
+                                              blacklistedPhotoLocalSource: BlacklistedPhotoLocalSource,
                                               dispatchersProvider: DispatchersProvider): GetUploadedPhotosRepository {
     return GetUploadedPhotosRepository(
       database,
@@ -295,6 +300,7 @@ open class DatabaseModule(
       timeUtils,
       pagedApiUtils,
       uploadedPhotosLocalSource,
+      blacklistedPhotoLocalSource,
       dispatchersProvider
     )
   }

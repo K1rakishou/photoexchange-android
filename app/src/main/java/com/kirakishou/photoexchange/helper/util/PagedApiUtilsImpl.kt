@@ -22,6 +22,7 @@ class PagedApiUtilsImpl(
     getPageOfPhotosFunc: suspend (String?, Long, Int) -> List<R>,
     clearCacheFunc: suspend () -> Unit,
     deleteOldFunc: suspend () -> Unit,
+    filterBannedPhotosFunc: suspend (List<R>) -> List<R>,
     cachePhotosFunc: suspend (List<R>) -> Boolean,
     mapperFunc: suspend (List<R>) -> List<T>
   ): Paged<T> {
@@ -93,11 +94,16 @@ class PagedApiUtilsImpl(
       return Paged(emptyList(), true)
     }
 
-    if (!cachePhotosFunc(photos)) {
+    val filteredPhotos = filterBannedPhotosFunc(photos)
+
+    //TODO: should move this inside the when statement because we don't need to cache photos from the cache
+    if (!cachePhotosFunc(filteredPhotos)) {
       throw DatabaseException("Could not cache gallery photos in the database")
     }
 
-    val mappedPhotos = mapperFunc(photos)
+    val mappedPhotos = mapperFunc(filteredPhotos)
+
+    //use the "photos.size" not the "filteredPhotos.size"
     return Paged(mappedPhotos, photos.size < requestedCount)
   }
 
