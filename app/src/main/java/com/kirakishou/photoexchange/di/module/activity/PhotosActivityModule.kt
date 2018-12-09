@@ -122,7 +122,8 @@ open class PhotosActivityModule(
                               settingsRepository: SettingsRepository,
                               takenPhotosRepository: TakenPhotosRepository,
                               uploadedPhotosRepository: UploadedPhotosRepository,
-                              receivedPhotosRepository: ReceivedPhotosRepository): PhotosActivityViewModelFactory {
+                              receivedPhotosRepository: ReceivedPhotosRepository,
+                              blacklistPhotoUseCase: BlacklistPhotoUseCase): PhotosActivityViewModelFactory {
     return PhotosActivityViewModelFactory(
       uploadedPhotosFragmentViewModel,
       receivedPhotosFragmentViewModel,
@@ -131,7 +132,8 @@ open class PhotosActivityModule(
       settingsRepository,
       takenPhotosRepository,
       uploadedPhotosRepository,
-      receivedPhotosRepository
+      receivedPhotosRepository,
+      blacklistPhotoUseCase
     )
   }
 

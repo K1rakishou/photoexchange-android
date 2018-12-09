@@ -127,4 +127,20 @@ class UseCaseProviderModule {
       dispatchersProvider
     )
   }
+
+  @Singleton
+  @Provides
+  fun provideBlacklistPhotoUseCase(database: MyDatabase,
+                                   receivedPhotosRepository: ReceivedPhotosRepository,
+                                   galleryPhotosRepository: GalleryPhotosRepository,
+                                   blacklistedPhotoRepository: BlacklistedPhotoRepository,
+                                   dispatchersProvider: DispatchersProvider): BlacklistPhotoUseCase {
+    return BlacklistPhotoUseCase(
+      database,
+      receivedPhotosRepository,
+      galleryPhotosRepository,
+      blacklistedPhotoRepository,
+      dispatchersProvider
+    )
+  }
 }

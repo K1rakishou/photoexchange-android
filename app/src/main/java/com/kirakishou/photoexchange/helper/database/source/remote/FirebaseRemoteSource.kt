@@ -8,6 +8,7 @@ class FirebaseRemoteSource(
   private val firebaseInstanceId: FirebaseInstanceId
 ) {
 
+  //TODO: rewrite with using suspendCoroutine instead of CompletableDeferred
   fun getTokenAsync(): CompletableDeferred<String?> {
     val result = CompletableDeferred<String?>()
 

@@ -85,6 +85,16 @@ open class DatabaseModule(
     return TempFileLocalSource(database, filesDir, timeUtils, fileUtils)
   }
 
+  @Singleton
+  @Provides
+  open fun provideBlacklistedPhotoLocalSource(database: MyDatabase,
+                                              timeUtils: TimeUtils): BlacklistedPhotoLocalSource {
+    return BlacklistedPhotoLocalSource(
+      database,
+      timeUtils
+    )
+  }
+
   /**
    * Remote Sources
    * */
@@ -331,6 +341,16 @@ open class DatabaseModule(
       settingsRepository,
       uploadedPhotosRepository,
       receivedPhotosRepository,
+      dispatchersProvider
+    )
+  }
+
+  @Singleton
+  @Provides
+  open fun provideBlacklistedPhotoRepository(blacklistedPhotoLocalSource: BlacklistedPhotoLocalSource,
+                                             dispatchersProvider: DispatchersProvider): BlacklistedPhotoRepository {
+    return BlacklistedPhotoRepository(
+      blacklistedPhotoLocalSource,
       dispatchersProvider
     )
   }
