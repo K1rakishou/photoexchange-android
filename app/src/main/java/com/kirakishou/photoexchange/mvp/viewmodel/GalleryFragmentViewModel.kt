@@ -109,6 +109,7 @@ class GalleryFragmentViewModel(
     }
   }
 
+  //FIXME: hangs in some transaction
   private fun reportPhotoInternal(photoName: String) {
     fun updateIsPhotoReported(state: GalleryFragmentState, photoName: String) {
       if (state.reportedPhotos.contains(photoName)) {
@@ -212,11 +213,16 @@ class GalleryFragmentViewModel(
     }
   }
 
-  //TODO: check LonLat(-1.0, -1.0)
   private fun swapPhotoAndMapInternal(photoName: String) {
     withState { state ->
       val photoIndex = state.galleryPhotos.indexOfFirst { it.photoName == photoName }
       if (photoIndex == -1) {
+        return@withState
+      }
+
+      if (state.galleryPhotos[photoIndex].lonLat.isEmpty()) {
+        intercom.tell<PhotosActivity>().to(PhotosActivityEvent
+          .ShowToast("Photo was sent anonymously"))
         return@withState
       }
 

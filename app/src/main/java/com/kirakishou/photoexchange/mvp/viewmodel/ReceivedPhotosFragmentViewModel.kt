@@ -13,6 +13,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragment
 import com.kirakishou.photoexchange.interactors.GetReceivedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.helper.Constants
+import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.extension.filterDuplicatesWith
@@ -122,8 +123,10 @@ class ReceivedPhotosFragmentViewModel(
       val newPhoto = ReceivedPhoto(
         photoExchangedData.uploadedPhotoName,
         photoExchangedData.receivedPhotoName,
-        photoExchangedData.lon,
-        photoExchangedData.lat,
+        LonLat(
+          photoExchangedData.lon,
+          photoExchangedData.lat
+        ),
         photoExchangedData.uploadedOn,
         true,
         photoSize
@@ -141,11 +144,16 @@ class ReceivedPhotosFragmentViewModel(
     }
   }
 
-  //TODO: check LonLat(-1.0, -1.0)
   private fun swapPhotoAndMapInternal(receivedPhotoName: String) {
     withState { state ->
       val photoIndex = state.receivedPhotos.indexOfFirst { it.receivedPhotoName == receivedPhotoName }
       if (photoIndex == -1) {
+        return@withState
+      }
+
+      if (state.receivedPhotos[photoIndex].lonLat.isEmpty()) {
+        intercom.tell<PhotosActivity>().to(PhotosActivityEvent
+          .ShowToast("Photo was sent anonymously"))
         return@withState
       }
 
