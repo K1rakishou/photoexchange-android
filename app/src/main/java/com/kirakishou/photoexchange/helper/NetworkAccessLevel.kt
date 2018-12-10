@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.helper
 
 /**
- * This setting tells what we can do when there is no wifi connection:
+ * This setting tells what we can do when active network is metered:
  * Neither means that we can't access network at all.
  * CanAccessInternet means that we can make lightweight requests (text/jsons)
  * CanLoadImages means that we can make requests and event load images
