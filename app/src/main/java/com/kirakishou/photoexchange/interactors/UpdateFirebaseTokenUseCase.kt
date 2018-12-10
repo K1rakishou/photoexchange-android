@@ -1,6 +1,5 @@
 package com.kirakishou.photoexchange.interactors
 
-import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
@@ -8,10 +7,8 @@ import com.kirakishou.photoexchange.helper.database.source.remote.FirebaseRemote
 import com.kirakishou.photoexchange.helper.exception.ApiErrorException
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.helper.exception.FirebaseException
-import com.kirakishou.photoexchange.helper.myRunCatching
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.lang.Exception
 
 open class UpdateFirebaseTokenUseCase(
   private val settingsRepository: SettingsRepository,
@@ -21,27 +18,25 @@ open class UpdateFirebaseTokenUseCase(
 ) : BaseUseCase(dispatchersProvider) {
   private val TAG = "UpdateFirebaseTokenUseCase"
 
-  open suspend fun updateFirebaseTokenIfNecessary(): Either<Exception, String> {
+  open suspend fun updateFirebaseTokenIfNecessary() {
     return withContext(coroutineContext) {
-      return@withContext myRunCatching {
-        val newToken = settingsRepository.getNewFirebaseToken()
-        val regularToken = settingsRepository.getFirebaseToken()
+      val newToken = settingsRepository.getNewFirebaseToken()
+      val regularToken = settingsRepository.getFirebaseToken()
 
-        //both tokens must be not empty, new token must be equal to regular token
-        //otherwise we need to update token
-        if (newToken.isNotEmpty() && regularToken.isNotEmpty() && newToken == regularToken) {
-          return@myRunCatching regularToken
-        }
-
-        return@myRunCatching updateFirebaseTokenInternal(newToken)
+      //both tokens must be not empty, new token must be equal to regular token
+      //otherwise we need to update token
+      if (newToken.isNotEmpty() && regularToken.isNotEmpty() && newToken == regularToken) {
+        return@withContext
       }
+
+      return@withContext updateFirebaseTokenInternal()
     }
   }
 
-  private suspend fun updateFirebaseTokenInternal(newToken: String): String {
+  private suspend fun updateFirebaseTokenInternal() {
     //always retrieve fresh token from the firebase instead of reading it from the database
     val freshToken = try {
-      firebaseRemoteSource.getTokenAsync().await()
+      firebaseRemoteSource.getTokenAsync()
     } catch (error: Throwable) {
       throw FirebaseException(error.message)
     }
@@ -66,7 +61,7 @@ open class UpdateFirebaseTokenUseCase(
     }
 
     try {
-      apiClient.updateFirebaseToken(userId, newToken)
+      apiClient.updateFirebaseToken(userId, freshToken)
     } catch (error: ApiErrorException) {
       Timber.tag(TAG).e(error)
 
@@ -81,7 +76,5 @@ open class UpdateFirebaseTokenUseCase(
 
       throw error
     }
-
-    return newToken
   }
 }
