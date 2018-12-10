@@ -11,12 +11,9 @@ import kotlinx.coroutines.runBlocking
  * Created by kirakishou on 7/26/2017.
  */
 class NetUtilsImpl(
-  context: Context,
+  private val context: Context,
   private val settingsRepository: SettingsRepository
 ) : NetUtils {
-  private val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE)
-    as ConnectivityManager
-
   override fun canLoadImages(): Boolean {
     if (isNetworkUnmetered()) {
       return true
@@ -46,6 +43,9 @@ class NetUtilsImpl(
   }
 
   private fun isNetworkUnmetered(): Boolean {
+    val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE)
+      as ConnectivityManager
+
     return !connectivityManager.isActiveNetworkMetered
   }
 }

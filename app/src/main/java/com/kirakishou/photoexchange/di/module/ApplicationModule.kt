@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import dagger.Module
 import dagger.Provides
+import javax.inject.Named
 import javax.inject.Singleton
 
 /**
@@ -22,6 +23,7 @@ open class ApplicationModule(
 
   @Singleton
   @Provides
+  @Named("app_context")
   open fun provideContext(): Context {
     return application.applicationContext
   }

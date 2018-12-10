@@ -7,15 +7,16 @@ import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosReposi
 import com.kirakishou.photoexchange.helper.location.LocationService
 import dagger.Module
 import dagger.Provides
+import javax.inject.Named
 
 @Module
 class LocationServiceModule {
 
   @PerService
   @Provides
-  fun provideLocationService(applicationContext: Context,
+  fun provideLocationService(@Named("app_context") context: Context,
                              takenPhotosRepository: TakenPhotosRepository,
                              settingsRepository: SettingsRepository): LocationService {
-    return LocationService(applicationContext, takenPhotosRepository, settingsRepository)
+    return LocationService(context, takenPhotosRepository, settingsRepository)
   }
 }

@@ -5,6 +5,7 @@ import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.util.NetUtils
 import dagger.Module
 import dagger.Provides
+import javax.inject.Named
 import javax.inject.Singleton
 
 /**
@@ -15,7 +16,7 @@ class ImageLoaderModule {
 
   @Singleton
   @Provides
-  fun provideImageLoader(context: Context,
+  fun provideImageLoader(@Named("app_context") context: Context,
                          netUtils: NetUtils): ImageLoader {
     return ImageLoader(
       context,

@@ -99,7 +99,7 @@ class TakePhotoActivity : BaseActivity() {
 
   private fun initRx() {
     takePhotoButton.setOnClickListener {
-      vibrator.vibrate(this, VIBRATION_TIME_MS)
+      vibrator.vibrate(VIBRATION_TIME_MS)
 
       launch {
         animateCameraViewHide()
