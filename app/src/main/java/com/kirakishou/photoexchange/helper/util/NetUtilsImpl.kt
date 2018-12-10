@@ -15,7 +15,7 @@ class NetUtilsImpl(
   private val settingsRepository: SettingsRepository
 ) : NetUtils {
   override fun canLoadImages(): Boolean {
-    if (isNetworkUnmetered()) {
+    if (!isNetworkMetered()) {
       return true
     }
 
@@ -29,7 +29,7 @@ class NetUtilsImpl(
   }
 
   override fun canAccessNetwork(): Boolean {
-    if (isNetworkUnmetered()) {
+    if (!isNetworkMetered()) {
       return true
     }
 
@@ -42,10 +42,10 @@ class NetUtilsImpl(
     }
   }
 
-  private fun isNetworkUnmetered(): Boolean {
+  private fun isNetworkMetered(): Boolean {
     val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE)
       as ConnectivityManager
 
-    return !connectivityManager.isActiveNetworkMetered
+    return connectivityManager.isActiveNetworkMetered
   }
 }
