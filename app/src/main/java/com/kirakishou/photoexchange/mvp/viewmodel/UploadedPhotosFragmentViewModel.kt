@@ -299,6 +299,7 @@ class UploadedPhotosFragmentViewModel(
           }
         }
       }
+      //FIXME: apparently does not work
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress -> {
         Timber.tag(TAG).d("OnPhotoUploadingProgress")
 

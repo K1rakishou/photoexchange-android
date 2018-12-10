@@ -60,9 +60,9 @@ class ImageLoader
     val fullUrl = "${Constants.BASE_PHOTOS_URL}/${photoName}/${photoSize.value}"
 
     if (!netUtils.canLoadImages()) {
-      //TODO: load default "no wifi" image
       Timber.tag(TAG).d("No wifi")
 
+      //FIXME: this will be showing loading indicator forever if there is no photo in the glide cache
       GlideApp.with(context)
         .load(fullUrl)
         .onlyRetrieveFromCache(true)
@@ -85,9 +85,9 @@ class ImageLoader
     val fullUrl = "${Constants.BASE_STATIC_MAP_URL}/${photoName}"
 
     if (!netUtils.canLoadImages()) {
-      //TODO: load default "no wifi" image
       Timber.tag(TAG).d("No wifi")
 
+      //FIXME: this will be showing loading indicator forever if there is no photo in the glide cache
       GlideApp.with(context)
         .load(fullUrl)
         .onlyRetrieveFromCache(true)
