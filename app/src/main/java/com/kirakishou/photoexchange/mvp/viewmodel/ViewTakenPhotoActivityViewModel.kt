@@ -38,10 +38,10 @@ class ViewTakenPhotoActivityViewModel(
       return
     }
 
-    settingsRepository.saveMakePublicFlag(makePublic)
+    settingsRepository.savePhotoVisibility(makePublic)
   }
 
   suspend fun getMakePublicFlag(): PhotosVisibility {
-    return settingsRepository.getMakePublicFlag()
+    return settingsRepository.getPhotoVisibility()
   }
 }
