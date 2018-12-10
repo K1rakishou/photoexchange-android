@@ -93,6 +93,7 @@ class ImageLoader
       .load(fullUrl)
       .placeholder(createProgressDrawable())
       .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+      //TODO: add error text drawable
       .apply(RequestOptions().centerCrop())
       .into(view)
   }
@@ -125,6 +126,7 @@ class ImageLoader
       .load(fullUrl)
       .placeholder(createProgressDrawable())
       .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+      //TODO: add error text drawable
       .apply(RequestOptions().centerCrop())
       .into(view)
   }
