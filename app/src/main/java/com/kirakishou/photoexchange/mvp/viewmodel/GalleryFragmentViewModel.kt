@@ -212,6 +212,7 @@ class GalleryFragmentViewModel(
     }
   }
 
+  //TODO: check LonLat(-1.0, -1.0)
   private fun swapPhotoAndMapInternal(photoName: String) {
     withState { state ->
       val photoIndex = state.galleryPhotos.indexOfFirst { it.photoName == photoName }

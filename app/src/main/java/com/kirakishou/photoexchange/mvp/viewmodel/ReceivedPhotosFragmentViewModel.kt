@@ -141,7 +141,7 @@ class ReceivedPhotosFragmentViewModel(
     }
   }
 
-
+  //TODO: check LonLat(-1.0, -1.0)
   private fun swapPhotoAndMapInternal(receivedPhotoName: String) {
     withState { state ->
       val photoIndex = state.receivedPhotos.indexOfFirst { it.receivedPhotoName == receivedPhotoName }

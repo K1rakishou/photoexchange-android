@@ -106,6 +106,7 @@ class UploadedPhotosFragmentViewModel(
     launch { viewModelActor.send(ActorAction.SwapPhotoAndMap(photoName)) }
   }
 
+  //TODO: check LonLat(-1.0, -1.0)
   private fun swapPhotoAndMapInternal(uploadedPhotoName: String) {
     withState { state ->
       val photoIndex = state.uploadedPhotos.indexOfFirst { it.photoName == uploadedPhotoName }
