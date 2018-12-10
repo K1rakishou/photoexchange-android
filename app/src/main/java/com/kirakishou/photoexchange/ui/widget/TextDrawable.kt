@@ -52,7 +52,6 @@ class TextDrawable(
     )
 
     canvas.restoreToCount(count)
-
   }
 
   override fun setAlpha(alpha: Int) {

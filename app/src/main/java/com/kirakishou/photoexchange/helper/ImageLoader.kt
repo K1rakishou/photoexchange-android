@@ -70,8 +70,6 @@ class ImageLoader
     val fullUrl = "${Constants.BASE_PHOTOS_URL}/${photoName}/${photoSize.value}"
 
     if (!netUtils.canLoadImages()) {
-      Timber.tag(TAG).d("No wifi")
-
       if (isCached(fullUrl)) {
         GlideApp.with(context)
           .load(fullUrl)
@@ -81,31 +79,25 @@ class ImageLoader
           .apply(RequestOptions().centerCrop())
           .into(view)
       } else {
-        val textDrawable = createNoUnmeteredNetworkTextDrawable(view)
-
         GlideApp.with(context)
-          .load(textDrawable)
+          .load(createNoUnmeteredNetworkTextDrawable(view))
           .into(view)
       }
-
-      return
+    } else {
+      GlideApp.with(context)
+        .load(fullUrl)
+        .placeholder(createProgressDrawable())
+        .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+        .error(createErrorTextDrawable(view))
+        .apply(RequestOptions().centerCrop())
+        .into(view)
     }
-
-    GlideApp.with(context)
-      .load(fullUrl)
-      .placeholder(createProgressDrawable())
-      .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-      .error(createErrorTextDrawable(view))
-      .apply(RequestOptions().centerCrop())
-      .into(view)
   }
 
   suspend fun loadStaticMapImageFromNetInto(photoName: String, view: ImageView) {
     val fullUrl = "${Constants.BASE_STATIC_MAP_URL}/${photoName}"
 
     if (!netUtils.canLoadImages()) {
-      Timber.tag(TAG).d("No wifi")
-
       if (isCached(fullUrl)) {
         GlideApp.with(context)
           .load(fullUrl)
@@ -115,23 +107,19 @@ class ImageLoader
           .apply(RequestOptions().centerCrop())
           .into(view)
       } else {
-        val textDrawable = createNoUnmeteredNetworkTextDrawable(view)
-
         GlideApp.with(context)
-          .load(textDrawable)
+          .load(createNoUnmeteredNetworkTextDrawable(view))
           .into(view)
       }
-
-      return
+    } else {
+      GlideApp.with(context)
+        .load(fullUrl)
+        .placeholder(createProgressDrawable())
+        .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+        .error(createErrorTextDrawable(view))
+        .apply(RequestOptions().centerCrop())
+        .into(view)
     }
-
-    GlideApp.with(context)
-      .load(fullUrl)
-      .placeholder(createProgressDrawable())
-      .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-      .error(createErrorTextDrawable(view))
-      .apply(RequestOptions().centerCrop())
-      .into(view)
   }
 
   private suspend fun isCached(fullUrl: String): Boolean {
