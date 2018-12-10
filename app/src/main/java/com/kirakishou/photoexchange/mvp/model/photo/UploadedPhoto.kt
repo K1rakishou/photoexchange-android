@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.mvp.model.photo
 
+import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.mvp.model.PhotoSize
 
 data class UploadedPhoto(
@@ -19,8 +20,7 @@ data class UploadedPhoto(
 
   data class ReceiverInfo(
     val receiverPhotoName: String,
-    val receiverLon: Double,
-    val receiverLat: Double
+    val receiverLonLat: LonLat
   )
 
   companion object {

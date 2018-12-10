@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.helper.database.mapper
 
+import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import net.response.GetUploadedPhotosResponse
@@ -34,8 +35,10 @@ object UploadedPhotosMapper {
         } else {
           UploadedPhoto.ReceiverInfo(
             uploadedPhotoData.receiverInfoResponseData!!.receiverPhotoName,
-            uploadedPhotoData.receiverInfoResponseData!!.receiverLon,
-            uploadedPhotoData.receiverInfoResponseData!!.receiverLat
+            LonLat(
+              uploadedPhotoData.receiverInfoResponseData!!.receiverLon,
+              uploadedPhotoData.receiverInfoResponseData!!.receiverLat
+            )
           )
         }
 
@@ -63,8 +66,10 @@ object UploadedPhotosMapper {
         } else {
           UploadedPhoto.ReceiverInfo(
             uploadedPhotoEntity.receiverPhotoName!!,
-            uploadedPhotoEntity.receiverLon!!,
-            uploadedPhotoEntity.receiverLat!!
+            LonLat(
+              uploadedPhotoEntity.receiverLon!!,
+              uploadedPhotoEntity.receiverLat!!
+            )
           )
         }
 
