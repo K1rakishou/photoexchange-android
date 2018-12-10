@@ -85,7 +85,12 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
   }
 
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
-    controller.rebuild(requireContext(), this, viewModel.receivedPhotosFragmentViewModel)
+    controller.rebuild(
+      requireContext(),
+      this@ReceivedPhotosFragment,
+      this,
+      viewModel.receivedPhotosFragmentViewModel
+    )
   }
 
   override suspend fun onStateEvent(event: ReceivedPhotosFragmentEvent) {

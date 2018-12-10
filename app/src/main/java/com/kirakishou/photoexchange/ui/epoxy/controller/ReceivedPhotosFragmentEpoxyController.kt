@@ -14,6 +14,8 @@ import com.kirakishou.photoexchange.mvp.viewmodel.ReceivedPhotosFragmentViewMode
 import com.kirakishou.photoexchange.ui.epoxy.row.loadingRow
 import com.kirakishou.photoexchange.ui.epoxy.row.receivedPhotoRow
 import com.kirakishou.photoexchange.ui.epoxy.row.textRow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class ReceivedPhotosFragmentEpoxyController(
@@ -23,6 +25,7 @@ class ReceivedPhotosFragmentEpoxyController(
 
   fun rebuild(
     context: Context,
+    coroutineScope: CoroutineScope,
     controller: AsyncEpoxyController,
     viewModel: ReceivedPhotosFragmentViewModel
   ) {
@@ -55,7 +58,7 @@ class ReceivedPhotosFragmentEpoxyController(
                     viewModel.swapPhotoAndMap(model.photo().receivedPhotoName)
                   }
                   onBind { model, view, _ ->
-                    loadPhotoOrImage(model.photo(), view.photoView, view.staticMapView)
+                    loadPhotoOrImage(coroutineScope, model.photo(), view.photoView, view.staticMapView)
                   }
                 }
               }
@@ -119,11 +122,18 @@ class ReceivedPhotosFragmentEpoxyController(
     }
   }
 
-  private fun loadPhotoOrImage(photo: ReceivedPhoto, photoView: ImageView, mapView: ImageView) {
-    if (photo.showPhoto) {
-      imageLoader.loadPhotoFromNetInto(photo.receivedPhotoName, photoView)
-    } else {
-      imageLoader.loadStaticMapImageFromNetInto(photo.uploadedPhotoName, mapView)
+  private fun loadPhotoOrImage(
+    coroutineScope: CoroutineScope,
+    photo: ReceivedPhoto,
+    photoView: ImageView,
+    mapView: ImageView
+  ) {
+    coroutineScope.launch {
+      if (photo.showPhoto) {
+        imageLoader.loadPhotoFromNetInto(photo.receivedPhotoName, photoView)
+      } else {
+        imageLoader.loadStaticMapImageFromNetInto(photo.uploadedPhotoName, mapView)
+      }
     }
   }
 }

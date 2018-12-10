@@ -15,6 +15,8 @@ import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.UploadedPhotosFragmentViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.epoxy.row.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class UploadedPhotosFragmentEpoxyController(
@@ -24,6 +26,7 @@ class UploadedPhotosFragmentEpoxyController(
 
   fun rebuild(
     context: Context,
+    coroutineScope: CoroutineScope,
     controller: AsyncEpoxyController,
     viewModel: UploadedPhotosFragmentViewModel
   ) {
@@ -33,12 +36,13 @@ class UploadedPhotosFragmentEpoxyController(
           buildTakenPhotos(context, state, viewModel)
         }
 
-        buildUploadedPhotos(context, state, viewModel, state.uploadedPhotosRequest)
+        buildUploadedPhotos(coroutineScope, context, state, viewModel, state.uploadedPhotosRequest)
       }
     }
   }
 
   private fun AsyncEpoxyController.buildUploadedPhotos(
+    coroutineScope: CoroutineScope,
     context: Context,
     state: UploadedPhotosFragmentState,
     viewModel: UploadedPhotosFragmentViewModel,
@@ -75,7 +79,7 @@ class UploadedPhotosFragmentEpoxyController(
           photo(photo)
           callback { model, _, _, _ -> viewModel.swapPhotoAndMap(model.photo().photoName) }
           onBind { model, view, _ ->
-            loadPhotoOrImage(model.photo(), view.photoView, view.staticMapView)
+            loadPhotoOrImage(coroutineScope, model.photo(), view.photoView, view.staticMapView)
           }
         }
       }
@@ -177,11 +181,18 @@ class UploadedPhotosFragmentEpoxyController(
     }
   }
 
-  private fun loadPhotoOrImage(photo: UploadedPhoto, photoView: ImageView, mapView: ImageView) {
-    if (photo.showPhoto) {
-      imageLoader.loadPhotoFromNetInto(photo.photoName, photoView)
-    } else {
-      imageLoader.loadStaticMapImageFromNetInto(photo.receiverInfo!!.receiverPhotoName, mapView)
+  private fun loadPhotoOrImage(
+    coroutineScope: CoroutineScope,
+    photo: UploadedPhoto,
+    photoView: ImageView,
+    mapView: ImageView
+  ) {
+    coroutineScope.launch {
+      if (photo.showPhoto) {
+        imageLoader.loadPhotoFromNetInto(photo.photoName, photoView)
+      } else {
+        imageLoader.loadStaticMapImageFromNetInto(photo.receiverInfo!!.receiverPhotoName, mapView)
+      }
     }
   }
 }

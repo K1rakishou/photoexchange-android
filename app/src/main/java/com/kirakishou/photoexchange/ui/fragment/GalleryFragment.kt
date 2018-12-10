@@ -88,7 +88,12 @@ class GalleryFragment : BaseMvRxFragment(), StateEventListener<GalleryFragmentEv
   }
 
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
-    controller.rebuild(requireContext(), this, viewModel.galleryFragmentViewModel)
+    controller.rebuild(
+      requireContext(),
+      this@GalleryFragment,
+      this,
+      viewModel.galleryFragmentViewModel
+    )
   }
 
   override suspend fun onStateEvent(event: GalleryFragmentEvent) {
