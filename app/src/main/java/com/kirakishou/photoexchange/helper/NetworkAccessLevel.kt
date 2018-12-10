@@ -7,9 +7,9 @@ package com.kirakishou.photoexchange.helper
  * CanLoadImages means that we can make requests and event load images
  * */
 enum class NetworkAccessLevel(val value: Int) {
-  Neither(0),
+  CanLoadImages(0),
   CanAccessInternet(1), //default setting
-  CanLoadImages(2);
+  Neither(2);
 
   companion object {
     fun fromInt(value: Int?): NetworkAccessLevel {
