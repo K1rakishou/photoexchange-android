@@ -132,7 +132,7 @@ class ReceivedPhotosFragmentEpoxyController(
       if (photo.showPhoto) {
         imageLoader.loadPhotoFromNetInto(photo.receivedPhotoName, photoView)
       } else {
-        imageLoader.loadStaticMapImageFromNetInto(photo.uploadedPhotoName, mapView)
+        imageLoader.loadStaticMapImageFromNetInto(photo.receivedPhotoName, mapView)
       }
     }
   }
