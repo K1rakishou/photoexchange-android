@@ -80,7 +80,7 @@ class TempFileLocalSource(
     return tempFilesDao.markDeletedById(id, time)
   }
 
-  open suspend fun updateTakenPhotoId(tempFileEntity: TempFileEntity, takenPhotoId: Long): Int {
+  fun updateTakenPhotoId(tempFileEntity: TempFileEntity, takenPhotoId: Long): Int {
     return tempFilesDao.updateTakenPhotoId(tempFileEntity.id!!, takenPhotoId)
   }
 

@@ -205,9 +205,9 @@ open class TakenPhotosRepository(
 
   suspend fun loadNotUploadedPhotos(): List<TakenPhoto> {
     return withContext(coroutineContext) {
-      database.transactional {
-        val stillUploadingPhotos = findAllByState(PhotoState.PHOTO_UPLOADING)
+      val stillUploadingPhotos = findAllByState(PhotoState.PHOTO_UPLOADING)
 
+      database.transactional {
         for (photo in stillUploadingPhotos) {
           if (!photo.fileExists()) {
             takenPhotosLocalSource.deletePhotoById(photo.id)

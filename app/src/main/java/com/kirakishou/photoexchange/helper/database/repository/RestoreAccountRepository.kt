@@ -12,6 +12,7 @@ class RestoreAccountRepository(
   dispatchersProvider: DispatchersProvider
 ) : BaseRepository(dispatchersProvider) {
 
+  //FIXME: may hang
   suspend fun cleanDatabase(oldUserId: String): Boolean {
     return withContext(coroutineContext) {
       return@withContext database.transactional {

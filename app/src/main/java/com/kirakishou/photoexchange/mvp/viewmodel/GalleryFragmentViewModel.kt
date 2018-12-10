@@ -109,7 +109,7 @@ class GalleryFragmentViewModel(
     }
   }
 
-  //FIXME: hangs in some transaction
+  //FIXME: hangs somewhere in transaction
   private fun reportPhotoInternal(photoName: String) {
     fun updateIsPhotoReported(state: GalleryFragmentState, photoName: String) {
       if (state.reportedPhotos.contains(photoName)) {
