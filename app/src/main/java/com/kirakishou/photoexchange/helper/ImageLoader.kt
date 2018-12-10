@@ -33,7 +33,8 @@ class ImageLoader
 ) {
   private val TAG = "ImageLoader"
 
-  private val noUnmeteredNetworkAvailableText = "No unmetered network available"
+  private val noUnmeteredNetworkAvailableText = "No unmetered network available."
+  private val couldNotLoadPhotoText = "Error. Could not load photo."
   private val textColor = "#505050"
 
   private val photoSize by lazy {
@@ -76,6 +77,7 @@ class ImageLoader
           .load(fullUrl)
           .onlyRetrieveFromCache(true)
           .placeholder(createProgressDrawable())
+          .error(createErrorTextDrawable(view))
           .apply(RequestOptions().centerCrop())
           .into(view)
       } else {
@@ -93,7 +95,7 @@ class ImageLoader
       .load(fullUrl)
       .placeholder(createProgressDrawable())
       .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-      //TODO: add error text drawable
+      .error(createErrorTextDrawable(view))
       .apply(RequestOptions().centerCrop())
       .into(view)
   }
@@ -109,6 +111,7 @@ class ImageLoader
           .load(fullUrl)
           .onlyRetrieveFromCache(true)
           .placeholder(createProgressDrawable())
+          .error(createErrorTextDrawable(view))
           .apply(RequestOptions().centerCrop())
           .into(view)
       } else {
@@ -126,7 +129,7 @@ class ImageLoader
       .load(fullUrl)
       .placeholder(createProgressDrawable())
       .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-      //TODO: add error text drawable
+      .error(createErrorTextDrawable(view))
       .apply(RequestOptions().centerCrop())
       .into(view)
   }
@@ -166,6 +169,16 @@ class ImageLoader
   private fun createNoUnmeteredNetworkTextDrawable(view: ImageView): TextDrawable {
     return TextDrawable(
       noUnmeteredNetworkAvailableText,
+      Color.parseColor(textColor),
+      AndroidUtils.spToPx(context, 18f),
+      view.width,
+      view.height
+    )
+  }
+
+  private fun createErrorTextDrawable(view: ImageView): TextDrawable {
+    return TextDrawable(
+      couldNotLoadPhotoText,
       Color.parseColor(textColor),
       AndroidUtils.spToPx(context, 18f),
       view.width,
