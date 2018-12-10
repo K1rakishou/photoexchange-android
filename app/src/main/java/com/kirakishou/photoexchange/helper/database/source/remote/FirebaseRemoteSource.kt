@@ -2,38 +2,28 @@ package com.kirakishou.photoexchange.helper.database.source.remote
 
 import com.google.firebase.iid.FirebaseInstanceId
 import com.kirakishou.photoexchange.helper.Constants
-import kotlinx.coroutines.CompletableDeferred
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 class FirebaseRemoteSource(
   private val firebaseInstanceId: FirebaseInstanceId
 ) {
 
-  //TODO: rewrite with using suspendCoroutine instead of CompletableDeferred
-  fun getTokenAsync(): CompletableDeferred<String?> {
-    val result = CompletableDeferred<String?>()
-
-    /**
-     * User may not have google play services installed, so in this we will use this default token
-     * and all users with this token won't receive any push notifications
-     * */
-    if (!isGoogleServicesAvailable()) {
-      result.complete(Constants.NO_GOOGLE_PLAY_SERVICES_DEFAULT_TOKEN)
-    } else {
+  suspend fun getTokenAsync(): String? {
+    return suspendCoroutine { continuation ->
       firebaseInstanceId.instanceId.addOnCompleteListener { task ->
         if (!task.isSuccessful) {
-          result.completeExceptionally(task.exception!!)
+          /**
+           * User may not have google play services installed, so in this case we will use the default token
+           * and all users with such token won't receive any push notifications
+           * */
+
+          continuation.resume(Constants.NO_GOOGLE_PLAY_SERVICES_DEFAULT_TOKEN)
           return@addOnCompleteListener
         }
 
-        result.complete(task.result?.token)
+        continuation.resume(task.result?.token)
       }
     }
-
-    return result
-  }
-
-  private fun isGoogleServicesAvailable(): Boolean {
-    //TODO:
-    return true
   }
 }

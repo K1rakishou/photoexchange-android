@@ -5,9 +5,11 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 
-class Vibrator {
+class Vibrator(
+  private val context: Context
+) {
 
-  fun vibrate(context: Context, time: Long) {
+  fun vibrate(time: Long) {
     val v = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

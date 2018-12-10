@@ -1,18 +1,17 @@
 package com.kirakishou.photoexchange.service
 
-import com.kirakishou.photoexchange.helper.Either
+import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
+import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.helper.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
+import com.kirakishou.photoexchange.interactors.UpdateFirebaseTokenUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.helper.LonLat
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.helper.exception.DatabaseException
-import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
-import com.kirakishou.photoexchange.interactors.UpdateFirebaseTokenUseCase
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
@@ -40,7 +39,7 @@ open class UploadPhotoServicePresenter(
   private val TAG = "UploadPhotoServicePresenter"
   private val compositeDisposable = CompositeDisposable()
   private val job = Job()
-  val resultEventsSubject = PublishSubject.create<UploadPhotoEvent>().toSerialized()
+  private val resultEventsSubject = PublishSubject.create<UploadPhotoEvent>().toSerialized()
 
   private val uploadingActor: SendChannel<LonLat>
   private val eventsActor: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
@@ -73,14 +72,16 @@ open class UploadPhotoServicePresenter(
 
     try {
       //we need to get the userId first because this operation will create a default account on the server
-      val userId = getUserId()
+      val userId = getUserIdUseCase.getUserId()
       if (userId.isEmpty()) {
+        Timber.tag(TAG).d("UserId is empty")
         throw EmptyUserIdException()
       }
 
       val token = settingsRepository.getFirebaseToken()
       if (token.isEmpty()) {
-        updateFirebaseToken()
+        Timber.tag(TAG).d("Firebase token is empty, trying to fetch new one")
+        updateFirebaseTokenUseCase.updateFirebaseTokenIfNecessary()
       }
 
       val hasErrors = doUploading(userId, location)
@@ -103,6 +104,8 @@ open class UploadPhotoServicePresenter(
     val queuedUpPhotos = takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP)
     if (queuedUpPhotos.isEmpty()) {
       //should not really happen, since we make a check before starting the service
+
+      Timber.tag(TAG).d("No queued up photos")
       return false
     }
 
@@ -181,26 +184,6 @@ open class UploadPhotoServicePresenter(
       is UploadPhotoServicePresenter.NotificationType.Error -> {
         sendEvent(UploadPhotoEvent.OnNewNotification(NotificationType.Error(serviceNotification.errorMessage)))
       }
-    }.safe
-  }
-
-  private suspend fun updateFirebaseToken() {
-    val result = updateFirebaseTokenUseCase.updateFirebaseTokenIfNecessary()
-
-    when (result) {
-      is Either.Value -> {
-        //do nothing
-      }
-      is Either.Error -> throw result.error
-    }.safe
-  }
-
-  private suspend fun getUserId(): String {
-    val result = getUserIdUseCase.getUserId()
-
-    when (result) {
-      is Either.Value -> return result.value
-      is Either.Error -> throw result.error
     }.safe
   }
 

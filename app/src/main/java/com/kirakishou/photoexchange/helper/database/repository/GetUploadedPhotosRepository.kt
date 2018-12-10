@@ -72,7 +72,8 @@ class GetUploadedPhotosRepository(
     }, {
       deleteOld()
     }, { uploadedPhotos ->
-      filterBlacklistedPhotos(uploadedPhotos)
+      //we don't need to filter uploaded photos
+      uploadedPhotos
     }, { uploadedPhotos ->
       uploadedPhotosLocalSource.saveMany(uploadedPhotos)
     }, { responseData ->
@@ -113,16 +114,6 @@ class GetUploadedPhotosRepository(
   private suspend fun deleteOld() {
     database.transactional {
       uploadedPhotosLocalSource.deleteOldPhotos()
-    }
-  }
-
-  private suspend fun filterBlacklistedPhotos(
-    receivedPhotos: List<GetUploadedPhotosResponse.UploadedPhotoResponseData>
-  ): List<GetUploadedPhotosResponse.UploadedPhotoResponseData> {
-    return withContext(coroutineContext) {
-      return@withContext blacklistedPhotoLocalSource.filterBlacklistedPhotos(receivedPhotos) {
-        it.photoName
-      }
     }
   }
 

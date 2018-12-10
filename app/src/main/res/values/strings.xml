@@ -16,7 +16,7 @@
     <string name="settings_menu_item_text">Settings</string>
     <string name="photo_has_been_received_snackbar_text">A new photo has been received</string>
     <string name="show_snackbar_action_text">SHOW</string>
-    <string name="tap_to_copy_user_id_message">Tap to copy user id to clipboard</string>
+    <string name="tap_to_copy_user_id_message">Tap here to copy User ID to clipboard</string>
     <string name="default_notification_channel_id">1</string>
     <string name="the_gallery_is_empty_text">The gallery is empty</string>
     <string name="end_of_list_reached_text">End of the list reached.\nClick here to reload</string>
@@ -24,4 +24,7 @@
     <string name="you_have_no_photos_yet">You have no photos yet</string>
     <string name="uploaded_photos_text">Uploaded photos</string>
     <string name="uploading_photos_text">Uploading photos</string>
+    <string name="user_id_explanation_text">User ID is basically your account ID. Every photo you upload is marked with user ID so if you want to be able to access your photos from different phones or restore account after app has been uninstalled you better save this ID.</string>
+    <string name="photo_visibility_explanation_text">If photo visibility set to Always Public - all your photos will be available in the gallery for everyone, If it\'s set to Always Private then they won\'t. If it\'s set to Neither - you will be asked what visibility to use every time you take a photo.</string>
+    <string name="network_access_level_explanation_text">It\'s better to set this setting to Can Load Images when you are connected to unmetered network (unlimited download rate). By setting it to Can Access Internet - you won\'t be loading any images when you are not connected to an unmetered network, any other lightweight request will still be possible. Finally by setting it to Neither completely disables any network interactions when you are not connected to an unmetered network.</string>
 </resources>

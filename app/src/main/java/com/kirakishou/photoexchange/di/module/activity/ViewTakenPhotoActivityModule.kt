@@ -25,12 +25,21 @@ open class ViewTakenPhotoActivityModule(
   open fun provideViewModelFactory(schedulerProvider: SchedulerProvider,
                                    takenPhotosRepository: TakenPhotosRepository,
                                    settingsRepository: SettingsRepository): ViewTakenPhotoActivityViewModelFactory {
-    return ViewTakenPhotoActivityViewModelFactory(schedulerProvider, takenPhotosRepository, settingsRepository)
+    return ViewTakenPhotoActivityViewModelFactory(
+      schedulerProvider,
+      takenPhotosRepository,
+      settingsRepository
+    )
   }
 
   @PerActivity
   @Provides
-  fun provideViewModel(viewModelFactory: ViewTakenPhotoActivityViewModelFactory): ViewTakenPhotoActivityViewModel {
-    return ViewModelProviders.of(activity, viewModelFactory).get(ViewTakenPhotoActivityViewModel::class.java)
+  fun provideViewModel(
+    viewModelFactory: ViewTakenPhotoActivityViewModelFactory
+  ): ViewTakenPhotoActivityViewModel {
+    return ViewModelProviders.of(
+      activity,
+      viewModelFactory
+    ).get(ViewTakenPhotoActivityViewModel::class.java)
   }
 }

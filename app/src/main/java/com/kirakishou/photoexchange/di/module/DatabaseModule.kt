@@ -26,7 +26,7 @@ open class DatabaseModule(
 
   @Singleton
   @Provides
-  open fun provideDatabase(context: Context): MyDatabase {
+  open fun provideDatabase(@Named("app_context") context: Context): MyDatabase {
     return Room.databaseBuilder(context, MyDatabase::class.java, dbName)
       .build()
   }
@@ -40,7 +40,7 @@ open class DatabaseModule(
   @Singleton
   @Provides
   @Named("files_directory")
-  fun provideFilesDirectoryPath(context: Context): String {
+  fun provideFilesDirectoryPath(@Named("app_context") context: Context): String {
     return context.filesDir.absolutePath
   }
 

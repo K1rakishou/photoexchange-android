@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.helper.util
 
 import android.app.Activity
 import android.content.Context
+import android.graphics.Color
 import android.graphics.Point
 import android.os.Build
 import android.os.Looper
@@ -16,6 +17,7 @@ import timber.log.Timber
  * Created by kirakishou on 7/30/2017.
  */
 object AndroidUtils {
+  const val SHADE_FACTOR = 0.9f
 
   fun checkIsOnMainThread(): Boolean {
     return Looper.myLooper() == Looper.getMainLooper()
@@ -39,6 +41,11 @@ object AndroidUtils {
   fun pxToSp(context: Context, px: Float): Float {
     val scaledDensity = context.resources.displayMetrics.scaledDensity
     return px / scaledDensity
+  }
+
+  fun spToPx(context: Context, sp: Float): Float {
+    val scaledDensity = context.resources.displayMetrics.scaledDensity
+    return sp * scaledDensity
   }
 
   fun dpToPx(dp: Float, context: Context): Float {
@@ -103,5 +110,13 @@ object AndroidUtils {
     } else {
       PhotoSize.Big
     }
+  }
+
+  fun getDarkerShade(color: Int): Int {
+    return Color.rgb(
+      (SHADE_FACTOR * Color.red(color)).toInt(),
+      (SHADE_FACTOR * Color.green(color)).toInt(),
+      (SHADE_FACTOR * Color.blue(color)).toInt()
+    )
   }
 }

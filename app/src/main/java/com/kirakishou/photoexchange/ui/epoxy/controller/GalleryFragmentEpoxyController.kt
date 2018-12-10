@@ -13,6 +13,8 @@ import com.kirakishou.photoexchange.mvp.viewmodel.GalleryFragmentViewModel
 import com.kirakishou.photoexchange.ui.epoxy.row.galleryPhotoRow
 import com.kirakishou.photoexchange.ui.epoxy.row.loadingRow
 import com.kirakishou.photoexchange.ui.epoxy.row.textRow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -24,6 +26,7 @@ class GalleryFragmentEpoxyController
 
   fun rebuild(
     context: Context,
+    coroutineScope: CoroutineScope,
     controller: AsyncEpoxyController,
     viewModel: GalleryFragmentViewModel
   ) {
@@ -64,7 +67,7 @@ class GalleryFragmentEpoxyController
                     viewModel.reportPhotos(model.photo().photoName)
                   }
                   onBind { model, view, _ ->
-                    loadPhotoOrImage(model.photo(), view.photoView, view.staticMapView)
+                    loadPhotoOrImage(coroutineScope, model.photo(), view.photoView, view.staticMapView)
                   }
                 }
               }
@@ -120,11 +123,18 @@ class GalleryFragmentEpoxyController
     }
   }
 
-  private fun loadPhotoOrImage(photo: GalleryPhoto, photoView: ImageView, mapView: ImageView) {
-    if (photo.showPhoto) {
-      imageLoader.loadPhotoFromNetInto(photo.photoName, photoView)
-    } else {
-      imageLoader.loadStaticMapImageFromNetInto(photo.photoName, mapView)
+  private fun loadPhotoOrImage(
+    coroutineScope: CoroutineScope,
+    photo: GalleryPhoto,
+    photoView: ImageView,
+    mapView: ImageView
+  ) {
+    coroutineScope.launch {
+      if (photo.showPhoto) {
+        imageLoader.loadPhotoFromNetInto(photo.photoName, photoView)
+      } else {
+        imageLoader.loadStaticMapImageFromNetInto(photo.photoName, mapView)
+      }
     }
   }
 }

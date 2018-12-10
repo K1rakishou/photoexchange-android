@@ -15,9 +15,6 @@ class LonLat(val lon: Double,
   }
 
   companion object {
-    const val NO_LOCATION = -361.0
-    const val DISABLED_LOCATION = -362.0
-
     fun empty(): LonLat {
       return LonLat(-1.0, -1.0)
     }

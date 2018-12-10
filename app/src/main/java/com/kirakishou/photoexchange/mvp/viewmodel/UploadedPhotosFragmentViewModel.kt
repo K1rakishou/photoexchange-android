@@ -17,6 +17,7 @@ import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.helper.Constants
+import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.helper.extension.filterDuplicatesWith
@@ -142,8 +143,10 @@ class UploadedPhotosFragmentViewModel(
       val updatedPhotos = state.uploadedPhotos.toMutableList()
       val receiverInfo = UploadedPhoto.ReceiverInfo(
         photoExchangedData.receivedPhotoName,
-        photoExchangedData.lon,
-        photoExchangedData.lat
+        LonLat(
+          photoExchangedData.lon,
+          photoExchangedData.lat
+        )
       )
 
       val updatedPhoto = updatedPhotos[photoIndex]
@@ -299,6 +302,7 @@ class UploadedPhotosFragmentViewModel(
           }
         }
       }
+      //FIXME: apparently does not work
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress -> {
         Timber.tag(TAG).d("OnPhotoUploadingProgress")
 
@@ -415,8 +419,7 @@ class UploadedPhotosFragmentViewModel(
             } else {
               val receiverInfo = UploadedPhoto.ReceiverInfo(
                 exchangedPhoto.receivedPhotoName,
-                exchangedPhoto.lon,
-                exchangedPhoto.lat
+                exchangedPhoto.lonLat
               )
 
               uploadedPhoto.copy(receiverInfo = receiverInfo)

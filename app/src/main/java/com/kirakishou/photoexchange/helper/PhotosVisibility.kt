@@ -3,7 +3,7 @@ package com.kirakishou.photoexchange.helper
 enum class PhotosVisibility(val value: Int) {
   AlwaysPublic(0),
   AlwaysPrivate(1),
-  Neither(2);
+  Neither(2); //default setting
 
   companion object {
     fun fromBoolean(makePublic: Boolean?): PhotosVisibility {

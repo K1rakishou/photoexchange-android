@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.helper.database.mapper
 
+import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoEntity
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhotoInfo
@@ -11,8 +12,10 @@ object GalleryPhotosMapper {
     fun toGalleryPhoto(galleryPhotoEntity: GalleryPhotoEntity): GalleryPhoto {
       return GalleryPhoto(
         galleryPhotoEntity.photoName,
-        galleryPhotoEntity.lon,
-        galleryPhotoEntity.lat,
+        LonLat(
+          galleryPhotoEntity.lon,
+          galleryPhotoEntity.lat
+        ),
         galleryPhotoEntity.uploadedOn,
         galleryPhotoEntity.favouritedCount,
         GalleryPhotoInfo.empty(galleryPhotoEntity.photoName)
@@ -28,8 +31,8 @@ object GalleryPhotosMapper {
     fun toGalleryPhotoEntity(time: Long, galleryPhoto: GalleryPhoto): GalleryPhotoEntity {
       return GalleryPhotoEntity.create(
         galleryPhoto.photoName,
-        galleryPhoto.lon,
-        galleryPhoto.lat,
+        galleryPhoto.lonLat.lon,
+        galleryPhoto.lonLat.lat,
         galleryPhoto.uploadedOn,
         galleryPhoto.favouritesCount,
         time
@@ -46,8 +49,10 @@ object GalleryPhotosMapper {
       fun toGalleryPhoto(galleryPhotoResponseData: GalleryPhotosResponse.GalleryPhotoResponseData): GalleryPhoto {
         return GalleryPhoto(
           galleryPhotoResponseData.photoName,
-          galleryPhotoResponseData.lon,
-          galleryPhotoResponseData.lat,
+          LonLat(
+            galleryPhotoResponseData.lon,
+            galleryPhotoResponseData.lat
+          ),
           galleryPhotoResponseData.uploadedOn,
           galleryPhotoResponseData.favouritesCount,
           GalleryPhotoInfo.empty(galleryPhotoResponseData.photoName)

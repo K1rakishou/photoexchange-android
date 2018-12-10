@@ -58,14 +58,14 @@ open class SettingsRepository(
     }
   }
 
-  suspend fun saveMakePublicFlag(makePublic: Boolean?): Boolean {
+  suspend fun savePhotoVisibility(makePublic: Boolean?): Boolean {
     return withContext(coroutineContext) {
       val value = PhotosVisibility.fromBoolean(makePublic).value.toString()
       return@withContext settingsDao.insert(SettingEntity(MAKE_PHOTOS_PUBLIC_SETTING, value)) > 0
     }
   }
 
-  suspend fun getMakePublicFlag(): PhotosVisibility {
+  suspend fun getPhotoVisibility(): PhotosVisibility {
     return withContext(coroutineContext) {
       val result = settingsDao.findByName(MAKE_PHOTOS_PUBLIC_SETTING)
         ?: return@withContext PhotosVisibility.Neither

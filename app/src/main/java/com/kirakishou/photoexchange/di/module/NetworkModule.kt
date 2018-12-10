@@ -47,7 +47,10 @@ class NetworkModule(private val baseUrl: String) {
 
   @Singleton
   @Provides
-  fun provideRetrofit(client: OkHttpClient, converterFactory: GsonConverterFactory): Retrofit {
+  fun provideRetrofit(
+    client: OkHttpClient,
+    converterFactory: GsonConverterFactory
+  ): Retrofit {
     return Retrofit.Builder()
       .baseUrl(baseUrl)
       .addConverterFactory(converterFactory)

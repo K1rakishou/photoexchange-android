@@ -45,10 +45,9 @@ open class TakePhotoActivityModule(
 
   @PerActivity
   @Provides
-  open fun provideCameraProvider(context: Context,
-                                 takenPhotosRepository: TakenPhotosRepository): CameraProvider {
+  open fun provideCameraProvider(takenPhotosRepository: TakenPhotosRepository): CameraProvider {
     return CameraProvider(
-      context,
+      activity,
       takenPhotosRepository
     )
   }

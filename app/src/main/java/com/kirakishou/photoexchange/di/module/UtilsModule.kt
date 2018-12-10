@@ -5,6 +5,7 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import com.kirakishou.photoexchange.helper.util.*
 import dagger.Module
 import dagger.Provides
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
@@ -30,7 +31,7 @@ class UtilsModule {
 
   @Provides
   @Singleton
-  fun provideNetUtils(context: Context,
+  fun provideNetUtils(@Named("app_context") context: Context,
                       settingsRepository: SettingsRepository): NetUtils {
     return NetUtilsImpl(
       context,

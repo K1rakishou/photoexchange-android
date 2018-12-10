@@ -6,10 +6,7 @@ import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosReposi
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import io.fotoapparat.Fotoapparat
 import io.fotoapparat.configuration.CameraConfiguration
-import io.fotoapparat.selector.back
-import io.fotoapparat.selector.exactFixedFps
-import io.fotoapparat.selector.highestResolution
-import io.fotoapparat.selector.manualJpegQuality
+import io.fotoapparat.selector.*
 import io.fotoapparat.view.CameraView
 import timber.log.Timber
 import java.lang.RuntimeException
@@ -29,13 +26,11 @@ open class CameraProvider(
   private val TAG = "CameraProvider"
   private val isStarted = AtomicBoolean(false)
   private var camera: Fotoapparat? = null
-  private val tag = "[${this::class.java.simpleName}]: "
-  private val NORMAL_FPS = 30f
 
-  private fun createConfiguration(fps: Float): CameraConfiguration {
+  private fun createConfiguration(): CameraConfiguration {
     return CameraConfiguration(
       previewResolution = highestResolution(),
-      previewFpsRange = exactFixedFps(fps),
+      previewFpsRange = highestFps(),
       jpegQuality = manualJpegQuality(100)
     )
   }
@@ -45,13 +40,11 @@ open class CameraProvider(
       return
     }
 
-    val configuration = createConfiguration(NORMAL_FPS)
-
     camera = Fotoapparat(
       context = context,
       view = cameraView,
       lensPosition = back(),
-      cameraConfiguration = configuration
+      cameraConfiguration = createConfiguration()
     )
   }
 
@@ -118,7 +111,7 @@ open class CameraProvider(
       throw CameraIsNotStartedException("Camera is not started")
     }
 
-    Timber.tag(tag).d("Taking a photo...")
+    Timber.tag(TAG).d("Taking a photo...")
 
     return suspendCoroutine { continuation ->
       try {
@@ -127,7 +120,7 @@ open class CameraProvider(
         camera!!.takePicture()
           .saveToFile(file)
           .whenAvailable {
-            Timber.tag(tag).d("Photo has been taken")
+            Timber.tag(TAG).d("Photo has been taken")
             continuation.resume(Unit)
           }
       } catch (error: Throwable) {
