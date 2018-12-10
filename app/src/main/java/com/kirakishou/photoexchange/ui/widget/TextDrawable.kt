@@ -25,7 +25,6 @@ class TextDrawable(
     canvas.drawARGB(255, 228, 228, 228)
     canvas.translate(r.left.toFloat(), r.top.toFloat())
 
-    // draw text
     val width = if (w < 0) {
       r.width()
     } else {
