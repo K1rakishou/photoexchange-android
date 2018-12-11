@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.helper.exception.ConnectionError
 import kotlinx.coroutines.rx2.await
 import net.response.CheckAccountExistsResponse
+import timber.log.Timber
 
 class CheckAccountExistsRequest(
   private val userId: String,
@@ -19,6 +20,7 @@ class CheckAccountExistsRequest(
     val response = try {
       apiService.checkAccountExists(userId).await()
     } catch (error: Exception) {
+      Timber.e(error)
       throw ConnectionError(error.message)
     }
 

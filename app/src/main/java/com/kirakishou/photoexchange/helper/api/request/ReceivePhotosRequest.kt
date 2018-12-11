@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.helper.exception.ConnectionError
 import kotlinx.coroutines.rx2.await
 import net.response.ReceivedPhotosResponse
+import timber.log.Timber
 
 class ReceivePhotosRequest(
   private val userId: String,
@@ -20,6 +21,7 @@ class ReceivePhotosRequest(
     val response = try {
       apiService.receivePhotos(photoNames, userId).await()
     } catch (error: Exception) {
+      Timber.e(error)
       throw ConnectionError(error.message)
     }
 

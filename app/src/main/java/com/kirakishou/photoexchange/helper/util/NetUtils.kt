@@ -1,6 +1,6 @@
 package com.kirakishou.photoexchange.helper.util
 
 interface NetUtils {
-  fun canLoadImages(): Boolean
-  fun canAccessNetwork(): Boolean
+  suspend fun canLoadImages(): Boolean
+  suspend fun canAccessNetwork(): Boolean
 }

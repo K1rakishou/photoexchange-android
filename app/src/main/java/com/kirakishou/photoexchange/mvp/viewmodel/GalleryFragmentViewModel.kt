@@ -65,8 +65,6 @@ class GalleryFragmentViewModel(
         }.safe
       }
     }
-
-    loadGalleryPhotos(false)
   }
 
   fun resetState() {

@@ -1,21 +1,22 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
 import com.kirakishou.photoexchange.helper.PhotosVisibility
-import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.ui.fragment.AddToGalleryDialogFragment
 import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.withContext
 
 /**
  * Created by kirakishou on 3/9/2018.
  */
 class ViewTakenPhotoActivityViewModel(
-  private val schedulerProvider: SchedulerProvider,
   private val takenPhotosRepository: TakenPhotosRepository,
-  private val settingsRepository: SettingsRepository
-) : BaseViewModel() {
+  private val settingsRepository: SettingsRepository,
+  dispatchersProvider: DispatchersProvider
+) : BaseViewModel(dispatchersProvider) {
 
   private val TAG = "ViewTakenPhotoActivityViewModel"
 
@@ -26,22 +27,30 @@ class ViewTakenPhotoActivityViewModel(
   }
 
   suspend fun queueUpTakenPhoto(takenPhotoId: Long): Boolean {
-    return takenPhotosRepository.updatePhotoState(takenPhotoId, PhotoState.PHOTO_QUEUED_UP)
+    return withContext(coroutineContext) {
+      takenPhotosRepository.updatePhotoState(takenPhotoId, PhotoState.PHOTO_QUEUED_UP)
+    }
   }
 
   suspend fun updateSetIsPhotoPublic(takenPhotoId: Long, makePublic: Boolean): Boolean {
-    return takenPhotosRepository.updateMakePhotoPublic(takenPhotoId, makePublic)
+    return withContext(coroutineContext) {
+      takenPhotosRepository.updateMakePhotoPublic(takenPhotoId, makePublic)
+    }
   }
 
   suspend fun saveMakePublicFlag(rememberChoice: Boolean, makePublic: Boolean) {
-    if (!rememberChoice) {
-      return
-    }
+    return withContext(coroutineContext) {
+      if (!rememberChoice) {
+        return@withContext
+      }
 
-    settingsRepository.savePhotoVisibility(makePublic)
+      settingsRepository.savePhotoVisibility(makePublic)
+    }
   }
 
   suspend fun getMakePublicFlag(): PhotosVisibility {
-    return settingsRepository.getPhotoVisibility()
+    return withContext(coroutineContext) {
+      settingsRepository.getPhotoVisibility()
+    }
   }
 }

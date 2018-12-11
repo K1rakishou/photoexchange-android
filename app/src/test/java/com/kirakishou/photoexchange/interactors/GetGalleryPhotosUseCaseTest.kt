@@ -1,26 +1,5 @@
 package com.kirakishou.photoexchange.interactors
 
-import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.helper.api.ApiClient
-import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.concurrency.coroutines.TestDispatchers
-import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.repository.GetGalleryPhotosRepository
-import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
-import com.kirakishou.photoexchange.helper.exception.ApiErrorException
-import com.kirakishou.photoexchange.helper.exception.DatabaseException
-import core.ErrorCode
-import kotlinx.coroutines.runBlocking
-import net.response.GalleryPhotosResponse
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Before
-import org.junit.Test
-import org.mockito.Mockito
-import java.lang.Exception
-
 class GetGalleryPhotosUseCaseTest {
 
   /*lateinit var database: MyDatabase

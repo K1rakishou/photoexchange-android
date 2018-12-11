@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.helper.exception.ConnectionError
 import kotlinx.coroutines.rx2.await
 import net.response.GalleryPhotosResponse
+import timber.log.Timber
 
 class GetPageOfGalleryPhotosRequest(
   private val lastUploadedOn: Long,
@@ -20,6 +21,7 @@ class GetPageOfGalleryPhotosRequest(
     val response = try {
       apiService.getPageOfGalleryPhotos(lastUploadedOn, count).await()
     } catch (error: Exception) {
+      Timber.e(error)
       throw ConnectionError(error.message)
     }
 

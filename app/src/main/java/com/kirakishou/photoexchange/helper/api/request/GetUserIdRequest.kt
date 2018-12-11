@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.helper.exception.ConnectionError
 import kotlinx.coroutines.rx2.await
 import net.response.GetUserIdResponse
+import timber.log.Timber
 
 class GetUserIdRequest(
   private val apiService: ApiService,
@@ -18,6 +19,7 @@ class GetUserIdRequest(
     val response = try {
       apiService.getUserId().await()
     } catch (error: Exception) {
+      Timber.e(error)
       throw ConnectionError(error.message)
     }
 

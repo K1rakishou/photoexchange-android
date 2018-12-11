@@ -8,6 +8,7 @@ import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
 
+//TODO: probably should replace all PublishSubject with DispatchWorkSubject
 class PhotosActivityViewModelIntercom {
   val photosActivityEvents = PhotosActivityEvents()
   val uploadedPhotosFragmentEvents = UploadedPhotosFragmentEvents()

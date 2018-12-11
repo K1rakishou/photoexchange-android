@@ -1,6 +1,5 @@
 package com.kirakishou.photoexchange.di.component.service
 
-import com.kirakishou.photoexchange.di.module.*
 import com.kirakishou.photoexchange.di.module.service.UploadPhotoServiceModule
 import com.kirakishou.photoexchange.di.scope.PerService
 import com.kirakishou.photoexchange.service.UploadPhotoService
@@ -12,8 +11,7 @@ import dagger.Subcomponent
 
 @PerService
 @Subcomponent(modules = [
-  UploadPhotoServiceModule::class,
-  LocationServiceModule::class
+  UploadPhotoServiceModule::class
 ])
 interface UploadPhotoServiceComponent {
   fun inject(service: UploadPhotoService)

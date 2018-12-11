@@ -21,6 +21,10 @@ open class TakenPhotosLocalSource(
     return takenPhotoDao.findById(photoId) ?: TakenPhotoEntity.empty()
   }
 
+  fun findPhotoByName(photoName: String): TakenPhotoEntity {
+    return takenPhotoDao.findByName(photoName) ?: TakenPhotoEntity.empty()
+  }
+
   fun findAll(): List<TakenPhotoEntity> {
     return takenPhotoDao.findAll()
   }
@@ -55,16 +59,6 @@ open class TakenPhotosLocalSource(
 
   fun updatePhotoLocation(photoId: Long, lon: Double, lat: Double): Boolean {
     return takenPhotoDao.updatePhotoLocation(photoId, lon, lat) == 1
-  }
-
-  fun deletePhotoByName(photoName: String): Boolean {
-    val photoId = takenPhotoDao.findPhotoIdByName(photoName)
-    if (photoId == null) {
-      //already deleted
-      return true
-    }
-
-    return deletePhotoById(photoId)
   }
 
   open fun deletePhotoById(photoId: Long): Boolean {

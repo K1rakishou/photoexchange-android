@@ -3,8 +3,12 @@ package com.kirakishou.photoexchange.helper.util
 import android.content.Context
 import android.net.ConnectivityManager
 import com.kirakishou.photoexchange.helper.NetworkAccessLevel
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.CoroutineContext
 
 
 /**
@@ -12,15 +16,22 @@ import kotlinx.coroutines.runBlocking
  */
 class NetUtilsImpl(
   private val context: Context,
-  private val settingsRepository: SettingsRepository
-) : NetUtils {
-  override fun canLoadImages(): Boolean {
-    if (!isNetworkMetered()) {
-      return true
-    }
+  private val settingsRepository: SettingsRepository,
+  private val dispatchersProvider: DispatchersProvider
+) : NetUtils, CoroutineScope {
 
-    return runBlocking {
-      return@runBlocking when (settingsRepository.getNetworkAccessLevel()) {
+  private val job = Job()
+
+  override val coroutineContext: CoroutineContext
+    get() = job + dispatchersProvider.GENERAL()
+
+  override suspend fun canLoadImages(): Boolean {
+    return withContext(coroutineContext) {
+      if (!isNetworkMetered()) {
+        return@withContext true
+      }
+
+      return@withContext when (settingsRepository.getNetworkAccessLevel()) {
         NetworkAccessLevel.Neither -> false
         NetworkAccessLevel.CanAccessInternet -> false
         NetworkAccessLevel.CanLoadImages -> true
@@ -28,15 +39,15 @@ class NetUtilsImpl(
     }
   }
 
-  override fun canAccessNetwork(): Boolean {
-    if (!isNetworkMetered()) {
-      return true
-    }
+  override suspend fun canAccessNetwork(): Boolean {
+    return withContext(coroutineContext) {
+      if (!isNetworkMetered()) {
+        return@withContext true
+      }
 
-    return runBlocking {
-      return@runBlocking when (settingsRepository.getNetworkAccessLevel()) {
+      return@withContext when (settingsRepository.getNetworkAccessLevel()) {
         NetworkAccessLevel.Neither -> false
-        NetworkAccessLevel.CanAccessInternet -> false
+        NetworkAccessLevel.CanAccessInternet -> true
         NetworkAccessLevel.CanLoadImages -> true
       }
     }

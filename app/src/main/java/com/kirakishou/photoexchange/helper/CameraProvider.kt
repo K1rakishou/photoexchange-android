@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.helper
 
 import android.content.Context
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
@@ -8,9 +9,13 @@ import io.fotoapparat.Fotoapparat
 import io.fotoapparat.configuration.CameraConfiguration
 import io.fotoapparat.selector.*
 import io.fotoapparat.view.CameraView
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.lang.RuntimeException
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -19,13 +24,18 @@ import kotlin.coroutines.suspendCoroutine
  * Created by kirakishou on 1/4/2018.
  */
 open class CameraProvider(
-  val context: Context,
-  private val takenPhotosRepository: TakenPhotosRepository
-) {
-
+  private val context: Context,
+  private val takenPhotosRepository: TakenPhotosRepository,
+  private val dispatchersProvider: DispatchersProvider
+) : CoroutineScope {
   private val TAG = "CameraProvider"
   private val isStarted = AtomicBoolean(false)
   private var camera: Fotoapparat? = null
+
+  private val job = Job()
+
+  override val coroutineContext: CoroutineContext
+    get() = job + dispatchersProvider.GENERAL()
 
   private fun createConfiguration(): CameraConfiguration {
     return CameraConfiguration(
@@ -68,38 +78,46 @@ open class CameraProvider(
     }
   }
 
+  fun onDestroy() {
+    job.cancel()
+  }
+
   fun isStarted(): Boolean = isStarted.get()
   fun isAvailable(): Boolean = camera?.isAvailable(back()) ?: false
 
   suspend fun takePhoto(): TakenPhoto? {
-    Timber.tag(TAG).d("before cleanup")
-    takenPhotosRepository.cleanup()
-    Timber.tag(TAG).d("after cleanup")
+    return withContext(coroutineContext) {
+      Timber.tag(TAG).d("before cleanup")
+      takenPhotosRepository.cleanup()
+      Timber.tag(TAG).d("after cleanup")
 
-    val tempFile = takenPhotosRepository.createTempFile()
+      val tempFile = takenPhotosRepository.createTempFile()
 
-    try {
-      takePhotoInternal(tempFile)
-    } catch (error: Throwable) {
-      Timber.tag(TAG).d("takePhotoInternal returned false")
+      try {
+        takePhotoInternal(tempFile)
+      } catch (error: Throwable) {
+        Timber.tag(TAG).d("takePhotoInternal returned false")
 
-      takenPhotosRepository.markDeletedById(tempFile)
-      return null
+        takenPhotosRepository.markDeletedById(tempFile)
+        return@withContext null
+      }
+
+      Timber.tag(TAG).d("before saveTakenPhoto")
+      //TODO: move to usecase?
+      val takenPhoto = takenPhotosRepository.saveTakenPhoto(tempFile)
+      Timber.tag(TAG).d("after saveTakenPhoto")
+
+      if (takenPhoto == null) {
+        Timber.tag(TAG).d("saveTakenPhoto returned empty photo")
+
+        //TODO: transaction
+        takenPhotosRepository.markDeletedById(tempFile)
+        takenPhotosRepository.deleteMyPhoto(takenPhoto)
+        return@withContext null
+      }
+
+      return@withContext takenPhoto
     }
-
-    Timber.tag(TAG).d("before saveTakenPhoto")
-    val takenPhoto = takenPhotosRepository.saveTakenPhoto(tempFile)
-    Timber.tag(TAG).d("after saveTakenPhoto")
-
-    if (takenPhoto == null) {
-      Timber.tag(TAG).d("saveTakenPhoto returned empty photo")
-
-      takenPhotosRepository.markDeletedById(tempFile) //TODO: should this be here?
-      takenPhotosRepository.deleteMyPhoto(takenPhoto)
-      return null
-    }
-
-    return takenPhoto
   }
 
   private suspend fun takePhotoInternal(tempFile: TempFileEntity) {

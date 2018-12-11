@@ -12,6 +12,28 @@ class UploadingPhoto(
   photoState: PhotoState
 ) : TakenPhoto(id, isPublic, photoName, photoTempFile, photoState) {
 
+  override fun hashCode(): Int {
+    return id.hashCode() * progress.hashCode()
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (other == null) {
+      return false
+    }
+
+    if (other === this) {
+      return true
+    }
+
+    if (other::class != this::class) {
+      return false
+    }
+
+    other as UploadingPhoto
+
+    return this.id == other.id && this.progress == other.progress
+  }
+
   companion object {
     fun fromMyPhoto(takenPhoto: TakenPhoto, progress: Int): UploadingPhoto {
       return UploadingPhoto(

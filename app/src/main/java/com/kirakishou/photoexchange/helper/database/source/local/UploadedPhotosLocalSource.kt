@@ -10,7 +10,7 @@ import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import kotlinx.coroutines.withContext
 import net.response.GetUploadedPhotosResponse
 
-open class UploadPhotosLocalSource(
+open class UploadedPhotosLocalSource(
   private val database: MyDatabase,
   private val timeUtils: TimeUtils
 ) {

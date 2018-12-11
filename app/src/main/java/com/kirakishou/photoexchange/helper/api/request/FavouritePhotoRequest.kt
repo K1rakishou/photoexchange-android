@@ -8,6 +8,7 @@ import com.kirakishou.photoexchange.helper.exception.ConnectionError
 import kotlinx.coroutines.rx2.await
 import net.request.FavouritePhotoPacket
 import net.response.FavouritePhotoResponse
+import timber.log.Timber
 
 class FavouritePhotoRequest(
   private val userId: String,
@@ -21,6 +22,7 @@ class FavouritePhotoRequest(
     val response = try {
       apiService.favouritePhoto(FavouritePhotoPacket(userId, photoName)).await()
     } catch (error: Exception) {
+      Timber.e(error)
       throw ConnectionError(error.message)
     }
 

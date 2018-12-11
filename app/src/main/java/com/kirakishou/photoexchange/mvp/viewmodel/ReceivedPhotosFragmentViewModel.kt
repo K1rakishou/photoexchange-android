@@ -71,8 +71,6 @@ class ReceivedPhotosFragmentViewModel(
         }.safe
       }
     }
-
-    loadReceivedPhotos(false)
   }
 
   fun loadReceivedPhotos(forced: Boolean) {

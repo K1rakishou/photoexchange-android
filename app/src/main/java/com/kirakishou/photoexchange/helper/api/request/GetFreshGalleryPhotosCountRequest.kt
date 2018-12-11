@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.exception.ConnectionError
 import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import kotlinx.coroutines.rx2.await
 import net.response.GetFreshPhotosCountResponse
+import timber.log.Timber
 
 class GetFreshGalleryPhotosCountRequest(
   private val time: Long,
@@ -19,6 +20,7 @@ class GetFreshGalleryPhotosCountRequest(
     val response = try {
       apiService.getFreshGalleryPhotosCount(time).await()
     } catch (error: Exception) {
+      Timber.e(error)
       throw ConnectionError(error.message)
     }
 

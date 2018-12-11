@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.helper.exception.ConnectionError
 import kotlinx.coroutines.rx2.await
 import net.response.ReceivedPhotosResponse
+import timber.log.Timber
 
 class GetPageOfReceivedPhotosRequest(
   private val userId: String,
@@ -21,6 +22,7 @@ class GetPageOfReceivedPhotosRequest(
     val response = try {
       apiService.getReceivedPhotos(userId, lastUploadedOn, count).await()
     } catch (error: Exception) {
+      Timber.e(error)
       throw ConnectionError(error.message)
     }
 

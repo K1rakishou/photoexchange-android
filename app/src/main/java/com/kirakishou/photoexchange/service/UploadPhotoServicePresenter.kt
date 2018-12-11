@@ -140,11 +140,11 @@ open class UploadPhotoServicePresenter(
 
         Timber.tag(TAG).d("Successfully uploaded photo with id: ${photo.id} and name ${photo.photoName}")
       } catch (error: Exception) {
-        Timber.tag(TAG).e("Failed to upload photo  with id: ${photo.id} and name ${photo.photoName}", error)
+        Timber.tag(TAG).e(error, "Failed to upload photo  with id: ${photo.id} and name ${photo.photoName}")
 
         hasErrors = true
         takenPhotosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_QUEUED_UP)
-        eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUploadPhoto(photo))
+        eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUploadPhoto(photo, error))
       }
     }
 

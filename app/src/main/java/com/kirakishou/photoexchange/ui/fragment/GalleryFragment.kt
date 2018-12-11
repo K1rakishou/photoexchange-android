@@ -49,6 +49,7 @@ class GalleryFragment : BaseMvRxFragment(), StateEventListener<GalleryFragmentEv
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
+    initRx()
 
     viewModel.galleryFragmentViewModel.photoSize = photoSize
     viewModel.galleryFragmentViewModel.photosPerPage = columnsCount * Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
@@ -62,7 +63,7 @@ class GalleryFragment : BaseMvRxFragment(), StateEventListener<GalleryFragmentEv
       viewModel.galleryFragmentViewModel.loadGalleryPhotos(true)
     }
 
-    launch { initRx() }
+    viewModel.galleryFragmentViewModel.loadGalleryPhotos(false)
   }
 
   override fun onDestroyView() {
@@ -71,7 +72,7 @@ class GalleryFragment : BaseMvRxFragment(), StateEventListener<GalleryFragmentEv
     controller.destroy()
   }
 
-  private suspend fun initRx() {
+  private fun initRx() {
     compositeDisposable += scrollSubject
       .subscribeOn(Schedulers.io())
       .distinctUntilChanged()

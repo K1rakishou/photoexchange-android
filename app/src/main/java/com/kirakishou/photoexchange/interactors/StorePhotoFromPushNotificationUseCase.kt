@@ -1,32 +1,32 @@
-package com.kirakishou.photoexchange.helper.database.repository
+package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.source.local.ReceivedPhotosLocalSource
-import com.kirakishou.photoexchange.helper.database.source.local.UploadPhotosLocalSource
+import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
-class StorePhotoFromPushNotificationRepository(
+class StorePhotoFromPushNotificationUseCase(
   private val database: MyDatabase,
-  private val receivedPhotosLocalSource: ReceivedPhotosLocalSource,
-  private val uploadedPhotosLocalSource: UploadPhotosLocalSource,
+  private val receivedPhotosRepository: ReceivedPhotosRepository,
+  private val uploadedPhotosRepository: UploadedPhotosRepository,
   dispatchersProvider: DispatchersProvider
-) : BaseRepository(dispatchersProvider) {
-  private val TAG = "StorePhotoFromPushNotificationRepository"
+) : BaseUseCase(dispatchersProvider) {
+  private val TAG = "StorePhotoFromPushNotificationUseCase"
 
   suspend fun storePhotoFromPushNotification(photoExchangedData: PhotoExchangedData): Boolean {
     return withContext(coroutineContext) {
       try {
         database.transactional {
-          if (!receivedPhotosLocalSource.save(photoExchangedData)) {
+          if (!receivedPhotosRepository.save(photoExchangedData)) {
             throw DatabaseException("Could not save photoExchangedData as receivedPhoto, " +
               "photoExchangedData = $photoExchangedData")
           }
 
-          val result = uploadedPhotosLocalSource.updateReceiverInfo(
+          val result = uploadedPhotosRepository.updateReceiverInfo(
             photoExchangedData.uploadedPhotoName,
             photoExchangedData.receivedPhotoName,
             photoExchangedData.lon,
