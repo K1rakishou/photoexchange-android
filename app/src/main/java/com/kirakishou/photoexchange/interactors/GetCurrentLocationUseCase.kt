@@ -5,12 +5,14 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.extension.seconds
 import com.kirakishou.photoexchange.helper.LonLat
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.location.MyLocationManager
 import com.kirakishou.photoexchange.helper.location.RxLocationManager
 import io.reactivex.Observable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.rx2.awaitFirst
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
@@ -18,29 +20,32 @@ class GetCurrentLocationUseCase(
   private val context: Context,
   private val database: MyDatabase,
   private val takenPhotosRepository: TakenPhotosRepository,
-  private val settingsRepository: SettingsRepository
-) {
+  private val settingsRepository: SettingsRepository,
+  dispatchersProvider: DispatchersProvider
+) : BaseUseCase(dispatchersProvider) {
   private val TAG = "GetCurrentLocationUseCase"
   private val GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS = 15.seconds()
 
   private val locationManager by lazy { MyLocationManager(context) }
 
   suspend fun getCurrentLocation(): LonLat {
-    if (!takenPhotosRepository.hasPhotosWithEmptyLocation()) {
-      return LonLat.empty()
-    }
+    return withContext(coroutineContext) {
+      if (!takenPhotosRepository.hasPhotosWithEmptyLocation()) {
+        return@withContext LonLat.empty()
+      }
 
-    val gpsPermissionGranted = settingsRepository.isGpsPermissionGranted()
+      val gpsPermissionGranted = settingsRepository.isGpsPermissionGranted()
 
-    return if (gpsPermissionGranted) {
-      Timber.tag(TAG).d("Gps permission is granted")
+      return@withContext if (gpsPermissionGranted) {
+        Timber.tag(TAG).d("Gps permission is granted")
 
-      val currentLocation = getCurrentLocationInternal().awaitFirst()
-      updateCurrentLocationForAllPhotosWithEmptyLocation(currentLocation)
-      currentLocation
-    } else {
-      Timber.tag(TAG).d("Gps permission is not granted")
-      LonLat.empty()
+        val currentLocation = getCurrentLocationInternal().awaitFirst()
+        updateCurrentLocationForAllPhotosWithEmptyLocation(currentLocation)
+        currentLocation
+      } else {
+        Timber.tag(TAG).d("Gps permission is not granted")
+        LonLat.empty()
+      }
     }
   }
 

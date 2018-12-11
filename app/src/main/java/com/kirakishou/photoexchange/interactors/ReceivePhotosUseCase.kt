@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
@@ -11,6 +12,7 @@ import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.mvp.model.FindPhotosData
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import core.ErrorCode
+import kotlinx.coroutines.withContext
 import net.response.ReceivedPhotosResponse
 import timber.log.Timber
 
@@ -19,25 +21,28 @@ open class ReceivePhotosUseCase(
   private val apiClient: ApiClient,
   private val receivedPhotosRepository: ReceivedPhotosRepository,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
-  private val takenPhotosRepository: TakenPhotosRepository
-) {
+  private val takenPhotosRepository: TakenPhotosRepository,
+  dispatchersProvider: DispatchersProvider
+) : BaseUseCase(dispatchersProvider) {
   private val TAG = "ReceivePhotosUseCase"
 
   suspend fun receivePhotos(
     photoData: FindPhotosData
   ): List<ReceivedPhoto> {
-    if (photoData.isUserIdEmpty()) {
-      throw ReceivePhotosServiceException.UserIdIsEmptyException()
-    }
+    return withContext(coroutineContext) {
+      if (photoData.isUserIdEmpty()) {
+        throw ReceivePhotosServiceException.UserIdIsEmptyException()
+      }
 
-    if (photoData.isPhotoNamesEmpty()) {
-      throw ReceivePhotosServiceException.PhotoNamesAreEmpty()
-    }
+      if (photoData.isPhotoNamesEmpty()) {
+        throw ReceivePhotosServiceException.PhotoNamesAreEmpty()
+      }
 
-    return receivePhotos(photoData.userId!!, photoData.photoNames)
+      return@withContext receivePhotos(photoData.userId!!, photoData.photoNames)
+    }
   }
 
-  suspend fun receivePhotos(
+  private suspend fun receivePhotos(
     userId: String,
     photoNames: String
   ): List<ReceivedPhoto> {

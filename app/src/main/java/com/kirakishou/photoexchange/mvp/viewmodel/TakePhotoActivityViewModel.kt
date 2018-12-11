@@ -1,19 +1,16 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
-import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import core.ErrorCode
-import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.withContext
 
 /**
  * Created by kirakishou on 11/7/2017.
  */
 class TakePhotoActivityViewModel(
-  private val schedulerProvider: SchedulerProvider,
-  private val takenPhotosRepository: TakenPhotosRepository,
-  private val settingsRepository: SettingsRepository
-) : BaseViewModel() {
+  private val settingsRepository: SettingsRepository,
+  dispatchersProvider: DispatchersProvider
+) : BaseViewModel(dispatchersProvider) {
 
   private val TAG = "TakePhotoActivityViewModel"
 
@@ -22,7 +19,9 @@ class TakePhotoActivityViewModel(
   }
 
   suspend fun updateGpsPermissionGranted(granted: Boolean) {
-    settingsRepository.updateGpsPermissionGranted(granted)
+    withContext(coroutineContext) {
+      settingsRepository.updateGpsPermissionGranted(granted)
+    }
   }
 }
 

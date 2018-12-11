@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
@@ -17,6 +18,7 @@ import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 /**
@@ -27,12 +29,12 @@ class PhotosActivityViewModel(
   val receivedPhotosFragmentViewModel: ReceivedPhotosFragmentViewModel,
   val galleryFragmentViewModel: GalleryFragmentViewModel,
   val intercom: PhotosActivityViewModelIntercom,
-  private val settingsRepository: SettingsRepository,
   private val takenPhotosRepository: TakenPhotosRepository,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
   private val receivedPhotosRepository: ReceivedPhotosRepository,
-  private val blacklistPhotoUseCase: BlacklistPhotoUseCase
-) : BaseViewModel() {
+  private val blacklistPhotoUseCase: BlacklistPhotoUseCase,
+  dispatchersProvider: DispatchersProvider
+) : BaseViewModel(dispatchersProvider) {
   private val TAG = "PhotosActivityViewModel"
 
   override fun onCleared() {
@@ -44,14 +46,18 @@ class PhotosActivityViewModel(
   }
 
   suspend fun checkHasPhotosToUpload(): Boolean {
-    return takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
+    return withContext(coroutineContext) {
+      takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
+    }
   }
 
   suspend fun checkCanReceivePhotos(): Boolean {
-    val uploadedPhotosCount = uploadedPhotosRepository.count()
-    val receivedPhotosCount = receivedPhotosRepository.count()
+    return withContext(coroutineContext) {
+      val uploadedPhotosCount = uploadedPhotosRepository.count()
+      val receivedPhotosCount = receivedPhotosRepository.count()
 
-    return uploadedPhotosCount > receivedPhotosCount
+      return@withContext uploadedPhotosCount > receivedPhotosCount
+    }
   }
 
   fun addReceivedPhoto(photoExchangedData: PhotoExchangedData) {

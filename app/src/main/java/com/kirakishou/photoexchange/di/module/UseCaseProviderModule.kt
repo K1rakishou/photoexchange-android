@@ -25,7 +25,8 @@ class UseCaseProviderModule {
                                  fileUtils: FileUtils,
                                  bitmapUtils: BitmapUtils,
                                  takenPhotosRepository: TakenPhotosRepository,
-                                 uploadedPhotosRepository: UploadedPhotosRepository): UploadPhotosUseCase {
+                                 uploadedPhotosRepository: UploadedPhotosRepository,
+                                 dispatchersProvider: DispatchersProvider): UploadPhotosUseCase {
     return UploadPhotosUseCase(
       database,
       apiClient,
@@ -33,7 +34,8 @@ class UseCaseProviderModule {
       fileUtils,
       bitmapUtils,
       takenPhotosRepository,
-      uploadedPhotosRepository
+      uploadedPhotosRepository,
+      dispatchersProvider
     )
   }
 
@@ -43,13 +45,15 @@ class UseCaseProviderModule {
                                      apiClient: ApiClient,
                                      receivedPhotosRepository: ReceivedPhotosRepository,
                                      takenPhotosRepository: TakenPhotosRepository,
-                                     uploadedPhotosRepository: UploadedPhotosRepository): ReceivePhotosUseCase {
+                                     uploadedPhotosRepository: UploadedPhotosRepository,
+                                     dispatchersProvider: DispatchersProvider): ReceivePhotosUseCase {
     return ReceivePhotosUseCase(
       database,
       apiClient,
       receivedPhotosRepository,
       uploadedPhotosRepository,
-      takenPhotosRepository
+      takenPhotosRepository,
+      dispatchersProvider
     )
   }
 
@@ -218,12 +222,14 @@ class UseCaseProviderModule {
   fun provideGetCurrentLocationUseCase(@Named("app_context") context: Context,
                                        database: MyDatabase,
                                        takenPhotosRepository: TakenPhotosRepository,
-                                       settingsRepository: SettingsRepository): GetCurrentLocationUseCase {
+                                       settingsRepository: SettingsRepository,
+                                       dispatchersProvider: DispatchersProvider): GetCurrentLocationUseCase {
     return GetCurrentLocationUseCase(
       context,
       database,
       takenPhotosRepository,
-      settingsRepository
+      settingsRepository,
+      dispatchersProvider
     )
   }
 

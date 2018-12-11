@@ -3,18 +3,20 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 import com.kirakishou.photoexchange.helper.Constants.DOMAIN_NAME
 import com.kirakishou.photoexchange.helper.NetworkAccessLevel
 import com.kirakishou.photoexchange.helper.PhotosVisibility
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.interactors.RestoreAccountUseCase
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 class SettingsActivityViewModel(
   private val settingsRepository: SettingsRepository,
-  private val schedulerProvider: SchedulerProvider,
-  private val restoreAccountUseCase: RestoreAccountUseCase
-) : BaseViewModel() {
+  private val restoreAccountUseCase: RestoreAccountUseCase,
+  dispatchersProvider: DispatchersProvider
+) : BaseViewModel(dispatchersProvider) {
   private val TAG = "SettingsActivityViewModel"
 
   suspend fun getUserId(): String {
@@ -36,8 +38,10 @@ class SettingsActivityViewModel(
   }
 
   suspend fun getPhotoVisibility(): PhotosVisibility {
-    return settingsRepository.getPhotoVisibility().also {
-      Timber.tag(TAG).d("Current photo visibility = ${it}")
+    return withContext(coroutineContext) {
+      return@withContext settingsRepository.getPhotoVisibility().also {
+        Timber.tag(TAG).d("Current photo visibility = ${it}")
+      }
     }
   }
 
@@ -50,20 +54,24 @@ class SettingsActivityViewModel(
   }
 
   suspend fun getNetworkAccessLevel(): NetworkAccessLevel {
-    return settingsRepository.getNetworkAccessLevel().also {
-      Timber.tag(TAG).d("Current network access level = ${it}")
+    return withContext(coroutineContext) {
+      return@withContext settingsRepository.getNetworkAccessLevel().also {
+        Timber.tag(TAG).d("Current network access level = ${it}")
+      }
     }
   }
 
   suspend fun restoreOldAccount(oldUserId: String): Boolean {
-    val suffix = "@${DOMAIN_NAME}"
+    return withContext(coroutineContext) {
+      val suffix = "@${DOMAIN_NAME}"
 
-    val userId = if (!oldUserId.endsWith(suffix, true)) {
-      oldUserId + suffix
-    } else {
-      oldUserId
+      val userId = if (!oldUserId.endsWith(suffix, true)) {
+        oldUserId + suffix
+      } else {
+        oldUserId
+      }
+
+      return@withContext restoreAccountUseCase.restoreAccount(userId)
     }
-
-    return restoreAccountUseCase.restoreAccount(userId)
   }
 }

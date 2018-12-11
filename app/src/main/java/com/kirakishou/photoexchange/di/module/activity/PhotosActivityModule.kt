@@ -61,18 +61,14 @@ open class PhotosActivityModule(
                                              viewState: UploadedPhotosFragmentState,
                                              takenPhotosRepository: TakenPhotosRepository,
                                              uploadedPhotosRepository: UploadedPhotosRepository,
-                                             receivedPhotosRepository: ReceivedPhotosRepository,
                                              getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
-                                             timeUtils: TimeUtils,
                                              dispatchersProvider: DispatchersProvider): UploadedPhotosFragmentViewModel {
     return UploadedPhotosFragmentViewModel(
       viewState,
       intercom,
       takenPhotosRepository,
       uploadedPhotosRepository,
-      receivedPhotosRepository,
       getUploadedPhotosUseCase,
-      timeUtils,
       dispatchersProvider
     )
   }
@@ -119,21 +115,21 @@ open class PhotosActivityModule(
                               receivedPhotosFragmentViewModel: ReceivedPhotosFragmentViewModel,
                               galleryFragmentViewModel: GalleryFragmentViewModel,
                               intercom: PhotosActivityViewModelIntercom,
-                              settingsRepository: SettingsRepository,
                               takenPhotosRepository: TakenPhotosRepository,
                               uploadedPhotosRepository: UploadedPhotosRepository,
                               receivedPhotosRepository: ReceivedPhotosRepository,
-                              blacklistPhotoUseCase: BlacklistPhotoUseCase): PhotosActivityViewModelFactory {
+                              blacklistPhotoUseCase: BlacklistPhotoUseCase,
+                              dispatchersProvider: DispatchersProvider): PhotosActivityViewModelFactory {
     return PhotosActivityViewModelFactory(
       uploadedPhotosFragmentViewModel,
       receivedPhotosFragmentViewModel,
       galleryFragmentViewModel,
       intercom,
-      settingsRepository,
       takenPhotosRepository,
       uploadedPhotosRepository,
       receivedPhotosRepository,
-      blacklistPhotoUseCase
+      blacklistPhotoUseCase,
+      dispatchersProvider
     )
   }
 

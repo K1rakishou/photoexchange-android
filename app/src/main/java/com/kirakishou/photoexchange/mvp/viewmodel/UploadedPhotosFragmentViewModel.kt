@@ -45,9 +45,7 @@ class UploadedPhotosFragmentViewModel(
   private val intercom: PhotosActivityViewModelIntercom,
   private val takenPhotosRepository: TakenPhotosRepository,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
-  private val receivedPhotosRepository: ReceivedPhotosRepository,
   private val getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
-  private val timeUtils: TimeUtils,
   private val dispatchersProvider: DispatchersProvider
 ) : BaseMvRxViewModel<UploadedPhotosFragmentState>(initialState, BuildConfig.DEBUG), CoroutineScope {
   private val TAG = "UploadedPhotosFragmentViewModel"

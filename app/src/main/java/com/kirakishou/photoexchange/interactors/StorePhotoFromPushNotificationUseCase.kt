@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRep
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 class StorePhotoFromPushNotificationUseCase(
@@ -17,30 +18,32 @@ class StorePhotoFromPushNotificationUseCase(
   private val TAG = "StorePhotoFromPushNotificationUseCase"
 
   suspend fun storePhotoFromPushNotification(photoExchangedData: PhotoExchangedData): Boolean {
-    try {
-      database.transactional {
-        if (!receivedPhotosRepository.save(photoExchangedData)) {
-          throw DatabaseException("Could not save photoExchangedData as receivedPhoto, " +
-            "photoExchangedData = $photoExchangedData")
+    return withContext(coroutineContext) {
+      try {
+        database.transactional {
+          if (!receivedPhotosRepository.save(photoExchangedData)) {
+            throw DatabaseException("Could not save photoExchangedData as receivedPhoto, " +
+              "photoExchangedData = $photoExchangedData")
+          }
+
+          val result = uploadedPhotosRepository.updateReceiverInfo(
+            photoExchangedData.uploadedPhotoName,
+            photoExchangedData.receivedPhotoName,
+            photoExchangedData.lon,
+            photoExchangedData.lat
+          )
+
+          if (!result) {
+            throw DatabaseException("Could not update receiverInfo for photo with " +
+              "uploadedPhotoName = ${photoExchangedData.uploadedPhotoName}")
+          }
         }
 
-        val result = uploadedPhotosRepository.updateReceiverInfo(
-          photoExchangedData.uploadedPhotoName,
-          photoExchangedData.receivedPhotoName,
-          photoExchangedData.lon,
-          photoExchangedData.lat
-        )
-
-        if (!result) {
-          throw DatabaseException("Could not update receiverInfo for photo with " +
-            "uploadedPhotoName = ${photoExchangedData.uploadedPhotoName}")
-        }
+        return@withContext true
+      } catch (error: Throwable) {
+        Timber.tag(TAG).e(error)
+        return@withContext false
       }
-
-      return true
-    } catch (error: Throwable) {
-      Timber.tag(TAG).e(error)
-      return false
     }
   }
 

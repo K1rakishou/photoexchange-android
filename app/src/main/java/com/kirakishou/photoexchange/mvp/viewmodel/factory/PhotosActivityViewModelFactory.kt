@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.mvp.viewmodel.factory
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
@@ -25,11 +26,11 @@ class PhotosActivityViewModelFactory
   val receivedPhotosFragmentViewModel: ReceivedPhotosFragmentViewModel,
   val galleryFragmentViewModel: GalleryFragmentViewModel,
   val intercom: PhotosActivityViewModelIntercom,
-  val settingsRepository: SettingsRepository,
   val takenPhotosRepository: TakenPhotosRepository,
   val uploadedPhotosRepository: UploadedPhotosRepository,
   val receivedPhotosRepository: ReceivedPhotosRepository,
-  val blacklistPhotoUseCase: BlacklistPhotoUseCase
+  val blacklistPhotoUseCase: BlacklistPhotoUseCase,
+  val dispatchersProvider: DispatchersProvider
 ) : ViewModelProvider.Factory {
 
   @Suppress("UNCHECKED_CAST")
@@ -39,11 +40,11 @@ class PhotosActivityViewModelFactory
       receivedPhotosFragmentViewModel,
       galleryFragmentViewModel,
       intercom,
-      settingsRepository,
       takenPhotosRepository,
       uploadedPhotosRepository,
       receivedPhotosRepository,
-      blacklistPhotoUseCase
+      blacklistPhotoUseCase,
+      dispatchersProvider
     ) as T
   }
 }

@@ -2,6 +2,7 @@ package com.kirakishou.photoexchange.di.module.activity
 
 import androidx.lifecycle.ViewModelProviders
 import com.kirakishou.photoexchange.di.scope.PerActivity
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.interactors.RestoreAccountUseCase
@@ -18,15 +19,22 @@ open class SettingsActivityModule(
 
   @PerActivity
   @Provides
-  fun provideViewModelFactory(schedulerProvider: SchedulerProvider,
-                              settingsRepository: SettingsRepository,
-                              restoreAccountUseCase: RestoreAccountUseCase): SettingsActivityViewModelFactory {
-    return SettingsActivityViewModelFactory(settingsRepository, schedulerProvider, restoreAccountUseCase)
+  fun provideViewModelFactory(settingsRepository: SettingsRepository,
+                              restoreAccountUseCase: RestoreAccountUseCase,
+                              dispatchersProvider: DispatchersProvider): SettingsActivityViewModelFactory {
+    return SettingsActivityViewModelFactory(
+      settingsRepository,
+      restoreAccountUseCase,
+      dispatchersProvider
+    )
   }
 
   @PerActivity
   @Provides
   fun provideViewModel(viewModelFactory: SettingsActivityViewModelFactory): SettingsActivityViewModel {
-    return ViewModelProviders.of(activity, viewModelFactory).get(SettingsActivityViewModel::class.java)
+    return ViewModelProviders.of(
+      activity,
+      viewModelFactory
+    ).get(SettingsActivityViewModel::class.java)
   }
 }
