@@ -20,7 +20,9 @@ class SettingsActivityViewModel(
   private val TAG = "SettingsActivityViewModel"
 
   suspend fun getUserId(): String {
-    return settingsRepository.getUserId()
+    return withContext(coroutineContext) {
+      settingsRepository.getUserId()
+    }
   }
 
   fun updatePhotoVisibility(visibility: PhotosVisibility) {
