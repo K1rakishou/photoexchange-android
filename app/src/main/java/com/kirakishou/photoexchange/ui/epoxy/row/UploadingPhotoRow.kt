@@ -12,13 +12,9 @@ import androidx.appcompat.widget.AppCompatButton
 import androidx.cardview.widget.CardView
 import com.airbnb.epoxy.ModelProp
 import com.airbnb.epoxy.ModelView
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.fixmypc.photoexchange.R
-import com.kirakishou.photoexchange.di.module.GlideApp
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
-import java.lang.IllegalStateException
 
 @ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT)
 class UploadingPhotoRow @JvmOverloads constructor(
@@ -54,7 +50,7 @@ class UploadingPhotoRow @JvmOverloads constructor(
       throw IllegalStateException("photo state should be PHOTO_UPLOADING but actually is (${photo.photoState})")
     }
 
-    photoUploadingStateIndicator.background = ColorDrawable(context.resources.getColor(R.color.photo_state_uploading_color))
+    photoUploadingStateIndicator.background = ColorDrawable(context.resources.getColor(R.color.colorPrimary))
     uploadingMessageHolderView.visibility = View.VISIBLE
   }
 

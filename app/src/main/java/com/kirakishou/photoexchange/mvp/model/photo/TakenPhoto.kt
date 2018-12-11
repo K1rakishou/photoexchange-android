@@ -48,6 +48,10 @@ open class TakenPhoto(
       return true
     }
 
+    if (other::class != this::class) {
+      return false
+    }
+
     other as TakenPhoto
 
     return other.id == this.id
