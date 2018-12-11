@@ -44,6 +44,7 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
+    initRx()
 
     viewModel.uploadedPhotosFragmentViewModel.photoSize = photoSize
     viewModel.uploadedPhotosFragmentViewModel.photosPerPage = columnsCount * Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
@@ -57,7 +58,7 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
       viewModel.uploadedPhotosFragmentViewModel.loadUploadedPhotos(true)
     }
 
-    initRx()
+    viewModel.uploadedPhotosFragmentViewModel.loadQueuedUpPhotos()
   }
 
   private fun initRx() {

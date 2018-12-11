@@ -52,6 +52,7 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
+    initRx()
 
     viewModel.receivedPhotosFragmentViewModel.photoSize = photoSize
     viewModel.receivedPhotosFragmentViewModel.photosPerPage = columnsCount * Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
@@ -65,7 +66,7 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
       viewModel.receivedPhotosFragmentViewModel.loadReceivedPhotos(true)
     }
 
-    initRx()
+    viewModel.receivedPhotosFragmentViewModel.loadReceivedPhotos(false)
   }
 
   private fun initRx() {

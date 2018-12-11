@@ -77,8 +77,6 @@ class UploadedPhotosFragmentViewModel(
         }.safe
       }
     }
-
-    loadQueuedUpPhotos()
   }
 
   fun loadQueuedUpPhotos() {
@@ -373,7 +371,7 @@ class UploadedPhotosFragmentViewModel(
           setState { copy(takenPhotos = newPhotos) }
 
           intercom.tell<PhotosActivity>()
-            .to(PhotosActivityEvent.ShowToast("Failed to upload photo"))
+            .to(PhotosActivityEvent.ShowToast("Failed to upload photo, error message: ${event.error.message}"))
         }
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoCanceled -> {
@@ -440,6 +438,8 @@ class UploadedPhotosFragmentViewModel(
   }
 
   private fun startUploadingService(reason: String) {
+    Timber.tag(TAG).d("startUploadingService called!")
+
     intercom.tell<PhotosActivity>()
       .to(PhotosActivityEvent.StartUploadingService(
         PhotosActivityViewModel::class.java,
