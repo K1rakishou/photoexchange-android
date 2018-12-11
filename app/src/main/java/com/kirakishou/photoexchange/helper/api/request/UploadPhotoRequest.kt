@@ -14,6 +14,7 @@ import kotlinx.coroutines.rx2.await
 import net.request.SendPhotoPacket
 import net.response.UploadPhotoResponse
 import okhttp3.MultipartBody
+import timber.log.Timber
 import java.io.File
 
 /**
@@ -41,6 +42,7 @@ class UploadPhotoRequest(
     val response = try {
       apiService.uploadPhoto(body.part(0), body.part(1)).await()
     } catch (error: Exception) {
+      Timber.e(error)
       throw ConnectionError(error.message)
     }
 

@@ -8,6 +8,7 @@ import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import kotlinx.coroutines.rx2.await
 import net.request.UpdateFirebaseTokenPacket
 import net.response.UpdateFirebaseTokenResponse
+import timber.log.Timber
 
 class UpdateFirebaseTokenRequest(
   private val userId: String,
@@ -23,6 +24,7 @@ class UpdateFirebaseTokenRequest(
     val response = try {
       apiService.updateFirebaseToken(packet).await()
     } catch (error: Exception) {
+      Timber.e(error)
       throw ConnectionError(error.message)
     }
 

@@ -9,6 +9,7 @@ import kotlinx.coroutines.rx2.await
 import net.request.ReportPhotoPacket
 import net.response.ReportPhotoResponse
 import retrofit2.Response
+import timber.log.Timber
 
 class ReportPhotoRequest(
   private val userId: String,
@@ -22,6 +23,7 @@ class ReportPhotoRequest(
     val response = try {
       apiService.reportPhoto(ReportPhotoPacket(userId, photoName)).await() as Response<ReportPhotoResponse>
     } catch (error: Exception) {
+      Timber.e(error)
       throw ConnectionError(error.message)
     }
 
