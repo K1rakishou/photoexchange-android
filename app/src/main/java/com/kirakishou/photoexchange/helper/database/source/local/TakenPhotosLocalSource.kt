@@ -21,6 +21,10 @@ open class TakenPhotosLocalSource(
     return takenPhotoDao.findById(photoId) ?: TakenPhotoEntity.empty()
   }
 
+  fun findPhotoByName(photoName: String): TakenPhotoEntity {
+    return takenPhotoDao.findByName(photoName) ?: TakenPhotoEntity.empty()
+  }
+
   fun findAll(): List<TakenPhotoEntity> {
     return takenPhotoDao.findAll()
   }

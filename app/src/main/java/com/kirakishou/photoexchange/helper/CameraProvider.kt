@@ -88,6 +88,7 @@ open class CameraProvider(
     }
 
     Timber.tag(TAG).d("before saveTakenPhoto")
+    //TODO: move to usecase?
     val takenPhoto = takenPhotosRepository.saveTakenPhoto(tempFile)
     Timber.tag(TAG).d("after saveTakenPhoto")
 

@@ -72,8 +72,8 @@ open class DatabaseModule(
   @Singleton
   @Provides
   open fun provideUploadPhotosLocalSource(database: MyDatabase,
-                                          timeUtils: TimeUtils): UploadPhotosLocalSource {
-    return UploadPhotosLocalSource(database, timeUtils)
+                                          timeUtils: TimeUtils): UploadedPhotosLocalSource {
+    return UploadedPhotosLocalSource(database, timeUtils)
   }
 
   @Singleton
@@ -114,149 +114,39 @@ open class DatabaseModule(
   open fun provideTakenPhotoRepository(database: MyDatabase,
                                        timeUtils: TimeUtils,
                                        takenPhotosLocalSource: TakenPhotosLocalSource,
-                                       tempFileLocalSource: TempFileLocalSource,
-                                       dispatchersProvider: DispatchersProvider): TakenPhotosRepository {
+                                       tempFileLocalSource: TempFileLocalSource): TakenPhotosRepository {
     return TakenPhotosRepository(
       timeUtils,
       database,
       takenPhotosLocalSource,
-      tempFileLocalSource,
-      dispatchersProvider
+      tempFileLocalSource
     )
   }
 
   @Singleton
   @Provides
-  open fun provideSettingsRepository(database: MyDatabase,
-                                     dispatchersProvider: DispatchersProvider): SettingsRepository {
-    return SettingsRepository(database, dispatchersProvider)
+  open fun provideSettingsRepository(database: MyDatabase): SettingsRepository {
+    return SettingsRepository(database)
   }
 
   @Singleton
   @Provides
   open fun provideReceivedPhotoRepository(database: MyDatabase,
-                                          receivedPhotosLocalSource: ReceivedPhotosLocalSource,
-                                          dispatchersProvider: DispatchersProvider): ReceivedPhotosRepository {
+                                          receivedPhotosLocalSource: ReceivedPhotosLocalSource): ReceivedPhotosRepository {
     return ReceivedPhotosRepository(
       database,
-      receivedPhotosLocalSource,
-      dispatchersProvider
+      receivedPhotosLocalSource
     )
   }
 
-  @Singleton
-  @Provides
-  open fun provideGalleryPhotoRepository(database: MyDatabase,
-                                         apiClient: ApiClient,
-                                         timeUtils: TimeUtils,
-                                         pagedApiUtils: PagedApiUtils,
-                                         netUtils: NetUtils,
-                                         galleryPhotoLocalSource: GalleryPhotoLocalSource,
-                                         galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
-                                         blacklistedPhotoLocalSource: BlacklistedPhotoLocalSource,
-                                         dispatchersProvider: DispatchersProvider): GetGalleryPhotosRepository {
-    return GetGalleryPhotosRepository(
-      database,
-      apiClient,
-      timeUtils,
-      pagedApiUtils,
-      netUtils,
-      galleryPhotoLocalSource,
-      galleryPhotoInfoLocalSource,
-      blacklistedPhotoLocalSource,
-      dispatchersProvider
-    )
-  }
 
   @Singleton
   @Provides
   open fun provideUploadedPhotoRepository(database: MyDatabase,
-                                          uploadedPhotosLocalSource: UploadPhotosLocalSource,
-                                          dispatchersProvider: DispatchersProvider): UploadedPhotosRepository {
+                                          uploadedPhotosLocalSource: UploadedPhotosLocalSource): UploadedPhotosRepository {
     return UploadedPhotosRepository(
       database,
-      uploadedPhotosLocalSource,
-      dispatchersProvider
-    )
-  }
-
-  @Singleton
-  @Provides
-  open fun provideFavouritePhotoRepository(database: MyDatabase,
-                                           timeUtils: TimeUtils,
-                                           apiClient: ApiClient,
-                                           galleryPhotoLocalSource: GalleryPhotoLocalSource,
-                                           galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
-                                           dispatchersProvider: DispatchersProvider): FavouritePhotoRepository {
-    return FavouritePhotoRepository(
-      database,
-      timeUtils,
-      apiClient,
-      galleryPhotoLocalSource,
-      galleryPhotoInfoLocalSource,
-      dispatchersProvider
-    )
-  }
-
-  @Singleton
-  @Provides
-  open fun provideReportPhotoRepository(database: MyDatabase,
-                                        timeUtils: TimeUtils,
-                                        apiClient: ApiClient,
-                                        galleryPhotoLocalSource: GalleryPhotoLocalSource,
-                                        galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
-                                        dispatchersProvider: DispatchersProvider): ReportPhotoRepository {
-    return ReportPhotoRepository(
-      database,
-      timeUtils,
-      apiClient,
-      galleryPhotoLocalSource,
-      galleryPhotoInfoLocalSource,
-      dispatchersProvider
-    )
-  }
-
-  @Singleton
-  @Provides
-  open fun provideGetReceivedPhotosRepository(database: MyDatabase,
-                                              apiClient: ApiClient,
-                                              timeUtils: TimeUtils,
-                                              pagedApiUtils: PagedApiUtils,
-                                              receivedPhotosLocalSource: ReceivedPhotosLocalSource,
-                                              uploadedPhotosLocalSource: UploadPhotosLocalSource,
-                                              blacklistedPhotoLocalSource: BlacklistedPhotoLocalSource,
-                                              dispatchersProvider: DispatchersProvider): GetReceivedPhotosRepository {
-    return GetReceivedPhotosRepository(
-      database,
-      apiClient,
-      timeUtils,
-      pagedApiUtils,
-      receivedPhotosLocalSource,
-      uploadedPhotosLocalSource,
-      blacklistedPhotoLocalSource,
-      dispatchersProvider
-    )
-  }
-
-  @Singleton
-  @Provides
-  open fun provideUploadPhotosRepository(database: MyDatabase,
-                                         timeUtils: TimeUtils,
-                                         bitmapUtils: BitmapUtils,
-                                         fileUtils: FileUtils,
-                                         takenPhotosLocalSource: TakenPhotosLocalSource,
-                                         apiClient: ApiClient,
-                                         uploadPhotosLocalSource: UploadPhotosLocalSource,
-                                         dispatchersProvider: DispatchersProvider): UploadPhotosRepository {
-    return UploadPhotosRepository(
-      database,
-      timeUtils,
-      bitmapUtils,
-      fileUtils,
-      takenPhotosLocalSource,
-      apiClient,
-      uploadPhotosLocalSource,
-      dispatchersProvider
+      uploadedPhotosLocalSource
     )
   }
 
@@ -269,95 +159,21 @@ open class DatabaseModule(
 
   @Singleton
   @Provides
-  open fun provideReceivePhotosRepository(database: MyDatabase,
-                                          apiClient: ApiClient,
-                                          receivedPhotosLocalSource: ReceivedPhotosLocalSource,
-                                          uploadedPhotosLocalSource: UploadPhotosLocalSource,
-                                          takenPhotosLocalSource: TakenPhotosLocalSource,
-                                          dispatchersProvider: DispatchersProvider): ReceivePhotosRepository {
-    return ReceivePhotosRepository(
-      database,
-      apiClient,
-      receivedPhotosLocalSource,
-      uploadedPhotosLocalSource,
-      takenPhotosLocalSource,
-      dispatchersProvider
-    )
-  }
-
-  @Singleton
-  @Provides
-  open fun provideGetUploadedPhotosRepository(database: MyDatabase,
-                                              apiClient: ApiClient,
-                                              timeUtils: TimeUtils,
-                                              pagedApiUtils: PagedApiUtils,
-                                              uploadedPhotosLocalSource: UploadPhotosLocalSource,
-                                              blacklistedPhotoLocalSource: BlacklistedPhotoLocalSource,
-                                              dispatchersProvider: DispatchersProvider): GetUploadedPhotosRepository {
-    return GetUploadedPhotosRepository(
-      database,
-      apiClient,
-      timeUtils,
-      pagedApiUtils,
-      uploadedPhotosLocalSource,
-      blacklistedPhotoLocalSource,
-      dispatchersProvider
-    )
-  }
-
-  @Singleton
-  @Provides
   open fun provideGalleryPhotosRepository(database: MyDatabase,
-                                          timeUtils: TimeUtils,
                                           galleryPhotoLocalSource: GalleryPhotoLocalSource,
-                                          galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource,
-                                          dispatchersProvider: DispatchersProvider): GalleryPhotosRepository {
+                                          galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource): GalleryPhotosRepository {
     return GalleryPhotosRepository(
       database,
-      timeUtils,
       galleryPhotoLocalSource,
-      galleryPhotoInfoLocalSource,
-      dispatchersProvider
+      galleryPhotoInfoLocalSource
     )
   }
 
   @Singleton
   @Provides
-  open fun provideStorePhotoFromPushNotificationRepository(database: MyDatabase,
-                                                           receivedPhotosLocalSource: ReceivedPhotosLocalSource,
-                                                           uploadedPhotosLocalSource: UploadPhotosLocalSource,
-                                                           dispatchersProvider: DispatchersProvider): StorePhotoFromPushNotificationRepository {
-    return StorePhotoFromPushNotificationRepository(
-      database,
-      receivedPhotosLocalSource,
-      uploadedPhotosLocalSource,
-      dispatchersProvider
-    )
-  }
-
-  @Singleton
-  @Provides
-  open fun provideRestoreAccountRepository(database: MyDatabase,
-                                           settingsRepository: SettingsRepository,
-                                           uploadedPhotosRepository: UploadedPhotosRepository,
-                                           receivedPhotosRepository: ReceivedPhotosRepository,
-                                           dispatchersProvider: DispatchersProvider): RestoreAccountRepository {
-    return RestoreAccountRepository(
-      database,
-      settingsRepository,
-      uploadedPhotosRepository,
-      receivedPhotosRepository,
-      dispatchersProvider
-    )
-  }
-
-  @Singleton
-  @Provides
-  open fun provideBlacklistedPhotoRepository(blacklistedPhotoLocalSource: BlacklistedPhotoLocalSource,
-                                             dispatchersProvider: DispatchersProvider): BlacklistedPhotoRepository {
+  open fun provideBlacklistedPhotoRepository(blacklistedPhotoLocalSource: BlacklistedPhotoLocalSource): BlacklistedPhotoRepository {
     return BlacklistedPhotoRepository(
-      blacklistedPhotoLocalSource,
-      dispatchersProvider
+      blacklistedPhotoLocalSource
     )
   }
 }

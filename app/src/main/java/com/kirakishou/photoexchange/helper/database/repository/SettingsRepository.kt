@@ -11,95 +11,70 @@ import kotlinx.coroutines.withContext
  * Created by kirakishou on 3/17/2018.
  */
 open class SettingsRepository(
-  private val database: MyDatabase,
-  dispatchersProvider: DispatchersProvider
-) : BaseRepository(dispatchersProvider) {
+  private val database: MyDatabase
+) : BaseRepository() {
   private val settingsDao = database.settingsDao()
 
   suspend fun saveUserId(userId: String?): Boolean {
-    return withContext(coroutineContext) {
-      return@withContext settingsDao.insert(SettingEntity(USER_ID_SETTING, userId)) > 0
-    }
+    return settingsDao.insert(SettingEntity(USER_ID_SETTING, userId)) > 0
   }
 
   open suspend fun getUserId(): String {
-    return withContext(coroutineContext) {
-      return@withContext settingsDao.findByName(USER_ID_SETTING)?.settingValue ?: ""
-    }
+    return settingsDao.findByName(USER_ID_SETTING)?.settingValue ?: ""
   }
 
   open suspend fun saveNewFirebaseToken(newToken: String?): Boolean {
-    return withContext(coroutineContext) {
-      return@withContext settingsDao.insert(SettingEntity(NEW_FIREBASE_TOKEN, newToken)) > 0
-    }
+    return settingsDao.insert(SettingEntity(NEW_FIREBASE_TOKEN, newToken)) > 0
   }
 
   /**
    * Used for figuring out that the token has changed
    * */
   open suspend fun getNewFirebaseToken(): String {
-    return withContext(coroutineContext) {
-      return@withContext settingsDao.findByName(NEW_FIREBASE_TOKEN)?.settingValue ?: ""
-    }
+    return settingsDao.findByName(NEW_FIREBASE_TOKEN)?.settingValue ?: ""
   }
 
   /**
    * Used for all operations
    * */
   open suspend fun saveFirebaseToken(token: String?): Boolean {
-    return withContext(coroutineContext) {
-      return@withContext settingsDao.insert(SettingEntity(FIREBASE_TOKEN, token)) > 0
-    }
+    return settingsDao.insert(SettingEntity(FIREBASE_TOKEN, token)) > 0
   }
 
   open suspend fun getFirebaseToken(): String {
-    return withContext(coroutineContext) {
-      return@withContext settingsDao.findByName(FIREBASE_TOKEN)?.settingValue ?: ""
-    }
+    return settingsDao.findByName(FIREBASE_TOKEN)?.settingValue ?: ""
   }
 
   suspend fun savePhotoVisibility(makePublic: Boolean?): Boolean {
-    return withContext(coroutineContext) {
-      val value = PhotosVisibility.fromBoolean(makePublic).value.toString()
-      return@withContext settingsDao.insert(SettingEntity(MAKE_PHOTOS_PUBLIC_SETTING, value)) > 0
-    }
+    val value = PhotosVisibility.fromBoolean(makePublic).value.toString()
+    return settingsDao.insert(SettingEntity(MAKE_PHOTOS_PUBLIC_SETTING, value)) > 0
   }
 
   suspend fun getPhotoVisibility(): PhotosVisibility {
-    return withContext(coroutineContext) {
-      val result = settingsDao.findByName(MAKE_PHOTOS_PUBLIC_SETTING)
-        ?: return@withContext PhotosVisibility.Neither
+    val result = settingsDao.findByName(MAKE_PHOTOS_PUBLIC_SETTING)
+      ?: return PhotosVisibility.Neither
 
-      return@withContext PhotosVisibility.fromInt(result.settingValue?.toInt())
-    }
+    return PhotosVisibility.fromInt(result.settingValue?.toInt())
   }
 
   suspend fun updateGpsPermissionGranted(granted: Boolean): Boolean {
-    return withContext(coroutineContext) {
-      return@withContext settingsDao.insert(SettingEntity(GPS_PERMISSION_GRANTED_SETTING, granted.toString())) > 0
-    }
+    return settingsDao.insert(SettingEntity(GPS_PERMISSION_GRANTED_SETTING, granted.toString())) > 0
   }
 
   suspend fun isGpsPermissionGranted(): Boolean {
-    return withContext(coroutineContext) {
-      return@withContext settingsDao.findByName(GPS_PERMISSION_GRANTED_SETTING)
-        ?.settingValue?.toBoolean() ?: false
-    }
+    return settingsDao.findByName(GPS_PERMISSION_GRANTED_SETTING)
+      ?.settingValue?.toBoolean() ?: false
   }
 
   suspend fun setNetworkAccessLevel(level: NetworkAccessLevel): Boolean {
-    return withContext(coroutineContext) {
-      return@withContext settingsDao.insert(SettingEntity(NETWORK_ACCESS_LEVEL_SETTING, level.value.toString())) > 0
-    }
+    return settingsDao.insert(SettingEntity(NETWORK_ACCESS_LEVEL_SETTING, level.value.toString())) > 0
   }
 
   suspend fun getNetworkAccessLevel(): NetworkAccessLevel {
-    return withContext(coroutineContext) {
-      val value = settingsDao.findByName(NETWORK_ACCESS_LEVEL_SETTING)
-        ?.settingValue?.toIntOrNull()
+    val value = settingsDao.findByName(NETWORK_ACCESS_LEVEL_SETTING)
+      ?.settingValue?.toIntOrNull()
 
-      return@withContext NetworkAccessLevel.fromInt(value)
-    }
+    return NetworkAccessLevel.fromInt(value)
   }
 
   companion object {

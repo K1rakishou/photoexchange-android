@@ -13,7 +13,7 @@ import com.google.firebase.messaging.RemoteMessage
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.helper.database.repository.StorePhotoFromPushNotificationRepository
+import com.kirakishou.photoexchange.interactors.StorePhotoFromPushNotificationUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
@@ -31,7 +31,7 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
   lateinit var settingsRepository: SettingsRepository
 
   @Inject
-  lateinit var storePhotoFromPushNotificationRepository: StorePhotoFromPushNotificationRepository
+  lateinit var storePhotoFromPushNotificationUseCase: StorePhotoFromPushNotificationUseCase
 
   override fun onCreate() {
     super.onCreate()
@@ -59,7 +59,7 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
       Timber.tag(TAG).d("Got new photo from someone")
 
       runBlocking {
-        if (!storePhotoFromPushNotificationRepository.storePhotoFromPushNotification(photoExchangedData)) {
+        if (!storePhotoFromPushNotificationUseCase.storePhotoFromPushNotification(photoExchangedData)) {
           Timber.tag(TAG).w("Could not store photoExchangedData")
           return@runBlocking
         }
