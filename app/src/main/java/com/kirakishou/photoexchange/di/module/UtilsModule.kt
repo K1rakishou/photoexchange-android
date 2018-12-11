@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.di.module
 
 import android.content.Context
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.util.*
 import dagger.Module
@@ -32,10 +33,12 @@ class UtilsModule {
   @Provides
   @Singleton
   fun provideNetUtils(@Named("app_context") context: Context,
-                      settingsRepository: SettingsRepository): NetUtils {
+                      settingsRepository: SettingsRepository,
+                      dispatchersProvider: DispatchersProvider): NetUtils {
     return NetUtilsImpl(
       context,
-      settingsRepository
+      settingsRepository,
+      dispatchersProvider
     )
   }
 

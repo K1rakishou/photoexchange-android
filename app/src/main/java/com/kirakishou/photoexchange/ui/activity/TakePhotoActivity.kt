@@ -88,6 +88,11 @@ class TakePhotoActivity : BaseActivity() {
   override fun onActivityStop() {
   }
 
+  override fun onDestroy() {
+    super.onDestroy()
+    cameraProvider.onDestroy()
+  }
+
   private fun initViews() {
     translationDelta = AndroidUtils.dpToPx(BUTTONS_TRANSITION_DELTA, this)
 

@@ -44,10 +44,12 @@ open class TakePhotoActivityModule(
 
   @PerActivity
   @Provides
-  open fun provideCameraProvider(takenPhotosRepository: TakenPhotosRepository): CameraProvider {
+  open fun provideCameraProvider(takenPhotosRepository: TakenPhotosRepository,
+                                 dispatchersProvider: DispatchersProvider): CameraProvider {
     return CameraProvider(
       activity,
-      takenPhotosRepository
+      takenPhotosRepository,
+      dispatchersProvider
     )
   }
 }

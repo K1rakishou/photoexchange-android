@@ -152,10 +152,10 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   override fun onActivityStart() {
-    registerReceiver(notificationBroadcastReceiver, IntentFilter(newPhotoReceivedAction))
-
     initRx()
     initViews()
+
+    registerReceiver(notificationBroadcastReceiver, IntentFilter(newPhotoReceivedAction))
   }
 
   override fun onActivityStop() {
@@ -276,9 +276,11 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       is PhotosActivityEvent.StartUploadingService -> {
         val hasPhotosToUpload = viewModel.checkHasPhotosToUpload()
         if (hasPhotosToUpload) {
+          Timber.tag(TAG).d("Starting uploading service")
           bindUploadingService(event.callerClass, event.reason)
         } else {
           //do nothing
+          Timber.tag(TAG).d("Won't start service, since there are no photos to upload")
         }
       }
       is PhotosActivityEvent.StartReceivingService -> {

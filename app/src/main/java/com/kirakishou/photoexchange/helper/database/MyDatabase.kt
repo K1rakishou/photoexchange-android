@@ -24,8 +24,6 @@ import kotlinx.coroutines.withContext
   BlacklistedPhotoEntity::class
 ], version = 1)
 abstract class MyDatabase : RoomDatabase() {
-  private val mutex = Mutex()
-
   abstract fun takenPhotoDao(): TakenPhotoDao
   abstract fun tempFileDao(): TempFileDao
   abstract fun settingsDao(): SettingsDao
@@ -36,17 +34,15 @@ abstract class MyDatabase : RoomDatabase() {
   abstract fun blacklistedPhotoDao(): BlacklistedPhotoDao
 
   open suspend fun <T> transactional(func: suspend () -> T): T {
-    return mutex.withLock {
-      beginTransaction()
+    beginTransaction()
 
-      try {
-        val result = func()
-        setTransactionSuccessful()
+    try {
+      val result = func()
+      setTransactionSuccessful()
 
-        return@withLock result
-      } finally {
-        endTransaction()
-      }
+      return result
+    } finally {
+      endTransaction()
     }
   }
 

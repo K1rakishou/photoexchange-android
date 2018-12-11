@@ -61,16 +61,6 @@ open class TakenPhotosLocalSource(
     return takenPhotoDao.updatePhotoLocation(photoId, lon, lat) == 1
   }
 
-  fun deletePhotoByName(photoName: String): Boolean {
-    val photoId = takenPhotoDao.findPhotoIdByName(photoName)
-    if (photoId == null) {
-      //already deleted
-      return true
-    }
-
-    return deletePhotoById(photoId)
-  }
-
   open fun deletePhotoById(photoId: Long): Boolean {
     if (takenPhotoDao.findById(photoId) == null) {
       //already deleted
