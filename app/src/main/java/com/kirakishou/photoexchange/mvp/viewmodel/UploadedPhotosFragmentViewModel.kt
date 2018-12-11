@@ -3,32 +3,33 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 import androidx.fragment.app.FragmentActivity
 import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
-import com.kirakishou.photoexchange.helper.Either
-import com.kirakishou.photoexchange.mvp.model.PhotoSize
+import com.kirakishou.photoexchange.helper.Constants
+import com.kirakishou.photoexchange.helper.LonLat
+import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
+import com.kirakishou.photoexchange.helper.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.extension.filterDuplicatesWith
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
-import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
-import com.kirakishou.photoexchange.helper.Constants
-import com.kirakishou.photoexchange.helper.LonLat
-import com.kirakishou.photoexchange.helper.Paged
-import com.kirakishou.photoexchange.helper.exception.DatabaseException
-import com.kirakishou.photoexchange.helper.extension.filterDuplicatesWith
-import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
+import com.kirakishou.photoexchange.mvp.model.PhotoSize
+import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.photo.QueuedUpPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
+import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.Observables
+import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -38,6 +39,7 @@ import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
 
 class UploadedPhotosFragmentViewModel(
@@ -51,14 +53,21 @@ class UploadedPhotosFragmentViewModel(
   private val TAG = "UploadedPhotosFragmentViewModel"
 
   private val compositeDisposable = CompositeDisposable()
+  private val servicesStartCompositeDisposable = CompositeDisposable()
+
   private val job = Job()
   private val viewModelActor: SendChannel<ActorAction>
+  private val timerIntervalSeconds = 30L
+  private val throttleTime = 20L
 
   var photosPerPage: Int = Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
   var photoSize: PhotoSize = PhotoSize.Medium
 
   override val coroutineContext: CoroutineContext
     get() = job + dispatchersProvider.GENERAL()
+
+  private val startUploadingServiceSubject = PublishSubject.create<Unit>().toSerialized()
+  private val startReceivingServiceSubject = PublishSubject.create<Unit>().toSerialized()
 
   init {
     viewModelActor = actor(capacity = Channel.UNLIMITED) {
@@ -77,6 +86,28 @@ class UploadedPhotosFragmentViewModel(
         }.safe
       }
     }
+  }
+
+  fun startServiceSubjects() {
+    val timerObservable = Observable.interval(timerIntervalSeconds, timerIntervalSeconds, TimeUnit.SECONDS)
+      .publish()
+      .autoConnect(2)
+
+    servicesStartCompositeDisposable += Observables.combineLatest(startUploadingServiceSubject, timerObservable)
+      .throttleFirst(throttleTime, TimeUnit.SECONDS)
+      .subscribe({
+        startUploadingService()
+      })
+
+    servicesStartCompositeDisposable += Observables.combineLatest(startReceivingServiceSubject, timerObservable)
+      .throttleFirst(throttleTime, TimeUnit.SECONDS)
+      .subscribe({
+        startReceivingService()
+      })
+  }
+
+  fun stopServiceSubjects() {
+    servicesStartCompositeDisposable.clear()
   }
 
   fun loadQueuedUpPhotos() {
@@ -219,7 +250,7 @@ class UploadedPhotosFragmentViewModel(
           )
         }
 
-        startUploadingService("There are queued up photos that need to be uploaded")
+        startUploadingServiceSubject.onNext(Unit)
       }
     }
   }
@@ -272,6 +303,8 @@ class UploadedPhotosFragmentViewModel(
             uploadedPhotos = newUploadedPhotos
           )
         }
+
+        startReceivingServiceSubject.onNext(Unit)
       }
     }
   }
@@ -298,7 +331,6 @@ class UploadedPhotosFragmentViewModel(
           }
         }
       }
-      //FIXME: apparently does not work
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress -> {
         Timber.tag(TAG).d("OnPhotoUploadingProgress")
 
@@ -437,13 +469,23 @@ class UploadedPhotosFragmentViewModel(
     loadUploadedPhotos(false)
   }
 
-  private fun startUploadingService(reason: String) {
+  private fun startReceivingService() {
+    Timber.tag(TAG).d("startReceiveingService called!")
+
+    intercom.tell<PhotosActivity>()
+      .to(PhotosActivityEvent.StartReceivingService(
+        PhotosActivityViewModel::class.java,
+        "Start receiving service request")
+      )
+  }
+
+  private fun startUploadingService() {
     Timber.tag(TAG).d("startUploadingService called!")
 
     intercom.tell<PhotosActivity>()
       .to(PhotosActivityEvent.StartUploadingService(
         PhotosActivityViewModel::class.java,
-        reason)
+        "Start uploading service request")
       )
   }
 

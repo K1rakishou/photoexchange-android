@@ -61,6 +61,18 @@ class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPh
     viewModel.uploadedPhotosFragmentViewModel.loadQueuedUpPhotos()
   }
 
+  override fun onResume() {
+    super.onResume()
+
+    viewModel.uploadedPhotosFragmentViewModel.startServiceSubjects()
+  }
+
+  override fun onPause() {
+    super.onPause()
+
+    viewModel.uploadedPhotosFragmentViewModel.stopServiceSubjects()
+  }
+
   private fun initRx() {
     compositeDisposable += viewModel.intercom.uploadedPhotosFragmentEvents.listen()
       .subscribe(
