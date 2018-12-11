@@ -153,9 +153,7 @@ open class TakenPhotosRepository(
   }
 
   suspend fun deletePhotoById(photoId: Long): Boolean {
-    return database.transactional {
-      takenPhotosLocalSource.deletePhotoById(photoId)
-    }
+    return takenPhotosLocalSource.deletePhotoById(photoId)
   }
 
   suspend fun findTempFile(id: Long): TempFileEntity {
