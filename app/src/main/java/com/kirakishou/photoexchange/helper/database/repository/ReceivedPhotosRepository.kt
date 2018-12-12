@@ -40,6 +40,10 @@ open class ReceivedPhotosRepository(
     return receivedPhotosLocalSource.findMany(receivedPhotoIds)
   }
 
+  suspend fun findOld(): List<ReceivedPhoto> {
+    return receivedPhotosLocalSource.findOld()
+  }
+
   suspend fun deleteByPhotoName(photoName: String) {
     receivedPhotosLocalSource.deleteByPhotoName(photoName)
   }
@@ -47,9 +51,4 @@ open class ReceivedPhotosRepository(
   suspend fun deleteAll() {
     receivedPhotosLocalSource.deleteAll()
   }
-
-  suspend fun deleteOldPhotos() {
-    receivedPhotosLocalSource.deleteOldPhotos()
-  }
-
 }

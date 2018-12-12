@@ -64,18 +64,18 @@ class ReceivedPhotosLocalSource(
     return ReceivedPhotosMapper.FromEntity.toReceivedPhotos(photos)
   }
 
+  fun findOld(): List<ReceivedPhoto> {
+    val now = timeUtils.getTimeFast() - oldPhotosCleanupRoutineInterval
+    val photos =  receivedPhotosDao.findOld(now)
+
+    return ReceivedPhotosMapper.FromEntity.toReceivedPhotos(photos)
+  }
+
   fun getPage(lastUploadedOn: Long, count: Int): List<ReceivedPhoto> {
     val deletionTime = timeUtils.getTimeFast() - oldPhotosCleanupRoutineInterval
     val photos = receivedPhotosDao.getPage(lastUploadedOn, deletionTime, count)
 
     return ReceivedPhotosMapper.FromEntity.toReceivedPhotos(photos)
-  }
-
-  fun deleteOldPhotos() {
-    val now = timeUtils.getTimeFast()
-    val deletedCount = receivedPhotosDao.deleteOlderThan(now - oldPhotosCleanupRoutineInterval)
-
-    Timber.tag(TAG).d("deleted $deletedCount received photos")
   }
 
   fun deleteAll() {
@@ -85,4 +85,5 @@ class ReceivedPhotosLocalSource(
   fun deleteByPhotoName(photoName: String) {
     receivedPhotosDao.deleteByPhotoName(photoName)
   }
+
 }

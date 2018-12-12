@@ -88,8 +88,7 @@ open class DatabaseModule(
                                           timeUtils: TimeUtils): UploadedPhotosLocalSource {
     return UploadedPhotosLocalSource(
       database,
-      timeUtils,
-      SharedConstants.OLD_PHOTOS_CLEANUP_ROUTINE_INTERVAL
+      timeUtils
     )
   }
 

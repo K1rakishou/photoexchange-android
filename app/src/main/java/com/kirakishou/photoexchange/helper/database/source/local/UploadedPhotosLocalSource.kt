@@ -7,12 +7,10 @@ import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import net.response.GetUploadedPhotosResponse
-import timber.log.Timber
 
 open class UploadedPhotosLocalSource(
   private val database: MyDatabase,
-  private val timeUtils: TimeUtils,
-  private val oldPhotosCleanupRoutineInterval: Long
+  private val timeUtils: TimeUtils
 ) {
   private val TAG = "UploadedPhotosLocalSource"
   private val uploadedPhotoDao = database.uploadedPhotoDao()
@@ -84,8 +82,7 @@ open class UploadedPhotosLocalSource(
   }
 
   fun getPage(time: Long, count: Int): List<UploadedPhoto> {
-    val deletionTime = timeUtils.getTimeFast() - oldPhotosCleanupRoutineInterval
-    val photos = uploadedPhotoDao.getPage(time, deletionTime, count)
+    val photos = uploadedPhotoDao.getPage(time, count)
 
     return UploadedPhotosMapper.FromEntity.ToObject
       .toUploadedPhotos(photos)
@@ -109,10 +106,7 @@ open class UploadedPhotosLocalSource(
     uploadedPhotoDao.deleteAll()
   }
 
-  fun deleteOldPhotos() {
-    val now = timeUtils.getTimeFast()
-    val deletedCount = uploadedPhotoDao.deleteOlderThan(now - oldPhotosCleanupRoutineInterval)
-
-    Timber.tag(TAG).d("deleted $deletedCount uploaded photos")
+  fun deleteByPhotoName(photoName: String) {
+    uploadedPhotoDao.deleteByPhotoName(photoName)
   }
 }

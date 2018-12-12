@@ -36,16 +36,16 @@ abstract class ReceivedPhotoDao {
     "ORDER BY ${ReceivedPhotoEntity.UPLOADED_ON_COLUMN } DESC")
   abstract fun findMany(receivedPhotoNameList: List<Long>): List<ReceivedPhotoEntity>
 
+  @Query("SELECT * FROM ${ReceivedPhotoEntity.TABLE_NAME} " +
+  "WHERE ${ReceivedPhotoEntity.INSERTED_ON_COLUMN} < :time")
+  abstract fun findOld(time: Long): List<ReceivedPhotoEntity>
+
   @Query("SELECT COUNT(*) FROM ${ReceivedPhotoEntity.TABLE_NAME}")
   abstract fun countAll(): Long
 
   @Query("DELETE FROM ${ReceivedPhotoEntity.TABLE_NAME} " +
     "WHERE ${ReceivedPhotoEntity.RECEIVED_PHOTO_NAME_COLUMN} = :photoName")
   abstract fun deleteByPhotoName(photoName: String)
-
-  @Query("DELETE FROM ${ReceivedPhotoEntity.TABLE_NAME} " +
-    "WHERE ${ReceivedPhotoEntity.INSERTED_ON_COLUMN} < :time")
-  abstract fun deleteOlderThan(time: Long)
 
   @Query("DELETE FROM ${ReceivedPhotoEntity.TABLE_NAME}")
   abstract fun deleteAll()
