@@ -6,10 +6,12 @@ import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import net.response.GalleryPhotosResponse
+import timber.log.Timber
 
 open class GalleryPhotoLocalSource(
   private val database: MyDatabase,
-  private val timeUtils: TimeUtils
+  private val timeUtils: TimeUtils,
+  private val oldPhotosCleanupRoutineInterval: Long
 ) {
   private val TAG = "GalleryPhotoLocalSource"
   private val galleryPhotoDao = database.galleryPhotoDao()
@@ -21,7 +23,10 @@ open class GalleryPhotoLocalSource(
   }
 
   open fun getPage(time: Long, count: Int): List<GalleryPhoto> {
-    return GalleryPhotosMapper.FromEntity.toGalleryPhotos(galleryPhotoDao.getPage(time, count))
+    val deletionTime = timeUtils.getTimeFast() - oldPhotosCleanupRoutineInterval
+    val photos =galleryPhotoDao.getPage(time, deletionTime, count)
+
+    return GalleryPhotosMapper.FromEntity.toGalleryPhotos(photos)
   }
 
   open fun findByPhotoName(photoName: String): GalleryPhoto? {
@@ -33,17 +38,11 @@ open class GalleryPhotoLocalSource(
     return GalleryPhotosMapper.FromEntity.toGalleryPhoto(galleryPhotoEntity)
   }
 
-  open fun findMany(photoNameList: List<String>): List<GalleryPhoto> {
-    return GalleryPhotosMapper.FromEntity.toGalleryPhotos(galleryPhotoDao.findMany(photoNameList))
-  }
-
-  open fun findAllPhotos(): List<GalleryPhoto> {
-    return GalleryPhotosMapper.FromEntity.toGalleryPhotos(galleryPhotoDao.findAll())
-  }
-
   open fun deleteOldPhotos() {
     val now = timeUtils.getTimeFast()
-    galleryPhotoDao.deleteOlderThan(now - Constants.GALLERY_PHOTOS_CACHE_MAX_LIVE_TIME)
+    val deletedCount = galleryPhotoDao.deleteOlderThan(now - oldPhotosCleanupRoutineInterval)
+
+    Timber.tag(TAG).d("deleted $deletedCount gallery photos")
   }
 
   open fun deleteAll() {

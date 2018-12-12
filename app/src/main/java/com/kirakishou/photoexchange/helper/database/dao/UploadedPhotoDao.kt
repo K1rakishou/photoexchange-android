@@ -16,10 +16,13 @@ abstract class UploadedPhotoDao {
   abstract fun save(uploadedPhotoEntity: UploadedPhotoEntity): Long
 
   @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
-    "WHERE ${UploadedPhotoEntity.UPLOADED_ON_COLUMN} < :time " +
+    "WHERE " +
+    " ${UploadedPhotoEntity.UPLOADED_ON_COLUMN} < :time " +
+    "AND " +
+    " ${UploadedPhotoEntity.INSERTED_ON_COLUMN} >= :deletionTime " +
     "ORDER BY ${UploadedPhotoEntity.UPLOADED_ON_COLUMN} DESC " +
     "LIMIT :count")
-  abstract fun getPage(time: Long, count: Int): List<UploadedPhotoEntity>
+  abstract fun getPage(time: Long, deletionTime: Long, count: Int): List<UploadedPhotoEntity>
 
   @Query("SELECT * FROM ${UploadedPhotoEntity.TABLE_NAME} " +
     "WHERE ${UploadedPhotoEntity.PHOTO_NAME_COLUMN} = :photoName")
@@ -65,8 +68,8 @@ abstract class UploadedPhotoDao {
 
   @Query("DELETE FROM ${UploadedPhotoEntity.TABLE_NAME} " +
     "WHERE ${UploadedPhotoEntity.INSERTED_ON_COLUMN} < :time")
-  abstract fun deleteOlderThan(time: Long)
+  abstract fun deleteOlderThan(time: Long): Int
 
   @Query("DELETE FROM ${UploadedPhotoEntity.TABLE_NAME}")
-  abstract fun deleteAll()
+  abstract fun deleteAll(): Int
 }

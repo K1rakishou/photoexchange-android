@@ -1,6 +1,5 @@
 package com.kirakishou.photoexchange.helper.database.source.local
 
-import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.entity.ReceivedPhotoEntity
 import com.kirakishou.photoexchange.helper.database.isSuccess
@@ -9,11 +8,14 @@ import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import net.response.ReceivedPhotosResponse
+import timber.log.Timber
 
 class ReceivedPhotosLocalSource(
   private val database: MyDatabase,
-  private val timeUtils: TimeUtils
+  private val timeUtils: TimeUtils,
+  private val oldPhotosCleanupRoutineInterval: Long
 ) {
+  private val TAG = "ReceivedPhotosLocalSource"
   private val receivedPhotosDao = database.receivedPhotoDao()
 
   fun save(receivedPhoto: ReceivedPhotosResponse.ReceivedPhotoResponseData): Boolean {
@@ -63,17 +65,17 @@ class ReceivedPhotosLocalSource(
   }
 
   fun getPage(lastUploadedOn: Long, count: Int): List<ReceivedPhoto> {
-    val photos = receivedPhotosDao.getPage(lastUploadedOn, count)
-    return ReceivedPhotosMapper.FromEntity.toReceivedPhotos(photos)
-  }
+    val deletionTime = timeUtils.getTimeFast() - oldPhotosCleanupRoutineInterval
+    val photos = receivedPhotosDao.getPage(lastUploadedOn, deletionTime, count)
 
-  fun findAll(): List<ReceivedPhotoEntity> {
-      return receivedPhotosDao.findAll()
+    return ReceivedPhotosMapper.FromEntity.toReceivedPhotos(photos)
   }
 
   fun deleteOldPhotos() {
     val now = timeUtils.getTimeFast()
-    receivedPhotosDao.deleteOlderThan(now - Constants.RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME)
+    val deletedCount = receivedPhotosDao.deleteOlderThan(now - oldPhotosCleanupRoutineInterval)
+
+    Timber.tag(TAG).d("deleted $deletedCount received photos")
   }
 
   fun deleteAll() {

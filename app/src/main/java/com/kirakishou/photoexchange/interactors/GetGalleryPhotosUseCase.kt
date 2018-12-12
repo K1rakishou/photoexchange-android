@@ -163,7 +163,7 @@ open class GetGalleryPhotosUseCase(
       return cachedGalleryPhotosInfo
     }
 
-    val requestString = photoNameList.joinToString(separator = Constants.PHOTOS_SEPARATOR)
+    val requestString = photoNameList.joinToString(separator = Constants.DELIMITER)
     val galleryPhotosInfo = apiClient.getGalleryPhotoInfo(userId, requestString)
     if (galleryPhotosInfo.isEmpty()) {
       Timber.tag(TAG).d("No gallery photo info were found on the server")
