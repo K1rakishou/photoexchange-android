@@ -129,6 +129,7 @@ open class GetReceivedPhotosUseCase(
   private suspend fun deleteOldPhotos() {
     database.transactional {
       val oldPhotos = receivedPhotosRepository.findOld()
+      Timber.tag(TAG).d("Found ${oldPhotos.size} old received photos")
 
       for (photo in oldPhotos) {
         uploadedPhotosRepository.deleteByPhotoName(photo.uploadedPhotoName)

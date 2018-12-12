@@ -79,7 +79,7 @@ class UploadedPhotosFragmentViewModel(
     launch { viewModelActor.send(ActorAction.LoadQueuedUpPhotos) }
   }
 
-  fun resetState(clearCache: Boolean = false) {
+  fun resetState(clearCache: Boolean) {
     launch { viewModelActor.send(ActorAction.ResetState(clearCache)) }
   }
 

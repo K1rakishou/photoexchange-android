@@ -74,7 +74,7 @@ class ReceivedPhotosFragmentViewModel(
     launch { viewModelActor.send(ActorAction.LoadReceivedPhotos(forced)) }
   }
 
-  fun resetState(clearCache: Boolean = false) {
+  fun resetState(clearCache: Boolean) {
     launch { viewModelActor.send(ActorAction.ResetState(clearCache)) }
   }
 
