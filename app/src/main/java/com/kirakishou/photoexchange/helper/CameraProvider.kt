@@ -11,6 +11,7 @@ import io.fotoapparat.selector.*
 import io.fotoapparat.view.CameraView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.lang.RuntimeException
@@ -79,7 +80,7 @@ open class CameraProvider(
   }
 
   fun onDestroy() {
-    job.cancel()
+    job.cancelChildren()
   }
 
   fun isAvailable(): Boolean = camera?.isAvailable(back()) ?: false

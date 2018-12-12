@@ -75,7 +75,7 @@ class UploadPhotoService : Service(), CoroutineScope {
     presenter.onDetach()
     detachCallback()
 
-    job.cancel()
+    job.cancelChildren()
     compositeDisposable.clear()
   }
 

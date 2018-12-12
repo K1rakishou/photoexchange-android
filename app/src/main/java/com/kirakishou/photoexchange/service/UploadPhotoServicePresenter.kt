@@ -188,7 +188,7 @@ open class UploadPhotoServicePresenter(
   }
 
   fun onDetach() {
-    job.cancel()
+    job.cancelChildren()
     compositeDisposable.clear()
   }
 

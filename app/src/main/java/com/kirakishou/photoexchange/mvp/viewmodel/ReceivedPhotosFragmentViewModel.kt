@@ -277,8 +277,8 @@ class ReceivedPhotosFragmentViewModel(
   override fun onCleared() {
     super.onCleared()
 
-    compositeDisposable.dispose()
-    job.cancel()
+    compositeDisposable.clear()
+    job.cancelChildren()
   }
 
   sealed class ActorAction {

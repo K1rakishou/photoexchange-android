@@ -95,7 +95,7 @@ open class ReceivePhotosServicePresenter(
   }
 
   fun onDetach() {
-    job.cancel()
+    job.cancelChildren()
     compositeDisposable.clear()
   }
 

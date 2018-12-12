@@ -40,7 +40,7 @@ abstract class BaseFragment : Fragment(), CoroutineScope {
   override fun onDetach() {
     super.onDetach()
 
-    job.cancel()
+    job.cancelChildren()
     compositeDisposable.clear()
     lifecycle.stop()
 
