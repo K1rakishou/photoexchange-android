@@ -24,14 +24,11 @@ import com.kirakishou.photoexchange.mvp.viewmodel.state.ReceivedPhotosFragmentSt
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
 import io.reactivex.disposables.CompositeDisposable
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 
@@ -172,7 +169,10 @@ class ReceivedPhotosFragmentViewModel(
         receivedPhotosRepository.deleteAll()
       }
 
-      setState { ReceivedPhotosFragmentState() }
+      //to avoid "Your reducer must be pure!" exceptions
+      val newState = ReceivedPhotosFragmentState()
+      setState { newState }
+
       viewModelActor.send(ActorAction.LoadReceivedPhotos(false))
     }
   }
@@ -194,7 +194,9 @@ class ReceivedPhotosFragmentViewModel(
           ?.uploadedOn
           ?: -1L
 
-        setState { copy(receivedPhotosRequest = Loading()) }
+        //to avoid "Your reducer must be pure!" exceptions
+        val receivedPhotosRequest = Loading<Paged<ReceivedPhoto>>()
+        setState { copy(receivedPhotosRequest = receivedPhotosRequest) }
 
         val request = try {
           val receivedPhotos = getReceivedPhotosUseCase.loadPageOfPhotos(
@@ -252,9 +254,12 @@ class ReceivedPhotosFragmentViewModel(
           val updatedSortedPhotos = updatedPhotos
             .sortedByDescending { it.uploadedOn }
 
+          //to avoid "Your reducer must be pure!" exceptions
+          val request = Success(Paged(updatedSortedPhotos))
+
           setState {
             copy(
-              receivedPhotosRequest = Success(Paged(updatedSortedPhotos)),
+              receivedPhotosRequest = request,
               receivedPhotos = updatedSortedPhotos
             )
           }
