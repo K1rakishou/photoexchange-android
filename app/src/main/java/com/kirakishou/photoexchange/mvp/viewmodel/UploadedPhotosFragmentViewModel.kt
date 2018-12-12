@@ -49,17 +49,12 @@ class UploadedPhotosFragmentViewModel(
 
   private val job = Job()
   private val viewModelActor: SendChannel<ActorAction>
-  private val timerIntervalSeconds = 30L
-  private val throttleTime = 20L
 
   var photosPerPage: Int = Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
   var photoSize: PhotoSize = PhotoSize.Medium
 
   override val coroutineContext: CoroutineContext
     get() = job + dispatchersProvider.GENERAL()
-
-  private val startUploadingServiceSubject = PublishSubject.create<Unit>().toSerialized()
-  private val startReceivingServiceSubject = PublishSubject.create<Unit>().toSerialized()
 
   init {
     viewModelActor = actor(capacity = Channel.UNLIMITED) {
@@ -78,28 +73,6 @@ class UploadedPhotosFragmentViewModel(
         }.safe
       }
     }
-  }
-
-  fun startServiceSubjects() {
-    val timerObservable = Observable.interval(timerIntervalSeconds, timerIntervalSeconds, TimeUnit.SECONDS)
-      .publish()
-      .autoConnect(2)
-
-    servicesStartCompositeDisposable += Observables.combineLatest(startUploadingServiceSubject, timerObservable)
-      .throttleFirst(throttleTime, TimeUnit.SECONDS)
-      .subscribe({
-        startUploadingService()
-      })
-
-    servicesStartCompositeDisposable += Observables.combineLatest(startReceivingServiceSubject, timerObservable)
-      .throttleFirst(throttleTime, TimeUnit.SECONDS)
-      .subscribe({
-        startReceivingService()
-      })
-  }
-
-  fun stopServiceSubjects() {
-    servicesStartCompositeDisposable.clear()
   }
 
   fun loadQueuedUpPhotos() {
@@ -184,7 +157,10 @@ class UploadedPhotosFragmentViewModel(
         uploadedPhotosRepository.deleteAll()
       }
 
-      setState { UploadedPhotosFragmentState() }
+      //to avoid "Your reducer must be pure!" exceptions
+      val newState = UploadedPhotosFragmentState()
+      setState { newState }
+
       loadQueuedUpPhotos()
     }
   }
@@ -242,7 +218,7 @@ class UploadedPhotosFragmentViewModel(
           )
         }
 
-        startUploadingServiceSubject.onNext(Unit)
+        startUploadingService()
       }
     }
   }
@@ -264,7 +240,9 @@ class UploadedPhotosFragmentViewModel(
           ?.uploadedOn
           ?: -1L
 
-        setState { copy(uploadedPhotosRequest = Loading()) }
+        //to avoid "Your reducer must be pure!" exceptions
+        val uploadedPhotosRequest = Loading<Paged<UploadedPhoto>>()
+        setState { copy(uploadedPhotosRequest = uploadedPhotosRequest) }
 
         val request = try {
           val photos = getUploadedPhotosUseCase.loadPageOfPhotos(
@@ -296,7 +274,7 @@ class UploadedPhotosFragmentViewModel(
           )
         }
 
-        startReceivingServiceSubject.onNext(Unit)
+        startReceivingService()
       }
     }
   }
@@ -457,8 +435,6 @@ class UploadedPhotosFragmentViewModel(
         Timber.tag(TAG).d("Error while trying to receive photos: (${event.error.message})")
       }
     }.safe
-
-    loadUploadedPhotos(false)
   }
 
   private fun startReceivingService() {
@@ -491,8 +467,8 @@ class UploadedPhotosFragmentViewModel(
   override fun onCleared() {
     super.onCleared()
 
-    compositeDisposable.dispose()
-    job.cancel()
+    compositeDisposable.clear()
+    job.cancelChildren()
   }
 
   sealed class ActorAction {
