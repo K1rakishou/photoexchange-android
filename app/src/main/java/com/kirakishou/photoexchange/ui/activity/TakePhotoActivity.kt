@@ -1,10 +1,9 @@
 package com.kirakishou.photoexchange.ui.activity
 
-import android.Manifest
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.app.Activity
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
 import android.view.ViewAnimationUtils
@@ -13,7 +12,6 @@ import android.view.animation.AccelerateInterpolator
 import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.core.animation.addListener
-import androidx.core.app.ActivityCompat
 import butterknife.BindView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.jakewharton.rxbinding2.view.RxView
@@ -27,10 +25,7 @@ import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
-import com.kirakishou.photoexchange.ui.dialog.AppCannotWorkWithoutCameraPermissionDialog
 import com.kirakishou.photoexchange.ui.dialog.CameraIsNotAvailableDialog
-import com.kirakishou.photoexchange.ui.dialog.CameraRationaleDialog
-import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
 import io.fotoapparat.view.CameraView
 import io.reactivex.Completable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -72,12 +67,20 @@ class TakePhotoActivity : BaseActivity() {
   override fun getContentView(): Int = R.layout.activity_take_photo
 
   override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
+    initViews()
+    initRx()
+
+    cameraProvider.initCamera(cameraView)
   }
 
   override fun onActivityStart() {
-    initViews()
-    initRx()
-    checkPermissions()
+  }
+
+  override fun onResume() {
+    super.onResume()
+
+    startCamera()
+    animateAppear()
   }
 
   override fun onPause() {
@@ -131,6 +134,13 @@ class TakePhotoActivity : BaseActivity() {
       .subscribe()
   }
 
+  private fun onPhotoTaken(takenPhoto: TakenPhoto) {
+    val intent = Intent(this, ViewTakenPhotoActivity::class.java)
+    intent.putExtras(takenPhoto.toBundle())
+
+    startActivityForResult(intent, ViewTakenPhotoActivity.VIEW_TAKEN_PHOTO_REQUEST_CODE)
+  }
+
   private fun animateCameraViewHide() {
     val cx = (takePhotoButton.x + (takePhotoButton.measuredWidth / 2)).toInt()
     val cy = (takePhotoButton.y + (takePhotoButton.measuredHeight / 2)).toInt()
@@ -146,61 +156,7 @@ class TakePhotoActivity : BaseActivity() {
     anim.start()
   }
 
-  private fun checkPermissions() {
-    val requestedPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION)
-
-    permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
-      val cameraIndex = permissions.indexOf(Manifest.permission.CAMERA)
-      if (cameraIndex == -1) {
-        throw RuntimeException("Couldn't find Manifest.permission.CAMERA in result permissions")
-      }
-
-      val gpsIndex = permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)
-      if (gpsIndex == -1) {
-        throw RuntimeException("Couldn't find Manifest.permission.ACCESS_FINE_LOCATION in result permissions")
-      }
-
-      if (grantResults[cameraIndex] == PackageManager.PERMISSION_DENIED) {
-        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
-          launch { showCameraRationaleDialog() }
-        } else {
-          Timber.tag(TAG).d("getPermissions() Could not obtain camera permission")
-          launch { showAppCannotWorkWithoutCameraPermissionDialog() }
-        }
-
-        return@askForPermission
-      }
-
-      var granted = true
-
-      if (grantResults[gpsIndex] == PackageManager.PERMISSION_DENIED) {
-        granted = false
-
-        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-          launch { showGpsRationaleDialog() }
-          return@askForPermission
-        }
-      }
-
-      launch {
-        viewModel.updateGpsPermissionGranted(granted)
-        onPermissionCallback()
-      }
-    }
-  }
-
-  private suspend fun onPermissionCallback() {
-    startCamera()
-    animateAppear()
-  }
-
-  private suspend fun startCamera() {
-    if (cameraProvider.isStarted()) {
-      return
-    }
-
-    cameraProvider.provideCamera(cameraView)
-
+  private fun startCamera() {
     if (!cameraProvider.isAvailable()) {
       showCameraIsNotAvailableDialog()
       return
@@ -209,40 +165,15 @@ class TakePhotoActivity : BaseActivity() {
     cameraProvider.startCamera()
   }
 
-  private suspend fun showGpsRationaleDialog() {
-    GpsRationaleDialog(this).show(this, {
-      checkPermissions()
-    }, {
-      onPermissionCallback()
-    })
-  }
-
-  private suspend fun showAppCannotWorkWithoutCameraPermissionDialog() {
-    AppCannotWorkWithoutCameraPermissionDialog(this).show(this) {
-      finish()
-    }
-  }
-
-  private suspend fun showCameraRationaleDialog() {
-    CameraRationaleDialog(this).show(this, {
-      checkPermissions()
-    }, {
-      finish()
-    })
-  }
-
-  private suspend fun showCameraIsNotAvailableDialog() {
-    CameraIsNotAvailableDialog(this).show(this) {
+  private fun showCameraIsNotAvailableDialog() {
+    CameraIsNotAvailableDialog().show(this@TakePhotoActivity) {
+      setResult(Activity.RESULT_CANCELED)
       finish()
     }
   }
 
   private suspend fun takePhoto(): TakenPhoto? {
     return cameraProvider.takePhoto()
-  }
-
-  private fun onPhotoTaken(takenPhoto: TakenPhoto) {
-    runActivityWithArgs(ViewTakenPhotoActivity::class.java, takenPhoto.toBundle())
   }
 
   private fun animateAppear() {
@@ -319,6 +250,22 @@ class TakePhotoActivity : BaseActivity() {
     permissionManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
   }
 
+  override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    super.onActivityResult(requestCode, resultCode, data)
+
+    if (requestCode == ViewTakenPhotoActivity.VIEW_TAKEN_PHOTO_REQUEST_CODE) {
+      if (resultCode == Activity.RESULT_OK) {
+        Timber.tag(TAG).d("ViewTakenPhotoActivity returned OK")
+        setResult(Activity.RESULT_OK)
+      } else {
+        Timber.tag(TAG).d("ViewTakenPhotoActivity returned CANCEL")
+        setResult(Activity.RESULT_CANCELED)
+      }
+
+      finish()
+    }
+  }
+
   override fun onBackPressed() {
     compositeDisposable += animateDisappear()
       .observeOn(AndroidSchedulers.mainThread())
@@ -330,5 +277,9 @@ class TakePhotoActivity : BaseActivity() {
     (application as PhotoExchangeApplication).applicationComponent
       .plus(TakePhotoActivityModule(this))
       .inject(this)
+  }
+
+  companion object {
+    const val TAKE_PHOTO_REQUEST_CODE = 0x1
   }
 }

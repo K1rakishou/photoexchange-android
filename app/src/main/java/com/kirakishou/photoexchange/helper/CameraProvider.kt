@@ -45,7 +45,7 @@ open class CameraProvider(
     )
   }
 
-  fun provideCamera(cameraView: CameraView) {
+  fun initCamera(cameraView: CameraView) {
     if (camera != null) {
       return
     }
@@ -82,7 +82,6 @@ open class CameraProvider(
     job.cancel()
   }
 
-  fun isStarted(): Boolean = isStarted.get()
   fun isAvailable(): Boolean = camera?.isAvailable(back()) ?: false
 
   suspend fun takePhoto(): TakenPhoto? {
@@ -125,7 +124,7 @@ open class CameraProvider(
       throw CameraIsNotAvailable("Camera is not supported by this device")
     }
 
-    if (!isStarted()) {
+    if (!isStarted.get()) {
       throw CameraIsNotStartedException("Camera is not started")
     }
 

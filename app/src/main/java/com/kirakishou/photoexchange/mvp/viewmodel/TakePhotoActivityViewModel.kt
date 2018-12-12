@@ -18,11 +18,6 @@ class TakePhotoActivityViewModel(
     super.onCleared()
   }
 
-  suspend fun updateGpsPermissionGranted(granted: Boolean) {
-    withContext(coroutineContext) {
-      settingsRepository.updateGpsPermissionGranted(granted)
-    }
-  }
 }
 
 

@@ -29,6 +29,7 @@ class PhotosActivityViewModel(
   val receivedPhotosFragmentViewModel: ReceivedPhotosFragmentViewModel,
   val galleryFragmentViewModel: GalleryFragmentViewModel,
   val intercom: PhotosActivityViewModelIntercom,
+  private val settingsRepository: SettingsRepository,
   private val takenPhotosRepository: TakenPhotosRepository,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
   private val receivedPhotosRepository: ReceivedPhotosRepository,
@@ -86,6 +87,12 @@ class PhotosActivityViewModel(
         .to(ReceivedPhotosFragmentEvent.GeneralEvents.RemovePhoto(photoName))
       intercom.tell<GalleryFragment>()
         .to(GalleryFragmentEvent.GeneralEvents.RemovePhoto(photoName))
+    }
+  }
+
+  suspend fun updateGpsPermissionGranted(granted: Boolean) {
+    withContext(coroutineContext) {
+      settingsRepository.updateGpsPermissionGranted(granted)
     }
   }
 
