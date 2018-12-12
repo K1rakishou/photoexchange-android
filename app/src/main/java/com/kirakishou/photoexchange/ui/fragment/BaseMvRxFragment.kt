@@ -51,14 +51,11 @@ abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
 
   override fun onAttach(context: Context?) {
     super.onAttach(context)
-
     lifecycle.start()
   }
 
   override fun onDetach() {
     super.onDetach()
-
-    job.cancel()
     lifecycle.stop()
   }
 
@@ -113,7 +110,7 @@ abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
     epoxyController.cancelPendingModelBuild()
 
     compositeDisposable.clear()
-    job.cancel()
+    job.cancelChildren()
 
     super.onDestroyView()
   }

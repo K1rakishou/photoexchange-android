@@ -67,7 +67,7 @@ open class UploadedPhotosRepository(
     uploadedPhotosLocalSource.deleteAll()
   }
 
-  suspend fun deleteOldPhotos() {
-    uploadedPhotosLocalSource.deleteOldPhotos()
+  fun deleteByPhotoName(photoName: String) {
+    uploadedPhotosLocalSource.deleteByPhotoName(photoName)
   }
 }

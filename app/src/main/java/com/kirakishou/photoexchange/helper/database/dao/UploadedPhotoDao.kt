@@ -63,10 +63,10 @@ abstract class UploadedPhotoDao {
   @Query("SELECT COUNT(*) FROM ${UploadedPhotoEntity.TABLE_NAME}")
   abstract fun count(): Long
 
-  @Query("DELETE FROM ${UploadedPhotoEntity.TABLE_NAME} " +
-    "WHERE ${UploadedPhotoEntity.INSERTED_ON_COLUMN} < :time")
-  abstract fun deleteOlderThan(time: Long)
-
   @Query("DELETE FROM ${UploadedPhotoEntity.TABLE_NAME}")
-  abstract fun deleteAll()
+  abstract fun deleteAll(): Int
+
+  @Query("DELETE FROM ${UploadedPhotoEntity.TABLE_NAME} " +
+    "WHERE ${UploadedPhotoEntity.PHOTO_NAME_COLUMN} = :photoName")
+  abstract fun deleteByPhotoName(photoName: String)
 }

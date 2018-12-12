@@ -15,18 +15,19 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:usesCleartextTraffic="true"
-        android:theme="@style/PhotoExchangeTheme">
-        <activity android:name="com.kirakishou.photoexchange.ui.activity.TakePhotoActivity">
+        android:theme="@style/PhotoExchangeTheme"
+        android:usesCleartextTraffic="true">
+
+        <activity
+            android:name="com.kirakishou.photoexchange.ui.activity.PhotosActivity"
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name="com.kirakishou.photoexchange.ui.activity.TakePhotoActivity" />
         <activity android:name="com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity" />
-        <activity
-            android:name="com.kirakishou.photoexchange.ui.activity.PhotosActivity"
-            android:launchMode="singleTop" />
         <activity android:name="com.kirakishou.photoexchange.ui.activity.SettingsActivity" />
 
         <meta-data

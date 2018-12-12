@@ -13,10 +13,13 @@ abstract class GalleryPhotoDao {
   abstract fun saveMany(galleryPhotos: List<GalleryPhotoEntity>): Array<Long>
 
   @Query("SELECT * FROM ${GalleryPhotoEntity.TABLE_NAME} " +
-    "WHERE ${GalleryPhotoEntity.UPLOADED_ON_COLUMN} < :time " +
+    "WHERE " +
+    " ${GalleryPhotoEntity.UPLOADED_ON_COLUMN} < :time " +
+    "AND " +
+    " ${GalleryPhotoEntity.INSERTED_ON_COLUMN} >= :deletionTime " +
     "ORDER BY ${GalleryPhotoEntity.UPLOADED_ON_COLUMN} DESC " +
     "LIMIT :count")
-  abstract fun getPage(time: Long, count: Int): List<GalleryPhotoEntity>
+  abstract fun getPage(time: Long, deletionTime: Long, count: Int): List<GalleryPhotoEntity>
 
   @Query("SELECT * FROM ${GalleryPhotoEntity.TABLE_NAME} " +
     "WHERE ${GalleryPhotoEntity.PHOTO_NAME_COLUMN} = :photoName")
@@ -32,17 +35,17 @@ abstract class GalleryPhotoDao {
     "WHERE ${GalleryPhotoEntity.PHOTO_NAME_COLUMN} = :photoName")
   abstract fun updateFavouritesCount(photoName: String, favouritesCount: Long): Int
 
-  @Query("DELETE FROM ${GalleryPhotoEntity.TABLE_NAME} " +
-    "WHERE ${GalleryPhotoEntity.INSERTED_ON_COLUMN} < :time")
-  abstract fun deleteOlderThan(time: Long)
-
   @Query("SELECT * FROM ${GalleryPhotoEntity.TABLE_NAME}")
   abstract fun findAll(): List<GalleryPhotoEntity>
-
-  @Query("DELETE FROM ${GalleryPhotoEntity.TABLE_NAME}")
-  abstract fun deleteAll()
 
   @Query("DELETE FROM ${GalleryPhotoEntity.TABLE_NAME} " +
     "WHERE ${GalleryPhotoEntity.PHOTO_NAME_COLUMN} = :photoName")
   abstract fun deleteByPhotoName(photoName: String)
+
+  @Query("DELETE FROM ${GalleryPhotoEntity.TABLE_NAME} " +
+    "WHERE ${GalleryPhotoEntity.INSERTED_ON_COLUMN} < :time")
+  abstract fun deleteOlderThan(time: Long)
+
+  @Query("DELETE FROM ${GalleryPhotoEntity.TABLE_NAME}")
+  abstract fun deleteAll()
 }

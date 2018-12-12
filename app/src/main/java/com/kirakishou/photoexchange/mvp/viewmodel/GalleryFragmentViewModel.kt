@@ -5,6 +5,7 @@ import com.airbnb.mvrx.*
 import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
+import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotosRepository
 import com.kirakishou.photoexchange.helper.extension.filterDuplicatesWith
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
@@ -17,20 +18,18 @@ import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.state.GalleryFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import io.reactivex.disposables.CompositeDisposable
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 
 class GalleryFragmentViewModel(
   initialState: GalleryFragmentState,
   private val intercom: PhotosActivityViewModelIntercom,
+  private val galleryPhotosRepository: GalleryPhotosRepository,
   private val getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
   private val favouritePhotoUseCase: FavouritePhotoUseCase,
   private val reportPhotoUseCase: ReportPhotoUseCase,
@@ -57,7 +56,7 @@ class GalleryFragmentViewModel(
 
         when (action) {
           is ActorAction.LoadGalleryPhotos -> loadGalleryPhotosInternal(action.forced)
-          is ActorAction.ResetState -> resetStateInternal()
+          is ActorAction.ResetState -> resetStateInternal(action.clearCache)
           is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.galleryPhotoName)
           is ActorAction.FavouritePhoto -> favouritePhotoInternal(action.galleryPhotoName)
           is ActorAction.ReportPhoto -> reportPhotoInternal(action.galleryPhotoName)
@@ -67,8 +66,8 @@ class GalleryFragmentViewModel(
     }
   }
 
-  fun resetState() {
-    launch { viewModelActor.send(ActorAction.ResetState) }
+  fun resetState(clearCache: Boolean) {
+    launch { viewModelActor.send(ActorAction.ResetState(clearCache)) }
   }
 
   fun loadGalleryPhotos(forced: Boolean) {
@@ -235,8 +234,12 @@ class GalleryFragmentViewModel(
     }
   }
 
-  private fun resetStateInternal() {
+  private fun resetStateInternal(clearCache: Boolean) {
     launch {
+      if (clearCache) {
+        galleryPhotosRepository.deleteAll()
+      }
+
       setState { GalleryFragmentState() }
       viewModelActor.send(ActorAction.LoadGalleryPhotos(false))
     }
@@ -307,13 +310,13 @@ class GalleryFragmentViewModel(
   override fun onCleared() {
     super.onCleared()
 
-    compositeDisposable.dispose()
-    job.cancel()
+    compositeDisposable.clear()
+    job.cancelChildren()
   }
 
   sealed class ActorAction {
     class LoadGalleryPhotos(val forced: Boolean) : ActorAction()
-    object ResetState : ActorAction()
+    class ResetState(val clearCache: Boolean) : ActorAction()
     class SwapPhotoAndMap(val galleryPhotoName: String) : ActorAction()
     class ReportPhoto(val galleryPhotoName: String) : ActorAction()
     class FavouritePhoto(val galleryPhotoName: String) : ActorAction()

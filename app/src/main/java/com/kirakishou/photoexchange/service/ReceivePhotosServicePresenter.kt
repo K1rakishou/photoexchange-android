@@ -13,6 +13,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
@@ -80,7 +81,7 @@ open class ReceivePhotosServicePresenter(
   }
 
   private suspend fun formatRequestString(uploadedPhotos: List<UploadedPhoto>): FindPhotosData? {
-    val photoNames = uploadedPhotos.joinToString(Constants.PHOTOS_SEPARATOR) { it.photoName }
+    val photoNames = uploadedPhotos.joinToString(Constants.DELIMITER) { it.photoName }
     val userId = settingsRepository.getUserId()
     if (userId.isEmpty()) {
       Timber.tag(TAG).d("UserId is empty")
@@ -95,7 +96,7 @@ open class ReceivePhotosServicePresenter(
   }
 
   fun onDetach() {
-    job.cancel()
+    job.cancelChildren()
     compositeDisposable.clear()
   }
 

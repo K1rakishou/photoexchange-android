@@ -79,7 +79,7 @@ open class GetReceivedPhotosUseCase(
     }, {
       receivedPhotosRepository.deleteAll()
     }, {
-      receivedPhotosRepository.deleteOldPhotos()
+      deleteOldPhotos()
     }, { receivedPhotos ->
       filterBlacklistedPhotos(receivedPhotos)
     }, { receivedPhotos ->
@@ -123,6 +123,18 @@ open class GetReceivedPhotosUseCase(
   ): List<ReceivedPhotosResponse.ReceivedPhotoResponseData> {
     return blacklistedPhotoRepository.filterBlacklistedPhotos(receivedPhotos) {
       it.receivedPhotoName
+    }
+  }
+
+  private suspend fun deleteOldPhotos() {
+    database.transactional {
+      val oldPhotos = receivedPhotosRepository.findOld()
+      Timber.tag(TAG).d("Found ${oldPhotos.size} old received photos")
+
+      for (photo in oldPhotos) {
+        uploadedPhotosRepository.deleteByPhotoName(photo.uploadedPhotoName)
+        receivedPhotosRepository.deleteByPhotoName(photo.receivedPhotoName)
+      }
     }
   }
 

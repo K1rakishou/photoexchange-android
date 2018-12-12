@@ -33,7 +33,7 @@ class UploadedPhotosFragmentEpoxyController(
     withState(viewModel) { state ->
       controller.apply {
         if (state.takenPhotos.isNotEmpty()) {
-          buildTakenPhotos(context, state, viewModel)
+          buildTakenPhotos(state, viewModel)
         }
 
         buildUploadedPhotos(coroutineScope, context, state, viewModel, state.uploadedPhotosRequest)
@@ -48,31 +48,8 @@ class UploadedPhotosFragmentEpoxyController(
     viewModel: UploadedPhotosFragmentViewModel,
     uploadedPhotosRequest: Async<Paged<UploadedPhoto>>
   ) {
-    if (uploadedPhotosRequest is Loading) {
-      if (state.uploadedPhotos.isEmpty()) {
-        Timber.tag(TAG).d("Loading uploaded photos")
 
-        loadingRow {
-          id("uploaded_photos_loading_row")
-        }
-
-        return
-      }
-    }
-
-    if (state.uploadedPhotos.isEmpty()) {
-      if (state.takenPhotos.isEmpty()) {
-        textRow {
-          id("no_uploaded_photos")
-          text(context.getString(R.string.you_have_no_photos_yet))
-        }
-      }
-    } else {
-      sectionRow {
-        id("uploaded_photos_section")
-        text(context.getString(R.string.uploaded_photos_text))
-      }
-
+    if (state.uploadedPhotos.isNotEmpty()) {
       state.uploadedPhotos.forEach { photo ->
         uploadedPhotoRow {
           id("uploaded_photo_${photo.photoName}")
@@ -90,7 +67,7 @@ class UploadedPhotosFragmentEpoxyController(
           text(context.getString(R.string.end_of_list_reached_text))
           callback { _ ->
             Timber.tag(TAG).d("Reloading")
-            viewModel.resetState()
+            viewModel.resetState(false)
           }
         }
       } else {
@@ -98,6 +75,17 @@ class UploadedPhotosFragmentEpoxyController(
           //we should change the id to trigger the binding
           id("load_next_page_${state.uploadedPhotos.size}")
           onBind { _, _, _ -> viewModel.loadUploadedPhotos(false) }
+        }
+      }
+    } else {
+      if (state.isEndReached) {
+        textRow {
+          id("list_end_footer_text")
+          text(context.getString(R.string.end_of_list_reached_text))
+          callback { _ ->
+            Timber.tag(TAG).d("Reloading")
+            viewModel.resetState(false)
+          }
         }
       }
     }
@@ -110,15 +98,9 @@ class UploadedPhotosFragmentEpoxyController(
   }
 
   private fun AsyncEpoxyController.buildTakenPhotos(
-    context: Context,
     state: UploadedPhotosFragmentState,
     viewModel: UploadedPhotosFragmentViewModel
   ) {
-    sectionRow {
-      id("queued_up_and_uploading_photos_section")
-      text(context.getString(R.string.uploading_photos_text))
-    }
-
     state.takenPhotos.forEach { photo ->
       when (photo.photoState) {
         PhotoState.PHOTO_TAKEN -> {

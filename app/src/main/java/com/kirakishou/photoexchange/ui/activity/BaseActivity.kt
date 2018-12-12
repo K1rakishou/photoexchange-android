@@ -31,8 +31,6 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
   }
 
   override fun getLifecycle(): LifecycleRegistry = registry
-
-  protected val unknownErrorsSubject = PublishSubject.create<Throwable>()
   protected val compositeDisposable = CompositeDisposable()
 
   private val job = Job()
@@ -54,19 +52,13 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
 
   override fun onStart() {
     super.onStart()
-
-    compositeDisposable += unknownErrorsSubject
-      .observeOn(AndroidSchedulers.mainThread())
-      .doOnError(this::onUnknownError)
-      .subscribe(this::onUnknownError)
-
     onActivityStart()
   }
 
   override fun onStop() {
     onActivityStop()
 
-    job.cancel()
+    job.cancelChildren()
     compositeDisposable.clear()
     super.onStop()
   }
@@ -83,31 +75,8 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
     }
   }
 
-  @CallSuper
-  open fun onUnknownError(error: Throwable) {
-    Timber.e(error)
-
-    if (error.message != null) {
-      onShowToast(error.message!!)
-    } else {
-      onShowToast("Unknown error")
-    }
-
-    finish()
-  }
-
   open fun runActivity(clazz: Class<*>, finishCurrentActivity: Boolean = false) {
     val intent = Intent(this, clazz)
-    startActivity(intent)
-
-    if (finishCurrentActivity) {
-      finish()
-    }
-  }
-
-  open fun runActivityWithArgs(clazz: Class<*>, args: Bundle, finishCurrentActivity: Boolean = false) {
-    val intent = Intent(this, clazz)
-    intent.putExtras(args)
     startActivity(intent)
 
     if (finishCurrentActivity) {

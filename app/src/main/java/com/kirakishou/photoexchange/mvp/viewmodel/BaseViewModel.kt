@@ -5,8 +5,8 @@ import androidx.annotation.CallSuper
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelChildren
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -24,7 +24,7 @@ abstract class BaseViewModel(
   @CallSuper
   override fun onCleared() {
     compositeDisposable.clear()
-    job.cancel()
+    job.cancelChildren()
 
     super.onCleared()
   }

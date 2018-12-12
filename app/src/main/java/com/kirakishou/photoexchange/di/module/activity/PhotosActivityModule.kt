@@ -3,10 +3,7 @@ package com.kirakishou.photoexchange.di.module.activity
 import androidx.lifecycle.ViewModelProviders
 import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.interactors.*
@@ -95,6 +92,7 @@ open class PhotosActivityModule(
   @Provides
   fun provideGalleryFragmentViewModel(intercom: PhotosActivityViewModelIntercom,
                                       viewState: GalleryFragmentState,
+                                      galleryPhotosRepository: GalleryPhotosRepository,
                                       getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
                                       favouritePhotoUseCase: FavouritePhotoUseCase,
                                       reportPhotoUseCase: ReportPhotoUseCase,
@@ -102,6 +100,7 @@ open class PhotosActivityModule(
     return GalleryFragmentViewModel(
       viewState,
       intercom,
+      galleryPhotosRepository,
       getGalleryPhotosUseCase,
       favouritePhotoUseCase,
       reportPhotoUseCase,
@@ -115,6 +114,7 @@ open class PhotosActivityModule(
                               receivedPhotosFragmentViewModel: ReceivedPhotosFragmentViewModel,
                               galleryFragmentViewModel: GalleryFragmentViewModel,
                               intercom: PhotosActivityViewModelIntercom,
+                              settingsRepository: SettingsRepository,
                               takenPhotosRepository: TakenPhotosRepository,
                               uploadedPhotosRepository: UploadedPhotosRepository,
                               receivedPhotosRepository: ReceivedPhotosRepository,
@@ -125,6 +125,7 @@ open class PhotosActivityModule(
       receivedPhotosFragmentViewModel,
       galleryFragmentViewModel,
       intercom,
+      settingsRepository,
       takenPhotosRepository,
       uploadedPhotosRepository,
       receivedPhotosRepository,

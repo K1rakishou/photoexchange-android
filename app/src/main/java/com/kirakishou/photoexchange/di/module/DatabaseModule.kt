@@ -10,6 +10,7 @@ import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.helper.database.source.local.*
 import com.kirakishou.photoexchange.helper.database.source.remote.*
 import com.kirakishou.photoexchange.helper.util.*
+import core.SharedConstants
 import dagger.Module
 import dagger.Provides
 import javax.inject.Named
@@ -52,28 +53,43 @@ open class DatabaseModule(
   @Provides
   open fun provideGalleryPhotoLocalSource(database: MyDatabase,
                                           timeUtils: TimeUtils): GalleryPhotoLocalSource {
-    return GalleryPhotoLocalSource(database, timeUtils)
+    return GalleryPhotoLocalSource(
+      database,
+      timeUtils,
+      SharedConstants.OLD_PHOTOS_CLEANUP_ROUTINE_INTERVAL
+    )
   }
 
   @Singleton
   @Provides
   open fun provideGalleryPhotoInfoLocalSource(database: MyDatabase,
                                               timeUtils: TimeUtils): GalleryPhotoInfoLocalSource {
-    return GalleryPhotoInfoLocalSource(database, timeUtils)
+    return GalleryPhotoInfoLocalSource(
+      database,
+      timeUtils,
+      SharedConstants.OLD_PHOTOS_CLEANUP_ROUTINE_INTERVAL
+    )
   }
 
   @Singleton
   @Provides
   open fun provideReceivePhotosLocalSource(database: MyDatabase,
                                            timeUtils: TimeUtils): ReceivedPhotosLocalSource {
-    return ReceivedPhotosLocalSource(database, timeUtils)
+    return ReceivedPhotosLocalSource(
+      database,
+      timeUtils,
+      SharedConstants.OLD_PHOTOS_CLEANUP_ROUTINE_INTERVAL
+    )
   }
 
   @Singleton
   @Provides
   open fun provideUploadPhotosLocalSource(database: MyDatabase,
                                           timeUtils: TimeUtils): UploadedPhotosLocalSource {
-    return UploadedPhotosLocalSource(database, timeUtils)
+    return UploadedPhotosLocalSource(
+      database,
+      timeUtils
+    )
   }
 
   @Singleton

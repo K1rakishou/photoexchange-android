@@ -8,10 +8,12 @@ import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosInfoMapp
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhotoInfo
 import net.response.GalleryPhotoInfoResponse
+import timber.log.Timber
 
 open class GalleryPhotoInfoLocalSource(
   private val database: MyDatabase,
-  private val timeUtils: TimeUtils
+  private val timeUtils: TimeUtils,
+  private val oldPhotosCleanupRoutineInterval: Long
 ) {
   private val TAG = "GalleryPhotoInfoLocalSource"
   private val galleryPhotoInfoDao = database.galleryPhotoInfoDao()
@@ -40,7 +42,9 @@ open class GalleryPhotoInfoLocalSource(
 
   open fun deleteOldPhotoInfos() {
     val now = timeUtils.getTimeFast()
-    galleryPhotoInfoDao.deleteOlderThan(now - Constants.GALLERY_PHOTOS_INFO_CACHE_MAX_LIVE_TIME)
+    val deletedCount = galleryPhotoInfoDao.deleteOlderThan(now - oldPhotosCleanupRoutineInterval)
+
+    Timber.tag(TAG).d("deleted $deletedCount gallery photo infos photos")
   }
 
   open fun deleteAll() {

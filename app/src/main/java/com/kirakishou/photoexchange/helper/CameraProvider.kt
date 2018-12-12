@@ -11,6 +11,7 @@ import io.fotoapparat.selector.*
 import io.fotoapparat.view.CameraView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.lang.RuntimeException
@@ -45,7 +46,7 @@ open class CameraProvider(
     )
   }
 
-  fun provideCamera(cameraView: CameraView) {
+  fun initCamera(cameraView: CameraView) {
     if (camera != null) {
       return
     }
@@ -79,10 +80,9 @@ open class CameraProvider(
   }
 
   fun onDestroy() {
-    job.cancel()
+    job.cancelChildren()
   }
 
-  fun isStarted(): Boolean = isStarted.get()
   fun isAvailable(): Boolean = camera?.isAvailable(back()) ?: false
 
   suspend fun takePhoto(): TakenPhoto? {
@@ -125,7 +125,7 @@ open class CameraProvider(
       throw CameraIsNotAvailable("Camera is not supported by this device")
     }
 
-    if (!isStarted()) {
+    if (!isStarted.get()) {
       throw CameraIsNotStartedException("Camera is not started")
     }
 

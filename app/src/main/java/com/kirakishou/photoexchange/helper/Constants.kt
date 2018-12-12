@@ -16,14 +16,8 @@ object Constants {
   const val DOMAIN_NAME = "photoexchange.io"
   const val NO_GOOGLE_PLAY_SERVICES_DEFAULT_TOKEN = "NO_GOOGLE_PLAY_SERVICES_DEFAULT_TOKEN"
 
-  const val PHOTOS_SEPARATOR = ","
   const val DEFAULT_ADAPTER_ITEM_WIDTH = 288
   const val DEFAULT_PHOTOS_PER_PAGE_COUNT = 5
 
-  //interval to update photos in the db with fresh information
-  //TODO: change this in production
-  val GALLERY_PHOTOS_CACHE_MAX_LIVE_TIME = 15.minutes()
-  val GALLERY_PHOTOS_INFO_CACHE_MAX_LIVE_TIME = 15.minutes()
-  val UPLOADED_PHOTOS_CACHE_MAX_LIVE_TIME = 15.minutes()
-  val RECEIVED_PHOTOS_CACHE_MAX_LIVE_TIME = 15.minutes()
+  const val DELIMITER = ","
 }

@@ -1,10 +1,13 @@
 package com.kirakishou.photoexchange.ui.activity
 
+import android.Manifest
+import android.app.Activity
 import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.view.MenuItem
@@ -12,6 +15,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.PopupMenu
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.app.ActivityCompat
 import androidx.viewpager.widget.ViewPager
 import butterknife.BindView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -21,7 +25,6 @@ import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.activity.PhotosActivityModule
-import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.extension.debounceClicks
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
@@ -36,7 +39,10 @@ import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.service.*
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingServiceCallback
 import com.kirakishou.photoexchange.ui.callback.ReceivePhotosServiceCallback
+import com.kirakishou.photoexchange.ui.dialog.AppCannotWorkWithoutCameraPermissionDialog
+import com.kirakishou.photoexchange.ui.dialog.CameraRationaleDialog
 import com.kirakishou.photoexchange.ui.dialog.DeletePhotoConfirmationDialog
+import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
 import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
@@ -187,7 +193,9 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
     compositeDisposable += RxView.clicks(takePhotoButton)
       .subscribeOn(AndroidSchedulers.mainThread())
       .debounceClicks()
-      .doOnNext { finish() }
+      .doOnNext {
+        launch { prepareToTakePhoto() }
+      }
       .doOnError { Timber.e(it) }
       .subscribe()
 
@@ -202,6 +210,87 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       .subscribe({ event ->
         launch { onStateEvent(event) }
       })
+  }
+
+  private suspend fun showGpsRationaleDialog() {
+    GpsRationaleDialog(this).show(this, {
+      checkPermissions()
+    }, {
+      startTakenPhotoActivity()
+    })
+  }
+
+  private suspend fun showAppCannotWorkWithoutCameraPermissionDialog() {
+    AppCannotWorkWithoutCameraPermissionDialog(this).show(this) {
+      finish()
+    }
+  }
+
+  private suspend fun showCameraRationaleDialog() {
+    CameraRationaleDialog(this).show(this, {
+      checkPermissions()
+    }, {
+      finish()
+    })
+  }
+
+  private suspend fun prepareToTakePhoto() {
+    checkFirebaseAvailability()
+    checkPermissions()
+  }
+
+  private suspend fun checkFirebaseAvailability() {
+    //TODO: show check whether firebase is available on this phone and if not warn the user about
+    //them no being able to receive push notifications, the update the flag that we have already showed
+    //the dialog and continue
+  }
+
+  private fun checkPermissions() {
+    val requestedPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION)
+
+    permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
+      val cameraIndex = permissions.indexOf(Manifest.permission.CAMERA)
+      if (cameraIndex == -1) {
+        throw RuntimeException("Couldn't find Manifest.permission.CAMERA in result permissions")
+      }
+
+      val gpsIndex = permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)
+      if (gpsIndex == -1) {
+        throw RuntimeException("Couldn't find Manifest.permission.ACCESS_FINE_LOCATION in result permissions")
+      }
+
+      if (grantResults[cameraIndex] == PackageManager.PERMISSION_DENIED) {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
+          launch { showCameraRationaleDialog() }
+        } else {
+          Timber.tag(TAG).d("getPermissions() Could not obtain camera permission")
+          launch { showAppCannotWorkWithoutCameraPermissionDialog() }
+        }
+
+        return@askForPermission
+      }
+
+      var granted = true
+
+      if (grantResults[gpsIndex] == PackageManager.PERMISSION_DENIED) {
+        granted = false
+
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+          launch { showGpsRationaleDialog() }
+          return@askForPermission
+        }
+      }
+
+      launch {
+        viewModel.updateGpsPermissionGranted(granted)
+        startTakenPhotoActivity()
+      }
+    }
+  }
+
+  private fun startTakenPhotoActivity() {
+    val intent = Intent(this, TakePhotoActivity::class.java)
+    startActivityForResult(intent, TakePhotoActivity.TAKE_PHOTO_REQUEST_CODE)
   }
 
   private fun initViews() {
@@ -384,6 +473,19 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   ) {
     super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     permissionManager.onRequestPermissionsResult(requestCode, permissions, grantResults)
+  }
+
+  override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    super.onActivityResult(requestCode, resultCode, data)
+
+    if (requestCode == TakePhotoActivity.TAKE_PHOTO_REQUEST_CODE) {
+      if (resultCode == Activity.RESULT_OK) {
+        Timber.tag(TAG).d("Got new photo from TakePhotoActivity")
+
+        viewModel.intercom.tell<PhotosActivity>()
+          .to(PhotosActivityEvent.StartUploadingService(PhotosActivity::class.java, "User took new photo"))
+      }
+    }
   }
 
   private fun bindReceivingService(

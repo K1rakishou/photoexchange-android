@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.ui.activity
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import com.kirakishou.fixmypc.photoexchange.R
@@ -72,7 +73,8 @@ class ViewTakenPhotoActivity : BaseActivity() {
   }
 
   private fun onPhotoUpdated() {
-    runActivity(PhotosActivity::class.java, true)
+    setResult(Activity.RESULT_OK)
+    finish()
   }
 
   private suspend fun onAddToGalleryFragmentResult(fragmentResult: AddToGalleryDialogFragment.FragmentResult) {
@@ -106,5 +108,9 @@ class ViewTakenPhotoActivity : BaseActivity() {
 
   override fun resolveDaggerDependency() {
     activityComponent.inject(this)
+  }
+
+  companion object {
+    const val VIEW_TAKEN_PHOTO_REQUEST_CODE = 0x2
   }
 }

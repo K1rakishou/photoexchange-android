@@ -18,6 +18,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
@@ -188,7 +189,7 @@ open class UploadPhotoServicePresenter(
   }
 
   fun onDetach() {
-    job.cancel()
+    job.cancelChildren()
     compositeDisposable.clear()
   }
 
