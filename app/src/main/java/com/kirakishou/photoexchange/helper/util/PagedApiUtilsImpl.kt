@@ -56,10 +56,18 @@ class PagedApiUtilsImpl(
           return fromCache
         }
 
-        //if there are no fresh photos and not enough photos were found in the cache -
-        //get fresh page from the server
-        getPageOfPhotosFunc(userId, lastUploadedOn, requestedCount).also {
-          Timber.tag("${TAG}_$tag").d("getPageOfPhotosFunc returned ${it.size} photos")
+        //if server is not available and this is a first run then getFreshPhotosCount will return NoFreshPhotos
+        //if it's not the first run then it will return NoInternet which we don't need to handle here
+
+        try {
+          //if there are no fresh photos and not enough photos were found in the cache -
+          //get fresh page from the server
+          getPageOfPhotosFunc(userId, lastUploadedOn, requestedCount).also {
+            Timber.tag("${TAG}_$tag").d("getPageOfPhotosFunc returned ${it.size} photos")
+          }
+        } catch (error: ConnectionError) {
+          //if the server is still dead then just return whatever there is in the cache
+          return fromCache
         }
       }
       is FreshPhotosCountRequestResult.Ok -> {
