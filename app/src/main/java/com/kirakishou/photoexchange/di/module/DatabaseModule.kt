@@ -3,14 +3,12 @@ package com.kirakishou.photoexchange.di.module
 import androidx.room.Room
 import android.content.Context
 import com.google.firebase.iid.FirebaseInstanceId
-import com.kirakishou.photoexchange.helper.api.ApiClient
-import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
+import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.helper.database.source.local.*
 import com.kirakishou.photoexchange.helper.database.source.remote.*
 import com.kirakishou.photoexchange.helper.util.*
-import core.SharedConstants
 import dagger.Module
 import dagger.Provides
 import javax.inject.Named
@@ -56,7 +54,7 @@ open class DatabaseModule(
     return GalleryPhotoLocalSource(
       database,
       timeUtils,
-      SharedConstants.OLD_PHOTOS_CLEANUP_ROUTINE_INTERVAL
+      Constants.INSERTED_EARLIER_THAN_TIME_DELTA
     )
   }
 
@@ -67,7 +65,7 @@ open class DatabaseModule(
     return GalleryPhotoInfoLocalSource(
       database,
       timeUtils,
-      SharedConstants.OLD_PHOTOS_CLEANUP_ROUTINE_INTERVAL
+      Constants.INSERTED_EARLIER_THAN_TIME_DELTA
     )
   }
 
@@ -78,7 +76,7 @@ open class DatabaseModule(
     return ReceivedPhotosLocalSource(
       database,
       timeUtils,
-      SharedConstants.OLD_PHOTOS_CLEANUP_ROUTINE_INTERVAL
+      Constants.INSERTED_EARLIER_THAN_TIME_DELTA
     )
   }
 

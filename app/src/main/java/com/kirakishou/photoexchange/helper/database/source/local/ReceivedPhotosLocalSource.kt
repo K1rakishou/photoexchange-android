@@ -8,12 +8,11 @@ import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import net.response.ReceivedPhotosResponse
-import timber.log.Timber
 
 class ReceivedPhotosLocalSource(
   private val database: MyDatabase,
   private val timeUtils: TimeUtils,
-  private val oldPhotosCleanupRoutineInterval: Long
+  private val insertedEarlierThanTimeDelta: Long
 ) {
   private val TAG = "ReceivedPhotosLocalSource"
   private val receivedPhotosDao = database.receivedPhotoDao()
@@ -65,14 +64,14 @@ class ReceivedPhotosLocalSource(
   }
 
   fun findOld(): List<ReceivedPhoto> {
-    val now = timeUtils.getTimeFast() - oldPhotosCleanupRoutineInterval
+    val now = timeUtils.getTimeFast() - insertedEarlierThanTimeDelta
     val photos =  receivedPhotosDao.findOld(now)
 
     return ReceivedPhotosMapper.FromEntity.toReceivedPhotos(photos)
   }
 
   fun getPage(lastUploadedOn: Long, count: Int): List<ReceivedPhoto> {
-    val deletionTime = timeUtils.getTimeFast() - oldPhotosCleanupRoutineInterval
+    val deletionTime = timeUtils.getTimeFast() - insertedEarlierThanTimeDelta
     val photos = receivedPhotosDao.getPage(lastUploadedOn, deletionTime, count)
 
     return ReceivedPhotosMapper.FromEntity.toReceivedPhotos(photos)

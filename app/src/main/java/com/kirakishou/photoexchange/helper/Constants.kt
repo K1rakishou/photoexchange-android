@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.helper
 
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
-import com.kirakishou.photoexchange.helper.extension.minutes
+import java.util.concurrent.TimeUnit
 
 /**
  * Created by kirakishou on 11/8/2017.
@@ -20,4 +20,6 @@ object Constants {
   const val DEFAULT_PHOTOS_PER_PAGE_COUNT = 5
 
   const val DELIMITER = ","
+
+  val INSERTED_EARLIER_THAN_TIME_DELTA = TimeUnit.MINUTES.toMillis(1)
 }
