@@ -1,6 +1,5 @@
 package com.kirakishou.photoexchange.helper.database.source.local
 
-import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
@@ -11,7 +10,7 @@ import timber.log.Timber
 open class GalleryPhotoLocalSource(
   private val database: MyDatabase,
   private val timeUtils: TimeUtils,
-  private val oldPhotosCleanupRoutineInterval: Long
+  private val insertedEarlierThanTimeDelta: Long
 ) {
   private val TAG = "GalleryPhotoLocalSource"
   private val galleryPhotoDao = database.galleryPhotoDao()
@@ -23,7 +22,7 @@ open class GalleryPhotoLocalSource(
   }
 
   open fun getPage(time: Long, count: Int): List<GalleryPhoto> {
-    val deletionTime = timeUtils.getTimeFast() - oldPhotosCleanupRoutineInterval
+    val deletionTime = timeUtils.getTimeFast() - insertedEarlierThanTimeDelta
     val photos =galleryPhotoDao.getPage(time, deletionTime, count)
 
     return GalleryPhotosMapper.FromEntity.toGalleryPhotos(photos)
@@ -40,7 +39,7 @@ open class GalleryPhotoLocalSource(
 
   open fun deleteOldPhotos() {
     val now = timeUtils.getTimeFast()
-    val deletedCount = galleryPhotoDao.deleteOlderThan(now - oldPhotosCleanupRoutineInterval)
+    val deletedCount = galleryPhotoDao.deleteOlderThan(now - insertedEarlierThanTimeDelta)
 
     Timber.tag(TAG).d("deleted $deletedCount gallery photos")
   }
