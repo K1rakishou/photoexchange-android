@@ -7,7 +7,7 @@ import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
-import net.response.ReceivedPhotosResponse
+import net.response.data.ReceivedPhotoResponseData
 
 class ReceivedPhotosLocalSource(
   private val database: MyDatabase,
@@ -17,7 +17,7 @@ class ReceivedPhotosLocalSource(
   private val TAG = "ReceivedPhotosLocalSource"
   private val receivedPhotosDao = database.receivedPhotoDao()
 
-  fun save(receivedPhoto: ReceivedPhotosResponse.ReceivedPhotoResponseData): Boolean {
+  fun save(receivedPhoto: ReceivedPhotoResponseData): Boolean {
     val now = timeUtils.getTimeFast()
 
     return receivedPhotosDao.save(
@@ -41,7 +41,7 @@ class ReceivedPhotosLocalSource(
   }
 
   fun saveMany(
-    receivedPhotos: List<ReceivedPhotosResponse.ReceivedPhotoResponseData>
+    receivedPhotos: List<ReceivedPhotoResponseData>
   ): Boolean {
     val time = timeUtils.getTimeFast()
     val photos = ReceivedPhotosMapper.FromResponse.GetReceivedPhotos

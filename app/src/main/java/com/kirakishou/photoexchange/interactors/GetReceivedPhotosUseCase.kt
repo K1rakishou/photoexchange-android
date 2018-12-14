@@ -15,7 +15,7 @@ import com.kirakishou.photoexchange.helper.util.PagedApiUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import kotlinx.coroutines.withContext
-import net.response.ReceivedPhotosResponse
+import net.response.data.ReceivedPhotoResponseData
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
@@ -70,24 +70,18 @@ open class GetReceivedPhotosUseCase(
       firstUploadedOnParam,
       lastUploadedOnParam,
       countParam,
-      userIdParam, { firstUploadedOn ->
-      getFreshPhotosCount(userIdParam, firstUploadedOn)
-    }, { lastUploadedOn, count ->
-      getFromCacheInternal(lastUploadedOn, count)
-    }, { userId, lastUploadedOn, count ->
-      apiClient.getPageOfReceivedPhotos(userId!!, lastUploadedOn, count)
-    }, {
-      receivedPhotosRepository.deleteAll()
-    }, {
-      deleteOldPhotos()
-    }, { receivedPhotos ->
-      filterBlacklistedPhotos(receivedPhotos)
-    }, { receivedPhotos ->
-      storeInDatabase(receivedPhotos)
-      true
-    }, { responseData ->
-      ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhotos(responseData)
-    })
+      userIdParam,
+      { firstUploadedOn -> getFreshPhotosCount(userIdParam, firstUploadedOn) },
+      { lastUploadedOn, count -> getFromCacheInternal(lastUploadedOn, count) },
+      { userId, lastUploadedOn, count -> apiClient.getPageOfReceivedPhotos(userId!!, lastUploadedOn, count) },
+      { receivedPhotosRepository.deleteAll() },
+      { deleteOldPhotos() },
+      { receivedPhotos -> filterBlacklistedPhotos(receivedPhotos) },
+      { receivedPhotos ->
+        storeInDatabase(receivedPhotos)
+        true
+      },
+      { responseData -> ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhotos(responseData) })
   }
 
   private fun resetTimer() {
@@ -119,8 +113,8 @@ open class GetReceivedPhotosUseCase(
   }
 
   private suspend fun filterBlacklistedPhotos(
-    receivedPhotos: List<ReceivedPhotosResponse.ReceivedPhotoResponseData>
-  ): List<ReceivedPhotosResponse.ReceivedPhotoResponseData> {
+    receivedPhotos: List<ReceivedPhotoResponseData>
+  ): List<ReceivedPhotoResponseData> {
     return blacklistedPhotoRepository.filterBlacklistedPhotos(receivedPhotos) {
       it.receivedPhotoName
     }
@@ -139,7 +133,7 @@ open class GetReceivedPhotosUseCase(
   }
 
   private suspend fun storeInDatabase(
-    receivedPhotos: List<ReceivedPhotosResponse.ReceivedPhotoResponseData>
+    receivedPhotos: List<ReceivedPhotoResponseData>
   ) {
     database.transactional {
       for (receivedPhoto in receivedPhotos) {

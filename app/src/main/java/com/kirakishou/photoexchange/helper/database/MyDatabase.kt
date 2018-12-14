@@ -19,9 +19,9 @@ import kotlinx.coroutines.withContext
   SettingEntity::class,
   ReceivedPhotoEntity::class,
   GalleryPhotoEntity::class,
-  GalleryPhotoInfoEntity::class,
   UploadedPhotoEntity::class,
-  BlacklistedPhotoEntity::class
+  BlacklistedPhotoEntity::class,
+  PhotoAdditionalInfoEntity::class
 ], version = 1)
 abstract class MyDatabase : RoomDatabase() {
   abstract fun takenPhotoDao(): TakenPhotoDao
@@ -29,9 +29,9 @@ abstract class MyDatabase : RoomDatabase() {
   abstract fun settingsDao(): SettingsDao
   abstract fun receivedPhotoDao(): ReceivedPhotoDao
   abstract fun galleryPhotoDao(): GalleryPhotoDao
-  abstract fun galleryPhotoInfoDao(): GalleryPhotoInfoDao
   abstract fun uploadedPhotoDao(): UploadedPhotoDao
   abstract fun blacklistedPhotoDao(): BlacklistedPhotoDao
+  abstract fun photoAdditionalInfoDao(): PhotoAdditionalInfoDao
 
   open suspend fun <T> transactional(func: suspend () -> T): T {
     beginTransaction()

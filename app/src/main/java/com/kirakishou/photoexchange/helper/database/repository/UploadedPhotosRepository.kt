@@ -3,7 +3,7 @@ package com.kirakishou.photoexchange.helper.database.repository
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.source.local.UploadedPhotosLocalSource
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
-import net.response.GetUploadedPhotosResponse
+import net.response.data.UploadedPhotoResponseData
 
 open class UploadedPhotosRepository(
   private val database: MyDatabase,
@@ -16,7 +16,7 @@ open class UploadedPhotosRepository(
   }
 
   suspend fun saveMany(
-    uploadedPhotoDataList: List<GetUploadedPhotosResponse.UploadedPhotoResponseData>
+    uploadedPhotoDataList: List<UploadedPhotoResponseData>
   ): Boolean {
     return uploadedPhotosLocalSource.saveMany(uploadedPhotoDataList)
   }

@@ -9,7 +9,10 @@ import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import kotlinx.coroutines.channels.SendChannel
-import net.response.*
+import net.response.data.GalleryPhotoResponseData
+import net.response.data.PhotoAdditionalInfoResponseData
+import net.response.data.ReceivedPhotoResponseData
+import net.response.data.UploadedPhotoResponseData
 import javax.inject.Inject
 
 /**
@@ -53,7 +56,7 @@ open class ApiClientImpl
   override suspend fun receivePhotos(
     userId: String,
     photoNames: String
-  ): List<ReceivedPhotosResponse.ReceivedPhotoResponseData> {
+  ): List<ReceivedPhotoResponseData> {
     val response = ReceivePhotosRequest(
       userId,
       photoNames,
@@ -63,36 +66,6 @@ open class ApiClientImpl
     ).execute()
 
     return response.receivedPhotos
-  }
-
-  override suspend fun getPageOfGalleryPhotos(
-    lastUploadedOn: Long,
-    count: Int
-  ): List<GalleryPhotosResponse.GalleryPhotoResponseData> {
-    val response = GetPageOfGalleryPhotosRequest(
-      lastUploadedOn,
-      count,
-      apiService,
-      jsonConverter,
-      dispatchersProvider
-    ).execute()
-
-    return response.galleryPhotos
-  }
-
-  override suspend fun getGalleryPhotoInfo(
-    userId: String,
-    galleryPhotoIds: String
-  ): List<GalleryPhotoInfoResponse.GalleryPhotosInfoResponseData> {
-    val response = GetGalleryPhotoInfoRequest(
-      userId,
-      galleryPhotoIds,
-      apiService,
-      jsonConverter,
-      dispatchersProvider
-    ).execute()
-
-    return response.galleryPhotosInfo
   }
 
   override suspend fun favouritePhoto(
@@ -139,7 +112,7 @@ open class ApiClientImpl
     userId: String,
     lastUploadedOn: Long,
     count: Int
-  ): List<GetUploadedPhotosResponse.UploadedPhotoResponseData> {
+  ): List<UploadedPhotoResponseData> {
     val response = GetPageOfUploadedPhotosRequest(
       userId,
       lastUploadedOn,
@@ -156,7 +129,7 @@ open class ApiClientImpl
     userId: String,
     lastUploadedOn: Long,
     count: Int
-  ): List<ReceivedPhotosResponse.ReceivedPhotoResponseData> {
+  ): List<ReceivedPhotoResponseData> {
     val response = GetPageOfReceivedPhotosRequest(
       userId,
       lastUploadedOn,
@@ -167,6 +140,36 @@ open class ApiClientImpl
     ).execute()
 
     return response.receivedPhotos
+  }
+
+  override suspend fun getPageOfGalleryPhotos(
+    lastUploadedOn: Long,
+    count: Int
+  ): List<GalleryPhotoResponseData> {
+    val response = GetPageOfGalleryPhotosRequest(
+      lastUploadedOn,
+      count,
+      apiService,
+      jsonConverter,
+      dispatchersProvider
+    ).execute()
+
+    return response.galleryPhotos
+  }
+
+  override suspend fun getPhotosAdditionalInfo(
+    userId: String,
+    photoNames: String
+  ): List<PhotoAdditionalInfoResponseData> {
+    val response = GetPhotosAdditionalInfoRequest(
+      userId,
+      photoNames,
+      apiService,
+      jsonConverter,
+      dispatchersProvider
+    ).execute()
+
+    return response.additionalInfoList
   }
 
   override suspend fun checkAccountExists(userId: String): Boolean {

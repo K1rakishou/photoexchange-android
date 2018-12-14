@@ -3,23 +3,23 @@ package com.kirakishou.photoexchange.helper.api.request
 import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.helper.api.ApiService
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.helper.exception.ConnectionError
+import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import kotlinx.coroutines.rx2.await
-import net.response.GalleryPhotoInfoResponse
+import net.response.GetPhotosAdditionalInfoResponse
 import timber.log.Timber
 
-class GetGalleryPhotoInfoRequest(
+class GetPhotosAdditionalInfoRequest(
   private val userId: String,
-  private val galleryPhotoIds: String,
+  private val photoNames: String,
   private val apiService: ApiService,
   private val jsonConverter: JsonConverter,
-  dispatchersProvider: DispatchersProvider
-) : BaseRequest<GalleryPhotoInfoResponse>(dispatchersProvider) {
+  private val dispatchersProvider: DispatchersProvider
+) : BaseRequest<GetPhotosAdditionalInfoResponse>(dispatchersProvider) {
 
-  override suspend fun execute(): GalleryPhotoInfoResponse {
+  override suspend fun execute(): GetPhotosAdditionalInfoResponse {
     val response = try {
-      apiService.getGalleryPhotoInfo(userId, galleryPhotoIds).await()
+      apiService.getPhotosAdditionalInfo(userId, photoNames).await()
     } catch (error: Exception) {
       Timber.e(error)
       throw ConnectionError(error.message)

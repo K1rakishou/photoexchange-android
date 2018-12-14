@@ -21,9 +21,6 @@ class GalleryPhotoEntity(
   @ColumnInfo(name = UPLOADED_ON_COLUMN)
   var uploadedOn: Long = 0L,
 
-  @ColumnInfo(name = FAVOURITED_COUNT_COLUMN)
-  var favouritedCount: Long = 0L,
-
   @ColumnInfo(name = INSERTED_ON_COLUMN, index = true)
   var insertedOn: Long = 0L
 ) {
@@ -38,9 +35,20 @@ class GalleryPhotoEntity(
       return GalleryPhotoEntity()
     }
 
-    fun create(photoName: String, lon: Double, lat: Double, uploadedOn: Long,
-               favouritedCount: Long, insertedOn: Long): GalleryPhotoEntity {
-      return GalleryPhotoEntity(photoName, lon, lat, uploadedOn, favouritedCount, insertedOn)
+    fun create(
+      photoName: String,
+      lon: Double,
+      lat: Double,
+      uploadedOn: Long,
+      insertedOn: Long
+    ): GalleryPhotoEntity {
+      return GalleryPhotoEntity(
+        photoName,
+        lon,
+        lat,
+        uploadedOn,
+        insertedOn
+      )
     }
 
     const val TABLE_NAME = "GALLERY_PHOTOS"
@@ -49,7 +57,6 @@ class GalleryPhotoEntity(
     const val LON_COLUMN = "LON"
     const val LAT_COLUMN = "LAT"
     const val UPLOADED_ON_COLUMN = "UPLOADED_ON"
-    const val FAVOURITED_COUNT_COLUMN = "FAVOURITED_COUNT"
     const val INSERTED_ON_COLUMN = "INSERTED_ON"
   }
 }

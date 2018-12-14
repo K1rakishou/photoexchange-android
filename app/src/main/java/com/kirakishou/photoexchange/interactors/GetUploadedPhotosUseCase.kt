@@ -13,6 +13,7 @@ import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
+
 open class GetUploadedPhotosUseCase(
   private val apiClient: ApiClient,
   private val pagedApiUtils: PagedApiUtils,
@@ -75,24 +76,21 @@ open class GetUploadedPhotosUseCase(
       firstUploadedOnParam,
       lastUploadedOnParam,
       countParam,
-      userIdParam, { firstUploadedOn ->
-      getFreshPhotosCount(userIdParam, firstUploadedOn)
-    }, { lastUploadedOn, count ->
-      getFromCacheInternal(lastUploadedOn, count)
-    }, { userId, lastUploadedOn, count ->
-      apiClient.getPageOfUploadedPhotos(userId!!, lastUploadedOn, count)
-    }, {
-      uploadedPhotosRepository.deleteAll()
-    }, {
-      //do not delete uploaded photos from this use case, do it in the received photo use case
-    }, { uploadedPhotos ->
-      //we don't need to filter uploaded photos
-      uploadedPhotos
-    }, { uploadedPhotos ->
-      uploadedPhotosRepository.saveMany(uploadedPhotos)
-    }, { responseData ->
-      UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhotos(responseData)
-    })
+      userIdParam,
+      { firstUploadedOn -> getFreshPhotosCount(userIdParam, firstUploadedOn) },
+      { lastUploadedOn, count -> getFromCacheInternal(lastUploadedOn, count) },
+      { userId, lastUploadedOn, count -> apiClient.getPageOfUploadedPhotos(userId!!, lastUploadedOn, count) },
+      { uploadedPhotosRepository.deleteAll() },
+      {
+        //do not delete uploaded photos from this use case, do it in the received photo use case
+      },
+      { uploadedPhotos ->
+        //we don't need to filter uploaded photos
+        uploadedPhotos
+      },
+      { uploadedPhotos -> uploadedPhotosRepository.saveMany(uploadedPhotos) },
+      { responseData -> UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhotos(responseData) }
+    )
   }
 
   private suspend fun getFreshPhotosCount(userId: String, firstUploadedOn: Long): Int {

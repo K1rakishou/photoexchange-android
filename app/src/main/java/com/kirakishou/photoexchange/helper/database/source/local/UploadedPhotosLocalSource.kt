@@ -6,7 +6,7 @@ import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
-import net.response.GetUploadedPhotosResponse
+import net.response.data.UploadedPhotoResponseData
 
 open class UploadedPhotosLocalSource(
   private val database: MyDatabase,
@@ -37,7 +37,7 @@ open class UploadedPhotosLocalSource(
   }
 
   open fun saveMany(
-    uploadedPhotoDataList: List<GetUploadedPhotosResponse.UploadedPhotoResponseData>
+    uploadedPhotoDataList: List<UploadedPhotoResponseData>
   ): Boolean {
     val now = timeUtils.getTimeFast()
 

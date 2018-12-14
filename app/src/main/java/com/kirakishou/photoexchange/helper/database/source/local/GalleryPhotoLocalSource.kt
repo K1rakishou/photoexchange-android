@@ -4,7 +4,7 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
-import net.response.GalleryPhotosResponse
+import net.response.data.GalleryPhotoResponseData
 import timber.log.Timber
 
 open class GalleryPhotoLocalSource(
@@ -15,10 +15,12 @@ open class GalleryPhotoLocalSource(
   private val TAG = "GalleryPhotoLocalSource"
   private val galleryPhotoDao = database.galleryPhotoDao()
 
-  open fun saveMany(galleryPhotos: List<GalleryPhotosResponse.GalleryPhotoResponseData>): Boolean {
+  open fun saveMany(galleryPhotos: List<GalleryPhotoResponseData>): Boolean {
     val now = timeUtils.getTimeFast()
-    return galleryPhotoDao.saveMany(GalleryPhotosMapper.FromResponse.ToEntity
-      .toGalleryPhotoEntitiesList(now, galleryPhotos)).size == galleryPhotos.size
+    val photos = GalleryPhotosMapper.FromResponse.ToEntity
+      .toGalleryPhotoEntitiesList(now, galleryPhotos)
+
+    return galleryPhotoDao.saveMany(photos).size == galleryPhotos.size
   }
 
   open fun getPage(time: Long, count: Int): List<GalleryPhoto> {
@@ -48,7 +50,8 @@ open class GalleryPhotoLocalSource(
     galleryPhotoDao.deleteAll()
   }
 
-  fun deleteByPhotoName(photoName: String) {
+  open fun deleteByPhotoName(photoName: String) {
     galleryPhotoDao.deleteByPhotoName(photoName)
   }
+
 }

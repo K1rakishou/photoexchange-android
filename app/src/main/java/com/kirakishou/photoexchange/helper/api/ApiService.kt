@@ -25,16 +25,12 @@ interface ApiService {
   @PUT("/v1/api/report")
   fun reportPhoto(@Body packet: ReportPhotoPacket): Single<Response<ReportPhotoResponse>>
 
-  @GET("/v1/api/receive_photos/{photo_names}/{user_id}")
-  fun receivePhotos(@Path("photo_names") photoNames: String,
-                    @Path("user_id") userId: String): Single<Response<ReceivedPhotosResponse>>
+  @GET("/v1/api/receive_photos/{user_id}/{photo_names}")
+  fun receivePhotos(@Path("user_id") userId: String,
+                    @Path("photo_names") photoNames: String): Single<Response<ReceivedPhotosResponse>>
 
   @GET("/v1/api/get_user_id")
   fun getUserId(): Single<Response<GetUserIdResponse>>
-
-  @GET("/v1/api/get_gallery_photo_info/{user_id}/{photo_ids}")
-  fun getGalleryPhotoInfo(@Path("user_id") userId: String,
-                          @Path("photo_ids") photoIds: String): Single<Response<GalleryPhotoInfoResponse>>
 
   @GET("/v1/api/get_page_of_gallery_photos/{last_uploaded_on}/{count}")
   fun getPageOfGalleryPhotos(@Path("last_uploaded_on") lastUploadedOn: Long,
@@ -49,6 +45,10 @@ interface ApiService {
   fun getReceivedPhotos(@Path("user_id") userId: String,
                         @Path("last_uploaded_on") lastUploadedOn: Long,
                         @Path("count") count: Int): Single<Response<ReceivedPhotosResponse>>
+
+  @GET("/v1/api/get_photos_additional_info/{user_id}/{photo_names}")
+  fun getPhotosAdditionalInfo(@Path("user_id") userId: String,
+                              @Path("photo_names") photoNames: String): Single<Response<GetPhotosAdditionalInfoResponse>>
 
   @GET("/v1/api/check_account_exists/{user_id}")
   fun checkAccountExists(@Path("user_id") userId: String): Single<Response<CheckAccountExistsResponse>>

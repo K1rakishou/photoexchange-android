@@ -13,7 +13,7 @@ import com.kirakishou.photoexchange.mvp.model.FindPhotosData
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import core.ErrorCode
 import kotlinx.coroutines.withContext
-import net.response.ReceivedPhotosResponse
+import net.response.data.ReceivedPhotoResponseData
 import timber.log.Timber
 
 open class ReceivePhotosUseCase(
@@ -71,9 +71,7 @@ open class ReceivePhotosUseCase(
     return results
   }
 
-  private suspend fun updatePhotoReceiverInfo(
-    receivedPhoto: ReceivedPhotosResponse.ReceivedPhotoResponseData
-  ) {
+  private suspend fun updatePhotoReceiverInfo(receivedPhoto: ReceivedPhotoResponseData) {
     database.transactional {
       if (!receivedPhotosRepository.save(receivedPhoto)) {
         throw DatabaseException("Could not save photo with receivedPhotoName ${receivedPhoto.receivedPhotoName}")

@@ -8,7 +8,10 @@ import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.helper.exception.ConnectionError
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import kotlinx.coroutines.channels.SendChannel
-import net.response.*
+import net.response.data.GalleryPhotoResponseData
+import net.response.data.PhotoAdditionalInfoResponseData
+import net.response.data.ReceivedPhotoResponseData
+import net.response.data.UploadedPhotoResponseData
 
 interface ApiClient {
 
@@ -23,13 +26,7 @@ interface ApiClient {
   ): UploadPhotosUseCase.UploadPhotoResult
 
   @Throws(ApiErrorException::class, ConnectionError::class)
-  suspend fun receivePhotos(userId: String, photoNames: String): List<ReceivedPhotosResponse.ReceivedPhotoResponseData>
-
-  @Throws(ApiErrorException::class, ConnectionError::class)
-  suspend fun getPageOfGalleryPhotos(lastUploadedOn: Long, count: Int): List<GalleryPhotosResponse.GalleryPhotoResponseData>
-
-  @Throws(ApiErrorException::class, ConnectionError::class)
-  suspend fun getGalleryPhotoInfo(userId: String, galleryPhotoIds: String): List<GalleryPhotoInfoResponse.GalleryPhotosInfoResponseData>
+  suspend fun receivePhotos(userId: String, photoNames: String): List<ReceivedPhotoResponseData>
 
   @Throws(ApiErrorException::class, ConnectionError::class)
   suspend fun favouritePhoto(userId: String, photoName: String): FavouritePhotoResponseData
@@ -41,10 +38,30 @@ interface ApiClient {
   suspend fun getUserId(): String
 
   @Throws(ApiErrorException::class, ConnectionError::class)
-  suspend fun getPageOfUploadedPhotos(userId: String, lastUploadedOn: Long, count: Int): List<GetUploadedPhotosResponse.UploadedPhotoResponseData>
+  suspend fun getPageOfUploadedPhotos(
+    userId: String,
+    lastUploadedOn: Long,
+    count: Int
+  ): List<UploadedPhotoResponseData>
 
   @Throws(ApiErrorException::class, ConnectionError::class)
-  suspend fun getPageOfReceivedPhotos(userId: String, lastUploadedOn: Long, count: Int): List<ReceivedPhotosResponse.ReceivedPhotoResponseData>
+  suspend fun getPageOfReceivedPhotos(
+    userId: String,
+    lastUploadedOn: Long,
+    count: Int
+  ): List<ReceivedPhotoResponseData>
+
+  @Throws(ApiErrorException::class, ConnectionError::class)
+  suspend fun getPageOfGalleryPhotos(
+    lastUploadedOn: Long,
+    count: Int
+  ): List<GalleryPhotoResponseData>
+
+  @Throws(ApiErrorException::class, ConnectionError::class)
+  suspend fun getPhotosAdditionalInfo(
+    userId: String,
+    photoNames: String
+  ): List<PhotoAdditionalInfoResponseData>
 
   @Throws(ApiErrorException::class, ConnectionError::class)
   suspend fun checkAccountExists(userId: String): Boolean

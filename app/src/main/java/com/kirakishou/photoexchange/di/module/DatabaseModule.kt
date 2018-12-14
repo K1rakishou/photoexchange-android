@@ -60,9 +60,9 @@ open class DatabaseModule(
 
   @Singleton
   @Provides
-  open fun provideGalleryPhotoInfoLocalSource(database: MyDatabase,
-                                              timeUtils: TimeUtils): GalleryPhotoInfoLocalSource {
-    return GalleryPhotoInfoLocalSource(
+  open fun provideReceivePhotosLocalSource(database: MyDatabase,
+                                           timeUtils: TimeUtils): ReceivedPhotosLocalSource {
+    return ReceivedPhotosLocalSource(
       database,
       timeUtils,
       Constants.INSERTED_EARLIER_THAN_TIME_DELTA
@@ -71,12 +71,9 @@ open class DatabaseModule(
 
   @Singleton
   @Provides
-  open fun provideReceivePhotosLocalSource(database: MyDatabase,
-                                           timeUtils: TimeUtils): ReceivedPhotosLocalSource {
-    return ReceivedPhotosLocalSource(
-      database,
-      timeUtils,
-      Constants.INSERTED_EARLIER_THAN_TIME_DELTA
+  open fun providePhotoAdditionalInfoLocalSource(database: MyDatabase): PhotoAdditionalInfoLocalSource {
+    return PhotoAdditionalInfoLocalSource(
+      database
     )
   }
 
@@ -174,12 +171,9 @@ open class DatabaseModule(
   @Singleton
   @Provides
   open fun provideGalleryPhotosRepository(database: MyDatabase,
-                                          galleryPhotoLocalSource: GalleryPhotoLocalSource,
-                                          galleryPhotoInfoLocalSource: GalleryPhotoInfoLocalSource): GalleryPhotosRepository {
+                                          galleryPhotoLocalSource: GalleryPhotoLocalSource): GalleryPhotosRepository {
     return GalleryPhotosRepository(
-      database,
-      galleryPhotoLocalSource,
-      galleryPhotoInfoLocalSource
+      galleryPhotoLocalSource
     )
   }
 
@@ -188,6 +182,16 @@ open class DatabaseModule(
   open fun provideBlacklistedPhotoRepository(blacklistedPhotoLocalSource: BlacklistedPhotoLocalSource): BlacklistedPhotoRepository {
     return BlacklistedPhotoRepository(
       blacklistedPhotoLocalSource
+    )
+  }
+
+  @Singleton
+  @Provides
+  open fun providePhotoAdditionalInfoRepository(
+    photoAdditionalInfoLocalSource: PhotoAdditionalInfoLocalSource
+  ): PhotoAdditionalInfoRepository {
+    return PhotoAdditionalInfoRepository(
+      photoAdditionalInfoLocalSource
     )
   }
 }

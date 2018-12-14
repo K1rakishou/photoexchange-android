@@ -4,21 +4,21 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.api.response.FavouritePhotoResponseData
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoInfoEntity
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.PhotoAdditionalInfoRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
-import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.FavouritePhotoActionResult
+import com.kirakishou.photoexchange.mvp.model.photo.PhotoAdditionalInfo
 import kotlinx.coroutines.withContext
 
 open class FavouritePhotoUseCase(
   private val database: MyDatabase,
   private val apiClient: ApiClient,
-  private val timeUtils: TimeUtils,
   private val settingsRepository: SettingsRepository,
   private val galleryPhotosRepository: GalleryPhotosRepository,
+  private val photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
   private val TAG = "FavouritePhotoUseCase"
@@ -52,27 +52,25 @@ open class FavouritePhotoUseCase(
     photoName: String,
     favouritePhotoResponseData: FavouritePhotoResponseData
   ) {
-    database.transactional {
-      val galleryPhotoEntity = galleryPhotosRepository.findPhotoByPhotoName(photoName)
-      if (galleryPhotoEntity == null) {
-        //TODO: should an exception be thrown here?
-        return@transactional
-      }
+    val galleryPhotoEntity = galleryPhotosRepository.findPhotoByPhotoName(photoName)
+    if (galleryPhotoEntity == null) {
+      return
+    }
 
-      var galleryPhotoInfoEntity = galleryPhotosRepository.findPhotoInfoByPhotoName(galleryPhotoEntity.photoName)
-      if (galleryPhotoInfoEntity == null) {
-        galleryPhotoInfoEntity = GalleryPhotoInfoEntity.create(
+    database.transactional {
+      val photoAdditionalInfo = photoAdditionalInfoRepository.findByPhotoName(galleryPhotoEntity.photoName)
+        ?.copy(
+          isFavourited = favouritePhotoResponseData.isFavourited,
+          favouritesCount = favouritePhotoResponseData.favouritesCount
+        )
+        ?: PhotoAdditionalInfo.create(
           galleryPhotoEntity.photoName,
           favouritePhotoResponseData.isFavourited,
           favouritePhotoResponseData.favouritesCount,
-          false,
-          timeUtils.getTimeFast()
+          false
         )
-      } else {
-        galleryPhotoInfoEntity.isFavourited = favouritePhotoResponseData.isFavourited
-      }
 
-      if (!galleryPhotosRepository.save(galleryPhotoInfoEntity)) {
+      if (!photoAdditionalInfoRepository.save(photoAdditionalInfo)) {
         throw DatabaseException("Could not update gallery photo info ")
       }
     }
