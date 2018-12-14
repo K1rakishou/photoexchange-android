@@ -55,8 +55,6 @@ class GalleryFragmentEpoxyController
                 galleryPhotoRow {
                   id("gallery_photo_${photo.photoName}")
                   photo(photo)
-                  favouriteButtonEnabled(state.favouritedPhotos.contains(photo.photoName))
-                  reportButtonEnabled(state.reportedPhotos.contains(photo.photoName))
                   clickViewCallback { model, _, _, _ ->
                     viewModel.swapPhotoAndMap(model.photo().photoName)
                   }

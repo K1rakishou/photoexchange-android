@@ -62,8 +62,10 @@ class UseCaseProviderModule {
   fun provideGetGalleryPhotosUseCase(apiClient: ApiClient,
                                      timeUtils: TimeUtils,
                                      pagedApiUtils: PagedApiUtils,
+                                     photoAdditionalInfoUtils: PhotoAdditionalInfoUtils,
                                      netUtils: NetUtils,
                                      galleryPhotosRepository: GalleryPhotosRepository,
+                                     photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
                                      blacklistedPhotoRepository: BlacklistedPhotoRepository,
                                      settingsRepository: SettingsRepository,
                                      dispatchersProvider: DispatchersProvider): GetGalleryPhotosUseCase {
@@ -71,8 +73,10 @@ class UseCaseProviderModule {
       apiClient,
       timeUtils,
       pagedApiUtils,
+      photoAdditionalInfoUtils,
       netUtils,
       galleryPhotosRepository,
+      photoAdditionalInfoRepository,
       blacklistedPhotoRepository,
       settingsRepository,
       dispatchersProvider
@@ -83,16 +87,16 @@ class UseCaseProviderModule {
   @Provides
   fun provideReportPhotoUseCase(database: MyDatabase,
                                 apiClient: ApiClient,
-                                timeUtils: TimeUtils,
                                 settingsRepository: SettingsRepository,
                                 galleryPhotosRepository: GalleryPhotosRepository,
+                                photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
                                 dispatchersProvider: DispatchersProvider): ReportPhotoUseCase {
     return ReportPhotoUseCase(
       database,
       apiClient,
-      timeUtils,
       settingsRepository,
       galleryPhotosRepository,
+      photoAdditionalInfoRepository,
       dispatchersProvider
     )
   }
@@ -101,16 +105,16 @@ class UseCaseProviderModule {
   @Provides
   fun provideFavouritePhotoUseCase(database: MyDatabase,
                                    apiClient: ApiClient,
-                                   timeUtils: TimeUtils,
                                    settingsRepository: SettingsRepository,
                                    galleryPhotosRepository: GalleryPhotosRepository,
+                                   photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
                                    dispatchersProvider: DispatchersProvider): FavouritePhotoUseCase {
     return FavouritePhotoUseCase(
       database,
       apiClient,
-      timeUtils,
       settingsRepository,
       galleryPhotosRepository,
+      photoAdditionalInfoRepository,
       dispatchersProvider
     )
   }

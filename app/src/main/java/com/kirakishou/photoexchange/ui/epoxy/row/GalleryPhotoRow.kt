@@ -10,13 +10,9 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import com.airbnb.epoxy.CallbackProp
 import com.airbnb.epoxy.ModelProp
 import com.airbnb.epoxy.ModelView
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.request.RequestOptions
 import com.kirakishou.fixmypc.photoexchange.R
-import com.kirakishou.photoexchange.di.module.GlideApp
-import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
-import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhotoInfo
+import com.kirakishou.photoexchange.mvp.model.photo.PhotoAdditionalInfo
 
 @ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT)
 class GalleryPhotoRow @JvmOverloads constructor(
@@ -55,26 +51,15 @@ class GalleryPhotoRow @JvmOverloads constructor(
     if (photo.showPhoto) {
       showPhotoHideMap()
 
-      if (photo.galleryPhotoInfo.type == GalleryPhotoInfo.Type.Normal) {
+      if (photo.photoAdditionalInfo.hasUserId) {
         showControls(photo)
+        favouritesCount.text = photo.photoAdditionalInfo.favouritesCount.toString()
       } else {
         hideControls()
       }
     } else {
       showMapHidePhoto()
     }
-
-    favouritesCount.text = photo.favouritesCount.toString()
-  }
-
-  @ModelProp
-  fun setFavouriteButtonEnabled(isFavouriteRequestActive: Boolean) {
-    favouriteButton.isEnabled = !isFavouriteRequestActive
-  }
-
-  @ModelProp
-  fun setReportButtonEnabled(isReportRequestActive: Boolean) {
-    reportButton.isEnabled = !isReportRequestActive
   }
 
   @CallbackProp
@@ -97,13 +82,13 @@ class GalleryPhotoRow @JvmOverloads constructor(
     favouriteButton.isClickable = true
     reportButton.isClickable = true
 
-    if (photo.galleryPhotoInfo.isFavourited) {
+    if (photo.photoAdditionalInfo.isFavourited) {
       favouriteIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_favorite))
     } else {
       favouriteIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_favorite_border))
     }
 
-    if (photo.galleryPhotoInfo.isReported) {
+    if (photo.photoAdditionalInfo.isReported) {
       reportIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_reported))
     } else {
       reportIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_report_border))

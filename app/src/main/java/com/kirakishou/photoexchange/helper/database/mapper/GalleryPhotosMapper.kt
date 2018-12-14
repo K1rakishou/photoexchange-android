@@ -3,8 +3,8 @@ package com.kirakishou.photoexchange.helper.database.mapper
 import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.helper.database.entity.GalleryPhotoEntity
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
-import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhotoInfo
-import net.response.GalleryPhotosResponse
+import com.kirakishou.photoexchange.mvp.model.photo.PhotoAdditionalInfo
+import net.response.data.GalleryPhotoResponseData
 
 object GalleryPhotosMapper {
 
@@ -17,8 +17,7 @@ object GalleryPhotosMapper {
           galleryPhotoEntity.lat
         ),
         galleryPhotoEntity.uploadedOn,
-        galleryPhotoEntity.favouritedCount,
-        GalleryPhotoInfo.empty(galleryPhotoEntity.photoName)
+        PhotoAdditionalInfo.empty(galleryPhotoEntity.photoName)
       )
     }
 
@@ -34,7 +33,6 @@ object GalleryPhotosMapper {
         galleryPhoto.lonLat.lon,
         galleryPhoto.lonLat.lat,
         galleryPhoto.uploadedOn,
-        galleryPhoto.favouritesCount,
         time
       )
     }
@@ -46,7 +44,7 @@ object GalleryPhotosMapper {
 
   object FromResponse {
     object ToObject {
-      fun toGalleryPhoto(galleryPhotoResponseData: GalleryPhotosResponse.GalleryPhotoResponseData): GalleryPhoto {
+      fun toGalleryPhoto(galleryPhotoResponseData: GalleryPhotoResponseData): GalleryPhoto {
         return GalleryPhoto(
           galleryPhotoResponseData.photoName,
           LonLat(
@@ -54,30 +52,28 @@ object GalleryPhotosMapper {
             galleryPhotoResponseData.lat
           ),
           galleryPhotoResponseData.uploadedOn,
-          galleryPhotoResponseData.favouritesCount,
-          GalleryPhotoInfo.empty(galleryPhotoResponseData.photoName)
+          PhotoAdditionalInfo.empty(galleryPhotoResponseData.photoName)
         )
       }
 
-      fun toGalleryPhotoList(galleryPhotoResponseDataList: List<GalleryPhotosResponse.GalleryPhotoResponseData>): List<GalleryPhoto> {
+      fun toGalleryPhotoList(galleryPhotoResponseDataList: List<GalleryPhotoResponseData>): List<GalleryPhoto> {
         return galleryPhotoResponseDataList.map { toGalleryPhoto(it) }
       }
     }
 
     object ToEntity {
-      fun toGalleryPhotoEntity(time: Long, galleryPhotoResponseData: GalleryPhotosResponse.GalleryPhotoResponseData): GalleryPhotoEntity {
+      fun toGalleryPhotoEntity(time: Long, galleryPhotoResponseData: GalleryPhotoResponseData): GalleryPhotoEntity {
         return GalleryPhotoEntity.create(
           galleryPhotoResponseData.photoName,
           galleryPhotoResponseData.lon,
           galleryPhotoResponseData.lat,
           galleryPhotoResponseData.uploadedOn,
-          galleryPhotoResponseData.favouritesCount,
           time
         )
       }
 
 
-      fun toGalleryPhotoEntitiesList(time: Long, galleryPhotoResponseDataList: List<GalleryPhotosResponse.GalleryPhotoResponseData>): List<GalleryPhotoEntity> {
+      fun toGalleryPhotoEntitiesList(time: Long, galleryPhotoResponseDataList: List<GalleryPhotoResponseData>): List<GalleryPhotoEntity> {
         return galleryPhotoResponseDataList.map { toGalleryPhotoEntity(time, it) }
       }
     }

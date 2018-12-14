@@ -3,13 +3,13 @@ package com.kirakishou.photoexchange.helper.database.mapper
 import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
-import net.response.GetUploadedPhotosResponse
+import net.response.data.UploadedPhotoResponseData
 
 object UploadedPhotosMapper {
 
   object FromResponse {
     object ToEntity {
-      fun toUploadedPhotoEntity(time: Long, uploadedPhotoData: GetUploadedPhotosResponse.UploadedPhotoResponseData): UploadedPhotoEntity {
+      fun toUploadedPhotoEntity(time: Long, uploadedPhotoData: UploadedPhotoResponseData): UploadedPhotoEntity {
         return UploadedPhotoEntity.create(
           uploadedPhotoData.photoName,
           uploadedPhotoData.photoId,
@@ -23,13 +23,13 @@ object UploadedPhotosMapper {
         )
       }
 
-      fun toUploadedPhotoEntities(time: Long, uploadedPhotoDataList: List<GetUploadedPhotosResponse.UploadedPhotoResponseData>): List<UploadedPhotoEntity> {
+      fun toUploadedPhotoEntities(time: Long, uploadedPhotoDataList: List<UploadedPhotoResponseData>): List<UploadedPhotoEntity> {
         return uploadedPhotoDataList.map { toUploadedPhotoEntity(time, it) }
       }
     }
 
     object ToObject {
-      fun toUploadedPhoto(uploadedPhotoData: GetUploadedPhotosResponse.UploadedPhotoResponseData): UploadedPhoto {
+      fun toUploadedPhoto(uploadedPhotoData: UploadedPhotoResponseData): UploadedPhoto {
         val receiverInfo = if (uploadedPhotoData.receiverInfoResponseData == null) {
           null
         } else {
@@ -52,7 +52,7 @@ object UploadedPhotosMapper {
         )
       }
 
-      fun toUploadedPhotos(uploadedPhotoDataList: List<GetUploadedPhotosResponse.UploadedPhotoResponseData>): List<UploadedPhoto> {
+      fun toUploadedPhotos(uploadedPhotoDataList: List<UploadedPhotoResponseData>): List<UploadedPhoto> {
         return uploadedPhotoDataList.map { toUploadedPhoto(it) }
       }
     }

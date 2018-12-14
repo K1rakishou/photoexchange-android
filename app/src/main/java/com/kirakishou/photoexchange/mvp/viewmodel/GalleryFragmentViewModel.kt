@@ -106,7 +106,6 @@ class GalleryFragmentViewModel(
     }
   }
 
-  //FIXME: hangs somewhere in transaction
   private fun reportPhotoInternal(photoName: String) {
     fun updateIsPhotoReported(state: GalleryFragmentState, photoName: String) {
       if (state.reportedPhotos.contains(photoName)) {
@@ -145,14 +144,17 @@ class GalleryFragmentViewModel(
         val updatedPhotos = state.galleryPhotos.toMutableList()
         val galleryPhoto = updatedPhotos[photoIndex]
 
-        val updatedPhotoInfo = updatedPhotos[photoIndex].galleryPhotoInfo
+        val updatedPhotoInfo = updatedPhotos[photoIndex].photoAdditionalInfo
           .copy(isReported = reportResult)
 
         updatedPhotos[photoIndex] = galleryPhoto
-          .copy(galleryPhotoInfo = updatedPhotoInfo)
+          .copy(photoAdditionalInfo = updatedPhotoInfo)
 
-        intercom.tell<PhotosActivity>()
-          .to(PhotosActivityEvent.ShowDeletePhotoDialog(photoName))
+        //only show delete photo dialog when we reporting a photo and not removing the report
+        if (reportResult) {
+          intercom.tell<PhotosActivity>()
+            .to(PhotosActivityEvent.ShowDeletePhotoDialog(photoName))
+        }
 
         setState { copy(galleryPhotos = updatedPhotos) }
       }
@@ -197,12 +199,14 @@ class GalleryFragmentViewModel(
         val updatedPhotos = state.galleryPhotos.toMutableList()
         val galleryPhoto = updatedPhotos[photoIndex]
 
-        val updatedPhotoInfo = updatedPhotos[photoIndex].galleryPhotoInfo
-          .copy(isFavourited = favouriteResult.isFavourited)
+        val updatedPhotoInfo = updatedPhotos[photoIndex].photoAdditionalInfo
+          .copy(
+            isFavourited = favouriteResult.isFavourited,
+            favouritesCount = favouriteResult.favouritesCount
+          )
 
         updatedPhotos[photoIndex] = galleryPhoto.copy(
-          favouritesCount = favouriteResult.favouritesCount,
-          galleryPhotoInfo = updatedPhotoInfo
+          photoAdditionalInfo = updatedPhotoInfo
         )
 
         setState { copy(galleryPhotos = updatedPhotos) }

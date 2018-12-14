@@ -30,11 +30,6 @@ abstract class GalleryPhotoDao {
     "ORDER BY ${GalleryPhotoEntity.UPLOADED_ON_COLUMN} DESC")
   abstract fun findMany(photoNameList: List<String>): List<GalleryPhotoEntity>
 
-  @Query("UPDATE ${GalleryPhotoEntity.TABLE_NAME} " +
-    "SET ${GalleryPhotoEntity.FAVOURITED_COUNT_COLUMN} = :favouritesCount " +
-    "WHERE ${GalleryPhotoEntity.PHOTO_NAME_COLUMN} = :photoName")
-  abstract fun updateFavouritesCount(photoName: String, favouritesCount: Long): Int
-
   @Query("SELECT * FROM ${GalleryPhotoEntity.TABLE_NAME}")
   abstract fun findAll(): List<GalleryPhotoEntity>
 

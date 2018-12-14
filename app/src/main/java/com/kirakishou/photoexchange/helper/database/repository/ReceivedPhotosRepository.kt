@@ -4,7 +4,7 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.source.local.ReceivedPhotosLocalSource
 import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
-import net.response.ReceivedPhotosResponse
+import net.response.data.ReceivedPhotoResponseData
 
 open class ReceivedPhotosRepository(
   private val database: MyDatabase,
@@ -12,7 +12,7 @@ open class ReceivedPhotosRepository(
 ) : BaseRepository() {
   private val TAG = "ReceivedPhotosRepository"
 
-  suspend fun save(receivedPhoto: ReceivedPhotosResponse.ReceivedPhotoResponseData): Boolean {
+  suspend fun save(receivedPhoto: ReceivedPhotoResponseData): Boolean {
     return receivedPhotosLocalSource.save(receivedPhoto)
   }
 
@@ -20,7 +20,7 @@ open class ReceivedPhotosRepository(
     return receivedPhotosLocalSource.save(photoExchangedData)
   }
 
-  suspend fun saveMany(receivedPhotos: List<ReceivedPhotosResponse.ReceivedPhotoResponseData>): Boolean {
+  suspend fun saveMany(receivedPhotos: List<ReceivedPhotoResponseData>): Boolean {
     return receivedPhotosLocalSource.saveMany(receivedPhotos)
   }
 
