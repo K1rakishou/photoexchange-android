@@ -27,8 +27,4 @@ class PhotoAdditionalInfoRepository(
   suspend fun findNotCached(photoNameList: List<String>): List<String> {
     return photoAdditionalInfoLocalSource.findNotCached(photoNameList)
   }
-
-  suspend fun updateFavouritesCount(photoName: String, favouritesCount: Long): Boolean {
-    return photoAdditionalInfoLocalSource.updateFavouritesCount(photoName, favouritesCount)
-  }
 }
