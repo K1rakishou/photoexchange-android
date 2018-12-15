@@ -258,4 +258,16 @@ class UseCaseProviderModule {
       dispatchersProvider
     )
   }
+
+  @Singleton
+  @Provides
+  fun provideCheckFirebaseAvailabilityUseCase(firebaseRemoteSource: FirebaseRemoteSource,
+                                              settingsRepository: SettingsRepository,
+                                              dispatchersProvider: DispatchersProvider): CheckFirebaseAvailabilityUseCase {
+    return CheckFirebaseAvailabilityUseCase(
+      firebaseRemoteSource,
+      settingsRepository,
+      dispatchersProvider
+    )
+  }
 }

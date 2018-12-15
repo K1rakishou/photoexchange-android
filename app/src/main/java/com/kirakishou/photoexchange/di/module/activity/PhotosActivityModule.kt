@@ -123,6 +123,7 @@ open class PhotosActivityModule(
                               uploadedPhotosRepository: UploadedPhotosRepository,
                               receivedPhotosRepository: ReceivedPhotosRepository,
                               blacklistPhotoUseCase: BlacklistPhotoUseCase,
+                              checkFirebaseAvailabilityUseCase: CheckFirebaseAvailabilityUseCase,
                               dispatchersProvider: DispatchersProvider): PhotosActivityViewModelFactory {
     return PhotosActivityViewModelFactory(
       uploadedPhotosFragmentViewModel,
@@ -134,6 +135,7 @@ open class PhotosActivityModule(
       uploadedPhotosRepository,
       receivedPhotosRepository,
       blacklistPhotoUseCase,
+      checkFirebaseAvailabilityUseCase,
       dispatchersProvider
     )
   }

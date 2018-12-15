@@ -11,6 +11,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.BlacklistPhotoUseCase
+import com.kirakishou.photoexchange.interactors.CheckFirebaseAvailabilityUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
@@ -34,6 +35,7 @@ class PhotosActivityViewModel(
   private val uploadedPhotosRepository: UploadedPhotosRepository,
   private val receivedPhotosRepository: ReceivedPhotosRepository,
   private val blacklistPhotoUseCase: BlacklistPhotoUseCase,
+  private val checkFirebaseAvailabilityUseCase: CheckFirebaseAvailabilityUseCase,
   dispatchersProvider: DispatchersProvider
 ) : BaseViewModel(dispatchersProvider) {
   private val TAG = "PhotosActivityViewModel"
@@ -93,6 +95,12 @@ class PhotosActivityViewModel(
   suspend fun updateGpsPermissionGranted(granted: Boolean) {
     withContext(coroutineContext) {
       settingsRepository.updateGpsPermissionGranted(granted)
+    }
+  }
+
+  suspend fun checkFirebaseAvailability(): CheckFirebaseAvailabilityUseCase.FirebaseAvailabilityResult {
+    return withContext(coroutineContext) {
+      return@withContext checkFirebaseAvailabilityUseCase.check()
     }
   }
 

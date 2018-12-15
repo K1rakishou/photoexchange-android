@@ -9,7 +9,7 @@ class FirebaseRemoteSource(
   private val firebaseInstanceId: FirebaseInstanceId
 ) {
 
-  suspend fun getTokenAsync(): String? {
+  suspend fun getTokenAsync(): String {
     return suspendCoroutine { continuation ->
       firebaseInstanceId.instanceId.addOnCompleteListener { task ->
         if (!task.isSuccessful) {
@@ -22,7 +22,11 @@ class FirebaseRemoteSource(
           return@addOnCompleteListener
         }
 
-        continuation.resume(task.result?.token)
+        if (task.result == null) {
+          continuation.resume(Constants.NO_GOOGLE_PLAY_SERVICES_DEFAULT_TOKEN)
+        } else {
+          continuation.resume(task.result!!.token)
+        }
       }
     }
   }
