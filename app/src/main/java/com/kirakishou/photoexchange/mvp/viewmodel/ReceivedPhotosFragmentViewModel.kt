@@ -439,6 +439,8 @@ class ReceivedPhotosFragmentViewModel(
             receivedPhotos = newReceivedPhotos
           )
         }
+
+        startReceivingService()
       }
     }
   }
@@ -482,6 +484,16 @@ class ReceivedPhotosFragmentViewModel(
         Timber.tag(TAG).d("Error while trying to receive photos: (${event.error.message})")
       }
     }.safe
+  }
+
+  private fun startReceivingService() {
+    Timber.tag(TAG).d("startReceiveingService called!")
+
+    intercom.tell<PhotosActivity>()
+      .to(PhotosActivityEvent.StartReceivingService(
+        PhotosActivityViewModel::class.java,
+        "Start receiving service request")
+      )
   }
 
   fun clear() {
