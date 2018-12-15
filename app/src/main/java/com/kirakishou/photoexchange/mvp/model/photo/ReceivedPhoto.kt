@@ -8,6 +8,7 @@ data class ReceivedPhoto(
   val receivedPhotoName: String,
   val lonLat: LonLat,
   val uploadedOn: Long,
+  val photoAdditionalInfo: PhotoAdditionalInfo,
   val showPhoto: Boolean = true,
   val photoSize: PhotoSize = PhotoSize.Medium
 )

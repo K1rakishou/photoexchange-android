@@ -13,19 +13,19 @@ class ReceivedPhotoEntity(
   var uploadedPhotoName: String = "",
 
   @ColumnInfo(name = RECEIVED_PHOTO_NAME_COLUMN)
-  var receivedPhotoName: String? = null,
+  var receivedPhotoName: String= "",
 
   @ColumnInfo(name = LON_COLUMN)
-  var lon: Double? = null,
+  var lon: Double = 0.0,
 
   @ColumnInfo(name = LAT_COLUMN)
-  var lat: Double? = null,
+  var lat: Double = 0.0,
 
   @ColumnInfo(name = UPLOADED_ON_COLUMN)
-  var uploadedOn: Long? = null,
+  var uploadedOn: Long = 0L,
 
   @ColumnInfo(name = INSERTED_ON_COLUMN)
-  var insertedOn: Long? = null
+  var insertedOn: Long = 0L
 ) {
 
   companion object {

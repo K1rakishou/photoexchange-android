@@ -71,9 +71,11 @@ open class DatabaseModule(
 
   @Singleton
   @Provides
-  open fun providePhotoAdditionalInfoLocalSource(database: MyDatabase): PhotoAdditionalInfoLocalSource {
+  open fun providePhotoAdditionalInfoLocalSource(database: MyDatabase,
+                                                 timeUtils: TimeUtils): PhotoAdditionalInfoLocalSource {
     return PhotoAdditionalInfoLocalSource(
-      database
+      database,
+      timeUtils
     )
   }
 

@@ -12,7 +12,6 @@ import com.airbnb.epoxy.ModelProp
 import com.airbnb.epoxy.ModelView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
-import com.kirakishou.photoexchange.mvp.model.photo.PhotoAdditionalInfo
 
 @ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT)
 class GalleryPhotoRow @JvmOverloads constructor(

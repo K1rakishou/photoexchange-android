@@ -20,6 +20,7 @@ import com.kirakishou.photoexchange.helper.extension.filterDuplicatesWith
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
+import com.kirakishou.photoexchange.mvp.model.photo.PhotoAdditionalInfo
 import com.kirakishou.photoexchange.mvp.viewmodel.state.ReceivedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
@@ -90,6 +91,14 @@ class ReceivedPhotosFragmentViewModel(
     launch { viewModelActor.send(ActorAction.RemovePhoto(photoName)) }
   }
 
+  fun favouritePhoto(receivedPhotoName: String) {
+    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+  }
+
+  fun reportPhotos(receivedPhotoName: String) {
+    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+  }
+
   private fun removePhotoInternal(photoName: String) {
     withState { state ->
       //FIXME: maybe receivedPhotoName here is wrong
@@ -123,6 +132,7 @@ class ReceivedPhotosFragmentViewModel(
           photoExchangedData.lat
         ),
         photoExchangedData.uploadedOn,
+        PhotoAdditionalInfo.empty(photoExchangedData.receivedPhotoName),
         true,
         photoSize
       )
