@@ -484,6 +484,8 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
         viewModel.intercom.tell<PhotosActivity>()
           .to(PhotosActivityEvent.StartUploadingService(PhotosActivity::class.java, "User took new photo"))
+
+        switchToTab(UPLOADED_PHOTOS_TAB_INDEX)
       }
     }
   }
