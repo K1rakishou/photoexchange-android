@@ -75,6 +75,22 @@ open class SettingsRepository(
     return NetworkAccessLevel.fromInt(value)
   }
 
+  suspend fun isNoFirebaseDialogAlreadyShown(): Boolean {
+    val value = try {
+      settingsDao.findByName(IS_NO_FIREBASE_DIALOG_ALREADY_SHOWN_SETTING)
+        ?.settingValue?.toBoolean() ?: false
+    } catch (error: Throwable) {
+      false
+    }
+
+    return value
+  }
+
+  suspend fun setNoFirebaseDialogAlreadyShown(): Boolean {
+    val setting = SettingEntity(IS_NO_FIREBASE_DIALOG_ALREADY_SHOWN_SETTING, true.toString())
+    return settingsDao.insert(setting) > 0
+  }
+
   companion object {
     const val USER_ID_SETTING = "USER_ID"
 
@@ -98,5 +114,6 @@ open class SettingsRepository(
     const val MAKE_PHOTOS_PUBLIC_SETTING = "MAKE_PHOTOS_PUBLIC"
     const val GPS_PERMISSION_GRANTED_SETTING = "GPS_PERMISSION_GRANTED"
     const val NETWORK_ACCESS_LEVEL_SETTING = "NETWORK_ACCESS_LEVEL"
+    const val IS_NO_FIREBASE_DIALOG_ALREADY_SHOWN_SETTING = " IS_NO_FIREBASE_DIALOG_ALREADY_SHOWN"
   }
 }

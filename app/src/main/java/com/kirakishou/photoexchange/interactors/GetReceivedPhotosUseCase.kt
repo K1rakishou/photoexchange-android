@@ -5,13 +5,11 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
-import com.kirakishou.photoexchange.helper.database.repository.BlacklistedPhotoRepository
-import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
+import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
 import com.kirakishou.photoexchange.helper.util.PagedApiUtils
+import com.kirakishou.photoexchange.helper.util.PhotoAdditionalInfoUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import kotlinx.coroutines.withContext
@@ -24,9 +22,11 @@ open class GetReceivedPhotosUseCase(
   private val apiClient: ApiClient,
   private val timeUtils: TimeUtils,
   private val pagedApiUtils: PagedApiUtils,
+  private val photoAdditionalInfoUtils: PhotoAdditionalInfoUtils,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
   private val receivedPhotosRepository: ReceivedPhotosRepository,
   private val blacklistedPhotoRepository: BlacklistedPhotoRepository,
+  private val photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
   private val settingsRepository: SettingsRepository,
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
@@ -44,17 +44,28 @@ open class GetReceivedPhotosUseCase(
       Timber.tag(TAG).d("loadFreshPhotos called")
       val (lastUploadedOn, userId) = getParameters(lastUploadedOnParam)
 
-      return@withContext getPage(
+      val receivedPhotosPage = getPageOfReceivedPhotos(
         forced,
         firstUploadedOn,
         lastUploadedOn,
         userId,
         count
       )
+
+      val receivedPhotosWithInfo = photoAdditionalInfoUtils.appendAdditionalPhotoInfo(
+        photoAdditionalInfoRepository,
+        apiClient,
+        userId,
+        receivedPhotosPage.page,
+        { receivedPhoto -> receivedPhoto.receivedPhotoName },
+        { receivedPhoto, photoAdditionalInfo -> receivedPhoto.copy(photoAdditionalInfo = photoAdditionalInfo) }
+      )
+
+      return@withContext Paged(receivedPhotosWithInfo, receivedPhotosPage.isEnd)
     }
   }
 
-  private suspend fun getPage(
+  private suspend fun getPageOfReceivedPhotos(
     forced: Boolean,
     firstUploadedOnParam: Long,
     lastUploadedOnParam: Long,

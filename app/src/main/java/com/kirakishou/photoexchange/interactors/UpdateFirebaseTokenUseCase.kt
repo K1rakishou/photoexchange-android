@@ -41,8 +41,8 @@ open class UpdateFirebaseTokenUseCase(
       throw FirebaseException(error.message)
     }
 
-    if (freshToken.isNullOrEmpty()) {
-      throw FirebaseException("Token is empty or null!")
+    if (freshToken.isEmpty()) {
+      throw FirebaseException("Token is empty!")
     }
 
     //update both the regular firebase token and the new one since we have just retrieved

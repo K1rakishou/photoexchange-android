@@ -77,6 +77,8 @@ open class PhotosActivityModule(
                                              timeUtils: TimeUtils,
                                              receivedPhotosRepository: ReceivedPhotosRepository,
                                              getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
+                                             favouritePhotoUseCase: FavouritePhotoUseCase,
+                                             reportPhotoUseCase: ReportPhotoUseCase,
                                              dispatchersProvider: DispatchersProvider): ReceivedPhotosFragmentViewModel {
     return ReceivedPhotosFragmentViewModel(
       viewState,
@@ -84,6 +86,8 @@ open class PhotosActivityModule(
       timeUtils,
       receivedPhotosRepository,
       getReceivedPhotosUseCase,
+      favouritePhotoUseCase,
+      reportPhotoUseCase,
       dispatchersProvider
     )
   }
@@ -119,6 +123,7 @@ open class PhotosActivityModule(
                               uploadedPhotosRepository: UploadedPhotosRepository,
                               receivedPhotosRepository: ReceivedPhotosRepository,
                               blacklistPhotoUseCase: BlacklistPhotoUseCase,
+                              checkFirebaseAvailabilityUseCase: CheckFirebaseAvailabilityUseCase,
                               dispatchersProvider: DispatchersProvider): PhotosActivityViewModelFactory {
     return PhotosActivityViewModelFactory(
       uploadedPhotosFragmentViewModel,
@@ -130,6 +135,7 @@ open class PhotosActivityModule(
       uploadedPhotosRepository,
       receivedPhotosRepository,
       blacklistPhotoUseCase,
+      checkFirebaseAvailabilityUseCase,
       dispatchersProvider
     )
   }

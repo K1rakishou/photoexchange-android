@@ -54,8 +54,14 @@ class ReceivedPhotosFragmentEpoxyController(
                 receivedPhotoRow {
                   id("received_photo_${photo.receivedPhotoName}")
                   photo(photo)
-                  callback { model, _, _, _ ->
+                  clickViewCallback { model, _, _, _ ->
                     viewModel.swapPhotoAndMap(model.photo().receivedPhotoName)
+                  }
+                  favouriteButtonCallback { model, _, _, _ ->
+                    viewModel.favouritePhoto(model.photo().receivedPhotoName)
+                  }
+                  reportButtonCallback { model, _, _, _ ->
+                    viewModel.reportPhotos(model.photo().receivedPhotoName)
                   }
                   onBind { model, view, _ ->
                     loadPhotoOrImage(coroutineScope, model.photo(), view.photoView, view.staticMapView)

@@ -34,15 +34,13 @@ import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
+import com.kirakishou.photoexchange.interactors.CheckFirebaseAvailabilityUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.service.*
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingServiceCallback
 import com.kirakishou.photoexchange.ui.callback.ReceivePhotosServiceCallback
-import com.kirakishou.photoexchange.ui.dialog.AppCannotWorkWithoutCameraPermissionDialog
-import com.kirakishou.photoexchange.ui.dialog.CameraRationaleDialog
-import com.kirakishou.photoexchange.ui.dialog.DeletePhotoConfirmationDialog
-import com.kirakishou.photoexchange.ui.dialog.GpsRationaleDialog
+import com.kirakishou.photoexchange.ui.dialog.*
 import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
@@ -240,9 +238,16 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   private suspend fun checkFirebaseAvailability() {
-    //TODO: show check whether firebase is available on this phone and if not warn the user about
-    //them no being able to receive push notifications, the update the flag that we have already showed
-    //the dialog and continue
+    val result = viewModel.checkFirebaseAvailability()
+    if (result == CheckFirebaseAvailabilityUseCase.FirebaseAvailabilityResult.AlreadyShown) {
+      return
+    }
+
+    if (result == CheckFirebaseAvailabilityUseCase.FirebaseAvailabilityResult.Available) {
+      return
+    }
+
+    FirebaseNotAvailableDialog().show(this)
   }
 
   private fun checkPermissions() {
@@ -484,6 +489,8 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
         viewModel.intercom.tell<PhotosActivity>()
           .to(PhotosActivityEvent.StartUploadingService(PhotosActivity::class.java, "User took new photo"))
+
+        switchToTab(UPLOADED_PHOTOS_TAB_INDEX)
       }
     }
   }

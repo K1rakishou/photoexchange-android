@@ -9,8 +9,7 @@ import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosReposi
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
 import com.kirakishou.photoexchange.interactors.BlacklistPhotoUseCase
-import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
-import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
+import com.kirakishou.photoexchange.interactors.CheckFirebaseAvailabilityUseCase
 import com.kirakishou.photoexchange.mvp.viewmodel.GalleryFragmentViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.ReceivedPhotosFragmentViewModel
@@ -31,6 +30,7 @@ class PhotosActivityViewModelFactory
   val uploadedPhotosRepository: UploadedPhotosRepository,
   val receivedPhotosRepository: ReceivedPhotosRepository,
   val blacklistPhotoUseCase: BlacklistPhotoUseCase,
+  val checkFirebaseAvailabilityUseCase: CheckFirebaseAvailabilityUseCase,
   val dispatchersProvider: DispatchersProvider
 ) : ViewModelProvider.Factory {
 
@@ -46,6 +46,7 @@ class PhotosActivityViewModelFactory
       uploadedPhotosRepository,
       receivedPhotosRepository,
       blacklistPhotoUseCase,
+      checkFirebaseAvailabilityUseCase,
       dispatchersProvider
     ) as T
   }

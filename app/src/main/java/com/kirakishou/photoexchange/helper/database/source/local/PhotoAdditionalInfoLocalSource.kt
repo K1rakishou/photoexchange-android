@@ -3,17 +3,20 @@ package com.kirakishou.photoexchange.helper.database.source.local
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.PhotoAdditionalInfoMapper
+import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.PhotoAdditionalInfo
 import net.response.data.PhotoAdditionalInfoResponseData
 
 //TODO: deleteOld()
 open class PhotoAdditionalInfoLocalSource(
-  private val database: MyDatabase
+  private val database: MyDatabase,
+  private val timeUtils: TimeUtils
 ) {
   private val photoAdditionalInfoDao = database.photoAdditionalInfoDao()
 
   open fun save(photoAdditionalInfo: PhotoAdditionalInfo): Boolean {
     val photoAdditionalInfoEntity = PhotoAdditionalInfoMapper.ToEntity.toPhotoAdditionalInfoEntity(
+      timeUtils.getTimeFast(),
       photoAdditionalInfo
     )
 
@@ -22,6 +25,7 @@ open class PhotoAdditionalInfoLocalSource(
 
   open fun saveMany(additionalInfoResponseDataList: List<PhotoAdditionalInfoResponseData>): Boolean {
     val additionalInfoList = PhotoAdditionalInfoMapper.FromResponse.ToEntity.toEntities(
+      timeUtils.getTimeFast(),
       additionalInfoResponseDataList
     )
 

@@ -43,16 +43,20 @@ class UseCaseProviderModule {
   @Provides
   fun provideFindPhotoAnswersUseCase(database: MyDatabase,
                                      apiClient: ApiClient,
+                                     photoAdditionalInfoUtils: PhotoAdditionalInfoUtils,
                                      receivedPhotosRepository: ReceivedPhotosRepository,
                                      takenPhotosRepository: TakenPhotosRepository,
                                      uploadedPhotosRepository: UploadedPhotosRepository,
+                                     photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
                                      dispatchersProvider: DispatchersProvider): ReceivePhotosUseCase {
     return ReceivePhotosUseCase(
       database,
       apiClient,
+      photoAdditionalInfoUtils,
       receivedPhotosRepository,
       uploadedPhotosRepository,
       takenPhotosRepository,
+      photoAdditionalInfoRepository,
       dispatchersProvider
     )
   }
@@ -155,9 +159,11 @@ class UseCaseProviderModule {
                                       apiClient: ApiClient,
                                       timeUtils: TimeUtils,
                                       pagedApiUtils: PagedApiUtils,
+                                      photoAdditionalInfoUtils: PhotoAdditionalInfoUtils,
                                       uploadedPhotosRepository: UploadedPhotosRepository,
                                       receivedPhotosRepository: ReceivedPhotosRepository,
                                       blacklistedPhotoRepository: BlacklistedPhotoRepository,
+                                      photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
                                       settingsRepository: SettingsRepository,
                                       dispatchersProvider: DispatchersProvider): GetReceivedPhotosUseCase {
     return GetReceivedPhotosUseCase(
@@ -165,9 +171,11 @@ class UseCaseProviderModule {
       apiClient,
       timeUtils,
       pagedApiUtils,
+      photoAdditionalInfoUtils,
       uploadedPhotosRepository,
       receivedPhotosRepository,
       blacklistedPhotoRepository,
+      photoAdditionalInfoRepository,
       settingsRepository,
       dispatchersProvider
     )
@@ -247,6 +255,18 @@ class UseCaseProviderModule {
       database,
       receivedPhotosRepository,
       uploadedPhotosRepository,
+      dispatchersProvider
+    )
+  }
+
+  @Singleton
+  @Provides
+  fun provideCheckFirebaseAvailabilityUseCase(firebaseRemoteSource: FirebaseRemoteSource,
+                                              settingsRepository: SettingsRepository,
+                                              dispatchersProvider: DispatchersProvider): CheckFirebaseAvailabilityUseCase {
+    return CheckFirebaseAvailabilityUseCase(
+      firebaseRemoteSource,
+      settingsRepository,
       dispatchersProvider
     )
   }

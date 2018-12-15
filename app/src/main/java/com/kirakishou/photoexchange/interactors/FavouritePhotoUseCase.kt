@@ -57,22 +57,20 @@ open class FavouritePhotoUseCase(
       return
     }
 
-    database.transactional {
-      val photoAdditionalInfo = photoAdditionalInfoRepository.findByPhotoName(galleryPhotoEntity.photoName)
-        ?.copy(
-          isFavourited = favouritePhotoResponseData.isFavourited,
-          favouritesCount = favouritePhotoResponseData.favouritesCount
-        )
-        ?: PhotoAdditionalInfo.create(
-          galleryPhotoEntity.photoName,
-          favouritePhotoResponseData.isFavourited,
-          favouritePhotoResponseData.favouritesCount,
-          false
-        )
+    val photoAdditionalInfo = photoAdditionalInfoRepository.findByPhotoName(galleryPhotoEntity.photoName)
+      ?.copy(
+        isFavourited = favouritePhotoResponseData.isFavourited,
+        favouritesCount = favouritePhotoResponseData.favouritesCount
+      )
+      ?: PhotoAdditionalInfo.create(
+        galleryPhotoEntity.photoName,
+        favouritePhotoResponseData.isFavourited,
+        favouritePhotoResponseData.favouritesCount,
+        false
+      )
 
-      if (!photoAdditionalInfoRepository.save(photoAdditionalInfo)) {
-        throw DatabaseException("Could not update gallery photo info ")
-      }
+    if (!photoAdditionalInfoRepository.save(photoAdditionalInfo)) {
+      throw DatabaseException("Could not update gallery photo info ")
     }
   }
 

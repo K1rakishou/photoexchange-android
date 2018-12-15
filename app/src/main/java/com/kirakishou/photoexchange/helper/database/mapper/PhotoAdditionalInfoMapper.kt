@@ -11,20 +11,23 @@ object PhotoAdditionalInfoMapper {
     object ToEntity {
 
       fun toEntity(
+        time: Long,
         photoAdditionalInfoResponseData: PhotoAdditionalInfoResponseData
       ): PhotoAdditionalInfoEntity {
         return PhotoAdditionalInfoEntity(
           photoAdditionalInfoResponseData.photoName,
           photoAdditionalInfoResponseData.isFavourited,
           photoAdditionalInfoResponseData.favouritesCount,
-          photoAdditionalInfoResponseData.isReported
+          photoAdditionalInfoResponseData.isReported,
+          time
         )
       }
 
       fun toEntities(
+        time: Long,
         photoAdditionalInfoResponseDataList: List<PhotoAdditionalInfoResponseData>
       ): List<PhotoAdditionalInfoEntity> {
-        return photoAdditionalInfoResponseDataList.map { toEntity(it) }
+        return photoAdditionalInfoResponseDataList.map { toEntity(time, it) }
       }
 
     }
@@ -71,13 +74,15 @@ object PhotoAdditionalInfoMapper {
   object ToEntity {
 
     fun toPhotoAdditionalInfoEntity(
+      time: Long,
       photoAdditionalInfo: PhotoAdditionalInfo
     ): PhotoAdditionalInfoEntity {
       return PhotoAdditionalInfoEntity(
         photoAdditionalInfo.photoName,
         photoAdditionalInfo.isFavourited,
         photoAdditionalInfo.favouritesCount,
-        photoAdditionalInfo.isReported
+        photoAdditionalInfo.isReported,
+        time
       )
     }
 
