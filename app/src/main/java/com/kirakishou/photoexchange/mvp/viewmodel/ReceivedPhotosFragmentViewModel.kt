@@ -334,6 +334,8 @@ class ReceivedPhotosFragmentViewModel(
         photoSize
       )
 
+      //TODO: fetch photo additional info here
+
       val updatedPhotos = state.receivedPhotos.toMutableList() + newPhoto
       val sortedPhotos = updatedPhotos
         .sortedByDescending { it.uploadedOn }

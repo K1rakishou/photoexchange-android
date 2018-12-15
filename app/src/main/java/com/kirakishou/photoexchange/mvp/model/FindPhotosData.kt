@@ -1,9 +1,9 @@
 package com.kirakishou.photoexchange.mvp.model
 
-class FindPhotosData(val userId: String?,
+class FindPhotosData(val userId: String,
                      val photoNames: String) {
   fun isUserIdEmpty(): Boolean {
-    return userId.isNullOrEmpty()
+    return userId.isEmpty()
   }
 
   fun isPhotoNamesEmpty(): Boolean {

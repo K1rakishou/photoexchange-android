@@ -4,11 +4,13 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
+import com.kirakishou.photoexchange.helper.database.repository.PhotoAdditionalInfoRepository
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.exception.ApiErrorException
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.util.PhotoAdditionalInfoUtils
 import com.kirakishou.photoexchange.mvp.model.FindPhotosData
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import core.ErrorCode
@@ -19,9 +21,11 @@ import timber.log.Timber
 open class ReceivePhotosUseCase(
   private val database: MyDatabase,
   private val apiClient: ApiClient,
+  private val photoAdditionalInfoUtils: PhotoAdditionalInfoUtils,
   private val receivedPhotosRepository: ReceivedPhotosRepository,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
   private val takenPhotosRepository: TakenPhotosRepository,
+  private val photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
   private val TAG = "ReceivePhotosUseCase"
@@ -38,7 +42,16 @@ open class ReceivePhotosUseCase(
         throw ReceivePhotosServiceException.PhotoNamesAreEmpty()
       }
 
-      return@withContext receivePhotos(photoData.userId!!, photoData.photoNames)
+      val receivedPhotos = receivePhotos(photoData.userId, photoData.photoNames)
+
+      return@withContext photoAdditionalInfoUtils.appendAdditionalPhotoInfo(
+        photoAdditionalInfoRepository,
+        apiClient,
+        photoData.userId,
+        receivedPhotos,
+        { receivedPhoto -> receivedPhoto.receivedPhotoName },
+        { receivedPhoto, photoAdditionalInfo -> receivedPhoto.copy(photoAdditionalInfo = photoAdditionalInfo) }
+      )
     }
   }
 
