@@ -121,6 +121,19 @@ class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPh
       is ReceivedPhotosFragmentEvent.GeneralEvents.RemovePhoto -> {
         viewModel.receivedPhotosFragmentViewModel.removePhoto(event.photoName)
       }
+      is ReceivedPhotosFragmentEvent.GeneralEvents.PhotoReported -> {
+        viewModel.receivedPhotosFragmentViewModel.onPhotoReported(
+          event.photoName,
+          event.isReported
+        )
+      }
+      is ReceivedPhotosFragmentEvent.GeneralEvents.PhotoFavourited -> {
+        viewModel.receivedPhotosFragmentViewModel.onPhotoFavourited(
+          event.photoName,
+          event.isFavourited,
+          event.favouritesCount
+        )
+      }
     }.safe
   }
 

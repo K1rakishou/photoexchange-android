@@ -8,6 +8,11 @@ sealed class ReceivedPhotosFragmentEvent : BaseEvent {
     class ScrollToTop : GeneralEvents()
     class OnNewPhotoNotificationReceived(val photoExchangedData: PhotoExchangedData) : GeneralEvents()
     class RemovePhoto(val photoName: String) : GeneralEvents()
+    class PhotoReported(val photoName: String,
+                        val isReported: Boolean) : GeneralEvents()
+    class PhotoFavourited(val photoName: String,
+                          val isFavourited: Boolean,
+                          val favouritesCount: Long) : GeneralEvents()
   }
 
   sealed class ReceivePhotosEvent : ReceivedPhotosFragmentEvent() {

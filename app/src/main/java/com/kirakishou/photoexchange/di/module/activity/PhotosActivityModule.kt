@@ -77,6 +77,8 @@ open class PhotosActivityModule(
                                              timeUtils: TimeUtils,
                                              receivedPhotosRepository: ReceivedPhotosRepository,
                                              getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
+                                             favouritePhotoUseCase: FavouritePhotoUseCase,
+                                             reportPhotoUseCase: ReportPhotoUseCase,
                                              dispatchersProvider: DispatchersProvider): ReceivedPhotosFragmentViewModel {
     return ReceivedPhotosFragmentViewModel(
       viewState,
@@ -84,6 +86,8 @@ open class PhotosActivityModule(
       timeUtils,
       receivedPhotosRepository,
       getReceivedPhotosUseCase,
+      favouritePhotoUseCase,
+      reportPhotoUseCase,
       dispatchersProvider
     )
   }

@@ -109,6 +109,19 @@ class GalleryFragment : BaseMvRxFragment(), StateEventListener<GalleryFragmentEv
       is GalleryFragmentEvent.GeneralEvents.RemovePhoto -> {
         viewModel.galleryFragmentViewModel.removePhoto(event.photoName)
       }
+      is GalleryFragmentEvent.GeneralEvents.PhotoReported -> {
+        viewModel.galleryFragmentViewModel.onPhotoReported(
+          event.photoName,
+          event.isReported
+        )
+      }
+      is GalleryFragmentEvent.GeneralEvents.PhotoFavourited -> {
+        viewModel.galleryFragmentViewModel.onPhotoFavourited(
+          event.photoName,
+          event.isFavourited,
+          event.favouritesCount
+        )
+      }
     }.safe
   }
 

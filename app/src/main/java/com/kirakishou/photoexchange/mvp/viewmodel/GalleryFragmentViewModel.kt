@@ -10,6 +10,7 @@ import com.kirakishou.photoexchange.helper.extension.filterDuplicatesWith
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
+import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
 import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
@@ -17,6 +18,7 @@ import com.kirakishou.photoexchange.mvp.model.PhotoSize
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.state.GalleryFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
+import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -61,6 +63,10 @@ class GalleryFragmentViewModel(
           is ActorAction.FavouritePhoto -> favouritePhotoInternal(action.galleryPhotoName)
           is ActorAction.ReportPhoto -> reportPhotoInternal(action.galleryPhotoName)
           is ActorAction.RemovePhoto -> removePhotoInternal(action.photoName)
+          is ActorAction.OnPhotoReported -> onPhotoReportedInternal(action.photoName, action.isReported)
+          is ActorAction.OnPhotoFavourited -> {
+            onPhotoFavouritedInternal(action.photoName, action.isFavourited, action.favouritesCount)
+          }
         }.safe
       }
     }
@@ -90,6 +96,72 @@ class GalleryFragmentViewModel(
     launch { viewModelActor.send(ActorAction.RemovePhoto(photoName)) }
   }
 
+  fun onPhotoReported(photoName: String, isReported: Boolean) {
+    launch { viewModelActor.send(ActorAction.OnPhotoReported(photoName, isReported)) }
+  }
+
+  fun onPhotoFavourited(
+    photoName: String,
+    isFavourited: Boolean,
+    favouritesCount: Long
+  ) {
+    launch {
+      viewModelActor.send(ActorAction.OnPhotoFavourited(photoName, isFavourited, favouritesCount))
+    }
+  }
+
+  private fun onPhotoFavouritedInternal(
+    photoName: String,
+    isFavourited: Boolean,
+    favouritesCount: Long
+  ) {
+    withState { state ->
+      launch {
+        val photoIndex = state.galleryPhotos.indexOfFirst { it.photoName == photoName }
+        if (photoIndex == -1) {
+          return@launch
+        }
+
+        val updatedPhotos = state.galleryPhotos.toMutableList()
+        val galleryPhoto = updatedPhotos[photoIndex]
+
+        val updatedPhotoInfo = updatedPhotos[photoIndex].photoAdditionalInfo
+          .copy(
+            isFavourited = isFavourited,
+            favouritesCount = favouritesCount
+          )
+
+        updatedPhotos[photoIndex] = galleryPhoto.copy(
+          photoAdditionalInfo = updatedPhotoInfo
+        )
+
+        setState { copy(galleryPhotos = updatedPhotos) }
+      }
+    }
+  }
+
+  private fun onPhotoReportedInternal(photoName: String, isReported: Boolean) {
+    withState { state ->
+      launch {
+        val photoIndex = state.galleryPhotos.indexOfFirst { it.photoName == photoName }
+        if (photoIndex == -1) {
+          return@launch
+        }
+
+        val updatedPhotos = state.galleryPhotos.toMutableList()
+        val galleryPhoto = updatedPhotos[photoIndex]
+
+        val updatedPhotoInfo = updatedPhotos[photoIndex].photoAdditionalInfo
+          .copy(isReported = isReported)
+
+        updatedPhotos[photoIndex] = galleryPhoto
+          .copy(photoAdditionalInfo = updatedPhotoInfo)
+
+        setState { copy(galleryPhotos = updatedPhotos) }
+      }
+    }
+  }
+
   private fun removePhotoInternal(photoName: String) {
     withState { state ->
       val photoIndex = state.galleryPhotos.indexOfFirst { it.photoName == photoName }
@@ -106,12 +178,13 @@ class GalleryFragmentViewModel(
     }
   }
 
+  //TODO: should user be allowed to report his own photos?
   private fun reportPhotoInternal(photoName: String) {
     fun updateIsPhotoReported(state: GalleryFragmentState, photoName: String) {
       if (state.reportedPhotos.contains(photoName)) {
-        setState { copy(favouritedPhotos = state.reportedPhotos - photoName) }
+        setState { copy(reportedPhotos = state.reportedPhotos - photoName) }
       } else {
-        setState { copy(favouritedPhotos = state.reportedPhotos + photoName) }
+        setState { copy(reportedPhotos = state.reportedPhotos + photoName) }
       }
     }
 
@@ -156,11 +229,16 @@ class GalleryFragmentViewModel(
             .to(PhotosActivityEvent.ShowDeletePhotoDialog(photoName))
         }
 
+        //notify ReceivedPhotosFragment that a photo has been reported
+        intercom.tell<ReceivedPhotosFragment>()
+          .that(ReceivedPhotosFragmentEvent.GeneralEvents.PhotoReported(photoName, reportResult))
+
         setState { copy(galleryPhotos = updatedPhotos) }
       }
     }
   }
 
+  //TODO: should user be allowed to favourite his own photos?
   private fun favouritePhotoInternal(photoName: String) {
     fun updateIsPhotoFavourited(state: GalleryFragmentState, photoName: String) {
       if (state.favouritedPhotos.contains(photoName)) {
@@ -208,6 +286,12 @@ class GalleryFragmentViewModel(
         updatedPhotos[photoIndex] = galleryPhoto.copy(
           photoAdditionalInfo = updatedPhotoInfo
         )
+
+        //notify ReceivedPhotosFragment that a photo has been favourited
+        intercom.tell<ReceivedPhotosFragment>()
+          .that(ReceivedPhotosFragmentEvent.GeneralEvents.PhotoFavourited(
+            photoName, favouriteResult.isFavourited, favouriteResult.favouritesCount
+          ))
 
         setState { copy(galleryPhotos = updatedPhotos) }
       }
@@ -325,6 +409,11 @@ class GalleryFragmentViewModel(
     class ReportPhoto(val galleryPhotoName: String) : ActorAction()
     class FavouritePhoto(val galleryPhotoName: String) : ActorAction()
     class RemovePhoto(val photoName: String) : ActorAction()
+    class OnPhotoReported(val photoName: String,
+                          val isReported: Boolean) : ActorAction()
+    class OnPhotoFavourited(val photoName: String,
+                            val isFavourited: Boolean,
+                            val favouritesCount: Long) : ActorAction()
   }
 
   companion object : MvRxViewModelFactory<GalleryFragmentState> {
