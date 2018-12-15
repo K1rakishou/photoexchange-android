@@ -53,21 +53,19 @@ open class ReportPhotoUseCase(
       return
     }
 
-    database.transactional {
-      val photoAdditionalInfo = photoAdditionalInfoRepository.findByPhotoName(galleryPhotoEntity.photoName)
-        ?.copy(
-          isReported = isReported
-        )
-        ?: PhotoAdditionalInfo.create(
-          galleryPhotoEntity.photoName,
-          false,
-          0,
-          isReported
-        )
+    val photoAdditionalInfo = photoAdditionalInfoRepository.findByPhotoName(galleryPhotoEntity.photoName)
+      ?.copy(
+        isReported = isReported
+      )
+      ?: PhotoAdditionalInfo.create(
+        galleryPhotoEntity.photoName,
+        false,
+        0,
+        isReported
+      )
 
-      if (!photoAdditionalInfoRepository.save(photoAdditionalInfo)) {
-        throw DatabaseException("Could not update photo additional info")
-      }
+    if (!photoAdditionalInfoRepository.save(photoAdditionalInfo)) {
+      throw DatabaseException("Could not update photo additional info")
     }
   }
 }
