@@ -270,4 +270,16 @@ class UseCaseProviderModule {
       dispatchersProvider
     )
   }
+
+  @Singleton
+  @Provides
+  fun provideTakePhotoUseCase(database: MyDatabase,
+                              takenPhotosRepository: TakenPhotosRepository,
+                              dispatchersProvider: DispatchersProvider): TakePhotoUseCase {
+    return TakePhotoUseCase(
+      database,
+      takenPhotosRepository,
+      dispatchersProvider
+    )
+  }
 }

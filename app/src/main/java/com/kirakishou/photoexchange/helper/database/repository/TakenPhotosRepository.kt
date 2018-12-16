@@ -197,8 +197,6 @@ open class TakenPhotosRepository(
       //in case the user takes photos way too often and they weight a lot (like 3-4 mb per photo)
       //we need to consider this as well so we delete them when total files size exceeds MAX_CACHE_SIZE
       tempFileLocalSource.deleteOldIfCacheSizeIsTooBig()
-
-      return@transactional true
     }
   }
 }

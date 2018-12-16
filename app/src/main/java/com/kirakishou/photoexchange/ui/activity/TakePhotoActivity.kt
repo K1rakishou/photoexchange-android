@@ -74,26 +74,28 @@ class TakePhotoActivity : BaseActivity() {
   }
 
   override fun onActivityStart() {
-  }
-
-  override fun onResume() {
-    super.onResume()
-
     startCamera()
     animateAppear()
   }
 
-  override fun onPause() {
-    super.onPause()
+  override fun onActivityStop() {
     cameraProvider.stopCamera()
   }
 
-  override fun onActivityStop() {
+  private fun startCamera() {
+    if (!cameraProvider.isAvailable()) {
+      showCameraIsNotAvailableDialog()
+      return
+    }
+
+    cameraProvider.startCamera()
   }
 
-  override fun onDestroy() {
-    super.onDestroy()
-    cameraProvider.onDestroy()
+  private fun showCameraIsNotAvailableDialog() {
+    CameraIsNotAvailableDialog().show(this@TakePhotoActivity) {
+      setResult(Activity.RESULT_CANCELED)
+      finish()
+    }
   }
 
   private fun initViews() {
@@ -134,6 +136,10 @@ class TakePhotoActivity : BaseActivity() {
       .subscribe()
   }
 
+  private suspend fun takePhoto(): TakenPhoto? {
+    return cameraProvider.takePhoto()
+  }
+
   private fun onPhotoTaken(takenPhoto: TakenPhoto) {
     val intent = Intent(this, ViewTakenPhotoActivity::class.java)
     intent.putExtras(takenPhoto.toBundle())
@@ -154,26 +160,6 @@ class TakePhotoActivity : BaseActivity() {
 
     anim.duration = 100
     anim.start()
-  }
-
-  private fun startCamera() {
-    if (!cameraProvider.isAvailable()) {
-      showCameraIsNotAvailableDialog()
-      return
-    }
-
-    cameraProvider.startCamera()
-  }
-
-  private fun showCameraIsNotAvailableDialog() {
-    CameraIsNotAvailableDialog().show(this@TakePhotoActivity) {
-      setResult(Activity.RESULT_CANCELED)
-      finish()
-    }
-  }
-
-  private suspend fun takePhoto(): TakenPhoto? {
-    return cameraProvider.takePhoto()
   }
 
   private fun animateAppear() {
@@ -257,12 +243,9 @@ class TakePhotoActivity : BaseActivity() {
       if (resultCode == Activity.RESULT_OK) {
         Timber.tag(TAG).d("ViewTakenPhotoActivity returned OK")
         setResult(Activity.RESULT_OK)
-      } else {
-        Timber.tag(TAG).d("ViewTakenPhotoActivity returned CANCEL")
-        setResult(Activity.RESULT_CANCELED)
-      }
 
-      finish()
+        finish()
+      }
     }
   }
 
