@@ -178,8 +178,8 @@ class UploadedPhotosFragmentViewModel(
       } catch (error: Throwable) {
         Timber.tag(TAG).e(error)
 
-        val message = "Error has occurred while trying to cancel photo uploading. \nError message: ${error.message
-          ?: "Unknown error message"}"
+        val message = "Error has occurred while trying to cancel photo uploading. " +
+          "\nError message: ${error.message ?: "Unknown error message"}"
         intercom.tell<PhotosActivity>()
           .to(PhotosActivityEvent.ShowToast(message))
         return@launch
@@ -273,8 +273,6 @@ class UploadedPhotosFragmentViewModel(
             uploadedPhotos = newUploadedPhotos
           )
         }
-
-        startReceivingService()
       }
     }
   }
@@ -392,15 +390,16 @@ class UploadedPhotosFragmentViewModel(
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
         Timber.tag(TAG).d("OnEnd")
+        startReceivingService()
       }
     }.safe
   }
 
   fun onReceiveEvent(event: UploadedPhotosFragmentEvent.ReceivePhotosEvent) {
-    Timber.tag(TAG).d("onReceiveEvent")
-
     when (event) {
       is UploadedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived -> {
+        Timber.tag(TAG).d("PhotosReceived")
+
         if (event.receivedPhotos.isEmpty()) {
           return
         }
@@ -428,9 +427,12 @@ class UploadedPhotosFragmentViewModel(
         }
       }
       is UploadedPhotosFragmentEvent.ReceivePhotosEvent.NoPhotosReceived -> {
+        Timber.tag(TAG).d("NoPhotosReceived")
         //do nothing?
       }
       is UploadedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
+        Timber.tag(TAG).d("OnFailed")
+
         event.error.printStackTrace()
         Timber.tag(TAG).d("Error while trying to receive photos: (${event.error.message})")
       }

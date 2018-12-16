@@ -24,6 +24,10 @@ class GalleryFragmentEpoxyController
 ) : BaseEpoxyController() {
   private val TAG = "GalleryFragmentEpoxyController"
 
+  override fun destroy() {
+    super.destroy()
+  }
+
   fun rebuild(
     context: Context,
     coroutineScope: CoroutineScope,

@@ -19,7 +19,7 @@ class ReceivePhotosRequest(
 
   override suspend fun execute(): ReceivedPhotosResponse {
     val response = try {
-      apiService.receivePhotos(photoNames, userId).await()
+      apiService.receivePhotos(userId, photoNames).await()
     } catch (error: Exception) {
       Timber.e(error)
       throw ConnectionError(error.message)
