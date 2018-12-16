@@ -24,7 +24,7 @@ import kotlin.coroutines.CoroutineContext
 abstract class BaseFragment : Fragment(), CoroutineScope {
   protected val compositeDisposable = CompositeDisposable()
   protected val lifecycle = RxLifecycle(this)
-  private val job = Job()
+  private var job = Job()
 
   private lateinit var unBinder: Unbinder
 
@@ -40,7 +40,9 @@ abstract class BaseFragment : Fragment(), CoroutineScope {
   override fun onDetach() {
     super.onDetach()
 
-    job.cancelChildren()
+    job.cancel()
+    job = Job()
+
     compositeDisposable.clear()
     lifecycle.stop()
 

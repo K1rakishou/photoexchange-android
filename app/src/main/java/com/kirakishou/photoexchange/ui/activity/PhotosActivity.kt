@@ -368,13 +368,11 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   override suspend fun onStateEvent(event: PhotosActivityEvent) {
     when (event) {
       is PhotosActivityEvent.StartUploadingService -> {
-        val hasPhotosToUpload = viewModel.checkHasPhotosToUpload()
+        val hasPhotosToUpload = viewModel.checkCanUploadPhotos()
         if (hasPhotosToUpload) {
-          Timber.tag(TAG).d("Starting uploading service")
           bindUploadingService(event.callerClass, event.reason)
         } else {
           //do nothing
-          Timber.tag(TAG).d("Won't start service, since there are no photos to upload")
         }
       }
       is PhotosActivityEvent.StartReceivingService -> {

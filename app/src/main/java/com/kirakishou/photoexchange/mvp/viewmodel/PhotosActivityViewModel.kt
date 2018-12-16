@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
+import android.annotation.SuppressLint
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
@@ -48,17 +49,28 @@ class PhotosActivityViewModel(
     super.onCleared()
   }
 
-  suspend fun checkHasPhotosToUpload(): Boolean {
+  //TODO: add netUtils.canLoadImages()
+  suspend fun checkCanUploadPhotos(): Boolean {
     return withContext(coroutineContext) {
-      takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
+      val count = takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
+      Timber.tag(TAG).d("Queued up photo count = $count")
+
+      return@withContext count
     }
   }
 
+  //TODO: add netUtils.canLoadImages()
+  @SuppressLint("BinaryOperationInTimber")
   suspend fun checkCanReceivePhotos(): Boolean {
     return withContext(coroutineContext) {
       val uploadedPhotosCount = uploadedPhotosRepository.count()
       val receivedPhotosCount = receivedPhotosRepository.count()
 
+      Timber.tag(TAG).d(
+        "uploadedPhotosCount = $uploadedPhotosCount, " +
+          "receivedPhotosCount = $receivedPhotosCount, " +
+          "uploadedPhotosCount > receivedPhotosCount = ${uploadedPhotosCount > receivedPhotosCount}"
+      )
       return@withContext uploadedPhotosCount > receivedPhotosCount
     }
   }

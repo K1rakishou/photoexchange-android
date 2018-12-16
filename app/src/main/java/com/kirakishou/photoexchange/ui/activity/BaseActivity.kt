@@ -33,7 +33,7 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
   override fun getLifecycle(): LifecycleRegistry = registry
   protected val compositeDisposable = CompositeDisposable()
 
-  private val job = Job()
+  private var job = Job()
   private var unBinder: Unbinder? = null
 
   override val coroutineContext: CoroutineContext
@@ -58,7 +58,9 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
   override fun onStop() {
     onActivityStop()
 
-    job.cancelChildren()
+    job.cancel()
+    job = Job()
+
     compositeDisposable.clear()
     super.onStop()
   }

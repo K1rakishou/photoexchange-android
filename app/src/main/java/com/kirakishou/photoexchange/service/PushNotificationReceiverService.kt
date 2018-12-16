@@ -140,10 +140,6 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
   private fun showNotification(photoExchangedData: PhotoExchangedData) {
     Timber.tag(TAG).d("showNotification called")
 
-    val backIntent = Intent(this, TakePhotoActivity::class.java).apply {
-      addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-    }
-
     val intent = Intent(this, PhotosActivity::class.java).apply {
       val bundle = Bundle()
       photoExchangedData.toBundle(bundle)
@@ -151,10 +147,10 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
       putExtra(PhotosActivity.receivedPhotoExtra, bundle)
     }
 
-    val pendingIntent = PendingIntent.getActivities(
+    val pendingIntent = PendingIntent.getActivity(
       this,
       0,
-      arrayOf(backIntent, intent),
+      intent,
       PendingIntent.FLAG_ONE_SHOT
     )
 

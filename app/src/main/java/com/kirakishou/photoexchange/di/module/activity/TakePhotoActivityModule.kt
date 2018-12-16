@@ -1,13 +1,12 @@
 package com.kirakishou.photoexchange.di.module.activity
 
 import androidx.lifecycle.ViewModelProviders
-import android.content.Context
 import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.helper.CameraProvider
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.interactors.TakePhotoUseCase
 import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.TakePhotoActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
@@ -45,11 +44,10 @@ open class TakePhotoActivityModule(
   @PerActivity
   @Provides
   open fun provideCameraProvider(takenPhotosRepository: TakenPhotosRepository,
-                                 dispatchersProvider: DispatchersProvider): CameraProvider {
+                                 takePhotoUseCase: TakePhotoUseCase): CameraProvider {
     return CameraProvider(
       activity,
-      takenPhotosRepository,
-      dispatchersProvider
+      takePhotoUseCase
     )
   }
 }

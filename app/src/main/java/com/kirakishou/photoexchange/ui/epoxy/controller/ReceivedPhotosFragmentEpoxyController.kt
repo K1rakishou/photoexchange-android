@@ -23,6 +23,10 @@ class ReceivedPhotosFragmentEpoxyController(
 ) : BaseEpoxyController() {
   private val TAG = "ReceivedPhotosFragmentEpoxyController"
 
+  override fun destroy() {
+    super.destroy()
+  }
+
   fun rebuild(
     context: Context,
     coroutineScope: CoroutineScope,
