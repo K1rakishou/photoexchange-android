@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.kirakishou.fixmypc.photoexchange">
 
     <uses-permission android:name="android.permission.CAMERA" />
@@ -16,7 +17,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/PhotoExchangeTheme"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="true"
+        tools:ignore="GoogleAppIndexingWarning">
 
         <activity
             android:name="com.kirakishou.photoexchange.ui.activity.PhotosActivity"
@@ -44,7 +46,8 @@
             android:name="com.kirakishou.photoexchange.service.ReceivePhotosService"
             android:exported="false" />
 
-        <service android:name="com.kirakishou.photoexchange.service.PushNotificationReceiverService">
+        <service android:name="com.kirakishou.photoexchange.service.PushNotificationReceiverService"
+            android:exported="false" >
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
