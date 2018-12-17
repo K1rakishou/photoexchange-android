@@ -20,7 +20,7 @@ import timber.log.Timber
 import javax.inject.Inject
 
 
-class UploadedPhotosFragment : BaseMvRxFragment(), StateEventListener<UploadedPhotosFragmentEvent>, IntercomListener {
+class UploadedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<UploadedPhotosFragmentEvent>, IntercomListener {
 
   @Inject
   lateinit var viewModel: PhotosActivityViewModel

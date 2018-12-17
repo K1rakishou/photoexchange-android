@@ -10,17 +10,14 @@ import android.view.ViewAnimationUtils
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.AccelerateInterpolator
 import android.widget.ImageView
-import android.widget.LinearLayout
 import androidx.core.animation.addListener
 import butterknife.BindView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.activity.TakePhotoActivityModule
 import com.kirakishou.photoexchange.helper.CameraProvider
 import com.kirakishou.photoexchange.helper.Vibrator
-import com.kirakishou.photoexchange.helper.extension.debounceClicks
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
@@ -31,13 +28,9 @@ import io.reactivex.Completable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import javax.inject.Inject
 
 class TakePhotoActivity : BaseActivity() {
-
-  @BindView(R.id.show_all_photos_btn)
-  lateinit var showAllPhotosButton: LinearLayout
 
   @BindView(R.id.camera_view)
   lateinit var cameraView: CameraView
@@ -57,6 +50,7 @@ class TakePhotoActivity : BaseActivity() {
   @Inject
   lateinit var vibrator: Vibrator
 
+  //TODO: inject
   private val permissionManager = PermissionManager()
 
   private val TAG = "TakePhotoActivity"
@@ -80,6 +74,7 @@ class TakePhotoActivity : BaseActivity() {
 
   override fun onActivityStop() {
     cameraProvider.stopCamera()
+    permissionManager.clear()
   }
 
   private fun startCamera() {
@@ -100,10 +95,7 @@ class TakePhotoActivity : BaseActivity() {
 
   private fun initViews() {
     translationDelta = AndroidUtils.dpToPx(BUTTONS_TRANSITION_DELTA, this)
-
     takePhotoButton.translationY = takePhotoButton.translationY + translationDelta
-    showAllPhotosButton.translationX = showAllPhotosButton.translationX + translationDelta
-
     circularRevealView.visibility = View.GONE
   }
 
@@ -127,13 +119,6 @@ class TakePhotoActivity : BaseActivity() {
         }
       }
     }
-
-    compositeDisposable += RxView.clicks(showAllPhotosButton)
-      .subscribeOn(AndroidSchedulers.mainThread())
-      .debounceClicks()
-      .doOnNext { runActivity(PhotosActivity::class.java) }
-      .doOnError { Timber.tag(TAG).e(it) }
-      .subscribe()
   }
 
   private suspend fun takePhoto(): TakenPhoto? {
@@ -141,10 +126,11 @@ class TakePhotoActivity : BaseActivity() {
   }
 
   private fun onPhotoTaken(takenPhoto: TakenPhoto) {
-    val intent = Intent(this, ViewTakenPhotoActivity::class.java)
-    intent.putExtras(takenPhoto.toBundle())
+    val intent = Intent()
+    intent.putExtra(TAKEN_PHOTO_BUNDLE_KEY, takenPhoto.toBundle())
 
-    startActivityForResult(intent, ViewTakenPhotoActivity.VIEW_TAKEN_PHOTO_REQUEST_CODE)
+    setResult(Activity.RESULT_OK, intent)
+    finish()
   }
 
   private fun animateCameraViewHide() {
@@ -156,7 +142,6 @@ class TakePhotoActivity : BaseActivity() {
 
     (takePhotoButton as ImageView).visibility = View.GONE
     circularRevealView.visibility = View.VISIBLE
-    showAllPhotosButton.visibility = View.GONE
 
     anim.duration = 100
     anim.start()
@@ -166,30 +151,19 @@ class TakePhotoActivity : BaseActivity() {
     runOnUiThread {
       val set = AnimatorSet()
 
-      val animation1 = ObjectAnimator.ofFloat(takePhotoButton, View.TRANSLATION_Y, translationDelta, 0f)
-      animation1.setInterpolator(AccelerateDecelerateInterpolator())
+      val animation = ObjectAnimator.ofFloat(takePhotoButton, View.TRANSLATION_Y, translationDelta, 0f)
+      animation.setInterpolator(AccelerateDecelerateInterpolator())
 
-      val animation2 = ObjectAnimator.ofFloat(showAllPhotosButton, View.TRANSLATION_X, translationDelta, 0f)
-      animation2.setInterpolator(AccelerateDecelerateInterpolator())
-
-      set.playTogether(animation1, animation2)
+      set.play(animation)
       set.setStartDelay(50)
       set.setDuration(200)
       set.addListener(onEnd = {
         if (::takePhotoButton.isInitialized) {
           takePhotoButton.isClickable = true
         }
-
-        if (::showAllPhotosButton.isInitialized) {
-          showAllPhotosButton.isClickable = true
-        }
       }, onStart = {
         if (::takePhotoButton.isInitialized) {
           takePhotoButton.show()
-        }
-
-        if (::showAllPhotosButton.isInitialized) {
-          showAllPhotosButton.visibility = View.VISIBLE
         }
       })
       set.start()
@@ -200,29 +174,18 @@ class TakePhotoActivity : BaseActivity() {
     return Completable.create { emitter ->
       val set = AnimatorSet()
 
-      val animation1 = ObjectAnimator.ofFloat(takePhotoButton, View.TRANSLATION_Y, 0f, translationDelta)
-      animation1.setInterpolator(AccelerateInterpolator())
+      val animation = ObjectAnimator.ofFloat(takePhotoButton, View.TRANSLATION_Y, 0f, translationDelta)
+      animation.setInterpolator(AccelerateInterpolator())
 
-      val animation2 = ObjectAnimator.ofFloat(showAllPhotosButton, View.TRANSLATION_X, 0f, translationDelta)
-      animation2.setInterpolator(AccelerateInterpolator())
-
-      set.playTogether(animation1, animation2)
+      set.play(animation)
       set.setDuration(250)
       set.addListener(onStart = {
         if (::takePhotoButton.isInitialized) {
           takePhotoButton.isClickable = false
         }
-
-        if (::showAllPhotosButton.isInitialized) {
-          showAllPhotosButton.isClickable = false
-        }
       }, onEnd = {
         if (::takePhotoButton.isInitialized) {
           takePhotoButton.hide()
-        }
-
-        if (::showAllPhotosButton.isInitialized) {
-          showAllPhotosButton.visibility = View.GONE
         }
 
         emitter.onComplete()
@@ -241,9 +204,7 @@ class TakePhotoActivity : BaseActivity() {
 
     if (requestCode == ViewTakenPhotoActivity.VIEW_TAKEN_PHOTO_REQUEST_CODE) {
       if (resultCode == Activity.RESULT_OK) {
-        Timber.tag(TAG).d("ViewTakenPhotoActivity returned OK")
         setResult(Activity.RESULT_OK)
-
         finish()
       }
     }
@@ -264,5 +225,6 @@ class TakePhotoActivity : BaseActivity() {
 
   companion object {
     const val TAKE_PHOTO_REQUEST_CODE = 0x1
+    const val TAKEN_PHOTO_BUNDLE_KEY = "taken_photo"
   }
 }

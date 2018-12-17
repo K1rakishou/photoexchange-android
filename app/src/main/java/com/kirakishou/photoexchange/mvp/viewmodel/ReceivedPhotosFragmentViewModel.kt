@@ -3,7 +3,6 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 import androidx.fragment.app.FragmentActivity
 import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
-import com.kirakishou.photoexchange.helper.Either
 import com.kirakishou.photoexchange.mvp.model.PhotoSize
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.extension.safe

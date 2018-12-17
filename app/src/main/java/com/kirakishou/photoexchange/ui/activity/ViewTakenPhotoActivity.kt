@@ -79,7 +79,6 @@ class ViewTakenPhotoActivity : BaseActivity() {
 
   private suspend fun onAddToGalleryFragmentResult(fragmentResult: AddToGalleryDialogFragment.FragmentResult) {
     viewModel.saveMakePublicFlag(fragmentResult.rememberChoice, fragmentResult.makePublic)
-
     viewModel.updateSetIsPhotoPublic(takenPhoto.id, fragmentResult.makePublic)
   }
 
