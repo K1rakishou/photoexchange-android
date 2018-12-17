@@ -35,9 +35,6 @@
         <meta-data
             android:name="io.fabric.ApiKey"
             android:value="25e246425284f02064665b2dc30323200c19a724" />
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyAGVBH_OihoUtvM-VCqQKOvcp5n_3kUs1U" />
 
         <service
             android:name="com.kirakishou.photoexchange.service.UploadPhotoService"
