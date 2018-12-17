@@ -6,7 +6,6 @@ import android.view.View
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.di.module.fragment.ReceivedPhotosFragmentModule
-import com.kirakishou.photoexchange.di.module.fragment.UploadedPhotosFragmentModule
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
@@ -25,7 +24,7 @@ import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-class ReceivedPhotosFragment : BaseMvRxFragment(), StateEventListener<ReceivedPhotosFragmentEvent>, IntercomListener {
+class ReceivedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<ReceivedPhotosFragmentEvent>, IntercomListener {
 
   @Inject
   lateinit var viewModel: PhotosActivityViewModel

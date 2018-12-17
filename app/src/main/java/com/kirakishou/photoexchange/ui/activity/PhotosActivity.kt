@@ -481,15 +481,33 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
     super.onActivityResult(requestCode, resultCode, data)
 
-    if (requestCode == TakePhotoActivity.TAKE_PHOTO_REQUEST_CODE) {
-      if (resultCode == Activity.RESULT_OK) {
-        Timber.tag(TAG).d("Got new photo from TakePhotoActivity")
+    when (requestCode) {
+      TakePhotoActivity.TAKE_PHOTO_REQUEST_CODE -> {
+        if (resultCode == Activity.RESULT_OK) {
+          Timber.tag(TAG).d("Photo taken")
 
-        viewModel.intercom.tell<PhotosActivity>()
-          .to(PhotosActivityEvent.StartUploadingService(PhotosActivity::class.java, "User took new photo"))
+          if (data == null) {
+            Timber.tag(TAG).w("requestCode is TAKE_PHOTO_REQUEST_CODE but the intent is null!")
+            return
+          }
 
-        switchToTab(UPLOADED_PHOTOS_TAB_INDEX)
+          val intent = Intent(this, ViewTakenPhotoActivity::class.java)
+          intent.putExtras(data.getBundleExtra(TakePhotoActivity.TAKEN_PHOTO_BUNDLE_KEY))
+
+          startActivityForResult(intent, ViewTakenPhotoActivity.VIEW_TAKEN_PHOTO_REQUEST_CODE)
+        }
       }
+      ViewTakenPhotoActivity.VIEW_TAKEN_PHOTO_REQUEST_CODE -> {
+        if (resultCode == Activity.RESULT_OK) {
+          Timber.tag(TAG).d("Uploading photo")
+
+          viewModel.intercom.tell<PhotosActivity>()
+            .to(PhotosActivityEvent.StartUploadingService(PhotosActivity::class.java, "User took new photo"))
+
+          switchToTab(UPLOADED_PHOTOS_TAB_INDEX)
+        }
+      }
+      else -> IllegalStateException("Not implemented for ${requestCode}")
     }
   }
 

@@ -20,7 +20,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlin.coroutines.CoroutineContext
 
-abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
+abstract class MyBaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
   private val spanCount = 1
 
   private val invalidationActor: SendChannel<Unit>
@@ -64,7 +64,7 @@ abstract class BaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
     return inflater.inflate(getFragmentLayoutId(), container, false).apply {
       val recyclerViewInstance = findViewById<EpoxyRecyclerView>(R.id.recycler_view)
       if (recyclerViewInstance == null) {
-        throw IllegalStateException("BaseMvRxFragment requires fragment to contain " +
+        throw IllegalStateException("MyBaseMvRxFragment requires fragment to contain " +
           "RecyclerView with id = R.id.recycler_view!")
       }
 

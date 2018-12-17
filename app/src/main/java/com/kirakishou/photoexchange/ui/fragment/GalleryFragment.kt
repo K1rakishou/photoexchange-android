@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-class GalleryFragment : BaseMvRxFragment(), StateEventListener<GalleryFragmentEvent>, IntercomListener {
+class GalleryFragment : MyBaseMvRxFragment(), StateEventListener<GalleryFragmentEvent>, IntercomListener {
 
   @Inject
   lateinit var viewModel: PhotosActivityViewModel

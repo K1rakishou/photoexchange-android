@@ -34,9 +34,13 @@ open class PermissionManager {
   }
 
   fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-    val permission = pendingPermissions.first { permission -> permission.requestCode == requestCode }
+    val permission = pendingPermissions.firstOrNull { permission -> permission.requestCode == requestCode }
     pendingPermissions.removeAll { it.requestCode == requestCode }
 
-    permission.callback.invoke(permissions, grantResults)
+    permission?.callback?.invoke(permissions, grantResults)
+  }
+
+  fun clear() {
+    pendingPermissions.clear()
   }
 }
