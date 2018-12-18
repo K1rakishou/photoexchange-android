@@ -4,7 +4,6 @@ import androidx.fragment.app.FragmentActivity
 import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
 import com.kirakishou.photoexchange.helper.Constants
-import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
@@ -18,11 +17,10 @@ import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragment
 import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import com.kirakishou.photoexchange.mvp.model.PhotoSize
-import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.photo.QueuedUpPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
-import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
+import com.kirakishou.photoexchange.mvp.viewmodel.state.UpdateStateResult
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import io.reactivex.disposables.CompositeDisposable
@@ -45,7 +43,6 @@ class UploadedPhotosFragmentViewModel(
   private val TAG = "UploadedPhotosFragmentViewModel"
 
   private val compositeDisposable = CompositeDisposable()
-  private val servicesStartCompositeDisposable = CompositeDisposable()
 
   private val job = Job()
   private val viewModelActor: SendChannel<ActorAction>
@@ -101,53 +98,33 @@ class UploadedPhotosFragmentViewModel(
 
   private fun swapPhotoAndMapInternal(uploadedPhotoName: String) {
     withState { state ->
-      val photoIndex = state.uploadedPhotos.indexOfFirst { it.photoName == uploadedPhotoName }
-      if (photoIndex == -1) {
-        return@withState
-      }
+      val updateResult = state.swapPhotoAndMap(uploadedPhotoName)
 
-      if (state.uploadedPhotos[photoIndex].receiverInfo == null) {
-        intercom.tell<PhotosActivity>().to(PhotosActivityEvent
-          .ShowToast("Still looking for your photo..."))
-        return@withState
-      }
+      when (updateResult) {
+        is UpdateStateResult.Update -> {
+          setState { copy(uploadedPhotos = updateResult.update) }
+        }
+        is UpdateStateResult.SendIntercom -> {
+          intercom.tell<PhotosActivity>().to(PhotosActivityEvent
+            .ShowToast("Still looking for your photo..."))
+        }
+        is UpdateStateResult.NothingToUpdate -> {}
+      }.safe
 
-      val oldShowPhoto = state.uploadedPhotos[photoIndex].showPhoto
-      val updatedPhoto = state.uploadedPhotos[photoIndex]
-        .copy(showPhoto = !oldShowPhoto)
-
-      val updatedPhotos = state.uploadedPhotos.toMutableList()
-      updatedPhotos[photoIndex] = updatedPhoto
-
-      setState { copy(uploadedPhotos = updatedPhotos) }
     }
   }
 
   private fun onNewPhotoReceivedInternal(photoExchangedData: PhotoExchangedData) {
     withState { state ->
-      val photoIndex = state.uploadedPhotos
-        .indexOfFirst { it.photoName == photoExchangedData.uploadedPhotoName }
-      if (photoIndex == -1) {
-        //nothing to update
-        return@withState
-      }
+      val updateResult = state.updateReceiverInfo(photoExchangedData)
 
-      val updatedPhotos = state.uploadedPhotos.toMutableList()
-      val receiverInfo = UploadedPhoto.ReceiverInfo(
-        photoExchangedData.receivedPhotoName,
-        LonLat(
-          photoExchangedData.lon,
-          photoExchangedData.lat
-        )
-      )
-
-      val updatedPhoto = updatedPhotos[photoIndex]
-        .copy(receiverInfo = receiverInfo)
-
-      updatedPhotos.removeAt(photoIndex)
-      updatedPhotos.add(photoIndex, updatedPhoto)
-
-      setState { copy(uploadedPhotos = updatedPhotos) }
+      when (updateResult) {
+        is UpdateStateResult.Update -> {
+          setState { copy(uploadedPhotos = updateResult.update) }
+        }
+        is UpdateStateResult.SendIntercom -> {}
+        is UpdateStateResult.NothingToUpdate -> {}
+      }.safe
     }
   }
 
@@ -283,92 +260,56 @@ class UploadedPhotosFragmentViewModel(
         Timber.tag(TAG).d("OnPhotoUploadingStart")
 
         withState { state ->
-          val photoIndex = state.takenPhotos
-            .indexOfFirst { it.id == event.photo.id && it.photoState == PhotoState.PHOTO_QUEUED_UP }
-
-          if (photoIndex != -1) {
-            val filteredPhotos = state.takenPhotos
-              .filter { it.id != event.photo.id }
-              .toMutableList()
-
-            filteredPhotos += UploadingPhoto.fromMyPhoto(state.takenPhotos[photoIndex], 0)
-            setState { copy(takenPhotos = filteredPhotos) }
-          } else {
-            val newPhoto = UploadingPhoto.fromMyPhoto(event.photo, 0)
-            setState { copy(takenPhotos = state.takenPhotos + newPhoto) }
+          val updateResult = state.replaceQueuedUpPhotoWithUploading(event.photo)
+          if (updateResult !is UpdateStateResult.Update) {
+            throw IllegalStateException("Not implemented for result ${updateResult::class}")
           }
+
+          setState { copy(takenPhotos = updateResult.update) }
         }
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress -> {
         Timber.tag(TAG).d("OnPhotoUploadingProgress")
 
         withState { state ->
-          val photoIndex = state.takenPhotos
-            .indexOfFirst { it.id == event.photo.id && it.photoState == PhotoState.PHOTO_UPLOADING }
-
-          val newPhotos = if (photoIndex != -1) {
-            state.takenPhotos.filter { it.id != event.photo.id }.toMutableList()
-          } else {
-            state.takenPhotos.toMutableList()
+          val updateResult = state.updateUploadingPhotoProgress(event.photo, event.progress)
+          if (updateResult !is UpdateStateResult.Update) {
+            throw IllegalStateException("Not implemented for result ${updateResult::class}")
           }
 
-          if (photoIndex != -1) {
-            newPhotos.add(photoIndex, UploadingPhoto.fromMyPhoto(event.photo, event.progress))
-          } else {
-            newPhotos.add(0, UploadingPhoto.fromMyPhoto(event.photo, event.progress))
-          }
-
-          setState { copy(takenPhotos = newPhotos) }
+          setState { copy(takenPhotos = updateResult.update) }
         }
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploaded -> {
         Timber.tag(TAG).d("OnPhotoUploaded")
 
         withState { state ->
-          val photoIndex = state.takenPhotos
-            .indexOfFirst { it.id == event.photo.id && it.photoState == PhotoState.PHOTO_UPLOADING }
-
-          if (photoIndex == -1) {
-            return@withState
-          }
-
-          val newTakenPhotos = state.takenPhotos.toMutableList()
-          newTakenPhotos.removeAt(photoIndex)
-
-          val newUploadedPhotos = state.uploadedPhotos.toMutableList()
-          val newUploadedPhoto = UploadedPhoto(
+          val updateResult = state.replaceUploadingPhotoWithUploaded(
+            event.photo,
             event.newPhotoId,
             event.newPhotoName,
-            event.currentLocation.lon,
-            event.currentLocation.lat,
-            null,
-            event.uploadedOn
+            event.uploadedOn,
+            event.currentLocation
           )
 
-          newUploadedPhotos.add(newUploadedPhoto)
-          newUploadedPhotos.sortByDescending { it.uploadedOn }
-
-          setState {
-            copy(
-              takenPhotos = newTakenPhotos,
-              uploadedPhotos = newUploadedPhotos
-            )
+          if (updateResult !is UpdateStateResult.Update) {
+            throw IllegalStateException("Not implemented for result ${updateResult::class}")
           }
+
+          val (newTakenPhotos, newUploadedPhotos) = updateResult.update
+          setState { copy(takenPhotos = newTakenPhotos, uploadedPhotos = newUploadedPhotos) }
         }
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUploadPhoto -> {
         Timber.tag(TAG).d("OnFailedToUploadPhoto")
 
         withState { state ->
-          val photoIndex = state.takenPhotos.indexOfFirst { it.id == event.photo.id }
-          val newPhotos = if (photoIndex != -1) {
-            state.takenPhotos.filter { it.id != event.photo.id }.toMutableList()
-          } else {
-            state.takenPhotos.toMutableList()
+          val updateResult = state.replaceUploadingPhotoWithFailed(event.photo)
+          if (updateResult !is UpdateStateResult.Update) {
+            throw IllegalStateException("Not implemented for result ${updateResult::class}")
           }
 
-          newPhotos.add(photoIndex, QueuedUpPhoto.fromTakenPhoto(event.photo))
-          setState { copy(takenPhotos = newPhotos) }
+          setState { copy(takenPhotos = updateResult.update) }
 
           intercom.tell<PhotosActivity>()
             .to(PhotosActivityEvent.ShowToast("Failed to upload photo, error message: ${event.error.message}"))
@@ -405,30 +346,13 @@ class UploadedPhotosFragmentViewModel(
         }
 
         withState { state ->
-          val updatedPhotos = mutableListOf<UploadedPhoto>()
-
-          for (uploadedPhoto in state.uploadedPhotos) {
-            val exchangedPhoto = event.receivedPhotos
-              .firstOrNull { it.uploadedPhotoName == uploadedPhoto.photoName }
-
-            updatedPhotos += if (exchangedPhoto == null) {
-              uploadedPhoto.copy()
-            } else {
-              val receiverInfo = UploadedPhoto.ReceiverInfo(
-                exchangedPhoto.receivedPhotoName,
-                exchangedPhoto.lonLat
-              )
-
-              uploadedPhoto.copy(receiverInfo = receiverInfo)
-            }
+          val updateResult = state.updateReceiverInfo(event.receivedPhotos)
+          if (updateResult !is UpdateStateResult.Update) {
+            throw IllegalStateException("Not implemented for result ${updateResult::class}")
           }
 
-          setState { copy(uploadedPhotos = updatedPhotos) }
+          setState { copy(uploadedPhotos = updateResult.update) }
         }
-      }
-      is UploadedPhotosFragmentEvent.ReceivePhotosEvent.NoPhotosReceived -> {
-        Timber.tag(TAG).d("NoPhotosReceived")
-        //do nothing?
       }
       is UploadedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
         Timber.tag(TAG).d("OnFailed")

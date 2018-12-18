@@ -67,10 +67,14 @@ class ReceivePhotosService : Service() {
   private fun onReceivePhotoResult(event: ReceivePhotosServicePresenter.ReceivePhotoEvent) {
     when (event) {
       is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnPhotosReceived -> {
-        if (event.receivedPhotos.isEmpty()) {
-          callback.get()?.onReceivePhotoEvent(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.NoPhotosReceived())
+        if (event.receivedPhotos.isNotEmpty()) {
+          val photosReceivedEvent = ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived(
+            event.receivedPhotos
+          )
+
+          callback.get()?.onReceivePhotoEvent(photosReceivedEvent)
         } else {
-          callback.get()?.onReceivePhotoEvent(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived(event.receivedPhotos))
+          //do nothing
         }
       }
       is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnError -> {
