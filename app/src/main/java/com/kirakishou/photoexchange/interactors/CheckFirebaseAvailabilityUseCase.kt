@@ -1,9 +1,9 @@
 package com.kirakishou.photoexchange.interactors
 
-import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.source.remote.FirebaseRemoteSource
+import core.SharedConstants
 import kotlinx.coroutines.withContext
 
 class CheckFirebaseAvailabilityUseCase(
@@ -22,7 +22,7 @@ class CheckFirebaseAvailabilityUseCase(
         val token = firebaseRemoteSource.getTokenAsync()
 
         try {
-          return@withContext if (token == Constants.NO_GOOGLE_PLAY_SERVICES_DEFAULT_TOKEN) {
+          return@withContext if (token == SharedConstants.NO_GOOGLE_PLAY_SERVICES_DEFAULT_TOKEN) {
             FirebaseAvailabilityResult.NotAvailable
           } else {
             FirebaseAvailabilityResult.Available
