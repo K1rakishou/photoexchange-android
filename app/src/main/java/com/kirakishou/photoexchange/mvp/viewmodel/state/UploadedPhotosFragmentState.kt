@@ -43,8 +43,14 @@ data class UploadedPhotosFragmentState(
     val photoIndex = uploadedPhotos.indexOfFirst { uploadedPhoto ->
       uploadedPhoto.photoName == photoExchangedData.uploadedPhotoName
     }
+
     if (photoIndex == -1) {
       //nothing to update
+      return UpdateStateResult.NothingToUpdate()
+    }
+
+    if (uploadedPhotos[photoIndex].receiverInfo != null) {
+      //photo already has receiver info
       return UpdateStateResult.NothingToUpdate()
     }
 

@@ -65,7 +65,7 @@ class UploadedPhotosFragmentViewModel(
           is ActorAction.CancelPhotoUploading -> cancelPhotoUploadingInternal(action.photoId)
           ActorAction.LoadQueuedUpPhotos -> loadQueuedUpPhotosInternal()
           is ActorAction.LoadUploadedPhotos -> loadUploadedPhotosInternal(action.forced)
-          is ActorAction.OnNewPhotoReceived -> onNewPhotoReceivedInternal(action.photoExchangedData)
+          is ActorAction.OnNewPhotoNotificationReceived -> onNewPhotoNotificationReceivedInternal(action.photoExchangedData)
           is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.photoName)
         }.safe
       }
@@ -88,8 +88,8 @@ class UploadedPhotosFragmentViewModel(
     launch { viewModelActor.send(ActorAction.LoadUploadedPhotos(forced)) }
   }
 
-  fun onNewPhotoReceived(photoExchangedData: PhotoExchangedData) {
-    launch { viewModelActor.send(ActorAction.OnNewPhotoReceived(photoExchangedData)) }
+  fun onNewPhotoNotificationReceived(photoExchangedData: PhotoExchangedData) {
+    launch { viewModelActor.send(ActorAction.OnNewPhotoNotificationReceived(photoExchangedData)) }
   }
 
   fun swapPhotoAndMap(photoName: String) {
@@ -114,7 +114,7 @@ class UploadedPhotosFragmentViewModel(
     }
   }
 
-  private fun onNewPhotoReceivedInternal(photoExchangedData: PhotoExchangedData) {
+  private fun onNewPhotoNotificationReceivedInternal(photoExchangedData: PhotoExchangedData) {
     withState { state ->
       val updateResult = state.updateReceiverInfo(photoExchangedData)
 
@@ -402,7 +402,7 @@ class UploadedPhotosFragmentViewModel(
     class CancelPhotoUploading(val photoId: Long) : ActorAction()
     object LoadQueuedUpPhotos : ActorAction()
     class LoadUploadedPhotos(val forced: Boolean) : ActorAction()
-    class OnNewPhotoReceived(val photoExchangedData: PhotoExchangedData) : ActorAction()
+    class OnNewPhotoNotificationReceived(val photoExchangedData: PhotoExchangedData) : ActorAction()
     class SwapPhotoAndMap(val photoName: String) : ActorAction()
   }
 

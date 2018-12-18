@@ -69,7 +69,7 @@ class ReceivedPhotosFragmentViewModel(
           is ActorAction.LoadReceivedPhotos -> loadReceivedPhotosInternal(action.forced)
           is ActorAction.ResetState -> resetStateInternal(action.clearCache)
           is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.receivedPhotoName)
-          is ActorAction.OnNewPhotoReceived -> onNewPhotoReceivedInternal(action.photoExchangedData)
+          is ActorAction.OnNewPhotoNotificationReceived -> onNewPhotoNotificationReceivedInternal(action.photoExchangedData)
           is ActorAction.RemovePhoto -> removePhotoInternal(action.photoName)
           is ActorAction.FavouritePhoto -> favouritePhotoInternal(action.photoName)
           is ActorAction.ReportPhoto -> reportPhotoInternal(action.photoName)
@@ -94,8 +94,8 @@ class ReceivedPhotosFragmentViewModel(
     launch { viewModelActor.send(ActorAction.SwapPhotoAndMap(receivedPhotoName)) }
   }
 
-  fun onNewPhotoReceived(photoExchangedData: PhotoExchangedData) {
-    launch { viewModelActor.send(ActorAction.OnNewPhotoReceived(photoExchangedData)) }
+  fun onNewPhotoNotificationReceived(photoExchangedData: PhotoExchangedData) {
+    launch { viewModelActor.send(ActorAction.OnNewPhotoNotificationReceived(photoExchangedData)) }
   }
 
   fun removePhoto(photoName: String) {
@@ -312,9 +312,12 @@ class ReceivedPhotosFragmentViewModel(
     }
   }
 
-  private fun onNewPhotoReceivedInternal(photoExchangedData: PhotoExchangedData) {
+  private fun onNewPhotoNotificationReceivedInternal(photoExchangedData: PhotoExchangedData) {
     withState { state ->
-      val photoIndex = state.receivedPhotos.indexOfFirst { it.receivedPhotoName == photoExchangedData.receivedPhotoName }
+      val photoIndex = state.receivedPhotos.indexOfFirst { receivedPhoto ->
+        receivedPhoto.receivedPhotoName == photoExchangedData.receivedPhotoName
+      }
+
       if (photoIndex != -1) {
         //photo is already shown
         return@withState
@@ -475,9 +478,6 @@ class ReceivedPhotosFragmentViewModel(
           }
         }
       }
-      is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.NoPhotosReceived -> {
-        //do nothing?
-      }
       is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
         event.error.printStackTrace()
         Timber.tag(TAG).d("Error while trying to receive photos: (${event.error.message})")
@@ -510,7 +510,7 @@ class ReceivedPhotosFragmentViewModel(
     class LoadReceivedPhotos(val forced: Boolean) : ActorAction()
     class ResetState(val clearCache: Boolean) : ActorAction()
     class SwapPhotoAndMap(val receivedPhotoName: String) : ActorAction()
-    class OnNewPhotoReceived(val photoExchangedData: PhotoExchangedData) : ActorAction()
+    class OnNewPhotoNotificationReceived(val photoExchangedData: PhotoExchangedData) : ActorAction()
     class RemovePhoto(val photoName: String) : ActorAction()
     class ReportPhoto(val photoName: String) : ActorAction()
     class FavouritePhoto(val photoName: String) : ActorAction()
