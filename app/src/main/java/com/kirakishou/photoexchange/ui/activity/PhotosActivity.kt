@@ -414,12 +414,6 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
         showNewPhotoHasBeenReceivedSnackbar()
       }
-      is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.NoPhotosReceived -> {
-        viewModel.intercom.tell<UploadedPhotosFragment>()
-          .that(UploadedPhotosFragmentEvent.ReceivePhotosEvent.NoPhotosReceived())
-        viewModel.intercom.tell<ReceivedPhotosFragment>()
-          .that(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.NoPhotosReceived())
-      }
       is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
         viewModel.intercom.tell<UploadedPhotosFragment>()
           .that(UploadedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed(event.error))

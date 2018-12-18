@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.helper.database.source.remote
 
 import com.google.firebase.iid.FirebaseInstanceId
-import com.kirakishou.photoexchange.helper.Constants
+import core.SharedConstants
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -18,12 +18,12 @@ class FirebaseRemoteSource(
            * and all users with such token won't receive any push notifications
            * */
 
-          continuation.resume(Constants.NO_GOOGLE_PLAY_SERVICES_DEFAULT_TOKEN)
+          continuation.resume(SharedConstants.NO_GOOGLE_PLAY_SERVICES_DEFAULT_TOKEN)
           return@addOnCompleteListener
         }
 
         if (task.result == null) {
-          continuation.resume(Constants.NO_GOOGLE_PLAY_SERVICES_DEFAULT_TOKEN)
+          continuation.resume(SharedConstants.NO_GOOGLE_PLAY_SERVICES_DEFAULT_TOKEN)
         } else {
           continuation.resume(task.result!!.token)
         }

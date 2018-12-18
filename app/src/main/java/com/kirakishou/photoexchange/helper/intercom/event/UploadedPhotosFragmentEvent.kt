@@ -13,7 +13,6 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
 
   sealed class ReceivePhotosEvent : UploadedPhotosFragmentEvent() {
     class PhotosReceived(val receivedPhotos: List<ReceivedPhoto>) : ReceivePhotosEvent()
-    class NoPhotosReceived : ReceivePhotosEvent()
     class OnFailed(val error: Throwable) : ReceivePhotosEvent()
   }
 

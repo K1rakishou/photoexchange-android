@@ -115,7 +115,7 @@ class ReceivedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Received
       }
       is ReceivedPhotosFragmentEvent.GeneralEvents.OnNewPhotoNotificationReceived -> {
         Timber.tag(TAG).d("OnNewPhotoNotificationReceived, currentState = ${lifecycle.getCurrentState()}")
-        viewModel.receivedPhotosFragmentViewModel.onNewPhotoReceived(event.photoExchangedData)
+        viewModel.receivedPhotosFragmentViewModel.onNewPhotoNotificationReceived(event.photoExchangedData)
       }
       is ReceivedPhotosFragmentEvent.GeneralEvents.RemovePhoto -> {
         viewModel.receivedPhotosFragmentViewModel.removePhoto(event.photoName)

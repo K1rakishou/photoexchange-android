@@ -59,7 +59,7 @@ class PhotosActivityViewModel(
     }
   }
 
-  //TODO: add netUtils.canLoadImages()
+  //TODO: add netUtils.canAccessNetwork()
   @SuppressLint("BinaryOperationInTimber")
   suspend fun checkCanReceivePhotos(): Boolean {
     return withContext(coroutineContext) {
