@@ -22,45 +22,11 @@ class PhotoAdditionalInfoUtilsImpl(
     photoNameSelectorFunc: (T) -> String,
     copyFunc: (T, PhotoAdditionalInfo) -> T
   ): List<T> {
-    suspend fun getPhotoAdditionalInfoForGalleryPhotos(
-      userId: String,
-      photoNameList: List<String>
-    ): List<PhotoAdditionalInfo>? {
-      if (userId.isEmpty()) {
-        return null
-      }
-
-      val cachedPhotoInfoList = photoAdditionalInfoRepository.findMany(photoNameList)
-      if (!netUtils.canAccessNetwork()) {
-        //if there is no wifi and we can't access network without wifi -
-        //use whatever there is in the cache
-        return cachedPhotoInfoList
-      }
-
-      if (cachedPhotoInfoList.size == photoNameList.size) {
-        Timber.tag(TAG).d("Found enough in the database")
-        return cachedPhotoInfoList
-      }
-
-      val notCachedList = photoAdditionalInfoRepository.findNotCached(photoNameList)
-      val photoNames = notCachedList.joinToString(separator = Constants.DELIMITER)
-
-      val additionalInfoList = apiClient.getPhotosAdditionalInfo(userId, photoNames)
-      if (additionalInfoList.isEmpty()) {
-        Timber.tag(TAG).d("Nothing was found on the server")
-        return emptyList()
-      }
-
-      if (!photoAdditionalInfoRepository.saveMany(additionalInfoList)) {
-        throw DatabaseException("Could not cache additional photo info in the database")
-      }
-
-      return PhotoAdditionalInfoMapper.FromResponse.toPhotoAdditionalInfoList(additionalInfoList)
-    }
-
     val additionalPhotoInfoList = getPhotoAdditionalInfoForGalleryPhotos(
       userId,
-      galleryPhotos.map { photoNameSelectorFunc(it) }
+      galleryPhotos.map { photoNameSelectorFunc(it) },
+      photoAdditionalInfoRepository,
+      apiClient
     )
 
     if (additionalPhotoInfoList == null) {
@@ -82,6 +48,44 @@ class PhotoAdditionalInfoUtilsImpl(
     }
 
     return resultList
+  }
+
+  private suspend fun getPhotoAdditionalInfoForGalleryPhotos(
+    userId: String,
+    photoNameList: List<String>,
+    photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
+    apiClient: ApiClient
+  ): List<PhotoAdditionalInfo>? {
+    if (userId.isEmpty()) {
+      return null
+    }
+
+    val cachedPhotoInfoList = photoAdditionalInfoRepository.findMany(photoNameList)
+    if (!netUtils.canAccessNetwork()) {
+      //if there is no wifi and we can't access network without wifi -
+      //use whatever there is in the cache
+      return cachedPhotoInfoList
+    }
+
+    if (cachedPhotoInfoList.size == photoNameList.size) {
+      Timber.tag(TAG).d("Found enough in the database")
+      return cachedPhotoInfoList
+    }
+
+    val notCachedList = photoAdditionalInfoRepository.findNotCached(photoNameList)
+    val photoNames = notCachedList.joinToString(separator = Constants.DELIMITER)
+
+    val additionalInfoList = apiClient.getPhotosAdditionalInfo(userId, photoNames)
+    if (additionalInfoList.isEmpty()) {
+      Timber.tag(TAG).d("Nothing was found on the server")
+      return emptyList()
+    }
+
+    if (!photoAdditionalInfoRepository.saveMany(additionalInfoList)) {
+      throw DatabaseException("Could not cache additional photo info in the database")
+    }
+
+    return PhotoAdditionalInfoMapper.FromResponse.toPhotoAdditionalInfoList(additionalInfoList)
   }
 
 }

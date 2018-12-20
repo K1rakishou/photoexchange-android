@@ -9,13 +9,15 @@ import com.kirakishou.photoexchange.helper.database.repository.PhotoAdditionalIn
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
+import com.kirakishou.photoexchange.helper.exception.NetworkAccessDisabledInSettings
+import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.mvp.model.FavouritePhotoActionResult
 import com.kirakishou.photoexchange.mvp.model.photo.PhotoAdditionalInfo
 import kotlinx.coroutines.withContext
 
 open class FavouritePhotoUseCase(
-  private val database: MyDatabase,
   private val apiClient: ApiClient,
+  private val netUtils: NetUtils,
   private val settingsRepository: SettingsRepository,
   private val galleryPhotosRepository: GalleryPhotosRepository,
   private val photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
@@ -30,6 +32,10 @@ open class FavouritePhotoUseCase(
       val userId = settingsRepository.getUserId()
       if (userId.isEmpty()) {
         throw EmptyUserIdException()
+      }
+
+      if (!netUtils.canAccessNetwork()) {
+        throw NetworkAccessDisabledInSettings()
       }
 
       val favouritePhotoResult = apiClient.favouritePhoto(userId, photoName)

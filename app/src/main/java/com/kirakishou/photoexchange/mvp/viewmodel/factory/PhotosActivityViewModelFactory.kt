@@ -8,6 +8,7 @@ import com.kirakishou.photoexchange.helper.database.repository.SettingsRepositor
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
+import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.interactors.BlacklistPhotoUseCase
 import com.kirakishou.photoexchange.interactors.CheckFirebaseAvailabilityUseCase
 import com.kirakishou.photoexchange.mvp.viewmodel.GalleryFragmentViewModel
@@ -25,6 +26,7 @@ class PhotosActivityViewModelFactory
   val receivedPhotosFragmentViewModel: ReceivedPhotosFragmentViewModel,
   val galleryFragmentViewModel: GalleryFragmentViewModel,
   val intercom: PhotosActivityViewModelIntercom,
+  val netUtils: NetUtils,
   val settingsRepository: SettingsRepository,
   val takenPhotosRepository: TakenPhotosRepository,
   val uploadedPhotosRepository: UploadedPhotosRepository,
@@ -41,6 +43,7 @@ class PhotosActivityViewModelFactory
       receivedPhotosFragmentViewModel,
       galleryFragmentViewModel,
       intercom,
+      netUtils,
       settingsRepository,
       takenPhotosRepository,
       uploadedPhotosRepository,

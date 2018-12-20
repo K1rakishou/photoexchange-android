@@ -97,7 +97,7 @@ class SettingsActivity : BaseActivity() {
 
         val isOk = try {
           viewModel.restoreOldAccount(userId)
-        } catch (error: Exception) {
+        } catch (error: Throwable) {
           onShowToast("Unknown error while trying to restore account: ${error.message
             ?: "empty error message"}")
           return@launch

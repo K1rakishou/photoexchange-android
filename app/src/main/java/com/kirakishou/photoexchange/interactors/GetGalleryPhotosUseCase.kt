@@ -23,7 +23,6 @@ open class GetGalleryPhotosUseCase(
   private val timeUtils: TimeUtils,
   private val pagedApiUtils: PagedApiUtils,
   private val photoAdditionalInfoUtils: PhotoAdditionalInfoUtils,
-  private val netUtils: NetUtils,
   private val galleryPhotosRepository: GalleryPhotosRepository,
   private val photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
   private val blacklistedPhotoRepository: BlacklistedPhotoRepository,

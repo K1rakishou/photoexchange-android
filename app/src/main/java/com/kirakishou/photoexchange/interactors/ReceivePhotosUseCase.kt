@@ -10,6 +10,8 @@ import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosReposi
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.exception.ApiErrorException
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.exception.NetworkAccessDisabledInSettings
+import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.helper.util.PhotoAdditionalInfoUtils
 import com.kirakishou.photoexchange.mvp.model.FindPhotosData
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
@@ -21,6 +23,7 @@ import timber.log.Timber
 open class ReceivePhotosUseCase(
   private val database: MyDatabase,
   private val apiClient: ApiClient,
+  private val netUtils: NetUtils,
   private val photoAdditionalInfoUtils: PhotoAdditionalInfoUtils,
   private val receivedPhotosRepository: ReceivedPhotosRepository,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
@@ -40,6 +43,10 @@ open class ReceivePhotosUseCase(
 
       if (photoData.isPhotoNamesEmpty()) {
         throw ReceivePhotosServiceException.PhotoNamesAreEmpty()
+      }
+
+      if (!netUtils.canAccessNetwork()) {
+        throw NetworkAccessDisabledInSettings()
       }
 
       val receivedPhotos = receivePhotos(photoData.userId, photoData.photoNames)

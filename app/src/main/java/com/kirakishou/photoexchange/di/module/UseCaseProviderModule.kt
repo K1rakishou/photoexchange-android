@@ -24,6 +24,7 @@ class UseCaseProviderModule {
                                  timeUtils: TimeUtils,
                                  fileUtils: FileUtils,
                                  bitmapUtils: BitmapUtils,
+                                 netUtils: NetUtils,
                                  takenPhotosRepository: TakenPhotosRepository,
                                  uploadedPhotosRepository: UploadedPhotosRepository,
                                  dispatchersProvider: DispatchersProvider): UploadPhotosUseCase {
@@ -33,6 +34,7 @@ class UseCaseProviderModule {
       timeUtils,
       fileUtils,
       bitmapUtils,
+      netUtils,
       takenPhotosRepository,
       uploadedPhotosRepository,
       dispatchersProvider
@@ -43,6 +45,7 @@ class UseCaseProviderModule {
   @Provides
   fun provideFindPhotoAnswersUseCase(database: MyDatabase,
                                      apiClient: ApiClient,
+                                     netUtils: NetUtils,
                                      photoAdditionalInfoUtils: PhotoAdditionalInfoUtils,
                                      receivedPhotosRepository: ReceivedPhotosRepository,
                                      takenPhotosRepository: TakenPhotosRepository,
@@ -52,6 +55,7 @@ class UseCaseProviderModule {
     return ReceivePhotosUseCase(
       database,
       apiClient,
+      netUtils,
       photoAdditionalInfoUtils,
       receivedPhotosRepository,
       uploadedPhotosRepository,
@@ -67,7 +71,6 @@ class UseCaseProviderModule {
                                      timeUtils: TimeUtils,
                                      pagedApiUtils: PagedApiUtils,
                                      photoAdditionalInfoUtils: PhotoAdditionalInfoUtils,
-                                     netUtils: NetUtils,
                                      galleryPhotosRepository: GalleryPhotosRepository,
                                      photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
                                      blacklistedPhotoRepository: BlacklistedPhotoRepository,
@@ -78,7 +81,6 @@ class UseCaseProviderModule {
       timeUtils,
       pagedApiUtils,
       photoAdditionalInfoUtils,
-      netUtils,
       galleryPhotosRepository,
       photoAdditionalInfoRepository,
       blacklistedPhotoRepository,
@@ -89,15 +91,15 @@ class UseCaseProviderModule {
 
   @Singleton
   @Provides
-  fun provideReportPhotoUseCase(database: MyDatabase,
-                                apiClient: ApiClient,
+  fun provideReportPhotoUseCase(apiClient: ApiClient,
+                                netUtils: NetUtils,
                                 settingsRepository: SettingsRepository,
                                 galleryPhotosRepository: GalleryPhotosRepository,
                                 photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
                                 dispatchersProvider: DispatchersProvider): ReportPhotoUseCase {
     return ReportPhotoUseCase(
-      database,
       apiClient,
+      netUtils,
       settingsRepository,
       galleryPhotosRepository,
       photoAdditionalInfoRepository,
@@ -107,15 +109,15 @@ class UseCaseProviderModule {
 
   @Singleton
   @Provides
-  fun provideFavouritePhotoUseCase(database: MyDatabase,
-                                   apiClient: ApiClient,
+  fun provideFavouritePhotoUseCase(apiClient: ApiClient,
+                                   netUtils: NetUtils,
                                    settingsRepository: SettingsRepository,
                                    galleryPhotosRepository: GalleryPhotosRepository,
                                    photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
                                    dispatchersProvider: DispatchersProvider): FavouritePhotoUseCase {
     return FavouritePhotoUseCase(
-      database,
       apiClient,
+      netUtils,
       settingsRepository,
       galleryPhotosRepository,
       photoAdditionalInfoRepository,
@@ -125,12 +127,14 @@ class UseCaseProviderModule {
 
   @Singleton
   @Provides
-  fun provideGetUserIdUseCase(settingsRepository: SettingsRepository,
-                              apiClient: ApiClient,
+  fun provideGetUserIdUseCase(apiClient: ApiClient,
+                              netUtils: NetUtils,
+                              settingsRepository: SettingsRepository,
                               dispatchersProvider: DispatchersProvider): GetUserIdUseCase {
     return GetUserIdUseCase(
-      settingsRepository,
       apiClient,
+      netUtils,
+      settingsRepository,
       dispatchersProvider
     )
   }
@@ -183,15 +187,17 @@ class UseCaseProviderModule {
 
   @Singleton
   @Provides
-  fun provideRestoreAccountUseCase(database: MyDatabase,
-                                   apiClient: ApiClient,
+  fun provideRestoreAccountUseCase(apiClient: ApiClient,
+                                   database: MyDatabase,
+                                   netUtils: NetUtils,
                                    settingsRepository: SettingsRepository,
                                    uploadedPhotosRepository: UploadedPhotosRepository,
                                    receivedPhotosRepository: ReceivedPhotosRepository,
                                    dispatchersProvider: DispatchersProvider): RestoreAccountUseCase {
     return RestoreAccountUseCase(
-      database,
       apiClient,
+      database,
+      netUtils,
       settingsRepository,
       uploadedPhotosRepository,
       receivedPhotosRepository,
@@ -202,13 +208,15 @@ class UseCaseProviderModule {
   @Singleton
   @Provides
   fun provideUpdateFirebaseTokenUseCase(apiClient: ApiClient,
+                                        netUtils: NetUtils,
                                         settingsRepository: SettingsRepository,
                                         firebaseRemoteSource: FirebaseRemoteSource,
                                         dispatchersProvider: DispatchersProvider): UpdateFirebaseTokenUseCase {
     return UpdateFirebaseTokenUseCase(
+      apiClient,
+      netUtils,
       settingsRepository,
       firebaseRemoteSource,
-      apiClient,
       dispatchersProvider
     )
   }
