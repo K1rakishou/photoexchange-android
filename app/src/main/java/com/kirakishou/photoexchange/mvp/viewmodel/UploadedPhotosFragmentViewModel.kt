@@ -110,7 +110,6 @@ class UploadedPhotosFragmentViewModel(
         }
         is UpdateStateResult.NothingToUpdate -> {}
       }.safe
-
     }
   }
 
