@@ -335,7 +335,7 @@ class ReceivedPhotosFragmentViewModel(
           )
 
           intercom.tell<UploadedPhotosFragment>()
-            .to(UploadedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived(receivedPhotos.page.map { it }))
+            .to(UploadedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotosReceived(receivedPhotos.page.map { it }))
 
           Success(receivedPhotos)
         } catch (error: Throwable) {

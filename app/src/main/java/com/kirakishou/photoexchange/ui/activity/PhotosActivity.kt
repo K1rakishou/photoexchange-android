@@ -408,7 +408,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
     when (event) {
       is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived -> {
         viewModel.intercom.tell<UploadedPhotosFragment>()
-          .that(UploadedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived(event.receivedPhotos))
+          .that(UploadedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotosReceived(event.receivedPhotos))
         viewModel.intercom.tell<ReceivedPhotosFragment>()
           .that(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived(event.receivedPhotos))
 
