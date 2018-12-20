@@ -9,8 +9,11 @@ import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosReposi
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.exception.ApiErrorException
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.exception.ImageLoadingDisabledInSettings
+import com.kirakishou.photoexchange.helper.exception.NetworkAccessDisabledInSettings
 import com.kirakishou.photoexchange.helper.util.BitmapUtils
 import com.kirakishou.photoexchange.helper.util.FileUtils
+import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
@@ -24,6 +27,7 @@ open class UploadPhotosUseCase(
   private val timeUtils: TimeUtils,
   private val fileUtils: FileUtils,
   private val bitmapUtils: BitmapUtils,
+  private val netUtils: NetUtils,
   private val takenPhotosRepository: TakenPhotosRepository,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
   dispatchersProvider: DispatchersProvider
@@ -37,6 +41,10 @@ open class UploadPhotosUseCase(
     channel: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
   ): UploadPhotosUseCase.UploadPhotoResult {
     return withContext(coroutineContext) {
+      if (!netUtils.canLoadImages()) {
+        throw ImageLoadingDisabledInSettings()
+      }
+
       if (!photo.fileExists()) {
         val path = photo.photoTempFile?.absolutePath ?: "(No photoTempFile)"
         Timber.tag(TAG).e("Photo does not exists on disk! $path")

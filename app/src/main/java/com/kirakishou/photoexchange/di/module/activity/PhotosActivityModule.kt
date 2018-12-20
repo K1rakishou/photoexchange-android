@@ -5,6 +5,7 @@ import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
+import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.interactors.*
 import com.kirakishou.photoexchange.mvp.viewmodel.GalleryFragmentViewModel
@@ -74,7 +75,6 @@ open class PhotosActivityModule(
   @Provides
   fun provideReceivedPhotosFragmentViewModel(intercom: PhotosActivityViewModelIntercom,
                                              viewState: ReceivedPhotosFragmentState,
-                                             timeUtils: TimeUtils,
                                              receivedPhotosRepository: ReceivedPhotosRepository,
                                              getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
                                              favouritePhotoUseCase: FavouritePhotoUseCase,
@@ -83,7 +83,6 @@ open class PhotosActivityModule(
     return ReceivedPhotosFragmentViewModel(
       viewState,
       intercom,
-      timeUtils,
       receivedPhotosRepository,
       getReceivedPhotosUseCase,
       favouritePhotoUseCase,
@@ -118,6 +117,7 @@ open class PhotosActivityModule(
                               receivedPhotosFragmentViewModel: ReceivedPhotosFragmentViewModel,
                               galleryFragmentViewModel: GalleryFragmentViewModel,
                               intercom: PhotosActivityViewModelIntercom,
+                              netUtils: NetUtils,
                               settingsRepository: SettingsRepository,
                               takenPhotosRepository: TakenPhotosRepository,
                               uploadedPhotosRepository: UploadedPhotosRepository,
@@ -130,6 +130,7 @@ open class PhotosActivityModule(
       receivedPhotosFragmentViewModel,
       galleryFragmentViewModel,
       intercom,
+      netUtils,
       settingsRepository,
       takenPhotosRepository,
       uploadedPhotosRepository,

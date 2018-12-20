@@ -34,31 +34,22 @@ open class GetUploadedPhotosUseCase(
   ): Paged<UploadedPhoto> {
     return withContext(coroutineContext) {
       Timber.tag(TAG).d("loadPageOfPhotos called")
+
+      if (forced) {
+        resetTimer()
+      }
+
       val (lastUploadedOn, userId) = getParameters(lastUploadedOnParam)
 
-      return@withContext getPage(
-        forced,
+      val uploadedPhotosPage = getPageOfUploadedPhotos(
         firstUploadedOn,
         lastUploadedOn,
         userId,
         count
       )
-    }
-  }
 
-  suspend fun getPage(
-    forced: Boolean,
-    firstUploadedOn: Long,
-    lastUploadedOn: Long,
-    userId: String,
-    count: Int
-  ): Paged<UploadedPhoto> {
-    if (forced) {
-      resetTimer()
+      return@withContext splitPhotos(uploadedPhotosPage)
     }
-
-    val uploadedPhotosPage = getPageOfUploadedPhotos(firstUploadedOn, lastUploadedOn, userId, count)
-    return splitPhotos(uploadedPhotosPage)
   }
 
   private fun resetTimer() {

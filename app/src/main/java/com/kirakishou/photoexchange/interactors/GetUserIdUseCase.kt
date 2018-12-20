@@ -4,11 +4,14 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.exception.NetworkAccessDisabledInSettings
+import com.kirakishou.photoexchange.helper.util.NetUtils
 import kotlinx.coroutines.withContext
 
 open class GetUserIdUseCase(
-  private val settingsRepository: SettingsRepository,
   private val apiClient: ApiClient,
+  private val netUtils: NetUtils,
+  private val settingsRepository: SettingsRepository,
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
   private val TAG = "GetUserIdUseCase"
@@ -18,6 +21,10 @@ open class GetUserIdUseCase(
       val userId = settingsRepository.getUserId()
       if (userId.isNotEmpty()) {
         return@withContext userId
+      }
+
+      if (!netUtils.canAccessNetwork()) {
+        throw NetworkAccessDisabledInSettings()
       }
 
       val newUserId = apiClient.getUserId()

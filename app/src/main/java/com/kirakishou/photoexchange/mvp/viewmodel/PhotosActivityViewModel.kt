@@ -11,6 +11,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
+import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.interactors.BlacklistPhotoUseCase
 import com.kirakishou.photoexchange.interactors.CheckFirebaseAvailabilityUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
@@ -31,6 +32,7 @@ class PhotosActivityViewModel(
   val receivedPhotosFragmentViewModel: ReceivedPhotosFragmentViewModel,
   val galleryFragmentViewModel: GalleryFragmentViewModel,
   val intercom: PhotosActivityViewModelIntercom,
+  private val netUtils: NetUtils,
   private val settingsRepository: SettingsRepository,
   private val takenPhotosRepository: TakenPhotosRepository,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
@@ -49,9 +51,12 @@ class PhotosActivityViewModel(
     super.onCleared()
   }
 
-  //TODO: add netUtils.canLoadImages()
   suspend fun checkCanUploadPhotos(): Boolean {
     return withContext(coroutineContext) {
+      if (!netUtils.canLoadImages()) {
+        return@withContext false
+      }
+
       val count = takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
       Timber.tag(TAG).d("Queued up photo count = $count")
 
@@ -59,10 +64,13 @@ class PhotosActivityViewModel(
     }
   }
 
-  //TODO: add netUtils.canAccessNetwork()
   @SuppressLint("BinaryOperationInTimber")
   suspend fun checkCanReceivePhotos(): Boolean {
     return withContext(coroutineContext) {
+      if (!netUtils.canAccessNetwork()) {
+        return@withContext false
+      }
+
       val uploadedPhotosCount = uploadedPhotosRepository.count()
       val receivedPhotosCount = receivedPhotosRepository.count()
 

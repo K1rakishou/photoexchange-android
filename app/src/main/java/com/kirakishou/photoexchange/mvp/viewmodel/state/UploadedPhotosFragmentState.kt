@@ -37,7 +37,7 @@ data class UploadedPhotosFragmentState(
     return UpdateStateResult.Update(updatedPhotos)
   }
 
-  fun updateReceiverInfo(
+  fun onNewPhotoNotificationReceived(
     photoExchangedData: PhotoExchangedData
   ): UpdateStateResult<List<UploadedPhoto>> {
     val photoIndex = uploadedPhotos.indexOfFirst { uploadedPhoto ->
@@ -72,7 +72,7 @@ data class UploadedPhotosFragmentState(
     return UpdateStateResult.Update(updatedPhotos)
   }
 
-  fun replaceQueuedUpPhotoWithUploading(photo: TakenPhoto): UpdateStateResult<List<TakenPhoto>> {
+  fun onPhotoUploadingStart(photo: TakenPhoto): UpdateStateResult<List<TakenPhoto>> {
     val photoIndex = takenPhotos
       .indexOfFirst { it.id == photo.id && it.photoState == PhotoState.PHOTO_QUEUED_UP }
 
@@ -88,7 +88,7 @@ data class UploadedPhotosFragmentState(
     return UpdateStateResult.Update(updatedPhotos)
   }
 
-  fun updateUploadingPhotoProgress(photo: TakenPhoto, progress: Int): UpdateStateResult<List<TakenPhoto>> {
+  fun onPhotoUploadingProgress(photo: TakenPhoto, progress: Int): UpdateStateResult<List<TakenPhoto>> {
     val photoIndex = takenPhotos.indexOfFirst { takenPhoto ->
       takenPhoto.id == photo.id && takenPhoto.photoState == PhotoState.PHOTO_UPLOADING
     }
@@ -105,7 +105,7 @@ data class UploadedPhotosFragmentState(
     return UpdateStateResult.Update(updatedPhotos)
   }
 
-  fun replaceUploadingPhotoWithUploaded(
+  fun onPhotoUploaded(
     photo: TakenPhoto,
     newPhotoId: Long,
     newPhotoName: String,
@@ -138,7 +138,7 @@ data class UploadedPhotosFragmentState(
     return UpdateStateResult.Update(newTakenPhotos to newUploadedPhotos)
   }
 
-  fun replaceUploadingPhotoWithFailed(photo: TakenPhoto): UpdateStateResult<List<TakenPhoto>> {
+  fun onFailedToUploadPhoto(photo: TakenPhoto): UpdateStateResult<List<TakenPhoto>> {
     val photoIndex = takenPhotos.indexOfFirst { takenPhoto ->
       takenPhoto.id == photo.id && takenPhoto.photoState == PhotoState.PHOTO_UPLOADING
     }
@@ -155,7 +155,7 @@ data class UploadedPhotosFragmentState(
     return UpdateStateResult.Update(updatedPhotos)
   }
 
-  fun updateReceiverInfo(receivedPhotos: List<ReceivedPhoto>): UpdateStateResult<List<UploadedPhoto>> {
+  fun onPhotosReceived(receivedPhotos: List<ReceivedPhoto>): UpdateStateResult<List<UploadedPhoto>> {
     val updatedPhotos = mutableListOf<UploadedPhoto>()
 
     for (uploadedPhoto in uploadedPhotos) {

@@ -110,13 +110,12 @@ class UploadedPhotosFragmentViewModel(
         }
         is UpdateStateResult.NothingToUpdate -> {}
       }.safe
-
     }
   }
 
   private fun onNewPhotoNotificationReceivedInternal(photoExchangedData: PhotoExchangedData) {
     withState { state ->
-      val updateResult = state.updateReceiverInfo(photoExchangedData)
+      val updateResult = state.onNewPhotoNotificationReceived(photoExchangedData)
 
       when (updateResult) {
         is UpdateStateResult.Update -> {
@@ -260,7 +259,7 @@ class UploadedPhotosFragmentViewModel(
         Timber.tag(TAG).d("OnPhotoUploadingStart")
 
         withState { state ->
-          val updateResult = state.replaceQueuedUpPhotoWithUploading(event.photo)
+          val updateResult = state.onPhotoUploadingStart(event.photo)
           if (updateResult !is UpdateStateResult.Update) {
             throw IllegalStateException("Not implemented for result ${updateResult::class}")
           }
@@ -272,7 +271,7 @@ class UploadedPhotosFragmentViewModel(
         Timber.tag(TAG).d("OnPhotoUploadingProgress")
 
         withState { state ->
-          val updateResult = state.updateUploadingPhotoProgress(event.photo, event.progress)
+          val updateResult = state.onPhotoUploadingProgress(event.photo, event.progress)
           if (updateResult !is UpdateStateResult.Update) {
             throw IllegalStateException("Not implemented for result ${updateResult::class}")
           }
@@ -284,7 +283,7 @@ class UploadedPhotosFragmentViewModel(
         Timber.tag(TAG).d("OnPhotoUploaded")
 
         withState { state ->
-          val updateResult = state.replaceUploadingPhotoWithUploaded(
+          val updateResult = state.onPhotoUploaded(
             event.photo,
             event.newPhotoId,
             event.newPhotoName,
@@ -304,7 +303,7 @@ class UploadedPhotosFragmentViewModel(
         Timber.tag(TAG).d("OnFailedToUploadPhoto")
 
         withState { state ->
-          val updateResult = state.replaceUploadingPhotoWithFailed(event.photo)
+          val updateResult = state.onFailedToUploadPhoto(event.photo)
           if (updateResult !is UpdateStateResult.Update) {
             throw IllegalStateException("Not implemented for result ${updateResult::class}")
           }
@@ -338,15 +337,15 @@ class UploadedPhotosFragmentViewModel(
 
   fun onReceiveEvent(event: UploadedPhotosFragmentEvent.ReceivePhotosEvent) {
     when (event) {
-      is UploadedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived -> {
-        Timber.tag(TAG).d("PhotosReceived")
+      is UploadedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotosReceived -> {
+        Timber.tag(TAG).d("OnPhotosReceived")
 
         if (event.receivedPhotos.isEmpty()) {
           return
         }
 
         withState { state ->
-          val updateResult = state.updateReceiverInfo(event.receivedPhotos)
+          val updateResult = state.onPhotosReceived(event.receivedPhotos)
           if (updateResult !is UpdateStateResult.Update) {
             throw IllegalStateException("Not implemented for result ${updateResult::class}")
           }

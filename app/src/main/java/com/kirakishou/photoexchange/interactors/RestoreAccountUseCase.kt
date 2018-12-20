@@ -7,11 +7,14 @@ import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRep
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.exception.NetworkAccessDisabledInSettings
+import com.kirakishou.photoexchange.helper.util.NetUtils
 import kotlinx.coroutines.withContext
 
 open class RestoreAccountUseCase(
-  private val database: MyDatabase,
   private val apiClient: ApiClient,
+  private val database: MyDatabase,
+  private val netUtils: NetUtils,
   private val settingsRepository: SettingsRepository,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
   private val receivedPhotosRepository: ReceivedPhotosRepository,
@@ -20,6 +23,10 @@ open class RestoreAccountUseCase(
 
   suspend fun restoreAccount(oldUserId: String): Boolean {
     return withContext(coroutineContext) {
+      if (!netUtils.canAccessNetwork()) {
+        throw NetworkAccessDisabledInSettings()
+      }
+
       val accountExists = apiClient.checkAccountExists(oldUserId)
       if (!accountExists) {
         return@withContext false

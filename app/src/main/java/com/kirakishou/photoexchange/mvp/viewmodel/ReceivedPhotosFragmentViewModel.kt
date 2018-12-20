@@ -3,27 +3,25 @@ package com.kirakishou.photoexchange.mvp.viewmodel
 import androidx.fragment.app.FragmentActivity
 import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
-import com.kirakishou.photoexchange.mvp.model.PhotoSize
-import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.extension.safe
-import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
-import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
-import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
-import com.kirakishou.photoexchange.interactors.GetReceivedPhotosUseCase
-import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.helper.Constants
-import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.helper.Paged
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.extension.filterDuplicatesWith
+import com.kirakishou.photoexchange.helper.extension.safe
+import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
 import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
-import com.kirakishou.photoexchange.helper.util.TimeUtils
+import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
+import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
+import com.kirakishou.photoexchange.interactors.GetReceivedPhotosUseCase
 import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
-import com.kirakishou.photoexchange.mvp.model.photo.PhotoAdditionalInfo
+import com.kirakishou.photoexchange.mvp.model.PhotoSize
+import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.state.ReceivedPhotosFragmentState
+import com.kirakishou.photoexchange.mvp.viewmodel.state.UpdateStateResult
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
 import com.kirakishou.photoexchange.ui.fragment.UploadedPhotosFragment
@@ -39,7 +37,6 @@ import kotlin.coroutines.CoroutineContext
 class ReceivedPhotosFragmentViewModel(
   initialState: ReceivedPhotosFragmentState,
   private val intercom: PhotosActivityViewModelIntercom,
-  private val timeUtils: TimeUtils,
   private val receivedPhotosRepository: ReceivedPhotosRepository,
   private val getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
   private val favouritePhotoUseCase: FavouritePhotoUseCase,
@@ -131,25 +128,10 @@ class ReceivedPhotosFragmentViewModel(
   ) {
     withState { state ->
       launch {
-        val photoIndex = state.receivedPhotos.indexOfFirst { it.receivedPhotoName == photoName }
-        if (photoIndex == -1) {
-          return@launch
+        val updateResult = state.onPhotoFavourited(photoName, isFavourited, favouritesCount)
+        if (updateResult is UpdateStateResult.Update) {
+          setState { copy(receivedPhotos = updateResult.update) }
         }
-
-        val updatedPhotos = state.receivedPhotos.toMutableList()
-        val receivedPhoto = updatedPhotos[photoIndex]
-
-        val updatedPhotoInfo = updatedPhotos[photoIndex].photoAdditionalInfo
-          .copy(
-            isFavourited = isFavourited,
-            favouritesCount = favouritesCount
-          )
-
-        updatedPhotos[photoIndex] = receivedPhoto.copy(
-          photoAdditionalInfo = updatedPhotoInfo
-        )
-
-        setState { copy(receivedPhotos = updatedPhotos) }
       }
     }
   }
@@ -157,21 +139,10 @@ class ReceivedPhotosFragmentViewModel(
   private fun onPhotoReportedInternal(photoName: String, isReported: Boolean) {
     withState { state ->
       launch {
-        val photoIndex = state.receivedPhotos.indexOfFirst { it.receivedPhotoName == photoName }
-        if (photoIndex == -1) {
-          return@launch
+        val updateResult = state.onPhotoReported(photoName, isReported)
+        if (updateResult is UpdateStateResult.Update) {
+          setState { copy(receivedPhotos = updateResult.update) }
         }
-
-        val updatedPhotos = state.receivedPhotos.toMutableList()
-        val receivedPhoto = updatedPhotos[photoIndex]
-
-        val updatedPhotoInfo = updatedPhotos[photoIndex].photoAdditionalInfo
-          .copy(isReported = isReported)
-
-        updatedPhotos[photoIndex] = receivedPhoto
-          .copy(photoAdditionalInfo = updatedPhotoInfo)
-
-        setState { copy(receivedPhotos = updatedPhotos) }
       }
     }
   }
@@ -207,19 +178,7 @@ class ReceivedPhotosFragmentViewModel(
           return@launch
         }
 
-        val photoIndex = state.receivedPhotos.indexOfFirst { it.receivedPhotoName == photoName }
-        if (photoIndex == -1) {
-          return@launch
-        }
-
-        val updatedPhotos = state.receivedPhotos.toMutableList()
-        val galleryPhoto = updatedPhotos[photoIndex]
-
-        val updatedPhotoInfo = updatedPhotos[photoIndex].photoAdditionalInfo
-          .copy(isReported = reportResult)
-
-        updatedPhotos[photoIndex] = galleryPhoto
-          .copy(photoAdditionalInfo = updatedPhotoInfo)
+        val updateResult = state.reportPhoto(photoName, reportResult)
 
         //only show delete photo dialog when we reporting a photo and not removing the report
         if (reportResult) {
@@ -231,7 +190,9 @@ class ReceivedPhotosFragmentViewModel(
         intercom.tell<GalleryFragment>()
           .that(GalleryFragmentEvent.GeneralEvents.PhotoReported(photoName, reportResult))
 
-        setState { copy(receivedPhotos = updatedPhotos) }
+        if (updateResult is UpdateStateResult.Update) {
+          setState { copy(receivedPhotos = updateResult.update) }
+        }
       }
     }
   }
@@ -267,22 +228,10 @@ class ReceivedPhotosFragmentViewModel(
           return@launch
         }
 
-        val photoIndex = state.receivedPhotos.indexOfFirst { it.receivedPhotoName == photoName }
-        if (photoIndex == -1) {
-          return@launch
-        }
-
-        val updatedPhotos = state.receivedPhotos.toMutableList()
-        val galleryPhoto = updatedPhotos[photoIndex]
-
-        val updatedPhotoInfo = updatedPhotos[photoIndex].photoAdditionalInfo
-          .copy(
-            isFavourited = favouriteResult.isFavourited,
-            favouritesCount = favouriteResult.favouritesCount
-          )
-
-        updatedPhotos[photoIndex] = galleryPhoto.copy(
-          photoAdditionalInfo = updatedPhotoInfo
+        val updateResult = state.favouritePhoto(
+          photoName,
+          favouriteResult.isFavourited,
+          favouriteResult.favouritesCount
         )
 
         //notify GalleryFragment that a photo has been favourited
@@ -291,86 +240,54 @@ class ReceivedPhotosFragmentViewModel(
             photoName, favouriteResult.isFavourited, favouriteResult.favouritesCount
           ))
 
-        setState { copy(receivedPhotos = updatedPhotos) }
+        if (updateResult is UpdateStateResult.Update) {
+          setState { copy(receivedPhotos = updateResult.update) }
+        }
       }
     }
   }
 
   private fun removePhotoInternal(photoName: String) {
     withState { state ->
-      val photoIndex = state.receivedPhotos.indexOfFirst { it.receivedPhotoName == photoName }
-      if (photoIndex == -1) {
-        //nothing to remove
-        return@withState
+      val updateResult = state.removePhoto(photoName)
+      if (updateResult is UpdateStateResult.Update) {
+        setState { copy(receivedPhotos = updateResult.update) }
       }
-
-      val updatedPhotos = state.receivedPhotos.toMutableList().apply {
-        removeAt(photoIndex)
-      }
-
-      setState { copy(receivedPhotos = updatedPhotos) }
     }
   }
 
   private fun onNewPhotoNotificationReceivedInternal(photoExchangedData: PhotoExchangedData) {
     withState { state ->
-      val photoIndex = state.receivedPhotos.indexOfFirst { receivedPhoto ->
-        receivedPhoto.receivedPhotoName == photoExchangedData.receivedPhotoName
-      }
-
-      if (photoIndex != -1) {
-        //photo is already shown
-        return@withState
-      }
-
-      val newPhoto = ReceivedPhoto(
-        photoExchangedData.uploadedPhotoName,
-        photoExchangedData.receivedPhotoName,
-        LonLat(
-          photoExchangedData.lon,
-          photoExchangedData.lat
-        ),
-        photoExchangedData.uploadedOn,
-        PhotoAdditionalInfo.empty(photoExchangedData.receivedPhotoName),
-        true,
+      //TODO: fetch photo additional info here
+      val updateResult = state.onNewPhotoNotificationReceived(
+        photoExchangedData,
         photoSize
       )
-
-      //TODO: fetch photo additional info here
-
-      val updatedPhotos = state.receivedPhotos.toMutableList() + newPhoto
-      val sortedPhotos = updatedPhotos
-        .sortedByDescending { it.uploadedOn }
 
       //show a snackbar telling user that we got a photo
       intercom.tell<PhotosActivity>()
         .that(PhotosActivityEvent.OnNewPhotoReceived)
 
-      setState { copy(receivedPhotos = sortedPhotos) }
+      if (updateResult is UpdateStateResult.Update) {
+        setState { copy(receivedPhotos = updateResult.update) }
+      }
     }
   }
 
   private fun swapPhotoAndMapInternal(receivedPhotoName: String) {
     withState { state ->
-      val photoIndex = state.receivedPhotos.indexOfFirst { it.receivedPhotoName == receivedPhotoName }
-      if (photoIndex == -1) {
-        return@withState
-      }
+      val updateResult = state.swapMapAndPhoto(receivedPhotoName)
 
-      if (state.receivedPhotos[photoIndex].lonLat.isEmpty()) {
-        intercom.tell<PhotosActivity>().to(PhotosActivityEvent
-          .ShowToast("Photo was sent anonymously"))
-        return@withState
-      }
-
-      val oldShowPhoto = state.receivedPhotos[photoIndex].showPhoto
-      val updatedPhoto = state.receivedPhotos[photoIndex]
-        .copy(showPhoto = !oldShowPhoto)
-
-      val updatedPhotos = state.receivedPhotos.toMutableList()
-      updatedPhotos[photoIndex] = updatedPhoto
-
-      setState { copy(receivedPhotos = updatedPhotos) }
+      when (updateResult) {
+        is UpdateStateResult.Update -> {
+          setState { copy(receivedPhotos = updateResult.update) }
+        }
+        is UpdateStateResult.SendIntercom -> {
+          intercom.tell<PhotosActivity>().to(PhotosActivityEvent
+            .ShowToast("Photo was sent anonymously"))
+        }
+        is UpdateStateResult.NothingToUpdate -> {}
+      }.safe
     }
   }
 
@@ -418,7 +335,7 @@ class ReceivedPhotosFragmentViewModel(
           )
 
           intercom.tell<UploadedPhotosFragment>()
-            .to(UploadedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived(receivedPhotos.page.map { it }))
+            .to(UploadedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotosReceived(receivedPhotos.page.map { it }))
 
           Success(receivedPhotos)
         } catch (error: Throwable) {
@@ -451,29 +368,18 @@ class ReceivedPhotosFragmentViewModel(
     when (event) {
       is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived -> {
         withState { state ->
-          val updatedPhotos = state.receivedPhotos.toMutableList()
-
-          for (receivedPhoto in event.receivedPhotos) {
-            val photoIndex = state.receivedPhotos
-              .indexOfFirst { it.receivedPhotoName == receivedPhoto.receivedPhotoName }
-
-            if (photoIndex != -1) {
-              updatedPhotos[photoIndex] = receivedPhoto
-            } else {
-              updatedPhotos.add(receivedPhoto)
-            }
+          val updateResult = state.onPhotosReceived(event.receivedPhotos)
+          if (updateResult !is UpdateStateResult.Update) {
+            throw IllegalStateException("Not implemented for result ${updateResult::class}")
           }
 
-          val updatedSortedPhotos = updatedPhotos
-            .sortedByDescending { it.uploadedOn }
-
           //to avoid "Your reducer must be pure!" exceptions
-          val request = Success(Paged(updatedSortedPhotos))
+          val request = Success(Paged(updateResult.update))
 
           setState {
             copy(
               receivedPhotosRequest = request,
-              receivedPhotos = updatedSortedPhotos
+              receivedPhotos = updateResult.update
             )
           }
         }
@@ -516,6 +422,7 @@ class ReceivedPhotosFragmentViewModel(
     class FavouritePhoto(val photoName: String) : ActorAction()
     class OnPhotoReported(val photoName: String,
                           val isReported: Boolean) : ActorAction()
+
     class OnPhotoFavourited(val photoName: String,
                             val isFavourited: Boolean,
                             val favouritesCount: Long) : ActorAction()

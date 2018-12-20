@@ -7,13 +7,16 @@ import com.kirakishou.photoexchange.helper.database.source.remote.FirebaseRemote
 import com.kirakishou.photoexchange.helper.exception.ApiErrorException
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.helper.exception.FirebaseException
+import com.kirakishou.photoexchange.helper.exception.NetworkAccessDisabledInSettings
+import com.kirakishou.photoexchange.helper.util.NetUtils
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 open class UpdateFirebaseTokenUseCase(
+  private val apiClient: ApiClient,
+  private val netUtils: NetUtils,
   private val settingsRepository: SettingsRepository,
   private val firebaseRemoteSource: FirebaseRemoteSource,
-  private val apiClient: ApiClient,
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
   private val TAG = "UpdateFirebaseTokenUseCase"
@@ -27,6 +30,10 @@ open class UpdateFirebaseTokenUseCase(
       //otherwise we need to update token
       if (newToken.isNotEmpty() && regularToken.isNotEmpty() && newToken == regularToken) {
         return@withContext
+      }
+
+      if (!netUtils.canAccessNetwork()) {
+        throw NetworkAccessDisabledInSettings()
       }
 
       return@withContext updateFirebaseTokenInternal()

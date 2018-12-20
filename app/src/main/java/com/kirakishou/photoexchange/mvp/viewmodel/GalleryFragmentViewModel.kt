@@ -17,6 +17,7 @@ import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoSize
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.state.GalleryFragmentState
+import com.kirakishou.photoexchange.mvp.viewmodel.state.UpdateStateResult
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import io.reactivex.disposables.CompositeDisposable
@@ -117,25 +118,15 @@ class GalleryFragmentViewModel(
   ) {
     withState { state ->
       launch {
-        val photoIndex = state.galleryPhotos.indexOfFirst { it.photoName == photoName }
-        if (photoIndex == -1) {
-          return@launch
-        }
-
-        val updatedPhotos = state.galleryPhotos.toMutableList()
-        val galleryPhoto = updatedPhotos[photoIndex]
-
-        val updatedPhotoInfo = updatedPhotos[photoIndex].photoAdditionalInfo
-          .copy(
-            isFavourited = isFavourited,
-            favouritesCount = favouritesCount
-          )
-
-        updatedPhotos[photoIndex] = galleryPhoto.copy(
-          photoAdditionalInfo = updatedPhotoInfo
+        val updateResult = state.onPhotoFavourited(
+          photoName,
+          isFavourited,
+          favouritesCount
         )
 
-        setState { copy(galleryPhotos = updatedPhotos) }
+        if (updateResult is UpdateStateResult.Update) {
+          setState { copy(galleryPhotos = updateResult.update) }
+        }
       }
     }
   }
@@ -143,38 +134,25 @@ class GalleryFragmentViewModel(
   private fun onPhotoReportedInternal(photoName: String, isReported: Boolean) {
     withState { state ->
       launch {
-        val photoIndex = state.galleryPhotos.indexOfFirst { it.photoName == photoName }
-        if (photoIndex == -1) {
-          return@launch
+        val updateResult = state.onPhotoReported(
+          photoName,
+          isReported
+        )
+
+        if (updateResult is UpdateStateResult.Update) {
+          setState { copy(galleryPhotos = updateResult.update) }
         }
-
-        val updatedPhotos = state.galleryPhotos.toMutableList()
-        val galleryPhoto = updatedPhotos[photoIndex]
-
-        val updatedPhotoInfo = updatedPhotos[photoIndex].photoAdditionalInfo
-          .copy(isReported = isReported)
-
-        updatedPhotos[photoIndex] = galleryPhoto
-          .copy(photoAdditionalInfo = updatedPhotoInfo)
-
-        setState { copy(galleryPhotos = updatedPhotos) }
       }
     }
   }
 
   private fun removePhotoInternal(photoName: String) {
     withState { state ->
-      val photoIndex = state.galleryPhotos.indexOfFirst { it.photoName == photoName }
-      if (photoIndex == -1) {
-        //nothing to remove
-        return@withState
-      }
+      val updateResult = state.removePhoto(photoName)
 
-      val updatedPhotos = state.galleryPhotos.toMutableList().apply {
-        removeAt(photoIndex)
+      if (updateResult is UpdateStateResult.Update) {
+        setState { copy(galleryPhotos = updateResult.update) }
       }
-
-      setState { copy(galleryPhotos = updatedPhotos) }
     }
   }
 
@@ -209,19 +187,7 @@ class GalleryFragmentViewModel(
           return@launch
         }
 
-        val photoIndex = state.galleryPhotos.indexOfFirst { it.photoName == photoName }
-        if (photoIndex == -1) {
-          return@launch
-        }
-
-        val updatedPhotos = state.galleryPhotos.toMutableList()
-        val galleryPhoto = updatedPhotos[photoIndex]
-
-        val updatedPhotoInfo = updatedPhotos[photoIndex].photoAdditionalInfo
-          .copy(isReported = reportResult)
-
-        updatedPhotos[photoIndex] = galleryPhoto
-          .copy(photoAdditionalInfo = updatedPhotoInfo)
+        val updateResult = state.reportPhoto(photoName, reportResult)
 
         //only show delete photo dialog when we reporting a photo and not removing the report
         if (reportResult) {
@@ -233,7 +199,9 @@ class GalleryFragmentViewModel(
         intercom.tell<ReceivedPhotosFragment>()
           .that(ReceivedPhotosFragmentEvent.GeneralEvents.PhotoReported(photoName, reportResult))
 
-        setState { copy(galleryPhotos = updatedPhotos) }
+        if (updateResult is UpdateStateResult.Update) {
+          setState { copy(galleryPhotos = updateResult.update) }
+        }
       }
     }
   }
@@ -269,22 +237,10 @@ class GalleryFragmentViewModel(
           return@launch
         }
 
-        val photoIndex = state.galleryPhotos.indexOfFirst { it.photoName == photoName }
-        if (photoIndex == -1) {
-          return@launch
-        }
-
-        val updatedPhotos = state.galleryPhotos.toMutableList()
-        val galleryPhoto = updatedPhotos[photoIndex]
-
-        val updatedPhotoInfo = updatedPhotos[photoIndex].photoAdditionalInfo
-          .copy(
-            isFavourited = favouriteResult.isFavourited,
-            favouritesCount = favouriteResult.favouritesCount
-          )
-
-        updatedPhotos[photoIndex] = galleryPhoto.copy(
-          photoAdditionalInfo = updatedPhotoInfo
+        val updateResult = state.favouritePhoto(
+          photoName,
+          favouriteResult.isFavourited,
+          favouriteResult.favouritesCount
         )
 
         //notify ReceivedPhotosFragment that a photo has been favourited
@@ -293,32 +249,28 @@ class GalleryFragmentViewModel(
             photoName, favouriteResult.isFavourited, favouriteResult.favouritesCount
           ))
 
-        setState { copy(galleryPhotos = updatedPhotos) }
+        if (updateResult is UpdateStateResult.Update) {
+          setState { copy(galleryPhotos = updateResult.update) }
+        }
       }
     }
   }
 
   private fun swapPhotoAndMapInternal(photoName: String) {
     withState { state ->
-      val photoIndex = state.galleryPhotos.indexOfFirst { it.photoName == photoName }
-      if (photoIndex == -1) {
-        return@withState
-      }
+      val updateResult = state.swapPhotoAndMap(photoName)
 
-      if (state.galleryPhotos[photoIndex].lonLat.isEmpty()) {
-        intercom.tell<PhotosActivity>().to(PhotosActivityEvent
-          .ShowToast("Photo was sent anonymously"))
-        return@withState
-      }
-
-      val oldShowPhoto = state.galleryPhotos[photoIndex].showPhoto
-      val updatedPhoto = state.galleryPhotos[photoIndex]
-        .copy(showPhoto = !oldShowPhoto)
-
-      val updatedPhotos = state.galleryPhotos.toMutableList()
-      updatedPhotos[photoIndex] = updatedPhoto
-
-      setState { copy(galleryPhotos = updatedPhotos) }
+      when (updateResult) {
+        is UpdateStateResult.Update -> {
+          setState { copy(galleryPhotos = updateResult.update) }
+        }
+        is UpdateStateResult.SendIntercom -> {
+          intercom.tell<PhotosActivity>().to(PhotosActivityEvent
+            .ShowToast("Photo was sent anonymously"))
+        }
+        is UpdateStateResult.NothingToUpdate -> {
+        }
+      }.safe
     }
   }
 
@@ -411,6 +363,7 @@ class GalleryFragmentViewModel(
     class RemovePhoto(val photoName: String) : ActorAction()
     class OnPhotoReported(val photoName: String,
                           val isReported: Boolean) : ActorAction()
+
     class OnPhotoFavourited(val photoName: String,
                             val isFavourited: Boolean,
                             val favouritesCount: Long) : ActorAction()
