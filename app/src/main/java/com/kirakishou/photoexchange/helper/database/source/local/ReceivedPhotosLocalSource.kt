@@ -5,7 +5,7 @@ import com.kirakishou.photoexchange.helper.database.entity.ReceivedPhotoEntity
 import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
+import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import net.response.data.ReceivedPhotoResponseData
 
@@ -25,15 +25,15 @@ class ReceivedPhotosLocalSource(
     ).isSuccess()
   }
 
-  fun save(photoExchangedData: PhotoExchangedData): Boolean {
+  fun save(newReceivedPhoto: NewReceivedPhoto): Boolean {
     val now = timeUtils.getTimeFast()
 
     val receivedPhotoEntity = ReceivedPhotoEntity(
-      photoExchangedData.uploadedPhotoName,
-      photoExchangedData.receivedPhotoName,
-      photoExchangedData.lon,
-      photoExchangedData.lat,
-      photoExchangedData.uploadedOn,
+      newReceivedPhoto.uploadedPhotoName,
+      newReceivedPhoto.receivedPhotoName,
+      newReceivedPhoto.lon,
+      newReceivedPhoto.lat,
+      newReceivedPhoto.uploadedOn,
       now
     )
 

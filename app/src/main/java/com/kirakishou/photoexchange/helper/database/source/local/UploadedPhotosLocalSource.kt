@@ -61,6 +61,13 @@ open class UploadedPhotosLocalSource(
     return uploadedPhotoDao.findByPhotoName(photoName) != null
   }
 
+  fun findByPhotoName(photoName: String): UploadedPhoto? {
+    val photo = uploadedPhotoDao.findByPhotoName(photoName)
+      ?: return null
+
+    return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhoto(photo)
+  }
+
   fun findMany(photoIds: List<Long>): List<UploadedPhoto> {
     val photos = uploadedPhotoDao.findMany(photoIds)
     return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(photos)
@@ -109,4 +116,5 @@ open class UploadedPhotosLocalSource(
   fun deleteByPhotoName(photoName: String) {
     uploadedPhotoDao.deleteByPhotoName(photoName)
   }
+
 }

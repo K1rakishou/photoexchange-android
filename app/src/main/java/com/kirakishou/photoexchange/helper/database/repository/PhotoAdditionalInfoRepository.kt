@@ -27,4 +27,8 @@ class PhotoAdditionalInfoRepository(
   suspend fun findNotCached(photoNameList: List<String>): List<String> {
     return photoAdditionalInfoLocalSource.findNotCached(photoNameList)
   }
+
+  suspend fun deleteOld() {
+    photoAdditionalInfoLocalSource.deleteOld()
+  }
 }

@@ -6,12 +6,14 @@ import com.kirakishou.photoexchange.helper.database.mapper.PhotoAdditionalInfoMa
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.PhotoAdditionalInfo
 import net.response.data.PhotoAdditionalInfoResponseData
+import timber.log.Timber
 
-//TODO: deleteOld()
 open class PhotoAdditionalInfoLocalSource(
   private val database: MyDatabase,
-  private val timeUtils: TimeUtils
+  private val timeUtils: TimeUtils,
+  private val insertedEarlierThanTimeDelta: Long
 ) {
+  private val TAG = "PhotoAdditionalInfoLocalSource"
   private val photoAdditionalInfoDao = database.photoAdditionalInfoDao()
 
   open fun save(photoAdditionalInfo: PhotoAdditionalInfo): Boolean {
@@ -59,5 +61,12 @@ open class PhotoAdditionalInfoLocalSource(
 
   open fun updateFavouritesCount(photoName: String, favouritesCount: Long): Boolean {
     return photoAdditionalInfoDao.updateFavouritesCount(photoName, favouritesCount) == 1
+  }
+
+  open fun deleteOld() {
+    val now = timeUtils.getTimeFast()
+    val deletedCount = photoAdditionalInfoDao.deleteOlderThan(now - insertedEarlierThanTimeDelta)
+
+    Timber.tag(TAG).d("deleted $deletedCount additional photo infos")
   }
 }

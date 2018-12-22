@@ -8,7 +8,8 @@ import timber.log.Timber
 
 open class BlacklistedPhotoLocalSource(
   private val database: MyDatabase,
-  private val timeUtils: TimeUtils
+  private val timeUtils: TimeUtils,
+  private val blacklistedEarlierThanTimeDelta: Long
 ) {
   private val TAG = "BlacklistedPhotoLocalSource"
   private val blacklistedPhotoDao = database.blacklistedPhotoDao()
@@ -24,20 +25,11 @@ open class BlacklistedPhotoLocalSource(
     return blacklistedPhotoDao.find(photoName) != null
   }
 
-  fun <T> filterBlacklistedPhotos(photos: List<T>, nameSelector: (T) -> String): List<T> {
-    val resultList = mutableListOf<T>()
+  fun deleteOld() {
+    val now = timeUtils.getTimeFast()
+    val deletedCount = blacklistedPhotoDao.deleteOlderThan(now - blacklistedEarlierThanTimeDelta)
 
-    for (photo in photos) {
-      //TODO: make this faster by checking blacklisted photos in batches
-      if (isBlacklisted(nameSelector(photo))) {
-        continue
-      }
-
-      resultList += photo
-    }
-
-    Timber.tag(TAG).d("Filtered ${photos.size - resultList.size} photos")
-    return resultList
+    Timber.tag(TAG).d("deleted $deletedCount blacklisted photos")
   }
 
 }

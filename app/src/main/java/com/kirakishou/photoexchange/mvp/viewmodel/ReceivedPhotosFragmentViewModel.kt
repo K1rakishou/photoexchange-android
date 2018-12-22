@@ -4,6 +4,7 @@ import androidx.fragment.app.FragmentActivity
 import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
 import com.kirakishou.photoexchange.helper.Constants
+import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
@@ -15,10 +16,12 @@ import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
+import com.kirakishou.photoexchange.interactors.GetPhotoAdditionalInfoUseCase
 import com.kirakishou.photoexchange.interactors.GetReceivedPhotosUseCase
 import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
-import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
+import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoSize
+import com.kirakishou.photoexchange.mvp.model.photo.PhotoAdditionalInfo
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.state.ReceivedPhotosFragmentState
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UpdateStateResult
@@ -41,6 +44,7 @@ class ReceivedPhotosFragmentViewModel(
   private val getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
   private val favouritePhotoUseCase: FavouritePhotoUseCase,
   private val reportPhotoUseCase: ReportPhotoUseCase,
+  private val getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
   private val dispatchersProvider: DispatchersProvider
 ) : BaseMvRxViewModel<ReceivedPhotosFragmentState>(initialState, BuildConfig.DEBUG), CoroutineScope {
   private val TAG = "ReceivedPhotosFragmentViewModel"
@@ -66,7 +70,7 @@ class ReceivedPhotosFragmentViewModel(
           is ActorAction.LoadReceivedPhotos -> loadReceivedPhotosInternal(action.forced)
           is ActorAction.ResetState -> resetStateInternal(action.clearCache)
           is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.receivedPhotoName)
-          is ActorAction.OnNewPhotoNotificationReceived -> onNewPhotoNotificationReceivedInternal(action.photoExchangedData)
+          is ActorAction.OnNewPhotosReceived -> onNewPhotoReceivedInternal(action.newReceivedPhotos)
           is ActorAction.RemovePhoto -> removePhotoInternal(action.photoName)
           is ActorAction.FavouritePhoto -> favouritePhotoInternal(action.photoName)
           is ActorAction.ReportPhoto -> reportPhotoInternal(action.photoName)
@@ -91,8 +95,8 @@ class ReceivedPhotosFragmentViewModel(
     launch { viewModelActor.send(ActorAction.SwapPhotoAndMap(receivedPhotoName)) }
   }
 
-  fun onNewPhotoNotificationReceived(photoExchangedData: PhotoExchangedData) {
-    launch { viewModelActor.send(ActorAction.OnNewPhotoNotificationReceived(photoExchangedData)) }
+  fun onNewPhotosReceived(newReceivedPhotos: List<NewReceivedPhoto>) {
+    launch { viewModelActor.send(ActorAction.OnNewPhotosReceived(newReceivedPhotos)) }
   }
 
   fun removePhoto(photoName: String) {
@@ -256,20 +260,88 @@ class ReceivedPhotosFragmentViewModel(
     }
   }
 
-  private fun onNewPhotoNotificationReceivedInternal(photoExchangedData: PhotoExchangedData) {
-    withState { state ->
-      //TODO: fetch photo additional info here
-      val updateResult = state.onNewPhotoNotificationReceived(
-        photoExchangedData,
-        photoSize
+  // FIXME: make faster (use hashSet/Map for filtering already added photos)
+  // This function is called every time a new page of uploaded photos is loaded and
+  // it is a pretty slow function
+  private fun onNewPhotoReceivedInternal(newReceivedPhotos: List<NewReceivedPhoto>) {
+
+    suspend fun updateAdditionalPhotoInfo(
+      photoNameListToFetchAdditionalInfo: MutableList<String>,
+      updatedPhotos: MutableList<ReceivedPhoto>
+    ) {
+      val additionalPhotoInfoList = getPhotoAdditionalInfoUseCase.getPhotoAdditionalInfoByPhotoNameList(
+        photoNameListToFetchAdditionalInfo
       )
 
-      //show a snackbar telling user that we got a photo
-      intercom.tell<PhotosActivity>()
-        .that(PhotosActivityEvent.OnNewPhotoReceived)
+      if (additionalPhotoInfoList == null) {
+        return
+      }
 
-      if (updateResult is UpdateStateResult.Update) {
-        setState { copy(receivedPhotos = updateResult.update) }
+      for (additionalPhotoInfo in additionalPhotoInfoList) {
+        val photoIndex = updatedPhotos.indexOfFirst { photo ->
+          photo.receivedPhotoName == additionalPhotoInfo.photoName
+        }
+
+        if (photoIndex == -1) {
+          continue
+        }
+
+        val photoWithUpdatedAdditionalInfo = updatedPhotos[photoIndex].copy(
+          photoAdditionalInfo = additionalPhotoInfo
+        )
+
+        updatedPhotos.removeAt(photoIndex)
+        updatedPhotos.add(photoIndex, photoWithUpdatedAdditionalInfo)
+      }
+    }
+
+    withState { state ->
+      launch {
+        Timber.tag(TAG).d("onNewPhotoReceivedInternal called with ${newReceivedPhotos.size} new photos")
+
+        val updatedPhotos = state.receivedPhotos.toMutableList()
+        val photoNameListToFetchAdditionalInfo = mutableListOf<String>()
+
+        for (newReceivedPhoto in newReceivedPhotos) {
+          val photoIndex = updatedPhotos.indexOfFirst { receivedPhoto ->
+            receivedPhoto.receivedPhotoName == newReceivedPhoto.receivedPhotoName
+          }
+
+          if (photoIndex != -1) {
+            continue
+          }
+
+          val newPhoto = ReceivedPhoto(
+            newReceivedPhoto.uploadedPhotoName,
+            newReceivedPhoto.receivedPhotoName,
+            LonLat(
+              newReceivedPhoto.lon,
+              newReceivedPhoto.lat
+            ),
+            newReceivedPhoto.uploadedOn,
+            PhotoAdditionalInfo.empty(newReceivedPhoto.receivedPhotoName),
+            true,
+            photoSize
+          )
+
+          updatedPhotos += newPhoto
+          photoNameListToFetchAdditionalInfo += newReceivedPhoto.receivedPhotoName
+        }
+
+        if (photoNameListToFetchAdditionalInfo.isNotEmpty()) {
+          updateAdditionalPhotoInfo(
+            photoNameListToFetchAdditionalInfo,
+            updatedPhotos
+          )
+
+          //show a snackbar telling user that we got a photo
+          intercom.tell<PhotosActivity>()
+            .that(PhotosActivityEvent.OnNewPhotoReceived)
+        }
+
+        updatedPhotos.sortByDescending { it.uploadedOn }
+
+        setState { copy(receivedPhotos = updatedPhotos) }
       }
     }
   }
@@ -349,6 +421,21 @@ class ReceivedPhotosFragmentViewModel(
           .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
           .sortedByDescending { it.uploadedOn }
 
+        if (newPhotos.isNotEmpty()) {
+          val mapped = newPhotos.map { receivedPhoto ->
+            NewReceivedPhoto(
+              receivedPhoto.uploadedPhotoName,
+              receivedPhoto.receivedPhotoName,
+              receivedPhoto.lonLat.lon,
+              receivedPhoto.lonLat.lat,
+              receivedPhoto.uploadedOn
+            )
+          }
+
+          intercom.tell<UploadedPhotosFragment>()
+            .that(UploadedPhotosFragmentEvent.GeneralEvents.OnNewPhotosReceived(mapped))
+        }
+
         val isEndReached = request()?.isEnd ?: false
 
         setState {
@@ -416,7 +503,7 @@ class ReceivedPhotosFragmentViewModel(
     class LoadReceivedPhotos(val forced: Boolean) : ActorAction()
     class ResetState(val clearCache: Boolean) : ActorAction()
     class SwapPhotoAndMap(val receivedPhotoName: String) : ActorAction()
-    class OnNewPhotoNotificationReceived(val photoExchangedData: PhotoExchangedData) : ActorAction()
+    class OnNewPhotosReceived(val newReceivedPhotos: List<NewReceivedPhoto>) : ActorAction()
     class RemovePhoto(val photoName: String) : ActorAction()
     class ReportPhoto(val photoName: String) : ActorAction()
     class FavouritePhoto(val photoName: String) : ActorAction()

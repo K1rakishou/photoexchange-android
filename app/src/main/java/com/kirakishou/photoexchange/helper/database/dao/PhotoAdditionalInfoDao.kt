@@ -27,4 +27,8 @@ abstract class PhotoAdditionalInfoDao {
     "SET ${PhotoAdditionalInfoEntity.FAVOURITES_COUNT_COLUMN} = :favouritesCount " +
     "WHERE ${PhotoAdditionalInfoEntity.PHOTO_NAME_COLUMN} = :photoName")
   abstract fun updateFavouritesCount(photoName: String, favouritesCount: Long): Int
+
+  @Query("DELETE FROM ${PhotoAdditionalInfoEntity.TABLE_NAME} " +
+    "WHERE ${PhotoAdditionalInfoEntity.INSERTED_ON_COLUMN} < :time")
+  abstract fun deleteOlderThan(time: Long)
 }

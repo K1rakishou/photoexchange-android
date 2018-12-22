@@ -5,7 +5,6 @@ import com.airbnb.mvrx.MvRxState
 import com.airbnb.mvrx.Uninitialized
 import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.helper.Paged
-import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.photo.*
 
@@ -33,41 +32,6 @@ data class UploadedPhotosFragmentState(
 
     val updatedPhotos = uploadedPhotos.toMutableList()
     updatedPhotos[photoIndex] = updatedPhoto
-
-    return UpdateStateResult.Update(updatedPhotos)
-  }
-
-  fun onNewPhotoNotificationReceived(
-    photoExchangedData: PhotoExchangedData
-  ): UpdateStateResult<List<UploadedPhoto>> {
-    val photoIndex = uploadedPhotos.indexOfFirst { uploadedPhoto ->
-      uploadedPhoto.photoName == photoExchangedData.uploadedPhotoName
-    }
-
-    if (photoIndex == -1) {
-      //nothing to update
-      return UpdateStateResult.NothingToUpdate()
-    }
-
-    if (uploadedPhotos[photoIndex].receiverInfo != null) {
-      //photo already has receiver info
-      return UpdateStateResult.NothingToUpdate()
-    }
-
-    val updatedPhotos = uploadedPhotos.toMutableList()
-    val receiverInfo = UploadedPhoto.ReceiverInfo(
-      photoExchangedData.receivedPhotoName,
-      LonLat(
-        photoExchangedData.lon,
-        photoExchangedData.lat
-      )
-    )
-
-    val updatedPhoto = updatedPhotos[photoIndex]
-      .copy(receiverInfo = receiverInfo)
-
-    updatedPhotos.removeAt(photoIndex)
-    updatedPhotos.add(photoIndex, updatedPhoto)
 
     return UpdateStateResult.Update(updatedPhotos)
   }

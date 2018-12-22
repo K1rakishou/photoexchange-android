@@ -3,11 +3,7 @@ package com.kirakishou.photoexchange.mvp.viewmodel.state
 import com.airbnb.mvrx.Async
 import com.airbnb.mvrx.MvRxState
 import com.airbnb.mvrx.Uninitialized
-import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.helper.Paged
-import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
-import com.kirakishou.photoexchange.mvp.model.PhotoSize
-import com.kirakishou.photoexchange.mvp.model.photo.PhotoAdditionalInfo
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 
 data class ReceivedPhotosFragmentState(
@@ -115,38 +111,6 @@ data class ReceivedPhotosFragmentState(
     val updatedPhotos = receivedPhotos.toMutableList().apply {
       removeAt(photoIndex)
     }
-
-    return UpdateStateResult.Update(updatedPhotos)
-  }
-
-  fun onNewPhotoNotificationReceived(
-    photoExchangedData: PhotoExchangedData,
-    photoSize: PhotoSize
-  ): UpdateStateResult<List<ReceivedPhoto>> {
-    val photoIndex = receivedPhotos.indexOfFirst { receivedPhoto ->
-      receivedPhoto.receivedPhotoName == photoExchangedData.receivedPhotoName
-    }
-
-    if (photoIndex != -1) {
-      //photo is already shown
-      return UpdateStateResult.NothingToUpdate()
-    }
-
-    val newPhoto = ReceivedPhoto(
-      photoExchangedData.uploadedPhotoName,
-      photoExchangedData.receivedPhotoName,
-      LonLat(
-        photoExchangedData.lon,
-        photoExchangedData.lat
-      ),
-      photoExchangedData.uploadedOn,
-      PhotoAdditionalInfo.empty(photoExchangedData.receivedPhotoName),
-      true,
-      photoSize
-    )
-
-    val updatedPhotos = (receivedPhotos.toMutableList() + newPhoto)
-      .sortedByDescending { it.uploadedOn }
 
     return UpdateStateResult.Update(updatedPhotos)
   }

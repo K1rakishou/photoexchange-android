@@ -14,7 +14,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragment
 import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.interactors.BlacklistPhotoUseCase
 import com.kirakishou.photoexchange.interactors.CheckFirebaseAvailabilityUseCase
-import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
+import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
@@ -83,13 +83,20 @@ class PhotosActivityViewModel(
     }
   }
 
-  fun addReceivedPhoto(photoExchangedData: PhotoExchangedData) {
+  /**
+   * When we receive a new photo information via the push notification this method will send that
+   * information to both UploadedPhotosFragment and ReceivedPhotosFragment so they can internally add
+   * that photo to their inner lists of photos
+   * */
+  fun addReceivedPhoto(newReceivedPhoto: NewReceivedPhoto) {
     Timber.tag(TAG).d("addReceivedPhoto called")
 
+    val list = listOf(newReceivedPhoto)
+
     intercom.tell<UploadedPhotosFragment>()
-      .to(UploadedPhotosFragmentEvent.GeneralEvents.OnNewPhotoNotificationReceived(photoExchangedData))
+      .to(UploadedPhotosFragmentEvent.GeneralEvents.OnNewPhotosReceived(list))
     intercom.tell<ReceivedPhotosFragment>()
-      .to(ReceivedPhotosFragmentEvent.GeneralEvents.OnNewPhotoNotificationReceived(photoExchangedData))
+      .to(ReceivedPhotosFragmentEvent.GeneralEvents.OnNewPhotosReceived(list))
   }
 
   fun deleteAndBlacklistPhoto(photoName: String) {

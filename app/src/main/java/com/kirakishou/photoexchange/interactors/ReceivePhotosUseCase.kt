@@ -12,7 +12,6 @@ import com.kirakishou.photoexchange.helper.exception.ApiErrorException
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.helper.exception.NetworkAccessDisabledInSettings
 import com.kirakishou.photoexchange.helper.util.NetUtils
-import com.kirakishou.photoexchange.helper.util.PhotoAdditionalInfoUtils
 import com.kirakishou.photoexchange.mvp.model.FindPhotosData
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import core.ErrorCode
@@ -24,11 +23,10 @@ open class ReceivePhotosUseCase(
   private val database: MyDatabase,
   private val apiClient: ApiClient,
   private val netUtils: NetUtils,
-  private val photoAdditionalInfoUtils: PhotoAdditionalInfoUtils,
+  private val getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
   private val receivedPhotosRepository: ReceivedPhotosRepository,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
   private val takenPhotosRepository: TakenPhotosRepository,
-  private val photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
   private val TAG = "ReceivePhotosUseCase"
@@ -51,10 +49,7 @@ open class ReceivePhotosUseCase(
 
       val receivedPhotos = receivePhotos(photoData.userId, photoData.photoNames)
 
-      return@withContext photoAdditionalInfoUtils.appendAdditionalPhotoInfo(
-        photoAdditionalInfoRepository,
-        apiClient,
-        photoData.userId,
+      return@withContext getPhotoAdditionalInfoUseCase.appendAdditionalPhotoInfo(
         receivedPhotos,
         { receivedPhoto -> receivedPhoto.receivedPhotoName },
         { receivedPhoto, photoAdditionalInfo -> receivedPhoto.copy(photoAdditionalInfo = photoAdditionalInfo) }

@@ -51,12 +51,4 @@ class UtilsModule {
       netUtils
     )
   }
-
-  @Provides
-  @Singleton
-  fun providePhotoAdditionalInfoUtils(netUtils: NetUtils): PhotoAdditionalInfoUtils {
-    return PhotoAdditionalInfoUtilsImpl(
-      netUtils
-    )
-  }
 }

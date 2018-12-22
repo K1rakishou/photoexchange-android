@@ -16,9 +16,10 @@ class BlacklistPhotoUseCase(
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
 
-  //TODO: remove old blacklisted database entries
   suspend fun blacklistPhoto(photoName: String) {
     withContext(coroutineContext) {
+      blacklistedPhotoRepository.deleteOld()
+
       database.transactional {
         if (!blacklistedPhotoRepository.blacklist(photoName)) {
           throw DatabaseException("Could not blacklist photo ${photoName}")

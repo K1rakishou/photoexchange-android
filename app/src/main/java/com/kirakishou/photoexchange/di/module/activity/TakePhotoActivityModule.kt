@@ -6,6 +6,7 @@ import com.kirakishou.photoexchange.helper.CameraProvider
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
+import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.interactors.TakePhotoUseCase
 import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.factory.TakePhotoActivityViewModelFactory
@@ -49,5 +50,11 @@ open class TakePhotoActivityModule(
       activity,
       takePhotoUseCase
     )
+  }
+
+  @PerActivity
+  @Provides
+  open fun providePermissionManager(): PermissionManager {
+    return PermissionManager()
   }
 }

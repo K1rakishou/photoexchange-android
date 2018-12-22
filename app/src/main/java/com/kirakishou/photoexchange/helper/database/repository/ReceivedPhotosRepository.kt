@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.helper.database.repository
 
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.source.local.ReceivedPhotosLocalSource
-import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
+import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import net.response.data.ReceivedPhotoResponseData
 
@@ -16,8 +16,8 @@ open class ReceivedPhotosRepository(
     return receivedPhotosLocalSource.save(receivedPhoto)
   }
 
-  suspend fun save(photoExchangedData: PhotoExchangedData): Boolean {
-    return receivedPhotosLocalSource.save(photoExchangedData)
+  suspend fun save(newReceivedPhoto: NewReceivedPhoto): Boolean {
+    return receivedPhotosLocalSource.save(newReceivedPhoto)
   }
 
   suspend fun saveMany(receivedPhotos: List<ReceivedPhotoResponseData>): Boolean {

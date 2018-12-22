@@ -46,21 +46,19 @@ class UseCaseProviderModule {
   fun provideFindPhotoAnswersUseCase(database: MyDatabase,
                                      apiClient: ApiClient,
                                      netUtils: NetUtils,
-                                     photoAdditionalInfoUtils: PhotoAdditionalInfoUtils,
+                                     getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
                                      receivedPhotosRepository: ReceivedPhotosRepository,
                                      takenPhotosRepository: TakenPhotosRepository,
                                      uploadedPhotosRepository: UploadedPhotosRepository,
-                                     photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
                                      dispatchersProvider: DispatchersProvider): ReceivePhotosUseCase {
     return ReceivePhotosUseCase(
       database,
       apiClient,
       netUtils,
-      photoAdditionalInfoUtils,
+      getPhotoAdditionalInfoUseCase,
       receivedPhotosRepository,
       uploadedPhotosRepository,
       takenPhotosRepository,
-      photoAdditionalInfoRepository,
       dispatchersProvider
     )
   }
@@ -70,9 +68,8 @@ class UseCaseProviderModule {
   fun provideGetGalleryPhotosUseCase(apiClient: ApiClient,
                                      timeUtils: TimeUtils,
                                      pagedApiUtils: PagedApiUtils,
-                                     photoAdditionalInfoUtils: PhotoAdditionalInfoUtils,
+                                     getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
                                      galleryPhotosRepository: GalleryPhotosRepository,
-                                     photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
                                      blacklistedPhotoRepository: BlacklistedPhotoRepository,
                                      settingsRepository: SettingsRepository,
                                      dispatchersProvider: DispatchersProvider): GetGalleryPhotosUseCase {
@@ -80,9 +77,8 @@ class UseCaseProviderModule {
       apiClient,
       timeUtils,
       pagedApiUtils,
-      photoAdditionalInfoUtils,
+      getPhotoAdditionalInfoUseCase,
       galleryPhotosRepository,
-      photoAdditionalInfoRepository,
       blacklistedPhotoRepository,
       settingsRepository,
       dispatchersProvider
@@ -163,11 +159,10 @@ class UseCaseProviderModule {
                                       apiClient: ApiClient,
                                       timeUtils: TimeUtils,
                                       pagedApiUtils: PagedApiUtils,
-                                      photoAdditionalInfoUtils: PhotoAdditionalInfoUtils,
+                                      getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
                                       uploadedPhotosRepository: UploadedPhotosRepository,
                                       receivedPhotosRepository: ReceivedPhotosRepository,
                                       blacklistedPhotoRepository: BlacklistedPhotoRepository,
-                                      photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
                                       settingsRepository: SettingsRepository,
                                       dispatchersProvider: DispatchersProvider): GetReceivedPhotosUseCase {
     return GetReceivedPhotosUseCase(
@@ -175,11 +170,10 @@ class UseCaseProviderModule {
       apiClient,
       timeUtils,
       pagedApiUtils,
-      photoAdditionalInfoUtils,
+      getPhotoAdditionalInfoUseCase,
       uploadedPhotosRepository,
       receivedPhotosRepository,
       blacklistedPhotoRepository,
-      photoAdditionalInfoRepository,
       settingsRepository,
       dispatchersProvider
     )
@@ -287,6 +281,22 @@ class UseCaseProviderModule {
     return TakePhotoUseCase(
       database,
       takenPhotosRepository,
+      dispatchersProvider
+    )
+  }
+
+  @Singleton
+  @Provides
+  fun provideGetPhotoAdditionalInfoUseCase(apiClient: ApiClient,
+                                           netUtils: NetUtils,
+                                           photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
+                                           settingsRepository: SettingsRepository,
+                                           dispatchersProvider: DispatchersProvider): GetPhotoAdditionalInfoUseCase {
+    return GetPhotoAdditionalInfoUseCase(
+      apiClient,
+      netUtils,
+      photoAdditionalInfoRepository,
+      settingsRepository,
       dispatchersProvider
     )
   }

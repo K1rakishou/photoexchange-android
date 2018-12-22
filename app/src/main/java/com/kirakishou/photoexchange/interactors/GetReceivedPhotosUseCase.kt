@@ -9,7 +9,6 @@ import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
 import com.kirakishou.photoexchange.helper.util.PagedApiUtils
-import com.kirakishou.photoexchange.helper.util.PhotoAdditionalInfoUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import kotlinx.coroutines.withContext
@@ -22,11 +21,10 @@ open class GetReceivedPhotosUseCase(
   private val apiClient: ApiClient,
   private val timeUtils: TimeUtils,
   private val pagedApiUtils: PagedApiUtils,
-  private val photoAdditionalInfoUtils: PhotoAdditionalInfoUtils,
+  private val getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
   private val receivedPhotosRepository: ReceivedPhotosRepository,
   private val blacklistedPhotoRepository: BlacklistedPhotoRepository,
-  private val photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
   private val settingsRepository: SettingsRepository,
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
@@ -52,10 +50,7 @@ open class GetReceivedPhotosUseCase(
         count
       )
 
-      val receivedPhotosWithInfo = photoAdditionalInfoUtils.appendAdditionalPhotoInfo(
-        photoAdditionalInfoRepository,
-        apiClient,
-        userId,
+      val receivedPhotosWithInfo = getPhotoAdditionalInfoUseCase.appendAdditionalPhotoInfo(
         receivedPhotosPage.page,
         { receivedPhoto -> receivedPhoto.receivedPhotoName },
         { receivedPhoto, photoAdditionalInfo -> receivedPhoto.copy(photoAdditionalInfo = photoAdditionalInfo) }

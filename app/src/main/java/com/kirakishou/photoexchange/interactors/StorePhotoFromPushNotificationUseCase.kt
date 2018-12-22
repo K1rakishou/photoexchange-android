@@ -5,7 +5,7 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
-import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
+import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
@@ -17,25 +17,25 @@ class StorePhotoFromPushNotificationUseCase(
 ) : BaseUseCase(dispatchersProvider) {
   private val TAG = "StorePhotoFromPushNotificationUseCase"
 
-  suspend fun storePhotoFromPushNotification(photoExchangedData: PhotoExchangedData): Boolean {
+  suspend fun storePhotoFromPushNotification(newReceivedPhoto: NewReceivedPhoto): Boolean {
     return withContext(coroutineContext) {
       try {
         database.transactional {
-          if (!receivedPhotosRepository.save(photoExchangedData)) {
-            throw DatabaseException("Could not save photoExchangedData as receivedPhoto, " +
-              "photoExchangedData = $photoExchangedData")
+          if (!receivedPhotosRepository.save(newReceivedPhoto)) {
+            throw DatabaseException("Could not save newReceivedPhoto as receivedPhoto, " +
+              "newReceivedPhoto = $newReceivedPhoto")
           }
 
           val result = uploadedPhotosRepository.updateReceiverInfo(
-            photoExchangedData.uploadedPhotoName,
-            photoExchangedData.receivedPhotoName,
-            photoExchangedData.lon,
-            photoExchangedData.lat
+            newReceivedPhoto.uploadedPhotoName,
+            newReceivedPhoto.receivedPhotoName,
+            newReceivedPhoto.lon,
+            newReceivedPhoto.lat
           )
 
           if (!result) {
             throw DatabaseException("Could not update receiverInfo for photo with " +
-              "uploadedPhotoName = ${photoExchangedData.uploadedPhotoName}")
+              "uploadedPhotoName = ${newReceivedPhoto.uploadedPhotoName}")
           }
         }
 

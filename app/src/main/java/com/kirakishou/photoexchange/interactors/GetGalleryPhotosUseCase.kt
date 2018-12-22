@@ -8,9 +8,7 @@ import com.kirakishou.photoexchange.helper.database.repository.BlacklistedPhotoR
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAdditionalInfoRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.helper.util.PagedApiUtils
-import com.kirakishou.photoexchange.helper.util.PhotoAdditionalInfoUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import kotlinx.coroutines.withContext
@@ -22,9 +20,8 @@ open class GetGalleryPhotosUseCase(
   private val apiClient: ApiClient,
   private val timeUtils: TimeUtils,
   private val pagedApiUtils: PagedApiUtils,
-  private val photoAdditionalInfoUtils: PhotoAdditionalInfoUtils,
+  private val getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
   private val galleryPhotosRepository: GalleryPhotosRepository,
-  private val photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
   private val blacklistedPhotoRepository: BlacklistedPhotoRepository,
   private val settingsRepository: SettingsRepository,
   dispatchersProvider: DispatchersProvider
@@ -56,10 +53,7 @@ open class GetGalleryPhotosUseCase(
         count
       )
 
-      val galleryPhotoWithInfo = photoAdditionalInfoUtils.appendAdditionalPhotoInfo(
-        photoAdditionalInfoRepository,
-        apiClient,
-        userId,
+      val galleryPhotoWithInfo = getPhotoAdditionalInfoUseCase.appendAdditionalPhotoInfo(
         galleryPhotosPage.page,
         { galleryPhoto -> galleryPhoto.photoName },
         { galleryPhoto, photoAdditionalInfo -> galleryPhoto.copy(photoAdditionalInfo = photoAdditionalInfo) }
