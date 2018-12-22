@@ -5,15 +5,18 @@ import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.mapper.PhotoAdditionalInfoMapper
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAdditionalInfoRepository
+import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.mvp.model.photo.PhotoAdditionalInfo
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 class GetPhotoAdditionalInfoUseCase(
   private val apiClient: ApiClient,
   private val netUtils: NetUtils,
   private val photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
+  private val settingsRepository: SettingsRepository,
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
 
@@ -21,35 +24,58 @@ class GetPhotoAdditionalInfoUseCase(
 
   //TODO: deleteOld
   suspend fun <T> appendAdditionalPhotoInfo(
-    userId: String,
     galleryPhotos: List<T>,
     photoNameSelectorFunc: (T) -> String,
     copyFunc: (T, PhotoAdditionalInfo) -> T
   ): List<T> {
-    val additionalPhotoInfoList = getPhotoAdditionalInfos(
-      userId,
-      galleryPhotos.map { photoNameSelectorFunc(it) }
-    )
+    return withContext(coroutineContext) {
+      val userId = settingsRepository.getUserId()
 
-    if (additionalPhotoInfoList == null) {
-      return galleryPhotos
+      val additionalPhotoInfoList = getPhotoAdditionalInfos(
+        userId,
+        galleryPhotos.map { photoNameSelectorFunc(it) }
+      )
+
+      if (additionalPhotoInfoList == null) {
+        return@withContext galleryPhotos
+      }
+
+      val resultList = mutableListOf<T>()
+
+      for (galleryPhoto in galleryPhotos) {
+        val photoName = photoNameSelectorFunc(galleryPhoto)
+
+        val photoAdditionalInfo = additionalPhotoInfoList
+          .firstOrNull { it.photoName == photoName }
+
+        val info = (photoAdditionalInfo ?: PhotoAdditionalInfo.empty(photoName))
+          .copy(hasUserId = userId.isNotEmpty())
+
+        resultList += copyFunc(galleryPhoto, info)
+      }
+
+      return@withContext resultList
     }
+  }
 
-    val resultList = mutableListOf<T>()
+  //returns null when userId is empty
+  suspend fun getPhotoAdditionalInfoByPhotoNameList(
+    photoNameList: List<String>
+  ): List<PhotoAdditionalInfo>? {
+    return withContext(coroutineContext) {
+      val userId = settingsRepository.getUserId()
 
-    for (galleryPhoto in galleryPhotos) {
-      val photoName = photoNameSelectorFunc(galleryPhoto)
+      if (userId.isEmpty()) {
+        return@withContext null
+      }
 
-      val photoAdditionalInfo = additionalPhotoInfoList
-        .firstOrNull { it.photoName == photoName }
+      val result = getPhotoAdditionalInfos(userId, photoNameList)
+      if (result == null) {
+        return@withContext null
+      }
 
-      val info = (photoAdditionalInfo ?: PhotoAdditionalInfo.empty(photoName))
-        .copy(hasUserId = userId.isNotEmpty())
-
-      resultList += copyFunc(galleryPhoto, info)
+      return@withContext result
     }
-
-    return resultList
   }
 
   private suspend fun getPhotoAdditionalInfos(

@@ -290,11 +290,13 @@ class UseCaseProviderModule {
   fun provideGetPhotoAdditionalInfoUseCase(apiClient: ApiClient,
                                            netUtils: NetUtils,
                                            photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
+                                           settingsRepository: SettingsRepository,
                                            dispatchersProvider: DispatchersProvider): GetPhotoAdditionalInfoUseCase {
     return GetPhotoAdditionalInfoUseCase(
       apiClient,
       netUtils,
       photoAdditionalInfoRepository,
+      settingsRepository,
       dispatchersProvider
     )
   }

@@ -16,6 +16,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
+import com.kirakishou.photoexchange.interactors.GetPhotoAdditionalInfoUseCase
 import com.kirakishou.photoexchange.interactors.GetReceivedPhotosUseCase
 import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
 import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
@@ -43,6 +44,7 @@ class ReceivedPhotosFragmentViewModel(
   private val getReceivedPhotosUseCase: GetReceivedPhotosUseCase,
   private val favouritePhotoUseCase: FavouritePhotoUseCase,
   private val reportPhotoUseCase: ReportPhotoUseCase,
+  private val getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
   private val dispatchersProvider: DispatchersProvider
 ) : BaseMvRxViewModel<ReceivedPhotosFragmentState>(initialState, BuildConfig.DEBUG), CoroutineScope {
   private val TAG = "ReceivedPhotosFragmentViewModel"
@@ -262,15 +264,47 @@ class ReceivedPhotosFragmentViewModel(
   // This function is called every time a new page of uploaded photos is loaded and
   // it is a pretty slow function
   private fun onNewPhotoReceivedInternal(newReceivedPhotos: List<NewReceivedPhoto>) {
+
+    suspend fun updateAdditionalPhotoInfo(
+      photoNameListToFetchAdditionalInfo: MutableList<String>,
+      updatedPhotos: MutableList<ReceivedPhoto>
+    ) {
+      val additionalPhotoInfoList = getPhotoAdditionalInfoUseCase.getPhotoAdditionalInfoByPhotoNameList(
+        photoNameListToFetchAdditionalInfo
+      )
+
+      if (additionalPhotoInfoList == null) {
+        return
+      }
+
+      for (additionalPhotoInfo in additionalPhotoInfoList) {
+        val photoIndex = updatedPhotos.indexOfFirst { photo ->
+          photo.receivedPhotoName == additionalPhotoInfo.photoName
+        }
+
+        if (photoIndex == -1) {
+          continue
+        }
+
+        val photoWithUpdatedAdditionalInfo = updatedPhotos[photoIndex].copy(
+          photoAdditionalInfo = additionalPhotoInfo
+        )
+
+        updatedPhotos.removeAt(photoIndex)
+        updatedPhotos.add(photoIndex, photoWithUpdatedAdditionalInfo)
+      }
+    }
+
     withState { state ->
       launch {
         Timber.tag(TAG).d("onNewPhotoReceivedInternal called with ${newReceivedPhotos.size} new photos")
 
         val updatedPhotos = state.receivedPhotos.toMutableList()
+        val photoNameListToFetchAdditionalInfo = mutableListOf<String>()
         var hasNewPhotos = false
 
         for (newReceivedPhoto in newReceivedPhotos) {
-          val photoIndex = state.receivedPhotos.indexOfFirst { receivedPhoto ->
+          val photoIndex = updatedPhotos.indexOfFirst { receivedPhoto ->
             receivedPhoto.receivedPhotoName == newReceivedPhoto.receivedPhotoName
           }
 
@@ -292,10 +326,17 @@ class ReceivedPhotosFragmentViewModel(
           )
 
           updatedPhotos += newPhoto
+          photoNameListToFetchAdditionalInfo += newReceivedPhoto.receivedPhotoName
           hasNewPhotos = true
         }
 
-        //TODO: fetch photo additional info here
+        if (photoNameListToFetchAdditionalInfo.isNotEmpty()) {
+          updateAdditionalPhotoInfo(
+            photoNameListToFetchAdditionalInfo,
+            updatedPhotos
+          )
+        }
+
         updatedPhotos.sortByDescending { it.uploadedOn }
 
         if (hasNewPhotos) {

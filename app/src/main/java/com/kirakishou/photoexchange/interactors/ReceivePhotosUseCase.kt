@@ -50,7 +50,6 @@ open class ReceivePhotosUseCase(
       val receivedPhotos = receivePhotos(photoData.userId, photoData.photoNames)
 
       return@withContext getPhotoAdditionalInfoUseCase.appendAdditionalPhotoInfo(
-        photoData.userId,
         receivedPhotos,
         { receivedPhoto -> receivedPhoto.receivedPhotoName },
         { receivedPhoto, photoAdditionalInfo -> receivedPhoto.copy(photoAdditionalInfo = photoAdditionalInfo) }

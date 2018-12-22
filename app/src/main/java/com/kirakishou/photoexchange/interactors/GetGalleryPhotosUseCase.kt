@@ -54,7 +54,6 @@ open class GetGalleryPhotosUseCase(
       )
 
       val galleryPhotoWithInfo = getPhotoAdditionalInfoUseCase.appendAdditionalPhotoInfo(
-        userId,
         galleryPhotosPage.page,
         { galleryPhoto -> galleryPhoto.photoName },
         { galleryPhoto, photoAdditionalInfo -> galleryPhoto.copy(photoAdditionalInfo = photoAdditionalInfo) }

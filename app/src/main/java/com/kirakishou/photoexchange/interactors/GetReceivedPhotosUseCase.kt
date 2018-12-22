@@ -51,7 +51,6 @@ open class GetReceivedPhotosUseCase(
       )
 
       val receivedPhotosWithInfo = getPhotoAdditionalInfoUseCase.appendAdditionalPhotoInfo(
-        userId,
         receivedPhotosPage.page,
         { receivedPhoto -> receivedPhoto.receivedPhotoName },
         { receivedPhoto, photoAdditionalInfo -> receivedPhoto.copy(photoAdditionalInfo = photoAdditionalInfo) }
