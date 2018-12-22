@@ -1,32 +1,34 @@
-package com.kirakishou.photoexchange.helper.util
+package com.kirakishou.photoexchange.interactors
 
 import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.api.ApiClient
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.mapper.PhotoAdditionalInfoMapper
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAdditionalInfoRepository
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
+import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.mvp.model.photo.PhotoAdditionalInfo
 import timber.log.Timber
 
-class PhotoAdditionalInfoUtilsImpl(
-  private val netUtils: NetUtils
-) : PhotoAdditionalInfoUtils {
+class GetPhotoAdditionalInfoUseCase(
+  private val apiClient: ApiClient,
+  private val netUtils: NetUtils,
+  private val photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
+  dispatchersProvider: DispatchersProvider
+) : BaseUseCase(dispatchersProvider) {
+
   private val TAG = "PhotoAdditionalInfoUtilsImpl"
 
   //TODO: deleteOld
-  override suspend fun <T> appendAdditionalPhotoInfo(
-    photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
-    apiClient: ApiClient,
+  suspend fun <T> appendAdditionalPhotoInfo(
     userId: String,
     galleryPhotos: List<T>,
     photoNameSelectorFunc: (T) -> String,
     copyFunc: (T, PhotoAdditionalInfo) -> T
   ): List<T> {
-    val additionalPhotoInfoList = getPhotoAdditionalInfoForGalleryPhotos(
+    val additionalPhotoInfoList = getPhotoAdditionalInfos(
       userId,
-      galleryPhotos.map { photoNameSelectorFunc(it) },
-      photoAdditionalInfoRepository,
-      apiClient
+      galleryPhotos.map { photoNameSelectorFunc(it) }
     )
 
     if (additionalPhotoInfoList == null) {
@@ -50,11 +52,9 @@ class PhotoAdditionalInfoUtilsImpl(
     return resultList
   }
 
-  private suspend fun getPhotoAdditionalInfoForGalleryPhotos(
+  private suspend fun getPhotoAdditionalInfos(
     userId: String,
-    photoNameList: List<String>,
-    photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,
-    apiClient: ApiClient
+    photoNameList: List<String>
   ): List<PhotoAdditionalInfo>? {
     if (userId.isEmpty()) {
       return null
