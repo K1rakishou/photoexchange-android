@@ -47,20 +47,24 @@ open class UploadPhotosUseCase(
 
       if (!photo.fileExists()) {
         val path = photo.photoTempFile?.absolutePath ?: "(No photoTempFile)"
-        Timber.tag(TAG).e("Photo does not exists on disk! $path")
-        //TODO: add message
-        throw PhotoUploadingException.PhotoDoesNotExistOnDisk()
+        throw PhotoUploadingException.PhotoDoesNotExistOnDisk(
+          "Photo does not exists on disk! ($path)"
+        )
       }
 
       val photoFile = fileUtils.createTempFile("rotated_photo", ".tmp")
 
       try {
         if (!takenPhotosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_UPLOADING)) {
-          throw UploadPhotosUseCase.PhotoUploadingException.CouldNotUpdatePhotoState()
+          throw UploadPhotosUseCase.PhotoUploadingException.CouldNotUpdatePhotoState(
+            "Could not update photo state to PHOTO_UPLOADING for photo with id (${photo.id})"
+          )
         }
 
         if (!bitmapUtils.rotatePhoto(photo.photoTempFile!!, photoFile)) {
-          throw UploadPhotosUseCase.PhotoUploadingException.CouldNotRotatePhoto()
+          throw UploadPhotosUseCase.PhotoUploadingException.CouldNotRotatePhoto(
+            "Could not rotate photo with path (${photo.photoTempFile!!.absolutePath} and photoFile (${photoFile.absolutePath}))"
+          )
         }
 
         val result = try {
@@ -101,9 +105,9 @@ open class UploadPhotosUseCase(
     val uploadedOn: Long
   )
 
-  sealed class PhotoUploadingException : Exception() {
-    class PhotoDoesNotExistOnDisk : PhotoUploadingException()
-    class CouldNotRotatePhoto : PhotoUploadingException()
-    class CouldNotUpdatePhotoState : PhotoUploadingException()
+  sealed class PhotoUploadingException(msg: String) : Exception(msg) {
+    class PhotoDoesNotExistOnDisk(msg: String) : PhotoUploadingException(msg)
+    class CouldNotRotatePhoto(msg: String) : PhotoUploadingException(msg)
+    class CouldNotUpdatePhotoState(msg: String) : PhotoUploadingException(msg)
   }
 }
