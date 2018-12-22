@@ -22,7 +22,6 @@ class GetPhotoAdditionalInfoUseCase(
 
   private val TAG = "PhotoAdditionalInfoUtilsImpl"
 
-  //TODO: deleteOld
   suspend fun <T> appendAdditionalPhotoInfo(
     galleryPhotos: List<T>,
     photoNameSelectorFunc: (T) -> String,
@@ -82,6 +81,8 @@ class GetPhotoAdditionalInfoUseCase(
     userId: String,
     photoNameList: List<String>
   ): List<PhotoAdditionalInfo>? {
+    photoAdditionalInfoRepository.deleteOld()
+
     if (userId.isEmpty()) {
       return null
     }

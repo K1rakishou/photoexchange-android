@@ -75,7 +75,8 @@ open class DatabaseModule(
                                                  timeUtils: TimeUtils): PhotoAdditionalInfoLocalSource {
     return PhotoAdditionalInfoLocalSource(
       database,
-      timeUtils
+      timeUtils,
+      Constants.INSERTED_EARLIER_THAN_TIME_DELTA
     )
   }
 
