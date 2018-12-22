@@ -25,22 +25,6 @@ open class BlacklistedPhotoLocalSource(
     return blacklistedPhotoDao.find(photoName) != null
   }
 
-  fun <T> filterBlacklistedPhotos(photos: List<T>, nameSelector: (T) -> String): List<T> {
-    val resultList = mutableListOf<T>()
-
-    for (photo in photos) {
-      //TODO: make this faster by checking blacklisted photos in batches
-      if (isBlacklisted(nameSelector(photo))) {
-        continue
-      }
-
-      resultList += photo
-    }
-
-    Timber.tag(TAG).d("Filtered ${photos.size - resultList.size} photos")
-    return resultList
-  }
-
   fun deleteOld() {
     val now = timeUtils.getTimeFast()
     val deletedCount = blacklistedPhotoDao.deleteOlderThan(now - blacklistedEarlierThanTimeDelta)
