@@ -50,8 +50,8 @@ class TakePhotoActivity : BaseActivity() {
   @Inject
   lateinit var vibrator: Vibrator
 
-  //TODO: inject
-  private val permissionManager = PermissionManager()
+  @Inject
+  lateinit var permissionManager: PermissionManager
 
   private val TAG = "TakePhotoActivity"
   private val VIBRATION_TIME_MS = 25L
