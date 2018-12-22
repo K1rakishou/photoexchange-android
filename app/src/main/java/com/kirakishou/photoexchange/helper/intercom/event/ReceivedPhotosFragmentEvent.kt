@@ -6,7 +6,7 @@ import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 sealed class ReceivedPhotosFragmentEvent : BaseEvent {
   sealed class GeneralEvents : ReceivedPhotosFragmentEvent() {
     class ScrollToTop : GeneralEvents()
-    class OnNewPhotoReceived(val newReceivedPhoto: NewReceivedPhoto) : GeneralEvents()
+    class OnNewPhotosReceived(val newReceivedPhotos: List<NewReceivedPhoto>) : GeneralEvents()
     class RemovePhoto(val photoName: String) : GeneralEvents()
     class PhotoReported(val photoName: String,
                         val isReported: Boolean) : GeneralEvents()

@@ -33,6 +33,10 @@ open class UploadedPhotosRepository(
     return uploadedPhotosLocalSource.getPage(time, count)
   }
 
+  suspend fun findByPhotoName(uploadedPhotoName: String): UploadedPhoto? {
+    return uploadedPhotosLocalSource.findByPhotoName(uploadedPhotoName)
+  }
+
   suspend fun findMany(photoIds: List<Long>): List<UploadedPhoto> {
     return uploadedPhotosLocalSource.findMany(photoIds)
   }
@@ -70,4 +74,5 @@ open class UploadedPhotosRepository(
   fun deleteByPhotoName(photoName: String) {
     uploadedPhotosLocalSource.deleteByPhotoName(photoName)
   }
+
 }

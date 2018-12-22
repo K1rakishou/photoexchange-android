@@ -14,6 +14,7 @@ import com.kirakishou.photoexchange.helper.extension.filterDuplicatesWith
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
+import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
@@ -24,6 +25,7 @@ import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UpdateStateResult
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
+import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -66,7 +68,7 @@ class UploadedPhotosFragmentViewModel(
           is ActorAction.CancelPhotoUploading -> cancelPhotoUploadingInternal(action.photoId)
           ActorAction.LoadQueuedUpPhotos -> loadQueuedUpPhotosInternal()
           is ActorAction.LoadUploadedPhotos -> loadUploadedPhotosInternal(action.forced)
-          is ActorAction.OnNewPhotoReceived -> onNewPhotoReceivedInternal(action.newReceivedPhoto)
+          is ActorAction.OnNewPhotosReceived -> onNewPhotoReceivedInternal(action.newReceivedPhotos)
           is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.photoName)
         }.safe
       }
@@ -89,8 +91,8 @@ class UploadedPhotosFragmentViewModel(
     launch { viewModelActor.send(ActorAction.LoadUploadedPhotos(forced)) }
   }
 
-  fun onNewPhotoReceived(newReceivedPhoto: NewReceivedPhoto) {
-    launch { viewModelActor.send(ActorAction.OnNewPhotoReceived(newReceivedPhoto)) }
+  fun onNewPhotosReceived(newReceivedPhotos: List<NewReceivedPhoto>) {
+    launch { viewModelActor.send(ActorAction.OnNewPhotosReceived(newReceivedPhotos)) }
   }
 
   fun swapPhotoAndMap(photoName: String) {
@@ -115,38 +117,48 @@ class UploadedPhotosFragmentViewModel(
     }
   }
 
-  private fun onNewPhotoReceivedInternal(newReceivedPhoto: NewReceivedPhoto) {
+  // FIXME: make faster (use hashSet/Map for filtering already added photos)
+  // This function is called every time a new page of received photos is loaded and
+  // it is a pretty slow function
+  private fun onNewPhotoReceivedInternal(newReceivedPhotos: List<NewReceivedPhoto>) {
     withState { state ->
-      val photoIndex = state.uploadedPhotos.indexOfFirst { uploadedPhoto ->
-        uploadedPhoto.photoName == newReceivedPhoto.uploadedPhotoName
+      launch {
+        Timber.tag(TAG).d("onNewPhotoReceivedInternal called with ${newReceivedPhotos.size} new photos")
+
+        val updatedPhotos = state.uploadedPhotos.toMutableList()
+
+        for (newReceivedPhoto in newReceivedPhotos) {
+          val photoIndex = updatedPhotos.indexOfFirst { uploadedPhoto ->
+            uploadedPhoto.photoName == newReceivedPhoto.uploadedPhotoName
+          }
+
+          if (photoIndex == -1) {
+            continue
+          }
+
+          if (updatedPhotos[photoIndex].receiverInfo != null) {
+            //photo already has receiver info
+            continue
+          }
+
+          val receiverInfo = UploadedPhoto.ReceiverInfo(
+            newReceivedPhoto.receivedPhotoName,
+            LonLat(
+              newReceivedPhoto.lon,
+              newReceivedPhoto.lat
+            )
+          )
+
+          val updatedPhoto = updatedPhotos[photoIndex].copy(
+            receiverInfo = receiverInfo
+          )
+
+          updatedPhotos.removeAt(photoIndex)
+          updatedPhotos.add(photoIndex, updatedPhoto)
+        }
+
+        setState { copy(uploadedPhotos = updatedPhotos) }
       }
-
-      if (photoIndex == -1) {
-        //nothing to update
-        return@withState
-      }
-
-      if (state.uploadedPhotos[photoIndex].receiverInfo != null) {
-        //photo already has receiver info
-        return@withState
-      }
-
-      val updatedPhotos = state.uploadedPhotos.toMutableList()
-      val receiverInfo = UploadedPhoto.ReceiverInfo(
-        newReceivedPhoto.receivedPhotoName,
-        LonLat(
-          newReceivedPhoto.lon,
-          newReceivedPhoto.lat
-        )
-      )
-
-      val updatedPhoto = updatedPhotos[photoIndex]
-        .copy(receiverInfo = receiverInfo)
-
-      updatedPhotos.removeAt(photoIndex)
-      updatedPhotos.add(photoIndex, updatedPhoto)
-
-      setState { copy(uploadedPhotos = updatedPhotos) }
     }
   }
 
@@ -262,6 +274,25 @@ class UploadedPhotosFragmentViewModel(
           .filterDuplicatesWith(newPhotos) { it.photoName }
           .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
           .sortedByDescending { it.uploadedOn }
+
+        if (newPhotos.isNotEmpty()) {
+          val mapped = newPhotos
+            .filter { uploadedPhoto -> uploadedPhoto.receiverInfo != null }
+            .map { uploadedPhoto ->
+              uploadedPhoto.receiverInfo!!
+
+              NewReceivedPhoto(
+                uploadedPhoto.photoName,
+                uploadedPhoto.receiverInfo.receiverPhotoName,
+                uploadedPhoto.receiverInfo.receiverLonLat.lon,
+                uploadedPhoto.receiverInfo.receiverLonLat.lat,
+                uploadedPhoto.uploadedOn
+              )
+            }
+
+          intercom.tell<ReceivedPhotosFragment>()
+            .that(ReceivedPhotosFragmentEvent.GeneralEvents.OnNewPhotosReceived(mapped))
+        }
 
         val isEndReached = request()?.isEnd ?: false
 
@@ -424,7 +455,7 @@ class UploadedPhotosFragmentViewModel(
     class CancelPhotoUploading(val photoId: Long) : ActorAction()
     object LoadQueuedUpPhotos : ActorAction()
     class LoadUploadedPhotos(val forced: Boolean) : ActorAction()
-    class OnNewPhotoReceived(val newReceivedPhoto: NewReceivedPhoto) : ActorAction()
+    class OnNewPhotosReceived(val newReceivedPhotos: List<NewReceivedPhoto>) : ActorAction()
     class SwapPhotoAndMap(val photoName: String) : ActorAction()
   }
 

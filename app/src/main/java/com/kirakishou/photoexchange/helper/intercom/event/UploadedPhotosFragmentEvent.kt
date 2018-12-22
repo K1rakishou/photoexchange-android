@@ -8,7 +8,7 @@ import java.lang.Exception
 
 sealed class UploadedPhotosFragmentEvent : BaseEvent {
   sealed class GeneralEvents : UploadedPhotosFragmentEvent() {
-    class OnNewPhotoReceived(val newReceivedPhoto: NewReceivedPhoto) : GeneralEvents()
+    class OnNewPhotosReceived(val newReceivedPhotos: List<NewReceivedPhoto>) : GeneralEvents()
   }
 
   sealed class ReceivePhotosEvent : UploadedPhotosFragmentEvent() {

@@ -83,13 +83,20 @@ class PhotosActivityViewModel(
     }
   }
 
+  /**
+   * When we receive a new photo information via the push notification this method will send that
+   * information to both UploadedPhotosFragment and ReceivedPhotosFragment so they can internally add
+   * that photo to their inner lists of photos
+   * */
   fun addReceivedPhoto(newReceivedPhoto: NewReceivedPhoto) {
     Timber.tag(TAG).d("addReceivedPhoto called")
 
+    val list = listOf(newReceivedPhoto)
+
     intercom.tell<UploadedPhotosFragment>()
-      .to(UploadedPhotosFragmentEvent.GeneralEvents.OnNewPhotoReceived(newReceivedPhoto))
+      .to(UploadedPhotosFragmentEvent.GeneralEvents.OnNewPhotosReceived(list))
     intercom.tell<ReceivedPhotosFragment>()
-      .to(ReceivedPhotosFragmentEvent.GeneralEvents.OnNewPhotoReceived(newReceivedPhoto))
+      .to(ReceivedPhotosFragmentEvent.GeneralEvents.OnNewPhotosReceived(list))
   }
 
   fun deleteAndBlacklistPhoto(photoName: String) {

@@ -8,6 +8,10 @@ data class PhotoAdditionalInfo(
   val hasUserId: Boolean = false
 ) {
 
+  fun isEmpty(): Boolean {
+    return !isFavourited && favouritesCount == 0L && !isReported && !hasUserId
+  }
+
   companion object {
     fun create(
       photoName: String,
