@@ -301,7 +301,6 @@ class ReceivedPhotosFragmentViewModel(
 
         val updatedPhotos = state.receivedPhotos.toMutableList()
         val photoNameListToFetchAdditionalInfo = mutableListOf<String>()
-        var hasNewPhotos = false
 
         for (newReceivedPhoto in newReceivedPhotos) {
           val photoIndex = updatedPhotos.indexOfFirst { receivedPhoto ->
@@ -327,7 +326,6 @@ class ReceivedPhotosFragmentViewModel(
 
           updatedPhotos += newPhoto
           photoNameListToFetchAdditionalInfo += newReceivedPhoto.receivedPhotoName
-          hasNewPhotos = true
         }
 
         if (photoNameListToFetchAdditionalInfo.isNotEmpty()) {
@@ -335,15 +333,13 @@ class ReceivedPhotosFragmentViewModel(
             photoNameListToFetchAdditionalInfo,
             updatedPhotos
           )
-        }
 
-        updatedPhotos.sortByDescending { it.uploadedOn }
-
-        if (hasNewPhotos) {
           //show a snackbar telling user that we got a photo
           intercom.tell<PhotosActivity>()
             .that(PhotosActivityEvent.OnNewPhotoReceived)
         }
+
+        updatedPhotos.sortByDescending { it.uploadedOn }
 
         setState { copy(receivedPhotos = updatedPhotos) }
       }
