@@ -14,11 +14,16 @@ object Constants {
   const val BASE_STATIC_MAP_URL = "${BASE_URL}v1/api/get_static_map"
   const val DATABASE_NAME = "photoexchange_db"
   const val DOMAIN_NAME = "photoexchange.io"
-
-  const val DEFAULT_ADAPTER_ITEM_WIDTH = 288
-  const val DEFAULT_PHOTOS_PER_PAGE_COUNT = 5
-
   const val DELIMITER = ","
 
+  const val DEFAULT_ADAPTER_ITEM_WIDTH = 288
+
+  //TODO: change in production
+  const val DEFAULT_PHOTOS_PER_PAGE_COUNT = 5
+
+  //TODO: change in production
   val INSERTED_EARLIER_THAN_TIME_DELTA = TimeUnit.MINUTES.toMillis(1)
+
+  //TODO: change in production
+  val BLACKLISTED_EARLIER_THAN_TIME_DELTA = TimeUnit.MINUTES.toMillis(1)
 }

@@ -105,7 +105,8 @@ open class DatabaseModule(
                                               timeUtils: TimeUtils): BlacklistedPhotoLocalSource {
     return BlacklistedPhotoLocalSource(
       database,
-      timeUtils
+      timeUtils,
+      Constants.BLACKLISTED_EARLIER_THAN_TIME_DELTA
     )
   }
 

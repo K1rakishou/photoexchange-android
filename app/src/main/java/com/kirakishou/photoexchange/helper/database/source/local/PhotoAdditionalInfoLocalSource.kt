@@ -67,6 +67,6 @@ open class PhotoAdditionalInfoLocalSource(
     val now = timeUtils.getTimeFast()
     val deletedCount = photoAdditionalInfoDao.deleteOlderThan(now - insertedEarlierThanTimeDelta)
 
-    Timber.tag(TAG).d("deleted $deletedCount gallery photos")
+    Timber.tag(TAG).d("deleted $deletedCount additional photo infos")
   }
 }

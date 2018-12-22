@@ -15,4 +15,8 @@ abstract class BlacklistedPhotoDao {
   @Query("SELECT * FROM ${BlacklistedPhotoEntity.TABLE_NAME} " +
     "WHERE ${BlacklistedPhotoEntity.PHOTO_NAME_COLUMN} = :photoName")
   abstract fun find(photoName: String): BlacklistedPhotoEntity?
+
+  @Query("DELETE FROM ${BlacklistedPhotoEntity.TABLE_NAME} " +
+    "WHERE ${BlacklistedPhotoEntity.BLACKLISTED_ON_COLUMN} < :time")
+  abstract fun deleteOlderThan(time: Long)
 }

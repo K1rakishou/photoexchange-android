@@ -18,4 +18,8 @@ class BlacklistedPhotoRepository(
     return blacklistedPhotoLocalSource.filterBlacklistedPhotos(photos, nameSelector)
   }
 
+  suspend fun deleteOld() {
+    blacklistedPhotoLocalSource.deleteOld()
+  }
+
 }
