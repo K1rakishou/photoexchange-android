@@ -35,7 +35,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragment
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.interactors.CheckFirebaseAvailabilityUseCase
-import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
+import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.service.*
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingServiceCallback
@@ -115,9 +115,9 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       }
 
       val bundle = intent.extras?.getBundle(PhotosActivity.receivedPhotoExtra)
-      val photoExchangedData = PhotoExchangedData.fromBundle(bundle)
-      if (photoExchangedData == null) {
-        throw IllegalStateException("photoExchangedData should not be null!")
+      val newReceivedPhoto = NewReceivedPhoto.fromBundle(bundle)
+      if (newReceivedPhoto == null) {
+        throw IllegalStateException("newReceivedPhoto should not be null!")
       }
 
       launch {
@@ -128,7 +128,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(PushNotificationReceiverService.NOTIFICATION_ID)
 
-        onNewPhotoNotification(photoExchangedData)
+        onNewPhotoNotification(newReceivedPhoto)
       }
     }
   }
@@ -148,10 +148,10 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
     super.onNewIntent(intent)
 
     val bundle = intent.extras?.getBundle(PhotosActivity.receivedPhotoExtra)
-    val photoExchangedData = PhotoExchangedData.fromBundle(bundle)
+    val newReceivedPhoto = NewReceivedPhoto.fromBundle(bundle)
 
-    if (photoExchangedData != null) {
-      onNewPhotoNotification(photoExchangedData)
+    if (newReceivedPhoto != null) {
+      onNewPhotoNotification(newReceivedPhoto)
     }
   }
 
@@ -169,8 +169,8 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
     unregisterReceiver(notificationBroadcastReceiver)
   }
 
-  private fun onNewPhotoNotification(photoExchangedData: PhotoExchangedData) {
-    launch { viewModel.addReceivedPhoto(photoExchangedData) }
+  private fun onNewPhotoNotification(newReceivedPhoto: NewReceivedPhoto) {
+    launch { viewModel.addReceivedPhoto(newReceivedPhoto) }
   }
 
   override fun onSaveInstanceState(outState: Bundle?, outPersistentState: PersistableBundle?) {

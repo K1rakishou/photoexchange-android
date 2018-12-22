@@ -14,9 +14,8 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.interactors.StorePhotoFromPushNotificationUseCase
-import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
+import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
-import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import javax.inject.Inject
@@ -48,24 +47,24 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
       return
     }
 
-    val photoExchangedData = try {
+    val newReceivedPhoto = try {
       extractData(remoteMessage)
     } catch (error: Throwable) {
       Timber.tag(TAG).e(error)
       null
     }
 
-    if (photoExchangedData != null) {
+    if (newReceivedPhoto != null) {
       Timber.tag(TAG).d("Got new photo from someone")
 
       runBlocking {
-        if (!storePhotoFromPushNotificationUseCase.storePhotoFromPushNotification(photoExchangedData)) {
-          Timber.tag(TAG).w("Could not store photoExchangedData")
+        if (!storePhotoFromPushNotificationUseCase.storePhotoFromPushNotification(newReceivedPhoto)) {
+          Timber.tag(TAG).w("Could not store newReceivedPhoto")
           return@runBlocking
         }
 
-        showNotification(photoExchangedData)
-        sendPhotoReceivedBroadcast(photoExchangedData)
+        showNotification(newReceivedPhoto)
+        sendPhotoReceivedBroadcast(newReceivedPhoto)
       }
     }
   }
@@ -91,29 +90,29 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
     }
   }
 
-  private fun extractData(remoteMessage: RemoteMessage): PhotoExchangedData? {
+  private fun extractData(remoteMessage: RemoteMessage): NewReceivedPhoto? {
     val data = remoteMessage.data
 
-    val uploadedPhotoName = data.get(PhotoExchangedData.uploadedPhotoNameField)
+    val uploadedPhotoName = data.get(NewReceivedPhoto.uploadedPhotoNameField)
     if (uploadedPhotoName.isNullOrEmpty()) {
       return null
     }
 
-    val receivedPhotoName = data.get(PhotoExchangedData.receivedPhotoNameField)
+    val receivedPhotoName = data.get(NewReceivedPhoto.receivedPhotoNameField)
     if (receivedPhotoName.isNullOrEmpty()) {
       return null
     }
 
-    val receiverLon = data.get(PhotoExchangedData.receiverLonField)?.toDoubleOrNull()
+    val receiverLon = data.get(NewReceivedPhoto.receiverLonField)?.toDoubleOrNull()
       ?: return null
 
-    val receiverLat = data.get(PhotoExchangedData.receiverLatField)?.toDoubleOrNull()
+    val receiverLat = data.get(NewReceivedPhoto.receiverLatField)?.toDoubleOrNull()
       ?: return null
 
-    val uploadedOn = data.get(PhotoExchangedData.uploadedOnField)?.toLongOrNull()
+    val uploadedOn = data.get(NewReceivedPhoto.uploadedOnField)?.toLongOrNull()
       ?: return null
 
-    return PhotoExchangedData(
+    return NewReceivedPhoto(
       uploadedPhotoName,
       receivedPhotoName,
       receiverLon,
@@ -122,14 +121,14 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
     )
   }
 
-  private fun sendPhotoReceivedBroadcast(photoExchangedData: PhotoExchangedData) {
+  private fun sendPhotoReceivedBroadcast(newReceivedPhoto: NewReceivedPhoto) {
     Timber.tag(TAG).d("sendPhotoReceivedBroadcast called")
 
     val intent = Intent().apply {
       action = PhotosActivity.newPhotoReceivedAction
 
       val bundle = Bundle()
-      photoExchangedData.toBundle(bundle)
+      newReceivedPhoto.toBundle(bundle)
 
       putExtra(PhotosActivity.receivedPhotoExtra, bundle)
     }
@@ -137,12 +136,12 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
     sendBroadcast(intent)
   }
 
-  private fun showNotification(photoExchangedData: PhotoExchangedData) {
+  private fun showNotification(newReceivedPhoto: NewReceivedPhoto) {
     Timber.tag(TAG).d("showNotification called")
 
     val intent = Intent(this, PhotosActivity::class.java).apply {
       val bundle = Bundle()
-      photoExchangedData.toBundle(bundle)
+      newReceivedPhoto.toBundle(bundle)
 
       putExtra(PhotosActivity.receivedPhotoExtra, bundle)
     }

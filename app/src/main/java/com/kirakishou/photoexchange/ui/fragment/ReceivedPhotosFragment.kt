@@ -113,9 +113,9 @@ class ReceivedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Received
       is ReceivedPhotosFragmentEvent.GeneralEvents.ScrollToTop -> {
         recyclerView.scrollToPosition(0)
       }
-      is ReceivedPhotosFragmentEvent.GeneralEvents.OnNewPhotoNotificationReceived -> {
-        Timber.tag(TAG).d("OnNewPhotoNotificationReceived, currentState = ${lifecycle.getCurrentState()}")
-        viewModel.receivedPhotosFragmentViewModel.onNewPhotoNotificationReceived(event.photoExchangedData)
+      is ReceivedPhotosFragmentEvent.GeneralEvents.OnNewPhotoReceived -> {
+        Timber.tag(TAG).d("OnNewPhotoReceived, currentState = ${lifecycle.getCurrentState()}")
+        viewModel.receivedPhotosFragmentViewModel.onNewPhotoReceived(event.newReceivedPhoto)
       }
       is ReceivedPhotosFragmentEvent.GeneralEvents.RemovePhoto -> {
         viewModel.receivedPhotosFragmentViewModel.removePhoto(event.photoName)

@@ -99,9 +99,9 @@ class UploadedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Uploaded
     }
 
     when (event) {
-      is UploadedPhotosFragmentEvent.GeneralEvents.OnNewPhotoNotificationReceived -> {
-        Timber.tag(TAG).d("OnNewPhotoNotificationReceived, currentState = ${lifecycle.getCurrentState()}")
-        viewModel.uploadedPhotosFragmentViewModel.onNewPhotoNotificationReceived(event.photoExchangedData)
+      is UploadedPhotosFragmentEvent.GeneralEvents.OnNewPhotoReceived -> {
+        Timber.tag(TAG).d("OnNewPhotoReceived, currentState = ${lifecycle.getCurrentState()}")
+        viewModel.uploadedPhotosFragmentViewModel.onNewPhotoReceived(event.newReceivedPhoto)
       }
     }.safe
   }

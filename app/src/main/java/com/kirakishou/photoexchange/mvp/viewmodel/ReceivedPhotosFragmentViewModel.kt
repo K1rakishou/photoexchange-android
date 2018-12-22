@@ -4,6 +4,7 @@ import androidx.fragment.app.FragmentActivity
 import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
 import com.kirakishou.photoexchange.helper.Constants
+import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
@@ -17,8 +18,9 @@ import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragment
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
 import com.kirakishou.photoexchange.interactors.GetReceivedPhotosUseCase
 import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
-import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
+import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoSize
+import com.kirakishou.photoexchange.mvp.model.photo.PhotoAdditionalInfo
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.state.ReceivedPhotosFragmentState
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UpdateStateResult
@@ -66,7 +68,7 @@ class ReceivedPhotosFragmentViewModel(
           is ActorAction.LoadReceivedPhotos -> loadReceivedPhotosInternal(action.forced)
           is ActorAction.ResetState -> resetStateInternal(action.clearCache)
           is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.receivedPhotoName)
-          is ActorAction.OnNewPhotoNotificationReceived -> onNewPhotoNotificationReceivedInternal(action.photoExchangedData)
+          is ActorAction.OnNewPhotoReceived -> onNewPhotoReceivedInternal(action.newReceivedPhoto)
           is ActorAction.RemovePhoto -> removePhotoInternal(action.photoName)
           is ActorAction.FavouritePhoto -> favouritePhotoInternal(action.photoName)
           is ActorAction.ReportPhoto -> reportPhotoInternal(action.photoName)
@@ -91,8 +93,8 @@ class ReceivedPhotosFragmentViewModel(
     launch { viewModelActor.send(ActorAction.SwapPhotoAndMap(receivedPhotoName)) }
   }
 
-  fun onNewPhotoNotificationReceived(photoExchangedData: PhotoExchangedData) {
-    launch { viewModelActor.send(ActorAction.OnNewPhotoNotificationReceived(photoExchangedData)) }
+  fun onNewPhotoReceived(newReceivedPhoto: NewReceivedPhoto) {
+    launch { viewModelActor.send(ActorAction.OnNewPhotoReceived(newReceivedPhoto)) }
   }
 
   fun removePhoto(photoName: String) {
@@ -256,21 +258,39 @@ class ReceivedPhotosFragmentViewModel(
     }
   }
 
-  private fun onNewPhotoNotificationReceivedInternal(photoExchangedData: PhotoExchangedData) {
+  private fun onNewPhotoReceivedInternal(newReceivedPhoto: NewReceivedPhoto) {
     withState { state ->
       //TODO: fetch photo additional info here
-      val updateResult = state.onNewPhotoNotificationReceived(
-        photoExchangedData,
+      val photoIndex = state.receivedPhotos.indexOfFirst { receivedPhoto ->
+        receivedPhoto.receivedPhotoName == newReceivedPhoto.receivedPhotoName
+      }
+
+      if (photoIndex != -1) {
+        //photo is already shown
+        return@withState
+      }
+
+      val newPhoto = ReceivedPhoto(
+        newReceivedPhoto.uploadedPhotoName,
+        newReceivedPhoto.receivedPhotoName,
+        LonLat(
+          newReceivedPhoto.lon,
+          newReceivedPhoto.lat
+        ),
+        newReceivedPhoto.uploadedOn,
+        PhotoAdditionalInfo.empty(newReceivedPhoto.receivedPhotoName),
+        true,
         photoSize
       )
+
+      val updatedPhotos = (state.receivedPhotos.toMutableList() + newPhoto)
+        .sortedByDescending { it.uploadedOn }
 
       //show a snackbar telling user that we got a photo
       intercom.tell<PhotosActivity>()
         .that(PhotosActivityEvent.OnNewPhotoReceived)
 
-      if (updateResult is UpdateStateResult.Update) {
-        setState { copy(receivedPhotos = updateResult.update) }
-      }
+      setState { copy(receivedPhotos = updatedPhotos) }
     }
   }
 
@@ -416,7 +436,7 @@ class ReceivedPhotosFragmentViewModel(
     class LoadReceivedPhotos(val forced: Boolean) : ActorAction()
     class ResetState(val clearCache: Boolean) : ActorAction()
     class SwapPhotoAndMap(val receivedPhotoName: String) : ActorAction()
-    class OnNewPhotoNotificationReceived(val photoExchangedData: PhotoExchangedData) : ActorAction()
+    class OnNewPhotoReceived(val newReceivedPhoto: NewReceivedPhoto) : ActorAction()
     class RemovePhoto(val photoName: String) : ActorAction()
     class ReportPhoto(val photoName: String) : ActorAction()
     class FavouritePhoto(val photoName: String) : ActorAction()

@@ -14,7 +14,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragment
 import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.interactors.BlacklistPhotoUseCase
 import com.kirakishou.photoexchange.interactors.CheckFirebaseAvailabilityUseCase
-import com.kirakishou.photoexchange.mvp.model.PhotoExchangedData
+import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.fragment.GalleryFragment
@@ -83,13 +83,13 @@ class PhotosActivityViewModel(
     }
   }
 
-  fun addReceivedPhoto(photoExchangedData: PhotoExchangedData) {
+  fun addReceivedPhoto(newReceivedPhoto: NewReceivedPhoto) {
     Timber.tag(TAG).d("addReceivedPhoto called")
 
     intercom.tell<UploadedPhotosFragment>()
-      .to(UploadedPhotosFragmentEvent.GeneralEvents.OnNewPhotoNotificationReceived(photoExchangedData))
+      .to(UploadedPhotosFragmentEvent.GeneralEvents.OnNewPhotoReceived(newReceivedPhoto))
     intercom.tell<ReceivedPhotosFragment>()
-      .to(ReceivedPhotosFragmentEvent.GeneralEvents.OnNewPhotoNotificationReceived(photoExchangedData))
+      .to(ReceivedPhotosFragmentEvent.GeneralEvents.OnNewPhotoReceived(newReceivedPhoto))
   }
 
   fun deleteAndBlacklistPhoto(photoName: String) {
