@@ -77,6 +77,7 @@ class GetPhotoAdditionalInfoUseCase(
     }
   }
 
+  //returns null when userId is empty
   private suspend fun getPhotoAdditionalInfos(
     userId: String,
     photoNameList: List<String>
