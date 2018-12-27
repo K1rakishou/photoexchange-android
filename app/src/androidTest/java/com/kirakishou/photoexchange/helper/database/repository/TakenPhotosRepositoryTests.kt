@@ -12,8 +12,7 @@ import com.kirakishou.photoexchange.helper.database.source.local.TakenPhotosLoca
 import com.kirakishou.photoexchange.helper.database.source.local.TempFileLocalSource
 import kotlinx.coroutines.runBlocking
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -96,7 +95,7 @@ class TakenPhotosRepositoryTests {
       val takenPhoto = takenPhotosRepository.saveTakenPhoto(tempFile)
 
       assertEquals(true, tempFile.fileExists())
-      assertNotNull(takenPhoto)
+      assertNull(takenPhoto)
 
       val deletedFiles = tempFilesLocalSource.findDeletedOld(Long.MAX_VALUE)
       assertEquals(1, deletedFiles.size)
