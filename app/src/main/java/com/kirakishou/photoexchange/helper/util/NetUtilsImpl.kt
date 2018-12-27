@@ -14,7 +14,7 @@ import kotlin.coroutines.CoroutineContext
 /**
  * Created by kirakishou on 7/26/2017.
  */
-class NetUtilsImpl(
+open class NetUtilsImpl(
   private val context: Context,
   private val settingsRepository: SettingsRepository,
   private val dispatchersProvider: DispatchersProvider
