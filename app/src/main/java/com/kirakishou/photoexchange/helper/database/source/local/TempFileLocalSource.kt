@@ -11,7 +11,7 @@ import com.kirakishou.photoexchange.helper.util.TimeUtils
 import timber.log.Timber
 import java.io.File
 
-class TempFileLocalSource(
+open class TempFileLocalSource(
   private val database: MyDatabase,
   private val filesDir: String,
   private val timeUtils: TimeUtils,
@@ -80,7 +80,7 @@ class TempFileLocalSource(
     return tempFilesDao.markDeletedById(id, time)
   }
 
-  fun updateTakenPhotoId(tempFileEntity: TempFileEntity, takenPhotoId: Long): Int {
+  open fun updateTakenPhotoId(tempFileEntity: TempFileEntity, takenPhotoId: Long): Int {
     return tempFilesDao.updateTakenPhotoId(tempFileEntity.id!!, takenPhotoId)
   }
 
