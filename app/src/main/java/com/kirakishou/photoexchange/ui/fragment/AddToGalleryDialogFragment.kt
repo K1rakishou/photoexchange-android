@@ -4,11 +4,13 @@ package com.kirakishou.photoexchange.ui.fragment
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.os.Bundle
-import androidx.constraintlayout.widget.ConstraintLayout
+import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.AccelerateInterpolator
+import android.view.animation.LinearInterpolator
 import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.SwitchCompat
-import android.view.View
-import android.view.animation.*
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.animation.addListener
 import butterknife.BindView
 import com.jakewharton.rxbinding2.view.RxView

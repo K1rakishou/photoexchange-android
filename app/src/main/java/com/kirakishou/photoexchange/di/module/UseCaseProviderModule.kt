@@ -1,7 +1,6 @@
 package com.kirakishou.photoexchange.di.module
 
 import android.content.Context
-import butterknife.ButterKnife
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.MyDatabase

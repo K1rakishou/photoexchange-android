@@ -1,22 +1,17 @@
 package com.kirakishou.photoexchange.ui.activity
 
-import androidx.lifecycle.LifecycleRegistry
 import android.content.Intent
 import android.os.Bundle
-import androidx.annotation.CallSuper
-import androidx.appcompat.app.AppCompatActivity
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.LifecycleRegistry
 import butterknife.ButterKnife
 import butterknife.Unbinder
 import com.kirakishou.photoexchange.PhotoExchangeApplication
-import core.ErrorCode
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.rxkotlin.plusAssign
-import io.reactivex.subjects.PublishSubject
-import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.ReceiveChannel
-import timber.log.Timber
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlin.coroutines.CoroutineContext
 
 

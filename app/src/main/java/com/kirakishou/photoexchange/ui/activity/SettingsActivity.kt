@@ -50,6 +50,7 @@ class SettingsActivity : BaseActivity() {
   private val photoVisibilitySpinnerList = ArrayList<String>().apply {
     add("Always Public")
     add("Always Private")
+    //TODO: change to "Ask me every time"
     add("Neither")
   }
 

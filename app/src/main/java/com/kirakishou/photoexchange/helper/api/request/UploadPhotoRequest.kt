@@ -11,7 +11,7 @@ import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.rx2.await
-import net.request.SendPhotoPacket
+import net.request.UploadPhotoPacket
 import net.response.UploadPhotoResponse
 import okhttp3.MultipartBody
 import timber.log.Timber
@@ -35,7 +35,7 @@ class UploadPhotoRequest(
 
   @Suppress("UNCHECKED_CAST")
   override suspend fun execute(): UploadPhotoResponse {
-    val packet = SendPhotoPacket(location.lon, location.lat, userId, isPublic)
+    val packet = UploadPhotoPacket(location.lon, location.lat, userId, isPublic)
     val photoFile = File(photoFilePath)
     val body = getBody(photoFile, packet, photo, channel)
 
@@ -55,7 +55,7 @@ class UploadPhotoRequest(
 
   private fun getBody(
     photoFile: File,
-    packet: SendPhotoPacket,
+    packet: UploadPhotoPacket,
     photo: TakenPhoto,
     channel: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
   ): MultipartBody {

@@ -158,13 +158,9 @@ class TakePhotoActivity : BaseActivity() {
       set.setStartDelay(50)
       set.setDuration(200)
       set.addListener(onEnd = {
-        if (::takePhotoButton.isInitialized) {
-          takePhotoButton.isClickable = true
-        }
+        takePhotoButton.isClickable = true
       }, onStart = {
-        if (::takePhotoButton.isInitialized) {
-          takePhotoButton.show()
-        }
+        takePhotoButton.show()
       })
       set.start()
     }
@@ -180,14 +176,9 @@ class TakePhotoActivity : BaseActivity() {
       set.play(animation)
       set.setDuration(250)
       set.addListener(onStart = {
-        if (::takePhotoButton.isInitialized) {
-          takePhotoButton.isClickable = false
-        }
+        takePhotoButton.isClickable = false
       }, onEnd = {
-        if (::takePhotoButton.isInitialized) {
-          takePhotoButton.hide()
-        }
-
+        takePhotoButton.hide()
         emitter.onComplete()
       })
       set.start()
