@@ -11,21 +11,21 @@ class PagedApiUtilsImpl(
 ) : PagedApiUtils {
   private val TAG = "PagedApiUtils"
 
-  override suspend fun <T, R> getPageOfPhotos(
+  override suspend fun <Photo, PhotoResponse> getPageOfPhotos(
     tag: String,  //for debugging
     firstUploadedOn: Long,
     lastUploadedOn: Long,
     requestedCount: Int,
     userId: String?,
     getFreshPhotosCountFunc: suspend (Long) -> Int,
-    getPhotosFromCacheFunc: suspend (Long, Int) -> Paged<T>,
-    getPageOfPhotosFunc: suspend (String?, Long, Int) -> List<R>,
+    getPhotosFromCacheFunc: suspend (Long, Int) -> List<Photo>,
+    getPageOfPhotosFunc: suspend (String?, Long, Int) -> List<PhotoResponse>,
     clearCacheFunc: suspend () -> Unit,
     deleteOldFunc: suspend () -> Unit,
-    filterBannedPhotosFunc: suspend (List<R>) -> List<R>,
-    cachePhotosFunc: suspend (List<R>) -> Boolean,
-    mapperFunc: suspend (List<R>) -> List<T>
-  ): Paged<T> {
+    filterBannedPhotosFunc: suspend (List<PhotoResponse>) -> List<PhotoResponse>,
+    cachePhotosFunc: suspend (List<PhotoResponse>) -> Boolean,
+    mapperFunc: suspend (List<PhotoResponse>) -> List<Photo>
+  ): Paged<Photo> {
     val getFreshPhotosCountResult = getFreshPhotosCount(
       firstUploadedOn,
       requestedCount,
@@ -42,18 +42,20 @@ class PagedApiUtilsImpl(
     val photos = when (getFreshPhotosCountResult) {
       FreshPhotosCountRequestResult.NoInternet -> {
         Timber.tag("${TAG}_$tag").d("result == NoInternet, just fetch photos from the database")
-        return getPhotosFromCacheFunc(lastUploadedOn, requestedCount)
+
+        val photosFromCache = getPhotosFromCacheFunc(lastUploadedOn, requestedCount)
+        return Paged(photosFromCache, photosFromCache.size < requestedCount)
       }
       FreshPhotosCountRequestResult.NoFreshPhotos -> {
         Timber.tag("${TAG}_$tag").d("result == NoFreshPhotos")
 
         //if there are no fresh photos then we can check the cache
-        val fromCache = getPhotosFromCacheFunc(lastUploadedOn, requestedCount)
-        if (fromCache.page.size == requestedCount) {
+        val photosFromCache = getPhotosFromCacheFunc(lastUploadedOn, requestedCount)
+        if (photosFromCache.size == requestedCount) {
           Timber.tag("${TAG}_$tag").d("getPhotosFromCacheFunc returned enough photos")
 
           //if enough photos were found in the cache - return them
-          return fromCache
+          return Paged(photosFromCache, photosFromCache.size < requestedCount)
         }
 
         //if server is not available and this is a first run then getFreshPhotosCount will return NoFreshPhotos
@@ -67,14 +69,14 @@ class PagedApiUtilsImpl(
           }
         } catch (error: ConnectionError) {
           //if the server is still dead then just return whatever there is in the cache
-          return fromCache
+          return Paged(photosFromCache, photosFromCache.size < requestedCount)
         }
       }
       is FreshPhotosCountRequestResult.Ok -> {
         Timber.tag("${TAG}_$tag").d("result == ok, count in 1..$requestedCount")
 
         //otherwise get fresh photos AND the next page and then combine them
-        val photos = mutableListOf<R>()
+        val photos = mutableListOf<PhotoResponse>()
 
         photos += getPageOfPhotosFunc(userId, timeUtils.getTimeFast(), getFreshPhotosCountResult.count).also {
           Timber.tag("${TAG}_$tag").d("getPageOfPhotosFunc with current time returned ${it.size} photos")

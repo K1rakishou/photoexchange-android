@@ -105,15 +105,15 @@ open class GetGalleryPhotosUseCase(
     }
   }
 
-  private suspend fun getFromCacheInternal(lastUploadedOn: Long, count: Int): Paged<GalleryPhoto> {
+  private suspend fun getFromCacheInternal(lastUploadedOn: Long, count: Int): List<GalleryPhoto> {
     //if there is no internet - search only in the database
     val cachedGalleryPhotos = galleryPhotosRepository.getPage(lastUploadedOn, count)
     return if (cachedGalleryPhotos.size == count) {
       Timber.tag(TAG).d("Found enough gallery photos in the database")
-      Paged(cachedGalleryPhotos, false)
+      cachedGalleryPhotos
     } else {
       Timber.tag(TAG).d("Found not enough gallery photos in the database")
-      Paged(cachedGalleryPhotos, cachedGalleryPhotos.size < count)
+      cachedGalleryPhotos
     }
   }
 

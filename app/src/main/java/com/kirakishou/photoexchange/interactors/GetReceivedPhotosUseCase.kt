@@ -94,15 +94,15 @@ open class GetReceivedPhotosUseCase(
     lastTimeFreshPhotosCheck = 0
   }
 
-  private suspend fun getFromCacheInternal(lastUploadedOn: Long, count: Int): Paged<ReceivedPhoto> {
+  private suspend fun getFromCacheInternal(lastUploadedOn: Long, count: Int): List<ReceivedPhoto> {
     //if there is no internet - search only in the database
     val cachedReceivedPhotos = receivedPhotosRepository.getPage(lastUploadedOn, count)
     return if (cachedReceivedPhotos.size == count) {
       Timber.tag(TAG).d("Found enough received photos in the database")
-      Paged(cachedReceivedPhotos, false)
+      cachedReceivedPhotos
     } else {
       Timber.tag(TAG).d("Found not enough received photos in the database")
-      Paged(cachedReceivedPhotos, cachedReceivedPhotos.size < count)
+      cachedReceivedPhotos
     }
   }
 
