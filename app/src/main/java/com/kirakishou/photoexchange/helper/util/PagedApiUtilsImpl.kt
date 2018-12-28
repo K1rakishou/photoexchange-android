@@ -32,6 +32,7 @@ class PagedApiUtilsImpl(
    * @param cachePhotosFunc - a function that caches fresh photos
    * @return a page of photos
    * */
+  //TODO: make getPageOfPhotosFunc return Photo instead of PhotoResponse. After that remove mapperFunc
   override suspend fun <Photo, PhotoResponse> getPageOfPhotos(
     tag: String,  //for debugging
     firstUploadedOn: Long,
