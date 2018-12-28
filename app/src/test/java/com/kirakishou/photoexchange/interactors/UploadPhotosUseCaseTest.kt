@@ -1,32 +1,5 @@
 package com.kirakishou.photoexchange.interactors
 
-import com.kirakishou.photoexchange.helper.api.ApiClient
-import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
-import com.kirakishou.photoexchange.helper.gson.JsonConverter
-import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
-import com.kirakishou.photoexchange.helper.util.BitmapUtils
-import com.kirakishou.photoexchange.helper.util.FileUtils
-import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
-import com.kirakishou.photoexchange.helper.exception.ApiErrorException
-import com.kirakishou.photoexchange.helper.LonLat
-import com.nhaarman.mockito_kotlin.any
-import core.ErrorCode
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.runBlocking
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Test
-import org.mockito.Mockito
-import java.io.File
-import java.io.IOException
-import java.lang.IllegalStateException
-import java.lang.RuntimeException
-
 class UploadPhotosUseCaseTest {
 
   /*lateinit var database: MyDatabase

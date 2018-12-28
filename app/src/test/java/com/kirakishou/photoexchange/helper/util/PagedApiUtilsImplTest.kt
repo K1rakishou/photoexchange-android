@@ -3,8 +3,9 @@ package com.kirakishou.photoexchange.helper.util
 import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.PhotoAdditionalInfo
-import junit.framework.Assert.assertEquals
-import junit.framework.Assert.assertTrue
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.whenever
+import junit.framework.Assert.*
 import kotlinx.coroutines.runBlocking
 import net.response.data.GalleryPhotoResponseData
 import org.junit.Before
@@ -18,7 +19,6 @@ class PagedApiUtilsImplTest {
   private lateinit var pagedApiUtils: PagedApiUtils
 
   private val currentTime = 1000L
-  private val requestedCount = 5
 
   @Before
   fun setUp() {
@@ -33,26 +33,90 @@ class PagedApiUtilsImplTest {
   @Test
   fun `should return photos from cache when there is no internet and network access level is less than canAccessNetwork`() {
     runBlocking {
-      Mockito.`when`(netUtils.canAccessNetwork()).thenReturn(false)
+      val photos = listOf(
+        GalleryPhoto(
+          "123",
+          LonLat.empty(),
+          21212L,
+          PhotoAdditionalInfo.empty("123")
+        )
+      )
 
-      val page = pagedApiUtils.getPageOfPhotos<GalleryPhoto, GalleryPhotoResponseData>(
+      val getFreshPhotosFunc = mock<suspend (Long) -> Int>()
+      val getPageOfPhotosFunc = mock<suspend (String?, Long, Int) -> List<GalleryPhotoResponseData>>()
+      val clearCacheFunc = mock<suspend () -> Unit>()
+      val deleteOldFunc = mock<suspend () -> Unit>()
+      val mapperFunc = mock<suspend (List<GalleryPhotoResponseData>) -> List<GalleryPhoto>>()
+      val filterBannedPhotosFunc = mock<suspend (List<GalleryPhoto>) -> List<GalleryPhoto>>()
+      val cachePhotosFunc = mock<suspend (List<GalleryPhoto>) -> Boolean>()
+
+      whenever(netUtils.canAccessNetwork()).thenReturn(false)
+
+      val page = pagedApiUtils.getPageOfPhotos(
         "test",
         -1L,
         currentTime,
-        requestedCount,
+        5,
         "234",
-        { 0 },
-        { _, _ -> listOf(GalleryPhoto("123", LonLat.empty(), 21212L, PhotoAdditionalInfo.empty("123"))) },
-        {_, _, _ -> listOf()},
-        {},
-        {},
-        { listOf() },
-        { listOf() },
-        { true }
+        getFreshPhotosFunc,
+        { _, _ -> photos },
+        getPageOfPhotosFunc,
+        clearCacheFunc,
+        deleteOldFunc,
+        mapperFunc,
+        filterBannedPhotosFunc,
+        cachePhotosFunc
       )
 
       assertEquals(1, page.page.size)
+      assertEquals("123", page.page.first().photoName)
+
       assertTrue(page.isEnd)
+    }
+  }
+
+  @Test
+  fun `should return photos from cache when it's first run and there are enough photos in the cache`() {
+    runBlocking {
+      val photos = listOf(
+        GalleryPhoto(
+          "123",
+          LonLat.empty(),
+          21212L,
+          PhotoAdditionalInfo.empty("123")
+        )
+      )
+
+      val getFreshPhotosFunc = mock<suspend (Long) -> Int>()
+      val getPageOfPhotosFunc = mock<suspend (String?, Long, Int) -> List<GalleryPhotoResponseData>>()
+      val clearCacheFunc = mock<suspend () -> Unit>()
+      val deleteOldFunc = mock<suspend () -> Unit>()
+      val mapperFunc = mock<suspend (List<GalleryPhotoResponseData>) -> List<GalleryPhoto>>()
+      val filterBannedPhotosFunc = mock<suspend (List<GalleryPhoto>) -> List<GalleryPhoto>>()
+      val cachePhotosFunc = mock<suspend (List<GalleryPhoto>) -> Boolean>()
+
+      Mockito.`when`(netUtils.canAccessNetwork()).thenReturn(true)
+
+      val page = pagedApiUtils.getPageOfPhotos(
+        "test",
+        -1L,
+        currentTime,
+        1,
+        "234",
+        getFreshPhotosFunc,
+        { _, _ -> photos },
+        getPageOfPhotosFunc,
+        clearCacheFunc,
+        deleteOldFunc,
+        mapperFunc,
+        filterBannedPhotosFunc,
+        cachePhotosFunc
+      )
+
+      assertEquals(1, page.page.size)
+      assertEquals("123", page.page.first().photoName)
+
+      assertFalse(page.isEnd)
     }
   }
 }

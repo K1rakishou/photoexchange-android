@@ -11,6 +11,27 @@ class PagedApiUtilsImpl(
 ) : PagedApiUtils {
   private val TAG = "PagedApiUtils"
 
+  /**
+   * An utility method for paged photo fetching from cache/remote server. Considers network
+   * availability and do not access network when current network is metered and it's disabled in
+   * the settings to access network with metered connection. Tries to get photos from the cache first
+   * and only if there are not enough photos in the cache - tries to access the network. Manages
+   * cache cleaning up and fresh photos caching.
+   *
+   * @param tag - used for debugging logs
+   * @param firstUploadedOn - the time when the first photo from the current state was uploaded (MvRx state)
+   * @param lastUploadedOn - the time when the last photo from the current state was uploaded (MvRx state)
+   * @param requestedCount - the amount of photos we want to be returned
+   * @param userId - the id of the current user
+   * @param getFreshPhotosCountFunc - a function that fetches the amount of fresh photos on the server
+   * @param getPhotosFromCacheFunc - a function that fetches a page of photos from the cache
+   * @param getPhotosFromCacheFunc - a function that clears the current photos cache completely
+   * @param deleteOldFunc - a function that deletes old cached photos
+   * @param mapperFunc - a mapper function that maps photo response to photo object
+   * @param filterBannedPhotosFunc - a function that checks whether any fresh photos has been filtered by the user
+   * @param cachePhotosFunc - a function that caches fresh photos
+   * @return a page of photos
+   * */
   override suspend fun <Photo, PhotoResponse> getPageOfPhotos(
     tag: String,  //for debugging
     firstUploadedOn: Long,
@@ -51,25 +72,26 @@ class PagedApiUtilsImpl(
       mapperFunc
     )
 
-    val photos = when (returnedPhotos) {
+    val freshPhotosFromServer = when (returnedPhotos) {
       is ReturnedPhotos.FromCache<Photo> -> return returnedPhotos.page
       is ReturnedPhotos.FromServer<Photo> -> returnedPhotos.photos
     }
 
-    if (photos.isEmpty()) {
+    if (freshPhotosFromServer.isEmpty()) {
       Timber.tag("${TAG}_$tag").d("No gallery photos were found on the server")
       return Paged(emptyList(), true)
     }
 
-    val filteredPhotos = filterBannedPhotosFunc(photos)
+    val filteredPhotos = filterBannedPhotosFunc(freshPhotosFromServer)
 
     //TODO: should move this inside the when statement because we don't need to cache photos from the cache
     if (!cachePhotosFunc(filteredPhotos)) {
       throw DatabaseException("Could not cache gallery photos in the database")
     }
 
-    //use the "photos.size" not the "filteredPhotos.size"
-    return Paged(filteredPhotos, photos.size < requestedCount)
+    //It is important to use "freshPhotosFromServer.size" because it indicates the real amount of the received photos
+    //We use that info to figure out whether it is the last page of photos on the server. That's why it is so important.
+    return Paged(filteredPhotos, freshPhotosFromServer.size < requestedCount)
   }
 
   private suspend fun <Photo, PhotoResponse> getPhotos(
@@ -107,7 +129,7 @@ class PagedApiUtilsImpl(
           return ReturnedPhotos.FromCache(
             Paged(
               photosFromCache,
-              photosFromCache.size < requestedCount
+              false
             )
           )
         }

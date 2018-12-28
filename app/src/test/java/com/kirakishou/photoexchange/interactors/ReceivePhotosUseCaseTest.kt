@@ -1,22 +1,5 @@
 package com.kirakishou.photoexchange.interactors
 
-import com.kirakishou.photoexchange.helper.api.ApiClient
-import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
-import com.kirakishou.photoexchange.mvp.model.FindPhotosData
-import com.kirakishou.photoexchange.helper.exception.ApiErrorException
-import com.nhaarman.mockito_kotlin.any
-import core.ErrorCode
-import kotlinx.coroutines.runBlocking
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Before
-import org.junit.Test
-import org.mockito.Mockito
-
 class ReceivePhotosUseCaseTest {
 
   /*lateinit var database: MyDatabase
