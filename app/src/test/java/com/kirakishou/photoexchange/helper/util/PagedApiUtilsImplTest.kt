@@ -50,12 +50,18 @@ class PagedApiUtilsImplTest {
       "444",
       51.1,
       22.2,
-      398L
+      397L
     ),
     GalleryPhotoResponseData(
       "555",
       42.1,
       23.2,
+      398L
+    ),
+    GalleryPhotoResponseData(
+      "666",
+      54.1,
+      33.2,
       399L
     )
   )
@@ -312,7 +318,7 @@ class PagedApiUtilsImplTest {
             }
             1 -> {
               ++callNumber
-              freshPhotosFromServer
+              freshPhotosFromServer.take(2)
             }
             else -> throw IllegalStateException("Not implemented for ${callNumber}")
           }
@@ -333,6 +339,41 @@ class PagedApiUtilsImplTest {
       assertEquals("333", photos[1].photoName)
       assertEquals("444", photos[2].photoName)
       assertEquals("555", photos[3].photoName)
+
+      assertFalse(page.isEnd)
+    }
+  }
+
+  @Test
+  fun `should clear cache completely and then get page of photos from the server when fresh photos amount is greater than requested photos count`() {
+    runBlocking {
+      var clearCacheFuncCalled = false
+      Mockito.`when`(netUtils.canAccessNetwork()).thenReturn(true)
+
+      val page = pagedApiUtils.getPageOfPhotos<GalleryPhoto, GalleryPhotoResponseData>(
+        "test",
+        1L,
+        currentTime,
+        2,
+        "234",
+        getFreshPhotosCountFunc = { 3 },
+        getPhotosFromCacheFunc = { _, _ -> photosFromCache },
+        getPageOfPhotosFunc = { _, _, _ -> freshPhotosFromServer },
+        clearCacheFunc = { clearCacheFuncCalled = true },
+        deleteOldFunc = { assertNotCalled() },
+        mapperFunc = { GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(it) },
+        filterBannedPhotosFunc = { it },
+        cachePhotosFunc = { true }
+      )
+
+      assertTrue(clearCacheFuncCalled)
+
+      assertEquals(3, page.page.size)
+      val photos = page.page
+
+      assertEquals("444", photos[0].photoName)
+      assertEquals("555", photos[1].photoName)
+      assertEquals("666", photos[2].photoName)
 
       assertFalse(page.isEnd)
     }
