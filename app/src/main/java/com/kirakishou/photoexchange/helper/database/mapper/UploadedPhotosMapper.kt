@@ -91,14 +91,14 @@ object UploadedPhotosMapper {
 
   object FromObject {
     object ToEntity {
-      fun toUploadedPhotoEntity(photoId: Long, photoName: String, lon: Double, lat: Double, time: Long, uploadedOn: Long): UploadedPhotoEntity {
+      fun toUploadedPhotoEntity(photoId: Long, photoName: String, lon: Double, lat: Double, insertedOn: Long, uploadedOn: Long): UploadedPhotoEntity {
         return UploadedPhotoEntity.createWithoutReceiverInfo(
           photoName,
           photoId,
           lon,
           lat,
           uploadedOn,
-          time
+          insertedOn
         )
       }
     }

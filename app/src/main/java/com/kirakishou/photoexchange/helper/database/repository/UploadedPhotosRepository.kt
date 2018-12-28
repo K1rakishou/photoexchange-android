@@ -15,10 +15,8 @@ open class UploadedPhotosRepository(
     return uploadedPhotosLocalSource.save(photoId, photoName, lon, lat, uploadedOn)
   }
 
-  suspend fun saveMany(
-    uploadedPhotoDataList: List<UploadedPhotoResponseData>
-  ): Boolean {
-    return uploadedPhotosLocalSource.saveMany(uploadedPhotoDataList)
+  suspend fun saveMany(uploadedPhotoList: List<UploadedPhoto>): Boolean {
+    return uploadedPhotosLocalSource.saveMany(uploadedPhotoList)
   }
 
   suspend fun count(): Int {

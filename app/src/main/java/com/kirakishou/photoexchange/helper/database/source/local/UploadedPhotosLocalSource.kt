@@ -37,13 +37,19 @@ open class UploadedPhotosLocalSource(
   }
 
   open fun saveMany(
-    uploadedPhotoDataList: List<UploadedPhotoResponseData>
+    uploadedPhotoList: List<UploadedPhoto>
   ): Boolean {
-    val now = timeUtils.getTimeFast()
+    val insertedOn = timeUtils.getTimeFast()
 
-    for (uploadedPhotoData in uploadedPhotoDataList) {
-      val photo = UploadedPhotosMapper.FromResponse.ToEntity
-        .toUploadedPhotoEntity(now, uploadedPhotoData)
+    for (uploadedPhoto in uploadedPhotoList) {
+      val photo = UploadedPhotosMapper.FromObject.ToEntity.toUploadedPhotoEntity(
+        uploadedPhoto.photoId,
+        uploadedPhoto.photoName,
+        uploadedPhoto.uploaderLon,
+        uploadedPhoto.uploaderLat,
+        insertedOn,
+        uploadedPhoto.uploadedOn
+      )
 
       if (!save(photo)) {
         return false

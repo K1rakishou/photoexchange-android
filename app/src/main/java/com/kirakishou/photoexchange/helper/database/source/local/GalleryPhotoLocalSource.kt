@@ -15,10 +15,9 @@ open class GalleryPhotoLocalSource(
   private val TAG = "GalleryPhotoLocalSource"
   private val galleryPhotoDao = database.galleryPhotoDao()
 
-  open fun saveMany(galleryPhotos: List<GalleryPhotoResponseData>): Boolean {
+  open fun saveMany(galleryPhotos: List<GalleryPhoto>): Boolean {
     val now = timeUtils.getTimeFast()
-    val photos = GalleryPhotosMapper.FromResponse.ToEntity
-      .toGalleryPhotoEntitiesList(now, galleryPhotos)
+    val photos = GalleryPhotosMapper.FromObject.toGalleryPhotoEntities(now, galleryPhotos)
 
     return galleryPhotoDao.saveMany(photos).size == galleryPhotos.size
   }
