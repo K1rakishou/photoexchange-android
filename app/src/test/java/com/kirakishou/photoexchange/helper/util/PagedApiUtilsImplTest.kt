@@ -12,6 +12,7 @@ import net.response.data.GalleryPhotoResponseData
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
+import java.lang.IllegalStateException
 import java.lang.RuntimeException
 
 class PagedApiUtilsImplTest {
@@ -30,8 +31,7 @@ class PagedApiUtilsImplTest {
       PhotoAdditionalInfo.empty("123")
     )
   )
-
-  private val freshPhotos = listOf(
+  private val photosFromServer = listOf(
     GalleryPhotoResponseData(
       "222",
       11.1,
@@ -45,6 +45,20 @@ class PagedApiUtilsImplTest {
       401L
     )
   )
+  private val freshPhotosFromServer = listOf(
+    GalleryPhotoResponseData(
+      "444",
+      51.1,
+      22.2,
+      398L
+    ),
+    GalleryPhotoResponseData(
+      "555",
+      42.1,
+      23.2,
+      399L
+    )
+  )
 
   @Before
   fun setUp() {
@@ -55,7 +69,7 @@ class PagedApiUtilsImplTest {
       timeUtils, netUtils
     )
   }
-  
+
   private fun assertNotCalled(): Nothing = throw RuntimeException("Must not be called")
 
   @Test
@@ -131,7 +145,7 @@ class PagedApiUtilsImplTest {
         "234",
         getFreshPhotosCountFunc = { assertNotCalled() },
         getPhotosFromCacheFunc = { _, _ -> photosFromCache },
-        getPageOfPhotosFunc = { _, _, _ -> freshPhotos },
+        getPageOfPhotosFunc = { _, _, _ -> photosFromServer },
         clearCacheFunc = { assertNotCalled() },
         deleteOldFunc = { deleteOldFuncCalled = true },
         mapperFunc = { GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(it) },
@@ -224,7 +238,7 @@ class PagedApiUtilsImplTest {
         "234",
         getFreshPhotosCountFunc = { 0 },
         getPhotosFromCacheFunc = { _, _ -> photosFromCache },
-        getPageOfPhotosFunc = { _, _, _ -> freshPhotos },
+        getPageOfPhotosFunc = { _, _, _ -> photosFromServer },
         clearCacheFunc = { assertNotCalled() },
         deleteOldFunc = { deleteOldFuncCalled = true },
         mapperFunc = { GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(it) },
@@ -272,6 +286,55 @@ class PagedApiUtilsImplTest {
       assertEquals("123", page.page.first().photoName)
 
       assertTrue(page.isEnd)
+    }
+  }
+
+  @Test
+  fun `should return page of photos concatenated with fresh photos when there are fresh photos on the server`() {
+    runBlocking {
+      var deleteOldFuncCalled = false
+      var callNumber = 0
+      Mockito.`when`(netUtils.canAccessNetwork()).thenReturn(true)
+
+      val page = pagedApiUtils.getPageOfPhotos<GalleryPhoto, GalleryPhotoResponseData>(
+        "test",
+        1L,
+        currentTime,
+        2,
+        "234",
+        getFreshPhotosCountFunc = { 2 },
+        getPhotosFromCacheFunc = { _, _ -> photosFromCache },
+        getPageOfPhotosFunc = { _, _, _ ->
+          return@getPageOfPhotos when (callNumber) {
+            0 -> {
+              ++callNumber
+              photosFromServer
+            }
+            1 -> {
+              ++callNumber
+              freshPhotosFromServer
+            }
+            else -> throw IllegalStateException("Not implemented for ${callNumber}")
+          }
+        },
+        clearCacheFunc = { assertNotCalled() },
+        deleteOldFunc = { deleteOldFuncCalled = true },
+        mapperFunc = { GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(it) },
+        filterBannedPhotosFunc = { it },
+        cachePhotosFunc = { true }
+      )
+
+      assertTrue(deleteOldFuncCalled)
+      assertEquals(4, page.page.size)
+
+      val photos = page.page
+
+      assertEquals("222", photos[0].photoName)
+      assertEquals("333", photos[1].photoName)
+      assertEquals("444", photos[2].photoName)
+      assertEquals("555", photos[3].photoName)
+
+      assertFalse(page.isEnd)
     }
   }
 }
