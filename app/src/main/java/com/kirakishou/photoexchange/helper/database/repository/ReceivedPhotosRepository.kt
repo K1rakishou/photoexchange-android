@@ -20,7 +20,7 @@ open class ReceivedPhotosRepository(
     return receivedPhotosLocalSource.save(newReceivedPhoto)
   }
 
-  suspend fun saveMany(receivedPhotos: List<ReceivedPhotoResponseData>): Boolean {
+  suspend fun saveMany(receivedPhotos: List<ReceivedPhoto>): Boolean {
     return receivedPhotosLocalSource.saveMany(receivedPhotos)
   }
 

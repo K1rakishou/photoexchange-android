@@ -8,7 +8,7 @@ class GalleryPhotosRepository(
   private val galleryPhotoLocalSource: GalleryPhotoLocalSource
 ) : BaseRepository() {
 
-  suspend fun saveMany(galleryPhotos: List<GalleryPhotoResponseData>): Boolean {
+  suspend fun saveMany(galleryPhotos: List<GalleryPhoto>): Boolean {
     return galleryPhotoLocalSource.saveMany(galleryPhotos)
   }
 

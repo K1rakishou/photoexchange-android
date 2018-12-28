@@ -79,15 +79,25 @@ open class GetReceivedPhotosUseCase(
       userIdParam,
       { firstUploadedOn -> getFreshPhotosCount(userIdParam, firstUploadedOn) },
       { lastUploadedOn, count -> getFromCacheInternal(lastUploadedOn, count) },
-      { userId, lastUploadedOn, count -> apiClient.getPageOfReceivedPhotos(userId!!, lastUploadedOn, count) },
+      { userId, lastUploadedOn, count ->
+        apiClient.getPageOfReceivedPhotos(
+          userId!!,
+          lastUploadedOn,
+          count
+        )
+      },
       { receivedPhotosRepository.deleteAll() },
       { deleteOldPhotos() },
+      { responseData ->
+        ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhotos(
+          responseData
+        )
+      },
       { receivedPhotos -> filterBlacklistedPhotos(receivedPhotos) },
       { receivedPhotos ->
         storeInDatabase(receivedPhotos)
         true
-      },
-      { responseData -> ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhotos(responseData) })
+      })
   }
 
   private fun resetTimer() {
@@ -119,8 +129,8 @@ open class GetReceivedPhotosUseCase(
   }
 
   private suspend fun filterBlacklistedPhotos(
-    receivedPhotos: List<ReceivedPhotoResponseData>
-  ): List<ReceivedPhotoResponseData> {
+    receivedPhotos: List<ReceivedPhoto>
+  ): List<ReceivedPhoto> {
     return blacklistedPhotoRepository.filterBlacklistedPhotos(receivedPhotos) {
       it.receivedPhotoName
     }
@@ -139,15 +149,15 @@ open class GetReceivedPhotosUseCase(
   }
 
   private suspend fun storeInDatabase(
-    receivedPhotos: List<ReceivedPhotoResponseData>
+    receivedPhotos: List<ReceivedPhoto>
   ) {
     database.transactional {
       for (receivedPhoto in receivedPhotos) {
         val updateResult = uploadedPhotosRepository.updateReceiverInfo(
           receivedPhoto.uploadedPhotoName,
           receivedPhoto.receivedPhotoName,
-          receivedPhoto.lon,
-          receivedPhoto.lat
+          receivedPhoto.lonLat.lon,
+          receivedPhoto.lonLat.lat
         )
 
         if (!updateResult) {

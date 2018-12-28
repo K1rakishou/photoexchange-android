@@ -21,7 +21,7 @@ class ReceivedPhotosLocalSource(
     val now = timeUtils.getTimeFast()
 
     return receivedPhotosDao.save(
-      ReceivedPhotosMapper.FromObject.toReceivedPhotoEntity(now, receivedPhoto)
+      ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhotoEntity(now, receivedPhoto)
     ).isSuccess()
   }
 
@@ -41,12 +41,10 @@ class ReceivedPhotosLocalSource(
   }
 
   fun saveMany(
-    receivedPhotos: List<ReceivedPhotoResponseData>
+    receivedPhotos: List<ReceivedPhoto>
   ): Boolean {
     val time = timeUtils.getTimeFast()
-    val photos = ReceivedPhotosMapper.FromResponse.GetReceivedPhotos
-      .toReceivedPhotoEntities(time, receivedPhotos)
-
+    val photos = ReceivedPhotosMapper.FromObject.toReceivedPhotoEntities(time, receivedPhotos)
     return receivedPhotosDao.saveMany(photos).size == receivedPhotos.size
   }
 

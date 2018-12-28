@@ -22,9 +22,9 @@ class PagedApiUtilsImpl(
     getPageOfPhotosFunc: suspend (String?, Long, Int) -> List<PhotoResponse>,
     clearCacheFunc: suspend () -> Unit,
     deleteOldFunc: suspend () -> Unit,
-    filterBannedPhotosFunc: suspend (List<PhotoResponse>) -> List<PhotoResponse>,
-    cachePhotosFunc: suspend (List<PhotoResponse>) -> Boolean,
-    mapperFunc: suspend (List<PhotoResponse>) -> List<Photo>
+    mapperFunc: suspend (List<PhotoResponse>) -> List<Photo>,
+    filterBannedPhotosFunc: suspend (List<Photo>) -> List<Photo>,
+    cachePhotosFunc: suspend (List<Photo>) -> Boolean
   ): Paged<Photo> {
     val getFreshPhotosCountResult = getFreshPhotosCount(
       firstUploadedOn,
@@ -47,12 +47,13 @@ class PagedApiUtilsImpl(
       getFreshPhotosCountResult,
       getPhotosFromCacheFunc,
       getPageOfPhotosFunc,
-      clearCacheFunc
+      clearCacheFunc,
+      mapperFunc
     )
 
     val photos = when (returnedPhotos) {
-      is ReturnedPhotos.FromCache<*> -> return returnedPhotos.page as Paged<Photo>
-      is ReturnedPhotos.FromServer<*> -> returnedPhotos.photos as List<PhotoResponse>
+      is ReturnedPhotos.FromCache<Photo> -> return returnedPhotos.page
+      is ReturnedPhotos.FromServer<Photo> -> returnedPhotos.photos
     }
 
     if (photos.isEmpty()) {
@@ -67,10 +68,8 @@ class PagedApiUtilsImpl(
       throw DatabaseException("Could not cache gallery photos in the database")
     }
 
-    val mappedPhotos = mapperFunc(filteredPhotos)
-
     //use the "photos.size" not the "filteredPhotos.size"
-    return Paged(mappedPhotos, photos.size < requestedCount)
+    return Paged(filteredPhotos, photos.size < requestedCount)
   }
 
   private suspend fun <Photo, PhotoResponse> getPhotos(
@@ -81,8 +80,9 @@ class PagedApiUtilsImpl(
     getFreshPhotosCountResult: FreshPhotosCountRequestResult,
     getPhotosFromCacheFunc: suspend (Long, Int) -> List<Photo>,
     getPageOfPhotosFunc: suspend (String?, Long, Int) -> List<PhotoResponse>,
-    clearCacheFunc: suspend () -> Unit
-  ): ReturnedPhotos {
+    clearCacheFunc: suspend () -> Unit,
+    mapperFunc: suspend (List<PhotoResponse>) -> List<Photo>
+  ): ReturnedPhotos<Photo> {
     when (getFreshPhotosCountResult) {
       FreshPhotosCountRequestResult.NoInternet -> {
         Timber.tag("${TAG}_$tag").d("result == NoInternet, just fetch photos from the database")
@@ -122,7 +122,7 @@ class PagedApiUtilsImpl(
             Timber.tag("${TAG}_$tag").d("getPageOfPhotosFunc returned ${it.size} photos")
           }
 
-          return ReturnedPhotos.FromServer(photos)
+          return ReturnedPhotos.FromServer(mapperFunc(photos))
         } catch (error: ConnectionError) {
           //if the server is still dead then just return whatever there is in the cache
           return ReturnedPhotos.FromCache(
@@ -146,11 +146,12 @@ class PagedApiUtilsImpl(
         ).also {
           Timber.tag("${TAG}_$tag").d("getPageOfPhotosFunc with current time returned ${it.size} photos")
         }
+
         photos += getPageOfPhotosFunc(userId, lastUploadedOn, requestedCount).also {
           Timber.tag("${TAG}_$tag").d("getPageOfPhotosFunc with the time of last photo returned ${it.size} photos")
         }
 
-        return ReturnedPhotos.FromServer(photos)
+        return ReturnedPhotos.FromServer(mapperFunc(photos))
       }
       FreshPhotosCountRequestResult.TooFreshManyPhotos -> {
         Timber.tag("${TAG}_$tag").d("result == TooFreshManyPhotos, count > $requestedCount")
@@ -162,7 +163,7 @@ class PagedApiUtilsImpl(
           Timber.tag("${TAG}_$tag").d("getPageOfPhotosFunc returned ${it.size} photos")
         }
 
-        return ReturnedPhotos.FromServer(photos)
+        return ReturnedPhotos.FromServer(mapperFunc(photos))
       }
     }
   }
@@ -202,9 +203,9 @@ class PagedApiUtilsImpl(
     }
   }
 
-  private sealed class ReturnedPhotos {
-    class FromCache<Photos>(val page: Paged<Photos>) : ReturnedPhotos()
-    class FromServer<PhotoResponse>(val photos: List<PhotoResponse>) : ReturnedPhotos()
+  private sealed class ReturnedPhotos<T> {
+    class FromCache<T>(val page: Paged<T>) : ReturnedPhotos<T>()
+    class FromServer<T>(val photos: List<T>) : ReturnedPhotos<T>()
   }
 
   private sealed class FreshPhotosCountRequestResult {

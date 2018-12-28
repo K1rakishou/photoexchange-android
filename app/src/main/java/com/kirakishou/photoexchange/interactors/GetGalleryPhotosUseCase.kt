@@ -84,9 +84,9 @@ open class GetGalleryPhotosUseCase(
       { _, lastUploadedOn, count -> apiClient.getPageOfGalleryPhotos(lastUploadedOn, count) },
       { galleryPhotosRepository.deleteAll() },
       { galleryPhotosRepository.deleteOldPhotos() },
+      { responseData -> GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(responseData) },
       { galleryPhotos -> filterBlacklistedPhotos(galleryPhotos) },
-      { galleryPhotos -> galleryPhotosRepository.saveMany(galleryPhotos) },
-      { responseData -> GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(responseData) }
+      { galleryPhotos -> galleryPhotosRepository.saveMany(galleryPhotos) }
     )
   }
 
@@ -118,8 +118,8 @@ open class GetGalleryPhotosUseCase(
   }
 
   private suspend fun filterBlacklistedPhotos(
-    receivedPhotos: List<GalleryPhotoResponseData>
-  ): List<GalleryPhotoResponseData> {
+    receivedPhotos: List<GalleryPhoto>
+  ): List<GalleryPhoto> {
     return blacklistedPhotoRepository.filterBlacklistedPhotos(receivedPhotos) {
       it.photoName
     }

@@ -75,12 +75,12 @@ open class GetUploadedPhotosUseCase(
       {
         //do not delete uploaded photos from this use case, do it in the received photo use case
       },
+      { responseData -> UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhotos(responseData) },
       { uploadedPhotos ->
         //we don't need to filter uploaded photos
         uploadedPhotos
       },
-      { uploadedPhotos -> uploadedPhotosRepository.saveMany(uploadedPhotos) },
-      { responseData -> UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhotos(responseData) }
+      { uploadedPhotos -> uploadedPhotosRepository.saveMany(uploadedPhotos) }
     )
   }
 

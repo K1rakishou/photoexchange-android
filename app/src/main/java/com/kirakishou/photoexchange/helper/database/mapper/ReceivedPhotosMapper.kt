@@ -98,15 +98,19 @@ object ReceivedPhotosMapper {
   }
 
   object FromObject {
-    fun toReceivedPhotoEntity(time: Long, receivedPhoto: ReceivedPhotoResponseData): ReceivedPhotoEntity {
+    fun toReceivedPhotoEntity(time: Long, receivedPhoto: ReceivedPhoto): ReceivedPhotoEntity {
       return ReceivedPhotoEntity.create(
         receivedPhoto.uploadedPhotoName,
         receivedPhoto.receivedPhotoName,
-        receivedPhoto.lon,
-        receivedPhoto.lat,
+        receivedPhoto.lonLat.lon,
+        receivedPhoto.lonLat.lat,
         receivedPhoto.uploadedOn,
         time
       )
+    }
+
+    fun toReceivedPhotoEntities(time: Long, receivedPhotoList: List<ReceivedPhoto>): List<ReceivedPhotoEntity> {
+      return receivedPhotoList.map { toReceivedPhotoEntity(time, it) }
     }
   }
 }
