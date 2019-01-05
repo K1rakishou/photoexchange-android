@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.View
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.di.component.activity.PhotosActivityComponent
 import com.kirakishou.photoexchange.di.module.fragment.UploadedPhotosFragmentModule
 import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.extension.safe
@@ -12,7 +13,7 @@ import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
-import com.kirakishou.photoexchange.ui.activity.PhotosActivity
+import com.kirakishou.photoexchange.ui.activity.HasActivityComponent
 import com.kirakishou.photoexchange.ui.epoxy.controller.UploadedPhotosFragmentEpoxyController
 import io.reactivex.rxkotlin.plusAssign
 import kotlinx.coroutines.launch
@@ -29,7 +30,7 @@ class UploadedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Uploaded
   lateinit var controller: UploadedPhotosFragmentEpoxyController
 
   private val fragmentComponent by lazy {
-    (requireActivity() as PhotosActivity).activityComponent
+    (requireActivity() as HasActivityComponent<PhotosActivityComponent>).getActivityComponent()
       .plus(UploadedPhotosFragmentModule())
   }
 

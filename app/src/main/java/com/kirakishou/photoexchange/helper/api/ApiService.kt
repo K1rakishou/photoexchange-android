@@ -14,6 +14,7 @@ import retrofit2.http.*
  */
 interface ApiService {
 
+  //TODO: fix endpoints
   @Multipart
   @POST("/v1/api/upload")
   fun uploadPhoto(@Part packet: MultipartBody.Part,
@@ -29,8 +30,8 @@ interface ApiService {
   fun receivePhotos(@Path("user_id") userId: String,
                     @Path("photo_names") photoNames: String): Single<Response<ReceivedPhotosResponse>>
 
-  @GET("/v1/api/get_user_id")
-  fun getUserId(): Single<Response<GetUserIdResponse>>
+  @GET("/v1/api/get_user_uuid")
+  fun getUserUuid(): Single<Response<GetUserUuidResponse>>
 
   @GET("/v1/api/get_page_of_gallery_photos/{last_uploaded_on}/{count}")
   fun getPageOfGalleryPhotos(@Path("last_uploaded_on") lastUploadedOn: Long,

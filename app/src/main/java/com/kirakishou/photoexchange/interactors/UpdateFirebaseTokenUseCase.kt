@@ -62,7 +62,7 @@ open class UpdateFirebaseTokenUseCase(
       throw DatabaseException("Could not update new firebase firebase token")
     }
 
-    val userId = settingsRepository.getUserId()
+    val userId = settingsRepository.getUserUuid()
     if (userId.isEmpty()) {
       throw DatabaseException("Cannot update firebase because userId is empty!")
     }

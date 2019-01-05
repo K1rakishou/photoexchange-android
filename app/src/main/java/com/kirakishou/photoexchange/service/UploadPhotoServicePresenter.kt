@@ -8,7 +8,7 @@ import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
-import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
+import com.kirakishou.photoexchange.interactors.GetUserUuidUseCase
 import com.kirakishou.photoexchange.interactors.UpdateFirebaseTokenUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoState
@@ -33,7 +33,7 @@ open class UploadPhotoServicePresenter(
   private val settingsRepository: SettingsRepository,
   private val takenPhotosRepository: TakenPhotosRepository,
   private val uploadPhotosUseCase: UploadPhotosUseCase,
-  private val getUserIdUseCase: GetUserIdUseCase,
+  private val getUserUuidUseCase: GetUserUuidUseCase,
   private val updateFirebaseTokenUseCase: UpdateFirebaseTokenUseCase,
   private val dispatchersProvider: DispatchersProvider
 ) : CoroutineScope {
@@ -73,7 +73,7 @@ open class UploadPhotoServicePresenter(
 
     try {
       //we need to get the userId first because this operation will create a default account on the server
-      val userId = getUserIdUseCase.getUserId()
+      val userId = getUserUuidUseCase.getUserId()
       if (userId.isEmpty()) {
         Timber.tag(TAG).d("UserId is empty")
         throw EmptyUserIdException()

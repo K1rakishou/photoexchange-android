@@ -15,7 +15,7 @@ class GetGalleryPhotosUseCaseTest {
     apiClient = Mockito.mock(ApiClient::class.java)
     getGalleryPhotosRepository = Mockito.mock(GetGalleryPhotosRepository::class.java)
     timeUtils = Mockito.mock(TimeUtils::class.java)
-    dispatchersProvider = TestDispatchers()
+    dispatchersProvider = MockDispatchers()
 
     getGalleryPhotosUseCase = GetGalleryPhotosUseCase(
       apiClient,

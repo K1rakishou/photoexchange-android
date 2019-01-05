@@ -28,7 +28,7 @@ class GetPhotoAdditionalInfoUseCase(
     copyFunc: (T, PhotoAdditionalInfo) -> T
   ): List<T> {
     return withContext(coroutineContext) {
-      val userId = settingsRepository.getUserId()
+      val userId = settingsRepository.getUserUuid()
 
       val additionalPhotoInfoList = getPhotoAdditionalInfos(
         userId,
@@ -62,7 +62,7 @@ class GetPhotoAdditionalInfoUseCase(
     photoNameList: List<String>
   ): List<PhotoAdditionalInfo>? {
     return withContext(coroutineContext) {
-      val userId = settingsRepository.getUserId()
+      val userId = settingsRepository.getUserUuid()
 
       if (userId.isEmpty()) {
         return@withContext null

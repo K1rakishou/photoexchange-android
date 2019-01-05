@@ -6,18 +6,18 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersPro
 import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.helper.exception.ConnectionError
 import kotlinx.coroutines.rx2.await
-import net.response.GetUserIdResponse
+import net.response.GetUserUuidResponse
 import timber.log.Timber
 
-class GetUserIdRequest(
+class GetUserUuidRequest(
   private val apiService: ApiService,
   private val jsonConverter: JsonConverter,
   dispatchersProvider: DispatchersProvider
-) : BaseRequest<GetUserIdResponse>(dispatchersProvider) {
+) : BaseRequest<GetUserUuidResponse>(dispatchersProvider) {
 
-  override suspend fun execute(): GetUserIdResponse {
+  override suspend fun execute(): GetUserUuidResponse {
     val response = try {
-      apiService.getUserId().await()
+      apiService.getUserUuid().await()
     } catch (error: Exception) {
       Timber.e(error)
       throw ConnectionError(error.message)

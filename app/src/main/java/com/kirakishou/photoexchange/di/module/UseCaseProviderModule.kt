@@ -125,8 +125,8 @@ class UseCaseProviderModule {
   fun provideGetUserIdUseCase(apiClient: ApiClient,
                               netUtils: NetUtils,
                               settingsRepository: SettingsRepository,
-                              dispatchersProvider: DispatchersProvider): GetUserIdUseCase {
-    return GetUserIdUseCase(
+                              dispatchersProvider: DispatchersProvider): GetUserUuidUseCase {
+    return GetUserUuidUseCase(
       apiClient,
       netUtils,
       settingsRepository,

@@ -3,7 +3,6 @@ package com.kirakishou.photoexchange.interactors
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.api.response.FavouritePhotoResponseData
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAdditionalInfoRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
@@ -29,7 +28,7 @@ open class FavouritePhotoUseCase(
     photoName: String
   ): FavouritePhotoActionResult {
     return withContext(coroutineContext) {
-      val userId = settingsRepository.getUserId()
+      val userId = settingsRepository.getUserUuid()
       if (userId.isEmpty()) {
         throw EmptyUserIdException()
       }

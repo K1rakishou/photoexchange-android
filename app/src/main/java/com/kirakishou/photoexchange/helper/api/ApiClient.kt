@@ -35,7 +35,7 @@ interface ApiClient {
   suspend fun reportPhoto(userId: String, photoName: String): Boolean
 
   @Throws(ApiErrorException::class, ConnectionError::class)
-  suspend fun getUserId(): String
+  suspend fun getUserUuid(): String
 
   @Throws(ApiErrorException::class, ConnectionError::class)
   suspend fun getPageOfUploadedPhotos(

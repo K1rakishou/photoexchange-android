@@ -8,17 +8,17 @@ import com.kirakishou.photoexchange.helper.exception.NetworkAccessDisabledInSett
 import com.kirakishou.photoexchange.helper.util.NetUtils
 import kotlinx.coroutines.withContext
 
-open class GetUserIdUseCase(
+open class GetUserUuidUseCase(
   private val apiClient: ApiClient,
   private val netUtils: NetUtils,
   private val settingsRepository: SettingsRepository,
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
-  private val TAG = "GetUserIdUseCase"
+  private val TAG = "GetUserUuidUseCase"
 
   open suspend fun getUserId(): String {
     return withContext(coroutineContext) {
-      val userId = settingsRepository.getUserId()
+      val userId = settingsRepository.getUserUuid()
       if (userId.isNotEmpty()) {
         return@withContext userId
       }
@@ -27,12 +27,12 @@ open class GetUserIdUseCase(
         throw NetworkAccessDisabledInSettings()
       }
 
-      val newUserId = apiClient.getUserId()
-      if (!settingsRepository.saveUserId(newUserId)) {
+      val newUserUuid = apiClient.getUserUuid()
+      if (!settingsRepository.saveUserUuid(newUserUuid)) {
         throw DatabaseException("Could not update userId in the database")
       }
 
-      return@withContext newUserId
+      return@withContext newUserUuid
     }
   }
 }

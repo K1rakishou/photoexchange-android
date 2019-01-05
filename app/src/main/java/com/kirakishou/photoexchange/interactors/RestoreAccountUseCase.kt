@@ -43,7 +43,7 @@ open class RestoreAccountUseCase(
 
   private suspend fun cleanDatabase(oldUserId: String): Boolean {
     return database.transactional {
-      if (!settingsRepository.saveUserId(oldUserId)) {
+      if (!settingsRepository.saveUserUuid(oldUserId)) {
         return@transactional false
       }
 

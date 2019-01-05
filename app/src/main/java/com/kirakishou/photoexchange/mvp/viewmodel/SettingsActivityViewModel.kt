@@ -4,7 +4,6 @@ import com.kirakishou.photoexchange.helper.Constants.DOMAIN_NAME
 import com.kirakishou.photoexchange.helper.NetworkAccessLevel
 import com.kirakishou.photoexchange.helper.PhotosVisibility
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.interactors.RestoreAccountUseCase
@@ -21,7 +20,7 @@ class SettingsActivityViewModel(
 
   suspend fun getUserId(): String {
     return withContext(coroutineContext) {
-      settingsRepository.getUserId()
+      settingsRepository.getUserUuid()
     }
   }
 

@@ -35,7 +35,7 @@ abstract class MyBaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
   override val coroutineContext: CoroutineContext
     get() = job + Dispatchers.Main
 
-  protected val epoxyController: EpoxyController by lazy {
+  val epoxyController: EpoxyController by lazy {
     buildEpoxyController().apply {
       isDebugLoggingEnabled = BuildConfig.DEBUG
     }
@@ -49,7 +49,7 @@ abstract class MyBaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
     }
   }
 
-  override fun onAttach(context: Context?) {
+  override fun onAttach(context: Context) {
     super.onAttach(context)
     lifecycle.start()
   }

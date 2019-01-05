@@ -5,7 +5,7 @@ import android.content.Context
 import androidx.test.InstrumentationRegistry
 import androidx.test.runner.AndroidJUnit4
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.concurrency.coroutines.TestDispatchers
+import com.kirakishou.photoexchange.helper.concurrency.coroutines.MockDispatchers
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.util.*
 import com.kirakishou.photoexchange.helper.database.source.local.TakenPhotosLocalSource
@@ -47,7 +47,7 @@ class TakenPhotosRepositoryTests {
     timeUtils = Mockito.spy(TimeUtils::class.java)
     fileUtils = Mockito.spy(FileUtils::class.java)
     tempFilesDir = targetContext.getDir("test_temp_files", Context.MODE_PRIVATE).absolutePath
-    dispatchersProvider = TestDispatchers()
+    dispatchersProvider = MockDispatchers()
 
     takenPhotosLocalSource = Mockito.spy(TakenPhotosLocalSource(database, timeUtils))
     tempFilesLocalSource = Mockito.spy(

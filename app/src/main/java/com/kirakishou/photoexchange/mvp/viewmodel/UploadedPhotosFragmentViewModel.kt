@@ -75,6 +75,10 @@ class UploadedPhotosFragmentViewModel(
     }
   }
 
+  fun testSetState(newState: UploadedPhotosFragmentState) {
+    setState { newState }
+  }
+
   fun loadQueuedUpPhotos() {
     launch { viewModelActor.send(ActorAction.LoadQueuedUpPhotos) }
   }

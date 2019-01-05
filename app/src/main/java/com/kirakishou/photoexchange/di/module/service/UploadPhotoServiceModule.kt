@@ -4,7 +4,7 @@ import com.kirakishou.photoexchange.di.scope.PerService
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
-import com.kirakishou.photoexchange.interactors.GetUserIdUseCase
+import com.kirakishou.photoexchange.interactors.GetUserUuidUseCase
 import com.kirakishou.photoexchange.interactors.UpdateFirebaseTokenUseCase
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.service.UploadPhotoServicePresenter
@@ -23,14 +23,14 @@ class UploadPhotoServiceModule {
   fun provideUploadPhotoServicePresenter(settingsRepository: SettingsRepository,
                                          takenPhotosRepository: TakenPhotosRepository,
                                          uploadPhotosUseCase: UploadPhotosUseCase,
-                                         getUserIdUseCase: GetUserIdUseCase,
+                                         getUserUuidUseCase: GetUserUuidUseCase,
                                          updateFirebaseTokenUseCase: UpdateFirebaseTokenUseCase,
                                          dispatchersProvider: DispatchersProvider): UploadPhotoServicePresenter {
     return UploadPhotoServicePresenter(
       settingsRepository,
       takenPhotosRepository,
       uploadPhotosUseCase,
-      getUserIdUseCase,
+      getUserUuidUseCase,
       updateFirebaseTokenUseCase,
       dispatchersProvider
     )

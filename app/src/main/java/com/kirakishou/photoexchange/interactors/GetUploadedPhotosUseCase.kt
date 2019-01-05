@@ -126,7 +126,7 @@ open class GetUploadedPhotosUseCase(
       timeUtils.getTimeFast()
     }
 
-    val userId = settingsRepository.getUserId()
+    val userId = settingsRepository.getUserUuid()
     if (userId.isEmpty()) {
       throw EmptyUserIdException()
     }

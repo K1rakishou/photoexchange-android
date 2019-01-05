@@ -9,16 +9,13 @@ import android.os.StrictMode
 import android.util.Log
 import com.crashlytics.android.Crashlytics
 import com.kirakishou.photoexchange.di.component.ApplicationComponent
-import com.kirakishou.photoexchange.di.module.ApplicationModule
-import com.kirakishou.photoexchange.di.module.DatabaseModule
-import com.kirakishou.photoexchange.di.module.NetworkModule
-import com.kirakishou.photoexchange.di.module.SchedulerProviderModule
 import com.kirakishou.photoexchange.helper.Constants
 import io.fabric.sdk.android.Fabric
 import com.crashlytics.android.core.CrashlyticsCore
 import com.facebook.stetho.Stetho
 import com.google.firebase.FirebaseApp
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
+import com.kirakishou.photoexchange.di.module.*
 
 
 /**
@@ -43,7 +40,7 @@ open class PhotoExchangeApplication : Application() {
       .applicationModule(ApplicationModule(this))
       .databaseModule(DatabaseModule(Constants.DATABASE_NAME))
       .networkModule(NetworkModule(Constants.BASE_URL))
-      .schedulerProviderModule(SchedulerProviderModule())
+      .dispatchersProviderModule(DispatchersProviderModule())
       .build()
   }
 

@@ -6,13 +6,11 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersPro
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosMapper
 import com.kirakishou.photoexchange.helper.database.repository.BlacklistedPhotoRepository
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotosRepository
-import com.kirakishou.photoexchange.helper.database.repository.PhotoAdditionalInfoRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.util.PagedApiUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import kotlinx.coroutines.withContext
-import net.response.data.GalleryPhotoResponseData
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
@@ -133,7 +131,7 @@ open class GetGalleryPhotosUseCase(
     }
 
     //empty userId is allowed here since we need it only when fetching photoAdditionalInfo
-    val userId = settingsRepository.getUserId()
+    val userId = settingsRepository.getUserUuid()
     return lastUploadedOn to userId
   }
 }
