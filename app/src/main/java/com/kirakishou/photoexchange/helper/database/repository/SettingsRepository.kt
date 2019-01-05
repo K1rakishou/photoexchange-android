@@ -13,12 +13,12 @@ open class SettingsRepository(
 ) : BaseRepository() {
   private val settingsDao = database.settingsDao()
 
-  suspend fun saveUserId(userId: String?): Boolean {
-    return settingsDao.insert(SettingEntity(USER_ID_SETTING, userId)) > 0
+  suspend fun saveUserUuid(userUuid: String?): Boolean {
+    return settingsDao.insert(SettingEntity(USER_UUID_SETTING, userUuid)) > 0
   }
 
-  open suspend fun getUserId(): String {
-    return settingsDao.findByName(USER_ID_SETTING)?.settingValue ?: ""
+  open suspend fun getUserUuid(): String {
+    return settingsDao.findByName(USER_UUID_SETTING)?.settingValue ?: ""
   }
 
   open suspend fun saveNewFirebaseToken(newToken: String?): Boolean {
@@ -92,7 +92,7 @@ open class SettingsRepository(
   }
 
   companion object {
-    const val USER_ID_SETTING = "USER_ID"
+    const val USER_UUID_SETTING = "USER_UUID"
 
     /**
      * NewFirebaseToken is a token that we receive when FirebaseMessagingService's onNewToken method is getting called.

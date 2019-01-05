@@ -24,6 +24,7 @@ import com.google.android.material.tabs.TabLayout
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
+import com.kirakishou.photoexchange.di.component.activity.PhotosActivityComponent
 import com.kirakishou.photoexchange.di.module.activity.PhotosActivityModule
 import com.kirakishou.photoexchange.helper.extension.debounceClicks
 import com.kirakishou.photoexchange.helper.extension.safe
@@ -56,7 +57,7 @@ import javax.inject.Inject
 
 
 class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePhotosServiceCallback,
-  PopupMenu.OnMenuItemClickListener, StateEventListener<PhotosActivityEvent>, IntercomListener {
+  PopupMenu.OnMenuItemClickListener, StateEventListener<PhotosActivityEvent>, IntercomListener, HasActivityComponent<PhotosActivityComponent> {
 
   @BindView(R.id.root_layout)
   lateinit var rootLayout: CoordinatorLayout
@@ -79,7 +80,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   @Inject
   lateinit var viewModel: PhotosActivityViewModel
 
-  val activityComponent by lazy {
+  private val activityComponentInternal by lazy {
     (application as PhotoExchangeApplication).applicationComponent
       .plus(PhotosActivityModule(this))
   }
@@ -99,6 +100,10 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   private val adapter = FragmentTabsPager(supportFragmentManager)
   private var viewState = PhotosActivityViewState()
   private val permissionManager = PermissionManager()
+
+  override fun getActivityComponent(): PhotosActivityComponent {
+    return activityComponentInternal
+  }
 
   /**
    * When we receive a push notification we show a notification and send a broadcast to this activity.
@@ -540,7 +545,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   override fun resolveDaggerDependency() {
-    activityComponent
+    activityComponentInternal
       .inject(this)
   }
 

@@ -12,7 +12,6 @@ import com.kirakishou.photoexchange.helper.util.PagedApiUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
 import kotlinx.coroutines.withContext
-import net.response.data.ReceivedPhotoResponseData
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
@@ -179,7 +178,7 @@ open class GetReceivedPhotosUseCase(
       timeUtils.getTimeFast()
     }
 
-    val userId = settingsRepository.getUserId()
+    val userId = settingsRepository.getUserUuid()
     if (userId.isEmpty()) {
       throw EmptyUserIdException()
     }

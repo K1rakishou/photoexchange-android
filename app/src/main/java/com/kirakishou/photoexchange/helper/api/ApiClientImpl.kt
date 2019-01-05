@@ -98,14 +98,14 @@ open class ApiClientImpl
     return response.isReported
   }
 
-  override suspend fun getUserId(): String {
-    val response = GetUserIdRequest(
+  override suspend fun getUserUuid(): String {
+    val response = GetUserUuidRequest(
       apiService,
       jsonConverter,
       dispatchersProvider
     ).execute()
 
-    return response.userId
+    return response.userUuid
   }
 
   override suspend fun getPageOfUploadedPhotos(

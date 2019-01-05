@@ -69,7 +69,7 @@ class ReceivePhotosServicePresenterTest {
 
     Mockito.`when`(uploadedPhotosRepository.findAllWithoutReceiverInfo())
       .thenReturn(uploadedPhotos)
-    Mockito.`when`(settingsRepository.getUserId())
+    Mockito.`when`(settingsRepository.getUserUuid())
       .thenReturn("")
 
     val values = presenter.resultEventsSubject
@@ -97,7 +97,7 @@ class ReceivePhotosServicePresenterTest {
     assertEquals(true, values[3] is ReceivePhotosServicePresenter.ReceivePhotoEvent.StopService)
 
     Mockito.verify(uploadedPhotosRepository, Mockito.times(1)).findAllWithoutReceiverInfo()
-    Mockito.verify(settingsRepository, Mockito.times(1)).getUserId()
+    Mockito.verify(settingsRepository, Mockito.times(1)).getUserUuid()
 
     Mockito.verifyNoMoreInteractions(uploadedPhotosRepository)
     Mockito.verifyNoMoreInteractions(settingsRepository)
@@ -116,7 +116,7 @@ class ReceivePhotosServicePresenterTest {
 
     Mockito.`when`(uploadedPhotosRepository.findAllWithoutReceiverInfo())
       .thenReturn(uploadedPhotos)
-    Mockito.`when`(settingsRepository.getUserId())
+    Mockito.`when`(settingsRepository.getUserUuid())
       .thenReturn(userId)
     Mockito.doAnswer {
       return@doAnswer Observable.create<ReceivePhotosServicePresenter.ReceivePhotoEvent> { emitter ->
@@ -163,7 +163,7 @@ class ReceivePhotosServicePresenterTest {
     assertEquals(true, values[4] is ReceivePhotosServicePresenter.ReceivePhotoEvent.StopService)
 
     Mockito.verify(uploadedPhotosRepository, Mockito.times(1)).findAllWithoutReceiverInfo()
-    Mockito.verify(settingsRepository, Mockito.times(1)).getUserId()
+    Mockito.verify(settingsRepository, Mockito.times(1)).getUserUuid()
     Mockito.verify(receivePhotosUseCase, Mockito.times(1)).receivePhotos(any())
 
     Mockito.verifyNoMoreInteractions(uploadedPhotosRepository)
@@ -181,7 +181,7 @@ class ReceivePhotosServicePresenterTest {
 
     Mockito.`when`(uploadedPhotosRepository.findAllWithoutReceiverInfo())
       .thenReturn(uploadedPhotos)
-    Mockito.`when`(settingsRepository.getUserId())
+    Mockito.`when`(settingsRepository.getUserUuid())
       .thenReturn(userId)
     Mockito.doAnswer {
       return@doAnswer Observable.create<ReceivePhotosServicePresenter.ReceivePhotoEvent> { emitter ->
@@ -215,7 +215,7 @@ class ReceivePhotosServicePresenterTest {
     assertEquals(true, values[3] is ReceivePhotosServicePresenter.ReceivePhotoEvent.StopService)
 
     Mockito.verify(uploadedPhotosRepository, Mockito.times(1)).findAllWithoutReceiverInfo()
-    Mockito.verify(settingsRepository, Mockito.times(1)).getUserId()
+    Mockito.verify(settingsRepository, Mockito.times(1)).getUserUuid()
     Mockito.verify(receivePhotosUseCase, Mockito.times(1)).receivePhotos(any())
 
     Mockito.verifyNoMoreInteractions(uploadedPhotosRepository)
@@ -233,7 +233,7 @@ class ReceivePhotosServicePresenterTest {
 
     Mockito.`when`(uploadedPhotosRepository.findAllWithoutReceiverInfo())
       .thenReturn(uploadedPhotos)
-    Mockito.`when`(settingsRepository.getUserId())
+    Mockito.`when`(settingsRepository.getUserUuid())
       .thenReturn(userId)
     Mockito.doAnswer {
       return@doAnswer Observable.create<ReceivePhotosServicePresenter.ReceivePhotoEvent> { emitter ->
@@ -265,7 +265,7 @@ class ReceivePhotosServicePresenterTest {
     assertEquals(true, values[3] is ReceivePhotosServicePresenter.ReceivePhotoEvent.StopService)
 
     Mockito.verify(uploadedPhotosRepository, Mockito.times(1)).findAllWithoutReceiverInfo()
-    Mockito.verify(settingsRepository, Mockito.times(1)).getUserId()
+    Mockito.verify(settingsRepository, Mockito.times(1)).getUserUuid()
     Mockito.verify(receivePhotosUseCase, Mockito.times(1)).receivePhotos(any())
 
     Mockito.verifyNoMoreInteractions(uploadedPhotosRepository)

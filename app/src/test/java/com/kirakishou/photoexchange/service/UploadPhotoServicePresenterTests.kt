@@ -5,7 +5,7 @@ class UploadPhotoServicePresenterTests {
  /* lateinit var takenPhotosRepository: TakenPhotosRepository
   lateinit var schedulerProvider: SchedulerProvider
   lateinit var uploadPhotosUseCase: UploadPhotosUseCase
-  lateinit var getUserIdUseCase: GetUserIdUseCase
+  lateinit var getUserIdUseCase: GetUserUuidUseCase
 
   lateinit var presenter: UploadPhotoServicePresenter
 
@@ -13,7 +13,7 @@ class UploadPhotoServicePresenterTests {
   fun setUp() {
     takenPhotosRepository = Mockito.mock(TakenPhotosRepository::class.java)
     uploadPhotosUseCase = Mockito.mock(UploadPhotosUseCase::class.java)
-    getUserIdUseCase = Mockito.mock(GetUserIdUseCase::class.java)
+    getUserIdUseCase = Mockito.mock(GetUserUuidUseCase::class.java)
     schedulerProvider = TestSchedulers()
 
     presenter = Mockito.spy(
@@ -84,9 +84,9 @@ class UploadPhotoServicePresenterTests {
   }
 
   @Test
-  fun `should mark all photos with FAILED_TO_UPLOAD state, set error notification and stop the service when getUserId threw an error`() {
+  fun `should mark all photos with FAILED_TO_UPLOAD state, set error notification and stop the service when getUserUuid threw an error`() {
     Mockito.doAnswer { throw IOException("DB Error") }
-      .`when`(getUserIdUseCase).getUserId()
+      .`when`(getUserIdUseCase).getUserUuid()
 
     val values = presenter.resultEventsSubject
       .test()
@@ -123,7 +123,7 @@ class UploadPhotoServicePresenterTests {
 
     assertEquals(true, values[3] is UploadPhotoServicePresenter.UploadPhotoEvent.StopService)
 
-    Mockito.verify(getUserIdUseCase, Mockito.times(1)).getUserId()
+    Mockito.verify(getUserIdUseCase, Mockito.times(1)).getUserUuid()
     Mockito.verify(takenPhotosRepository, Mockito.times(1)).updateStates(PhotoState.PHOTO_QUEUED_UP, PhotoState.FAILED_TO_UPLOAD)
     Mockito.verify(takenPhotosRepository, Mockito.times(1)).updateStates(PhotoState.PHOTO_UPLOADING, PhotoState.FAILED_TO_UPLOAD)
 
@@ -134,7 +134,7 @@ class UploadPhotoServicePresenterTests {
 
   @Test
   fun `should do nothing when there are no queued up photos`() {
-    Mockito.`when`(getUserIdUseCase.getUserId())
+    Mockito.`when`(getUserIdUseCase.getUserUuid())
       .thenReturn(Single.just(Either.Value("123")))
     Mockito.`when`(takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP))
       .thenReturn(listOf())
@@ -160,7 +160,7 @@ class UploadPhotoServicePresenterTests {
 
     assertEquals(true, values[2] is UploadPhotoServicePresenter.UploadPhotoEvent.StopService)
 
-    Mockito.verify(getUserIdUseCase, Mockito.times(1)).getUserId()
+    Mockito.verify(getUserIdUseCase, Mockito.times(1)).getUserUuid()
     Mockito.verify(takenPhotosRepository, Mockito.times(1)).findAllByState(PhotoState.PHOTO_QUEUED_UP)
 
     Mockito.verifyNoMoreInteractions(takenPhotosRepository)
@@ -179,7 +179,7 @@ class UploadPhotoServicePresenterTests {
     val queuedUpPhoto2 = TakenPhoto(2L, PhotoState.PHOTO_QUEUED_UP, true, "555666", mockedFile2)
     val queuedUpPhoto3 = TakenPhoto(3L, PhotoState.PHOTO_QUEUED_UP, true, "765756", mockedFile3)
 
-    Mockito.`when`(getUserIdUseCase.getUserId())
+    Mockito.`when`(getUserIdUseCase.getUserUuid())
       .thenReturn(Single.just(Either.Value(userId)))
     Mockito.`when`(takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP))
       .thenReturn(listOf(queuedUpPhoto1, queuedUpPhoto2, queuedUpPhoto3))
@@ -246,7 +246,7 @@ class UploadPhotoServicePresenterTests {
     Mockito.verify(uploadPhotosUseCase, Mockito.times(1)).uploadPhoto(queuedUpPhoto1, userId, location)
     Mockito.verify(uploadPhotosUseCase, Mockito.times(1)).uploadPhoto(queuedUpPhoto2, userId, location)
     Mockito.verify(uploadPhotosUseCase, Mockito.times(1)).uploadPhoto(queuedUpPhoto3, userId, location)
-    Mockito.verify(getUserIdUseCase, Mockito.times(1)).getUserId()
+    Mockito.verify(getUserIdUseCase, Mockito.times(1)).getUserUuid()
 
     Mockito.verifyNoMoreInteractions(takenPhotosRepository)
     Mockito.verifyNoMoreInteractions(uploadPhotosUseCase)
@@ -264,7 +264,7 @@ class UploadPhotoServicePresenterTests {
     val queuedUpPhoto2 = TakenPhoto(2L, PhotoState.PHOTO_QUEUED_UP, true, "555666", mockedFile2)
     val queuedUpPhoto3 = TakenPhoto(3L, PhotoState.PHOTO_QUEUED_UP, true, "765756", mockedFile3)
 
-    Mockito.`when`(getUserIdUseCase.getUserId())
+    Mockito.`when`(getUserIdUseCase.getUserUuid())
       .thenReturn(Single.just(Either.Value(userId)))
     Mockito.`when`(takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP))
       .thenReturn(listOf(queuedUpPhoto1, queuedUpPhoto2, queuedUpPhoto3))
@@ -328,7 +328,7 @@ class UploadPhotoServicePresenterTests {
     Mockito.verify(uploadPhotosUseCase, Mockito.times(1)).uploadPhoto(queuedUpPhoto1, userId, location)
     Mockito.verify(uploadPhotosUseCase, Mockito.times(1)).uploadPhoto(queuedUpPhoto2, userId, location)
     Mockito.verify(uploadPhotosUseCase, Mockito.times(1)).uploadPhoto(queuedUpPhoto3, userId, location)
-    Mockito.verify(getUserIdUseCase, Mockito.times(1)).getUserId()
+    Mockito.verify(getUserIdUseCase, Mockito.times(1)).getUserUuid()
 
     Mockito.verifyNoMoreInteractions(takenPhotosRepository)
     Mockito.verifyNoMoreInteractions(uploadPhotosUseCase)

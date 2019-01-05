@@ -19,9 +19,7 @@ import dagger.Subcomponent
 @Subcomponent(modules = [
   PhotosActivityModule::class
 ])
-interface PhotosActivityComponent {
-  fun inject(activity: PhotosActivity)
-
+interface PhotosActivityComponent : BasePhotosActivityComponent<PhotosActivity> {
   fun plus(fragment: UploadedPhotosFragmentModule): UploadedPhotosFragmentComponent
   fun plus(fragment: ReceivedPhotosFragmentModule): ReceivedPhotosFragmentComponent
   fun plus(fragment: GalleryFragmentModule): GalleryFragmentComponent

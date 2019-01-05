@@ -1,15 +1,5 @@
 package com.kirakishou.photoexchange.interactors
 
-import com.kirakishou.photoexchange.helper.api.ApiClient
-import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.concurrency.coroutines.TestDispatchers
-import com.kirakishou.photoexchange.helper.database.MyDatabase
-import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
-import com.kirakishou.photoexchange.helper.util.TimeUtils
-import org.junit.After
-import org.junit.Before
-import org.mockito.Mockito
-
 class GetUploadedPhotosUseCaseTest {
 
   /*lateinit var database: MyDatabase
@@ -25,7 +15,7 @@ class GetUploadedPhotosUseCaseTest {
     apiClient = Mockito.mock(ApiClient::class.java)
     uploadedPhotosRepository = Mockito.mock(UploadedPhotosRepository::class.java)
     timeUtils = Mockito.mock(TimeUtils::class.java)
-    dispatchersProvider = TestDispatchers()
+    dispatchersProvider = MockDispatchers()
 
     getUploadedPhotosUseCase = GetUploadedPhotosUseCase(
       uploadedPhotosRepository,
