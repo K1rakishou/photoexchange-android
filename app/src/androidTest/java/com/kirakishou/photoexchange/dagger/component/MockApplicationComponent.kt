@@ -2,12 +2,11 @@ package com.kirakishou.photoexchange.dagger.component
 
 import com.kirakishou.photoexchange.dagger.component.activity.MockPhotosActivityComponent
 import com.kirakishou.photoexchange.dagger.module.*
-import com.kirakishou.photoexchange.mock.MockApplication
 import com.kirakishou.photoexchange.dagger.module.activity.MockPhotosActivityModule
-import com.kirakishou.photoexchange.di.module.ApiClientModule
 import com.kirakishou.photoexchange.di.module.GsonModule
 import com.kirakishou.photoexchange.di.module.ImageLoaderModule
 import com.kirakishou.photoexchange.di.module.UseCaseProviderModule
+import com.kirakishou.photoexchange.mock.MockApplication
 import dagger.Component
 import javax.inject.Singleton
 

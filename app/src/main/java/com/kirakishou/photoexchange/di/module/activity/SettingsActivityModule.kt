@@ -3,7 +3,6 @@ package com.kirakishou.photoexchange.di.module.activity
 import androidx.lifecycle.ViewModelProviders
 import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
-import com.kirakishou.photoexchange.helper.concurrency.rx.scheduler.SchedulerProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.interactors.RestoreAccountUseCase
 import com.kirakishou.photoexchange.mvp.viewmodel.SettingsActivityViewModel

@@ -6,7 +6,6 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersPro
 import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
 import com.kirakishou.photoexchange.helper.util.NetUtils
-import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.interactors.*
 import com.kirakishou.photoexchange.mock.FragmentTestingActivity
 import com.kirakishou.photoexchange.mvp.viewmodel.GalleryFragmentViewModel
@@ -17,7 +16,6 @@ import com.kirakishou.photoexchange.mvp.viewmodel.factory.PhotosActivityViewMode
 import com.kirakishou.photoexchange.mvp.viewmodel.state.GalleryFragmentState
 import com.kirakishou.photoexchange.mvp.viewmodel.state.ReceivedPhotosFragmentState
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
-import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import dagger.Module
 import dagger.Provides
 

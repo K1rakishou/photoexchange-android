@@ -14,6 +14,7 @@ import com.kirakishou.photoexchange.di.module.activity.TakePhotoActivityModule
 import com.kirakishou.photoexchange.di.module.activity.ViewTakenPhotoActivityModule
 import com.kirakishou.photoexchange.di.module.service.ReceivePhotosServiceModule
 import com.kirakishou.photoexchange.di.module.service.UploadPhotoServiceModule
+import com.kirakishou.photoexchange.di.module.ImageLoaderModule
 import com.kirakishou.photoexchange.service.PushNotificationReceiverService
 import dagger.Component
 import javax.inject.Singleton
