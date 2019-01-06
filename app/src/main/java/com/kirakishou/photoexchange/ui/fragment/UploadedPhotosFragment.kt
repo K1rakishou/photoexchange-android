@@ -30,8 +30,17 @@ class UploadedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Uploaded
   lateinit var controller: UploadedPhotosFragmentEpoxyController
 
   private val fragmentComponent by lazy {
-    (requireActivity() as HasActivityComponent<PhotosActivityComponent>).getActivityComponent()
-      .plus(UploadedPhotosFragmentModule())
+    val component = (requireActivity() as HasActivityComponent<PhotosActivityComponent>).getActivityComponent()
+
+    println()
+    println()
+    println()
+    println()
+    println()
+    println()
+    println()
+
+    component.plus(UploadedPhotosFragmentModule())
   }
 
   private val TAG = "UploadedPhotosFragment"

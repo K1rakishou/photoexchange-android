@@ -4,19 +4,19 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.dagger.component.activity.MockPhotosActivityComponent
 import com.kirakishou.photoexchange.dagger.module.activity.MockPhotosActivityModule
-import com.kirakishou.photoexchange.di.component.activity.BasePhotosActivityComponent
 import com.kirakishou.photoexchange.ui.activity.HasActivityComponent
 
 
-class FragmentTestingActivity : AppCompatActivity(), HasActivityComponent<BasePhotosActivityComponent<FragmentTestingActivity>> {
+class FragmentTestingActivity : AppCompatActivity(), HasActivityComponent<MockPhotosActivityComponent> {
 
   private val activityComponentInternal by lazy {
     (application as MockApplication).applicationComponent
       .plus(MockPhotosActivityModule(this))
   }
 
-  override fun getActivityComponent(): BasePhotosActivityComponent<FragmentTestingActivity> {
+  override fun getActivityComponent(): MockPhotosActivityComponent {
     return activityComponentInternal
   }
 
@@ -34,5 +34,4 @@ class FragmentTestingActivity : AppCompatActivity(), HasActivityComponent<BasePh
     waitForIdleSyncFunc()
     return supportFragmentManager.findFragmentByTag("tag") as T
   }
-
 }
