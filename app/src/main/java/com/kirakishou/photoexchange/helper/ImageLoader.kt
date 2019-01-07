@@ -26,7 +26,7 @@ import kotlin.coroutines.suspendCoroutine
 /**
  * Created by kirakishou on 12/20/2017.
  */
-class ImageLoader
+open class ImageLoader
 @Inject constructor(
   private val context: Context,
   private val netUtils: NetUtils
@@ -49,15 +49,7 @@ class ImageLoader
     }
   }
 
-  private fun createProgressDrawable(): CircularProgressDrawable {
-    return CircularProgressDrawable(context).apply {
-      strokeWidth = 10f
-      centerRadius = 50f
-      start()
-    }
-  }
-
-  fun loadPhotoFromDiskInto(imageFile: File, view: ImageView) {
+  open fun loadPhotoFromDiskInto(imageFile: File, view: ImageView) {
     GlideApp.with(context)
       //we do not need to cache this image
       .applyDefaultRequestOptions(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.NONE))
@@ -66,7 +58,7 @@ class ImageLoader
       .into(view)
   }
 
-  suspend fun loadPhotoFromNetInto(photoName: String, view: ImageView) {
+  open suspend fun loadPhotoFromNetInto(photoName: String, view: ImageView) {
     val fullUrl = "${Constants.BASE_PHOTOS_URL}/${photoName}/${photoSize.value}"
 
     if (!netUtils.canLoadImages()) {
@@ -94,7 +86,7 @@ class ImageLoader
     }
   }
 
-  suspend fun loadStaticMapImageFromNetInto(photoName: String, view: ImageView) {
+  open suspend fun loadStaticMapImageFromNetInto(photoName: String, view: ImageView) {
     val fullUrl = "${Constants.BASE_STATIC_MAP_URL}/${photoName}"
 
     if (!netUtils.canLoadImages()) {
@@ -151,6 +143,14 @@ class ImageLoader
           }
         })
         .submit()
+    }
+  }
+
+  private fun createProgressDrawable(): CircularProgressDrawable {
+    return CircularProgressDrawable(context).apply {
+      strokeWidth = 10f
+      centerRadius = 50f
+      start()
     }
   }
 

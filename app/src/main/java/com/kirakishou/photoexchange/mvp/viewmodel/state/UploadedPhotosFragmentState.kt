@@ -97,7 +97,7 @@ data class UploadedPhotosFragmentState(
     )
 
     newUploadedPhotos.add(newUploadedPhoto)
-    newUploadedPhotos.sortByDescending { it.uploadedOn }
+    newUploadedPhotos.sortByDescending { it.photoId }
 
     return UpdateStateResult.Update(newTakenPhotos to newUploadedPhotos)
   }

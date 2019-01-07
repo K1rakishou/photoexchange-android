@@ -37,7 +37,7 @@ import kotlinx.coroutines.channels.consumeEach
 import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 
-class ReceivedPhotosFragmentViewModel(
+open class ReceivedPhotosFragmentViewModel(
   initialState: ReceivedPhotosFragmentState,
   private val intercom: PhotosActivityViewModelIntercom,
   private val receivedPhotosRepository: ReceivedPhotosRepository,

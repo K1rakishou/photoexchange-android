@@ -57,7 +57,7 @@ import javax.inject.Inject
 
 
 class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePhotosServiceCallback,
-  PopupMenu.OnMenuItemClickListener, StateEventListener<PhotosActivityEvent>, IntercomListener, HasActivityComponent<PhotosActivityComponent> {
+  PopupMenu.OnMenuItemClickListener, StateEventListener<PhotosActivityEvent>, IntercomListener {
 
   @BindView(R.id.root_layout)
   lateinit var rootLayout: CoordinatorLayout
@@ -80,7 +80,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   @Inject
   lateinit var viewModel: PhotosActivityViewModel
 
-  private val activityComponentInternal by lazy {
+  val activityComponent by lazy {
     (application as PhotoExchangeApplication).applicationComponent
       .plus(PhotosActivityModule(this))
   }
@@ -100,10 +100,6 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   private val adapter = FragmentTabsPager(supportFragmentManager)
   private var viewState = PhotosActivityViewState()
   private val permissionManager = PermissionManager()
-
-  override fun getActivityComponent(): PhotosActivityComponent {
-    return activityComponentInternal
-  }
 
   /**
    * When we receive a push notification we show a notification and send a broadcast to this activity.
@@ -545,7 +541,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   override fun resolveDaggerDependency() {
-    activityComponentInternal
+    activityComponent
       .inject(this)
   }
 

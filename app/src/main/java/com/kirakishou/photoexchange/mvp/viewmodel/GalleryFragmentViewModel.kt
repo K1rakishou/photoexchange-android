@@ -29,7 +29,7 @@ import kotlinx.coroutines.channels.consumeEach
 import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
 
-class GalleryFragmentViewModel(
+open class GalleryFragmentViewModel(
   initialState: GalleryFragmentState,
   private val intercom: PhotosActivityViewModelIntercom,
   private val galleryPhotosRepository: GalleryPhotosRepository,

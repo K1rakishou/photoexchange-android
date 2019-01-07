@@ -6,7 +6,7 @@ import java.io.File
 /**
  * Created by kirakishou on 11/21/2017.
  */
-class FileUtilsImpl : FileUtils {
+open class FileUtilsImpl : FileUtils {
 
   val TAG = "FileUtilsImpl"
 

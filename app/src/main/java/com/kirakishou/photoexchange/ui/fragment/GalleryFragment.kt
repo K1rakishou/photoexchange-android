@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.view.View
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.kirakishou.fixmypc.photoexchange.R
-import com.kirakishou.photoexchange.di.component.activity.PhotosActivityComponent
+import com.kirakishou.photoexchange.di.component.fregment.GalleryFragmentComponent
 import com.kirakishou.photoexchange.di.module.fragment.GalleryFragmentModule
 import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.extension.safe
@@ -15,7 +15,6 @@ import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
-import com.kirakishou.photoexchange.ui.activity.HasActivityComponent
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.epoxy.controller.GalleryFragmentEpoxyController
 import io.reactivex.rxkotlin.plusAssign
@@ -33,9 +32,15 @@ class GalleryFragment : MyBaseMvRxFragment(), StateEventListener<GalleryFragment
   @Inject
   lateinit var controller: GalleryFragmentEpoxyController
 
-  private val fragmentComponent by lazy {
-    (requireActivity() as HasActivityComponent<PhotosActivityComponent>).getActivityComponent()
-      .plus(GalleryFragmentModule())
+  /**
+   * This fragment may be attached to either PhotosActivity (and it has activity component,
+   * so we can get it from the activity) or to FragmentTestingActivity which doesn't have the component.
+   * In this case the test should provide that component
+   * */
+  private fun getFragmentComponent(): GalleryFragmentComponent? {
+    return (requireActivity() as? PhotosActivity)?.activityComponent?.plus(
+      GalleryFragmentModule()
+    )
   }
 
   private val TAG = "GalleryFragment"
@@ -66,12 +71,6 @@ class GalleryFragment : MyBaseMvRxFragment(), StateEventListener<GalleryFragment
     }
 
     viewModel.galleryFragmentViewModel.loadGalleryPhotos(false)
-  }
-
-  override fun onDestroyView() {
-    super.onDestroyView()
-
-    controller.destroy()
   }
 
   private fun initRx() {
@@ -128,7 +127,7 @@ class GalleryFragment : MyBaseMvRxFragment(), StateEventListener<GalleryFragment
   }
 
   override fun resolveDaggerDependency() {
-    fragmentComponent.inject(this)
+    getFragmentComponent()?.inject(this)
   }
 
   companion object {

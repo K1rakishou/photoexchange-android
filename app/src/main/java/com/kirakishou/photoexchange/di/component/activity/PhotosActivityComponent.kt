@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.di.component.activity
 
+import androidx.appcompat.app.AppCompatActivity
 import com.kirakishou.photoexchange.di.component.fregment.GalleryFragmentComponent
 import com.kirakishou.photoexchange.di.component.fregment.ReceivedPhotosFragmentComponent
 import com.kirakishou.photoexchange.di.component.fregment.UploadedPhotosFragmentComponent
@@ -19,7 +20,9 @@ import dagger.Subcomponent
 @Subcomponent(modules = [
   PhotosActivityModule::class
 ])
-interface PhotosActivityComponent : BasePhotosActivityComponent<PhotosActivity> {
+interface PhotosActivityComponent {
+  fun inject(activity: AppCompatActivity)
+
   fun plus(fragment: UploadedPhotosFragmentModule): UploadedPhotosFragmentComponent
   fun plus(fragment: ReceivedPhotosFragmentModule): ReceivedPhotosFragmentComponent
   fun plus(fragment: GalleryFragmentModule): GalleryFragmentComponent
