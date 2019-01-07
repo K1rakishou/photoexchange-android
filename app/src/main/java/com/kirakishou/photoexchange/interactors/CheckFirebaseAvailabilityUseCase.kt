@@ -6,7 +6,7 @@ import com.kirakishou.photoexchange.helper.database.source.remote.FirebaseRemote
 import core.SharedConstants
 import kotlinx.coroutines.withContext
 
-class CheckFirebaseAvailabilityUseCase(
+open class CheckFirebaseAvailabilityUseCase(
   private val firebaseRemoteSource: FirebaseRemoteSource,
   private val settingsRepository: SettingsRepository,
   dispatchersProvider: DispatchersProvider

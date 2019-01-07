@@ -5,17 +5,16 @@ import android.os.Bundle
 import android.view.View
 import com.airbnb.epoxy.AsyncEpoxyController
 import com.kirakishou.fixmypc.photoexchange.R
-import com.kirakishou.photoexchange.di.component.activity.PhotosActivityComponent
+import com.kirakishou.photoexchange.di.component.fregment.ReceivedPhotosFragmentComponent
 import com.kirakishou.photoexchange.di.module.fragment.ReceivedPhotosFragmentModule
+import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
-import com.kirakishou.photoexchange.ui.activity.HasActivityComponent
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.epoxy.controller.ReceivedPhotosFragmentEpoxyController
 import io.reactivex.rxkotlin.plusAssign
@@ -34,9 +33,15 @@ class ReceivedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Received
   @Inject
   lateinit var controller: ReceivedPhotosFragmentEpoxyController
 
-  private val fragmentComponent by lazy {
-    (requireActivity() as HasActivityComponent<PhotosActivityComponent>).getActivityComponent()
-      .plus(ReceivedPhotosFragmentModule())
+  /**
+   * This fragment may be attached to either PhotosActivity (and it has activity component,
+   * so we can get it from the activity) or to FragmentTestingActivity which doesn't have the component.
+   * In this case the test should provide that component
+   * */
+  private fun getFragmentComponent(): ReceivedPhotosFragmentComponent? {
+    return (requireActivity() as? PhotosActivity)?.activityComponent?.plus(
+      ReceivedPhotosFragmentModule()
+    )
   }
 
   private val TAG = "ReceivedPhotosFragment"
@@ -139,7 +144,7 @@ class ReceivedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Received
   }
 
   override fun resolveDaggerDependency() {
-    fragmentComponent.inject(this)
+    getFragmentComponent()?.inject(this)
   }
 
   companion object {

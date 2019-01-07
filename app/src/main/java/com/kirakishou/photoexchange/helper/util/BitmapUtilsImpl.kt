@@ -12,7 +12,7 @@ import java.io.FileOutputStream
 /**
  * Created by kirakishou on 1/5/2018.
  */
-class BitmapUtilsImpl : BitmapUtils {
+open class BitmapUtilsImpl : BitmapUtils {
 
   override fun rotatePhoto(photoFile: File, tempFile: File): Boolean {
     try {

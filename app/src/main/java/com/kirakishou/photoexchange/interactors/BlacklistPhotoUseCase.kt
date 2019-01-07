@@ -8,7 +8,7 @@ import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRep
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import kotlinx.coroutines.withContext
 
-class BlacklistPhotoUseCase(
+open class BlacklistPhotoUseCase(
   private val database: MyDatabase,
   private val receivedPhotosRepository: ReceivedPhotosRepository,
   private val galleryPhotosRepository: GalleryPhotosRepository,

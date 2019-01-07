@@ -160,7 +160,7 @@ open class TakenPhotosRepository(
     return tempFileLocalSource.findById(id)
   }
 
-  suspend fun loadNotUploadedPhotos(): List<TakenPhoto> {
+  open suspend fun loadNotUploadedPhotos(): List<TakenPhoto> {
     val stillUploadingPhotos = findAllByState(PhotoState.PHOTO_UPLOADING)
 
     database.transactional {

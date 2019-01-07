@@ -34,6 +34,8 @@ import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
 import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 class UploadedPhotosFragmentViewModel(
   initialState: UploadedPhotosFragmentState,
@@ -73,10 +75,6 @@ class UploadedPhotosFragmentViewModel(
         }.safe
       }
     }
-  }
-
-  fun testSetState(newState: UploadedPhotosFragmentState) {
-    setState { newState }
   }
 
   fun loadQueuedUpPhotos() {
@@ -452,6 +450,20 @@ class UploadedPhotosFragmentViewModel(
 
     compositeDisposable.clear()
     job.cancelChildren()
+  }
+
+  /**
+   * For tests
+   * */
+
+  fun testSetState(newState: UploadedPhotosFragmentState) {
+    setState { newState }
+  }
+
+  suspend fun testGetState(): UploadedPhotosFragmentState {
+    return suspendCoroutine { continuation ->
+      withState { state -> continuation.resume(state) }
+    }
   }
 
   sealed class ActorAction {

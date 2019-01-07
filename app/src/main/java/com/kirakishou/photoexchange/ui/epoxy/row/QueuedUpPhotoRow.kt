@@ -45,7 +45,7 @@ class QueuedUpPhotoRow @JvmOverloads constructor(
     cancelButton = findViewById(R.id.cancel_button)
 
     orientation = VERTICAL
-    loadingProgress.isIndeterminate = true
+//    loadingProgress.isIndeterminate = true
     cancelButton.isEnabled = true
   }
 
@@ -55,6 +55,7 @@ class QueuedUpPhotoRow @JvmOverloads constructor(
       throw IllegalStateException("photo state should be PHOTO_QUEUED_UP not (${photo.photoState})")
     }
 
+    photoIdTextView.text = photo.id.toString()
     photoUploadingStateIndicator.background = ColorDrawable(context.resources.getColor(R.color.photo_state_uploading_color))
     uploadingMessageHolderView.visibility = View.VISIBLE
   }
