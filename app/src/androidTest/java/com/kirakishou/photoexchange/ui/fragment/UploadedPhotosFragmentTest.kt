@@ -283,19 +283,20 @@ class UploadedPhotosFragmentTest {
       val fragment = attachFragment()
       val testObserver = intercom.photosActivityEvents.listen().test()
 
-      onView(withId(R.id.recycler_view)).perform(
-        RecyclerViewActions.actionOnItemAtPosition<RecyclerView.ViewHolder>(0, click())
-      )
-      getInstrumentation().waitForIdleSync()
+      for (photo in takenPhotos) {
+        fragment.viewModel.uploadedPhotosFragmentViewModel.cancelPhotoUploading(photo.id)
+        Thread.sleep(waitTime)
+      }
 
       val state = fragment.viewModel.uploadedPhotosFragmentViewModel.testGetState()
       assertEquals(0, state.takenPhotos.size)
+      assertEquals(0, state.uploadedPhotos.size)
 
       val values = testObserver.values()
       assertEquals(count + 1, values.size)
 
-      assertTrue(values.take(1).all { it is PhotosActivityEvent.StartUploadingService })
-      assertTrue(values.drop(1).all { it is PhotosActivityEvent.CancelPhotoUploading })
+      assertTrue(values.count { it is PhotosActivityEvent.StartUploadingService } == 1)
+      assertTrue(values.count { it is PhotosActivityEvent.CancelPhotoUploading } == 10)
     }
   }
 
