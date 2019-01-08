@@ -220,6 +220,36 @@ class UploadedPhotosFragmentTest {
 
   @Test
   fun test_uploaded_photo_click_should_generate_show_toast_events_for_photos_with_no_receiver_info() {
+    fun checkPhotoShown() {
+      onView(withId(R.id.recycler_view))
+        .check(
+          matches(
+            hasDescendant(
+              allOf(
+                withId(R.id.photo_view),
+                withEffectiveVisibility(Visibility.VISIBLE)
+              )
+            )
+          )
+        )
+      getInstrumentation().waitForIdleSync()
+    }
+    fun checkMapNotShown() {
+      onView(withId(R.id.recycler_view))
+        .check(
+          matches(
+            hasDescendant(
+              allOf(
+                withId(R.id.static_map_view),
+                withEffectiveVisibility(Visibility.GONE)
+              )
+            )
+          )
+        )
+      getInstrumentation().waitForIdleSync()
+
+    }
+
     runBlocking {
       val count = 20
       val takenPhotos = mutableListOf<TakenPhoto>()
@@ -247,9 +277,15 @@ class UploadedPhotosFragmentTest {
 
       val testObserver = intercom.photosActivityEvents.listen().test()
 
-      uploadedPhotosFragmentViewModel.swapPhotoAndMap("test_name_11")
-      uploadedPhotosFragmentViewModel.swapPhotoAndMap("test_name_4")
-      uploadedPhotosFragmentViewModel.swapPhotoAndMap("test_name_18")
+      uploadedPhotosFragmentViewModel.swapPhotoAndMap("uploaded_photo_11")
+      uploadedPhotosFragmentViewModel.swapPhotoAndMap("uploaded_photo_4")
+      uploadedPhotosFragmentViewModel.swapPhotoAndMap("uploaded_photo_18")
+      Thread.sleep(waitTime)
+
+      checkPhotoShown()
+      Thread.sleep(waitTime)
+
+      checkMapNotShown()
       Thread.sleep(waitTime)
 
       val values = testObserver.values()
@@ -260,7 +296,7 @@ class UploadedPhotosFragmentTest {
 
   @Test
   fun test_should_be_able_to_cancel_queued_up_photos() {
-    val count = 10
+    val count = 20
     val takenPhotos = mutableListOf<TakenPhoto>()
 
     runBlocking {
@@ -297,8 +333,8 @@ class UploadedPhotosFragmentTest {
       val values = testObserver.values()
       assertEquals(count + 1, values.size)
 
-      assertTrue(values.count { it is PhotosActivityEvent.StartUploadingService } == 1)
-      assertTrue(values.count { it is PhotosActivityEvent.CancelPhotoUploading } == 10)
+      assertEquals(1, values.count { it is PhotosActivityEvent.StartUploadingService })
+      assertEquals(20, values.count { it is PhotosActivityEvent.CancelPhotoUploading })
     }
   }
 
@@ -363,7 +399,7 @@ class UploadedPhotosFragmentTest {
     }
 
     runBlocking {
-      val count = 10
+      val count = 50
       val takenPhotos = mutableListOf<TakenPhoto>()
       val receiverInfoList = mutableListOf<NewReceivedPhoto>()
 
