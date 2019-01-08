@@ -125,8 +125,6 @@ class UploadedPhotosFragmentViewModel(
   private fun onNewPhotoReceivedInternal(newReceivedPhotos: List<NewReceivedPhoto>) {
     withState { state ->
       launch {
-        Timber.tag(TAG).d("onNewPhotoReceivedInternal called with ${newReceivedPhotos.size} new photos")
-
         val updatedPhotos = state.uploadedPhotos.toMutableList()
 
         for (newReceivedPhoto in newReceivedPhotos) {

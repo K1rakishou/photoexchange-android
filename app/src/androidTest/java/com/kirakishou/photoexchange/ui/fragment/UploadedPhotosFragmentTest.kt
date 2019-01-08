@@ -4,9 +4,9 @@ import android.content.Intent
 import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Room
 import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.contrib.RecyclerViewActions
-import androidx.test.espresso.matcher.ViewMatchers.withId
+import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
@@ -32,6 +32,7 @@ import com.kirakishou.photoexchange.interactors.BlacklistPhotoUseCase
 import com.kirakishou.photoexchange.interactors.CheckFirebaseAvailabilityUseCase
 import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mock.FragmentTestingActivity
+import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.GalleryFragmentViewModel
@@ -43,6 +44,7 @@ import com.kirakishou.photoexchange.ui.epoxy.controller.UploadedPhotosFragmentEp
 import com.nhaarman.mockito_kotlin.doReturn
 import junit.framework.Assert.*
 import kotlinx.coroutines.runBlocking
+import org.hamcrest.CoreMatchers.allOf
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -300,6 +302,151 @@ class UploadedPhotosFragmentTest {
     }
   }
 
+  @Test
+  fun test_uploaded_photos_should_switch_between_map_and_photo_when_photos_have_receiver_info() {
+    fun checkMapShown() {
+      onView(withId(R.id.recycler_view))
+        .check(
+          matches(
+            hasDescendant(
+              allOf(
+                withId(R.id.static_map_view),
+                withEffectiveVisibility(Visibility.VISIBLE)
+              )
+            )
+          )
+        )
+      getInstrumentation().waitForIdleSync()
+    }
+    fun checkPhotoShown() {
+      onView(withId(R.id.recycler_view))
+        .check(
+          matches(
+            hasDescendant(
+              allOf(
+                withId(R.id.photo_view),
+                withEffectiveVisibility(Visibility.VISIBLE)
+              )
+            )
+          )
+        )
+      getInstrumentation().waitForIdleSync()
+    }
+    fun checkMapNotShown() {
+      onView(withId(R.id.recycler_view))
+        .check(
+          matches(
+            hasDescendant(
+              allOf(
+                withId(R.id.static_map_view),
+                withEffectiveVisibility(Visibility.GONE)
+              )
+            )
+          )
+        )
+      getInstrumentation().waitForIdleSync()
+
+    }
+    fun checkPhotoNotShown() {
+      onView(withId(R.id.recycler_view))
+        .check(
+          matches(
+            hasDescendant(
+              allOf(
+                withId(R.id.photo_view),
+                withEffectiveVisibility(Visibility.GONE)
+              )
+            )
+          )
+        )
+      getInstrumentation().waitForIdleSync()
+    }
+
+    runBlocking {
+      val count = 10
+      val takenPhotos = mutableListOf<TakenPhoto>()
+      val receiverInfoList = mutableListOf<NewReceivedPhoto>()
+
+      for (i in 0 until count) {
+        val tempFile = takenPhotosRepository.createTempFile()
+        val takenPhoto = takenPhotosRepository.saveTakenPhoto(tempFile)
+        assertNotNull(takenPhoto)
+
+        takenPhotosRepository.updatePhotoState(takenPhoto!!.id, PhotoState.PHOTO_QUEUED_UP)
+
+        takenPhotos += TakenPhoto(
+          takenPhoto.id,
+          takenPhoto.isPublic,
+          "taken_photo_$i",
+          takenPhoto.photoTempFile,
+          PhotoState.PHOTO_QUEUED_UP
+        )
+
+        receiverInfoList += NewReceivedPhoto(
+          "uploaded_photo_${takenPhoto.id}",
+          "receiver_name_$i",
+          11.1,
+          22.2,
+          555L
+        )
+      }
+
+      doReturn(false).`when`(netUtils).canLoadImages()
+
+      attachFragment()
+      uploadPhotos(takenPhotos)
+
+      uploadedPhotosFragmentViewModel.onNewPhotosReceived(receiverInfoList)
+      Thread.sleep(waitTime)
+
+      val state = uploadedPhotosFragmentViewModel.testGetState()
+
+      assertEquals(0, state.takenPhotos.size)
+      assertEquals(count, state.uploadedPhotos.size)
+
+      assertTrue(state.uploadedPhotos.all { it.showPhoto })
+      assertTrue(state.uploadedPhotos.all { it.receiverInfo != null })
+
+      //check that photo is shown
+      checkPhotoShown()
+      Thread.sleep(waitTime)
+
+      //check that map is not shown
+      checkMapNotShown()
+      Thread.sleep(waitTime)
+
+      //switch from photo to map
+      for (receiver in receiverInfoList) {
+        uploadedPhotosFragmentViewModel.swapPhotoAndMap(receiver.uploadedPhotoName)
+      }
+
+      Thread.sleep(waitTime)
+
+      //check that map is shown
+      checkMapShown()
+      Thread.sleep(waitTime)
+
+      //check that photo is not shown
+      checkPhotoNotShown()
+      Thread.sleep(waitTime)
+
+      //switch back to photo
+      for (receiver in receiverInfoList) {
+        uploadedPhotosFragmentViewModel.swapPhotoAndMap(receiver.uploadedPhotoName)
+      }
+
+      Thread.sleep(waitTime)
+
+      //check that photo is shown again
+      checkPhotoShown()
+      Thread.sleep(waitTime)
+
+      //check that map is not shown again
+      checkMapNotShown()
+    }
+
+  }
+
   private fun uploadPhotos(takenPhotos: MutableList<TakenPhoto>) {
     runBlocking {
       val state = uploadedPhotosFragmentViewModel.testGetState()
@@ -361,7 +508,7 @@ class UploadedPhotosFragmentTest {
           UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploaded(
             takenPhoto,
             newId,
-            "test_name_$newId",
+            "uploaded_photo_$newId",
             666L,
             LonLat(11.1, 22.2)
           )
