@@ -54,6 +54,10 @@ class UploadedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Uploaded
     viewModel.uploadedPhotosFragmentViewModel.photoSize = photoSize
     viewModel.uploadedPhotosFragmentViewModel.photosPerPage = columnsCount * Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
 
+    // Probably it would be a better idea to subscribe here not to the whole state but to
+    // just some properties that are responsible for building epoxy models.
+    // In the current situation all of the state properties are responsible for that, but once
+    // there are more properties in the state it should become more reasonable.
     viewModel.uploadedPhotosFragmentViewModel.subscribe(this, true) {
       doInvalidate()
     }

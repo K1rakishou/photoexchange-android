@@ -1,6 +1,7 @@
 package com.kirakishou.photoexchange.ui.fragment
 
 import android.content.Intent
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Room
 import androidx.test.espresso.Espresso.onView
@@ -582,15 +583,30 @@ class UploadedPhotosFragmentTest {
 
       doReturn(false).`when`(netUtils).canLoadImages()
 
+      //set fragment
       val fragment = replaceActivityFragment()
       Thread.sleep(waitTime)
 
       assertEquals(1, getActivity().getFragmentsCount())
 
+      //scroll to 25th element
+      onView(withId(R.id.recycler_view)).perform(
+        RecyclerViewActions.scrollToPosition<RecyclerView.ViewHolder>(25)
+      )
+      getInstrumentation().waitForIdleSync()
+
+      val lastFirstVisibleElement = (fragment.recyclerView.layoutManager as GridLayoutManager)
+        .findFirstCompletelyVisibleItemPosition()
+
+      //replace old fragment with a new one
       replaceActivityFragment()
       Thread.sleep(waitTime)
-
       assertEquals(1, getActivity().getFragmentsCount())
+
+      val currentFirstVisibleElement = (fragment.recyclerView.layoutManager as GridLayoutManager)
+        .findFirstCompletelyVisibleItemPosition()
+
+      assertEquals(lastFirstVisibleElement, currentFirstVisibleElement)
 
       val state = uploadedPhotosFragmentViewModel.testGetState()
       assertEquals(count, state.takenPhotos.size)
