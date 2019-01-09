@@ -161,15 +161,19 @@ class UploadedPhotosFragmentTest {
     )
   }
 
-  private fun attachFragment(): UploadedPhotosFragment {
+  private fun replaceActivityFragment(): UploadedPhotosFragment {
     val newFragment = UploadedPhotosFragment.newInstance().apply {
       viewModel = photosActivityViewModel
       controller = UploadedPhotosFragmentEpoxyController(imageLoader)
     }
 
-    return activityRule.activity.setFragment(newFragment) {
+    return activityRule.activity.replaceFragment(newFragment) {
       getInstrumentation().waitForIdleSync()
     }
+  }
+
+  private fun getActivity(): FragmentTestingActivity {
+    return activityRule.activity as FragmentTestingActivity
   }
 
   @Test
@@ -196,7 +200,7 @@ class UploadedPhotosFragmentTest {
 
       doReturn(false).`when`(netUtils).canLoadImages()
 
-      val fragment = attachFragment()
+      val fragment = replaceActivityFragment()
       uploadPhotos(takenPhotos)
 
       val state = fragment.viewModel.uploadedPhotosFragmentViewModel.testGetState()
@@ -238,6 +242,7 @@ class UploadedPhotosFragmentTest {
         )
       getInstrumentation().waitForIdleSync()
     }
+
     fun checkMapNotShown() {
       onView(withId(R.id.recycler_view))
         .check(
@@ -276,7 +281,7 @@ class UploadedPhotosFragmentTest {
 
       doReturn(false).`when`(netUtils).canLoadImages()
 
-      attachFragment()
+      replaceActivityFragment()
       uploadPhotos(takenPhotos)
 
       val testObserver = intercom.photosActivityEvents.listen().test()
@@ -322,7 +327,7 @@ class UploadedPhotosFragmentTest {
 
       doReturn(false).`when`(netUtils).canLoadImages()
 
-      val fragment = attachFragment()
+      val fragment = replaceActivityFragment()
       val testObserver = intercom.photosActivityEvents.listen().test()
 
       for (photo in takenPhotos) {
@@ -358,6 +363,7 @@ class UploadedPhotosFragmentTest {
         )
       getInstrumentation().waitForIdleSync()
     }
+
     fun checkPhotoShown() {
       onView(withId(R.id.recycler_view))
         .check(
@@ -372,6 +378,7 @@ class UploadedPhotosFragmentTest {
         )
       getInstrumentation().waitForIdleSync()
     }
+
     fun checkMapNotShown() {
       onView(withId(R.id.recycler_view))
         .check(
@@ -387,6 +394,7 @@ class UploadedPhotosFragmentTest {
       getInstrumentation().waitForIdleSync()
 
     }
+
     fun checkPhotoNotShown() {
       onView(withId(R.id.recycler_view))
         .check(
@@ -433,7 +441,7 @@ class UploadedPhotosFragmentTest {
 
       doReturn(false).`when`(netUtils).canLoadImages()
 
-      attachFragment()
+      replaceActivityFragment()
       uploadPhotos(takenPhotos)
 
       uploadedPhotosFragmentViewModel.onNewPhotosReceived(receiverInfoList)
@@ -523,15 +531,15 @@ class UploadedPhotosFragmentTest {
       whenever(getUploadedPhotosUseCase.loadPageOfPhotos(any(), any(), any(), any()))
         .thenReturn(
           Paged(uploadedPhotos.subList(0, pageSize)),
-            *uploadedPhotos.drop(pageSize)
-              .chunked(pageSize)
-              .map { Paged(it, it.size < pageSize) }
-              .toTypedArray()
+          *uploadedPhotos.drop(pageSize)
+            .chunked(pageSize)
+            .map { Paged(it, it.size < pageSize) }
+            .toTypedArray()
         )
 
       doReturn(false).`when`(netUtils).canLoadImages()
 
-      attachFragment()
+      replaceActivityFragment()
       Thread.sleep(waitTime)
 
       for (i in 0 until count step pageSize) {
@@ -547,6 +555,48 @@ class UploadedPhotosFragmentTest {
       for (i in 0 until count - 1) {
         assertTrue(photos[i].photoId >= photos[i + 1].photoId)
       }
+    }
+  }
+
+  @Test
+  fun test_activity_recreation_should_persist_all_taken_photos() {
+    runBlocking {
+      val count = 50
+      val takenPhotos = mutableListOf<TakenPhoto>()
+
+      for (i in 0 until count) {
+        val tempFile = takenPhotosRepository.createTempFile()
+        val takenPhoto = takenPhotosRepository.saveTakenPhoto(tempFile)
+        assertNotNull(takenPhoto)
+
+        takenPhotosRepository.updatePhotoState(takenPhoto!!.id, PhotoState.PHOTO_QUEUED_UP)
+
+        takenPhotos += TakenPhoto(
+          takenPhoto.id,
+          takenPhoto.isPublic,
+          takenPhoto.photoName,
+          takenPhoto.photoTempFile,
+          PhotoState.PHOTO_QUEUED_UP
+        )
+      }
+
+      doReturn(false).`when`(netUtils).canLoadImages()
+
+      val fragment = replaceActivityFragment()
+      Thread.sleep(waitTime)
+
+      assertEquals(1, getActivity().getFragmentsCount())
+
+      replaceActivityFragment()
+      Thread.sleep(waitTime)
+
+      assertEquals(1, getActivity().getFragmentsCount())
+
+      val state = uploadedPhotosFragmentViewModel.testGetState()
+      assertEquals(count, state.takenPhotos.size)
+
+      val models = fragment.epoxyController.adapter.copyOfModels
+      assertEquals(count, models.size)
     }
   }
 

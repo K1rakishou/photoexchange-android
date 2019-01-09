@@ -223,9 +223,13 @@ class UploadedPhotosFragmentViewModel(
           return@launch
         }
 
+        val newTakenPhotos = state.takenPhotos.filterDuplicatesWith(notUploadedPhotos) { takenPhoto ->
+          takenPhoto.id
+        }
+
         setState {
           copy(
-            takenPhotos = state.takenPhotos + notUploadedPhotos
+            takenPhotos = newTakenPhotos
           )
         }
 
