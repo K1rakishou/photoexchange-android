@@ -3,13 +3,15 @@ package com.kirakishou.photoexchange
 import android.view.View
 import androidx.annotation.IdRes
 import androidx.test.espresso.ViewAction
-import androidx.test.espresso.action.ViewActions.click
 import org.hamcrest.Matcher
+import androidx.recyclerview.widget.RecyclerView
+import androidx.test.espresso.matcher.BoundedMatcher
+import org.hamcrest.Description
 
 
 object TestUtils {
 
-  fun <T : View> performActionOnViewWithId(@IdRes id: Int): ViewAction {
+  fun <T : View> performActionOnViewWithId(@IdRes id: Int, action: (T) -> Unit): ViewAction {
     return object : ViewAction {
       override fun getConstraints(): Matcher<View>? {
         return null
@@ -20,7 +22,20 @@ object TestUtils {
       }
 
       override fun perform(uiController: androidx.test.espresso.UiController, view: View) {
-        click().perform(uiController, view.findViewById<T>(id))
+        action(view.findViewById(id))
+      }
+    }
+  }
+
+  fun withViewAtPosition(position: Int, itemMatcher: Matcher<View>): Matcher<View> {
+    return object : BoundedMatcher<View, RecyclerView>(RecyclerView::class.java) {
+      override fun describeTo(description: Description?) {
+        itemMatcher.describeTo(description)
+      }
+
+      override fun matchesSafely(recyclerView: RecyclerView): Boolean {
+        val viewHolder = recyclerView.findViewHolderForAdapterPosition(position)
+        return viewHolder != null && itemMatcher.matches(viewHolder.itemView)
       }
     }
   }

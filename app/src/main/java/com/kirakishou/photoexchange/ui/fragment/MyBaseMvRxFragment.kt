@@ -29,8 +29,8 @@ abstract class MyBaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
   protected val lifecycle = RxLifecycle(this)
 
   private val job = Job()
-  protected lateinit var recyclerView: EpoxyRecyclerView
-  protected lateinit var swipeRefreshLayout: SwipeRefreshLayout
+  lateinit var recyclerView: EpoxyRecyclerView
+  lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
   override val coroutineContext: CoroutineContext
     get() = job + Dispatchers.Main
@@ -115,10 +115,12 @@ abstract class MyBaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
     super.onDestroyView()
   }
 
+  // Notifies to actor to start models rebuilding process
   protected fun doInvalidate() {
     invalidationActor.offer(Unit)
   }
 
+  // This is called internally by MvRx
   @CallSuper
   override fun invalidate() {
     recyclerView.requestModelBuild()

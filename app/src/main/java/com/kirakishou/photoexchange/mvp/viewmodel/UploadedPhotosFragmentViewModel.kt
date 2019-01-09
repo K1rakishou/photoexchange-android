@@ -125,8 +125,6 @@ class UploadedPhotosFragmentViewModel(
   private fun onNewPhotoReceivedInternal(newReceivedPhotos: List<NewReceivedPhoto>) {
     withState { state ->
       launch {
-        Timber.tag(TAG).d("onNewPhotoReceivedInternal called with ${newReceivedPhotos.size} new photos")
-
         val updatedPhotos = state.uploadedPhotos.toMutableList()
 
         for (newReceivedPhoto in newReceivedPhotos) {
@@ -225,9 +223,13 @@ class UploadedPhotosFragmentViewModel(
           return@launch
         }
 
+        val newTakenPhotos = state.takenPhotos.filterDuplicatesWith(notUploadedPhotos) { takenPhoto ->
+          takenPhoto.id
+        }
+
         setState {
           copy(
-            takenPhotos = state.takenPhotos + notUploadedPhotos
+            takenPhotos = newTakenPhotos
           )
         }
 

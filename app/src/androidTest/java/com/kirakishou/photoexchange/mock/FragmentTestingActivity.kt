@@ -13,13 +13,19 @@ class FragmentTestingActivity : AppCompatActivity() {
     setContentView(R.layout.activity_fragment_testing)
   }
 
-  fun <T : Fragment> setFragment(fragment: Fragment, waitForIdleSyncFunc: () -> Unit): T {
-    supportFragmentManager.beginTransaction().apply {
-      add(R.id.test_fragment_container, fragment, "tag")
-      commit()
+  fun <T : Fragment> replaceFragment(fragment: Fragment, waitForIdleSyncFunc: (() -> Unit)? = null): T {
+    runOnUiThread {
+      supportFragmentManager.beginTransaction().apply {
+        replace(R.id.test_fragment_container, fragment, "tag")
+        commitNow()
+      }
     }
 
-    waitForIdleSyncFunc()
+    waitForIdleSyncFunc?.invoke()
     return supportFragmentManager.findFragmentByTag("tag") as T
+  }
+
+  fun getFragmentsCount(): Int {
+    return supportFragmentManager.fragments.size
   }
 }
