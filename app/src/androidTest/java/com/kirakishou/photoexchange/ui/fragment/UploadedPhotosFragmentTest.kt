@@ -14,6 +14,7 @@ import androidx.test.rule.ActivityTestRule
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.LonLat
+import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.MockDispatchers
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.ReceivedPhotosRepository
@@ -35,13 +36,16 @@ import com.kirakishou.photoexchange.mock.FragmentTestingActivity
 import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
+import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.viewmodel.GalleryFragmentViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.ReceivedPhotosFragmentViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.UploadedPhotosFragmentViewModel
 import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.epoxy.controller.UploadedPhotosFragmentEpoxyController
-import com.nhaarman.mockito_kotlin.doReturn
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.whenever
 import junit.framework.Assert.*
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.CoreMatchers.allOf
@@ -481,6 +485,69 @@ class UploadedPhotosFragmentTest {
       checkMapNotShown()
     }
 
+  }
+
+  @Test
+  fun test_paged_loading_of_5001_uploaded_photos() {
+    suspend fun scrollToBottom() {
+      val lastIndex = uploadedPhotosFragmentViewModel.testGetState().uploadedPhotos.lastIndex
+
+      onView(withId(R.id.recycler_view)).perform(
+        RecyclerViewActions.scrollToPosition<RecyclerView.ViewHolder>(lastIndex)
+      )
+      getInstrumentation().waitForIdleSync()
+    }
+
+    runBlocking {
+      val count = 5001
+      val uploadedPhotos = mutableListOf<UploadedPhoto>()
+
+      for (i in 0 until count) {
+        val photoId = (i + 1).toLong()
+
+        uploadedPhotos += UploadedPhoto(
+          photoId,
+          "uploaded_photo_$photoId",
+          11.1,
+          22.2,
+          null,
+          i.toLong()
+        )
+      }
+
+      //load 200 photos per scroll
+      val pageSize = 200
+      uploadedPhotosFragmentViewModel.photosPerPage = pageSize
+      uploadedPhotos.shuffle()
+
+      whenever(getUploadedPhotosUseCase.loadPageOfPhotos(any(), any(), any(), any()))
+        .thenReturn(
+          Paged(uploadedPhotos.subList(0, pageSize)),
+            *uploadedPhotos.drop(pageSize)
+              .chunked(pageSize)
+              .map { Paged(it, it.size < pageSize) }
+              .toTypedArray()
+        )
+
+      doReturn(false).`when`(netUtils).canLoadImages()
+
+      attachFragment()
+      Thread.sleep(waitTime)
+
+      for (i in 0 until count step pageSize) {
+        scrollToBottom()
+        Thread.sleep(waitTime)
+        uploadedPhotosFragmentViewModel.loadUploadedPhotos(false)
+        Thread.sleep(waitTime)
+      }
+
+      val photos = uploadedPhotosFragmentViewModel.testGetState().uploadedPhotos
+      assertEquals(count, photos.size)
+
+      for (i in 0 until count - 1) {
+        assertTrue(photos[i].photoId >= photos[i + 1].photoId)
+      }
+    }
   }
 
   private fun uploadPhotos(takenPhotos: MutableList<TakenPhoto>) {

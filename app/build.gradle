@@ -46,6 +46,12 @@ android {
     lintOptions {
         disable 'TimberTagLength'
     }
+    configurations.all {
+        resolutionStrategy {
+            force 'net.bytebuddy:byte-buddy:1.8.22'
+            force 'net.bytebuddy:byte-buddy-agent:1.8.22'
+        }
+    }
     repositories {
         maven { url 'https://jitpack.io' }
         maven { url "https://dl.bintray.com/drummer-aidan/maven/" }
@@ -68,7 +74,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-messaging:17.3.4'
 
     testImplementation 'junit:junit:4.12'
-    testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.0.0"
+    testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.1.0"
     testImplementation 'org.mockito:mockito-core:2.23.4'
     debugImplementation 'androidx.fragment:fragment-testing:1.1.0-alpha03'
 
@@ -82,8 +88,8 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-contrib:3.0.2'
 
-    androidTestImplementation 'org.mockito:mockito-android:2.22.0'
-    androidTestImplementation "com.nhaarman:mockito-kotlin:1.6.0"
+    androidTestImplementation 'org.mockito:mockito-android:2.23.4'
+    androidTestImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.1.0"
 
     implementation "androidx.lifecycle:lifecycle-runtime:2.0.0"
     implementation "androidx.lifecycle:lifecycle-extensions:2.0.0"
