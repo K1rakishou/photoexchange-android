@@ -47,12 +47,9 @@ class ReceivedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Received
   private val TAG = "ReceivedPhotosFragment"
 
   private val scrollSubject = PublishSubject.create<Boolean>()
-
-  private val receivedPhotoAdapterViewWidth = Constants.DEFAULT_ADAPTER_ITEM_WIDTH
   private val throttleTime = 200L
 
   private val photoSize by lazy { AndroidUtils.figureOutPhotosSizes(requireContext()) }
-  private val columnsCount by lazy { AndroidUtils.calculateNoOfColumns(requireContext(), receivedPhotoAdapterViewWidth) }
 
   override fun getFragmentLayoutId(): Int = R.layout.fragment_mvrx
 
@@ -61,7 +58,7 @@ class ReceivedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Received
     initRx()
 
     viewModel.receivedPhotosFragmentViewModel.photoSize = photoSize
-    viewModel.receivedPhotosFragmentViewModel.photosPerPage = columnsCount * Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
+    viewModel.receivedPhotosFragmentViewModel.photosPerPage = spanCount * Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
 
     viewModel.receivedPhotosFragmentViewModel.subscribe(this, true) {
       doInvalidate()

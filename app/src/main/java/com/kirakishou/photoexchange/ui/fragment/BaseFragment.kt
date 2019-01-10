@@ -1,6 +1,5 @@
 package com.kirakishou.photoexchange.ui.fragment
 
-import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,7 +8,6 @@ import androidx.fragment.app.Fragment
 import butterknife.ButterKnife
 import butterknife.Unbinder
 import com.kirakishou.photoexchange.PhotoExchangeApplication
-import com.kirakishou.photoexchange.helper.RxLifecycle
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,19 +20,12 @@ import kotlin.coroutines.CoroutineContext
 
 abstract class BaseFragment : Fragment(), CoroutineScope {
   protected val compositeDisposable = CompositeDisposable()
-  protected val lifecycle = RxLifecycle(this)
   private var job = Job()
 
   private lateinit var unBinder: Unbinder
 
   override val coroutineContext: CoroutineContext
     get() = job + Dispatchers.Main
-
-  override fun onAttach(context: Context) {
-    super.onAttach(context)
-
-    lifecycle.start()
-  }
 
   override fun onDetach() {
     super.onDetach()
@@ -43,7 +34,6 @@ abstract class BaseFragment : Fragment(), CoroutineScope {
     job = Job()
 
     compositeDisposable.clear()
-    lifecycle.stop()
 
     PhotoExchangeApplication.watch(this, this::class.simpleName)
   }

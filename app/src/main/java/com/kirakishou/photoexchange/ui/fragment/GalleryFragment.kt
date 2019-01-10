@@ -44,12 +44,9 @@ class GalleryFragment : MyBaseMvRxFragment(), StateEventListener<GalleryFragment
   }
 
   private val TAG = "GalleryFragment"
-  private val galleryPhotoAdapterViewWidth = Constants.DEFAULT_ADAPTER_ITEM_WIDTH
   private val recyclerViewScrollEventsThrottleTimeMs = 200L
 
   private val photoSize by lazy { AndroidUtils.figureOutPhotosSizes(requireContext()) }
-  private val columnsCount by lazy { AndroidUtils.calculateNoOfColumns(requireContext(), galleryPhotoAdapterViewWidth) }
-
   private val scrollSubject = PublishSubject.create<Boolean>()
 
   override fun getFragmentLayoutId(): Int = R.layout.fragment_mvrx
@@ -59,7 +56,7 @@ class GalleryFragment : MyBaseMvRxFragment(), StateEventListener<GalleryFragment
     initRx()
 
     viewModel.galleryFragmentViewModel.photoSize = photoSize
-    viewModel.galleryFragmentViewModel.photosPerPage = columnsCount * Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
+    viewModel.galleryFragmentViewModel.photosPerPage = spanCount * Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
 
     viewModel.galleryFragmentViewModel.subscribe(this, true) {
       doInvalidate()

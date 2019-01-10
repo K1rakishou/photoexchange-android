@@ -20,12 +20,6 @@ import kotlin.coroutines.CoroutineContext
  */
 abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
   private val TAG = "${this::class.java}"
-
-  private val registry by lazy {
-    LifecycleRegistry(this)
-  }
-
-  override fun getLifecycle(): LifecycleRegistry = registry
   protected val compositeDisposable = CompositeDisposable()
 
   private var job = Job()
