@@ -47,4 +47,7 @@
     <string name="photos_activity_tab_title_uploaded_photos">Uploaded</string>
     <string name="photos_activity_tab_title_received_photos">Received</string>
     <string name="photos_activity_tab_title_gallery">Gallery</string>
+
+    <!--take photo activity-->
+    <string name="take_photo_activity_could_not_take_photo">Could not take photo</string>
 </resources>
