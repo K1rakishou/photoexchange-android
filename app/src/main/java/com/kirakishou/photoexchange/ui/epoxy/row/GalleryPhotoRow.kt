@@ -13,7 +13,7 @@ import com.airbnb.epoxy.ModelView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 
-@ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT)
+@ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT, fullSpan = false)
 class GalleryPhotoRow @JvmOverloads constructor(
   context: Context,
   attrs: AttributeSet? = null,

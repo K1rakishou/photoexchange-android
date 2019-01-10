@@ -95,7 +95,7 @@ class ViewTakenPhotoFragment : BaseFragment(), ViewTakenPhotoActivity.BackPressA
         val makePublic = makePublicFlag == PhotosVisibility.AlwaysPublic
         viewModel.addToGalleryFragmentResult.onNext(AddToGalleryDialogFragment.FragmentResult(false, makePublic))
       }
-      PhotosVisibility.Neither -> {
+      PhotosVisibility.AskMeEveryTime -> {
         (requireActivity() as ViewTakenPhotoActivity).showDialogFragment()
       }
     }

@@ -45,12 +45,12 @@ open class SettingsRepository(
 
   suspend fun savePhotoVisibility(makePublic: Boolean?): Boolean {
     val value = PhotosVisibility.fromBoolean(makePublic).value.toString()
-    return settingsDao.insert(SettingEntity(MAKE_PHOTOS_PUBLIC_SETTING, value)) > 0
+    return settingsDao.insert(SettingEntity(PHOTOS_VISIBILITY_SETTING, value)) > 0
   }
 
   suspend fun getPhotoVisibility(): PhotosVisibility {
-    val result = settingsDao.findByName(MAKE_PHOTOS_PUBLIC_SETTING)
-      ?: return PhotosVisibility.Neither
+    val result = settingsDao.findByName(PHOTOS_VISIBILITY_SETTING)
+      ?: return PhotosVisibility.AskMeEveryTime
 
     return PhotosVisibility.fromInt(result.settingValue?.toInt())
   }
@@ -111,7 +111,7 @@ open class SettingsRepository(
      * */
     const val FIREBASE_TOKEN = "FIREBASE_TOKEN"
 
-    const val MAKE_PHOTOS_PUBLIC_SETTING = "MAKE_PHOTOS_PUBLIC"
+    const val PHOTOS_VISIBILITY_SETTING = "PHOTOS_VISIBILITY"
     const val GPS_PERMISSION_GRANTED_SETTING = "GPS_PERMISSION_GRANTED"
     const val NETWORK_ACCESS_LEVEL_SETTING = "NETWORK_ACCESS_LEVEL"
     const val IS_NO_FIREBASE_DIALOG_ALREADY_SHOWN_SETTING = " IS_NO_FIREBASE_DIALOG_ALREADY_SHOWN"

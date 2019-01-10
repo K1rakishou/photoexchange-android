@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:card_view="http://schemas.android.com/apk/res-auto"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="256dp"
     android:layout_marginStart="2dp"
@@ -27,12 +27,14 @@
                 android:id="@+id/photo_view"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:contentDescription="@null"
                 android:visibility="visible" />
 
             <ImageView
                 android:id="@+id/static_map_view"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:contentDescription="@null"
                 android:visibility="gone" />
 
             <LinearLayout
@@ -66,6 +68,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_gravity="center_vertical"
+                        android:contentDescription="@null"
                         android:src="@drawable/ic_favorite_border"
                         android:tint="@color/white" />
 
@@ -75,7 +78,7 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_vertical"
                         android:layout_marginStart="4dp"
-                        android:text="1"
+                        android:text="0"
                         android:textColor="@color/gray"
                         android:textSize="14sp" />
 
@@ -98,6 +101,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_gravity="center_vertical"
+                        android:contentDescription="@null"
                         android:src="@drawable/ic_report_border" />
 
                 </LinearLayout>

@@ -299,7 +299,8 @@ class UploadedPhotosFragmentTest {
       Thread.sleep(waitTime)
 
       val values = testObserver.values()
-      assertEquals(3, values.size)
+
+      assertEquals("bad amount of events, event names are: (${values.map { it::class.java }})", 3, values.size)
       assertTrue(values.all { it is PhotosActivityEvent.ShowToast })
     }
   }

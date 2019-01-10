@@ -24,7 +24,6 @@ import com.google.android.material.tabs.TabLayout
 import com.jakewharton.rxbinding2.view.RxView
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
-import com.kirakishou.photoexchange.di.component.activity.PhotosActivityComponent
 import com.kirakishou.photoexchange.di.module.activity.PhotosActivityModule
 import com.kirakishou.photoexchange.helper.extension.debounceClicks
 import com.kirakishou.photoexchange.helper.extension.safe
@@ -54,6 +53,9 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.lang.IllegalStateException
 import javax.inject.Inject
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 
 class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePhotosServiceCallback,
@@ -164,7 +166,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   override fun onActivityStop() {
-    receivePhotosServiceConnection.onFindingServiceDisconnected()
+    receivePhotosServiceConnection.onReceivedPhotosServiceDisconnected()
     uploadPhotosServiceConnection.onUploadingServiceDisconnected()
 
     unregisterReceiver(notificationBroadcastReceiver)
@@ -234,62 +236,87 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   private suspend fun prepareToTakePhoto() {
+    //1. Show GDPR dialog
+    //TODO: add GDPR dialog
+    //TODO: disable Crashlytics if user didn't give us their permission to send crashlogs
+
+    //2. Check firebase availability, show no firebase dialog if necessary
     checkFirebaseAvailability()
-    checkPermissions()
+
+    //3. Check permissions, show dialogs if necessary
+    val result = checkPermissions()
+
+    when (result) {
+      PermissionRequestResult.NotGranted,
+      PermissionRequestResult.Granted -> {
+        val granted = result == PermissionRequestResult.Granted
+
+        viewModel.updateGpsPermissionGranted(granted)
+        startTakenPhotoActivity()
+      }
+      PermissionRequestResult.ShowRationaleForCamera -> showCameraRationaleDialog()
+      PermissionRequestResult.ShowRationaleAppCannotWorkWithoutCamera -> {
+        showAppCannotWorkWithoutCameraPermissionDialog()
+      }
+      PermissionRequestResult.ShowRationaleForGps -> showGpsRationaleDialog()
+    }
   }
 
   private suspend fun checkFirebaseAvailability() {
     val result = viewModel.checkFirebaseAvailability()
-    if (result == CheckFirebaseAvailabilityUseCase.FirebaseAvailabilityResult.AlreadyShown) {
-      return
-    }
-
-    if (result == CheckFirebaseAvailabilityUseCase.FirebaseAvailabilityResult.Available) {
+    if (result != CheckFirebaseAvailabilityUseCase.FirebaseAvailabilityResult.NotAvailable) {
       return
     }
 
     FirebaseNotAvailableDialog().show(this)
   }
 
-  private fun checkPermissions() {
+  private suspend fun checkPermissions(): PermissionRequestResult {
     val requestedPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION)
 
-    permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
-      val cameraIndex = permissions.indexOf(Manifest.permission.CAMERA)
-      if (cameraIndex == -1) {
-        throw RuntimeException("Couldn't find Manifest.permission.CAMERA in result permissions")
-      }
-
-      val gpsIndex = permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)
-      if (gpsIndex == -1) {
-        throw RuntimeException("Couldn't find Manifest.permission.ACCESS_FINE_LOCATION in result permissions")
-      }
-
-      if (grantResults[cameraIndex] == PackageManager.PERMISSION_DENIED) {
-        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
-          launch { showCameraRationaleDialog() }
-        } else {
-          Timber.tag(TAG).d("getPermissions() Could not obtain camera permission")
-          launch { showAppCannotWorkWithoutCameraPermissionDialog() }
-        }
-
-        return@askForPermission
-      }
-
-      var granted = true
-
-      if (grantResults[gpsIndex] == PackageManager.PERMISSION_DENIED) {
-        granted = false
-
-        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-          launch { showGpsRationaleDialog() }
+    return suspendCoroutine { continuation ->
+      permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
+        val cameraIndex = permissions.indexOf(Manifest.permission.CAMERA)
+        if (cameraIndex == -1) {
+          continuation.resumeWithException(
+            RuntimeException("Couldn't find Manifest.permission.CAMERA in result permissions")
+          )
           return@askForPermission
         }
-      }
 
-      launch {
-        viewModel.updateGpsPermissionGranted(granted)
-        startTakenPhotoActivity()
+        val gpsIndex = permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        if (gpsIndex == -1) {
+          continuation.resumeWithException(
+            RuntimeException("Couldn't find Manifest.permission.ACCESS_FINE_LOCATION in result permissions")
+          )
+          return@askForPermission
+        }
+
+        if (grantResults[cameraIndex] == PackageManager.PERMISSION_DENIED) {
+          if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
+            continuation.resume(PermissionRequestResult.ShowRationaleForCamera)
+          } else {
+            Timber.tag(TAG).d("Could not obtain camera permission")
+            continuation.resume(PermissionRequestResult.ShowRationaleAppCannotWorkWithoutCamera)
+          }
+        } else {
+          var granted = true
+
+          if (grantResults[gpsIndex] == PackageManager.PERMISSION_DENIED) {
+            granted = false
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+              continuation.resume(PermissionRequestResult.ShowRationaleForGps)
+              return@askForPermission
+            }
+          }
+
+          if (granted) {
+            continuation.resume(PermissionRequestResult.Granted)
+          } else {
+            continuation.resume(PermissionRequestResult.NotGranted)
+          }
+        }
       }
     }
   }
@@ -309,9 +336,9 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
   private fun initTabs() {
     tabLayout.removeAllTabs()
-    tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_uploaded_photos)))
-    tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_received_photos)))
-    tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_gallery)))
+    tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.photos_activity_tab_title_uploaded_photos)))
+    tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.photos_activity_tab_title_received_photos)))
+    tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.photos_activity_tab_title_gallery)))
     tabLayout.tabGravity = TabLayout.GRAVITY_FILL
 
     viewPager.adapter = adapter
@@ -350,7 +377,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   private fun createMenu() {
     val popupMenu = PopupMenu(this, menuButton)
     popupMenu.setOnMenuItemClickListener(this)
-    popupMenu.menu.add(1, R.id.settings_item, 1, resources.getString(R.string.settings_menu_item_text))
+    popupMenu.menu.add(1, R.id.settings_item, 1, resources.getString(R.string.photos_activity_settings_menu_item_text))
     popupMenu.show()
   }
 
@@ -425,8 +452,8 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   private fun showNewPhotoHasBeenReceivedSnackbar() {
-    Snackbar.make(rootLayout, getString(R.string.photo_has_been_received_snackbar_text), Snackbar.LENGTH_LONG)
-      .setAction(getString(R.string.show_snackbar_action_text), {
+    Snackbar.make(rootLayout, getString(R.string.photos_activity_photo_has_been_received_snackbar_text), Snackbar.LENGTH_LONG)
+      .setAction(getString(R.string.photos_activity_show_snackbar_action_text), {
         launch {
           switchToTab(RECEIVED_PHOTOS_TAB_INDEX)
 
@@ -439,8 +466,8 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   private fun showNewGalleryPhotosSnackbar(count: Int) {
-    Snackbar.make(rootLayout, "You have ${count} new gallery photos", Snackbar.LENGTH_LONG)
-      .setAction(getString(R.string.show_snackbar_action_text), {
+    Snackbar.make(rootLayout, getString(R.string.photos_activity_new_gallery_photos, count), Snackbar.LENGTH_LONG)
+      .setAction(getString(R.string.photos_activity_show_snackbar_action_text), {
         launch {
           switchToTab(GALLERY_PHOTOS_TAB_INDEX)
 
@@ -543,6 +570,14 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   override fun resolveDaggerDependency() {
     activityComponent
       .inject(this)
+  }
+
+  enum class PermissionRequestResult {
+    Granted,
+    NotGranted,
+    ShowRationaleForCamera,
+    ShowRationaleAppCannotWorkWithoutCamera,
+    ShowRationaleForGps
   }
 
   companion object {

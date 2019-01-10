@@ -29,7 +29,7 @@ class SettingsActivityViewModel(
       val makePublic = when (visibility) {
         PhotosVisibility.AlwaysPublic -> true
         PhotosVisibility.AlwaysPrivate -> false
-        PhotosVisibility.Neither -> null
+        PhotosVisibility.AskMeEveryTime -> null
       }
 
       if (!settingsRepository.savePhotoVisibility(makePublic)) {
@@ -64,13 +64,15 @@ class SettingsActivityViewModel(
 
   suspend fun restoreOldAccount(oldUserId: String): Boolean {
     return withContext(coroutineContext) {
-      val suffix = "@${DOMAIN_NAME}"
+      val suffix = "@$DOMAIN_NAME"
 
-      val userId = if (!oldUserId.endsWith(suffix, true)) {
-        oldUserId + suffix
-      } else {
-        oldUserId
-      }
+      val userId = oldUserId.trim().let { userId ->
+        return@let if (!userId.endsWith(suffix, true)) {
+          userId + suffix
+        } else {
+          userId
+        }
+      }.toLowerCase()
 
       return@withContext restoreAccountUseCase.restoreAccount(userId)
     }

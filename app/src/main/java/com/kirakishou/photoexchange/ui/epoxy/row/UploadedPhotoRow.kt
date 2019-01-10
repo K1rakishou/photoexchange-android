@@ -18,7 +18,7 @@ import com.kirakishou.photoexchange.di.module.GlideApp
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.helper.Constants
 
-@ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT)
+@ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT, fullSpan = false)
 class UploadedPhotoRow @JvmOverloads constructor(
   context: Context,
   attrs: AttributeSet? = null,

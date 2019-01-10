@@ -1,30 +1,59 @@
 <resources>
     <string name="app_name">PhotoExchange</string>
-    <string name="tab_title_uploaded_photos">Uploaded</string>
-    <string name="tab_title_received_photos">Received</string>
-    <string name="tab_title_gallery">Gallery</string>
-    <string name="photo_is_uploading_text">Photo is uploading…</string>
-    <string name="view_full_photo">View full photo</string>
-    <string name="delete_photo">Delete photo</string>
-    <string name="report_photo">Report photo</string>
-
-    <string name="make_photo_public_text">Make this photo public?</string>
-    <string name="make_photo_public_explanation_text">This photo will be added to the gallery so all people will be able to see it (The location where the photo was taken too). Otherwise only you and the person who receives this photo would be able to see it.</string>
-    <string name="remember_my_choice_text">Remember my choice</string>
-    <string name="make_public_btn_text">Make public</string>
-    <string name="do_not_make_public_btn_text">Do not</string>
-    <string name="settings_menu_item_text">Settings</string>
-    <string name="photo_has_been_received_snackbar_text">A new photo has been received</string>
-    <string name="show_snackbar_action_text">SHOW</string>
-    <string name="tap_to_copy_user_id_message">Tap here to copy User ID to clipboard</string>
     <string name="default_notification_channel_id">1</string>
+
+    <!--epoxy controller-->
     <string name="the_gallery_is_empty_text">The gallery is empty</string>
     <string name="end_of_list_reached_text">End of the list reached.\nClick here to reload</string>
     <string name="unknown_error_while_trying_to_load_photos_text">Unknown error has occurred while trying to load photos. \nClick here to retry</string>
     <string name="you_have_no_photos_yet">You have no photos yet</string>
-    <string name="uploaded_photos_text">Uploaded photos</string>
-    <string name="uploading_photos_text">Uploading photos</string>
-    <string name="user_id_explanation_text">User ID is basically your account ID. Every photo you upload is marked with user ID so if you want to be able to access your photos from different phones or restore account after app has been uninstalled you better save this ID.</string>
-    <string name="photo_visibility_explanation_text">If photo visibility set to Always Public - all your photos will be available in the gallery for everyone, If it\'s set to Always Private then they won\'t. If it\'s set to Neither - you will be asked what visibility to use every time you take a photo.</string>
-    <string name="network_access_level_explanation_text">It\'s better to set this setting to Can Load Images when you are connected to unmetered network (unlimited download rate). By setting it to Can Access Internet - you won\'t be loading any images when you are not connected to an unmetered network, any other lightweight request will still be possible. Finally by setting it to Neither completely disables any network interactions when you are not connected to an unmetered network.</string>
+
+    <!--photo answer menu-->
+    <string name="photo_answer_menu_view_full_photo">View full photo</string>
+    <string name="photo_answer_menu_delete_photo">Delete photo</string>
+    <string name="photo_answer_menu_report_photo">Report photo</string>
+
+    <!--settings activity-->
+    <string name="settings_activity_your_user_id_msg">Your User ID</string>
+    <string name="settings_activity_current_user_id_is_empty_msg">Current UserId is empty (no photos uploaded yet)</string>
+    <string name="settings_activity_default_photo_visibility_msg">Default photo visibility</string>
+    <string name="settings_activity_network_access_level_msg">Network Access Level on metered network</string>
+    <string name="settings_activity_restore_old_account_msg">Restore old account</string>
+    <string name="settings_activity_always_public">Always Public</string>
+    <string name="settings_activity_always_private">Always Private</string>
+    <string name="settings_activity_ask_every_time">Ask me every time</string>
+    <string name="settings_activity_can_load_images">Can Load Images</string>
+    <string name="settings_activity_can_access_internet">Can Access Internet</string>
+    <string name="settings_activity_neither">Neither</string>
+    <string name="settings_activity_user_id_copied_to_clipboard">UserId copied to clipboard</string>
+    <string name="settings_activity_successfully_restored_old_account">Successfully restored old account</string>
+    <string name="settings_activity_account_does_not_exist">Account does not exist</string>
+    <string name="settings_activity_unknown_error">Unknown error while trying to restore account: %1$s</string>
+    <string name="settings_activity_tap_to_copy_user_id_message">Tap here to copy User ID to clipboard</string>
+    <string name="settings_activity_user_id_explanation_text">User ID is basically your account ID. Every photo you upload is marked with user ID so if you want to be able to access your photos from different phones or restore account after app has been uninstalled you better save this ID.</string>
+    <string name="settings_activity_photo_visibility_explanation_text">If photo visibility set to Always Public - all your photos will be available in the gallery for everyone, If it\'s set to Always Private then they won\'t. If it\'s set to Neither - you will be asked what visibility to use every time you take a photo.</string>
+    <string name="settings_activity_network_access_level_explanation_text">It\'s better to set this setting to Can Load Images when you are connected to unmetered network (unlimited download rate). By setting it to Can Access Internet - you won\'t be loading any images when you are not connected to an unmetered network, any other lightweight request will still be possible. Finally by setting it to Neither completely disables any network interactions when you are not connected to an unmetered network.</string>
+
+    <!--photos activity-->
+    <string name="photos_activity_new_gallery_photos">You have %1$d new gallery photos</string>
+    <string name="photos_activity_tab_title_uploaded_photos">Uploaded</string>
+    <string name="photos_activity_tab_title_received_photos">Received</string>
+    <string name="photos_activity_tab_title_gallery">Gallery</string>
+    <string name="photos_activity_settings_menu_item_text">Settings</string>
+    <string name="photos_activity_photo_has_been_received_snackbar_text">A new photo has been received</string>
+    <string name="photos_activity_show_snackbar_action_text">SHOW</string>
+
+    <!--take photo activity-->
+    <string name="take_photo_activity_could_not_take_photo">Could not take photo</string>
+
+    <!--epoxy adater taken photo items-->
+    <string name="epoxy_adapter_taken_photo_cancel">Cancel</string>
+    <string name="epoxy_adapter_taken_photo_photo_is_uploading_text">Photo is uploading…</string>
+
+    <!--fragment add to gallery-->
+    <string name="fragment_add_to_gallery_make_photo_public_text">Make this photo public?</string>
+    <string name="fragment_add_to_gallery_make_photo_public_explanation_text">This photo will be added to the gallery so all people will be able to see it (The location where the photo was taken too). Otherwise only you and the person who receives this photo would be able to see it.</string>
+    <string name="fragment_add_to_gallery_remember_my_choice_text">Remember my choice</string>
+    <string name="fragment_add_to_gallery_make_public_btn_text">Make public</string>
+    <string name="fragment_add_to_gallery_do_not_make_public_btn_text">Do not</string>
 </resources>

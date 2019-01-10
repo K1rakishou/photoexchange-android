@@ -39,11 +39,7 @@ class UploadedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Uploaded
   }
 
   private val TAG = "UploadedPhotosFragment"
-
-  private val uploadedPhotoAdapterViewWidth = Constants.DEFAULT_ADAPTER_ITEM_WIDTH
-
   private val photoSize by lazy { AndroidUtils.figureOutPhotosSizes(requireContext()) }
-  private val columnsCount by lazy { AndroidUtils.calculateNoOfColumns(requireContext(), uploadedPhotoAdapterViewWidth) }
 
   override fun getFragmentLayoutId(): Int = R.layout.fragment_mvrx
 
@@ -52,7 +48,7 @@ class UploadedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Uploaded
     initRx()
 
     viewModel.uploadedPhotosFragmentViewModel.photoSize = photoSize
-    viewModel.uploadedPhotosFragmentViewModel.photosPerPage = columnsCount * Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
+    viewModel.uploadedPhotosFragmentViewModel.photosPerPage = spanCount * Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
 
     // Probably it would be a better idea to subscribe here not to the whole state but to
     // just some properties that are responsible for building epoxy models.
@@ -109,7 +105,6 @@ class UploadedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Uploaded
 
     when (event) {
       is UploadedPhotosFragmentEvent.GeneralEvents.OnNewPhotosReceived -> {
-        Timber.tag(TAG).d("OnNewPhotosReceived, currentState = ${lifecycle.getCurrentState()}")
         viewModel.uploadedPhotosFragmentViewModel.onNewPhotosReceived(event.newReceivedPhotos)
       }
     }.safe

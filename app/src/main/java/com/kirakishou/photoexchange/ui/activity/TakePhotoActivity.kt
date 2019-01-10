@@ -109,7 +109,7 @@ class TakePhotoActivity : BaseActivity() {
         try {
           val takenPhoto = takePhoto()
           if (takenPhoto == null) {
-            onShowToast("Could not take photo")
+            onShowToast(getString(R.string.take_photo_activity_could_not_take_photo))
             return@launch
           }
 

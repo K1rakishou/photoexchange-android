@@ -35,14 +35,14 @@ class GalleryFragmentEpoxyController
         when (state.galleryPhotosRequest) {
           is Loading,
           is Success -> {
-            if (state.galleryPhotosRequest is Loading) {
+            if (state.galleryPhotosRequest is Loading && state.galleryPhotos.isEmpty()) {
               Timber.tag(TAG).d("Loading gallery photos")
 
               loadingRow {
                 id("gallery_photos_loading_row")
               }
-            } else {
-              Timber.tag(TAG).d("Success gallery photos")
+
+              return@withState
             }
 
             if (state.galleryPhotos.isEmpty()) {

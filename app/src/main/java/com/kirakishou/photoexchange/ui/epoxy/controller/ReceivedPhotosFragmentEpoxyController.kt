@@ -34,14 +34,14 @@ class ReceivedPhotosFragmentEpoxyController(
         when (state.receivedPhotosRequest) {
           is Loading,
           is Success -> {
-            if (state.receivedPhotosRequest is Loading) {
+            if (state.receivedPhotosRequest is Loading && state.receivedPhotos.isEmpty()) {
               Timber.tag(TAG).d("Loading received photos")
 
               loadingRow {
                 id("received_photos_loading_row")
               }
-            } else {
-              Timber.tag(TAG).d("Success received photos")
+
+              return@withState
             }
 
             if (state.receivedPhotos.isEmpty()) {

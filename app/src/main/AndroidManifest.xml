@@ -9,6 +9,10 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <!--TODO add <uses-feature camera>-->
+    <!--TODO add <uses-feature gps>-->
+    <!--TODO add <uses-feature vibrator???-->
+
     <application
         android:name="com.kirakishou.photoexchange.PhotoExchangeApplication"
         android:allowBackup="false"
@@ -33,10 +37,6 @@
         <activity android:name="com.kirakishou.photoexchange.ui.activity.SettingsActivity" />
         <activity android:name="com.kirakishou.photoexchange.mock.FragmentTestingActivity"  />
 
-        <meta-data
-            android:name="io.fabric.ApiKey"
-            android:value="25e246425284f02064665b2dc30323200c19a724" />
-
         <service
             android:name="com.kirakishou.photoexchange.service.UploadPhotoService"
             android:exported="false" />
@@ -51,6 +51,10 @@
             </intent-filter>
         </service>
 
+        <!--TODO hide this key with gradle script-->
+        <meta-data
+            android:name="io.fabric.ApiKey"
+            android:value="25e246425284f02064665b2dc30323200c19a724" />
 
     </application>
 

@@ -1,6 +1,5 @@
 package com.kirakishou.photoexchange.ui.fragment
 
-import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -14,19 +13,17 @@ import com.airbnb.epoxy.EpoxyRecyclerView
 import com.airbnb.mvrx.BaseMvRxFragment
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
 import com.kirakishou.fixmypc.photoexchange.R
-import com.kirakishou.photoexchange.helper.RxLifecycle
+import com.kirakishou.photoexchange.helper.Constants
+import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlin.coroutines.CoroutineContext
 
 abstract class MyBaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
-  private val spanCount = 1
-
   private val invalidationActor: SendChannel<Unit>
 
   protected val compositeDisposable = CompositeDisposable()
-  protected val lifecycle = RxLifecycle(this)
 
   private val job = Job()
   lateinit var recyclerView: EpoxyRecyclerView
@@ -34,6 +31,10 @@ abstract class MyBaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
 
   override val coroutineContext: CoroutineContext
     get() = job + Dispatchers.Main
+
+  val spanCount by lazy {
+    AndroidUtils.calculateNoOfColumns(requireContext(), Constants.DEFAULT_ADAPTER_ITEM_WIDTH)
+  }
 
   val epoxyController: EpoxyController by lazy {
     buildEpoxyController().apply {
@@ -47,16 +48,6 @@ abstract class MyBaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
         postInvalidate()
       }
     }
-  }
-
-  override fun onAttach(context: Context) {
-    super.onAttach(context)
-    lifecycle.start()
-  }
-
-  override fun onDetach() {
-    super.onDetach()
-    lifecycle.stop()
   }
 
   @CallSuper

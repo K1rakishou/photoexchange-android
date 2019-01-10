@@ -53,7 +53,8 @@
                     android:src="@drawable/ic_done_all"
                     android:tint="@color/white"
                     android:tintMode="src_in"
-                    android:visibility="gone" />
+                    android:visibility="gone"
+                    android:contentDescription="@null"/>
 
                 <TextView
                     android:id="@+id/photo_id_text_view"
@@ -97,7 +98,7 @@
                         android:ellipsize="end"
                         android:gravity="center_horizontal"
                         android:maxLines="2"
-                        android:text="@string/photo_is_uploading_text"
+                        android:text="@string/epoxy_adapter_taken_photo_photo_is_uploading_text"
                         android:textColor="@color/gray"
                         android:textSize="16sp" />
 
@@ -121,7 +122,7 @@
                         android:layout_marginEnd="8dp"
                         android:layout_marginBottom="8dp"
                         android:layout_gravity="center_horizontal"
-                        android:text="Cancel" />
+                        android:text="@string/epoxy_adapter_taken_photo_cancel" />
 
                 </LinearLayout>
 
