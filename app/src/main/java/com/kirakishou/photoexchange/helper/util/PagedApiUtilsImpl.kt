@@ -61,25 +61,17 @@ class PagedApiUtilsImpl(
       deleteOldFunc()
     }
 
-    val returnedPhotos = try {
-      getPhotos(
-        tag,
-        lastUploadedOn,
-        requestedCount,
-        userId,
-        getFreshPhotosCountResult,
-        getPhotosFromCacheFunc,
-        getPageOfPhotosFunc,
-        clearCacheFunc,
-        mapperFunc
-      )
-    } catch (error: ConnectionError) {
-      val photosFromCache = getPhotosFromCacheFunc(lastUploadedOn, requestedCount)
-      return Paged(
-        photosFromCache,
-        photosFromCache.size < requestedCount
-      )
-    }
+    val returnedPhotos = getPhotos(
+      tag,
+      lastUploadedOn,
+      requestedCount,
+      userId,
+      getFreshPhotosCountResult,
+      getPhotosFromCacheFunc,
+      getPageOfPhotosFunc,
+      clearCacheFunc,
+      mapperFunc
+    )
 
     val freshPhotosFromServer = when (returnedPhotos) {
       is ReturnedPhotos.FromCache<PhotoType> -> return returnedPhotos.page

@@ -245,6 +245,10 @@ class UploadedPhotosFragmentViewModel(
       }
 
       launch {
+        //to avoid "Your reducer must be pure!" exceptions
+        val uploadedPhotosRequest = Loading<Paged<UploadedPhoto>>()
+        setState { copy(uploadedPhotosRequest = uploadedPhotosRequest) }
+
         val firstUploadedOn = state.uploadedPhotos
           .firstOrNull()
           ?.uploadedOn
@@ -254,10 +258,6 @@ class UploadedPhotosFragmentViewModel(
           .lastOrNull()
           ?.uploadedOn
           ?: -1L
-
-        //to avoid "Your reducer must be pure!" exceptions
-        val uploadedPhotosRequest = Loading<Paged<UploadedPhoto>>()
-        setState { copy(uploadedPhotosRequest = uploadedPhotosRequest) }
 
         val request = try {
           val photos = getUploadedPhotosUseCase.loadPageOfPhotos(

@@ -292,6 +292,10 @@ open class GalleryFragmentViewModel(
       }
 
       launch {
+        //to avoid "Your reducer must be pure!" exceptions
+        val galleryPhotosRequest = Loading<Paged<GalleryPhoto>>()
+        setState { copy(galleryPhotosRequest = galleryPhotosRequest) }
+
         val firstUploadedOn = state.galleryPhotos
           .firstOrNull()
           ?.uploadedOn

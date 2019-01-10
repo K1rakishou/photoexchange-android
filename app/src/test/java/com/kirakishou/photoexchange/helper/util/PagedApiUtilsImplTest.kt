@@ -171,7 +171,7 @@ class PagedApiUtilsImplTest {
     }
   }
 
-  @Test
+  @Test(expected = ConnectionError::class)
   fun `should return photos from cache when attempt to fetch photos from server resulted in connection exception`() {
     runBlocking {
       var deleteOldFuncCalled = false
@@ -192,13 +192,6 @@ class PagedApiUtilsImplTest {
         filterBannedPhotosFunc = { assertNotCalled() },
         cachePhotosFunc = { assertNotCalled() }
       )
-
-      assertTrue(deleteOldFuncCalled)
-
-      assertEquals(1, page.page.size)
-      assertEquals("123", page.page.first().photoName)
-
-      assertTrue(page.isEnd)
     }
   }
 
@@ -264,7 +257,7 @@ class PagedApiUtilsImplTest {
     }
   }
 
-  @Test
+  @Test(expected = ConnectionError::class)
   fun `should return photos from cache when there are fresh photos on the server but attempt to get them resulted in connection exception`() {
     runBlocking {
       var deleteOldFuncCalled = false
@@ -285,13 +278,6 @@ class PagedApiUtilsImplTest {
         filterBannedPhotosFunc = { assertNotCalled() },
         cachePhotosFunc = { assertNotCalled() }
       )
-
-      assertTrue(deleteOldFuncCalled)
-
-      assertEquals(1, page.page.size)
-      assertEquals("123", page.page.first().photoName)
-
-      assertTrue(page.isEnd)
     }
   }
 
