@@ -48,16 +48,15 @@ class SettingsActivity : BaseActivity() {
   private val TAG = "SettingsActivity"
 
   private val photoVisibilitySpinnerList = ArrayList<String>().apply {
-    add("Always Public")
-    add("Always Private")
-    //TODO: change to "Ask me every time"
-    add("Neither")
+    add(getString(R.string.settings_activity_always_public))
+    add(getString(R.string.settings_activity_always_private))
+    add(getString(R.string.settings_activity_ask_every_time))
   }
 
   private val networkAccessLevelSpinnerList = ArrayList<String>().apply {
-    add("Can Load Images")
-    add("Can Access Internet")
-    add("Neither")
+    add(getString(R.string.settings_activity_can_load_images))
+    add(getString(R.string.settings_activity_can_access_internet))
+    add(getString(R.string.settings_activity_neither))
   }
 
   override fun getContentView(): Int = R.layout.activity_settings
@@ -86,7 +85,7 @@ class SettingsActivity : BaseActivity() {
 
     userIdHolder.setOnClickListener {
       copyUserIdToClipBoard()
-      Toast.makeText(this, "UserId copied to clipboard", Toast.LENGTH_SHORT).show()
+      Toast.makeText(this, getString(R.string.settings_activity_user_id_copied_to_clipboard), Toast.LENGTH_SHORT).show()
     }
 
     restoreFromOldUserIdButton.setOnClickListener {
@@ -99,16 +98,16 @@ class SettingsActivity : BaseActivity() {
         val isOk = try {
           viewModel.restoreOldAccount(userId)
         } catch (error: Throwable) {
-          onShowToast("Unknown error while trying to restore account: ${error.message
-            ?: "empty error message"}")
+          val message = error.message ?: "empty error message"
+          onShowToast(getString(R.string.settings_activity_unknown_error, message))
           return@launch
         }
 
         if (isOk) {
-          onShowToast("Successfully restored old account")
+          onShowToast(getString(R.string.settings_activity_successfully_restored_old_account))
           finish()
         } else {
-          onShowToast("Account does not exist")
+          onShowToast(getString(R.string.settings_activity_account_does_not_exist))
         }
       }
     }
@@ -116,7 +115,7 @@ class SettingsActivity : BaseActivity() {
     launch {
       val userId = viewModel.getUserId()
       if (userId.isEmpty()) {
-        userIdTextView.text = "Empty userId"
+        userIdTextView.text = getString(R.string.settings_activity_current_user_id_is_empty_msg)
       } else {
         userIdTextView.text = userId
       }
@@ -149,7 +148,7 @@ class SettingsActivity : BaseActivity() {
 
   private fun copyUserIdToClipBoard() {
     val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-    val clip = android.content.ClipData.newPlainText("user_id", userIdTextView.text.toString())
+    val clip = android.content.ClipData.newPlainText(CLIPBOARD_LABEL, userIdTextView.text.toString())
     clipboard.primaryClip = clip
   }
 
@@ -157,5 +156,9 @@ class SettingsActivity : BaseActivity() {
     (application as PhotoExchangeApplication).applicationComponent
       .plus(SettingsActivityModule(this))
       .inject(this)
+  }
+
+  companion object {
+    const val CLIPBOARD_LABEL = "user_id_label"
   }
 }

@@ -3,12 +3,12 @@ package com.kirakishou.photoexchange.helper
 enum class PhotosVisibility(val value: Int) {
   AlwaysPublic(0),
   AlwaysPrivate(1),
-  Neither(2); //default setting
+  AskMeEveryTime(2); //default setting
 
   companion object {
     fun fromBoolean(makePublic: Boolean?): PhotosVisibility {
       return when (makePublic) {
-        null -> Neither
+        null -> AskMeEveryTime
         true -> AlwaysPublic
         false -> AlwaysPrivate
       }
@@ -18,7 +18,7 @@ enum class PhotosVisibility(val value: Int) {
       return when (value) {
         0 -> AlwaysPublic
         1 -> AlwaysPrivate
-        else -> Neither
+        else -> AskMeEveryTime
       }
     }
   }
