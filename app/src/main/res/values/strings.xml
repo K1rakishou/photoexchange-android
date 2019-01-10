@@ -1,8 +1,5 @@
 <resources>
     <string name="app_name">PhotoExchange</string>
-    <string name="tab_title_uploaded_photos">Uploaded</string>
-    <string name="tab_title_received_photos">Received</string>
-    <string name="tab_title_gallery">Gallery</string>
     <string name="photo_is_uploading_text">Photo is uploading…</string>
     <string name="view_full_photo">View full photo</string>
     <string name="delete_photo">Delete photo</string>
@@ -44,4 +41,10 @@
     <string name="settings_activity_successfully_restored_old_account">Successfully restored old account</string>
     <string name="settings_activity_account_does_not_exist">Account does not exist</string>
     <string name="settings_activity_unknown_error">Unknown error while trying to restore account: %1$s</string>
+
+    <!--photos activity-->
+    <string name="photos_activity_new_gallery_photos">You have %1$d new gallery photos</string>
+    <string name="photos_activity_tab_title_uploaded_photos">Uploaded</string>
+    <string name="photos_activity_tab_title_received_photos">Received</string>
+    <string name="photos_activity_tab_title_gallery">Gallery</string>
 </resources>

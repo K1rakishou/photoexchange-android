@@ -14,11 +14,11 @@ class ReceivePhotosServiceConnection(
   private var receivePhotosService: ReceivePhotosService? = null
 
   override fun onServiceConnected(className: ComponentName, _service: IBinder) {
-    onFindingServiceConnected(_service)
+    onReceivedPhotosServiceConnected(_service)
   }
 
   override fun onServiceDisconnected(className: ComponentName) {
-    onFindingServiceDisconnected()
+    onReceivedPhotosServiceDisconnected()
   }
 
   fun isConnected(): Boolean {
@@ -29,7 +29,7 @@ class ReceivePhotosServiceConnection(
     receivePhotosService!!.startPhotosReceiving()
   }
 
-  private fun onFindingServiceConnected(_service: IBinder) {
+  private fun onReceivedPhotosServiceConnected(_service: IBinder) {
     if (this.compareAndSet(false, true)) {
       receivePhotosService = (_service as ReceivePhotosService.ReceivePhotosBinder).getService()
       receivePhotosService!!.attachCallback(WeakReference(activity))
@@ -37,7 +37,7 @@ class ReceivePhotosServiceConnection(
     }
   }
 
-  fun onFindingServiceDisconnected() {
+  fun onReceivedPhotosServiceDisconnected() {
     if (this.compareAndSet(true, false)) {
       receivePhotosService?.let { srvc ->
         srvc.detachCallback()
