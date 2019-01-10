@@ -28,14 +28,14 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/make_photo_public_text"
+                android:text="@string/fragment_add_to_gallery_make_photo_public_text"
                 android:textSize="24sp"
-                android:textStyle="bold" />
+                android:textColor="#202020"/>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/make_photo_public_explanation_text"
+                android:text="@string/fragment_add_to_gallery_make_photo_public_explanation_text"
                 android:textSize="18sp" />
 
         </LinearLayout>
@@ -47,7 +47,7 @@
             android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
             android:layout_marginEnd="16dp"
-            android:text="@string/remember_my_choice_text"
+            android:text="@string/fragment_add_to_gallery_remember_my_choice_text"
             android:textSize="20sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -61,7 +61,7 @@
             android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginBottom="8dp"
-            android:text="@string/make_public_btn_text"
+            android:text="@string/fragment_add_to_gallery_make_public_btn_text"
             android:textColor="@color/colorAccent"
             android:textSize="20sp"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -75,7 +75,7 @@
             style="?android:attr/borderlessButtonStyle"
             android:layout_width="156dp"
             android:layout_height="wrap_content"
-            android:text="@string/do_not_make_public_btn_text"
+            android:text="@string/fragment_add_to_gallery_do_not_make_public_btn_text"
             android:textColor="@color/colorPrimary"
             android:textSize="20sp"
             app:layout_constraintBottom_toBottomOf="@+id/make_public_button"

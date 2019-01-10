@@ -336,9 +336,9 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
   private fun initTabs() {
     tabLayout.removeAllTabs()
-    tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_uploaded_photos)))
-    tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_received_photos)))
-    tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.tab_title_gallery)))
+    tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.photos_activity_tab_title_uploaded_photos)))
+    tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.photos_activity_tab_title_received_photos)))
+    tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.photos_activity_tab_title_gallery)))
     tabLayout.tabGravity = TabLayout.GRAVITY_FILL
 
     viewPager.adapter = adapter
@@ -377,7 +377,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   private fun createMenu() {
     val popupMenu = PopupMenu(this, menuButton)
     popupMenu.setOnMenuItemClickListener(this)
-    popupMenu.menu.add(1, R.id.settings_item, 1, resources.getString(R.string.settings_menu_item_text))
+    popupMenu.menu.add(1, R.id.settings_item, 1, resources.getString(R.string.photos_activity_settings_menu_item_text))
     popupMenu.show()
   }
 
@@ -452,8 +452,8 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   private fun showNewPhotoHasBeenReceivedSnackbar() {
-    Snackbar.make(rootLayout, getString(R.string.photo_has_been_received_snackbar_text), Snackbar.LENGTH_LONG)
-      .setAction(getString(R.string.show_snackbar_action_text), {
+    Snackbar.make(rootLayout, getString(R.string.photos_activity_photo_has_been_received_snackbar_text), Snackbar.LENGTH_LONG)
+      .setAction(getString(R.string.photos_activity_show_snackbar_action_text), {
         launch {
           switchToTab(RECEIVED_PHOTOS_TAB_INDEX)
 
@@ -467,7 +467,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
   private fun showNewGalleryPhotosSnackbar(count: Int) {
     Snackbar.make(rootLayout, getString(R.string.photos_activity_new_gallery_photos, count), Snackbar.LENGTH_LONG)
-      .setAction(getString(R.string.show_snackbar_action_text), {
+      .setAction(getString(R.string.photos_activity_show_snackbar_action_text), {
         launch {
           switchToTab(GALLERY_PHOTOS_TAB_INDEX)
 

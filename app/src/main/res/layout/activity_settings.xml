@@ -41,7 +41,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:layout_marginBottom="4dp"
-                    android:text="@string/user_id_explanation_text"
+                    android:text="@string/settings_activity_user_id_explanation_text"
                     android:textSize="12sp" />
 
                 <TextView
@@ -59,7 +59,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:text="@string/tap_to_copy_user_id_message"
+                    android:text="@string/settings_activity_tap_to_copy_user_id_message"
                     android:textSize="12sp" />
             </LinearLayout>
 
@@ -86,7 +86,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:layout_marginBottom="4dp"
-                        android:text="@string/photo_visibility_explanation_text"
+                        android:text="@string/settings_activity_photo_visibility_explanation_text"
                         android:textSize="12sp" />
 
                     <androidx.appcompat.widget.AppCompatSpinner
@@ -113,7 +113,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:layout_marginBottom="4dp"
-                        android:text="@string/network_access_level_explanation_text"
+                        android:text="@string/settings_activity_network_access_level_explanation_text"
                         android:textSize="12sp" />
 
                     <androidx.appcompat.widget.AppCompatSpinner

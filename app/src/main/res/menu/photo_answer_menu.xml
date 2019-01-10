@@ -1,13 +1,13 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/view_full"
-        android:title="@string/view_full_photo" />
+        android:title="@string/photo_answer_menu_view_full_photo" />
 
     <item
         android:id="@+id/delete_photo"
-        android:title="@string/delete_photo" />
+        android:title="@string/photo_answer_menu_delete_photo" />
 
     <item
         android:id="@+id/report_photo"
-        android:title="@string/report_photo" />
+        android:title="@string/photo_answer_menu_report_photo" />
 </menu>
