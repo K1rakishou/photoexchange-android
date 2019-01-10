@@ -21,7 +21,7 @@ import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import java.lang.IllegalStateException
 
-@ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT)
+@ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT, fullSpan = false)
 class QueuedUpPhotoRow @JvmOverloads constructor(
   context: Context,
   attrs: AttributeSet? = null,
