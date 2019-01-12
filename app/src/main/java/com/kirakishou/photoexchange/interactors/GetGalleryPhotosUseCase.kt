@@ -61,6 +61,7 @@ open class GetGalleryPhotosUseCase(
     }
   }
 
+  @Synchronized
   private fun resetTimer() {
     lastTimeFreshPhotosCheck = 0
   }
@@ -89,18 +90,22 @@ open class GetGalleryPhotosUseCase(
   }
 
   private suspend fun getFreshPhotosCount(firstUploadedOn: Long): Int {
-    val now = timeUtils.getTimeFast()
-
     //if five minutes has passed since we last checked fresh photos count - check again
-    return if (now - lastTimeFreshPhotosCheck >= fiveMinutes) {
-      Timber.tag(TAG).d("Enough time has passed since last request")
-
-      lastTimeFreshPhotosCheck = now
-      apiClient.getFreshGalleryPhotosCount(firstUploadedOn)
-    } else {
-      Timber.tag(TAG).d("Not enough time has passed since last request: ${now - lastTimeFreshPhotosCheck} ms")
-      0
+    val shouldMakeRequest = synchronized(GetGalleryPhotosUseCase::class) {
+      val now = timeUtils.getTimeFast()
+      if (now - lastTimeFreshPhotosCheck >= fiveMinutes) {
+        lastTimeFreshPhotosCheck = now
+        true
+      } else {
+        false
+      }
     }
+
+    if (!shouldMakeRequest) {
+      return 0
+    }
+
+    return apiClient.getFreshGalleryPhotosCount(firstUploadedOn)
   }
 
   private suspend fun getFromCacheInternal(lastUploadedOn: Long, count: Int): List<GalleryPhoto> {

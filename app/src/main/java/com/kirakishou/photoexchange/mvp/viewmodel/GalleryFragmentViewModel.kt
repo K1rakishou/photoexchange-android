@@ -280,7 +280,10 @@ open class GalleryFragmentViewModel(
         galleryPhotosRepository.deleteAll()
       }
 
-      setState { GalleryFragmentState() }
+      //to avoid "Your reducer must be pure!" exceptions
+      val newState = GalleryFragmentState()
+      setState { newState }
+
       viewModelActor.send(ActorAction.LoadGalleryPhotos(false))
     }
   }
