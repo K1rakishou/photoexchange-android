@@ -99,6 +99,7 @@ open class GetReceivedPhotosUseCase(
       })
   }
 
+  @Synchronized
   private fun resetTimer() {
     lastTimeFreshPhotosCheck = 0
   }
@@ -116,15 +117,22 @@ open class GetReceivedPhotosUseCase(
   }
 
   private suspend fun getFreshPhotosCount(userId: String, firstUploadedOn: Long): Int {
-    val now = timeUtils.getTimeFast()
-
     //if five minutes has passed since we last checked fresh photos count - check again
-    return if (now - lastTimeFreshPhotosCheck >= fiveMinutes) {
-      lastTimeFreshPhotosCheck = now
-      apiClient.getFreshReceivedPhotosCount(userId, firstUploadedOn)
-    } else {
-      0
+    val shouldMakeRequest = synchronized(GetReceivedPhotosUseCase::class) {
+      val now = timeUtils.getTimeFast()
+      if (now - lastTimeFreshPhotosCheck >= fiveMinutes) {
+        lastTimeFreshPhotosCheck = now
+        true
+      } else {
+        false
+      }
     }
+
+    if (!shouldMakeRequest) {
+      return 0
+    }
+
+    return apiClient.getFreshReceivedPhotosCount(userId, firstUploadedOn)
   }
 
   private suspend fun filterBlacklistedPhotos(
