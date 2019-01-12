@@ -227,12 +227,7 @@ class UploadedPhotosFragmentViewModel(
           takenPhoto.id
         }
 
-        setState {
-          copy(
-            takenPhotos = newTakenPhotos
-          )
-        }
-
+        setState { copy(takenPhotos = newTakenPhotos) }
         startUploadingService()
       }
     }

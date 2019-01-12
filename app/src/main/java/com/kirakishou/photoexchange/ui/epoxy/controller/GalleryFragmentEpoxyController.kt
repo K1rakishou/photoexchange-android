@@ -77,7 +77,6 @@ class GalleryFragmentEpoxyController
                   callback { _ ->
                     Timber.tag(TAG).d("Reloading")
                     viewModel.resetState(false)
-                    viewModel.loadGalleryPhotos(false)
                   }
                 }
               } else {
@@ -116,7 +115,6 @@ class GalleryFragmentEpoxyController
       callback { _ ->
         Timber.tag(TAG).d("Reloading")
         viewModel.resetState(false)
-        viewModel.loadGalleryPhotos(false)
       }
     }
   }
