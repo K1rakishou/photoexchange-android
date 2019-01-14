@@ -34,6 +34,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/settings_activity_your_user_id_msg"
+                    android:textColor="#000"
                     android:textSize="16sp" />
 
                 <TextView
@@ -79,6 +80,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/settings_activity_default_photo_visibility_msg"
+                        android:textColor="#000"
                         android:textSize="16sp" />
 
                     <TextView
@@ -106,6 +108,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/settings_activity_network_access_level_msg"
+                        android:textColor="#000"
                         android:textSize="16sp" />
 
                     <TextView

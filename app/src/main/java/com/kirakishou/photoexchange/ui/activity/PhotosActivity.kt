@@ -241,12 +241,13 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
     //TODO: disable Crashlytics if user didn't give us their permission to send crashlogs
 
     //2. Check firebase availability, show no firebase dialog if necessary
-    checkFirebaseAvailability()
+    if (!isFirebaseAvailableOrDialogAlreadyShown()) {
+      FirebaseNotAvailableDialog().show(this)
+      return
+    }
 
     //3. Check permissions, show dialogs if necessary
-    val result = checkPermissions()
-
-    when (result) {
+    when (val result = checkPermissions()) {
       PermissionRequestResult.NotGranted,
       PermissionRequestResult.Granted -> {
         val granted = result == PermissionRequestResult.Granted
@@ -254,21 +255,21 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
         viewModel.updateGpsPermissionGranted(granted)
         startTakenPhotoActivity()
       }
-      PermissionRequestResult.ShowRationaleForCamera -> showCameraRationaleDialog()
+      PermissionRequestResult.ShowRationaleForCamera -> {
+        showCameraRationaleDialog()
+      }
       PermissionRequestResult.ShowRationaleAppCannotWorkWithoutCamera -> {
         showAppCannotWorkWithoutCameraPermissionDialog()
       }
-      PermissionRequestResult.ShowRationaleForGps -> showGpsRationaleDialog()
+      PermissionRequestResult.ShowRationaleForGps -> {
+        showGpsRationaleDialog()
+      }
     }
   }
 
-  private suspend fun checkFirebaseAvailability() {
-    val result = viewModel.checkFirebaseAvailability()
-    if (result != CheckFirebaseAvailabilityUseCase.FirebaseAvailabilityResult.NotAvailable) {
-      return
-    }
-
-    FirebaseNotAvailableDialog().show(this)
+  private suspend fun isFirebaseAvailableOrDialogAlreadyShown(): Boolean {
+    return viewModel.checkFirebaseAvailability() !=
+      CheckFirebaseAvailabilityUseCase.FirebaseAvailabilityResult.NotAvailable
   }
 
   private suspend fun checkPermissions(): PermissionRequestResult {

@@ -47,16 +47,20 @@ class SettingsActivity : BaseActivity() {
 
   private val TAG = "SettingsActivity"
 
-  private val photoVisibilitySpinnerList = ArrayList<String>().apply {
-    add(getString(R.string.settings_activity_always_public))
-    add(getString(R.string.settings_activity_always_private))
-    add(getString(R.string.settings_activity_ask_every_time))
+  private val photoVisibilitySpinnerList by lazy {
+    ArrayList<String>().apply {
+      add(getString(R.string.settings_activity_always_public))
+      add(getString(R.string.settings_activity_always_private))
+      add(getString(R.string.settings_activity_ask_every_time))
+    }
   }
 
-  private val networkAccessLevelSpinnerList = ArrayList<String>().apply {
-    add(getString(R.string.settings_activity_can_load_images))
-    add(getString(R.string.settings_activity_can_access_internet))
-    add(getString(R.string.settings_activity_neither))
+  private val networkAccessLevelSpinnerList by lazy {
+    ArrayList<String>().apply {
+      add(getString(R.string.settings_activity_can_load_images))
+      add(getString(R.string.settings_activity_can_access_internet))
+      add(getString(R.string.settings_activity_neither))
+    }
   }
 
   override fun getContentView(): Int = R.layout.activity_settings
