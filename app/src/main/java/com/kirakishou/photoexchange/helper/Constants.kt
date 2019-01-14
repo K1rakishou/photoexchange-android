@@ -13,7 +13,6 @@ object Constants {
   const val BASE_PHOTOS_URL = "${BASE_URL}v1/api/get_photo"
   const val BASE_STATIC_MAP_URL = "${BASE_URL}v1/api/get_static_map"
   const val DATABASE_NAME = "photoexchange_db"
-  const val DOMAIN_NAME = "photoexchange.io"
   const val DELIMITER = ","
 
   const val DEFAULT_ADAPTER_ITEM_WIDTH = 288

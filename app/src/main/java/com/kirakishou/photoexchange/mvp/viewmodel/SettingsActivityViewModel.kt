@@ -1,12 +1,12 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
-import com.kirakishou.photoexchange.helper.Constants.DOMAIN_NAME
 import com.kirakishou.photoexchange.helper.NetworkAccessLevel
 import com.kirakishou.photoexchange.helper.PhotosVisibility
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.interactors.RestoreAccountUseCase
+import core.SharedConstants
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -64,11 +64,9 @@ class SettingsActivityViewModel(
 
   suspend fun restoreOldAccount(oldUserUuid: String): Boolean {
     return withContext(coroutineContext) {
-      val suffix = "@$DOMAIN_NAME"
-
       val userUuid = oldUserUuid.trim().let { userUuid ->
-        return@let if (!userUuid.endsWith(suffix, true)) {
-          userUuid + suffix
+        return@let if (!userUuid.endsWith(SharedConstants.DOMAIN, true)) {
+          userUuid + "@" + SharedConstants.DOMAIN
         } else {
           userUuid
         }
