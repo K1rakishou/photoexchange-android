@@ -28,8 +28,7 @@ data class ReceivedPhotosFragmentState(
     val updatedPhotos = receivedPhotos.toMutableList()
     val receivedPhoto = updatedPhotos[photoIndex]
 
-    val updatedPhotoInfo = updatedPhotos[photoIndex].photoAdditionalInfo
-      .copy(
+    val updatedPhotoInfo = updatedPhotos[photoIndex].photoAdditionalInfo?.copy(
         isFavourited = isFavourited,
         favouritesCount = favouritesCount
       )
@@ -54,7 +53,7 @@ data class ReceivedPhotosFragmentState(
     val receivedPhoto = updatedPhotos[photoIndex]
 
     val updatedPhotoInfo = updatedPhotos[photoIndex].photoAdditionalInfo
-      .copy(isReported = isReported)
+      ?.copy(isReported = isReported)
 
     updatedPhotos[photoIndex] = receivedPhoto
       .copy(photoAdditionalInfo = updatedPhotoInfo)
@@ -72,7 +71,7 @@ data class ReceivedPhotosFragmentState(
     val galleryPhoto = updatedPhotos[photoIndex]
 
     val updatedPhotoInfo = updatedPhotos[photoIndex].photoAdditionalInfo
-      .copy(isReported = reportResult)
+      ?.copy(isReported = reportResult)
 
     updatedPhotos[photoIndex] = galleryPhoto
       .copy(photoAdditionalInfo = updatedPhotoInfo)
@@ -94,7 +93,7 @@ data class ReceivedPhotosFragmentState(
     val galleryPhoto = updatedPhotos[photoIndex]
 
     val updatedPhotoInfo = updatedPhotos[photoIndex].photoAdditionalInfo
-      .copy(isFavourited = isFavourited, favouritesCount = favouritesCount)
+      ?.copy(isFavourited = isFavourited, favouritesCount = favouritesCount)
 
     updatedPhotos[photoIndex] = galleryPhoto.copy(photoAdditionalInfo = updatedPhotoInfo)
 

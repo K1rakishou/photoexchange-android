@@ -269,6 +269,8 @@ open class ReceivedPhotosFragmentViewModel(
       photoNameListToFetchAdditionalInfo: MutableList<String>,
       updatedPhotos: MutableList<ReceivedPhoto>
     ) {
+      Timber.tag(TAG).d("Fetching additional photo info for photos ($photoNameListToFetchAdditionalInfo)")
+
       val additionalPhotoInfoList = getPhotoAdditionalInfoUseCase.getPhotoAdditionalInfoByPhotoNameList(
         photoNameListToFetchAdditionalInfo
       )
@@ -277,17 +279,19 @@ open class ReceivedPhotosFragmentViewModel(
         return
       }
 
-      for (additionalPhotoInfo in additionalPhotoInfoList) {
+      for (photoName in photoNameListToFetchAdditionalInfo) {
         val photoIndex = updatedPhotos.indexOfFirst { photo ->
-          photo.receivedPhotoName == additionalPhotoInfo.photoName
+          photo.receivedPhotoName == photoName
         }
 
         if (photoIndex == -1) {
           continue
         }
 
+        val additionalPhotoInfo = additionalPhotoInfoList.firstOrNull { it.photoName == photoName }
+
         val photoWithUpdatedAdditionalInfo = updatedPhotos[photoIndex].copy(
-          photoAdditionalInfo = additionalPhotoInfo
+          photoAdditionalInfo = additionalPhotoInfo ?: PhotoAdditionalInfo.empty(photoName)
         )
 
         updatedPhotos.removeAt(photoIndex)

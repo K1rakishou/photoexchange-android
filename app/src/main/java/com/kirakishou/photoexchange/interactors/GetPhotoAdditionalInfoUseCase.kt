@@ -20,7 +20,7 @@ class GetPhotoAdditionalInfoUseCase(
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
 
-  private val TAG = "PhotoAdditionalInfoUtilsImpl"
+  private val TAG = "GetPhotoAdditionalInfoUseCase"
 
   suspend fun <T> appendAdditionalPhotoInfo(
     galleryPhotos: List<T>,
