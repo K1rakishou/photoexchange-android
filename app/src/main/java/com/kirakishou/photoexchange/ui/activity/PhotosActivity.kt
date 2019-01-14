@@ -243,7 +243,6 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
     //2. Check firebase availability, show no firebase dialog if necessary
     if (!isFirebaseAvailableOrDialogAlreadyShown()) {
       FirebaseNotAvailableDialog().show(this)
-      return
     }
 
     //3. Check permissions, show dialogs if necessary
@@ -397,19 +396,32 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   override suspend fun onStateEvent(event: PhotosActivityEvent) {
     when (event) {
       is PhotosActivityEvent.StartUploadingService -> {
-        val hasPhotosToUpload = viewModel.checkCanUploadPhotos()
-        if (hasPhotosToUpload) {
-          bindUploadingService(event.callerClass, event.reason)
-        } else {
-          //do nothing
+        val canUploadPhotosResult = viewModel.checkCanUploadPhotos()
+        when (canUploadPhotosResult) {
+          PhotosActivityViewModel.CanUploadPhotoResult.HasQueuedUpPhotos -> {
+            bindUploadingService(event.callerClass, event.reason)
+          }
+          PhotosActivityViewModel.CanUploadPhotoResult.PhotoUploadingDisabled -> {
+            onShowToast(getString(R.string.photos_activity_cannot_upload_photo_disabled))
+          }
+          PhotosActivityViewModel.CanUploadPhotoResult.HasNoQueuedUpPhotos -> {
+            //do nothing
+          }
         }
       }
       is PhotosActivityEvent.StartReceivingService -> {
-        val hasPhotosToReceive = viewModel.checkCanReceivePhotos()
-        if (hasPhotosToReceive) {
-          bindReceivingService(event.callerClass, event.reason)
-        } else {
-          //do nothing
+        val canReceivedPhotosResult = viewModel.checkCanReceivePhotos()
+        when (canReceivedPhotosResult) {
+          PhotosActivityViewModel.CanReceivePhotoResult.HasMoreUploadedPhotosThanReceived -> {
+            bindReceivingService(event.callerClass, event.reason)
+          }
+          PhotosActivityViewModel.CanReceivePhotoResult.NetworkAccessDisabled -> {
+            onShowToast(getString(R.string.photos_activity_cannot_check_for_received_photos_disabled))
+          }
+          PhotosActivityViewModel.CanReceivePhotoResult.HasLessOrEqualUploadedPhotosThanReceived -> {
+            //do nothing
+
+          }
         }
       }
       is PhotosActivityEvent.ScrollEvent -> {

@@ -51,24 +51,28 @@ class PhotosActivityViewModel(
     super.onCleared()
   }
 
-  suspend fun checkCanUploadPhotos(): Boolean {
+  suspend fun checkCanUploadPhotos(): CanUploadPhotoResult {
     return withContext(coroutineContext) {
       if (!netUtils.canLoadImages()) {
-        return@withContext false
+        return@withContext CanUploadPhotoResult.PhotoUploadingDisabled
       }
 
-      val count = takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP) > 0
+      val count = takenPhotosRepository.countAllByState(PhotoState.PHOTO_QUEUED_UP)
       Timber.tag(TAG).d("Queued up photo count = $count")
 
-      return@withContext count
+      if (count > 0) {
+        return@withContext CanUploadPhotoResult.HasQueuedUpPhotos
+      }
+
+      return@withContext CanUploadPhotoResult.HasNoQueuedUpPhotos
     }
   }
 
   @SuppressLint("BinaryOperationInTimber")
-  suspend fun checkCanReceivePhotos(): Boolean {
+  suspend fun checkCanReceivePhotos(): CanReceivePhotoResult {
     return withContext(coroutineContext) {
       if (!netUtils.canAccessNetwork()) {
-        return@withContext false
+        return@withContext CanReceivePhotoResult.NetworkAccessDisabled
       }
 
       val uploadedPhotosCount = uploadedPhotosRepository.count()
@@ -79,7 +83,12 @@ class PhotosActivityViewModel(
           "receivedPhotosCount = $receivedPhotosCount, " +
           "uploadedPhotosCount > receivedPhotosCount = ${uploadedPhotosCount > receivedPhotosCount}"
       )
-      return@withContext uploadedPhotosCount > receivedPhotosCount
+
+      if (uploadedPhotosCount > receivedPhotosCount) {
+        return@withContext CanReceivePhotoResult.HasMoreUploadedPhotosThanReceived
+      }
+
+      return@withContext CanReceivePhotoResult.HasLessOrEqualUploadedPhotosThanReceived
     }
   }
 
@@ -131,4 +140,15 @@ class PhotosActivityViewModel(
     }
   }
 
+  enum class CanUploadPhotoResult {
+    HasQueuedUpPhotos,
+    HasNoQueuedUpPhotos,
+    PhotoUploadingDisabled
+  }
+
+  enum class CanReceivePhotoResult {
+    HasMoreUploadedPhotosThanReceived,
+    HasLessOrEqualUploadedPhotosThanReceived,
+    NetworkAccessDisabled
+  }
 }

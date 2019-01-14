@@ -152,6 +152,8 @@ class UploadedPhotosFragmentEpoxyController(
           val exceptionMessage = error.message ?: "Unknown error message"
           Toast.makeText(context, "Exception message is: \"$exceptionMessage\"", Toast.LENGTH_LONG).show()
 
+          Timber.tag(TAG).e(error)
+
           id("unknown_error")
           text(context.getString(R.string.unknown_error_while_trying_to_load_photos_text))
           callback { _ ->

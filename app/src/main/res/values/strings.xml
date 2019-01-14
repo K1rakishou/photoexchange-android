@@ -42,6 +42,8 @@
     <string name="photos_activity_settings_menu_item_text">Settings</string>
     <string name="photos_activity_photo_has_been_received_snackbar_text">A new photo has been received</string>
     <string name="photos_activity_show_snackbar_action_text">SHOW</string>
+    <string name="photos_activity_cannot_upload_photo_disabled">Cannot upload photo because current network is metered and it is not allowed to upload/download photos with metered network in settings (You can override it in settings)</string>
+    <string name="photos_activity_cannot_check_for_received_photos_disabled">Cannot check for received photos because current network is metered and it is not allowed to access internet with metered network in settings (You can override it in settings)</string>
 
     <!--take photo activity-->
     <string name="take_photo_activity_could_not_take_photo">Could not take photo</string>
