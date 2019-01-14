@@ -438,7 +438,6 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       is PhotosActivityEvent.CancelPhotoUploading -> {
         uploadPhotosServiceConnection.cancelPhotoUploading(event.photoId)
       }
-      PhotosActivityEvent.OnNewPhotoReceived -> showNewPhotoHasBeenReceivedSnackbar()
       is PhotosActivityEvent.ShowToast -> onShowToast(event.message)
       is PhotosActivityEvent.OnNewGalleryPhotos -> showNewGalleryPhotosSnackbar(event.count)
       is PhotosActivityEvent.ShowDeletePhotoDialog -> showDeletePhotoDialog(event.photoName)
