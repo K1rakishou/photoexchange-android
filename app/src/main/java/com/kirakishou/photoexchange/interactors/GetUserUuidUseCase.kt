@@ -16,11 +16,11 @@ open class GetUserUuidUseCase(
 ) : BaseUseCase(dispatchersProvider) {
   private val TAG = "GetUserUuidUseCase"
 
-  open suspend fun getUserId(): String {
+  open suspend fun getUserUuid(): String {
     return withContext(coroutineContext) {
-      val userId = settingsRepository.getUserUuid()
-      if (userId.isNotEmpty()) {
-        return@withContext userId
+      val userUuid = settingsRepository.getUserUuid()
+      if (userUuid.isNotEmpty()) {
+        return@withContext userUuid
       }
 
       if (!netUtils.canAccessNetwork()) {
@@ -29,7 +29,7 @@ open class GetUserUuidUseCase(
 
       val newUserUuid = apiClient.getUserUuid()
       if (!settingsRepository.saveUserUuid(newUserUuid)) {
-        throw DatabaseException("Could not update userId in the database")
+        throw DatabaseException("Could not update userUuid in the database")
       }
 
       return@withContext newUserUuid

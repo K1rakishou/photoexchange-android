@@ -11,7 +11,7 @@ import net.response.FavouritePhotoResponse
 import timber.log.Timber
 
 class FavouritePhotoRequest(
-  private val userId: String,
+  private val userUuid: String,
   private val photoName: String,
   private val apiService: ApiService,
   private val jsonConverter: JsonConverter,
@@ -20,7 +20,7 @@ class FavouritePhotoRequest(
 
   override suspend fun execute(): FavouritePhotoResponse {
     val response = try {
-      apiService.favouritePhoto(FavouritePhotoPacket(userId, photoName)).await()
+      apiService.favouritePhoto(FavouritePhotoPacket(userUuid, photoName)).await()
     } catch (error: Exception) {
       Timber.e(error)
       throw ConnectionError(error.message)

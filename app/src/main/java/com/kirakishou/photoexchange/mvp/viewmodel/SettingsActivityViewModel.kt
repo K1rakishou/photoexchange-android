@@ -1,12 +1,12 @@
 package com.kirakishou.photoexchange.mvp.viewmodel
 
-import com.kirakishou.photoexchange.helper.Constants.DOMAIN_NAME
 import com.kirakishou.photoexchange.helper.NetworkAccessLevel
 import com.kirakishou.photoexchange.helper.PhotosVisibility
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.interactors.RestoreAccountUseCase
+import core.SharedConstants
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -18,7 +18,7 @@ class SettingsActivityViewModel(
 ) : BaseViewModel(dispatchersProvider) {
   private val TAG = "SettingsActivityViewModel"
 
-  suspend fun getUserId(): String {
+  suspend fun getUserUuid(): String {
     return withContext(coroutineContext) {
       settingsRepository.getUserUuid()
     }
@@ -62,19 +62,17 @@ class SettingsActivityViewModel(
     }
   }
 
-  suspend fun restoreOldAccount(oldUserId: String): Boolean {
+  suspend fun restoreOldAccount(oldUserUuid: String): Boolean {
     return withContext(coroutineContext) {
-      val suffix = "@$DOMAIN_NAME"
-
-      val userId = oldUserId.trim().let { userId ->
-        return@let if (!userId.endsWith(suffix, true)) {
-          userId + suffix
+      val userUuid = oldUserUuid.trim().let { userUuid ->
+        return@let if (!userUuid.endsWith(SharedConstants.DOMAIN, true)) {
+          userUuid + "@" + SharedConstants.DOMAIN
         } else {
-          userId
+          userUuid
         }
       }.toLowerCase()
 
-      return@withContext restoreAccountUseCase.restoreAccount(userId)
+      return@withContext restoreAccountUseCase.restoreAccount(userUuid)
     }
   }
 }

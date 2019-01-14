@@ -6,7 +6,7 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersPro
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
-import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
+import com.kirakishou.photoexchange.helper.exception.EmptyUserUuidException
 import com.kirakishou.photoexchange.helper.util.PagedApiUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
@@ -39,12 +39,12 @@ open class GetUploadedPhotosUseCase(
         resetTimer()
       }
 
-      val (lastUploadedOn, userId) = getParameters(lastUploadedOnParam)
+      val (lastUploadedOn, userUuid) = getParameters(lastUploadedOnParam)
 
       val uploadedPhotosPage = getPageOfUploadedPhotos(
         firstUploadedOn,
         lastUploadedOn,
-        userId,
+        userUuid,
         count
       )
 
@@ -60,7 +60,7 @@ open class GetUploadedPhotosUseCase(
   private suspend fun getPageOfUploadedPhotos(
     firstUploadedOnParam: Long,
     lastUploadedOnParam: Long,
-    userIdParam: String,
+    userUuidParam: String,
     countParam: Int
   ): Paged<UploadedPhoto> {
     return pagedApiUtils.getPageOfPhotos(
@@ -68,10 +68,10 @@ open class GetUploadedPhotosUseCase(
       firstUploadedOnParam,
       lastUploadedOnParam,
       countParam,
-      userIdParam,
-      { firstUploadedOn -> getFreshPhotosCount(userIdParam, firstUploadedOn) },
+      userUuidParam,
+      { firstUploadedOn -> getFreshPhotosCount(userUuidParam, firstUploadedOn) },
       { lastUploadedOn, count -> getFromCacheInternal(lastUploadedOn, count) },
-      { userId, lastUploadedOn, count -> apiClient.getPageOfUploadedPhotos(userId!!, lastUploadedOn, count) },
+      { userUuid, lastUploadedOn, count -> apiClient.getPageOfUploadedPhotos(userUuid!!, lastUploadedOn, count) },
       { uploadedPhotosRepository.deleteAll() },
       {
         //do not delete uploaded photos from this use case, do it in the received photo use case
@@ -85,7 +85,7 @@ open class GetUploadedPhotosUseCase(
     )
   }
 
-  private suspend fun getFreshPhotosCount(userId: String, firstUploadedOn: Long): Int {
+  private suspend fun getFreshPhotosCount(userUuid: String, firstUploadedOn: Long): Int {
     //if five minutes has passed since we last checked fresh photos count - check again
     val shouldMakeRequest = synchronized(GetUploadedPhotosUseCase::class) {
       val now = timeUtils.getTimeFast()
@@ -101,7 +101,7 @@ open class GetUploadedPhotosUseCase(
       return 0
     }
 
-    return apiClient.getFreshUploadedPhotosCount(userId, firstUploadedOn)
+    return apiClient.getFreshUploadedPhotosCount(userUuid, firstUploadedOn)
   }
 
   private suspend fun getFromCacheInternal(lastUploadedOn: Long, count: Int): List<UploadedPhoto> {
@@ -134,11 +134,11 @@ open class GetUploadedPhotosUseCase(
       timeUtils.getTimeFast()
     }
 
-    val userId = settingsRepository.getUserUuid()
-    if (userId.isEmpty()) {
-      throw EmptyUserIdException()
+    val userUuid = settingsRepository.getUserUuid()
+    if (userUuid.isEmpty()) {
+      throw EmptyUserUuidException()
     }
 
-    return Pair(time, userId)
+    return Pair(time, userUuid)
   }
 }

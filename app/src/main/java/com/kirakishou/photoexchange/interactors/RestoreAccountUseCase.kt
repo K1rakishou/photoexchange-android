@@ -21,18 +21,18 @@ open class RestoreAccountUseCase(
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
 
-  suspend fun restoreAccount(oldUserId: String): Boolean {
+  suspend fun restoreAccount(oldUserUuid: String): Boolean {
     return withContext(coroutineContext) {
       if (!netUtils.canAccessNetwork()) {
         throw NetworkAccessDisabledInSettings()
       }
 
-      val accountExists = apiClient.checkAccountExists(oldUserId)
+      val accountExists = apiClient.checkAccountExists(oldUserUuid)
       if (!accountExists) {
         return@withContext false
       }
 
-      val transactionResult = cleanDatabase(oldUserId)
+      val transactionResult = cleanDatabase(oldUserUuid)
       if (!transactionResult) {
         throw DatabaseException("Could not clean database")
       }
@@ -41,9 +41,9 @@ open class RestoreAccountUseCase(
     }
   }
 
-  private suspend fun cleanDatabase(oldUserId: String): Boolean {
+  private suspend fun cleanDatabase(oldUserUuid: String): Boolean {
     return database.transactional {
-      if (!settingsRepository.saveUserUuid(oldUserId)) {
+      if (!settingsRepository.saveUserUuid(oldUserUuid)) {
         return@transactional false
       }
 

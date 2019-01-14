@@ -5,11 +5,11 @@ data class PhotoAdditionalInfo(
   val isFavourited: Boolean,
   val favouritesCount: Long,
   val isReported: Boolean,
-  val hasUserId: Boolean = false
+  val hasUserUuid: Boolean = false
 ) {
 
   fun isEmpty(): Boolean {
-    return !isFavourited && favouritesCount == 0L && !isReported && !hasUserId
+    return !isFavourited && favouritesCount == 0L && !isReported && !hasUserUuid
   }
 
   companion object {

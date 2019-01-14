@@ -5,7 +5,7 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersPro
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
-import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
+import com.kirakishou.photoexchange.helper.exception.EmptyUserUuidException
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.GetUserUuidUseCase
@@ -72,11 +72,11 @@ open class UploadPhotoServicePresenter(
     updateServiceNotification(NotificationType.Uploading)
 
     try {
-      //we need to get the userId first because this operation will create a default account on the server
-      val userId = getUserUuidUseCase.getUserId()
-      if (userId.isEmpty()) {
-        Timber.tag(TAG).d("UserId is empty")
-        throw EmptyUserIdException()
+      //we need to get the userUuid first because this operation will create a default account on the server
+      val userUuid = getUserUuidUseCase.getUserUuid()
+      if (userUuid.isEmpty()) {
+        Timber.tag(TAG).d("UserUuid is empty")
+        throw EmptyUserUuidException()
       }
 
       val token = settingsRepository.getFirebaseToken()
@@ -85,7 +85,7 @@ open class UploadPhotoServicePresenter(
         updateFirebaseTokenUseCase.updateFirebaseTokenIfNecessary()
       }
 
-      val hasErrors = doUploading(userId, location)
+      val hasErrors = doUploading(userUuid, location)
       if (!hasErrors) {
         updateServiceNotification(NotificationType.Success("All photos has been successfully uploaded"))
       } else {
@@ -101,7 +101,7 @@ open class UploadPhotoServicePresenter(
     }
   }
 
-  private suspend fun doUploading(userId: String, currentLocation: LonLat): Boolean {
+  private suspend fun doUploading(userUuid: String, currentLocation: LonLat): Boolean {
     val queuedUpPhotos = takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP)
     if (queuedUpPhotos.isEmpty()) {
       //should not really happen, since we make a check before starting the service
@@ -130,7 +130,7 @@ open class UploadPhotoServicePresenter(
       eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingStart(photo))
 
       try {
-        val result = uploadPhotosUseCase.uploadPhoto(photo, currentLocation, userId, eventsActor)
+        val result = uploadPhotosUseCase.uploadPhoto(photo, currentLocation, userUuid, eventsActor)
         eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploaded(
           photo,
           result.photoId,

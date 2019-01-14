@@ -277,17 +277,19 @@ open class ReceivedPhotosFragmentViewModel(
         return
       }
 
-      for (additionalPhotoInfo in additionalPhotoInfoList) {
+      for (photoName in photoNameListToFetchAdditionalInfo) {
         val photoIndex = updatedPhotos.indexOfFirst { photo ->
-          photo.receivedPhotoName == additionalPhotoInfo.photoName
+          photo.receivedPhotoName == photoName
         }
 
         if (photoIndex == -1) {
           continue
         }
 
+        val additionalPhotoInfo = additionalPhotoInfoList.firstOrNull { it.photoName == photoName }
+
         val photoWithUpdatedAdditionalInfo = updatedPhotos[photoIndex].copy(
-          photoAdditionalInfo = additionalPhotoInfo
+          photoAdditionalInfo = additionalPhotoInfo ?: PhotoAdditionalInfo.empty(photoName)
         )
 
         updatedPhotos.removeAt(photoIndex)
@@ -297,8 +299,6 @@ open class ReceivedPhotosFragmentViewModel(
 
     withState { state ->
       launch {
-        Timber.tag(TAG).d("onNewPhotoReceivedInternal called with ${newReceivedPhotos.size} new photos")
-
         val updatedPhotos = state.receivedPhotos.toMutableList()
         val photoNameListToFetchAdditionalInfo = mutableListOf<String>()
 
@@ -326,17 +326,6 @@ open class ReceivedPhotosFragmentViewModel(
 
           updatedPhotos += newPhoto
           photoNameListToFetchAdditionalInfo += newReceivedPhoto.receivedPhotoName
-        }
-
-        if (photoNameListToFetchAdditionalInfo.isNotEmpty()) {
-          updateAdditionalPhotoInfo(
-            photoNameListToFetchAdditionalInfo,
-            updatedPhotos
-          )
-
-          //show a snackbar telling user that we got a photo
-          intercom.tell<PhotosActivity>()
-            .that(PhotosActivityEvent.OnNewPhotoReceived)
         }
 
         updatedPhotos.sortByDescending { it.uploadedOn }

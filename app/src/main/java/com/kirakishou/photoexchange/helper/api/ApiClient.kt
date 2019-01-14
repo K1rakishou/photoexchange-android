@@ -19,34 +19,34 @@ interface ApiClient {
   suspend fun uploadPhoto(
     photoFilePath: String,
     location: LonLat,
-    userId: String,
+    userUuid: String,
     isPublic: Boolean,
     photo: TakenPhoto,
     channel: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
   ): UploadPhotosUseCase.UploadPhotoResult
 
   @Throws(ApiErrorException::class, ConnectionError::class)
-  suspend fun receivePhotos(userId: String, photoNames: String): List<ReceivedPhotoResponseData>
+  suspend fun receivePhotos(userUuid: String, photoNames: String): List<ReceivedPhotoResponseData>
 
   @Throws(ApiErrorException::class, ConnectionError::class)
-  suspend fun favouritePhoto(userId: String, photoName: String): FavouritePhotoResponseData
+  suspend fun favouritePhoto(userUuid: String, photoName: String): FavouritePhotoResponseData
 
   @Throws(ApiErrorException::class, ConnectionError::class)
-  suspend fun reportPhoto(userId: String, photoName: String): Boolean
+  suspend fun reportPhoto(userUuid: String, photoName: String): Boolean
 
   @Throws(ApiErrorException::class, ConnectionError::class)
   suspend fun getUserUuid(): String
 
   @Throws(ApiErrorException::class, ConnectionError::class)
   suspend fun getPageOfUploadedPhotos(
-    userId: String,
+    userUuid: String,
     lastUploadedOn: Long,
     count: Int
   ): List<UploadedPhotoResponseData>
 
   @Throws(ApiErrorException::class, ConnectionError::class)
   suspend fun getPageOfReceivedPhotos(
-    userId: String,
+    userUuid: String,
     lastUploadedOn: Long,
     count: Int
   ): List<ReceivedPhotoResponseData>
@@ -59,21 +59,21 @@ interface ApiClient {
 
   @Throws(ApiErrorException::class, ConnectionError::class)
   suspend fun getPhotosAdditionalInfo(
-    userId: String,
+    userUuid: String,
     photoNames: String
   ): List<PhotoAdditionalInfoResponseData>
 
   @Throws(ApiErrorException::class, ConnectionError::class)
-  suspend fun checkAccountExists(userId: String): Boolean
+  suspend fun checkAccountExists(userUuid: String): Boolean
 
   @Throws(ApiErrorException::class, ConnectionError::class)
-  suspend fun updateFirebaseToken(userId: String, token: String)
+  suspend fun updateFirebaseToken(userUuid: String, token: String)
 
   @Throws(ApiErrorException::class, ConnectionError::class)
-  suspend fun getFreshUploadedPhotosCount(userId: String, time: Long): Int
+  suspend fun getFreshUploadedPhotosCount(userUuid: String, time: Long): Int
 
   @Throws(ApiErrorException::class, ConnectionError::class)
-  suspend fun getFreshReceivedPhotosCount(userId: String, time: Long): Int
+  suspend fun getFreshReceivedPhotosCount(userUuid: String, time: Long): Int
 
   @Throws(ApiErrorException::class, ConnectionError::class)
   suspend fun getFreshGalleryPhotosCount(time: Long): Int

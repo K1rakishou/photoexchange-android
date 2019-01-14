@@ -54,7 +54,7 @@ class ReceivedPhotoRow @JvmOverloads constructor(
     if (photo.showPhoto) {
       showPhotoHideMap()
 
-      if (photo.photoAdditionalInfo.hasUserId) {
+      if (photo.photoAdditionalInfo != null) {
         showControls(photo)
         favouritesCount.text = photo.photoAdditionalInfo.favouritesCount.toString()
       } else {
@@ -84,6 +84,8 @@ class ReceivedPhotoRow @JvmOverloads constructor(
     photoButtonsHolder.visibility = View.VISIBLE
     favouriteButton.isClickable = true
     reportButton.isClickable = true
+
+    photo.photoAdditionalInfo!!
 
     if (photo.photoAdditionalInfo.isFavourited) {
       favouriteIcon.setImageDrawable(context.resources.getDrawable(R.drawable.ic_favorite))

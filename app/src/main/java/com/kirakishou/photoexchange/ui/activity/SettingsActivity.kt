@@ -17,7 +17,7 @@ import com.kirakishou.photoexchange.di.module.activity.SettingsActivityModule
 import com.kirakishou.photoexchange.helper.NetworkAccessLevel
 import com.kirakishou.photoexchange.helper.PhotosVisibility
 import com.kirakishou.photoexchange.mvp.viewmodel.SettingsActivityViewModel
-import com.kirakishou.photoexchange.ui.dialog.EnterOldUserIdDialog
+import com.kirakishou.photoexchange.ui.dialog.EnterOldUserUuidDialog
 import io.reactivex.rxkotlin.plusAssign
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.rx2.await
@@ -33,30 +33,34 @@ class SettingsActivity : BaseActivity() {
   @BindView(R.id.network_access_level_spinner)
   lateinit var networkAccessLevelSpinner: AppCompatSpinner
 
-  @BindView(R.id.restore_from_old_user_id)
-  lateinit var restoreFromOldUserIdButton: AppCompatButton
+  @BindView(R.id.restore_from_old_user_uuid)
+  lateinit var restoreFromOldUserUuidButton: AppCompatButton
 
-  @BindView(R.id.user_id_text_view)
-  lateinit var userIdTextView: TextView
+  @BindView(R.id.user_uuid_text_view)
+  lateinit var userUuidTextView: TextView
 
-  @BindView(R.id.user_id_holder)
-  lateinit var userIdHolder: LinearLayout
+  @BindView(R.id.user_uuid_holder)
+  lateinit var userUuidHolder: LinearLayout
 
   @Inject
   lateinit var viewModel: SettingsActivityViewModel
 
   private val TAG = "SettingsActivity"
 
-  private val photoVisibilitySpinnerList = ArrayList<String>().apply {
-    add(getString(R.string.settings_activity_always_public))
-    add(getString(R.string.settings_activity_always_private))
-    add(getString(R.string.settings_activity_ask_every_time))
+  private val photoVisibilitySpinnerList by lazy {
+    ArrayList<String>().apply {
+      add(getString(R.string.settings_activity_always_public))
+      add(getString(R.string.settings_activity_always_private))
+      add(getString(R.string.settings_activity_ask_every_time))
+    }
   }
 
-  private val networkAccessLevelSpinnerList = ArrayList<String>().apply {
-    add(getString(R.string.settings_activity_can_load_images))
-    add(getString(R.string.settings_activity_can_access_internet))
-    add(getString(R.string.settings_activity_neither))
+  private val networkAccessLevelSpinnerList by lazy {
+    ArrayList<String>().apply {
+      add(getString(R.string.settings_activity_can_load_images))
+      add(getString(R.string.settings_activity_can_access_internet))
+      add(getString(R.string.settings_activity_neither))
+    }
   }
 
   override fun getContentView(): Int = R.layout.activity_settings
@@ -83,20 +87,20 @@ class SettingsActivity : BaseActivity() {
         viewModel.updateNetworkAccessLevel(level)
       }, { error -> Timber.tag(TAG).e(error) })
 
-    userIdHolder.setOnClickListener {
-      copyUserIdToClipBoard()
-      Toast.makeText(this, getString(R.string.settings_activity_user_id_copied_to_clipboard), Toast.LENGTH_SHORT).show()
+    userUuidHolder.setOnClickListener {
+      copyUserUuidToClipBoard()
+      Toast.makeText(this, getString(R.string.settings_activity_user_uuid_copied_to_clipboard), Toast.LENGTH_SHORT).show()
     }
 
-    restoreFromOldUserIdButton.setOnClickListener {
+    restoreFromOldUserUuidButton.setOnClickListener {
       launch {
-        val userId = EnterOldUserIdDialog().show(this@SettingsActivity).await()
-        if (userId.isBlank()) {
+        val userUuid = EnterOldUserUuidDialog().show(this@SettingsActivity).await()
+        if (userUuid.isBlank()) {
           return@launch
         }
 
         val isOk = try {
-          viewModel.restoreOldAccount(userId)
+          viewModel.restoreOldAccount(userUuid)
         } catch (error: Throwable) {
           val message = error.message ?: "empty error message"
           onShowToast(getString(R.string.settings_activity_unknown_error, message))
@@ -113,11 +117,11 @@ class SettingsActivity : BaseActivity() {
     }
 
     launch {
-      val userId = viewModel.getUserId()
-      if (userId.isEmpty()) {
-        userIdTextView.text = getString(R.string.settings_activity_current_user_id_is_empty_msg)
+      val userUuid = viewModel.getUserUuid()
+      if (userUuid.isEmpty()) {
+        userUuidTextView.text = getString(R.string.settings_activity_current_user_uuid_is_empty_msg)
       } else {
-        userIdTextView.text = userId
+        userUuidTextView.text = userUuid
       }
     }
   }
@@ -146,9 +150,9 @@ class SettingsActivity : BaseActivity() {
   override fun onActivityStop() {
   }
 
-  private fun copyUserIdToClipBoard() {
+  private fun copyUserUuidToClipBoard() {
     val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-    val clip = android.content.ClipData.newPlainText(CLIPBOARD_LABEL, userIdTextView.text.toString())
+    val clip = android.content.ClipData.newPlainText(CLIPBOARD_LABEL, userUuidTextView.text.toString())
     clipboard.primaryClip = clip
   }
 
@@ -159,6 +163,6 @@ class SettingsActivity : BaseActivity() {
   }
 
   companion object {
-    const val CLIPBOARD_LABEL = "user_id_label"
+    const val CLIPBOARD_LABEL = "user_uuid_label"
   }
 }

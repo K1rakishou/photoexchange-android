@@ -14,8 +14,8 @@
     <string name="photo_answer_menu_report_photo">Report photo</string>
 
     <!--settings activity-->
-    <string name="settings_activity_your_user_id_msg">Your User ID</string>
-    <string name="settings_activity_current_user_id_is_empty_msg">Current UserId is empty (no photos uploaded yet)</string>
+    <string name="settings_activity_your_user_uuid_msg">Your User UUID</string>
+    <string name="settings_activity_current_user_uuid_is_empty_msg">Current UserUuid is empty (no photos uploaded yet)</string>
     <string name="settings_activity_default_photo_visibility_msg">Default photo visibility</string>
     <string name="settings_activity_network_access_level_msg">Network Access Level on metered network</string>
     <string name="settings_activity_restore_old_account_msg">Restore old account</string>
@@ -25,12 +25,12 @@
     <string name="settings_activity_can_load_images">Can Load Images</string>
     <string name="settings_activity_can_access_internet">Can Access Internet</string>
     <string name="settings_activity_neither">Neither</string>
-    <string name="settings_activity_user_id_copied_to_clipboard">UserId copied to clipboard</string>
+    <string name="settings_activity_user_uuid_copied_to_clipboard">UserUuid copied to clipboard</string>
     <string name="settings_activity_successfully_restored_old_account">Successfully restored old account</string>
     <string name="settings_activity_account_does_not_exist">Account does not exist</string>
     <string name="settings_activity_unknown_error">Unknown error while trying to restore account: %1$s</string>
-    <string name="settings_activity_tap_to_copy_user_id_message">Tap here to copy User ID to clipboard</string>
-    <string name="settings_activity_user_id_explanation_text">User ID is basically your account ID. Every photo you upload is marked with user ID so if you want to be able to access your photos from different phones or restore account after app has been uninstalled you better save this ID.</string>
+    <string name="settings_activity_tap_to_copy_user_uuid_message">Tap here to copy User UUID to clipboard</string>
+    <string name="settings_activity_user_uuid_explanation_text">User UUID is basically your account ID. Every photo you upload is marked with user ID so if you want to be able to access your photos from different phones or restore account after app has been uninstalled you better save this ID.</string>
     <string name="settings_activity_photo_visibility_explanation_text">If photo visibility set to Always Public - all your photos will be available in the gallery for everyone, If it\'s set to Always Private then they won\'t. If it\'s set to Neither - you will be asked what visibility to use every time you take a photo.</string>
     <string name="settings_activity_network_access_level_explanation_text">It\'s better to set this setting to Can Load Images when you are connected to unmetered network (unlimited download rate). By setting it to Can Access Internet - you won\'t be loading any images when you are not connected to an unmetered network, any other lightweight request will still be possible. Finally by setting it to Neither completely disables any network interactions when you are not connected to an unmetered network.</string>
 
@@ -42,6 +42,8 @@
     <string name="photos_activity_settings_menu_item_text">Settings</string>
     <string name="photos_activity_photo_has_been_received_snackbar_text">A new photo has been received</string>
     <string name="photos_activity_show_snackbar_action_text">SHOW</string>
+    <string name="photos_activity_cannot_upload_photo_disabled">Cannot upload photo because current network is metered and it is not allowed to upload/download photos with metered network in settings (You can override it in settings)</string>
+    <string name="photos_activity_cannot_check_for_received_photos_disabled">Cannot check for received photos because current network is metered and it is not allowed to access internet with metered network in settings (You can override it in settings)</string>
 
     <!--take photo activity-->
     <string name="take_photo_activity_could_not_take_photo">Could not take photo</string>

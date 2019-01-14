@@ -18,6 +18,7 @@ import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
+import java.lang.Exception
 import javax.inject.Inject
 
 
@@ -90,27 +91,33 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
     }
   }
 
-  private fun extractData(remoteMessage: RemoteMessage): NewReceivedPhoto? {
+  private fun extractData(remoteMessage: RemoteMessage): NewReceivedPhoto {
     val data = remoteMessage.data
 
     val uploadedPhotoName = data.get(NewReceivedPhoto.uploadedPhotoNameField)
     if (uploadedPhotoName.isNullOrEmpty()) {
-      return null
+      throw PushNotificationExctractionException("Could not extract uploadedPhotoName")
     }
 
     val receivedPhotoName = data.get(NewReceivedPhoto.receivedPhotoNameField)
     if (receivedPhotoName.isNullOrEmpty()) {
-      return null
+      throw PushNotificationExctractionException("Could not extract receivedPhotoName")
     }
 
     val receiverLon = data.get(NewReceivedPhoto.receiverLonField)?.toDoubleOrNull()
-      ?: return null
+    if (receiverLon == null) {
+      throw PushNotificationExctractionException("Could not extract receiverLon")
+    }
 
     val receiverLat = data.get(NewReceivedPhoto.receiverLatField)?.toDoubleOrNull()
-      ?: return null
+    if (receiverLat == null) {
+      throw PushNotificationExctractionException("Could not extract receiverLat")
+    }
 
     val uploadedOn = data.get(NewReceivedPhoto.uploadedOnField)?.toLongOrNull()
-      ?: return null
+    if (uploadedOn == null) {
+      throw PushNotificationExctractionException("Could not extract uploadedOn")
+    }
 
     return NewReceivedPhoto(
       uploadedPhotoName,
@@ -176,6 +183,8 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
 
     notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build())
   }
+
+  class PushNotificationExctractionException(msg: String) : Exception(msg)
 
   companion object {
     private val vibrationPattern = LongArray(4).apply {

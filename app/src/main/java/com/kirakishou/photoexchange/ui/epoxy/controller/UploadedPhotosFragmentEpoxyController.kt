@@ -8,7 +8,7 @@ import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.Paged
-import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
+import com.kirakishou.photoexchange.helper.exception.EmptyUserUuidException
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
@@ -141,7 +141,7 @@ class UploadedPhotosFragmentEpoxyController(
     viewModel: UploadedPhotosFragmentViewModel
   ) {
     when (error) {
-      is EmptyUserIdException -> {
+      is EmptyUserUuidException -> {
         textRow {
           id("no_uploaded_photos_message")
           text("You have to upload at least one photo first")
@@ -151,6 +151,8 @@ class UploadedPhotosFragmentEpoxyController(
         textRow {
           val exceptionMessage = error.message ?: "Unknown error message"
           Toast.makeText(context, "Exception message is: \"$exceptionMessage\"", Toast.LENGTH_LONG).show()
+
+          Timber.tag(TAG).e(error)
 
           id("unknown_error")
           text(context.getString(R.string.unknown_error_while_trying_to_load_photos_text))

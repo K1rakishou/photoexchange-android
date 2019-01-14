@@ -10,7 +10,7 @@ import net.response.GetPhotosAdditionalInfoResponse
 import timber.log.Timber
 
 class GetPhotosAdditionalInfoRequest(
-  private val userId: String,
+  private val userUuid: String,
   private val photoNames: String,
   private val apiService: ApiService,
   private val jsonConverter: JsonConverter,
@@ -19,7 +19,7 @@ class GetPhotosAdditionalInfoRequest(
 
   override suspend fun execute(): GetPhotosAdditionalInfoResponse {
     val response = try {
-      apiService.getPhotosAdditionalInfo(userId, photoNames).await()
+      apiService.getPhotosAdditionalInfo(userUuid, photoNames).await()
     } catch (error: Exception) {
       Timber.e(error)
       throw ConnectionError(error.message)

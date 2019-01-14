@@ -28,7 +28,7 @@ open class ApiClientImpl
   override suspend fun uploadPhoto(
     photoFilePath: String,
     location: LonLat,
-    userId: String,
+    userUuid: String,
     isPublic: Boolean,
     photo: TakenPhoto,
     channel: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
@@ -37,7 +37,7 @@ open class ApiClientImpl
     val response = UploadPhotoRequest(
       photoFilePath,
       location,
-      userId,
+      userUuid,
       isPublic,
       photo,
       channel,
@@ -54,11 +54,11 @@ open class ApiClientImpl
   }
 
   override suspend fun receivePhotos(
-    userId: String,
+    userUuid: String,
     photoNames: String
   ): List<ReceivedPhotoResponseData> {
     val response = ReceivePhotosRequest(
-      userId,
+      userUuid,
       photoNames,
       apiService,
       jsonConverter,
@@ -69,11 +69,11 @@ open class ApiClientImpl
   }
 
   override suspend fun favouritePhoto(
-    userId: String,
+    userUuid: String,
     photoName: String
   ): FavouritePhotoResponseData {
     val response = FavouritePhotoRequest(
-      userId,
+      userUuid,
       photoName,
       apiService,
       jsonConverter,
@@ -86,9 +86,9 @@ open class ApiClientImpl
     )
   }
 
-  override suspend fun reportPhoto(userId: String, photoName: String): Boolean {
+  override suspend fun reportPhoto(userUuid: String, photoName: String): Boolean {
     val response = ReportPhotoRequest(
-      userId,
+      userUuid,
       photoName,
       apiService,
       jsonConverter,
@@ -109,12 +109,12 @@ open class ApiClientImpl
   }
 
   override suspend fun getPageOfUploadedPhotos(
-    userId: String,
+    userUuid: String,
     lastUploadedOn: Long,
     count: Int
   ): List<UploadedPhotoResponseData> {
     val response = GetPageOfUploadedPhotosRequest(
-      userId,
+      userUuid,
       lastUploadedOn,
       count,
       apiService,
@@ -126,12 +126,12 @@ open class ApiClientImpl
   }
 
   override suspend fun getPageOfReceivedPhotos(
-    userId: String,
+    userUuid: String,
     lastUploadedOn: Long,
     count: Int
   ): List<ReceivedPhotoResponseData> {
     val response = GetPageOfReceivedPhotosRequest(
-      userId,
+      userUuid,
       lastUploadedOn,
       count,
       apiService,
@@ -158,11 +158,11 @@ open class ApiClientImpl
   }
 
   override suspend fun getPhotosAdditionalInfo(
-    userId: String,
+    userUuid: String,
     photoNames: String
   ): List<PhotoAdditionalInfoResponseData> {
     val response = GetPhotosAdditionalInfoRequest(
-      userId,
+      userUuid,
       photoNames,
       apiService,
       jsonConverter,
@@ -172,9 +172,9 @@ open class ApiClientImpl
     return response.additionalInfoList
   }
 
-  override suspend fun checkAccountExists(userId: String): Boolean {
+  override suspend fun checkAccountExists(userUuid: String): Boolean {
     val response = CheckAccountExistsRequest(
-      userId,
+      userUuid,
       apiService,
       jsonConverter,
       dispatchersProvider
@@ -183,9 +183,9 @@ open class ApiClientImpl
     return response.accountExists
   }
 
-  override suspend fun updateFirebaseToken(userId: String, token: String) {
+  override suspend fun updateFirebaseToken(userUuid: String, token: String) {
     UpdateFirebaseTokenRequest(
-      userId,
+      userUuid,
       token,
       apiService,
       jsonConverter,
@@ -195,9 +195,9 @@ open class ApiClientImpl
     //no response data
   }
 
-  override suspend fun getFreshUploadedPhotosCount(userId: String, time: Long): Int {
+  override suspend fun getFreshUploadedPhotosCount(userUuid: String, time: Long): Int {
     val response = GetFreshUploadedPhotosCountRequest(
-      userId,
+      userUuid,
       time,
       apiService,
       jsonConverter,
@@ -207,9 +207,9 @@ open class ApiClientImpl
     return response.freshPhotosCount
   }
 
-  override suspend fun getFreshReceivedPhotosCount(userId: String, time: Long): Int {
+  override suspend fun getFreshReceivedPhotosCount(userUuid: String, time: Long): Int {
     val response = GetFreshReceivedPhotosCountRequest(
-      userId,
+      userUuid,
       time,
       apiService,
       jsonConverter,

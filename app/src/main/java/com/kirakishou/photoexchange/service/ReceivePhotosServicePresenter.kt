@@ -82,14 +82,14 @@ open class ReceivePhotosServicePresenter(
 
   private suspend fun formatRequestString(uploadedPhotos: List<UploadedPhoto>): FindPhotosData? {
     val photoNames = uploadedPhotos.joinToString(Constants.DELIMITER) { it.photoName }
-    val userId = settingsRepository.getUserUuid()
+    val userUuid = settingsRepository.getUserUuid()
 
-    if (userId.isEmpty()) {
-      Timber.tag(TAG).d("UserId is empty")
+    if (userUuid.isEmpty()) {
+      Timber.tag(TAG).d("UserUuid is empty")
       return null
     }
 
-    return FindPhotosData(userId, photoNames)
+    return FindPhotosData(userUuid, photoNames)
   }
 
   private fun sendEvent(event: ReceivePhotoEvent) {

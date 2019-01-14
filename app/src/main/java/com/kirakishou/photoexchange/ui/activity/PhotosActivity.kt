@@ -241,12 +241,12 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
     //TODO: disable Crashlytics if user didn't give us their permission to send crashlogs
 
     //2. Check firebase availability, show no firebase dialog if necessary
-    checkFirebaseAvailability()
+    if (!isFirebaseAvailableOrDialogAlreadyShown()) {
+      FirebaseNotAvailableDialog().show(this)
+    }
 
     //3. Check permissions, show dialogs if necessary
-    val result = checkPermissions()
-
-    when (result) {
+    when (val result = checkPermissions()) {
       PermissionRequestResult.NotGranted,
       PermissionRequestResult.Granted -> {
         val granted = result == PermissionRequestResult.Granted
@@ -254,21 +254,21 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
         viewModel.updateGpsPermissionGranted(granted)
         startTakenPhotoActivity()
       }
-      PermissionRequestResult.ShowRationaleForCamera -> showCameraRationaleDialog()
+      PermissionRequestResult.ShowRationaleForCamera -> {
+        showCameraRationaleDialog()
+      }
       PermissionRequestResult.ShowRationaleAppCannotWorkWithoutCamera -> {
         showAppCannotWorkWithoutCameraPermissionDialog()
       }
-      PermissionRequestResult.ShowRationaleForGps -> showGpsRationaleDialog()
+      PermissionRequestResult.ShowRationaleForGps -> {
+        showGpsRationaleDialog()
+      }
     }
   }
 
-  private suspend fun checkFirebaseAvailability() {
-    val result = viewModel.checkFirebaseAvailability()
-    if (result != CheckFirebaseAvailabilityUseCase.FirebaseAvailabilityResult.NotAvailable) {
-      return
-    }
-
-    FirebaseNotAvailableDialog().show(this)
+  private suspend fun isFirebaseAvailableOrDialogAlreadyShown(): Boolean {
+    return viewModel.checkFirebaseAvailability() !=
+      CheckFirebaseAvailabilityUseCase.FirebaseAvailabilityResult.NotAvailable
   }
 
   private suspend fun checkPermissions(): PermissionRequestResult {
@@ -393,22 +393,39 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
     return true
   }
 
+  // TODO:
+  // When the user changes network access level in the settings it is probably a good idea to
+  // somehow check that and try to start uploading/receiving service right after that
+
   override suspend fun onStateEvent(event: PhotosActivityEvent) {
     when (event) {
       is PhotosActivityEvent.StartUploadingService -> {
-        val hasPhotosToUpload = viewModel.checkCanUploadPhotos()
-        if (hasPhotosToUpload) {
-          bindUploadingService(event.callerClass, event.reason)
-        } else {
-          //do nothing
+        val canUploadPhotosResult = viewModel.checkCanUploadPhotos()
+        when (canUploadPhotosResult) {
+          PhotosActivityViewModel.CanUploadPhotoResult.HasQueuedUpPhotos -> {
+            bindUploadingService(event.callerClass, event.reason)
+          }
+          PhotosActivityViewModel.CanUploadPhotoResult.PhotoUploadingDisabled -> {
+            onShowToast(getString(R.string.photos_activity_cannot_upload_photo_disabled))
+          }
+          PhotosActivityViewModel.CanUploadPhotoResult.HasNoQueuedUpPhotos -> {
+            //do nothing
+          }
         }
       }
       is PhotosActivityEvent.StartReceivingService -> {
-        val hasPhotosToReceive = viewModel.checkCanReceivePhotos()
-        if (hasPhotosToReceive) {
-          bindReceivingService(event.callerClass, event.reason)
-        } else {
-          //do nothing
+        val canReceivedPhotosResult = viewModel.checkCanReceivePhotos()
+        when (canReceivedPhotosResult) {
+          PhotosActivityViewModel.CanReceivePhotoResult.HasMoreUploadedPhotosThanReceived -> {
+            bindReceivingService(event.callerClass, event.reason)
+          }
+          PhotosActivityViewModel.CanReceivePhotoResult.NetworkAccessDisabled -> {
+            onShowToast(getString(R.string.photos_activity_cannot_check_for_received_photos_disabled))
+          }
+          PhotosActivityViewModel.CanReceivePhotoResult.HasLessOrEqualUploadedPhotosThanReceived -> {
+            //do nothing
+
+          }
         }
       }
       is PhotosActivityEvent.ScrollEvent -> {
@@ -421,7 +438,6 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       is PhotosActivityEvent.CancelPhotoUploading -> {
         uploadPhotosServiceConnection.cancelPhotoUploading(event.photoId)
       }
-      PhotosActivityEvent.OnNewPhotoReceived -> showNewPhotoHasBeenReceivedSnackbar()
       is PhotosActivityEvent.ShowToast -> onShowToast(event.message)
       is PhotosActivityEvent.OnNewGalleryPhotos -> showNewGalleryPhotosSnackbar(event.count)
       is PhotosActivityEvent.ShowDeletePhotoDialog -> showDeletePhotoDialog(event.photoName)
