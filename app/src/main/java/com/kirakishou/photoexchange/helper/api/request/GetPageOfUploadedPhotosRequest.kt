@@ -10,7 +10,7 @@ import net.response.GetUploadedPhotosResponse
 import timber.log.Timber
 
 class GetPageOfUploadedPhotosRequest(
-  private val userId: String,
+  private val userUuid: String,
   private val lastUploadedOn: Long,
   private val count: Int,
   private val apiService: ApiService,
@@ -20,7 +20,7 @@ class GetPageOfUploadedPhotosRequest(
 
   override suspend fun execute(): GetUploadedPhotosResponse {
     val response = try {
-      apiService.getPageOfUploadedPhotos(userId, lastUploadedOn, count).await()
+      apiService.getPageOfUploadedPhotos(userUuid, lastUploadedOn, count).await()
     } catch (error: Exception) {
       Timber.e(error)
       throw ConnectionError(error.message)

@@ -35,8 +35,8 @@ open class ReceivePhotosUseCase(
     photoData: FindPhotosData
   ): List<ReceivedPhoto> {
     return withContext(coroutineContext) {
-      if (photoData.isUserIdEmpty()) {
-        throw ReceivePhotosServiceException.UserIdIsEmptyException()
+      if (photoData.isUserUuidEmpty()) {
+        throw ReceivePhotosServiceException.UserUuidIsEmptyException()
       }
 
       if (photoData.isPhotoNamesEmpty()) {
@@ -47,7 +47,7 @@ open class ReceivePhotosUseCase(
         throw NetworkAccessDisabledInSettings()
       }
 
-      val receivedPhotos = receivePhotos(photoData.userId, photoData.photoNames)
+      val receivedPhotos = receivePhotos(photoData.userUuid, photoData.photoNames)
 
       return@withContext getPhotoAdditionalInfoUseCase.appendAdditionalPhotoInfo(
         receivedPhotos,
@@ -58,11 +58,11 @@ open class ReceivePhotosUseCase(
   }
 
   private suspend fun receivePhotos(
-    userId: String,
+    userUuid: String,
     photoNames: String
   ): List<ReceivedPhoto> {
     val receivedPhotos = try {
-      apiClient.receivePhotos(userId, photoNames)
+      apiClient.receivePhotos(userUuid, photoNames)
     } catch (error: ApiErrorException) {
       throw ReceivePhotosUseCase.ReceivePhotosServiceException.ApiException(error.errorCode)
     }
@@ -110,7 +110,7 @@ open class ReceivePhotosUseCase(
 
   sealed class ReceivePhotosServiceException : Exception() {
     class PhotoNamesAreEmpty : ReceivePhotosServiceException()
-    class UserIdIsEmptyException : ReceivePhotosServiceException()
+    class UserUuidIsEmptyException : ReceivePhotosServiceException()
     class ApiException(val errorCode: ErrorCode) : ReceivePhotosServiceException()
   }
 }

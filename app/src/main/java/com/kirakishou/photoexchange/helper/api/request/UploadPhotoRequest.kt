@@ -23,7 +23,7 @@ import java.io.File
 class UploadPhotoRequest(
   private val photoFilePath: String,
   private val location: LonLat,
-  private val userId: String,
+  private val userUuid: String,
   private val isPublic: Boolean,
   private val photo: TakenPhoto,
   private val channel: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>,
@@ -35,7 +35,7 @@ class UploadPhotoRequest(
 
   @Suppress("UNCHECKED_CAST")
   override suspend fun execute(): UploadPhotoResponse {
-    val packet = UploadPhotoPacket(location.lon, location.lat, userId, isPublic)
+    val packet = UploadPhotoPacket(location.lon, location.lat, userUuid, isPublic)
     val photoFile = File(photoFilePath)
     val body = getBody(photoFile, packet, photo, channel)
 

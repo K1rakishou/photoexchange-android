@@ -6,7 +6,7 @@ import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotosRepo
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAdditionalInfoRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
-import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
+import com.kirakishou.photoexchange.helper.exception.EmptyUserUuidException
 import com.kirakishou.photoexchange.helper.exception.NetworkAccessDisabledInSettings
 import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.mvp.model.photo.PhotoAdditionalInfo
@@ -27,21 +27,21 @@ open class ReportPhotoUseCase(
     photoName: String
   ): Boolean {
     return withContext(coroutineContext) {
-      val userId = settingsRepository.getUserUuid()
-      if (userId.isEmpty()) {
-        throw EmptyUserIdException()
+      val userUuid = settingsRepository.getUserUuid()
+      if (userUuid.isEmpty()) {
+        throw EmptyUserUuidException()
       }
 
       if (!netUtils.canAccessNetwork()) {
         throw NetworkAccessDisabledInSettings()
       }
 
-      return@withContext reportPhoto(userId, photoName)
+      return@withContext reportPhoto(userUuid, photoName)
     }
   }
 
-  private suspend fun reportPhoto(userId: String, photoName: String): Boolean {
-    val isReported = apiClient.reportPhoto(userId, photoName)
+  private suspend fun reportPhoto(userUuid: String, photoName: String): Boolean {
+    val isReported = apiClient.reportPhoto(userUuid, photoName)
 
     try {
       reportInDatabase(photoName, isReported)

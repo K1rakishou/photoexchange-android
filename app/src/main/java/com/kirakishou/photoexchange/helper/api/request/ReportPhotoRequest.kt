@@ -12,7 +12,7 @@ import retrofit2.Response
 import timber.log.Timber
 
 class ReportPhotoRequest(
-  private val userId: String,
+  private val userUuid: String,
   private val photoName: String,
   private val apiService: ApiService,
   private val jsonConverter: JsonConverter,
@@ -21,7 +21,7 @@ class ReportPhotoRequest(
 
   override suspend fun execute(): ReportPhotoResponse {
     val response = try {
-      apiService.reportPhoto(ReportPhotoPacket(userId, photoName)).await() as Response<ReportPhotoResponse>
+      apiService.reportPhoto(ReportPhotoPacket(userUuid, photoName)).await() as Response<ReportPhotoResponse>
     } catch (error: Exception) {
       Timber.e(error)
       throw ConnectionError(error.message)

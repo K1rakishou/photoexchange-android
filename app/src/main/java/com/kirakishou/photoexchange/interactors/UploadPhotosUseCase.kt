@@ -37,7 +37,7 @@ open class UploadPhotosUseCase(
   suspend fun uploadPhoto(
     photo: TakenPhoto,
     location: LonLat,
-    userId: String,
+    userUuid: String,
     channel: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
   ): UploadPhotosUseCase.UploadPhotoResult {
     return withContext(coroutineContext) {
@@ -68,7 +68,7 @@ open class UploadPhotosUseCase(
         }
 
         val result = try {
-          apiClient.uploadPhoto(photoFile.absolutePath, location, userId, photo.isPublic, photo, channel)
+          apiClient.uploadPhoto(photoFile.absolutePath, location, userUuid, photo.isPublic, photo, channel)
         } catch (error: ApiErrorException) {
           throw ApiErrorException(error.errorCode)
         }

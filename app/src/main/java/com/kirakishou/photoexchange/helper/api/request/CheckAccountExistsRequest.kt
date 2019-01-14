@@ -10,7 +10,7 @@ import net.response.CheckAccountExistsResponse
 import timber.log.Timber
 
 class CheckAccountExistsRequest(
-  private val userId: String,
+  private val userUuid: String,
   private val apiService: ApiService,
   private val jsonConverter: JsonConverter,
   dispatchersProvider: DispatchersProvider
@@ -18,7 +18,7 @@ class CheckAccountExistsRequest(
 
   override suspend fun execute(): CheckAccountExistsResponse {
     val response = try {
-      apiService.checkAccountExists(userId).await()
+      apiService.checkAccountExists(userUuid).await()
     } catch (error: Exception) {
       Timber.e(error)
       throw ConnectionError(error.message)

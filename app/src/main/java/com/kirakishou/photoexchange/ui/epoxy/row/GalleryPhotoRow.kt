@@ -50,7 +50,7 @@ class GalleryPhotoRow @JvmOverloads constructor(
     if (photo.showPhoto) {
       showPhotoHideMap()
 
-      if (photo.photoAdditionalInfo.hasUserId) {
+      if (photo.photoAdditionalInfo.hasUserUuid) {
         showControls(photo)
         favouritesCount.text = photo.photoAdditionalInfo.favouritesCount.toString()
       } else {

@@ -10,7 +10,7 @@ import net.response.ReceivedPhotosResponse
 import timber.log.Timber
 
 class ReceivePhotosRequest(
-  private val userId: String,
+  private val userUuid: String,
   private val photoNames: String,
   private val apiService: ApiService,
   private val jsonConverter: JsonConverter,
@@ -19,7 +19,7 @@ class ReceivePhotosRequest(
 
   override suspend fun execute(): ReceivedPhotosResponse {
     val response = try {
-      apiService.receivePhotos(userId, photoNames).await()
+      apiService.receivePhotos(userUuid, photoNames).await()
     } catch (error: Exception) {
       Timber.e(error)
       throw ConnectionError(error.message)

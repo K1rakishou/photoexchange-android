@@ -393,6 +393,10 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
     return true
   }
 
+  // TODO:
+  // When the user changes network access level in the settings it is probably a good idea to
+  // somehow check that and try to start uploading/receiving service right after that
+
   override suspend fun onStateEvent(event: PhotosActivityEvent) {
     when (event) {
       is PhotosActivityEvent.StartUploadingService -> {

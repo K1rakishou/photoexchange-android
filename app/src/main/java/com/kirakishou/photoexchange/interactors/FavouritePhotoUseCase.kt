@@ -7,7 +7,7 @@ import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotosRepo
 import com.kirakishou.photoexchange.helper.database.repository.PhotoAdditionalInfoRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
-import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
+import com.kirakishou.photoexchange.helper.exception.EmptyUserUuidException
 import com.kirakishou.photoexchange.helper.exception.NetworkAccessDisabledInSettings
 import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.mvp.model.FavouritePhotoActionResult
@@ -28,16 +28,16 @@ open class FavouritePhotoUseCase(
     photoName: String
   ): FavouritePhotoActionResult {
     return withContext(coroutineContext) {
-      val userId = settingsRepository.getUserUuid()
-      if (userId.isEmpty()) {
-        throw EmptyUserIdException()
+      val userUuid = settingsRepository.getUserUuid()
+      if (userUuid.isEmpty()) {
+        throw EmptyUserUuidException()
       }
 
       if (!netUtils.canAccessNetwork()) {
         throw NetworkAccessDisabledInSettings()
       }
 
-      val favouritePhotoResult = apiClient.favouritePhoto(userId, photoName)
+      val favouritePhotoResult = apiClient.favouritePhoto(userUuid, photoName)
 
       try {
         favouriteInDatabase(photoName, favouritePhotoResult)

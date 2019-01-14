@@ -24,7 +24,7 @@ object Utils {
     return sb.toString()
   }
 
-  fun generateUserId(): String {
+  fun generateUserUuid(): String {
     return generateRandomString(64, numericAlphabetic) + "_photoexchange"
   }
 

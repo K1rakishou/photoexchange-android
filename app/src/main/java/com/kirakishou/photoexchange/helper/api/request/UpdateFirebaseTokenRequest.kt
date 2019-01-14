@@ -11,7 +11,7 @@ import net.response.UpdateFirebaseTokenResponse
 import timber.log.Timber
 
 class UpdateFirebaseTokenRequest(
-  private val userId: String,
+  private val userUuid: String,
   private val token: String,
   private val apiService: ApiService,
   private val jsonConverter: JsonConverter,
@@ -19,7 +19,7 @@ class UpdateFirebaseTokenRequest(
 ) : BaseRequest<UpdateFirebaseTokenResponse>(dispatchersProvider) {
 
   override suspend fun execute(): UpdateFirebaseTokenResponse {
-    val packet = UpdateFirebaseTokenPacket(userId, token)
+    val packet = UpdateFirebaseTokenPacket(userUuid, token)
 
     val response = try {
       apiService.updateFirebaseToken(packet).await()

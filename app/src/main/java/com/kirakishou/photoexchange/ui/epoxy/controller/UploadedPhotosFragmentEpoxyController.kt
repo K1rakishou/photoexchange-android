@@ -8,7 +8,7 @@ import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.Paged
-import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
+import com.kirakishou.photoexchange.helper.exception.EmptyUserUuidException
 import com.kirakishou.photoexchange.mvp.model.PhotoState
 import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
@@ -141,7 +141,7 @@ class UploadedPhotosFragmentEpoxyController(
     viewModel: UploadedPhotosFragmentViewModel
   ) {
     when (error) {
-      is EmptyUserIdException -> {
+      is EmptyUserUuidException -> {
         textRow {
           id("no_uploaded_photos_message")
           text("You have to upload at least one photo first")

@@ -38,7 +38,7 @@ open class GetGalleryPhotosUseCase(
     return withContext(coroutineContext) {
       Timber.tag(TAG).d("loadPageOfPhotos called")
 
-      val (lastUploadedOn, userId) = getParameters(lastUploadedOnParam)
+      val (lastUploadedOn, userUuid) = getParameters(lastUploadedOnParam)
 
       if (forced) {
         resetTimer()
@@ -47,7 +47,7 @@ open class GetGalleryPhotosUseCase(
       val galleryPhotosPage = getPageOfGalleryPhotos(
         firstUploadedOn,
         lastUploadedOn,
-        userId,
+        userUuid,
         count
       )
 
@@ -69,7 +69,7 @@ open class GetGalleryPhotosUseCase(
   private suspend fun getPageOfGalleryPhotos(
     firstUploadedOnParam: Long,
     lastUploadedOnParam: Long,
-    userIdParam: String,
+    userUuidParam: String,
     countParam: Int
   ): Paged<GalleryPhoto> {
     return pagedApiUtils.getPageOfPhotos(
@@ -77,7 +77,7 @@ open class GetGalleryPhotosUseCase(
       firstUploadedOnParam,
       lastUploadedOnParam,
       countParam,
-      userIdParam,
+      userUuidParam,
       { firstUploadedOn -> getFreshPhotosCount(firstUploadedOn) },
       { lastUploadedOn, count -> getFromCacheInternal(lastUploadedOn, count) },
       { _, lastUploadedOn, count -> apiClient.getPageOfGalleryPhotos(lastUploadedOn, count) },
@@ -135,8 +135,8 @@ open class GetGalleryPhotosUseCase(
       timeUtils.getTimeFast()
     }
 
-    //empty userId is allowed here since we need it only when fetching photoAdditionalInfo
-    val userId = settingsRepository.getUserUuid()
-    return lastUploadedOn to userId
+    //empty userUuid is allowed here since we need it only when fetching photoAdditionalInfo
+    val userUuid = settingsRepository.getUserUuid()
+    return lastUploadedOn to userUuid
   }
 }

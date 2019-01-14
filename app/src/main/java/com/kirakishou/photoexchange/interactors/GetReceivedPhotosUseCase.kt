@@ -7,7 +7,7 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
-import com.kirakishou.photoexchange.helper.exception.EmptyUserIdException
+import com.kirakishou.photoexchange.helper.exception.EmptyUserUuidException
 import com.kirakishou.photoexchange.helper.util.PagedApiUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
@@ -39,13 +39,13 @@ open class GetReceivedPhotosUseCase(
   ): Paged<ReceivedPhoto> {
     return withContext(coroutineContext) {
       Timber.tag(TAG).d("loadFreshPhotos called")
-      val (lastUploadedOn, userId) = getParameters(lastUploadedOnParam)
+      val (lastUploadedOn, userUuid) = getParameters(lastUploadedOnParam)
 
       val receivedPhotosPage = getPageOfReceivedPhotos(
         forced,
         firstUploadedOn,
         lastUploadedOn,
-        userId,
+        userUuid,
         count
       )
 
@@ -63,7 +63,7 @@ open class GetReceivedPhotosUseCase(
     forced: Boolean,
     firstUploadedOnParam: Long,
     lastUploadedOnParam: Long,
-    userIdParam: String,
+    userUuidParam: String,
     countParam: Int
   ): Paged<ReceivedPhoto> {
     if (forced) {
@@ -75,12 +75,12 @@ open class GetReceivedPhotosUseCase(
       firstUploadedOnParam,
       lastUploadedOnParam,
       countParam,
-      userIdParam,
-      { firstUploadedOn -> getFreshPhotosCount(userIdParam, firstUploadedOn) },
+      userUuidParam,
+      { firstUploadedOn -> getFreshPhotosCount(userUuidParam, firstUploadedOn) },
       { lastUploadedOn, count -> getFromCacheInternal(lastUploadedOn, count) },
-      { userId, lastUploadedOn, count ->
+      { userUuid, lastUploadedOn, count ->
         apiClient.getPageOfReceivedPhotos(
-          userId!!,
+          userUuid!!,
           lastUploadedOn,
           count
         )
@@ -116,7 +116,7 @@ open class GetReceivedPhotosUseCase(
     }
   }
 
-  private suspend fun getFreshPhotosCount(userId: String, firstUploadedOn: Long): Int {
+  private suspend fun getFreshPhotosCount(userUuid: String, firstUploadedOn: Long): Int {
     //if five minutes has passed since we last checked fresh photos count - check again
     val shouldMakeRequest = synchronized(GetReceivedPhotosUseCase::class) {
       val now = timeUtils.getTimeFast()
@@ -132,7 +132,7 @@ open class GetReceivedPhotosUseCase(
       return 0
     }
 
-    return apiClient.getFreshReceivedPhotosCount(userId, firstUploadedOn)
+    return apiClient.getFreshReceivedPhotosCount(userUuid, firstUploadedOn)
   }
 
   private suspend fun filterBlacklistedPhotos(
@@ -186,11 +186,11 @@ open class GetReceivedPhotosUseCase(
       timeUtils.getTimeFast()
     }
 
-    val userId = settingsRepository.getUserUuid()
-    if (userId.isEmpty()) {
-      throw EmptyUserIdException()
+    val userUuid = settingsRepository.getUserUuid()
+    if (userUuid.isEmpty()) {
+      throw EmptyUserUuidException()
     }
 
-    return Pair(time, userId)
+    return Pair(time, userUuid)
   }
 }

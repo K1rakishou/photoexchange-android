@@ -10,7 +10,7 @@ import net.response.GetFreshPhotosCountResponse
 import timber.log.Timber
 
 class GetFreshReceivedPhotosCountRequest(
-  private val userId: String,
+  private val userUuid: String,
   private val time: Long,
   private val apiService: ApiService,
   private val jsonConverter: JsonConverter,
@@ -19,7 +19,7 @@ class GetFreshReceivedPhotosCountRequest(
 
   override suspend fun execute(): GetFreshPhotosCountResponse {
     val response = try {
-      apiService.getFreshReceivedPhotosCount(userId, time).await()
+      apiService.getFreshReceivedPhotosCount(userUuid, time).await()
     } catch (error: Exception) {
       Timber.e(error)
       throw ConnectionError(error.message)

@@ -7,7 +7,7 @@
     android:orientation="vertical">
 
     <androidx.cardview.widget.CardView
-        android:id="@+id/user_id_holder_card_view"
+        android:id="@+id/user_uuid_holder_card_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
@@ -23,7 +23,7 @@
             android:orientation="vertical">
 
             <LinearLayout
-                android:id="@+id/user_id_holder"
+                android:id="@+id/user_uuid_holder"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="?android:attr/selectableItemBackground"
@@ -33,7 +33,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/settings_activity_your_user_id_msg"
+                    android:text="@string/settings_activity_your_user_uuid_msg"
                     android:textColor="#000"
                     android:textSize="16sp" />
 
@@ -42,17 +42,17 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:layout_marginBottom="4dp"
-                    android:text="@string/settings_activity_user_id_explanation_text"
+                    android:text="@string/settings_activity_user_uuid_explanation_text"
                     android:textSize="12sp" />
 
                 <TextView
-                    android:id="@+id/user_id_text_view"
+                    android:id="@+id/user_uuid_text_view"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:layout_marginBottom="4dp"
                     android:gravity="center_horizontal"
-                    android:text="@string/settings_activity_current_user_id_is_empty_msg"
+                    android:text="@string/settings_activity_current_user_uuid_is_empty_msg"
                     android:textColor="#000"
                     android:textSize="14sp" />
 
@@ -60,7 +60,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:text="@string/settings_activity_tap_to_copy_user_id_message"
+                    android:text="@string/settings_activity_tap_to_copy_user_uuid_message"
                     android:textSize="12sp" />
             </LinearLayout>
 
@@ -127,7 +127,7 @@
                 </LinearLayout>
 
                 <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/restore_from_old_user_id"
+                    android:id="@+id/restore_from_old_user_uuid"
                     android:layout_width="256dp"
                     android:layout_height="48dp"
                     android:layout_gravity="center_horizontal"

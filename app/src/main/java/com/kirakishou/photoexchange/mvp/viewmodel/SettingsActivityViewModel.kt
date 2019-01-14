@@ -18,7 +18,7 @@ class SettingsActivityViewModel(
 ) : BaseViewModel(dispatchersProvider) {
   private val TAG = "SettingsActivityViewModel"
 
-  suspend fun getUserId(): String {
+  suspend fun getUserUuid(): String {
     return withContext(coroutineContext) {
       settingsRepository.getUserUuid()
     }
@@ -62,19 +62,19 @@ class SettingsActivityViewModel(
     }
   }
 
-  suspend fun restoreOldAccount(oldUserId: String): Boolean {
+  suspend fun restoreOldAccount(oldUserUuid: String): Boolean {
     return withContext(coroutineContext) {
       val suffix = "@$DOMAIN_NAME"
 
-      val userId = oldUserId.trim().let { userId ->
-        return@let if (!userId.endsWith(suffix, true)) {
-          userId + suffix
+      val userUuid = oldUserUuid.trim().let { userUuid ->
+        return@let if (!userUuid.endsWith(suffix, true)) {
+          userUuid + suffix
         } else {
-          userId
+          userUuid
         }
       }.toLowerCase()
 
-      return@withContext restoreAccountUseCase.restoreAccount(userId)
+      return@withContext restoreAccountUseCase.restoreAccount(userUuid)
     }
   }
 }

@@ -48,7 +48,7 @@ class GetPhotoAdditionalInfoUseCase(
           .firstOrNull { it.photoName == photoName }
 
         val info = (photoAdditionalInfo ?: PhotoAdditionalInfo.empty(photoName))
-          .copy(hasUserId = userId.isNotEmpty())
+          .copy(hasUserUuid = userId.isNotEmpty())
 
         resultList += copyFunc(galleryPhoto, info)
       }

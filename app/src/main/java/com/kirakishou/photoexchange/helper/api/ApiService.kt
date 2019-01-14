@@ -14,7 +14,6 @@ import retrofit2.http.*
  */
 interface ApiService {
 
-  //TODO: fix endpoints
   @Multipart
   @POST("/v1/api/upload")
   fun uploadPhoto(@Part packet: MultipartBody.Part,
@@ -26,8 +25,8 @@ interface ApiService {
   @PUT("/v1/api/report")
   fun reportPhoto(@Body packet: ReportPhotoPacket): Single<Response<ReportPhotoResponse>>
 
-  @GET("/v1/api/receive_photos/{user_id}/{photo_names}")
-  fun receivePhotos(@Path("user_id") userId: String,
+  @GET("/v1/api/receive_photos/{user_uuid}/{photo_names}")
+  fun receivePhotos(@Path("user_uuid") userUuid: String,
                     @Path("photo_names") photoNames: String): Single<Response<ReceivedPhotosResponse>>
 
   @GET("/v1/api/get_user_uuid")
@@ -37,32 +36,32 @@ interface ApiService {
   fun getPageOfGalleryPhotos(@Path("last_uploaded_on") lastUploadedOn: Long,
                              @Path("count") count: Int): Single<Response<GalleryPhotosResponse>>
 
-  @GET("/v1/api/get_page_of_uploaded_photos/{user_id}/{last_uploaded_on}/{count}")
-  fun getPageOfUploadedPhotos(@Path("user_id") userId: String,
+  @GET("/v1/api/get_page_of_uploaded_photos/{user_uuid}/{last_uploaded_on}/{count}")
+  fun getPageOfUploadedPhotos(@Path("user_uuid") userUuid: String,
                               @Path("last_uploaded_on") lastUploadedOn: Long,
                               @Path("count") count: Int): Single<Response<GetUploadedPhotosResponse>>
 
-  @GET("/v1/api/get_page_of_received_photos/{user_id}/{last_uploaded_on}/{count}")
-  fun getReceivedPhotos(@Path("user_id") userId: String,
+  @GET("/v1/api/get_page_of_received_photos/{user_uuid}/{last_uploaded_on}/{count}")
+  fun getReceivedPhotos(@Path("user_uuid") userUuid: String,
                         @Path("last_uploaded_on") lastUploadedOn: Long,
                         @Path("count") count: Int): Single<Response<ReceivedPhotosResponse>>
 
-  @GET("/v1/api/get_photos_additional_info/{user_id}/{photo_names}")
-  fun getPhotosAdditionalInfo(@Path("user_id") userId: String,
+  @GET("/v1/api/get_photos_additional_info/{user_uuid}/{photo_names}")
+  fun getPhotosAdditionalInfo(@Path("user_uuid") userUuid: String,
                               @Path("photo_names") photoNames: String): Single<Response<GetPhotosAdditionalInfoResponse>>
 
-  @GET("/v1/api/check_account_exists/{user_id}")
-  fun checkAccountExists(@Path("user_id") userId: String): Single<Response<CheckAccountExistsResponse>>
+  @GET("/v1/api/check_account_exists/{user_uuid}")
+  fun checkAccountExists(@Path("user_uuid") userUuid: String): Single<Response<CheckAccountExistsResponse>>
 
   @POST("/v1/api/update_token")
   fun updateFirebaseToken(@Body packet: UpdateFirebaseTokenPacket): Single<Response<UpdateFirebaseTokenResponse>>
 
-  @GET("/v1/api/get_fresh_uploaded_photos_count/{user_id}/{time}")
-  fun getFreshUploadedPhotosCount(@Path("user_id") userId: String,
+  @GET("/v1/api/get_fresh_uploaded_photos_count/{user_uuid}/{time}")
+  fun getFreshUploadedPhotosCount(@Path("user_uuid") userUuid: String,
                                   @Path("time") time: Long): Single<Response<GetFreshPhotosCountResponse>>
 
-  @GET("/v1/api/get_fresh_received_photos_count/{user_id}/{time}")
-  fun getFreshReceivedPhotosCount(@Path("user_id") userId: String,
+  @GET("/v1/api/get_fresh_received_photos_count/{user_uuid}/{time}")
+  fun getFreshReceivedPhotosCount(@Path("user_uuid") userUuid: String,
                                  @Path("time") time: Long): Single<Response<GetFreshPhotosCountResponse>>
 
   @GET("/v1/api/get_fresh_gallery_photos_count/{time}")
