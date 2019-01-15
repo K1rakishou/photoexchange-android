@@ -74,6 +74,12 @@ class UploadedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Uploaded
       )
   }
 
+  override fun onResume() {
+    super.onResume()
+
+    viewModel.uploadedPhotosFragmentViewModel.checkFreshPhotos()
+  }
+
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
     controller.rebuild(
       requireContext(),
@@ -104,6 +110,9 @@ class UploadedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Uploaded
     }
 
     when (event) {
+      is UploadedPhotosFragmentEvent.GeneralEvents.ScrollToTop -> {
+        recyclerView.scrollToPosition(0)
+      }
       is UploadedPhotosFragmentEvent.GeneralEvents.OnNewPhotosReceived -> {
         viewModel.uploadedPhotosFragmentViewModel.onNewPhotosReceived(event.newReceivedPhotos)
       }

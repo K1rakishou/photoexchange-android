@@ -12,6 +12,8 @@ sealed class PhotosActivityEvent : BaseEvent {
   class ScrollEvent(val isScrollingDown: Boolean) : PhotosActivityEvent()
 
   class OnNewGalleryPhotos(val count: Int) : PhotosActivityEvent()
+  class OnNewReceivedPhotos(val count: Int) : PhotosActivityEvent()
+  class OnNewUploadedPhotos(val count: Int) : PhotosActivityEvent()
   class ShowToast(val message: String) : PhotosActivityEvent()
   class ShowDeletePhotoDialog(val photoName: String) : PhotosActivityEvent()
 }

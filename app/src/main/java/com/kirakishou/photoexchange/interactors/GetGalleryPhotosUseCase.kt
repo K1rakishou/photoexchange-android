@@ -12,22 +12,19 @@ import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.util.concurrent.TimeUnit
 
 open class GetGalleryPhotosUseCase(
   private val apiClient: ApiClient,
   private val timeUtils: TimeUtils,
   private val pagedApiUtils: PagedApiUtils,
   private val getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
+  private val getFreshPhotosUseCase: GetFreshPhotosUseCase,
   private val galleryPhotosRepository: GalleryPhotosRepository,
   private val blacklistedPhotoRepository: BlacklistedPhotoRepository,
   private val settingsRepository: SettingsRepository,
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
   private val TAG = "GetGalleryPhotosUseCase"
-
-  private var lastTimeFreshPhotosCheck = 0L
-  private val fiveMinutes = TimeUnit.MINUTES.toMillis(5)
 
   open suspend fun loadPageOfPhotos(
     forced: Boolean,
@@ -40,11 +37,8 @@ open class GetGalleryPhotosUseCase(
 
       val (lastUploadedOn, userUuid) = getParameters(lastUploadedOnParam)
 
-      if (forced) {
-        resetTimer()
-      }
-
       val galleryPhotosPage = getPageOfGalleryPhotos(
+        forced,
         firstUploadedOn,
         lastUploadedOn,
         userUuid,
@@ -61,12 +55,8 @@ open class GetGalleryPhotosUseCase(
     }
   }
 
-  @Synchronized
-  private fun resetTimer() {
-    lastTimeFreshPhotosCheck = 0
-  }
-
   private suspend fun getPageOfGalleryPhotos(
+    forced: Boolean,
     firstUploadedOnParam: Long,
     lastUploadedOnParam: Long,
     userUuidParam: String,
@@ -78,8 +68,8 @@ open class GetGalleryPhotosUseCase(
       lastUploadedOnParam,
       countParam,
       userUuidParam,
-      { firstUploadedOn -> getFreshPhotosCount(firstUploadedOn) },
       { lastUploadedOn, count -> getFromCacheInternal(lastUploadedOn, count) },
+      { firstUploadedOn -> getFreshPhotosUseCase.getFreshGalleryPhotos(forced, firstUploadedOn) },
       { _, lastUploadedOn, count -> apiClient.getPageOfGalleryPhotos(lastUploadedOn, count) },
       { galleryPhotosRepository.deleteAll() },
       { galleryPhotosRepository.deleteOldPhotos() },
@@ -87,25 +77,6 @@ open class GetGalleryPhotosUseCase(
       { galleryPhotos -> filterBlacklistedPhotos(galleryPhotos) },
       { galleryPhotos -> galleryPhotosRepository.saveMany(galleryPhotos) }
     )
-  }
-
-  private suspend fun getFreshPhotosCount(firstUploadedOn: Long): Int {
-    //if five minutes has passed since we last checked fresh photos count - check again
-    val shouldMakeRequest = synchronized(GetGalleryPhotosUseCase::class) {
-      val now = timeUtils.getTimeFast()
-      if (now - lastTimeFreshPhotosCheck >= fiveMinutes) {
-        lastTimeFreshPhotosCheck = now
-        true
-      } else {
-        false
-      }
-    }
-
-    if (!shouldMakeRequest) {
-      return 0
-    }
-
-    return apiClient.getFreshGalleryPhotosCount(firstUploadedOn)
   }
 
   private suspend fun getFromCacheInternal(lastUploadedOn: Long, count: Int): List<GalleryPhoto> {

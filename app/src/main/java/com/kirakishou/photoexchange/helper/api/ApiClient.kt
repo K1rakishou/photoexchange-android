@@ -5,6 +5,8 @@ import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragment
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
 import com.kirakishou.photoexchange.helper.exception.ApiErrorException
 import com.kirakishou.photoexchange.helper.LonLat
+import com.kirakishou.photoexchange.helper.exception.AttemptToAccessInternetWithMeteredNetworkException
+import com.kirakishou.photoexchange.helper.exception.AttemptToLoadImagesWithMeteredNetworkException
 import com.kirakishou.photoexchange.helper.exception.ConnectionError
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import kotlinx.coroutines.channels.SendChannel
@@ -15,7 +17,7 @@ import net.response.data.UploadedPhotoResponseData
 
 interface ApiClient {
 
-  @Throws(ApiErrorException::class, ConnectionError::class)
+  @Throws(ApiErrorException::class, ConnectionError::class, AttemptToLoadImagesWithMeteredNetworkException::class)
   suspend fun uploadPhoto(
     photoFilePath: String,
     location: LonLat,
@@ -25,56 +27,56 @@ interface ApiClient {
     channel: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
   ): UploadPhotosUseCase.UploadPhotoResult
 
-  @Throws(ApiErrorException::class, ConnectionError::class)
+  @Throws(ApiErrorException::class, ConnectionError::class, AttemptToAccessInternetWithMeteredNetworkException::class)
   suspend fun receivePhotos(userUuid: String, photoNames: String): List<ReceivedPhotoResponseData>
 
-  @Throws(ApiErrorException::class, ConnectionError::class)
+  @Throws(ApiErrorException::class, ConnectionError::class, AttemptToAccessInternetWithMeteredNetworkException::class)
   suspend fun favouritePhoto(userUuid: String, photoName: String): FavouritePhotoResponseData
 
-  @Throws(ApiErrorException::class, ConnectionError::class)
+  @Throws(ApiErrorException::class, ConnectionError::class, AttemptToAccessInternetWithMeteredNetworkException::class)
   suspend fun reportPhoto(userUuid: String, photoName: String): Boolean
 
-  @Throws(ApiErrorException::class, ConnectionError::class)
+  @Throws(ApiErrorException::class, ConnectionError::class, AttemptToAccessInternetWithMeteredNetworkException::class)
   suspend fun getUserUuid(): String
 
-  @Throws(ApiErrorException::class, ConnectionError::class)
+  @Throws(ApiErrorException::class, ConnectionError::class, AttemptToAccessInternetWithMeteredNetworkException::class)
   suspend fun getPageOfUploadedPhotos(
     userUuid: String,
     lastUploadedOn: Long,
     count: Int
   ): List<UploadedPhotoResponseData>
 
-  @Throws(ApiErrorException::class, ConnectionError::class)
+  @Throws(ApiErrorException::class, ConnectionError::class, AttemptToAccessInternetWithMeteredNetworkException::class)
   suspend fun getPageOfReceivedPhotos(
     userUuid: String,
     lastUploadedOn: Long,
     count: Int
   ): List<ReceivedPhotoResponseData>
 
-  @Throws(ApiErrorException::class, ConnectionError::class)
+  @Throws(ApiErrorException::class, ConnectionError::class, AttemptToAccessInternetWithMeteredNetworkException::class)
   suspend fun getPageOfGalleryPhotos(
     lastUploadedOn: Long,
     count: Int
   ): List<GalleryPhotoResponseData>
 
-  @Throws(ApiErrorException::class, ConnectionError::class)
+  @Throws(ApiErrorException::class, ConnectionError::class, AttemptToAccessInternetWithMeteredNetworkException::class)
   suspend fun getPhotosAdditionalInfo(
     userUuid: String,
     photoNames: String
   ): List<PhotoAdditionalInfoResponseData>
 
-  @Throws(ApiErrorException::class, ConnectionError::class)
+  @Throws(ApiErrorException::class, ConnectionError::class, AttemptToAccessInternetWithMeteredNetworkException::class)
   suspend fun checkAccountExists(userUuid: String): Boolean
 
-  @Throws(ApiErrorException::class, ConnectionError::class)
+  @Throws(ApiErrorException::class, ConnectionError::class, AttemptToAccessInternetWithMeteredNetworkException::class)
   suspend fun updateFirebaseToken(userUuid: String, token: String)
 
-  @Throws(ApiErrorException::class, ConnectionError::class)
+  @Throws(ApiErrorException::class, ConnectionError::class, AttemptToAccessInternetWithMeteredNetworkException::class)
   suspend fun getFreshUploadedPhotosCount(userUuid: String, time: Long): Int
 
-  @Throws(ApiErrorException::class, ConnectionError::class)
+  @Throws(ApiErrorException::class, ConnectionError::class, AttemptToAccessInternetWithMeteredNetworkException::class)
   suspend fun getFreshReceivedPhotosCount(userUuid: String, time: Long): Int
 
-  @Throws(ApiErrorException::class, ConnectionError::class)
+  @Throws(ApiErrorException::class, ConnectionError::class, AttemptToAccessInternetWithMeteredNetworkException::class)
   suspend fun getFreshGalleryPhotosCount(time: Long): Int
 }

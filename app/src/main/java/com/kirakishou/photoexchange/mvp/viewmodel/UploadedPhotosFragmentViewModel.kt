@@ -16,6 +16,7 @@ import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelInter
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
+import com.kirakishou.photoexchange.interactors.GetFreshPhotosUseCase
 import com.kirakishou.photoexchange.interactors.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoSize
@@ -43,6 +44,7 @@ class UploadedPhotosFragmentViewModel(
   private val takenPhotosRepository: TakenPhotosRepository,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
   private val getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
+  private val getFreshPhotosUseCase: GetFreshPhotosUseCase,
   private val dispatchersProvider: DispatchersProvider
 ) : BaseMvRxViewModel<UploadedPhotosFragmentState>(initialState, BuildConfig.DEBUG), CoroutineScope {
   private val TAG = "UploadedPhotosFragmentViewModel"
@@ -72,6 +74,7 @@ class UploadedPhotosFragmentViewModel(
           is ActorAction.LoadUploadedPhotos -> loadUploadedPhotosInternal(action.forced)
           is ActorAction.OnNewPhotosReceived -> onNewPhotoReceivedInternal(action.newReceivedPhotos)
           is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.photoName)
+          ActorAction.CheckFreshPhotos -> checkFreshPhotosInternal()
         }.safe
       }
     }
@@ -99,6 +102,65 @@ class UploadedPhotosFragmentViewModel(
 
   fun swapPhotoAndMap(photoName: String) {
     launch { viewModelActor.send(ActorAction.SwapPhotoAndMap(photoName)) }
+  }
+
+  fun checkFreshPhotos() {
+    launch { viewModelActor.send(ActorAction.CheckFreshPhotos) }
+  }
+
+  private fun checkFreshPhotosInternal() {
+    withState { state ->
+      //do not run the request if there are queued up photos
+      if (state.takenPhotos.isNotEmpty()) {
+        return@withState
+      }
+
+      //do not run the request if we are in the failed state
+      if (state.uploadedPhotosRequest is Fail) {
+        return@withState
+      }
+
+      launch {
+        val firstUploadedOn = state.uploadedPhotos
+          .firstOrNull()
+          ?.uploadedOn
+
+        if (firstUploadedOn == null) {
+          //no photos
+          return@launch
+        }
+
+        val freshPhotos = try {
+          getFreshPhotosUseCase.getFreshUploadedPhotos(false, firstUploadedOn)
+        } catch (error: Throwable) {
+          Timber.tag(TAG).e(error, "Error while trying to check fresh uploaded photos")
+          //TODO: notify user about this error?
+          return@launch
+        }
+
+        if (freshPhotos.isEmpty()) {
+          return@launch
+        }
+
+        val newPhotosCount = freshPhotos.count { it.uploadedOn > firstUploadedOn }
+
+        //if there are any fresh photos - show snackbar
+        if (newPhotosCount > 0) {
+          intercom.tell<PhotosActivity>().to(PhotosActivityEvent.OnNewUploadedPhotos(newPhotosCount))
+        }
+
+        val newUploadedPhotos = state.uploadedPhotos
+          .filterDuplicatesWith(freshPhotos) { it.photoName }
+          .map { galleryPhoto -> galleryPhoto.copy(photoSize = photoSize) }
+          .sortedByDescending { it.uploadedOn }
+
+        setState {
+          copy(
+            uploadedPhotos = newUploadedPhotos
+          )
+        }
+      }
+    }
   }
 
   private fun swapPhotoAndMapInternal(uploadedPhotoName: String) {
@@ -470,6 +532,7 @@ class UploadedPhotosFragmentViewModel(
     class LoadUploadedPhotos(val forced: Boolean) : ActorAction()
     class OnNewPhotosReceived(val newReceivedPhotos: List<NewReceivedPhoto>) : ActorAction()
     class SwapPhotoAndMap(val photoName: String) : ActorAction()
+    object CheckFreshPhotos : ActorAction()
   }
 
   companion object : MvRxViewModelFactory<UploadedPhotosFragmentState> {

@@ -144,7 +144,9 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
     receivePhotosServiceConnection = ReceivePhotosServiceConnection(this)
     uploadPhotosServiceConnection = UploadPhotoServiceConnection(this)
 
+    initRx()
     onNewIntent(intent)
+    initViews()
   }
 
   override fun onNewIntent(intent: Intent) {
@@ -159,9 +161,6 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   override fun onActivityStart() {
-    initRx()
-    initViews()
-
     registerReceiver(notificationBroadcastReceiver, IntentFilter(newPhotoReceivedAction))
   }
 
@@ -440,6 +439,8 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       }
       is PhotosActivityEvent.ShowToast -> onShowToast(event.message)
       is PhotosActivityEvent.OnNewGalleryPhotos -> showNewGalleryPhotosSnackbar(event.count)
+      is PhotosActivityEvent.OnNewReceivedPhotos -> showNewReceivedPhotosSnackbar(event.count)
+      is PhotosActivityEvent.OnNewUploadedPhotos -> showNewUploadedPhotosSnackbar(event.count)
       is PhotosActivityEvent.ShowDeletePhotoDialog -> showDeletePhotoDialog(event.photoName)
     }.safe
   }
@@ -491,6 +492,34 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
           delay(FRAGMENT_SWITCH_ANIMATION_DELAY_MS)
           viewModel.intercom.tell<GalleryFragment>()
             .to(GalleryFragmentEvent.GeneralEvents.ScrollToTop)
+        }
+      }).show()
+  }
+
+  private fun showNewReceivedPhotosSnackbar(count: Int) {
+    Snackbar.make(rootLayout, getString(R.string.photos_activity_new_received_photos, count), Snackbar.LENGTH_LONG)
+      .setAction(getString(R.string.photos_activity_show_snackbar_action_text), {
+        launch {
+          switchToTab(RECEIVED_PHOTOS_TAB_INDEX)
+
+          //wait some time before fragments switching animation is done
+          delay(FRAGMENT_SWITCH_ANIMATION_DELAY_MS)
+          viewModel.intercom.tell<ReceivedPhotosFragment>()
+            .to(ReceivedPhotosFragmentEvent.GeneralEvents.ScrollToTop())
+        }
+      }).show()
+  }
+
+  private fun showNewUploadedPhotosSnackbar(count: Int) {
+    Snackbar.make(rootLayout, getString(R.string.photos_activity_new_uploaded_photos, count), Snackbar.LENGTH_LONG)
+      .setAction(getString(R.string.photos_activity_show_snackbar_action_text), {
+        launch {
+          switchToTab(UPLOADED_PHOTOS_TAB_INDEX)
+
+          //wait some time before fragments switching animation is done
+          delay(FRAGMENT_SWITCH_ANIMATION_DELAY_MS)
+          viewModel.intercom.tell<UploadedPhotosFragment>()
+            .to(UploadedPhotosFragmentEvent.GeneralEvents.ScrollToTop())
         }
       }).show()
   }
