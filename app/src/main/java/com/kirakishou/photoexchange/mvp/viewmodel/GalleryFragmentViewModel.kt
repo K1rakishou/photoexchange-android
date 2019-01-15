@@ -12,6 +12,7 @@ import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelInter
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
+import com.kirakishou.photoexchange.interactors.GetFreshPhotosUseCase
 import com.kirakishou.photoexchange.interactors.GetGalleryPhotosUseCase
 import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
 import com.kirakishou.photoexchange.mvp.model.PhotoSize
@@ -35,6 +36,7 @@ open class GalleryFragmentViewModel(
   private val galleryPhotosRepository: GalleryPhotosRepository,
   private val getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
   private val favouritePhotoUseCase: FavouritePhotoUseCase,
+  private val getFreshPhotosUseCase: GetFreshPhotosUseCase,
   private val reportPhotoUseCase: ReportPhotoUseCase,
   private val dispatchersProvider: DispatchersProvider
 ) : BaseMvRxViewModel<GalleryFragmentState>(initialState), CoroutineScope {
@@ -68,6 +70,7 @@ open class GalleryFragmentViewModel(
           is ActorAction.OnPhotoFavourited -> {
             onPhotoFavouritedInternal(action.photoName, action.isFavourited, action.favouritesCount)
           }
+          ActorAction.CheckFreshPhotos -> checkFreshPhotosInternal()
         }.safe
       }
     }
@@ -108,6 +111,60 @@ open class GalleryFragmentViewModel(
   ) {
     launch {
       viewModelActor.send(ActorAction.OnPhotoFavourited(photoName, isFavourited, favouritesCount))
+    }
+  }
+
+  fun checkFreshPhotos() {
+    launch { viewModelActor.send(ActorAction.CheckFreshPhotos) }
+  }
+
+  private fun checkFreshPhotosInternal() {
+    withState { state ->
+      //do not run the request if we are in the failed state
+      if (state.galleryPhotosRequest is Fail) {
+        return@withState
+      }
+
+      launch {
+        val firstUploadedOn = state.galleryPhotos
+          .firstOrNull()
+          ?.uploadedOn
+
+        if (firstUploadedOn == null) {
+          //no photos
+          return@launch
+        }
+
+        val freshPhotos = try {
+          getFreshPhotosUseCase.getFreshGalleryPhotos(false, firstUploadedOn)
+        } catch (error: Throwable) {
+          Timber.tag(TAG).e(error, "Error while trying to check fresh gallery photos")
+          //TODO: notify user about this error?
+          return@launch
+        }
+
+        if (freshPhotos.isEmpty()) {
+          return@launch
+        }
+
+        val newPhotosCount = freshPhotos.count { it.uploadedOn > firstUploadedOn }
+
+        //if there are any fresh photos - show snackbar
+        if (newPhotosCount > 0) {
+          intercom.tell<PhotosActivity>().to(PhotosActivityEvent.OnNewGalleryPhotos(newPhotosCount))
+        }
+
+        val newGalleryPhotos = state.galleryPhotos
+          .filterDuplicatesWith(freshPhotos) { it.photoName }
+          .map { galleryPhoto -> galleryPhoto.copy(photoSize = photoSize) }
+          .sortedByDescending { it.uploadedOn }
+
+        setState {
+          copy(
+            galleryPhotos = newGalleryPhotos
+          )
+        }
+      }
     }
   }
 
@@ -327,6 +384,8 @@ open class GalleryFragmentViewModel(
 
         if (firstUploadedOn != -1L) {
           val newPhotosCount = newPageOfPhotos.count { it.uploadedOn > firstUploadedOn }
+
+          //if there are any fresh photos - show snackbar
           if (newPhotosCount > 0) {
             intercom.tell<PhotosActivity>().to(PhotosActivityEvent.OnNewGalleryPhotos(newPhotosCount))
           }
@@ -370,10 +429,10 @@ open class GalleryFragmentViewModel(
     class RemovePhoto(val photoName: String) : ActorAction()
     class OnPhotoReported(val photoName: String,
                           val isReported: Boolean) : ActorAction()
-
     class OnPhotoFavourited(val photoName: String,
                             val isFavourited: Boolean,
                             val favouritesCount: Long) : ActorAction()
+    object CheckFreshPhotos : ActorAction()
   }
 
   companion object : MvRxViewModelFactory<GalleryFragmentState> {

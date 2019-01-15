@@ -144,7 +144,9 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
     receivePhotosServiceConnection = ReceivePhotosServiceConnection(this)
     uploadPhotosServiceConnection = UploadPhotoServiceConnection(this)
 
+    initRx()
     onNewIntent(intent)
+    initViews()
   }
 
   override fun onNewIntent(intent: Intent) {
@@ -159,9 +161,6 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   override fun onActivityStart() {
-    initRx()
-    initViews()
-
     registerReceiver(notificationBroadcastReceiver, IntentFilter(newPhotoReceivedAction))
   }
 

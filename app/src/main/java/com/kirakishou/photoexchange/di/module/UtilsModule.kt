@@ -44,11 +44,9 @@ class UtilsModule {
 
   @Provides
   @Singleton
-  fun providePagedApiUtils(timeUtils: TimeUtils,
-                           netUtils: NetUtils): PagedApiUtils {
+  fun providePagedApiUtils(timeUtils: TimeUtils): PagedApiUtils {
     return PagedApiUtilsImpl(
-      timeUtils,
-      netUtils
+      timeUtils
     )
   }
 }

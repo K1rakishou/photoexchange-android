@@ -72,7 +72,6 @@ object GalleryPhotosMapper {
         )
       }
 
-
       fun toGalleryPhotoEntitiesList(time: Long, galleryPhotoResponseDataList: List<GalleryPhotoResponseData>): List<GalleryPhotoEntity> {
         return galleryPhotoResponseDataList.map { toGalleryPhotoEntity(time, it) }
       }

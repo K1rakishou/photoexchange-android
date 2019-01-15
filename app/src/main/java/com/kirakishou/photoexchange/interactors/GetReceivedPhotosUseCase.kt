@@ -21,6 +21,7 @@ open class GetReceivedPhotosUseCase(
   private val timeUtils: TimeUtils,
   private val pagedApiUtils: PagedApiUtils,
   private val getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
+  private val getFreshPhotosUseCase: GetFreshPhotosUseCase,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
   private val receivedPhotosRepository: ReceivedPhotosRepository,
   private val blacklistedPhotoRepository: BlacklistedPhotoRepository,
@@ -28,8 +29,6 @@ open class GetReceivedPhotosUseCase(
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
   private val TAG = "GetReceivedPhotosUseCase"
-  private var lastTimeFreshPhotosCheck = 0L
-  private val fiveMinutes = TimeUnit.MINUTES.toMillis(5)
 
   open suspend fun loadPageOfPhotos(
     forced: Boolean,
@@ -66,18 +65,14 @@ open class GetReceivedPhotosUseCase(
     userUuidParam: String,
     countParam: Int
   ): Paged<ReceivedPhoto> {
-    if (forced) {
-      resetTimer()
-    }
-
     return pagedApiUtils.getPageOfPhotos(
       "received_photos",
       firstUploadedOnParam,
       lastUploadedOnParam,
       countParam,
       userUuidParam,
-      { firstUploadedOn -> getFreshPhotosCount(userUuidParam, firstUploadedOn) },
       { lastUploadedOn, count -> getFromCacheInternal(lastUploadedOn, count) },
+      { userUuid, firstUploadedOn -> getFreshPhotosUseCase.getFreshReceivedPhotos(userUuid!!, forced, firstUploadedOn) },
       { userUuid, lastUploadedOn, count ->
         apiClient.getPageOfReceivedPhotos(
           userUuid!!,
@@ -99,11 +94,6 @@ open class GetReceivedPhotosUseCase(
       })
   }
 
-  @Synchronized
-  private fun resetTimer() {
-    lastTimeFreshPhotosCheck = 0
-  }
-
   private suspend fun getFromCacheInternal(lastUploadedOn: Long, count: Int): List<ReceivedPhoto> {
     //if there is no internet - search only in the database
     val cachedReceivedPhotos = receivedPhotosRepository.getPage(lastUploadedOn, count)
@@ -114,25 +104,6 @@ open class GetReceivedPhotosUseCase(
       Timber.tag(TAG).d("Found not enough received photos in the database")
       cachedReceivedPhotos
     }
-  }
-
-  private suspend fun getFreshPhotosCount(userUuid: String, firstUploadedOn: Long): Int {
-    //if five minutes has passed since we last checked fresh photos count - check again
-    val shouldMakeRequest = synchronized(GetReceivedPhotosUseCase::class) {
-      val now = timeUtils.getTimeFast()
-      if (now - lastTimeFreshPhotosCheck >= fiveMinutes) {
-        lastTimeFreshPhotosCheck = now
-        true
-      } else {
-        false
-      }
-    }
-
-    if (!shouldMakeRequest) {
-      return 0
-    }
-
-    return apiClient.getFreshReceivedPhotosCount(userUuid, firstUploadedOn)
   }
 
   private suspend fun filterBlacklistedPhotos(

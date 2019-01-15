@@ -86,6 +86,12 @@ class GalleryFragment : MyBaseMvRxFragment(), StateEventListener<GalleryFragment
       })
   }
 
+  override fun onResume() {
+    super.onResume()
+
+    viewModel.galleryFragmentViewModel.checkFreshPhotos()
+  }
+
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
     controller.rebuild(
       requireContext(),

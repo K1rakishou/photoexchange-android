@@ -20,11 +20,10 @@ open class GetUploadedPhotosUseCase(
   private val timeUtils: TimeUtils,
   private val settingsRepository: SettingsRepository,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
+  private val getFreshPhotosUseCase: GetFreshPhotosUseCase,
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
   private val TAG = "GetUploadedPhotosUseCase"
-  private var lastTimeFreshPhotosCheck = 0L
-  private val fiveMinutes = TimeUnit.MINUTES.toMillis(5)
 
   open suspend fun loadPageOfPhotos(
     forced: Boolean,
@@ -35,13 +34,10 @@ open class GetUploadedPhotosUseCase(
     return withContext(coroutineContext) {
       Timber.tag(TAG).d("loadPageOfPhotos called")
 
-      if (forced) {
-        resetTimer()
-      }
-
       val (lastUploadedOn, userUuid) = getParameters(lastUploadedOnParam)
 
       val uploadedPhotosPage = getPageOfUploadedPhotos(
+        forced,
         firstUploadedOn,
         lastUploadedOn,
         userUuid,
@@ -52,12 +48,8 @@ open class GetUploadedPhotosUseCase(
     }
   }
 
-  @Synchronized
-  private fun resetTimer() {
-    lastTimeFreshPhotosCheck = 0
-  }
-
   private suspend fun getPageOfUploadedPhotos(
+    forced: Boolean,
     firstUploadedOnParam: Long,
     lastUploadedOnParam: Long,
     userUuidParam: String,
@@ -69,8 +61,8 @@ open class GetUploadedPhotosUseCase(
       lastUploadedOnParam,
       countParam,
       userUuidParam,
-      { firstUploadedOn -> getFreshPhotosCount(userUuidParam, firstUploadedOn) },
       { lastUploadedOn, count -> getFromCacheInternal(lastUploadedOn, count) },
+      { userUuid, firstUploadedOn -> getFreshPhotosUseCase.getFreshUploadedPhotos(userUuid!!, forced, firstUploadedOn) },
       { userUuid, lastUploadedOn, count -> apiClient.getPageOfUploadedPhotos(userUuid!!, lastUploadedOn, count) },
       { uploadedPhotosRepository.deleteAll() },
       {
@@ -83,25 +75,6 @@ open class GetUploadedPhotosUseCase(
       },
       { uploadedPhotos -> uploadedPhotosRepository.saveMany(uploadedPhotos) }
     )
-  }
-
-  private suspend fun getFreshPhotosCount(userUuid: String, firstUploadedOn: Long): Int {
-    //if five minutes has passed since we last checked fresh photos count - check again
-    val shouldMakeRequest = synchronized(GetUploadedPhotosUseCase::class) {
-      val now = timeUtils.getTimeFast()
-      if (now - lastTimeFreshPhotosCheck >= fiveMinutes) {
-        lastTimeFreshPhotosCheck = now
-        true
-      } else {
-        false
-      }
-    }
-
-    if (!shouldMakeRequest) {
-      return 0
-    }
-
-    return apiClient.getFreshUploadedPhotosCount(userUuid, firstUploadedOn)
   }
 
   private suspend fun getFromCacheInternal(lastUploadedOn: Long, count: Int): List<UploadedPhoto> {

@@ -99,6 +99,7 @@ open class PhotosActivityModule(
                                       galleryPhotosRepository: GalleryPhotosRepository,
                                       getGalleryPhotosUseCase: GetGalleryPhotosUseCase,
                                       favouritePhotoUseCase: FavouritePhotoUseCase,
+                                      getFreshPhotosUseCase: GetFreshPhotosUseCase,
                                       reportPhotoUseCase: ReportPhotoUseCase,
                                       dispatchersProvider: DispatchersProvider): GalleryFragmentViewModel {
     return GalleryFragmentViewModel(
@@ -107,6 +108,7 @@ open class PhotosActivityModule(
       galleryPhotosRepository,
       getGalleryPhotosUseCase,
       favouritePhotoUseCase,
+      getFreshPhotosUseCase,
       reportPhotoUseCase,
       dispatchersProvider
     )

@@ -68,6 +68,7 @@ class UseCaseProviderModule {
                                      timeUtils: TimeUtils,
                                      pagedApiUtils: PagedApiUtils,
                                      getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
+                                     getFreshPhotosUseCase: GetFreshPhotosUseCase,
                                      galleryPhotosRepository: GalleryPhotosRepository,
                                      blacklistedPhotoRepository: BlacklistedPhotoRepository,
                                      settingsRepository: SettingsRepository,
@@ -77,6 +78,7 @@ class UseCaseProviderModule {
       timeUtils,
       pagedApiUtils,
       getPhotoAdditionalInfoUseCase,
+      getFreshPhotosUseCase,
       galleryPhotosRepository,
       blacklistedPhotoRepository,
       settingsRepository,
@@ -141,6 +143,7 @@ class UseCaseProviderModule {
                                       timeUtils: TimeUtils,
                                       settingsRepository: SettingsRepository,
                                       uploadedPhotosRepository: UploadedPhotosRepository,
+                                      getFreshPhotosUseCase: GetFreshPhotosUseCase,
                                       dispatchersProvider: DispatchersProvider): GetUploadedPhotosUseCase {
     return GetUploadedPhotosUseCase(
       apiClient,
@@ -148,6 +151,7 @@ class UseCaseProviderModule {
       timeUtils,
       settingsRepository,
       uploadedPhotosRepository,
+      getFreshPhotosUseCase,
       dispatchersProvider
     )
   }
@@ -159,6 +163,7 @@ class UseCaseProviderModule {
                                       timeUtils: TimeUtils,
                                       pagedApiUtils: PagedApiUtils,
                                       getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
+                                      getFreshPhotosUseCase: GetFreshPhotosUseCase,
                                       uploadedPhotosRepository: UploadedPhotosRepository,
                                       receivedPhotosRepository: ReceivedPhotosRepository,
                                       blacklistedPhotoRepository: BlacklistedPhotoRepository,
@@ -170,6 +175,7 @@ class UseCaseProviderModule {
       timeUtils,
       pagedApiUtils,
       getPhotoAdditionalInfoUseCase,
+      getFreshPhotosUseCase,
       uploadedPhotosRepository,
       receivedPhotosRepository,
       blacklistedPhotoRepository,
@@ -296,6 +302,18 @@ class UseCaseProviderModule {
       netUtils,
       photoAdditionalInfoRepository,
       settingsRepository,
+      dispatchersProvider
+    )
+  }
+
+  @Singleton
+  @Provides
+  fun provideGetFreshPhotosUseCase(apiClient: ApiClient,
+                                   timeUtils: TimeUtils,
+                                   dispatchersProvider: DispatchersProvider): GetFreshPhotosUseCase {
+    return GetFreshPhotosUseCase(
+      apiClient,
+      timeUtils,
       dispatchersProvider
     )
   }

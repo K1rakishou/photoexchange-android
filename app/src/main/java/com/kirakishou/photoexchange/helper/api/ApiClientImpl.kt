@@ -1,12 +1,15 @@
 package com.kirakishou.photoexchange.helper.api
 
+import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.helper.api.request.*
 import com.kirakishou.photoexchange.helper.api.response.FavouritePhotoResponseData
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
+import com.kirakishou.photoexchange.helper.exception.AttemptToAccessInternetWithMeteredNetworkException
+import com.kirakishou.photoexchange.helper.exception.AttemptToLoadImagesWithMeteredNetworkException
 import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
+import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
-import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
 import kotlinx.coroutines.channels.SendChannel
 import net.response.data.GalleryPhotoResponseData
@@ -22,6 +25,7 @@ open class ApiClientImpl
 @Inject constructor(
   private val apiService: ApiService,
   private val jsonConverter: JsonConverter,
+  private val netUtils: NetUtils,
   private val dispatchersProvider: DispatchersProvider
 ) : ApiClient {
 
@@ -33,6 +37,7 @@ open class ApiClientImpl
     photo: TakenPhoto,
     channel: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
   ): UploadPhotosUseCase.UploadPhotoResult {
+    throwIfNotAllowedToLoadImages("uploadPhoto")
 
     val response = UploadPhotoRequest(
       photoFilePath,
@@ -57,6 +62,8 @@ open class ApiClientImpl
     userUuid: String,
     photoNames: String
   ): List<ReceivedPhotoResponseData> {
+    throwIfNotAllowedToAccessInternet("receivePhotos")
+
     val response = ReceivePhotosRequest(
       userUuid,
       photoNames,
@@ -72,6 +79,8 @@ open class ApiClientImpl
     userUuid: String,
     photoName: String
   ): FavouritePhotoResponseData {
+    throwIfNotAllowedToAccessInternet("favouritePhoto")
+
     val response = FavouritePhotoRequest(
       userUuid,
       photoName,
@@ -87,6 +96,8 @@ open class ApiClientImpl
   }
 
   override suspend fun reportPhoto(userUuid: String, photoName: String): Boolean {
+    throwIfNotAllowedToAccessInternet("reportPhoto")
+
     val response = ReportPhotoRequest(
       userUuid,
       photoName,
@@ -99,6 +110,8 @@ open class ApiClientImpl
   }
 
   override suspend fun getUserUuid(): String {
+    throwIfNotAllowedToAccessInternet("getUserUuid")
+
     val response = GetUserUuidRequest(
       apiService,
       jsonConverter,
@@ -113,6 +126,8 @@ open class ApiClientImpl
     lastUploadedOn: Long,
     count: Int
   ): List<UploadedPhotoResponseData> {
+    throwIfNotAllowedToAccessInternet("getPageOfUploadedPhotos")
+
     val response = GetPageOfUploadedPhotosRequest(
       userUuid,
       lastUploadedOn,
@@ -130,6 +145,8 @@ open class ApiClientImpl
     lastUploadedOn: Long,
     count: Int
   ): List<ReceivedPhotoResponseData> {
+    throwIfNotAllowedToAccessInternet("getPageOfReceivedPhotos")
+
     val response = GetPageOfReceivedPhotosRequest(
       userUuid,
       lastUploadedOn,
@@ -146,6 +163,8 @@ open class ApiClientImpl
     lastUploadedOn: Long,
     count: Int
   ): List<GalleryPhotoResponseData> {
+    throwIfNotAllowedToAccessInternet("getPageOfGalleryPhotos")
+
     val response = GetPageOfGalleryPhotosRequest(
       lastUploadedOn,
       count,
@@ -161,6 +180,8 @@ open class ApiClientImpl
     userUuid: String,
     photoNames: String
   ): List<PhotoAdditionalInfoResponseData> {
+    throwIfNotAllowedToAccessInternet("getPhotosAdditionalInfo")
+
     val response = GetPhotosAdditionalInfoRequest(
       userUuid,
       photoNames,
@@ -173,6 +194,8 @@ open class ApiClientImpl
   }
 
   override suspend fun checkAccountExists(userUuid: String): Boolean {
+    throwIfNotAllowedToAccessInternet("checkAccountExists")
+
     val response = CheckAccountExistsRequest(
       userUuid,
       apiService,
@@ -184,6 +207,8 @@ open class ApiClientImpl
   }
 
   override suspend fun updateFirebaseToken(userUuid: String, token: String) {
+    throwIfNotAllowedToAccessInternet("updateFirebaseToken")
+
     UpdateFirebaseTokenRequest(
       userUuid,
       token,
@@ -196,6 +221,8 @@ open class ApiClientImpl
   }
 
   override suspend fun getFreshUploadedPhotosCount(userUuid: String, time: Long): Int {
+    throwIfNotAllowedToAccessInternet("getFreshUploadedPhotosCount")
+
     val response = GetFreshUploadedPhotosCountRequest(
       userUuid,
       time,
@@ -208,6 +235,8 @@ open class ApiClientImpl
   }
 
   override suspend fun getFreshReceivedPhotosCount(userUuid: String, time: Long): Int {
+    throwIfNotAllowedToAccessInternet("getFreshReceivedPhotosCount")
+
     val response = GetFreshReceivedPhotosCountRequest(
       userUuid,
       time,
@@ -220,6 +249,8 @@ open class ApiClientImpl
   }
 
   override suspend fun getFreshGalleryPhotosCount(time: Long): Int {
+    throwIfNotAllowedToAccessInternet("getFreshGalleryPhotosCount")
+
     val response = GetFreshGalleryPhotosCountRequest(
       time,
       apiService,
@@ -228,5 +259,17 @@ open class ApiClientImpl
     ).execute()
 
     return response.freshPhotosCount
+  }
+
+  private suspend fun throwIfNotAllowedToLoadImages(methodName: String) {
+    if (!netUtils.canLoadImages()) {
+      throw AttemptToLoadImagesWithMeteredNetworkException(methodName)
+    }
+  }
+
+  private suspend fun throwIfNotAllowedToAccessInternet(methodName: String) {
+    if (!netUtils.canAccessNetwork()) {
+      throw AttemptToAccessInternetWithMeteredNetworkException(methodName)
+    }
   }
 }
