@@ -47,15 +47,17 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
   override fun onStop() {
     onActivityStop()
 
-    job.cancel()
-    job = Job()
-
-    compositeDisposable.clear()
     super.onStop()
   }
 
   override fun onDestroy() {
     unBinder?.unbind()
+
+    job.cancel()
+    job = Job()
+
+    compositeDisposable.clear()
+
     PhotoExchangeApplication.watch(this, this::class.simpleName)
     super.onDestroy()
   }
