@@ -15,10 +15,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
-import com.kirakishou.photoexchange.interactors.FavouritePhotoUseCase
-import com.kirakishou.photoexchange.interactors.GetPhotoAdditionalInfoUseCase
-import com.kirakishou.photoexchange.interactors.GetReceivedPhotosUseCase
-import com.kirakishou.photoexchange.interactors.ReportPhotoUseCase
+import com.kirakishou.photoexchange.interactors.*
 import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
 import com.kirakishou.photoexchange.mvp.model.PhotoSize
 import com.kirakishou.photoexchange.mvp.model.photo.PhotoAdditionalInfo
@@ -45,8 +42,12 @@ open class ReceivedPhotosFragmentViewModel(
   private val favouritePhotoUseCase: FavouritePhotoUseCase,
   private val reportPhotoUseCase: ReportPhotoUseCase,
   private val getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
+  private val getFreshPhotosUseCase: GetFreshPhotosUseCase,
   private val dispatchersProvider: DispatchersProvider
-) : BaseMvRxViewModel<ReceivedPhotosFragmentState>(initialState, BuildConfig.DEBUG), CoroutineScope {
+) : BaseMvRxViewModel<ReceivedPhotosFragmentState>(
+  initialState,
+  BuildConfig.DEBUG
+), CoroutineScope {
   private val TAG = "ReceivedPhotosFragmentViewModel"
 
   private val compositeDisposable = CompositeDisposable()
@@ -74,10 +75,14 @@ open class ReceivedPhotosFragmentViewModel(
           is ActorAction.RemovePhoto -> removePhotoInternal(action.photoName)
           is ActorAction.FavouritePhoto -> favouritePhotoInternal(action.photoName)
           is ActorAction.ReportPhoto -> reportPhotoInternal(action.photoName)
-          is ActorAction.OnPhotoReported -> onPhotoReportedInternal(action.photoName, action.isReported)
+          is ActorAction.OnPhotoReported -> onPhotoReportedInternal(
+            action.photoName,
+            action.isReported
+          )
           is ActorAction.OnPhotoFavourited -> {
             onPhotoFavouritedInternal(action.photoName, action.isFavourited, action.favouritesCount)
           }
+          ActorAction.CheckFreshPhotos -> checkFreshPhotosInternal()
         }.safe
       }
     }
@@ -122,6 +127,60 @@ open class ReceivedPhotosFragmentViewModel(
   ) {
     launch {
       viewModelActor.send(ActorAction.OnPhotoFavourited(photoName, isFavourited, favouritesCount))
+    }
+  }
+
+  fun checkFreshPhotos() {
+    launch { viewModelActor.send(ActorAction.CheckFreshPhotos) }
+  }
+
+  private fun checkFreshPhotosInternal() {
+    withState { state ->
+      //do not run the request if we are in the failed state
+      if (state.receivedPhotosRequest is Fail) {
+        return@withState
+      }
+
+      launch {
+        val firstUploadedOn = state.receivedPhotos
+          .firstOrNull()
+          ?.uploadedOn
+
+        if (firstUploadedOn == null) {
+          //no photos
+          return@launch
+        }
+
+        val freshPhotos = try {
+          getFreshPhotosUseCase.getFreshReceivedPhotos(false, firstUploadedOn)
+        } catch (error: Throwable) {
+          Timber.tag(TAG).e(error, "Error while trying to check fresh received photos")
+          //TODO: notify user about this error?
+          return@launch
+        }
+
+        if (freshPhotos.isEmpty()) {
+          return@launch
+        }
+
+        val newPhotosCount = freshPhotos.count { it.uploadedOn > firstUploadedOn }
+
+        //if there are any fresh photos - show snackbar
+        if (newPhotosCount > 0) {
+          intercom.tell<PhotosActivity>().to(PhotosActivityEvent.OnNewReceivedPhotos(newPhotosCount))
+        }
+
+        val newReceivedPhotos = state.receivedPhotos
+          .filterDuplicatesWith(freshPhotos) { it.receivedPhotoName }
+          .map { galleryPhoto -> galleryPhoto.copy(photoSize = photoSize) }
+          .sortedByDescending { it.uploadedOn }
+
+        setState {
+          copy(
+            receivedPhotos = newReceivedPhotos
+          )
+        }
+      }
     }
   }
 
@@ -240,9 +299,11 @@ open class ReceivedPhotosFragmentViewModel(
 
         //notify GalleryFragment that a photo has been favourited
         intercom.tell<GalleryFragment>()
-          .that(GalleryFragmentEvent.GeneralEvents.PhotoFavourited(
-            photoName, favouriteResult.isFavourited, favouriteResult.favouritesCount
-          ))
+          .that(
+            GalleryFragmentEvent.GeneralEvents.PhotoFavourited(
+              photoName, favouriteResult.isFavourited, favouriteResult.favouritesCount
+            )
+          )
 
         if (updateResult is UpdateStateResult.Update) {
           setState { copy(receivedPhotos = updateResult.update) }
@@ -344,10 +405,13 @@ open class ReceivedPhotosFragmentViewModel(
           setState { copy(receivedPhotos = updateResult.update) }
         }
         is UpdateStateResult.SendIntercom -> {
-          intercom.tell<PhotosActivity>().to(PhotosActivityEvent
-            .ShowToast("Photo was sent anonymously"))
+          intercom.tell<PhotosActivity>().to(
+            PhotosActivityEvent
+              .ShowToast("Photo was sent anonymously")
+          )
         }
-        is UpdateStateResult.NothingToUpdate -> {}
+        is UpdateStateResult.NothingToUpdate -> {
+        }
       }.safe
     }
   }
@@ -471,9 +535,11 @@ open class ReceivedPhotosFragmentViewModel(
     Timber.tag(TAG).d("startReceiveingService called!")
 
     intercom.tell<PhotosActivity>()
-      .to(PhotosActivityEvent.StartReceivingService(
-        PhotosActivityViewModel::class.java,
-        "Start receiving service request")
+      .to(
+        PhotosActivityEvent.StartReceivingService(
+          PhotosActivityViewModel::class.java,
+          "Start receiving service request"
+        )
       )
   }
 
@@ -502,6 +568,8 @@ open class ReceivedPhotosFragmentViewModel(
     class OnPhotoFavourited(val photoName: String,
                             val isFavourited: Boolean,
                             val favouritesCount: Long) : ActorAction()
+
+    object CheckFreshPhotos : ActorAction()
   }
 
   companion object : MvRxViewModelFactory<ReceivedPhotosFragmentState> {

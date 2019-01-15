@@ -6,7 +6,9 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersPro
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosMapper
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
+import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.exception.AttemptToAccessInternetWithMeteredNetworkException
+import com.kirakishou.photoexchange.helper.exception.EmptyUserUuidException
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
 import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
@@ -16,6 +18,7 @@ import java.util.concurrent.TimeUnit
 class GetFreshPhotosUseCase(
   private val apiClient: ApiClient,
   private val timeUtils: TimeUtils,
+  private val settingsRepository: SettingsRepository,
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
   private val TAG = "GetFreshPhotosUseCase"
@@ -34,10 +37,15 @@ class GetFreshPhotosUseCase(
     lastTimeFreshPhotosCheckMap.put(PhotoType.Gallery, 0L)
   }
 
-  @Throws(AttemptToAccessInternetWithMeteredNetworkException::class)
-  suspend fun getFreshUploadedPhotos(userUuid: String, forced: Boolean, firstUploadedOn: Long): List<UploadedPhoto> {
+  @Throws(AttemptToAccessInternetWithMeteredNetworkException::class, EmptyUserUuidException::class)
+  suspend fun getFreshUploadedPhotos(forced: Boolean, firstUploadedOn: Long): List<UploadedPhoto> {
     if (firstUploadedOn <= 0) {
       return emptyList()
+    }
+
+    val userUuid = settingsRepository.getUserUuid()
+    if (userUuid.isEmpty()) {
+      throw EmptyUserUuidException()
     }
 
     if (forced) {
@@ -53,10 +61,15 @@ class GetFreshPhotosUseCase(
       .map { responseData -> UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhoto(responseData) }
   }
 
-  @Throws(AttemptToAccessInternetWithMeteredNetworkException::class)
-  suspend fun getFreshReceivedPhotos(userUuid: String, forced: Boolean, firstUploadedOn: Long): List<ReceivedPhoto> {
+  @Throws(AttemptToAccessInternetWithMeteredNetworkException::class, EmptyUserUuidException::class)
+  suspend fun getFreshReceivedPhotos(forced: Boolean, firstUploadedOn: Long): List<ReceivedPhoto> {
     if (firstUploadedOn <= 0) {
       return emptyList()
+    }
+
+    val userUuid = settingsRepository.getUserUuid()
+    if (userUuid.isEmpty()) {
+      throw EmptyUserUuidException()
     }
 
     if (forced) {

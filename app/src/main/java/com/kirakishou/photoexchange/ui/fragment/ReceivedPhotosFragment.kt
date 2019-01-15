@@ -88,6 +88,12 @@ class ReceivedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Received
       })
   }
 
+  override fun onResume() {
+    super.onResume()
+
+    viewModel.receivedPhotosFragmentViewModel.checkFreshPhotos()
+  }
+
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
     controller.rebuild(
       requireContext(),
