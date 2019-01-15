@@ -37,6 +37,7 @@
     <!--photos activity-->
     <string name="photos_activity_new_gallery_photos">You have %1$d new gallery photos</string>
     <string name="photos_activity_new_received_photos">You have %1$d new received photos</string>
+    <string name="photos_activity_new_uploaded_photos">You have %1$d new uploaded photos</string>
     <string name="photos_activity_tab_title_uploaded_photos">Uploaded</string>
     <string name="photos_activity_tab_title_received_photos">Received</string>
     <string name="photos_activity_tab_title_gallery">Gallery</string>
