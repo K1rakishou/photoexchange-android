@@ -59,6 +59,7 @@ open class PhotosActivityModule(
                                              takenPhotosRepository: TakenPhotosRepository,
                                              uploadedPhotosRepository: UploadedPhotosRepository,
                                              getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
+                                             getFreshPhotosUseCase: GetFreshPhotosUseCase,
                                              dispatchersProvider: DispatchersProvider): UploadedPhotosFragmentViewModel {
     return UploadedPhotosFragmentViewModel(
       viewState,
@@ -66,6 +67,7 @@ open class PhotosActivityModule(
       takenPhotosRepository,
       uploadedPhotosRepository,
       getUploadedPhotosUseCase,
+      getFreshPhotosUseCase,
       dispatchersProvider
     )
   }
@@ -79,6 +81,7 @@ open class PhotosActivityModule(
                                              favouritePhotoUseCase: FavouritePhotoUseCase,
                                              reportPhotoUseCase: ReportPhotoUseCase,
                                              getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
+                                             getFreshPhotosUseCase: GetFreshPhotosUseCase,
                                              dispatchersProvider: DispatchersProvider): ReceivedPhotosFragmentViewModel {
     return ReceivedPhotosFragmentViewModel(
       viewState,
@@ -88,6 +91,7 @@ open class PhotosActivityModule(
       favouritePhotoUseCase,
       reportPhotoUseCase,
       getPhotoAdditionalInfoUseCase,
+      getFreshPhotosUseCase,
       dispatchersProvider
     )
   }

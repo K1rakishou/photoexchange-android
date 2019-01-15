@@ -19,7 +19,7 @@ class PagedApiUtilsImpl(
     userUuid: String?,
     getPhotosFromCacheFunc: suspend (Long, Int) -> List<PhotoType>,
     //Either throws an AttemptToAccessInternetWithMeteredNetworkException or returns list of fresh photos
-    getFreshPhotosFunc: suspend (String?, Long) -> List<PhotoType>,
+    getFreshPhotosFunc: suspend (Long) -> List<PhotoType>,
     getPageOfPhotosFunc: suspend (String?, Long, Int) -> List<PhotoResponseType>,
     clearCacheFunc: suspend () -> Unit,
     deleteOldFunc: suspend () -> Unit,
@@ -28,7 +28,7 @@ class PagedApiUtilsImpl(
     cachePhotosFunc: suspend (List<PhotoType>) -> Boolean
   ): Paged<PhotoType> {
     val freshPhotos = try {
-      getFreshPhotosFunc(userUuid, firstUploadedOn)
+      getFreshPhotosFunc(firstUploadedOn)
     } catch (error: AttemptToAccessInternetWithMeteredNetworkException) {
       // Error here means that we can't access internet (current network is metered) so
       // the only thing we can do is to return whatever there is in the cache

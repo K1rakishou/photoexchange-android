@@ -72,7 +72,7 @@ open class GetReceivedPhotosUseCase(
       countParam,
       userUuidParam,
       { lastUploadedOn, count -> getFromCacheInternal(lastUploadedOn, count) },
-      { userUuid, firstUploadedOn -> getFreshPhotosUseCase.getFreshReceivedPhotos(userUuid!!, forced, firstUploadedOn) },
+      { firstUploadedOn -> getFreshPhotosUseCase.getFreshReceivedPhotos(forced, firstUploadedOn) },
       { userUuid, lastUploadedOn, count ->
         apiClient.getPageOfReceivedPhotos(
           userUuid!!,

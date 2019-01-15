@@ -310,10 +310,12 @@ class UseCaseProviderModule {
   @Provides
   fun provideGetFreshPhotosUseCase(apiClient: ApiClient,
                                    timeUtils: TimeUtils,
+                                   settingsRepository: SettingsRepository,
                                    dispatchersProvider: DispatchersProvider): GetFreshPhotosUseCase {
     return GetFreshPhotosUseCase(
       apiClient,
       timeUtils,
+      settingsRepository,
       dispatchersProvider
     )
   }

@@ -62,7 +62,7 @@ open class GetUploadedPhotosUseCase(
       countParam,
       userUuidParam,
       { lastUploadedOn, count -> getFromCacheInternal(lastUploadedOn, count) },
-      { userUuid, firstUploadedOn -> getFreshPhotosUseCase.getFreshUploadedPhotos(userUuid!!, forced, firstUploadedOn) },
+      { firstUploadedOn -> getFreshPhotosUseCase.getFreshUploadedPhotos(forced, firstUploadedOn) },
       { userUuid, lastUploadedOn, count -> apiClient.getPageOfUploadedPhotos(userUuid!!, lastUploadedOn, count) },
       { uploadedPhotosRepository.deleteAll() },
       {

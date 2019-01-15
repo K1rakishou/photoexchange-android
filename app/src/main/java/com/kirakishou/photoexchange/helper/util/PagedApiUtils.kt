@@ -11,7 +11,7 @@ interface PagedApiUtils {
     requestedCount: Int,
     userUuid: String?,
     getPhotosFromCacheFunc: suspend (Long, Int) -> List<T>,
-    getFreshPhotosFunc: suspend (String?, Long) -> List<T>,
+    getFreshPhotosFunc: suspend (Long) -> List<T>,
     getPageOfPhotosFunc: suspend (String?, Long, Int) -> List<R>,
     clearCacheFunc: suspend () -> Unit,
     deleteOldFunc: suspend () -> Unit,

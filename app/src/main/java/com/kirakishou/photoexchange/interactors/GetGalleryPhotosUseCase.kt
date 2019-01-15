@@ -69,7 +69,7 @@ open class GetGalleryPhotosUseCase(
       countParam,
       userUuidParam,
       { lastUploadedOn, count -> getFromCacheInternal(lastUploadedOn, count) },
-      { _, firstUploadedOn -> getFreshPhotosUseCase.getFreshGalleryPhotos(forced, firstUploadedOn) },
+      { firstUploadedOn -> getFreshPhotosUseCase.getFreshGalleryPhotos(forced, firstUploadedOn) },
       { _, lastUploadedOn, count -> apiClient.getPageOfGalleryPhotos(lastUploadedOn, count) },
       { galleryPhotosRepository.deleteAll() },
       { galleryPhotosRepository.deleteOldPhotos() },
