@@ -13,7 +13,9 @@ data class UploadedPhotosFragmentState(
 
   val isEndReached: Boolean = false,
   val uploadedPhotos: List<UploadedPhoto> = emptyList(),
-  val uploadedPhotosRequest: Async<Paged<UploadedPhoto>> = Uninitialized
+  val uploadedPhotosRequest: Async<Paged<UploadedPhoto>> = Uninitialized,
+
+  val checkForFreshPhotosRequest: Async<Unit> = Uninitialized
 ) : MvRxState {
 
   fun swapPhotoAndMap(uploadedPhotoName: String): UpdateStateResult<List<UploadedPhoto>> {

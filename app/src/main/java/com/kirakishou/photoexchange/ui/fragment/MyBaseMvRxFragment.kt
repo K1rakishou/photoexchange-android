@@ -115,15 +115,14 @@ abstract class MyBaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
     super.onDestroyView()
   }
 
-  // Notifies to actor to start models rebuilding process
-  protected fun doInvalidate() {
-    invalidationActor.offer(Unit)
-  }
-
-  // This is called internally by MvRx
   @CallSuper
   override fun invalidate() {
-    recyclerView.requestModelBuild()
+    // We don't call recyclerView.requestModelBuild() here because we manually subscribe to only
+    // those parts of the state that we need in order to rebuild the epoxy models.
+    // Otherwise the rebuilding process would start every time even if we don't want it
+    // (e.g. when we update lastSeenColorPosition in the state we don't want to start the rebuilding process).
+    // By subscribing manually and then manually rebuilding epoxy we can store more things in
+    // the state while not being afraid of triggering recyclerview redrawing  with every state change.
   }
 
   protected fun simpleController(

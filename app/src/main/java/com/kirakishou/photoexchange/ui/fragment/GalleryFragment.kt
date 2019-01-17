@@ -63,7 +63,7 @@ class GalleryFragment : MyBaseMvRxFragment(), StateEventListener<GalleryFragment
     // In the current situation all of the state properties are responsible for that, but once
     // there are more properties in the state it should become more reasonable.
     viewModel.galleryFragmentViewModel.subscribe(this, true) {
-      doInvalidate()
+//      doInvalidate()
     }
 
     swipeRefreshLayout.setOnRefreshListener {

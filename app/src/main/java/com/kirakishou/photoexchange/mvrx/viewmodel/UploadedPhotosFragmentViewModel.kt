@@ -46,7 +46,10 @@ class UploadedPhotosFragmentViewModel(
   private val getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
   private val getFreshPhotosUseCase: GetFreshPhotosUseCase,
   private val dispatchersProvider: DispatchersProvider
-) : BaseMvRxViewModel<UploadedPhotosFragmentState>(initialState, BuildConfig.DEBUG), CoroutineScope {
+) : BaseMvRxViewModel<UploadedPhotosFragmentState>(
+  initialState,
+  BuildConfig.DEBUG
+), CoroutineScope {
   private val TAG = "UploadedPhotosFragmentViewModel"
 
   private val compositeDisposable = CompositeDisposable()
@@ -126,7 +129,15 @@ class UploadedPhotosFragmentViewModel(
         return@withState
       }
 
+      //do not run the request if it is already running
+      if (state.checkForFreshPhotosRequest is Loading) {
+        return@withState
+      }
+
       launch {
+        val loadingState = Loading<Unit>()
+        setState { copy(checkForFreshPhotosRequest = loadingState) }
+
         val firstUploadedOn = state.uploadedPhotos
           .firstOrNull()
           ?.uploadedOn
@@ -136,15 +147,17 @@ class UploadedPhotosFragmentViewModel(
           return@launch
         }
 
-        val freshPhotos = try {
-          getFreshPhotosUseCase.getFreshUploadedPhotos(false, firstUploadedOn)
+        val freshPhotosRequest = try {
+          Success(getFreshPhotosUseCase.getFreshUploadedPhotos(false, firstUploadedOn))
         } catch (error: Throwable) {
           Timber.tag(TAG).e(error, "Error while trying to check fresh uploaded photos")
-          //TODO: notify user about this error?
+          setState { copy(checkForFreshPhotosRequest = Uninitialized) }
           return@launch
         }
 
+        val freshPhotos = freshPhotosRequest() ?: emptyList()
         if (freshPhotos.isEmpty()) {
+          setState { copy(checkForFreshPhotosRequest = Uninitialized) }
           return@launch
         }
 
@@ -162,7 +175,8 @@ class UploadedPhotosFragmentViewModel(
 
         setState {
           copy(
-            uploadedPhotos = newUploadedPhotos
+            uploadedPhotos = newUploadedPhotos,
+            checkForFreshPhotosRequest = Uninitialized
           )
         }
       }
@@ -178,8 +192,10 @@ class UploadedPhotosFragmentViewModel(
           setState { copy(uploadedPhotos = updateResult.update) }
         }
         is UpdateStateResult.SendIntercom -> {
-          intercom.tell<PhotosActivity>().to(PhotosActivityEvent
-            .ShowToast("Still looking for your photo..."))
+          intercom.tell<PhotosActivity>().to(
+            PhotosActivityEvent
+              .ShowToast("Still looking for your photo...")
+          )
         }
         is UpdateStateResult.NothingToUpdate -> {
         }
