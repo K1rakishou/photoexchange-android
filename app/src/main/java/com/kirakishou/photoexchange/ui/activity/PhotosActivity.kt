@@ -34,9 +34,9 @@ import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
-import com.kirakishou.photoexchange.interactors.CheckFirebaseAvailabilityUseCase
-import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
-import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
+import com.kirakishou.photoexchange.usecases.CheckFirebaseAvailabilityUseCase
+import com.kirakishou.photoexchange.mvrx.model.NewReceivedPhoto
+import com.kirakishou.photoexchange.mvrx.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.service.*
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingServiceCallback
 import com.kirakishou.photoexchange.ui.callback.ReceivePhotosServiceCallback
@@ -48,10 +48,12 @@ import com.kirakishou.photoexchange.ui.viewstate.PhotosActivityViewState
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.lang.IllegalStateException
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -95,6 +97,8 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   private val UPLOADED_PHOTOS_TAB_INDEX = 0
   private val RECEIVED_PHOTOS_TAB_INDEX = 1
   private val GALLERY_PHOTOS_TAB_INDEX = 2
+
+  private val onTabSelectedSubject = PublishSubject.create<Int>()
 
   private lateinit var receivePhotosServiceConnection: ReceivePhotosServiceConnection
   private lateinit var uploadPhotosServiceConnection: UploadPhotoServiceConnection
@@ -141,8 +145,6 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
     viewState = PhotosActivityViewState().also { it.loadFromBundle(savedInstanceState) }
 
-    receivePhotosServiceConnection = ReceivePhotosServiceConnection(this)
-    uploadPhotosServiceConnection = UploadPhotoServiceConnection(this)
 
     initRx()
     onNewIntent(intent)
@@ -162,6 +164,9 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
   override fun onActivityStart() {
     registerReceiver(notificationBroadcastReceiver, IntentFilter(newPhotoReceivedAction))
+
+    receivePhotosServiceConnection = ReceivePhotosServiceConnection(this)
+    uploadPhotosServiceConnection = UploadPhotoServiceConnection(this)
   }
 
   override fun onActivityStop() {
@@ -206,6 +211,25 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       .doOnError { Timber.e(it) }
       .subscribe()
 
+    compositeDisposable += onTabSelectedSubject
+      .debounce(1, TimeUnit.SECONDS)
+      .subscribe({ tabIndex ->
+        when (tabIndex) {
+          UPLOADED_PHOTOS_TAB_INDEX -> {
+            viewModel.intercom.tell<UploadedPhotosFragment>()
+              .that(UploadedPhotosFragmentEvent.GeneralEvents.OnTabSelected)
+          }
+          RECEIVED_PHOTOS_TAB_INDEX -> {
+            viewModel.intercom.tell<ReceivedPhotosFragment>()
+              .that(ReceivedPhotosFragmentEvent.GeneralEvents.OnTabSelected)
+          }
+          GALLERY_PHOTOS_TAB_INDEX -> {
+            viewModel.intercom.tell<GalleryFragment>()
+              .that(GalleryFragmentEvent.GeneralEvents.OnTabSelected)
+          }
+        }
+      })
+
     compositeDisposable += viewModel.intercom.photosActivityEvents.listen()
       .subscribe({ event ->
         launch { onStateEvent(event) }
@@ -235,7 +259,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   private suspend fun prepareToTakePhoto() {
-    //1. Show GDPR dialog
+    //TODO: add new activity and GDPR dialog should be shown there
     //TODO: add GDPR dialog
     //TODO: disable Crashlytics if user didn't give us their permission to send crashlogs
 
@@ -270,6 +294,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       CheckFirebaseAvailabilityUseCase.FirebaseAvailabilityResult.NotAvailable
   }
 
+  //request permissions for camera and location
   private suspend fun checkPermissions(): PermissionRequestResult {
     val requestedPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION)
 
@@ -356,6 +381,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
       override fun onPageSelected(position: Int) {
         viewPager.currentItem = position
+        onTabSelectedSubject.onNext(position)
       }
     })
 
@@ -369,6 +395,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
       override fun onTabSelected(tab: TabLayout.Tab) {
         viewPager.currentItem = tab.position
+        onTabSelectedSubject.onNext(tab.position)
       }
     })
   }
@@ -402,7 +429,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
         val canUploadPhotosResult = viewModel.checkCanUploadPhotos()
         when (canUploadPhotosResult) {
           PhotosActivityViewModel.CanUploadPhotoResult.HasQueuedUpPhotos -> {
-            bindUploadingService(event.callerClass, event.reason)
+            bindUploadingService()
           }
           PhotosActivityViewModel.CanUploadPhotoResult.PhotoUploadingDisabled -> {
             onShowToast(getString(R.string.photos_activity_cannot_upload_photo_disabled))
@@ -416,14 +443,13 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
         val canReceivedPhotosResult = viewModel.checkCanReceivePhotos()
         when (canReceivedPhotosResult) {
           PhotosActivityViewModel.CanReceivePhotoResult.HasMoreUploadedPhotosThanReceived -> {
-            bindReceivingService(event.callerClass, event.reason)
+            bindReceivingService()
           }
           PhotosActivityViewModel.CanReceivePhotoResult.NetworkAccessDisabled -> {
             onShowToast(getString(R.string.photos_activity_cannot_check_for_received_photos_disabled))
           }
           PhotosActivityViewModel.CanReceivePhotoResult.HasLessOrEqualUploadedPhotosThanReceived -> {
             //do nothing
-
           }
         }
       }
@@ -568,9 +594,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
         if (resultCode == Activity.RESULT_OK) {
           Timber.tag(TAG).d("Uploading photo")
 
-          viewModel.intercom.tell<PhotosActivity>()
-            .to(PhotosActivityEvent.StartUploadingService(PhotosActivity::class.java, "User took new photo"))
-
+          viewModel.intercom.tell<PhotosActivity>().to(PhotosActivityEvent.StartUploadingService)
           switchToTab(UPLOADED_PHOTOS_TAB_INDEX)
         }
       }
@@ -578,36 +602,24 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
     }
   }
 
-  private fun bindReceivingService(
-    callerClass: Class<*>,
-    reason: String
-  ) {
+  private fun bindReceivingService() {
     if (!receivePhotosServiceConnection.isConnected()) {
-      Timber.tag(TAG).d("(callerClass = $callerClass, reason = $reason) bindReceivingService")
-
       val serviceIntent = Intent(applicationContext, ReceivePhotosService::class.java)
       startService(serviceIntent)
 
       bindService(serviceIntent, receivePhotosServiceConnection, Context.BIND_AUTO_CREATE)
     } else {
-      Timber.tag(TAG).d("(callerClass = $callerClass, reason = $reason) Already connected, force startPhotosReceiving")
       receivePhotosServiceConnection.startPhotosReceiving()
     }
   }
 
-  private fun bindUploadingService(
-    callerClass: Class<*>,
-    reason: String
-  ) {
+  private fun bindUploadingService() {
     if (!uploadPhotosServiceConnection.isConnected()) {
-      Timber.tag(TAG).d("(callerClass = $callerClass, reason = $reason) bindUploadingService")
-
       val serviceIntent = Intent(applicationContext, UploadPhotoService::class.java)
       startService(serviceIntent)
 
       bindService(serviceIntent, uploadPhotosServiceConnection, Context.BIND_AUTO_CREATE)
     } else {
-      Timber.tag(TAG).d("(callerClass = $callerClass, reason = $reason) Already connected, force startPhotosUploading")
       uploadPhotosServiceConnection.startPhotosUploading()
     }
   }

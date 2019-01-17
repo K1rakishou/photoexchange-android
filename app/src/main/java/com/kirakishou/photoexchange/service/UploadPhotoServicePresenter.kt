@@ -8,11 +8,11 @@ import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.helper.exception.EmptyUserUuidException
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
-import com.kirakishou.photoexchange.interactors.GetUserUuidUseCase
-import com.kirakishou.photoexchange.interactors.UpdateFirebaseTokenUseCase
-import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
-import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
+import com.kirakishou.photoexchange.usecases.GetUserUuidUseCase
+import com.kirakishou.photoexchange.usecases.UpdateFirebaseTokenUseCase
+import com.kirakishou.photoexchange.usecases.UploadPhotosUseCase
+import com.kirakishou.photoexchange.mvrx.model.PhotoState
+import com.kirakishou.photoexchange.mvrx.model.photo.TakenPhoto
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.PublishSubject

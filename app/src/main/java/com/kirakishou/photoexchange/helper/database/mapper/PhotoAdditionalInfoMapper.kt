@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.helper.database.mapper
 
 import com.kirakishou.photoexchange.helper.database.entity.PhotoAdditionalInfoEntity
-import com.kirakishou.photoexchange.mvp.model.photo.PhotoAdditionalInfo
+import com.kirakishou.photoexchange.mvrx.model.photo.PhotoAdditionalInfo
 import net.response.data.PhotoAdditionalInfoResponseData
 
 object PhotoAdditionalInfoMapper {

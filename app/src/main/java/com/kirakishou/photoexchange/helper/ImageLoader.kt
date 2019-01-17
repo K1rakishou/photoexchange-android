@@ -14,9 +14,8 @@ import com.bumptech.glide.request.target.Target
 import com.kirakishou.photoexchange.di.module.GlideApp
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.helper.util.NetUtils
-import com.kirakishou.photoexchange.mvp.model.PhotoSize
+import com.kirakishou.photoexchange.mvrx.model.PhotoSize
 import com.kirakishou.photoexchange.ui.widget.TextDrawable
-import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 import kotlin.coroutines.resume

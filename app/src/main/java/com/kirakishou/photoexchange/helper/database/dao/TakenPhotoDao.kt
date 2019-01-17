@@ -7,7 +7,7 @@ import androidx.room.TypeConverters
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.converter.PhotoStateConverter
 import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
-import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvrx.model.PhotoState
 
 /**
  * Created by kirakishou on 3/3/2018.

@@ -13,6 +13,7 @@ import com.airbnb.epoxy.EpoxyRecyclerView
 import com.airbnb.mvrx.BaseMvRxFragment
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
 import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import io.reactivex.disposables.CompositeDisposable
@@ -25,7 +26,7 @@ abstract class MyBaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
 
   protected val compositeDisposable = CompositeDisposable()
 
-  private val job = Job()
+  private var job = Job()
   lateinit var recyclerView: EpoxyRecyclerView
   lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
@@ -48,6 +49,17 @@ abstract class MyBaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
         postInvalidate()
       }
     }
+  }
+
+  override fun onDetach() {
+    super.onDetach()
+
+    job.cancel()
+    job = Job()
+
+    compositeDisposable.clear()
+
+    PhotoExchangeApplication.watch(this, this::class.simpleName)
   }
 
   @CallSuper
@@ -100,21 +112,17 @@ abstract class MyBaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
   override fun onDestroyView() {
     epoxyController.cancelPendingModelBuild()
 
-    compositeDisposable.clear()
-    job.cancelChildren()
-
     super.onDestroyView()
   }
 
-  // Notifies to actor to start models rebuilding process
-  protected fun doInvalidate() {
-    invalidationActor.offer(Unit)
-  }
-
-  // This is called internally by MvRx
   @CallSuper
   override fun invalidate() {
-    recyclerView.requestModelBuild()
+    // We don't call recyclerView.requestModelBuild() here because we manually subscribe to only
+    // those parts of the state that we need in order to rebuild the epoxy models.
+    // Otherwise the rebuilding process would start every time even if we don't want it
+    // (e.g. when we update lastSeenColorPosition in the state we don't want to start the rebuilding process).
+    // By subscribing manually and then manually rebuilding epoxy we can store more things in
+    // the state while not being afraid of triggering recyclerview redrawing  with every state change.
   }
 
   protected fun simpleController(

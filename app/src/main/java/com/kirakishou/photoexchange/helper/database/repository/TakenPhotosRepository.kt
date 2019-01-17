@@ -9,8 +9,8 @@ import com.kirakishou.photoexchange.helper.database.mapper.TakenPhotosMapper
 import com.kirakishou.photoexchange.helper.database.source.local.TakenPhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.TempFileLocalSource
 import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
-import com.kirakishou.photoexchange.mvp.model.PhotoState
+import com.kirakishou.photoexchange.mvrx.model.photo.TakenPhoto
+import com.kirakishou.photoexchange.mvrx.model.PhotoState
 import com.kirakishou.photoexchange.helper.exception.DatabaseException
 
 /**

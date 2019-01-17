@@ -8,8 +8,8 @@ import com.airbnb.mvrx.*
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.extension.safe
-import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
-import com.kirakishou.photoexchange.mvp.viewmodel.GalleryFragmentViewModel
+import com.kirakishou.photoexchange.mvrx.model.photo.GalleryPhoto
+import com.kirakishou.photoexchange.mvrx.viewmodel.GalleryFragmentViewModel
 import com.kirakishou.photoexchange.ui.epoxy.row.galleryPhotoRow
 import com.kirakishou.photoexchange.ui.epoxy.row.loadingRow
 import com.kirakishou.photoexchange.ui.epoxy.row.textRow

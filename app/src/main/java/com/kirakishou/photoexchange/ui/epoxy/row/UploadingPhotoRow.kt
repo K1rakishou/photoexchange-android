@@ -13,8 +13,8 @@ import androidx.cardview.widget.CardView
 import com.airbnb.epoxy.ModelProp
 import com.airbnb.epoxy.ModelView
 import com.kirakishou.fixmypc.photoexchange.R
-import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
+import com.kirakishou.photoexchange.mvrx.model.PhotoState
+import com.kirakishou.photoexchange.mvrx.model.photo.UploadingPhoto
 
 @ModelView(autoLayout = ModelView.Size.MATCH_WIDTH_WRAP_HEIGHT, fullSpan = false)
 class UploadingPhotoRow @JvmOverloads constructor(

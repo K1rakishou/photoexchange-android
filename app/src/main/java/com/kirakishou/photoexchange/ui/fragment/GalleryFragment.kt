@@ -14,7 +14,8 @@ import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
+import com.kirakishou.photoexchange.mvrx.viewmodel.PhotosActivityViewModel
+import com.kirakishou.photoexchange.mvrx.viewmodel.state.GalleryFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.epoxy.controller.GalleryFragmentEpoxyController
 import io.reactivex.rxkotlin.plusAssign
@@ -58,8 +59,13 @@ class GalleryFragment : MyBaseMvRxFragment(), StateEventListener<GalleryFragment
     viewModel.galleryFragmentViewModel.photoSize = photoSize
     viewModel.galleryFragmentViewModel.photosPerPage = spanCount * Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
 
-    viewModel.galleryFragmentViewModel.subscribe(this, true) {
-      doInvalidate()
+    //rebuild models when one of the following variables in the state changes
+    viewModel.galleryFragmentViewModel.selectSubscribe(
+      this,
+      GalleryFragmentState::galleryPhotos,
+      GalleryFragmentState::galleryPhotosRequest
+    ) { _, _ ->
+      recyclerView.requestModelBuild()
     }
 
     swipeRefreshLayout.setOnRefreshListener {
@@ -89,7 +95,7 @@ class GalleryFragment : MyBaseMvRxFragment(), StateEventListener<GalleryFragment
   override fun onResume() {
     super.onResume()
 
-    viewModel.galleryFragmentViewModel.checkFreshPhotos()
+    checkFreshPhotos()
   }
 
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
@@ -126,7 +132,12 @@ class GalleryFragment : MyBaseMvRxFragment(), StateEventListener<GalleryFragment
           event.favouritesCount
         )
       }
+      GalleryFragmentEvent.GeneralEvents.OnTabSelected -> checkFreshPhotos()
     }.safe
+  }
+
+  private fun checkFreshPhotos() {
+    viewModel.galleryFragmentViewModel.checkFreshPhotos()
   }
 
   override fun resolveDaggerDependency() {

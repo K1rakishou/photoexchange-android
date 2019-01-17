@@ -5,8 +5,7 @@ import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
 import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.UploadedPhotosMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
-import net.response.data.UploadedPhotoResponseData
+import com.kirakishou.photoexchange.mvrx.model.photo.UploadedPhoto
 
 open class UploadedPhotosLocalSource(
   private val database: MyDatabase,

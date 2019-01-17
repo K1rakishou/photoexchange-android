@@ -5,8 +5,8 @@ import com.kirakishou.photoexchange.helper.database.entity.ReceivedPhotoEntity
 import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.ReceivedPhotosMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
+import com.kirakishou.photoexchange.mvrx.model.NewReceivedPhoto
+import com.kirakishou.photoexchange.mvrx.model.photo.ReceivedPhoto
 import net.response.data.ReceivedPhotoResponseData
 
 class ReceivedPhotosLocalSource(

@@ -2,8 +2,7 @@ package com.kirakishou.photoexchange.helper.database.repository
 
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.source.local.UploadedPhotosLocalSource
-import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
-import net.response.data.UploadedPhotoResponseData
+import com.kirakishou.photoexchange.mvrx.model.photo.UploadedPhoto
 
 open class UploadedPhotosRepository(
   private val database: MyDatabase,

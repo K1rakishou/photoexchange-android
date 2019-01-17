@@ -1,14 +1,15 @@
 package com.kirakishou.photoexchange.helper.intercom.event
 
-import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
+import com.kirakishou.photoexchange.mvrx.model.photo.ReceivedPhoto
+import com.kirakishou.photoexchange.mvrx.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.helper.LonLat
-import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
+import com.kirakishou.photoexchange.mvrx.model.NewReceivedPhoto
 import java.lang.Exception
 
 sealed class UploadedPhotosFragmentEvent : BaseEvent {
   sealed class GeneralEvents : UploadedPhotosFragmentEvent() {
     class OnNewPhotosReceived(val newReceivedPhotos: List<NewReceivedPhoto>) : GeneralEvents()
+    object OnTabSelected : GeneralEvents()
     class ScrollToTop : GeneralEvents()
   }
 

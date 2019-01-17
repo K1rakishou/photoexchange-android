@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.helper.intercom.event
 
-import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
+import com.kirakishou.photoexchange.mvrx.model.NewReceivedPhoto
+import com.kirakishou.photoexchange.mvrx.model.photo.ReceivedPhoto
 
 sealed class ReceivedPhotosFragmentEvent : BaseEvent {
   sealed class GeneralEvents : ReceivedPhotosFragmentEvent() {
@@ -13,6 +13,7 @@ sealed class ReceivedPhotosFragmentEvent : BaseEvent {
     class PhotoFavourited(val photoName: String,
                           val isFavourited: Boolean,
                           val favouritesCount: Long) : GeneralEvents()
+    object OnTabSelected : GeneralEvents()
   }
 
   sealed class ReceivePhotosEvent : ReceivedPhotosFragmentEvent() {

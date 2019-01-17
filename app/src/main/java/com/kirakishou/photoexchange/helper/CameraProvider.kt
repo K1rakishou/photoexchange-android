@@ -1,8 +1,8 @@
 package com.kirakishou.photoexchange.helper
 
 import android.content.Context
-import com.kirakishou.photoexchange.interactors.TakePhotoUseCase
-import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
+import com.kirakishou.photoexchange.usecases.TakePhotoUseCase
+import com.kirakishou.photoexchange.mvrx.model.photo.TakenPhoto
 import io.fotoapparat.Fotoapparat
 import io.fotoapparat.configuration.CameraConfiguration
 import io.fotoapparat.selector.back

@@ -13,8 +13,8 @@ import com.google.firebase.messaging.RemoteMessage
 import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.interactors.StorePhotoFromPushNotificationUseCase
-import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
+import com.kirakishou.photoexchange.usecases.StorePhotoFromPushNotificationUseCase
+import com.kirakishou.photoexchange.mvrx.model.NewReceivedPhoto
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber

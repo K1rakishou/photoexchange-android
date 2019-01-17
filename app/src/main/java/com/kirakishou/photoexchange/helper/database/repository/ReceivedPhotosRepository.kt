@@ -2,8 +2,8 @@ package com.kirakishou.photoexchange.helper.database.repository
 
 import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.source.local.ReceivedPhotosLocalSource
-import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
+import com.kirakishou.photoexchange.mvrx.model.NewReceivedPhoto
+import com.kirakishou.photoexchange.mvrx.model.photo.ReceivedPhoto
 import net.response.data.ReceivedPhotoResponseData
 
 open class ReceivedPhotosRepository(

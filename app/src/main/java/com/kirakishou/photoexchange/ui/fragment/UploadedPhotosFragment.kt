@@ -12,7 +12,8 @@ import com.kirakishou.photoexchange.helper.intercom.IntercomListener
 import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
+import com.kirakishou.photoexchange.mvrx.viewmodel.PhotosActivityViewModel
+import com.kirakishou.photoexchange.mvrx.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.epoxy.controller.UploadedPhotosFragmentEpoxyController
 import io.reactivex.rxkotlin.plusAssign
@@ -50,12 +51,13 @@ class UploadedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Uploaded
     viewModel.uploadedPhotosFragmentViewModel.photoSize = photoSize
     viewModel.uploadedPhotosFragmentViewModel.photosPerPage = spanCount * Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
 
-    // Probably it would be a better idea to subscribe here not to the whole state but to
-    // just some properties that are responsible for building epoxy models.
-    // In the current situation all of the state properties are responsible for that, but once
-    // there are more properties in the state it should become more reasonable.
-    viewModel.uploadedPhotosFragmentViewModel.subscribe(this, true) {
-      doInvalidate()
+    //rebuild models when one of the following variables in the state changes
+    viewModel.uploadedPhotosFragmentViewModel.selectSubscribe(
+      this,
+      UploadedPhotosFragmentState::takenPhotos,
+      UploadedPhotosFragmentState::uploadedPhotos,
+      UploadedPhotosFragmentState::uploadedPhotosRequest) { _, _, _ ->
+      recyclerView.requestModelBuild()
     }
 
     swipeRefreshLayout.setOnRefreshListener {
@@ -77,7 +79,7 @@ class UploadedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Uploaded
   override fun onResume() {
     super.onResume()
 
-    viewModel.uploadedPhotosFragmentViewModel.checkFreshPhotos()
+    checkFreshPhotos()
   }
 
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
@@ -116,7 +118,12 @@ class UploadedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Uploaded
       is UploadedPhotosFragmentEvent.GeneralEvents.OnNewPhotosReceived -> {
         viewModel.uploadedPhotosFragmentViewModel.onNewPhotosReceived(event.newReceivedPhotos)
       }
+      UploadedPhotosFragmentEvent.GeneralEvents.OnTabSelected -> checkFreshPhotos()
     }.safe
+  }
+
+  private fun checkFreshPhotos() {
+    viewModel.uploadedPhotosFragmentViewModel.checkFreshPhotos()
   }
 
   override fun resolveDaggerDependency() {

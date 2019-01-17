@@ -4,7 +4,7 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.isSuccess
 import com.kirakishou.photoexchange.helper.database.mapper.PhotoAdditionalInfoMapper
 import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.mvp.model.photo.PhotoAdditionalInfo
+import com.kirakishou.photoexchange.mvrx.model.photo.PhotoAdditionalInfo
 import net.response.data.PhotoAdditionalInfoResponseData
 import timber.log.Timber
 
