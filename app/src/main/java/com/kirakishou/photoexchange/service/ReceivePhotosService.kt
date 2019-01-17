@@ -18,6 +18,7 @@ import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.callback.ReceivePhotosServiceCallback
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
+import timber.log.Timber
 import java.lang.ref.WeakReference
 import javax.inject.Inject
 
@@ -74,7 +75,7 @@ class ReceivePhotosService : Service() {
 
           callback.get()?.onReceivePhotoEvent(photosReceivedEvent)
         } else {
-          //do nothing
+          Timber.tag(TAG).d("event.receivedPhotos is EMPTY")
         }
       }
       is ReceivePhotosServicePresenter.ReceivePhotoEvent.OnError -> {

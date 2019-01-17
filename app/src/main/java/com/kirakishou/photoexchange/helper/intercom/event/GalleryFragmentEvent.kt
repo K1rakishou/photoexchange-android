@@ -9,5 +9,6 @@ sealed class GalleryFragmentEvent : BaseEvent {
     class PhotoFavourited(val photoName: String,
                           val isFavourited: Boolean,
                           val favouritesCount: Long) : GeneralEvents()
+    object OnTabSelected : GeneralEvents()
   }
 }

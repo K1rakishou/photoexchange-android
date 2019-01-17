@@ -77,7 +77,7 @@ class UploadedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Uploaded
   override fun onResume() {
     super.onResume()
 
-    viewModel.uploadedPhotosFragmentViewModel.checkFreshPhotos()
+    checkFreshPhotos()
   }
 
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
@@ -116,7 +116,12 @@ class UploadedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Uploaded
       is UploadedPhotosFragmentEvent.GeneralEvents.OnNewPhotosReceived -> {
         viewModel.uploadedPhotosFragmentViewModel.onNewPhotosReceived(event.newReceivedPhotos)
       }
+      UploadedPhotosFragmentEvent.GeneralEvents.OnTabSelected -> checkFreshPhotos()
     }.safe
+  }
+
+  private fun checkFreshPhotos() {
+    viewModel.uploadedPhotosFragmentViewModel.checkFreshPhotos()
   }
 
   override fun resolveDaggerDependency() {

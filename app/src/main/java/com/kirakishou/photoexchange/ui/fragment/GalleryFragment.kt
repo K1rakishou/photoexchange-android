@@ -93,7 +93,7 @@ class GalleryFragment : MyBaseMvRxFragment(), StateEventListener<GalleryFragment
   override fun onResume() {
     super.onResume()
 
-    viewModel.galleryFragmentViewModel.checkFreshPhotos()
+    checkFreshPhotos()
   }
 
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
@@ -130,7 +130,12 @@ class GalleryFragment : MyBaseMvRxFragment(), StateEventListener<GalleryFragment
           event.favouritesCount
         )
       }
+      GalleryFragmentEvent.GeneralEvents.OnTabSelected -> checkFreshPhotos()
     }.safe
+  }
+
+  private fun checkFreshPhotos() {
+    viewModel.galleryFragmentViewModel.checkFreshPhotos()
   }
 
   override fun resolveDaggerDependency() {

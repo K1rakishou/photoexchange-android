@@ -9,6 +9,7 @@ import java.lang.Exception
 sealed class UploadedPhotosFragmentEvent : BaseEvent {
   sealed class GeneralEvents : UploadedPhotosFragmentEvent() {
     class OnNewPhotosReceived(val newReceivedPhotos: List<NewReceivedPhoto>) : GeneralEvents()
+    object OnTabSelected : GeneralEvents()
     class ScrollToTop : GeneralEvents()
   }
 

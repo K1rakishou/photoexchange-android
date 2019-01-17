@@ -48,10 +48,12 @@ import com.kirakishou.photoexchange.ui.viewstate.PhotosActivityViewState
 import com.kirakishou.photoexchange.ui.widget.FragmentTabsPager
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.plusAssign
+import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.lang.IllegalStateException
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -95,6 +97,8 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   private val UPLOADED_PHOTOS_TAB_INDEX = 0
   private val RECEIVED_PHOTOS_TAB_INDEX = 1
   private val GALLERY_PHOTOS_TAB_INDEX = 2
+
+  private val onTabSelectedSubject = PublishSubject.create<Int>()
 
   private lateinit var receivePhotosServiceConnection: ReceivePhotosServiceConnection
   private lateinit var uploadPhotosServiceConnection: UploadPhotoServiceConnection
@@ -206,6 +210,25 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       .doOnNext { createMenu() }
       .doOnError { Timber.e(it) }
       .subscribe()
+
+    compositeDisposable += onTabSelectedSubject
+      .debounce(1, TimeUnit.SECONDS)
+      .subscribe({ tabIndex ->
+        when (tabIndex) {
+          UPLOADED_PHOTOS_TAB_INDEX -> {
+            viewModel.intercom.tell<UploadedPhotosFragment>()
+              .that(UploadedPhotosFragmentEvent.GeneralEvents.OnTabSelected)
+          }
+          RECEIVED_PHOTOS_TAB_INDEX -> {
+            viewModel.intercom.tell<ReceivedPhotosFragment>()
+              .that(ReceivedPhotosFragmentEvent.GeneralEvents.OnTabSelected)
+          }
+          GALLERY_PHOTOS_TAB_INDEX -> {
+            viewModel.intercom.tell<GalleryFragment>()
+              .that(GalleryFragmentEvent.GeneralEvents.OnTabSelected)
+          }
+        }
+      })
 
     compositeDisposable += viewModel.intercom.photosActivityEvents.listen()
       .subscribe({ event ->
@@ -358,6 +381,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
       override fun onPageSelected(position: Int) {
         viewPager.currentItem = position
+        onTabSelectedSubject.onNext(position)
       }
     })
 
@@ -371,6 +395,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
       override fun onTabSelected(tab: TabLayout.Tab) {
         viewPager.currentItem = tab.position
+        onTabSelectedSubject.onNext(tab.position)
       }
     })
   }

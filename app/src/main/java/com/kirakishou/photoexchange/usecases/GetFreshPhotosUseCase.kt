@@ -1,6 +1,5 @@
 package com.kirakishou.photoexchange.usecases
 
-import com.kirakishou.fixmypc.photoexchange.BuildConfig
 import com.kirakishou.photoexchange.helper.api.ApiClient
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosMapper
@@ -23,13 +22,7 @@ class GetFreshPhotosUseCase(
 ) : BaseUseCase(dispatchersProvider) {
   private val TAG = "GetFreshPhotosUseCase"
   private val lastTimeFreshPhotosCheckMap = hashMapOf<PhotoType, Long>()
-  private val timeBetweenFreshPhotosCheck by lazy {
-    if (BuildConfig.DEBUG) {
-      1
-    } else {
-      TimeUnit.MINUTES.toMillis(1)
-    }
-  }
+  private val timeBetweenFreshPhotosCheck = TimeUnit.MINUTES.toMillis(1)
 
   init {
     lastTimeFreshPhotosCheckMap.put(PhotoType.Uploaded, 0L)

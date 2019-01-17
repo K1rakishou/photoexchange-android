@@ -76,6 +76,8 @@ open class ReceivePhotosServicePresenter(
       return
     }
 
+    Timber.tag(TAG).d("Found ${receivedPhotos.size} received photos")
+
     sendEvent(ReceivePhotoEvent.OnPhotosReceived(receivedPhotos))
     sendEvent(ReceivePhotoEvent.OnNewNotification(NotificationType.Success()))
   }
