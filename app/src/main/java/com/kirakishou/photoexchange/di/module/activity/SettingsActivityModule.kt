@@ -4,9 +4,9 @@ import androidx.lifecycle.ViewModelProviders
 import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.interactors.RestoreAccountUseCase
-import com.kirakishou.photoexchange.mvp.viewmodel.SettingsActivityViewModel
-import com.kirakishou.photoexchange.mvp.viewmodel.factory.SettingsActivityViewModelFactory
+import com.kirakishou.photoexchange.usecases.RestoreAccountUseCase
+import com.kirakishou.photoexchange.mvrx.viewmodel.SettingsActivityViewModel
+import com.kirakishou.photoexchange.mvrx.viewmodel.factory.SettingsActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.SettingsActivity
 import dagger.Module
 import dagger.Provides

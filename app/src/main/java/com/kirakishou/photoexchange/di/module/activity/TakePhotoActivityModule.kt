@@ -7,9 +7,9 @@ import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersPro
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
-import com.kirakishou.photoexchange.interactors.TakePhotoUseCase
-import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
-import com.kirakishou.photoexchange.mvp.viewmodel.factory.TakePhotoActivityViewModelFactory
+import com.kirakishou.photoexchange.usecases.TakePhotoUseCase
+import com.kirakishou.photoexchange.mvrx.viewmodel.TakePhotoActivityViewModel
+import com.kirakishou.photoexchange.mvrx.viewmodel.factory.TakePhotoActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.TakePhotoActivity
 import dagger.Module
 import dagger.Provides

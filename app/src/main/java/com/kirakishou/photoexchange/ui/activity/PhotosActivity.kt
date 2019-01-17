@@ -34,9 +34,9 @@ import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
-import com.kirakishou.photoexchange.interactors.CheckFirebaseAvailabilityUseCase
-import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
-import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
+import com.kirakishou.photoexchange.usecases.CheckFirebaseAvailabilityUseCase
+import com.kirakishou.photoexchange.mvrx.model.NewReceivedPhoto
+import com.kirakishou.photoexchange.mvrx.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.service.*
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingServiceCallback
 import com.kirakishou.photoexchange.ui.callback.ReceivePhotosServiceCallback
@@ -141,6 +141,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
     viewState = PhotosActivityViewState().also { it.loadFromBundle(savedInstanceState) }
 
+    //TODO: should this be here?
     receivePhotosServiceConnection = ReceivePhotosServiceConnection(this)
     uploadPhotosServiceConnection = UploadPhotoServiceConnection(this)
 
@@ -270,6 +271,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       CheckFirebaseAvailabilityUseCase.FirebaseAvailabilityResult.NotAvailable
   }
 
+  //request permissions for camera and location
   private suspend fun checkPermissions(): PermissionRequestResult {
     val requestedPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION)
 
@@ -423,7 +425,6 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
           }
           PhotosActivityViewModel.CanReceivePhotoResult.HasLessOrEqualUploadedPhotosThanReceived -> {
             //do nothing
-
           }
         }
       }

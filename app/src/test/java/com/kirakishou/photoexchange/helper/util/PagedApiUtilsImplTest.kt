@@ -3,8 +3,8 @@ package com.kirakishou.photoexchange.helper.util
 import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosMapper
 import com.kirakishou.photoexchange.helper.exception.ConnectionError
-import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
-import com.kirakishou.photoexchange.mvp.model.photo.PhotoAdditionalInfo
+import com.kirakishou.photoexchange.mvrx.model.photo.GalleryPhoto
+import com.kirakishou.photoexchange.mvrx.model.photo.PhotoAdditionalInfo
 import com.nhaarman.mockitokotlin2.whenever
 import junit.framework.Assert.*
 import kotlinx.coroutines.runBlocking

@@ -5,8 +5,8 @@ import com.kirakishou.photoexchange.di.scope.PerActivity
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.mvp.viewmodel.ViewTakenPhotoActivityViewModel
-import com.kirakishou.photoexchange.mvp.viewmodel.factory.ViewTakenPhotoActivityViewModelFactory
+import com.kirakishou.photoexchange.mvrx.viewmodel.ViewTakenPhotoActivityViewModel
+import com.kirakishou.photoexchange.mvrx.viewmodel.factory.ViewTakenPhotoActivityViewModelFactory
 import com.kirakishou.photoexchange.ui.activity.ViewTakenPhotoActivity
 import dagger.Module
 import dagger.Provides

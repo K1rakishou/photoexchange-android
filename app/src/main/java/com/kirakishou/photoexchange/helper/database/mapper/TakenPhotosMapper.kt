@@ -2,9 +2,9 @@ package com.kirakishou.photoexchange.helper.database.mapper
 
 import com.kirakishou.photoexchange.helper.database.entity.TakenPhotoEntity
 import com.kirakishou.photoexchange.helper.database.entity.TempFileEntity
-import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
-import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
+import com.kirakishou.photoexchange.mvrx.model.PhotoState
+import com.kirakishou.photoexchange.mvrx.model.photo.TakenPhoto
+import com.kirakishou.photoexchange.mvrx.model.photo.UploadingPhoto
 
 /**
  * Created by kirakishou on 3/9/2018.

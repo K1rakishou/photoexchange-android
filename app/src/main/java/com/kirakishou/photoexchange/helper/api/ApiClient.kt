@@ -2,13 +2,13 @@ package com.kirakishou.photoexchange.helper.api
 
 import com.kirakishou.photoexchange.helper.api.response.FavouritePhotoResponseData
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
-import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
+import com.kirakishou.photoexchange.usecases.UploadPhotosUseCase
 import com.kirakishou.photoexchange.helper.exception.ApiErrorException
 import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.helper.exception.AttemptToAccessInternetWithMeteredNetworkException
 import com.kirakishou.photoexchange.helper.exception.AttemptToLoadImagesWithMeteredNetworkException
 import com.kirakishou.photoexchange.helper.exception.ConnectionError
-import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
+import com.kirakishou.photoexchange.mvrx.model.photo.TakenPhoto
 import kotlinx.coroutines.channels.SendChannel
 import net.response.data.GalleryPhotoResponseData
 import net.response.data.PhotoAdditionalInfoResponseData

@@ -8,7 +8,7 @@ import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.exception.ConnectionError
 import com.kirakishou.photoexchange.helper.LonLat
-import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
+import com.kirakishou.photoexchange.mvrx.model.photo.TakenPhoto
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.rx2.await
 import net.request.UploadPhotoPacket

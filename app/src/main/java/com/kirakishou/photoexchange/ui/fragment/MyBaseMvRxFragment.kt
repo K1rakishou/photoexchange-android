@@ -13,6 +13,7 @@ import com.airbnb.epoxy.EpoxyRecyclerView
 import com.airbnb.mvrx.BaseMvRxFragment
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
 import com.kirakishou.fixmypc.photoexchange.R
+import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import io.reactivex.disposables.CompositeDisposable
@@ -25,7 +26,7 @@ abstract class MyBaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
 
   protected val compositeDisposable = CompositeDisposable()
 
-  private val job = Job()
+  private var job = Job()
   lateinit var recyclerView: EpoxyRecyclerView
   lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
@@ -48,6 +49,17 @@ abstract class MyBaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
         postInvalidate()
       }
     }
+  }
+
+  override fun onDetach() {
+    super.onDetach()
+
+    job.cancel()
+    job = Job()
+
+    compositeDisposable.clear()
+
+    PhotoExchangeApplication.watch(this, this::class.simpleName)
   }
 
   @CallSuper
@@ -99,9 +111,6 @@ abstract class MyBaseMvRxFragment : BaseMvRxFragment(), CoroutineScope {
   @CallSuper
   override fun onDestroyView() {
     epoxyController.cancelPendingModelBuild()
-
-    compositeDisposable.clear()
-    job.cancelChildren()
 
     super.onDestroyView()
   }

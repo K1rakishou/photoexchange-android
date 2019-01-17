@@ -2,8 +2,8 @@ package com.kirakishou.photoexchange.helper.database.mapper
 
 import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.helper.database.entity.ReceivedPhotoEntity
-import com.kirakishou.photoexchange.mvp.model.photo.PhotoAdditionalInfo
-import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
+import com.kirakishou.photoexchange.mvrx.model.photo.PhotoAdditionalInfo
+import com.kirakishou.photoexchange.mvrx.model.photo.ReceivedPhoto
 import net.response.data.ReceivedPhotoResponseData
 
 object ReceivedPhotosMapper {

@@ -16,7 +16,7 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.activity.SettingsActivityModule
 import com.kirakishou.photoexchange.helper.NetworkAccessLevel
 import com.kirakishou.photoexchange.helper.PhotosVisibility
-import com.kirakishou.photoexchange.mvp.viewmodel.SettingsActivityViewModel
+import com.kirakishou.photoexchange.mvrx.viewmodel.SettingsActivityViewModel
 import com.kirakishou.photoexchange.ui.dialog.EnterOldUserUuidDialog
 import io.reactivex.rxkotlin.plusAssign
 import kotlinx.coroutines.launch

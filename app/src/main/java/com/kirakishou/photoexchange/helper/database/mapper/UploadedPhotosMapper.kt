@@ -2,7 +2,7 @@ package com.kirakishou.photoexchange.helper.database.mapper
 
 import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.helper.database.entity.UploadedPhotoEntity
-import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
+import com.kirakishou.photoexchange.mvrx.model.photo.UploadedPhoto
 import net.response.data.UploadedPhotoResponseData
 
 object UploadedPhotosMapper {

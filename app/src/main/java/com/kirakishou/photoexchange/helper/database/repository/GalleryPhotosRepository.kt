@@ -1,8 +1,7 @@
 package com.kirakishou.photoexchange.helper.database.repository
 
 import com.kirakishou.photoexchange.helper.database.source.local.GalleryPhotoLocalSource
-import com.kirakishou.photoexchange.mvp.model.photo.GalleryPhoto
-import net.response.data.GalleryPhotoResponseData
+import com.kirakishou.photoexchange.mvrx.model.photo.GalleryPhoto
 
 class GalleryPhotosRepository(
   private val galleryPhotoLocalSource: GalleryPhotoLocalSource

@@ -14,14 +14,13 @@ import com.kirakishou.photoexchange.helper.intercom.StateEventListener
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvp.viewmodel.PhotosActivityViewModel
+import com.kirakishou.photoexchange.mvrx.viewmodel.PhotosActivityViewModel
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.epoxy.controller.ReceivedPhotosFragmentEpoxyController
 import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -60,6 +59,10 @@ class ReceivedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Received
     viewModel.receivedPhotosFragmentViewModel.photoSize = photoSize
     viewModel.receivedPhotosFragmentViewModel.photosPerPage = spanCount * Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
 
+    // Probably it would be a better idea to subscribe here not to the whole state but to
+    // just some properties that are responsible for building epoxy models.
+    // In the current situation all of the state properties are responsible for that, but once
+    // there are more properties in the state it should become more reasonable.
     viewModel.receivedPhotosFragmentViewModel.subscribe(this, true) {
       doInvalidate()
     }

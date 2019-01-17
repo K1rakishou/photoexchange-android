@@ -20,8 +20,8 @@ import com.kirakishou.photoexchange.helper.CameraProvider
 import com.kirakishou.photoexchange.helper.Vibrator
 import com.kirakishou.photoexchange.helper.permission.PermissionManager
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
-import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
-import com.kirakishou.photoexchange.mvp.viewmodel.TakePhotoActivityViewModel
+import com.kirakishou.photoexchange.mvrx.model.photo.TakenPhoto
+import com.kirakishou.photoexchange.mvrx.viewmodel.TakePhotoActivityViewModel
 import com.kirakishou.photoexchange.ui.dialog.CameraIsNotAvailableDialog
 import io.fotoapparat.view.CameraView
 import io.reactivex.Completable

@@ -7,7 +7,7 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.database.repository.*
 import com.kirakishou.photoexchange.helper.database.source.remote.FirebaseRemoteSource
 import com.kirakishou.photoexchange.helper.util.*
-import com.kirakishou.photoexchange.interactors.*
+import com.kirakishou.photoexchange.usecases.*
 import dagger.Module
 import dagger.Provides
 import javax.inject.Named

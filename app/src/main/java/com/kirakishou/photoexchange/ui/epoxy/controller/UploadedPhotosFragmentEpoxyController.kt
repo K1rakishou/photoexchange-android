@@ -9,11 +9,11 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.exception.EmptyUserUuidException
-import com.kirakishou.photoexchange.mvp.model.PhotoState
-import com.kirakishou.photoexchange.mvp.model.photo.UploadedPhoto
-import com.kirakishou.photoexchange.mvp.model.photo.UploadingPhoto
-import com.kirakishou.photoexchange.mvp.viewmodel.UploadedPhotosFragmentViewModel
-import com.kirakishou.photoexchange.mvp.viewmodel.state.UploadedPhotosFragmentState
+import com.kirakishou.photoexchange.mvrx.model.PhotoState
+import com.kirakishou.photoexchange.mvrx.model.photo.UploadedPhoto
+import com.kirakishou.photoexchange.mvrx.model.photo.UploadingPhoto
+import com.kirakishou.photoexchange.mvrx.viewmodel.UploadedPhotosFragmentViewModel
+import com.kirakishou.photoexchange.mvrx.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.epoxy.row.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch

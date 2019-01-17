@@ -9,8 +9,8 @@ import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.helper.ImageLoader
 import com.kirakishou.photoexchange.helper.exception.EmptyUserUuidException
 import com.kirakishou.photoexchange.helper.extension.safe
-import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
-import com.kirakishou.photoexchange.mvp.viewmodel.ReceivedPhotosFragmentViewModel
+import com.kirakishou.photoexchange.mvrx.model.photo.ReceivedPhoto
+import com.kirakishou.photoexchange.mvrx.viewmodel.ReceivedPhotosFragmentViewModel
 import com.kirakishou.photoexchange.ui.epoxy.row.loadingRow
 import com.kirakishou.photoexchange.ui.epoxy.row.receivedPhotoRow
 import com.kirakishou.photoexchange.ui.epoxy.row.textRow
@@ -61,7 +61,7 @@ class ReceivedPhotosFragmentEpoxyController(
                     viewModel.favouritePhoto(model.photo().receivedPhotoName)
                   }
                   reportButtonCallback { model, _, _, _ ->
-                    viewModel.reportPhotos(model.photo().receivedPhotoName)
+                    viewModel.reportPhoto(model.photo().receivedPhotoName)
                   }
                   onBind { model, view, _ ->
                     loadPhotoOrImage(coroutineScope, model.photo(), view.photoView, view.staticMapView)

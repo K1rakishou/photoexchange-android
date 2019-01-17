@@ -1,7 +1,7 @@
 package com.kirakishou.photoexchange.helper.intercom.event
 
-import com.kirakishou.photoexchange.mvp.model.NewReceivedPhoto
-import com.kirakishou.photoexchange.mvp.model.photo.ReceivedPhoto
+import com.kirakishou.photoexchange.mvrx.model.NewReceivedPhoto
+import com.kirakishou.photoexchange.mvrx.model.photo.ReceivedPhoto
 
 sealed class ReceivedPhotosFragmentEvent : BaseEvent {
   sealed class GeneralEvents : ReceivedPhotosFragmentEvent() {

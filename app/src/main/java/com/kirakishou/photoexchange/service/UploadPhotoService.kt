@@ -13,7 +13,7 @@ import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.service.UploadPhotoServiceModule
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.extension.safe
-import com.kirakishou.photoexchange.interactors.GetCurrentLocationUseCase
+import com.kirakishou.photoexchange.usecases.GetCurrentLocationUseCase
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingServiceCallback

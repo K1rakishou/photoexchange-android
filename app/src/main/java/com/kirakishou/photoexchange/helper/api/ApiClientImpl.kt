@@ -9,8 +9,8 @@ import com.kirakishou.photoexchange.helper.exception.AttemptToLoadImagesWithMete
 import com.kirakishou.photoexchange.helper.gson.JsonConverter
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.NetUtils
-import com.kirakishou.photoexchange.interactors.UploadPhotosUseCase
-import com.kirakishou.photoexchange.mvp.model.photo.TakenPhoto
+import com.kirakishou.photoexchange.usecases.UploadPhotosUseCase
+import com.kirakishou.photoexchange.mvrx.model.photo.TakenPhoto
 import kotlinx.coroutines.channels.SendChannel
 import net.response.data.GalleryPhotoResponseData
 import net.response.data.PhotoAdditionalInfoResponseData
