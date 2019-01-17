@@ -12,7 +12,9 @@ data class ReceivedPhotosFragmentState(
 
   val isEndReached: Boolean = false,
   val receivedPhotos: List<ReceivedPhoto> = emptyList(),
-  val receivedPhotosRequest: Async<Paged<ReceivedPhoto>> = Uninitialized
+  val receivedPhotosRequest: Async<Paged<ReceivedPhoto>> = Uninitialized,
+
+  val checkForFreshPhotosRequest: Async<Unit> = Uninitialized
 ) : MvRxState {
 
   fun onPhotoFavourited(

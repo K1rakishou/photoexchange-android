@@ -135,9 +135,6 @@ class UploadedPhotosFragmentViewModel(
       }
 
       launch {
-        val loadingState = Loading<Unit>()
-        setState { copy(checkForFreshPhotosRequest = loadingState) }
-
         val firstUploadedOn = state.uploadedPhotos
           .firstOrNull()
           ?.uploadedOn
@@ -146,6 +143,9 @@ class UploadedPhotosFragmentViewModel(
           //no photos
           return@launch
         }
+
+        val loadingState = Loading<Unit>()
+        setState { copy(checkForFreshPhotosRequest = loadingState) }
 
         val freshPhotosRequest = try {
           Success(getFreshPhotosUseCase.getFreshUploadedPhotos(false, firstUploadedOn))

@@ -15,6 +15,7 @@ import com.kirakishou.photoexchange.helper.intercom.event.GalleryFragmentEvent
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.mvrx.viewmodel.PhotosActivityViewModel
+import com.kirakishou.photoexchange.mvrx.viewmodel.state.GalleryFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.epoxy.controller.GalleryFragmentEpoxyController
 import io.reactivex.rxkotlin.plusAssign
@@ -58,12 +59,13 @@ class GalleryFragment : MyBaseMvRxFragment(), StateEventListener<GalleryFragment
     viewModel.galleryFragmentViewModel.photoSize = photoSize
     viewModel.galleryFragmentViewModel.photosPerPage = spanCount * Constants.DEFAULT_PHOTOS_PER_PAGE_COUNT
 
-    // Probably it would be a better idea to subscribe here not to the whole state but to
-    // just some properties that are responsible for building epoxy models.
-    // In the current situation all of the state properties are responsible for that, but once
-    // there are more properties in the state it should become more reasonable.
-    viewModel.galleryFragmentViewModel.subscribe(this, true) {
-//      doInvalidate()
+    //rebuild models when one of the following variables in the state changes
+    viewModel.galleryFragmentViewModel.selectSubscribe(
+      this,
+      GalleryFragmentState::galleryPhotos,
+      GalleryFragmentState::galleryPhotosRequest
+    ) { _, _ ->
+      recyclerView.requestModelBuild()
     }
 
     swipeRefreshLayout.setOnRefreshListener {

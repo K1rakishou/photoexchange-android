@@ -12,7 +12,9 @@ data class GalleryFragmentState(
 
   val isEndReached: Boolean = false,
   val galleryPhotos: List<GalleryPhoto> = emptyList(),
-  val galleryPhotosRequest: Async<Paged<GalleryPhoto>> = Uninitialized
+  val galleryPhotosRequest: Async<Paged<GalleryPhoto>> = Uninitialized,
+
+  val checkForFreshPhotosRequest: Async<Unit> = Uninitialized
 ) : MvRxState {
 
   fun onPhotoFavourited(

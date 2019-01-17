@@ -149,6 +149,11 @@ open class ReceivedPhotosFragmentViewModel(
         return@withState
       }
 
+      //do not run the request if it is already running
+      if (state.checkForFreshPhotosRequest is Loading) {
+        return@withState
+      }
+
       launch {
         val firstUploadedOn = state.receivedPhotos
           .firstOrNull()
@@ -159,15 +164,21 @@ open class ReceivedPhotosFragmentViewModel(
           return@launch
         }
 
-        val freshPhotos = try {
-          getFreshPhotosUseCase.getFreshReceivedPhotos(false, firstUploadedOn)
+        val loadingState = Loading<Unit>()
+        setState { copy(checkForFreshPhotosRequest = loadingState) }
+
+        val freshPhotosRequest = try {
+          Success(getFreshPhotosUseCase.getFreshReceivedPhotos(false, firstUploadedOn))
         } catch (error: Throwable) {
           Timber.tag(TAG).e(error, "Error while trying to check fresh received photos")
+          setState { copy(checkForFreshPhotosRequest = Uninitialized) }
           //TODO: notify user about this error?
           return@launch
         }
 
+        val freshPhotos = freshPhotosRequest() ?: emptyList()
         if (freshPhotos.isEmpty()) {
+          setState { copy(checkForFreshPhotosRequest = Uninitialized) }
           return@launch
         }
 
@@ -185,7 +196,8 @@ open class ReceivedPhotosFragmentViewModel(
 
         setState {
           copy(
-            receivedPhotos = newReceivedPhotos
+            receivedPhotos = newReceivedPhotos,
+            checkForFreshPhotosRequest = Uninitialized
           )
         }
       }

@@ -131,6 +131,11 @@ open class GalleryFragmentViewModel(
         return@withState
       }
 
+      //do not run the request if it is already running
+      if (state.checkForFreshPhotosRequest is Loading) {
+        return@withState
+      }
+
       launch {
         val firstUploadedOn = state.galleryPhotos
           .firstOrNull()
@@ -141,15 +146,21 @@ open class GalleryFragmentViewModel(
           return@launch
         }
 
-        val freshPhotos = try {
-          getFreshPhotosUseCase.getFreshGalleryPhotos(false, firstUploadedOn)
+        val loadingState = Loading<Unit>()
+        setState { copy(checkForFreshPhotosRequest = loadingState) }
+
+        val freshPhotosRequest = try {
+          Success(getFreshPhotosUseCase.getFreshGalleryPhotos(false, firstUploadedOn))
         } catch (error: Throwable) {
           Timber.tag(TAG).e(error, "Error while trying to check fresh gallery photos")
+          setState { copy(checkForFreshPhotosRequest = Uninitialized) }
           //TODO: notify user about this error?
           return@launch
         }
 
+        val freshPhotos = freshPhotosRequest() ?: emptyList()
         if (freshPhotos.isEmpty()) {
+          setState { copy(checkForFreshPhotosRequest = Uninitialized) }
           return@launch
         }
 
@@ -167,7 +178,8 @@ open class GalleryFragmentViewModel(
 
         setState {
           copy(
-            galleryPhotos = newGalleryPhotos
+            galleryPhotos = newGalleryPhotos,
+            checkForFreshPhotosRequest = Uninitialized
           )
         }
       }
