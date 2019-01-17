@@ -52,26 +52,31 @@ class PagedApiUtilsImpl(
       else -> FreshPhotosCountRequestResult.Ok(freshPhotos.size)
     }
 
-    when (freshPhotosCountRequestResult) {
-      is FreshPhotosCountRequestResult.Ok,
-      FreshPhotosCountRequestResult.NoFreshPhotos -> {
-        deleteOldFunc()
-      }
-      FreshPhotosCountRequestResult.TooFreshManyPhotos -> {
-        //do nothing
+    val returnedPhotos = try {
+      getPhotos(
+        tag,
+        lastUploadedOn,
+        requestedCount,
+        userUuid,
+        freshPhotosCountRequestResult,
+        getPhotosFromCacheFunc,
+        getPageOfPhotosFunc,
+        clearCacheFunc,
+        deleteOldFunc
+      )
+    } catch (error: Throwable) {
+      when (error) {
+        is AttemptToAccessInternetWithMeteredNetworkException,
+        is ConnectionError -> {
+          // Error here means that we can't access internet (current network is metered) so
+          // the only thing we can do is to return whatever there is in the cache.
+          // We also don't want to delete old photos at this point.
+          val photosFromCache = getPhotosFromCacheFunc(lastUploadedOn, requestedCount)
+          return Paged(photosFromCache, photosFromCache.size < requestedCount)
+        }
+        else -> throw error
       }
     }
-
-    val returnedPhotos = getPhotos(
-      tag,
-      lastUploadedOn,
-      requestedCount,
-      userUuid,
-      freshPhotosCountRequestResult,
-      getPhotosFromCacheFunc,
-      getPageOfPhotosFunc,
-      clearCacheFunc
-    )
 
     val pageOfPhotos = when (returnedPhotos) {
       is ReturnedPhotos.FromCache<PhotoType> -> {
@@ -119,7 +124,8 @@ class PagedApiUtilsImpl(
     getFreshPhotosCountResult: FreshPhotosCountRequestResult,
     getPhotosFromCacheFunc: suspend (Long, Int) -> List<PhotoType>,
     getPageOfPhotosFunc: suspend (String?, Long, Int) -> List<PhotoType>,
-    clearCacheFunc: suspend () -> Unit
+    clearCacheFunc: suspend () -> Unit,
+    deleteOldFunc: suspend () -> Unit
   ): ReturnedPhotos<PhotoType> {
     when (getFreshPhotosCountResult) {
       FreshPhotosCountRequestResult.NoFreshPhotos -> {
@@ -143,6 +149,8 @@ class PagedApiUtilsImpl(
           Timber.tag("${TAG}_$tag").d("getPageOfPhotosFunc returned ${it.size} photos")
         }
 
+        deleteOldFunc()
+
         return ReturnedPhotos.FromServer(photos)
       }
       is FreshPhotosCountRequestResult.Ok -> {
@@ -152,6 +160,8 @@ class PagedApiUtilsImpl(
         val photos = getPageOfPhotosFunc(userId, lastUploadedOn, requestedCount).also {
           Timber.tag("${TAG}_$tag").d("getPageOfPhotosFunc with the time of last photo returned ${it.size} photos")
         }
+
+        deleteOldFunc()
 
         return ReturnedPhotos.FromServer(photos)
       }
