@@ -13,6 +13,10 @@ class BlacklistedPhotoRepository(
   }
 
   suspend fun <T> filterBlacklistedPhotos(photos: List<T>, nameSelector: (T) -> String): List<T> {
+    if (photos.isEmpty()) {
+      return emptyList()
+    }
+
     val resultList = mutableListOf<T>()
 
     for (photo in photos) {

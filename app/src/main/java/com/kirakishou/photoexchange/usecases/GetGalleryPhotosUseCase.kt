@@ -62,7 +62,7 @@ open class GetGalleryPhotosUseCase(
     userUuidParam: String,
     countParam: Int
   ): Paged<GalleryPhoto> {
-    return pagedApiUtils.getPageOfPhotos(
+    return pagedApiUtils.getPageOfPhotos<GalleryPhoto>(
       "gallery_photos",
       firstUploadedOnParam,
       lastUploadedOnParam,
@@ -70,10 +70,14 @@ open class GetGalleryPhotosUseCase(
       userUuidParam,
       { lastUploadedOn, count -> getFromCacheInternal(lastUploadedOn, count) },
       { firstUploadedOn -> getFreshPhotosUseCase.getFreshGalleryPhotos(forced, firstUploadedOn) },
-      { _, lastUploadedOn, count -> apiClient.getPageOfGalleryPhotos(lastUploadedOn, count) },
+      { _, lastUploadedOn, count ->
+        val responseData = apiClient.getPageOfGalleryPhotos(lastUploadedOn, count)
+        return@getPageOfPhotos GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(
+          responseData
+        )
+      },
       { galleryPhotosRepository.deleteAll() },
       { galleryPhotosRepository.deleteOldPhotos() },
-      { responseData -> GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(responseData) },
       { galleryPhotos -> filterBlacklistedPhotos(galleryPhotos) },
       { galleryPhotos -> galleryPhotosRepository.saveMany(galleryPhotos) }
     )

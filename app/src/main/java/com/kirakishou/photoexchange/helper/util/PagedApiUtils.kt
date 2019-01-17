@@ -4,7 +4,7 @@ import com.kirakishou.photoexchange.helper.Paged
 
 interface PagedApiUtils {
 
-  suspend fun <T, R> getPageOfPhotos(
+  suspend fun <T> getPageOfPhotos(
     tag: String,
     firstUploadedOn: Long,
     lastUploadedOn: Long,
@@ -12,10 +12,9 @@ interface PagedApiUtils {
     userUuid: String?,
     getPhotosFromCacheFunc: suspend (Long, Int) -> List<T>,
     getFreshPhotosFunc: suspend (Long) -> List<T>,
-    getPageOfPhotosFunc: suspend (String?, Long, Int) -> List<R>,
+    getPageOfPhotosFunc: suspend (String?, Long, Int) -> List<T>,
     clearCacheFunc: suspend () -> Unit,
     deleteOldFunc: suspend () -> Unit,
-    mapperFunc: suspend (List<R>) -> List<T>,
     filterBannedPhotosFunc: suspend (List<T>) -> List<T>,
     cachePhotosFunc: suspend (List<T>) -> Boolean
   ): Paged<T>

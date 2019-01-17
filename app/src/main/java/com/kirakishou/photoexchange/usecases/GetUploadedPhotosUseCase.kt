@@ -54,7 +54,7 @@ open class GetUploadedPhotosUseCase(
     userUuidParam: String,
     countParam: Int
   ): Paged<UploadedPhoto> {
-    return pagedApiUtils.getPageOfPhotos(
+    return pagedApiUtils.getPageOfPhotos<UploadedPhoto>(
       "uploaded_photos",
       firstUploadedOnParam,
       lastUploadedOnParam,
@@ -62,12 +62,14 @@ open class GetUploadedPhotosUseCase(
       userUuidParam,
       { lastUploadedOn, count -> getFromCacheInternal(lastUploadedOn, count) },
       { firstUploadedOn -> getFreshPhotosUseCase.getFreshUploadedPhotos(forced, firstUploadedOn) },
-      { userUuid, lastUploadedOn, count -> apiClient.getPageOfUploadedPhotos(userUuid!!, lastUploadedOn, count) },
+      { userUuid, lastUploadedOn, count ->
+        val responseData = apiClient.getPageOfUploadedPhotos(userUuid!!, lastUploadedOn, count)
+        return@getPageOfPhotos UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhotos(responseData)
+      },
       { uploadedPhotosRepository.deleteAll() },
       {
         //do not delete uploaded photos from this use case, do it in the received photo use case
       },
-      { responseData -> UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhotos(responseData) },
       { uploadedPhotos ->
         //we don't need to filter uploaded photos
         uploadedPhotos

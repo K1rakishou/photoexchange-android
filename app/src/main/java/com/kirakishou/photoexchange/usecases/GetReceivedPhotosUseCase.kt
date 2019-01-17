@@ -64,7 +64,7 @@ open class GetReceivedPhotosUseCase(
     userUuidParam: String,
     countParam: Int
   ): Paged<ReceivedPhoto> {
-    return pagedApiUtils.getPageOfPhotos(
+    return pagedApiUtils.getPageOfPhotos<ReceivedPhoto>(
       "received_photos",
       firstUploadedOnParam,
       lastUploadedOnParam,
@@ -73,19 +73,13 @@ open class GetReceivedPhotosUseCase(
       { lastUploadedOn, count -> getFromCacheInternal(lastUploadedOn, count) },
       { firstUploadedOn -> getFreshPhotosUseCase.getFreshReceivedPhotos(forced, firstUploadedOn) },
       { userUuid, lastUploadedOn, count ->
-        apiClient.getPageOfReceivedPhotos(
-          userUuid!!,
-          lastUploadedOn,
-          count
+        val responseData = apiClient.getPageOfReceivedPhotos(userUuid!!, lastUploadedOn, count)
+        return@getPageOfPhotos ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhotos(
+          responseData
         )
       },
       { receivedPhotosRepository.deleteAll() },
       { deleteOldPhotos() },
-      { responseData ->
-        ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhotos(
-          responseData
-        )
-      },
       { receivedPhotos -> filterBlacklistedPhotos(receivedPhotos) },
       { receivedPhotos ->
         storeInDatabase(receivedPhotos)
