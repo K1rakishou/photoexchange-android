@@ -485,22 +485,12 @@ class UploadedPhotosFragmentViewModel(
 
   private fun startReceivingService() {
     Timber.tag(TAG).d("startReceiveingService called!")
-
-    intercom.tell<PhotosActivity>()
-      .to(PhotosActivityEvent.StartReceivingService(
-        PhotosActivityViewModel::class.java,
-        "Start receiving service request")
-      )
+    intercom.tell<PhotosActivity>().to(PhotosActivityEvent.StartReceivingService)
   }
 
   private fun startUploadingService() {
     Timber.tag(TAG).d("startUploadingService called!")
-
-    intercom.tell<PhotosActivity>()
-      .to(PhotosActivityEvent.StartUploadingService(
-        PhotosActivityViewModel::class.java,
-        "Start uploading service request")
-      )
+    intercom.tell<PhotosActivity>().to(PhotosActivityEvent.StartUploadingService)
   }
 
   /**

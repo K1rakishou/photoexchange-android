@@ -78,7 +78,7 @@ class PagedApiUtilsImplTest {
     runBlocking {
       val page = pagedApiUtils.getPageOfPhotos<GalleryPhoto>(
         "test",
-        -1L,
+        0,
         currentTime,
         5,
         "234",

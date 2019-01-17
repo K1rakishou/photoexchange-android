@@ -541,14 +541,7 @@ open class ReceivedPhotosFragmentViewModel(
 
   private fun startReceivingService() {
     Timber.tag(TAG).d("startReceiveingService called!")
-
-    intercom.tell<PhotosActivity>()
-      .to(
-        PhotosActivityEvent.StartReceivingService(
-          PhotosActivityViewModel::class.java,
-          "Start receiving service request"
-        )
-      )
+    intercom.tell<PhotosActivity>().to(PhotosActivityEvent.StartReceivingService)
   }
 
   fun clear() {

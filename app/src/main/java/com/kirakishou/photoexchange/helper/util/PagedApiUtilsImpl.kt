@@ -27,7 +27,11 @@ class PagedApiUtilsImpl(
     cachePhotosFunc: suspend (List<PhotoType>) -> Boolean
   ): Paged<PhotoType> {
     val freshPhotos = try {
-      getFreshPhotosFunc(firstUploadedOn)
+      if (firstUploadedOn == -1L) {
+        emptyList()
+      } else {
+        getFreshPhotosFunc(firstUploadedOn)
+      }
     } catch (error: Throwable) {
       when (error) {
         is AttemptToAccessInternetWithMeteredNetworkException,
