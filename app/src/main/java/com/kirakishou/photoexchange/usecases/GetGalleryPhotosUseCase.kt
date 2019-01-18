@@ -28,14 +28,14 @@ open class GetGalleryPhotosUseCase(
 
   open suspend fun loadPageOfPhotos(
     forced: Boolean,
-    firstUploadedOn: Long,
-    lastUploadedOnParam: Long,
+    firstUploadedOn: Long?,
+    lastUploadedOn: Long?,
     count: Int
   ): Paged<GalleryPhoto> {
     return withContext(coroutineContext) {
       Timber.tag(TAG).d("loadPageOfPhotos called")
 
-      val (lastUploadedOn, userUuid) = getParameters(lastUploadedOnParam)
+      val userUuid = settingsRepository.getUserUuid()
 
       val galleryPhotosPage = getPageOfGalleryPhotos(
         forced,
@@ -57,21 +57,21 @@ open class GetGalleryPhotosUseCase(
 
   private suspend fun getPageOfGalleryPhotos(
     forced: Boolean,
-    firstUploadedOnParam: Long,
-    lastUploadedOnParam: Long,
+    firstUploadedOn: Long?,
+    lastUploadedOn: Long?,
     userUuidParam: String,
     countParam: Int
   ): Paged<GalleryPhoto> {
     return pagedApiUtils.getPageOfPhotos<GalleryPhoto>(
       "gallery_photos",
-      firstUploadedOnParam,
-      lastUploadedOnParam,
+      firstUploadedOn,
+      lastUploadedOn,
       countParam,
       userUuidParam,
-      { lastUploadedOn, count -> getFromCacheInternal(lastUploadedOn, count) },
-      { firstUploadedOn -> getFreshPhotosUseCase.getFreshGalleryPhotos(forced, firstUploadedOn) },
-      { _, lastUploadedOn, count ->
-        val responseData = apiClient.getPageOfGalleryPhotos(lastUploadedOn, count)
+      { lastUploadedOnParam, count -> getFromCacheInternal(lastUploadedOnParam, count) },
+      { firstUploadedOnParam -> getFreshPhotosUseCase.getFreshGalleryPhotos(forced, firstUploadedOnParam) },
+      { _, lastUploadedOnParam, count ->
+        val responseData = apiClient.getPageOfGalleryPhotos(lastUploadedOnParam, count)
         return@getPageOfPhotos GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhotoList(
           responseData
         )
@@ -83,9 +83,11 @@ open class GetGalleryPhotosUseCase(
     )
   }
 
-  private suspend fun getFromCacheInternal(lastUploadedOn: Long, count: Int): List<GalleryPhoto> {
+  private suspend fun getFromCacheInternal(lastUploadedOn: Long?, count: Int): List<GalleryPhoto> {
+    val time = lastUploadedOn ?: timeUtils.getTimePlus26Hours()
+
     //if there is no internet - search only in the database
-    val cachedGalleryPhotos = galleryPhotosRepository.getPage(lastUploadedOn, count)
+    val cachedGalleryPhotos = galleryPhotosRepository.getPage(time, count)
     return if (cachedGalleryPhotos.size == count) {
       Timber.tag(TAG).d("Found enough gallery photos in the database")
       cachedGalleryPhotos
@@ -101,18 +103,5 @@ open class GetGalleryPhotosUseCase(
     return blacklistedPhotoRepository.filterBlacklistedPhotos(receivedPhotos) {
       it.photoName
     }
-  }
-
-  private suspend fun getParameters(lastUploadedOnParam: Long): Pair<Long, String> {
-    //FIXME: do not get current time in the client, send -1 as it is to the server. Timezones bug
-    val lastUploadedOn = if (lastUploadedOnParam != -1L) {
-      lastUploadedOnParam
-    } else {
-      timeUtils.getTimeFast()
-    }
-
-    //empty userUuid is allowed here since we need it only when fetching photoAdditionalInfo
-    val userUuid = settingsRepository.getUserUuid()
-    return lastUploadedOn to userUuid
   }
 }

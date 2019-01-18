@@ -26,14 +26,17 @@ open class GetUploadedPhotosUseCase(
 
   open suspend fun loadPageOfPhotos(
     forced: Boolean,
-    firstUploadedOn: Long,
-    lastUploadedOnParam: Long,
+    firstUploadedOn: Long?,
+    lastUploadedOn: Long?,
     count: Int
   ): Paged<UploadedPhoto> {
     return withContext(coroutineContext) {
       Timber.tag(TAG).d("loadPageOfPhotos called")
 
-      val (lastUploadedOn, userUuid) = getParameters(lastUploadedOnParam)
+      val userUuid = settingsRepository.getUserUuid()
+      if (userUuid.isEmpty()) {
+        throw EmptyUserUuidException()
+      }
 
       val uploadedPhotosPage = getPageOfUploadedPhotos(
         forced,
@@ -49,21 +52,21 @@ open class GetUploadedPhotosUseCase(
 
   private suspend fun getPageOfUploadedPhotos(
     forced: Boolean,
-    firstUploadedOnParam: Long,
-    lastUploadedOnParam: Long,
+    firstUploadedOn: Long?,
+    lastUploadedOn: Long?,
     userUuidParam: String,
     countParam: Int
   ): Paged<UploadedPhoto> {
     return pagedApiUtils.getPageOfPhotos<UploadedPhoto>(
       "uploaded_photos",
-      firstUploadedOnParam,
-      lastUploadedOnParam,
+      firstUploadedOn,
+      lastUploadedOn,
       countParam,
       userUuidParam,
-      { lastUploadedOn, count -> getFromCacheInternal(lastUploadedOn, count) },
-      { firstUploadedOn -> getFreshPhotosUseCase.getFreshUploadedPhotos(forced, firstUploadedOn) },
-      { userUuid, lastUploadedOn, count ->
-        val responseData = apiClient.getPageOfUploadedPhotos(userUuid!!, lastUploadedOn, count)
+      { lastUploadedOnParam, count -> getFromCacheInternal(lastUploadedOnParam, count) },
+      { firstUploadedOnParam -> getFreshPhotosUseCase.getFreshUploadedPhotos(forced, firstUploadedOnParam) },
+      { userUuid, lastUploadedOnParam, count ->
+        val responseData = apiClient.getPageOfUploadedPhotos(userUuid!!, lastUploadedOnParam, count)
         return@getPageOfPhotos UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhotos(responseData)
       },
       { uploadedPhotosRepository.deleteAll() },
@@ -78,9 +81,11 @@ open class GetUploadedPhotosUseCase(
     )
   }
 
-  private suspend fun getFromCacheInternal(lastUploadedOn: Long, count: Int): List<UploadedPhoto> {
+  private suspend fun getFromCacheInternal(lastUploadedOn: Long?, count: Int): List<UploadedPhoto> {
+    val time = lastUploadedOn ?: timeUtils.getTimePlus26Hours()
+
     //if there is no internet - search only in the database
-    val cachedUploadedPhotos = uploadedPhotosRepository.getPage(lastUploadedOn, count)
+    val cachedUploadedPhotos = uploadedPhotosRepository.getPage(time, count)
     return if (cachedUploadedPhotos.size == count) {
       Timber.tag(TAG).d("Found enough uploaded photos in the database")
       cachedUploadedPhotos
@@ -99,21 +104,5 @@ open class GetUploadedPhotosUseCase(
 
     //we need to show photos without receiver first and after them photos with receiver
     return Paged(uploadedPhotosWithNoReceiver + uploadedPhotosWithReceiver, uploadedPhotosPage.isEnd)
-  }
-
-  private suspend fun getParameters(lastUploadedOn: Long): Pair<Long, String> {
-    //FIXME: do not get current time in the client, send -1 as it is to the server. Timezones bug
-    val time = if (lastUploadedOn != -1L) {
-      lastUploadedOn
-    } else {
-      timeUtils.getTimeFast()
-    }
-
-    val userUuid = settingsRepository.getUserUuid()
-    if (userUuid.isEmpty()) {
-      throw EmptyUserUuidException()
-    }
-
-    return Pair(time, userUuid)
   }
 }

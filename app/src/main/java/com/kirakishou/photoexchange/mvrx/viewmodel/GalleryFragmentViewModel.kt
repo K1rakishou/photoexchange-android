@@ -377,12 +377,10 @@ open class GalleryFragmentViewModel(
         val firstUploadedOn = state.galleryPhotos
           .firstOrNull()
           ?.uploadedOn
-          ?: -1L
 
         val lastUploadedOn = state.galleryPhotos
           .lastOrNull()
           ?.uploadedOn
-          ?: -1L
 
         val request = try {
           val photos = getGalleryPhotosUseCase.loadPageOfPhotos(
@@ -400,7 +398,7 @@ open class GalleryFragmentViewModel(
 
         val newPageOfPhotos = (request()?.page ?: emptyList())
 
-        if (firstUploadedOn != -1L) {
+        if (firstUploadedOn != null) {
           val newPhotosCount = newPageOfPhotos.count { it.uploadedOn > firstUploadedOn }
 
           //if there are any fresh photos - show snackbar

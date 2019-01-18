@@ -464,12 +464,10 @@ open class ReceivedPhotosFragmentViewModel(
         val firstUploadedOn = state.receivedPhotos
           .firstOrNull()
           ?.uploadedOn
-          ?: -1L
 
         val lastUploadedOn = state.receivedPhotos
           .lastOrNull()
           ?.uploadedOn
-          ?: -1L
 
         val request = try {
           val receivedPhotos = getReceivedPhotosUseCase.loadPageOfPhotos(

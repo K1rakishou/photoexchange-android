@@ -32,10 +32,6 @@ open class GetFreshPhotosUseCase(
 
   @Throws(AttemptToAccessInternetWithMeteredNetworkException::class, EmptyUserUuidException::class)
   suspend fun getFreshUploadedPhotos(forced: Boolean, firstUploadedOn: Long): List<UploadedPhoto> {
-    if (firstUploadedOn <= 0) {
-      return emptyList()
-    }
-
     val userUuid = settingsRepository.getUserUuid()
     if (userUuid.isEmpty()) {
       throw EmptyUserUuidException()
@@ -56,10 +52,6 @@ open class GetFreshPhotosUseCase(
 
   @Throws(AttemptToAccessInternetWithMeteredNetworkException::class, EmptyUserUuidException::class)
   suspend fun getFreshReceivedPhotos(forced: Boolean, firstUploadedOn: Long): List<ReceivedPhoto> {
-    if (firstUploadedOn <= 0) {
-      return emptyList()
-    }
-
     val userUuid = settingsRepository.getUserUuid()
     if (userUuid.isEmpty()) {
       throw EmptyUserUuidException()
@@ -80,10 +72,6 @@ open class GetFreshPhotosUseCase(
 
   @Throws(AttemptToAccessInternetWithMeteredNetworkException::class)
   suspend fun getFreshGalleryPhotos(forced: Boolean, firstUploadedOn: Long): List<GalleryPhoto> {
-    if (firstUploadedOn <= 0) {
-      return emptyList()
-    }
-
     if (forced) {
       resetTimer(PhotoType.Gallery)
     }
