@@ -14,7 +14,7 @@ import com.kirakishou.photoexchange.mvrx.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.mvrx.model.photo.UploadedPhoto
 import java.util.concurrent.TimeUnit
 
-class GetFreshPhotosUseCase(
+open class GetFreshPhotosUseCase(
   private val apiClient: ApiClient,
   private val timeUtils: TimeUtils,
   private val settingsRepository: SettingsRepository,

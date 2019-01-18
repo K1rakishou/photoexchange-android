@@ -44,6 +44,7 @@ import com.kirakishou.photoexchange.mvrx.viewmodel.ReceivedPhotosFragmentViewMod
 import com.kirakishou.photoexchange.mvrx.viewmodel.UploadedPhotosFragmentViewModel
 import com.kirakishou.photoexchange.mvrx.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.epoxy.controller.UploadedPhotosFragmentEpoxyController
+import com.kirakishou.photoexchange.usecases.GetFreshPhotosUseCase
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.whenever
@@ -78,6 +79,7 @@ class UploadedPhotosFragmentTest {
   lateinit var getUploadedPhotosUseCase: GetUploadedPhotosUseCase
   lateinit var blackListPhotoUseCase: BlacklistPhotoUseCase
   lateinit var checkFirebaseAvailabilityUseCase: CheckFirebaseAvailabilityUseCase
+  lateinit var getFreshPhotosUseCase: GetFreshPhotosUseCase
 
   lateinit var uploadedPhotosFragmentViewModel: UploadedPhotosFragmentViewModel
 
@@ -126,6 +128,7 @@ class UploadedPhotosFragmentTest {
     getUploadedPhotosUseCase = Mockito.mock(GetUploadedPhotosUseCase::class.java)
     blackListPhotoUseCase = Mockito.mock(BlacklistPhotoUseCase::class.java)
     checkFirebaseAvailabilityUseCase = Mockito.mock(CheckFirebaseAvailabilityUseCase::class.java)
+    getFreshPhotosUseCase = Mockito.mock(GetFreshPhotosUseCase::class.java)
 
     uploadedPhotosFragmentViewModel = UploadedPhotosFragmentViewModel(
       UploadedPhotosFragmentState(),
@@ -133,6 +136,7 @@ class UploadedPhotosFragmentTest {
       takenPhotosRepository,
       uploadedPhotosRepository,
       getUploadedPhotosUseCase,
+      getFreshPhotosUseCase,
       dispatchers
     )
 
@@ -299,9 +303,7 @@ class UploadedPhotosFragmentTest {
       Thread.sleep(waitTime)
 
       val values = testObserver.values()
-
-      assertEquals("bad amount of events, event names are: (${values.map { it::class.java }})", 3, values.size)
-      assertTrue(values.all { it is PhotosActivityEvent.ShowToast })
+      assertEquals(3, values.count { it is PhotosActivityEvent.ShowToast })
     }
   }
 
