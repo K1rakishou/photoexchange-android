@@ -101,8 +101,6 @@ class PagedApiUtilsImplTest {
   @Test
   fun `should return photos from cache when it's first run and there are enough photos in the cache`() {
     runBlocking {
-      var deleteOldFuncCalled = false
-
       val page = pagedApiUtils.getPageOfPhotos<GalleryPhoto>(
         "test",
         -1L,
@@ -113,12 +111,10 @@ class PagedApiUtilsImplTest {
         getFreshPhotosFunc = { listOf<GalleryPhoto>() },
         getPageOfPhotosFunc = { _, _, _ -> assertNotCalled() },
         clearCacheFunc = { assertNotCalled() },
-        deleteOldFunc = { deleteOldFuncCalled = true },
+        deleteOldFunc = { assertNotCalled() },
         filterBannedPhotosFunc = { assertNotCalled() },
         cachePhotosFunc = { assertNotCalled() }
       )
-
-      assertTrue(deleteOldFuncCalled)
 
       assertEquals(1, page.page.size)
       assertEquals("123", page.page.first().photoName)
@@ -159,11 +155,9 @@ class PagedApiUtilsImplTest {
     }
   }
 
-  @Test(expected = ConnectionError::class)
+  @Test
   fun `should return photos from cache when attempt to fetch photos from server resulted in connection exception`() {
     runBlocking {
-      var deleteOldFuncCalled = false
-
       val page = pagedApiUtils.getPageOfPhotos<GalleryPhoto>(
         "test",
         -1L,
@@ -174,10 +168,16 @@ class PagedApiUtilsImplTest {
         getFreshPhotosFunc = { listOf<GalleryPhoto>() },
         getPageOfPhotosFunc = { _, _, _ -> throw ConnectionError("BAM") },
         clearCacheFunc = { assertNotCalled() },
-        deleteOldFunc = { deleteOldFuncCalled = true },
+        deleteOldFunc = { assertNotCalled() },
         filterBannedPhotosFunc = { assertNotCalled() },
         cachePhotosFunc = { assertNotCalled() }
       )
+
+      assertEquals(1, page.page.size)
+      val photos = page.page
+
+      assertEquals("123", photos[0].photoName)
+      assertTrue(page.isEnd)
     }
   }
 
@@ -237,10 +237,9 @@ class PagedApiUtilsImplTest {
     }
   }
 
-  @Test(expected = ConnectionError::class)
+  @Test
   fun `should return photos from cache when there are fresh photos on the server but attempt to get them resulted in connection exception`() {
     runBlocking {
-      var deleteOldFuncCalled = false
       val page = pagedApiUtils.getPageOfPhotos<GalleryPhoto>(
         "test",
         1L,
@@ -251,10 +250,16 @@ class PagedApiUtilsImplTest {
         getFreshPhotosFunc = { freshPhotosFromServer.take(2) },
         getPageOfPhotosFunc = { _, _, _ -> throw ConnectionError("BAM") },
         clearCacheFunc = { assertNotCalled() },
-        deleteOldFunc = { deleteOldFuncCalled = true },
+        deleteOldFunc = { assertNotCalled() },
         filterBannedPhotosFunc = { assertNotCalled() },
         cachePhotosFunc = { assertNotCalled() }
       )
+
+      assertEquals(1, page.page.size)
+      val photos = page.page
+
+      assertEquals("123", photos[0].photoName)
+      assertTrue(page.isEnd)
     }
   }
 

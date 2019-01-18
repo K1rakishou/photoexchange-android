@@ -63,10 +63,12 @@ open class FavouritePhotoUseCase(
     }
 
     val photoAdditionalInfo = photoAdditionalInfoRepository.findByPhotoName(galleryPhotoEntity.photoName)
+      //if additional photo info has been found - update it with new data
       ?.copy(
         isFavourited = favouritePhotoResponseData.isFavourited,
         favouritesCount = favouritePhotoResponseData.favouritesCount
       )
+      //otherwise just create a new one for this photo
       ?: PhotoAdditionalInfo.create(
         galleryPhotoEntity.photoName,
         favouritePhotoResponseData.isFavourited,

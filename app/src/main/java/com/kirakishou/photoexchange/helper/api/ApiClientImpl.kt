@@ -123,14 +123,17 @@ open class ApiClientImpl
 
   override suspend fun getPageOfUploadedPhotos(
     userUuid: String,
-    lastUploadedOn: Long,
+    lastUploadedOn: Long?,
     count: Int
   ): List<UploadedPhotoResponseData> {
     throwIfNotAllowedToAccessInternet("getPageOfUploadedPhotos")
 
+    //-1L basically means current server local time
+    val time = lastUploadedOn ?: -1L
+
     val response = GetPageOfUploadedPhotosRequest(
       userUuid,
-      lastUploadedOn,
+      time,
       count,
       apiService,
       jsonConverter,
@@ -142,14 +145,17 @@ open class ApiClientImpl
 
   override suspend fun getPageOfReceivedPhotos(
     userUuid: String,
-    lastUploadedOn: Long,
+    lastUploadedOn: Long?,
     count: Int
   ): List<ReceivedPhotoResponseData> {
     throwIfNotAllowedToAccessInternet("getPageOfReceivedPhotos")
 
+    //-1L basically means current server local time
+    val time = lastUploadedOn ?: -1L
+
     val response = GetPageOfReceivedPhotosRequest(
       userUuid,
-      lastUploadedOn,
+      time,
       count,
       apiService,
       jsonConverter,
@@ -160,13 +166,16 @@ open class ApiClientImpl
   }
 
   override suspend fun getPageOfGalleryPhotos(
-    lastUploadedOn: Long,
+    lastUploadedOn: Long?,
     count: Int
   ): List<GalleryPhotoResponseData> {
     throwIfNotAllowedToAccessInternet("getPageOfGalleryPhotos")
 
+    //-1L basically means current server local time
+    val time = lastUploadedOn ?: -1L
+
     val response = GetPageOfGalleryPhotosRequest(
-      lastUploadedOn,
+      time,
       count,
       apiService,
       jsonConverter,

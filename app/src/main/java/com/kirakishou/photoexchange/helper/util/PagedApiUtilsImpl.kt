@@ -13,21 +13,21 @@ class PagedApiUtilsImpl(
 
   override suspend fun <PhotoType> getPageOfPhotos(
     tag: String,  //for debugging
-    firstUploadedOn: Long,
-    lastUploadedOn: Long,
+    firstUploadedOn: Long?,
+    lastUploadedOn: Long?,
     requestedCount: Int,
     userUuid: String?,
-    getPhotosFromCacheFunc: suspend (Long, Int) -> List<PhotoType>,
+    getPhotosFromCacheFunc: suspend (Long?, Int) -> List<PhotoType>,
     //Either throws an AttemptToAccessInternetWithMeteredNetworkException or returns list of fresh photos
     getFreshPhotosFunc: suspend (Long) -> List<PhotoType>,
-    getPageOfPhotosFunc: suspend (String?, Long, Int) -> List<PhotoType>,
+    getPageOfPhotosFunc: suspend (String?, Long?, Int) -> List<PhotoType>,
     clearCacheFunc: suspend () -> Unit,
     deleteOldFunc: suspend () -> Unit,
     filterBannedPhotosFunc: suspend (List<PhotoType>) -> List<PhotoType>,
     cachePhotosFunc: suspend (List<PhotoType>) -> Boolean
   ): Paged<PhotoType> {
     val freshPhotos = try {
-      if (firstUploadedOn == -1L) {
+      if (firstUploadedOn == null) {
         emptyList()
       } else {
         getFreshPhotosFunc(firstUploadedOn)
@@ -118,12 +118,12 @@ class PagedApiUtilsImpl(
 
   private suspend fun <PhotoType> getPhotos(
     tag: String,
-    lastUploadedOn: Long,
+    lastUploadedOn: Long?,
     requestedCount: Int,
     userId: String?,
     getFreshPhotosCountResult: FreshPhotosCountRequestResult,
-    getPhotosFromCacheFunc: suspend (Long, Int) -> List<PhotoType>,
-    getPageOfPhotosFunc: suspend (String?, Long, Int) -> List<PhotoType>,
+    getPhotosFromCacheFunc: suspend (Long?, Int) -> List<PhotoType>,
+    getPageOfPhotosFunc: suspend (String?, Long?, Int) -> List<PhotoType>,
     clearCacheFunc: suspend () -> Unit,
     deleteOldFunc: suspend () -> Unit
   ): ReturnedPhotos<PhotoType> {

@@ -14,7 +14,7 @@ import com.kirakishou.photoexchange.mvrx.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.mvrx.model.photo.UploadedPhoto
 import java.util.concurrent.TimeUnit
 
-class GetFreshPhotosUseCase(
+open class GetFreshPhotosUseCase(
   private val apiClient: ApiClient,
   private val timeUtils: TimeUtils,
   private val settingsRepository: SettingsRepository,
@@ -32,10 +32,6 @@ class GetFreshPhotosUseCase(
 
   @Throws(AttemptToAccessInternetWithMeteredNetworkException::class, EmptyUserUuidException::class)
   suspend fun getFreshUploadedPhotos(forced: Boolean, firstUploadedOn: Long): List<UploadedPhoto> {
-    if (firstUploadedOn <= 0) {
-      return emptyList()
-    }
-
     val userUuid = settingsRepository.getUserUuid()
     if (userUuid.isEmpty()) {
       throw EmptyUserUuidException()
@@ -56,10 +52,6 @@ class GetFreshPhotosUseCase(
 
   @Throws(AttemptToAccessInternetWithMeteredNetworkException::class, EmptyUserUuidException::class)
   suspend fun getFreshReceivedPhotos(forced: Boolean, firstUploadedOn: Long): List<ReceivedPhoto> {
-    if (firstUploadedOn <= 0) {
-      return emptyList()
-    }
-
     val userUuid = settingsRepository.getUserUuid()
     if (userUuid.isEmpty()) {
       throw EmptyUserUuidException()
@@ -80,10 +72,6 @@ class GetFreshPhotosUseCase(
 
   @Throws(AttemptToAccessInternetWithMeteredNetworkException::class)
   suspend fun getFreshGalleryPhotos(forced: Boolean, firstUploadedOn: Long): List<GalleryPhoto> {
-    if (firstUploadedOn <= 0) {
-      return emptyList()
-    }
-
     if (forced) {
       resetTimer(PhotoType.Gallery)
     }

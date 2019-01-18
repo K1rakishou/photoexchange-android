@@ -91,7 +91,7 @@ object UploadedPhotosMapper {
 
   object FromObject {
     object ToEntity {
-      fun toUploadedPhotoEntity(photoId: Long, photoName: String, lon: Double, lat: Double, insertedOn: Long, uploadedOn: Long): UploadedPhotoEntity {
+      fun toUploadedPhotoEntity(photoId: Long, photoName: String, lon: Double, lat: Double, uploadedOn: Long, insertedOn: Long): UploadedPhotoEntity {
         return UploadedPhotoEntity.createWithoutReceiverInfo(
           photoName,
           photoId,

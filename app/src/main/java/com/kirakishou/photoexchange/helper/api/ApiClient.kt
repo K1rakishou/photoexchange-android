@@ -42,20 +42,20 @@ interface ApiClient {
   @Throws(ApiErrorException::class, ConnectionError::class, AttemptToAccessInternetWithMeteredNetworkException::class)
   suspend fun getPageOfUploadedPhotos(
     userUuid: String,
-    lastUploadedOn: Long,
+    lastUploadedOn: Long?,
     count: Int
   ): List<UploadedPhotoResponseData>
 
   @Throws(ApiErrorException::class, ConnectionError::class, AttemptToAccessInternetWithMeteredNetworkException::class)
   suspend fun getPageOfReceivedPhotos(
     userUuid: String,
-    lastUploadedOn: Long,
+    lastUploadedOn: Long?,
     count: Int
   ): List<ReceivedPhotoResponseData>
 
   @Throws(ApiErrorException::class, ConnectionError::class, AttemptToAccessInternetWithMeteredNetworkException::class)
   suspend fun getPageOfGalleryPhotos(
-    lastUploadedOn: Long,
+    lastUploadedOn: Long?,
     count: Int
   ): List<GalleryPhotoResponseData>
 

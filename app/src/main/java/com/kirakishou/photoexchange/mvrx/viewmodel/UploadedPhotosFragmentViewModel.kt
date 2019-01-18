@@ -331,12 +331,10 @@ class UploadedPhotosFragmentViewModel(
         val firstUploadedOn = state.uploadedPhotos
           .firstOrNull()
           ?.uploadedOn
-          ?: -1L
 
         val lastUploadedOn = state.uploadedPhotos
           .lastOrNull()
           ?.uploadedOn
-          ?: -1L
 
         val request = try {
           val photos = getUploadedPhotosUseCase.loadPageOfPhotos(

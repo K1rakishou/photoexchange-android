@@ -26,6 +26,7 @@ class GetCurrentLocationUseCase(
   private val TAG = "GetCurrentLocationUseCase"
   private val GPS_LOCATION_OBTAINING_MAX_TIMEOUT_MS = 15.seconds()
 
+  //TODO: probably should inject it into this usecase instead of injecting context
   private val locationManager by lazy { MyLocationManager(context) }
 
   suspend fun getCurrentLocation(): LonLat {
