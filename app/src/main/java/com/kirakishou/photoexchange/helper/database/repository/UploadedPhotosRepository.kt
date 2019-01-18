@@ -10,8 +10,8 @@ open class UploadedPhotosRepository(
 ) : BaseRepository() {
   private val TAG = "UploadedPhotosRepository"
 
-  suspend fun save(photoId: Long, photoName: String, lon: Double, lat: Double, uploadedOn: Long): Boolean {
-    return uploadedPhotosLocalSource.save(photoId, photoName, lon, lat, uploadedOn)
+  suspend fun save(photoId: Long, photoName: String, lon: Double, lat: Double, uploadedOn: Long, insertedOn: Long): Boolean {
+    return uploadedPhotosLocalSource.save(photoId, photoName, lon, lat, uploadedOn, insertedOn)
   }
 
   suspend fun saveMany(uploadedPhotoList: List<UploadedPhoto>): Boolean {

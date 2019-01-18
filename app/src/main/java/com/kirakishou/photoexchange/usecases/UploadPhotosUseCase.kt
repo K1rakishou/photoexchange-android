@@ -66,14 +66,25 @@ open class UploadPhotosUseCase(
         }
 
         val result = try {
-          apiClient.uploadPhoto(photoFile.absolutePath, location, userUuid, photo.isPublic, photo, channel)
+          apiClient.uploadPhoto(
+            photoFile.absolutePath,
+            location,
+            userUuid,
+            photo.isPublic,
+            photo,
+            channel
+          )
         } catch (error: ApiErrorException) {
           throw ApiErrorException(error.errorCode)
         }
 
-        if (!updatePhotoAsUploaded(photo, result.photoId, result.photoName, location)) {
-          throw DatabaseException("Could not update photo as uploaded")
-        }
+        updatePhotoAsUploaded(
+          photo,
+          result.photoId,
+          result.photoName,
+          location,
+          result.uploadedOn
+        )
 
         return@withContext result
       } finally {
@@ -82,18 +93,26 @@ open class UploadPhotosUseCase(
     }
   }
 
-  private suspend fun updatePhotoAsUploaded(photo: TakenPhoto, photoId: Long, photoName: String, location: LonLat): Boolean {
+  private suspend fun updatePhotoAsUploaded(
+    photo: TakenPhoto,
+    photoId: Long,
+    photoName: String,
+    location: LonLat,
+    uploadedOn: Long
+  ) {
     return database.transactional {
-      val updateResult1 = takenPhotosRepository.deletePhotoById(photo.id)
-      val updateResult2 = uploadedPhotosRepository.save(
-        photoId,
-        photoName,
-        location.lon,
-        location.lat,
-        timeUtils.getTimeFast()
-      )
+      //ignore result
+      takenPhotosRepository.deletePhotoById(photo.id)
 
-      return@transactional updateResult1 && updateResult2
+      if (!uploadedPhotosRepository.save(
+          photoId,
+          photoName,
+          location.lon,
+          location.lat,
+          uploadedOn,
+          timeUtils.getTimeFast())) {
+        throw DatabaseException("Could not save new uploaded photo with id: ($photoId), name: ($photoName), uploadedOn: ($uploadedOn)")
+      }
     }
   }
 

@@ -144,6 +144,7 @@ open class GetReceivedPhotosUseCase(
   }
 
   private suspend fun getParameters(lastUploadedOn: Long): Pair<Long, String> {
+    //FIXME: do not get current time in the client, send -1 as it is to the server. Timezones bug
     val time = if (lastUploadedOn != -1L) {
       lastUploadedOn
     } else {

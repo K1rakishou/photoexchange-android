@@ -104,6 +104,7 @@ open class GetGalleryPhotosUseCase(
   }
 
   private suspend fun getParameters(lastUploadedOnParam: Long): Pair<Long, String> {
+    //FIXME: do not get current time in the client, send -1 as it is to the server. Timezones bug
     val lastUploadedOn = if (lastUploadedOnParam != -1L) {
       lastUploadedOnParam
     } else {

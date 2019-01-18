@@ -14,14 +14,14 @@ open class UploadedPhotosLocalSource(
   private val TAG = "UploadedPhotosLocalSource"
   private val uploadedPhotoDao = database.uploadedPhotoDao()
 
-  open fun save(photoId: Long, photoName: String, lon: Double, lat: Double, uploadedOn: Long): Boolean {
+  open fun save(photoId: Long, photoName: String, lon: Double, lat: Double, uploadedOn: Long, insertedOn: Long): Boolean {
     val uploadedPhotoEntity = UploadedPhotosMapper.FromObject.ToEntity.toUploadedPhotoEntity(
       photoId,
       photoName,
       lon,
       lat,
-      timeUtils.getTimeFast(),
-      uploadedOn
+      uploadedOn,
+      insertedOn
     )
     return uploadedPhotoDao.save(uploadedPhotoEntity).isSuccess()
   }
@@ -46,8 +46,8 @@ open class UploadedPhotosLocalSource(
         uploadedPhoto.photoName,
         uploadedPhoto.uploaderLon,
         uploadedPhoto.uploaderLat,
-        insertedOn,
-        uploadedPhoto.uploadedOn
+        uploadedPhoto.uploadedOn,
+        insertedOn
       )
 
       if (!save(photo)) {
