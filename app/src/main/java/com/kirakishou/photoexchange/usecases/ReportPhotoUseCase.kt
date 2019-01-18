@@ -59,9 +59,11 @@ open class ReportPhotoUseCase(
     }
 
     val photoAdditionalInfo = photoAdditionalInfoRepository.findByPhotoName(galleryPhotoEntity.photoName)
+      //if additional photo info has been found - update it with new data
       ?.copy(
         isReported = isReported
       )
+      //otherwise just create a new one for this photo
       ?: PhotoAdditionalInfo.create(
         galleryPhotoEntity.photoName,
         false,

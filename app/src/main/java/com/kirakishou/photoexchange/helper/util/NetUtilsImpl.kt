@@ -25,6 +25,11 @@ open class NetUtilsImpl(
   override val coroutineContext: CoroutineContext
     get() = job + dispatchersProvider.GENERAL()
 
+  /**
+   * Returns true when:
+   * 1. Current network is unmetered (for example Wi-Fi connection)
+   * 2. Current network is metered but user has allowed to load images with metered connection
+   * */
   override suspend fun canLoadImages(): Boolean {
     return withContext(coroutineContext) {
       if (!isNetworkMetered()) {
@@ -39,6 +44,11 @@ open class NetUtilsImpl(
     }
   }
 
+  /**
+   * Returns true when:
+   * 1. Current network is unmetered (for example Wi-Fi connection)
+   * 2. Current network is metered but user has allowed to access internet with metered connection
+   * */
   override suspend fun canAccessNetwork(): Boolean {
     return withContext(coroutineContext) {
       if (!isNetworkMetered()) {

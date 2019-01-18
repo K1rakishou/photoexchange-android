@@ -92,7 +92,14 @@ class UploadPhotoService : Service(), CoroutineScope {
     requireNotNull(callback.get())
 
     launch {
-      val location = getCurrentLocationUseCase.getCurrentLocation()
+      val location = try {
+        getCurrentLocationUseCase.getCurrentLocation()
+      } catch (error: Throwable) {
+        Timber.tag(TAG).e(error, "Could not get current location")
+        stopService()
+        return@launch
+      }
+
       presenter.uploadPhotos(location)
     }
   }
