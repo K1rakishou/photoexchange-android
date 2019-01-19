@@ -10,7 +10,7 @@ open class CancelPhotoUploadingUseCase(
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
 
-  suspend fun cancelPhotoUploading(photoId: Long) {
+  open suspend fun cancelPhotoUploading(photoId: Long) {
     withContext(coroutineContext) {
       if (takenPhotosRepository.findById(photoId) == null) {
         return@withContext

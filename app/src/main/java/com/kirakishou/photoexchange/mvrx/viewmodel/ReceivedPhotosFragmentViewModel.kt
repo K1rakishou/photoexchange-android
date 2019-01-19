@@ -144,6 +144,8 @@ open class ReceivedPhotosFragmentViewModel(
     launch { viewModelActor.send(ActorAction.CheckFreshPhotos) }
   }
 
+  //TODO: change all inner launch to runBlocking
+
   private fun checkFreshPhotosInternal() {
     withState { state ->
       //do not run the request if we are in the failed state
@@ -457,6 +459,8 @@ open class ReceivedPhotosFragmentViewModel(
       if (state.receivedPhotosRequest is Loading) {
         return@withState
       }
+
+      //TODO: return when state.isEndReached == true
 
       launch {
         //to avoid "Your reducer must be pure!" exceptions

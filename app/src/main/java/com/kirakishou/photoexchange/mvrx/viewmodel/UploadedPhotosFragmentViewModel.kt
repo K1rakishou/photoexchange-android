@@ -119,6 +119,8 @@ open class UploadedPhotosFragmentViewModel(
     launch { viewModelActor.send(ActorAction.CheckFreshPhotos) }
   }
 
+  //TODO: change all inner launch to runBlocking
+
   private fun checkFreshPhotosInternal() {
     withState { state ->
       //do not run the request if there are queued up photos
@@ -263,20 +265,20 @@ open class UploadedPhotosFragmentViewModel(
   }
 
   private fun cancelPhotoUploadingInternal(photoId: Long) {
-    launch {
-      try {
-        cancelPhotoUploadingUseCase.cancelPhotoUploading(photoId)
-      } catch (error: Throwable) {
-        Timber.tag(TAG).e(error)
+    withState { state ->
+      launch {
+        try {
+          cancelPhotoUploadingUseCase.cancelPhotoUploading(photoId)
+        } catch (error: Throwable) {
+          Timber.tag(TAG).e(error)
 
-        showErrorToast("Error has occurred while trying to cancel photo uploading.", error)
-        return@launch
-      }
+          showErrorToast("Error has occurred while trying to cancel photo uploading.", error)
+          return@launch
+        }
 
-      intercom.tell<PhotosActivity>()
-        .to(PhotosActivityEvent.CancelPhotoUploading(photoId))
+        intercom.tell<PhotosActivity>()
+          .to(PhotosActivityEvent.CancelPhotoUploading(photoId))
 
-      withState { state ->
         val newPhotos = state.takenPhotos.toMutableList()
         newPhotos.removeAll { it.id == photoId }
 
@@ -331,6 +333,8 @@ open class UploadedPhotosFragmentViewModel(
       if (state.uploadedPhotosRequest is Loading) {
         return@withState
       }
+
+      //TODO: return when state.isEndReached == true
 
       launch {
         //to avoid "Your reducer must be pure!" exceptions

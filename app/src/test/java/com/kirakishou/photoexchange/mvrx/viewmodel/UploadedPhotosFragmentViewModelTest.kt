@@ -98,4 +98,31 @@ class UploadedPhotosFragmentViewModelTest {
       verify(intercom, never()).tell<PhotosActivity>().to(PhotosActivityEvent.StartUploadingService)
     }
   }
+
+  @Test
+  fun `cancel queued up photo should remove photo from the state`() {
+    runBlocking {
+      val queuedUpPhotos = listOf(
+        TakenPhoto(1L, true, "111", null, PhotoState.PHOTO_QUEUED_UP),
+        TakenPhoto(2L, true, "112", null, PhotoState.PHOTO_QUEUED_UP),
+        TakenPhoto(3L, true, "113", null, PhotoState.PHOTO_QUEUED_UP)
+      )
+
+      doAnswer {
+        //throws exception without empty stub
+      }.whenever(cancelPhotoUploadingUseCase).cancelPhotoUploading(any())
+
+      viewModel.testSetState(UploadedPhotosFragmentState(takenPhotos = queuedUpPhotos))
+
+      viewModel.cancelPhotoUploading(1L)
+      viewModel.cancelPhotoUploading(2L)
+
+      assertEquals(1, viewModel.testGetState().takenPhotos.size)
+      assertEquals(3, viewModel.testGetState().takenPhotos.first().id)
+
+      viewModel.cancelPhotoUploading(3L)
+
+      assertTrue(viewModel.testGetState().takenPhotos.isEmpty())
+    }
+  }
 }
