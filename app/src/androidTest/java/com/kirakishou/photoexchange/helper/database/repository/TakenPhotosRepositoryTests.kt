@@ -10,6 +10,8 @@ import com.kirakishou.photoexchange.helper.database.MyDatabase
 import com.kirakishou.photoexchange.helper.util.*
 import com.kirakishou.photoexchange.helper.database.source.local.TakenPhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.TempFileLocalSource
+import com.kirakishou.photoexchange.helper.extension.mb
+import com.nhaarman.mockitokotlin2.whenever
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.*
@@ -55,7 +57,10 @@ class TakenPhotosRepositoryTests {
         database,
         tempFilesDir,
         timeUtils,
-        fileUtils
+        fileUtils,
+        50.mb(),
+        50L,
+        7
       )
     )
 
@@ -271,6 +276,24 @@ class TakenPhotosRepositoryTests {
       tempFile4.asFile().writeText("1234567890123456789012345678901234567890")
 
       assertEquals(100, FileUtilsImpl().calculateTotalDirectorySize(File(tempFilesDir)))
+    }
+  }
+
+  @Test
+  fun test_cleanup() {
+    runBlocking {
+      whenever(timeUtils.getTimeFast()).thenReturn(100, 101, 102, 103, 200, 201, 202, 203, 444)
+
+      takenPhotosRepository.saveTakenPhoto(tempFilesLocalSource.create())
+      takenPhotosRepository.saveTakenPhoto(tempFilesLocalSource.create())
+      takenPhotosRepository.saveTakenPhoto(tempFilesLocalSource.create())
+      takenPhotosRepository.saveTakenPhoto(tempFilesLocalSource.create())
+
+      takenPhotosRepository.cleanup()
+
+      assertTrue(takenPhotosLocalSource.findAll().isEmpty())
+      assertTrue(tempFilesLocalSource.findAll().isEmpty())
+      assertTrue(File(tempFilesDir).list().isEmpty())
     }
   }
 }

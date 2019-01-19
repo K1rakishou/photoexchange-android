@@ -15,13 +15,13 @@ open class TempFileLocalSource(
   private val database: MyDatabase,
   private val filesDir: String,
   private val timeUtils: TimeUtils,
-  private val fileUtils: FileUtils
+  private val fileUtils: FileUtils,
+  private val maxCacheSize: Long,
+  private val oldPhotoTimeThreshold: Long,
+  private val fileToDeleteAtATime: Int
 ) {
   private val TAG = "TempFileLocalSource"
   private val tempFilesDao = database.tempFileDao()
-  private val MAX_CACHE_SIZE = 50.mb()
-  private val OLD_PHOTO_TIME_THRESHOLD = 1.hours()
-  private val FILES_TO_DELETE_AT_A_TIME = 7
 
   fun init() {
     createTempFilesDirIfNotExists()
@@ -85,7 +85,7 @@ open class TempFileLocalSource(
   }
 
   fun deleteOld() {
-    deleteOld(OLD_PHOTO_TIME_THRESHOLD)
+    deleteOld(timeUtils.getTimeFast() - oldPhotoTimeThreshold)
   }
 
   fun deleteOld(oldPhotoThreshold: Long) {
@@ -95,8 +95,8 @@ open class TempFileLocalSource(
 
   fun deleteOldIfCacheSizeIsTooBig() {
     val totalTempFilesCacheSize = fileUtils.calculateTotalDirectorySize(File(filesDir))
-    if (totalTempFilesCacheSize > MAX_CACHE_SIZE) {
-      val filesToDelete = tempFilesDao.findOldest(FILES_TO_DELETE_AT_A_TIME)
+    if (totalTempFilesCacheSize > maxCacheSize) {
+      val filesToDelete = tempFilesDao.findOldest(fileToDeleteAtATime)
       if (filesToDelete.isEmpty()) {
         return
       }

@@ -177,7 +177,6 @@ open class TakenPhotosRepository(
     return findAllByState(PhotoState.PHOTO_QUEUED_UP)
   }
 
-  //TODO: tests
   suspend fun cleanup() {
     database.transactional {
       //we need to delete all photos with state PHOTO_TAKEN because at this step they are being considered corrupted
@@ -197,6 +196,8 @@ open class TakenPhotosRepository(
       //in case the user takes photos way too often and they weight a lot (like 3-4 mb per photo)
       //we need to consider this as well so we delete them when total files size exceeds MAX_CACHE_SIZE
       tempFileLocalSource.deleteOldIfCacheSizeIsTooBig()
+
+      //TODO: add deletion of files that are not in the TempFilesTable
     }
   }
 }

@@ -24,6 +24,7 @@ import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosReposi
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
 import com.kirakishou.photoexchange.helper.database.source.local.TakenPhotosLocalSource
 import com.kirakishou.photoexchange.helper.database.source.local.TempFileLocalSource
+import com.kirakishou.photoexchange.helper.extension.mb
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragmentEvent
@@ -107,7 +108,10 @@ class UploadedPhotosFragmentTest {
       database,
       context.filesDir.absolutePath,
       timeUtils,
-      fileUtils
+      fileUtils,
+      50.mb(),
+      50L,
+      7
     )
 
     takenPhotosRepository = TakenPhotosRepository(
