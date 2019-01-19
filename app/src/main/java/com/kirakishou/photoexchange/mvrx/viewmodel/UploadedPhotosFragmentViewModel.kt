@@ -324,7 +324,13 @@ open class UploadedPhotosFragmentViewModel(
         return@suspendWithState
       }
 
-      //TODO: return when state.isEndReached == true
+      if (state.takenPhotosRequest !is Success) {
+        return@suspendWithState
+      }
+
+      if (state.isEndReached) {
+        return@suspendWithState
+      }
 
       //to avoid "Your reducer must be pure!" exceptions
       val uploadedPhotosRequest = Loading<Paged<UploadedPhoto>>()

@@ -1,6 +1,8 @@
 package com.kirakishou.photoexchange.mvrx.viewmodel
 
 import com.airbnb.mvrx.Fail
+import com.airbnb.mvrx.Loading
+import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.MockDispatchers
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
@@ -8,6 +10,7 @@ import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelInter
 import com.kirakishou.photoexchange.helper.intercom.event.PhotosActivityEvent
 import com.kirakishou.photoexchange.mvrx.model.PhotoState
 import com.kirakishou.photoexchange.mvrx.model.photo.TakenPhoto
+import com.kirakishou.photoexchange.mvrx.model.photo.UploadedPhoto
 import com.kirakishou.photoexchange.mvrx.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.usecases.CancelPhotoUploadingUseCase
@@ -123,6 +126,57 @@ class UploadedPhotosFragmentViewModelTest {
       viewModel.cancelPhotoUploading(3L)
 
       assertTrue(viewModel.testGetState().takenPhotos.isEmpty())
+    }
+  }
+
+  @Test
+  fun `should not load uploaded photos when uploadedPhotosRequest is already being executed`() {
+    runBlocking {
+      viewModel.testSetState(UploadedPhotosFragmentState(uploadedPhotosRequest = Loading()))
+
+      viewModel.loadUploadedPhotos(false)
+
+      verify(getUploadedPhotosUseCase, never()).loadPageOfPhotos(any(), any(), any(), any())
+    }
+  }
+
+  @Test
+  fun `should not load uploaded photos when takenPhotosRequest is not Success`() {
+    runBlocking {
+      viewModel.testSetState(UploadedPhotosFragmentState(takenPhotosRequest = Fail(IOException("BAM"))))
+
+      viewModel.loadUploadedPhotos(false)
+
+      verify(getUploadedPhotosUseCase, never()).loadPageOfPhotos(any(), any(), any(), any())
+    }
+  }
+
+  @Test
+  fun `should not load uploaded photos when the end of the list has been reached`() {
+    runBlocking {
+      viewModel.testSetState(UploadedPhotosFragmentState(isEndReached = true))
+
+      viewModel.loadUploadedPhotos(false)
+
+      verify(getUploadedPhotosUseCase, never()).loadPageOfPhotos(any(), any(), any(), any())
+    }
+  }
+
+  @Test
+  fun `load uploaded photos should filter duplicates`() {
+    runBlocking {
+      val photo = listOf(UploadedPhoto(1L, "123", 11.1, 22.2, null, 111L))
+
+      whenever(getUploadedPhotosUseCase.loadPageOfPhotos(any(), any(), any(), any())).thenReturn(Paged(photo, true))
+
+      viewModel.testSetState(UploadedPhotosFragmentState(
+        uploadedPhotos = photo
+      ))
+
+      viewModel.loadUploadedPhotos(false)
+
+
+      assertEquals(1, viewModel.testGetState().uploadedPhotos.size)
     }
   }
 }
