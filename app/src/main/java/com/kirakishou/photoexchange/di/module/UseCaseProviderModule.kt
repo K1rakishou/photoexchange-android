@@ -319,4 +319,14 @@ class UseCaseProviderModule {
       dispatchersProvider
     )
   }
+
+  @Singleton
+  @Provides
+  fun provideCancelPhotoUploadingUseCase(takenPhotosRepository: TakenPhotosRepository,
+                                         dispatchersProvider: DispatchersProvider): CancelPhotoUploadingUseCase {
+    return CancelPhotoUploadingUseCase(
+      takenPhotosRepository,
+      dispatchersProvider
+    )
+  }
 }

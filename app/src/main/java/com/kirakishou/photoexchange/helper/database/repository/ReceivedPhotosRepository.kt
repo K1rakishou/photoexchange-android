@@ -12,6 +12,10 @@ open class ReceivedPhotosRepository(
 ) : BaseRepository() {
   private val TAG = "ReceivedPhotosRepository"
 
+  suspend fun save(receivedPhoto: ReceivedPhoto): Boolean {
+    return receivedPhotosLocalSource.saveMany(listOf(receivedPhoto))
+  }
+
   suspend fun save(receivedPhoto: ReceivedPhotoResponseData): Boolean {
     return receivedPhotosLocalSource.save(receivedPhoto)
   }

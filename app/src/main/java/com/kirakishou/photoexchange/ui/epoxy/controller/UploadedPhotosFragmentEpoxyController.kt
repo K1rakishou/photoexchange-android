@@ -33,10 +33,18 @@ class UploadedPhotosFragmentEpoxyController(
     withState(viewModel) { state ->
       controller.apply {
         if (state.takenPhotos.isNotEmpty()) {
-          buildTakenPhotos(state, viewModel)
+          buildTakenPhotos(context, state, viewModel)
         }
 
-        buildUploadedPhotos(coroutineScope, context, state, viewModel, state.uploadedPhotosRequest)
+        if (state.takenPhotosRequest !is Fail) {
+          buildUploadedPhotos(
+            coroutineScope,
+            context,
+            state,
+            viewModel,
+            state.uploadedPhotosRequest
+          )
+        }
       }
     }
   }
@@ -48,7 +56,6 @@ class UploadedPhotosFragmentEpoxyController(
     viewModel: UploadedPhotosFragmentViewModel,
     uploadedPhotosRequest: Async<Paged<UploadedPhoto>>
   ) {
-
     if (state.uploadedPhotos.isNotEmpty()) {
       state.uploadedPhotos.forEach { photo ->
         uploadedPhotoRow {
@@ -93,64 +100,100 @@ class UploadedPhotosFragmentEpoxyController(
     if (uploadedPhotosRequest is Fail) {
       Timber.tag(TAG).d("Fail uploaded photos")
 
-      buildErrorNotification(uploadedPhotosRequest.error, context, viewModel)
+      val error = uploadedPhotosRequest.error
+      when (error) {
+        is EmptyUserUuidException -> {
+          textRow {
+            id("no_uploaded_photos_message")
+            text("You have to upload at least one photo first")
+          }
+        }
+        else -> {
+          textRow {
+            val exceptionMessage = error.message ?: "Unknown error message"
+            Toast.makeText(
+              context,
+              "Exception message is: \"$exceptionMessage\"",
+              Toast.LENGTH_LONG
+            ).show()
+
+            Timber.tag(TAG).e(error)
+
+            id("unknown_error")
+            text(context.getString(R.string.unknown_error_while_trying_to_load_photos_text))
+            callback { _ ->
+              Timber.tag(TAG).d("Reloading")
+              viewModel.resetState(true)
+            }
+          }
+        }
+      }
     }
   }
 
   private fun AsyncEpoxyController.buildTakenPhotos(
+    context: Context,
     state: UploadedPhotosFragmentState,
     viewModel: UploadedPhotosFragmentViewModel
   ) {
-    state.takenPhotos.forEach { photo ->
-      when (photo.photoState) {
-        PhotoState.PHOTO_TAKEN -> {
+    when (state.takenPhotosRequest) {
+      is Loading,
+      is Success -> {
+        if (state.takenPhotosRequest is Loading && state.takenPhotos.isEmpty()) {
+          Timber.tag(TAG).d("Loading taken photos")
+
+          loadingRow {
+            id("taken_photos_loading_row")
+          }
+
+          return
         }
-        PhotoState.PHOTO_QUEUED_UP -> {
-          queuedUpPhotoRow {
-            id("queued_up_photo_${photo.id}")
-            photo(photo)
-            callback { _ -> viewModel.cancelPhotoUploading(photo.id) }
-            onBind { model, view, _ ->
-              model.photo().photoTempFile?.let { file ->
-                imageLoader.loadPhotoFromDiskInto(file, view.photoView)
+
+        state.takenPhotos.forEach { photo ->
+          when (photo.photoState) {
+            PhotoState.PHOTO_TAKEN -> {
+            }
+            PhotoState.PHOTO_QUEUED_UP -> {
+              queuedUpPhotoRow {
+                id("queued_up_photo_${photo.id}")
+                photo(photo)
+                callback { _ -> viewModel.cancelPhotoUploading(photo.id) }
+                onBind { model, view, _ ->
+                  model.photo().photoTempFile?.let { file ->
+                    imageLoader.loadPhotoFromDiskInto(file, view.photoView)
+                  }
+                }
               }
             }
-          }
-        }
-        PhotoState.PHOTO_UPLOADING -> {
-          val uploadingPhoto = photo as UploadingPhoto
+            PhotoState.PHOTO_UPLOADING -> {
+              val uploadingPhoto = photo as UploadingPhoto
 
-          uploadingPhotoRow {
-            id("uploading_photo_${photo.id}")
-            photo(uploadingPhoto)
-            progress(uploadingPhoto.progress)
-            onBind { model, view, _ ->
-              model.photo().photoTempFile?.let { file ->
-                imageLoader.loadPhotoFromDiskInto(file, view.photoView)
+              uploadingPhotoRow {
+                id("uploading_photo_${photo.id}")
+                photo(uploadingPhoto)
+                progress(uploadingPhoto.progress)
+                onBind { model, view, _ ->
+                  model.photo().photoTempFile?.let { file ->
+                    imageLoader.loadPhotoFromDiskInto(file, view.photoView)
+                  }
+                }
               }
             }
           }
         }
       }
-    }
-  }
+      is Fail -> {
+        Timber.tag(TAG).d("Fail taken photos")
 
-  private fun AsyncEpoxyController.buildErrorNotification(
-    error: Throwable,
-    context: Context,
-    viewModel: UploadedPhotosFragmentViewModel
-  ) {
-    when (error) {
-      is EmptyUserUuidException -> {
         textRow {
-          id("no_uploaded_photos_message")
-          text("You have to upload at least one photo first")
-        }
-      }
-      else -> {
-        textRow {
+          val error = state.takenPhotosRequest.error
           val exceptionMessage = error.message ?: "Unknown error message"
-          Toast.makeText(context, "Exception message is: \"$exceptionMessage\"", Toast.LENGTH_LONG).show()
+
+          Toast.makeText(
+            context,
+            "Exception message is: \"$exceptionMessage\"",
+            Toast.LENGTH_LONG
+          ).show()
 
           Timber.tag(TAG).e(error)
 

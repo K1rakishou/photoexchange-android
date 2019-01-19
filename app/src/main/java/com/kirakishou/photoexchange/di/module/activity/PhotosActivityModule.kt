@@ -60,6 +60,7 @@ open class PhotosActivityModule(
                                              uploadedPhotosRepository: UploadedPhotosRepository,
                                              getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
                                              getFreshPhotosUseCase: GetFreshPhotosUseCase,
+                                             cancelPhotoUploadingUseCase: CancelPhotoUploadingUseCase,
                                              dispatchersProvider: DispatchersProvider): UploadedPhotosFragmentViewModel {
     return UploadedPhotosFragmentViewModel(
       viewState,
@@ -68,6 +69,7 @@ open class PhotosActivityModule(
       uploadedPhotosRepository,
       getUploadedPhotosUseCase,
       getFreshPhotosUseCase,
+      cancelPhotoUploadingUseCase,
       dispatchersProvider
     )
   }

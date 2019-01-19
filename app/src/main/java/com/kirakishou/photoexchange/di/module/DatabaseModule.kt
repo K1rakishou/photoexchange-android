@@ -96,7 +96,15 @@ open class DatabaseModule(
                                       @Named("files_directory") filesDir: String,
                                       timeUtils: TimeUtils,
                                       fileUtils: FileUtils): TempFileLocalSource {
-    return TempFileLocalSource(database, filesDir, timeUtils, fileUtils)
+    return TempFileLocalSource(
+      database,
+      filesDir,
+      timeUtils,
+      fileUtils,
+      Constants.MAX_CACHE_SIZE,
+      Constants.OLD_PHOTO_TIME_THRESHOLD,
+      Constants.FILES_TO_DELETE_AT_A_TIME
+    )
   }
 
   @Singleton

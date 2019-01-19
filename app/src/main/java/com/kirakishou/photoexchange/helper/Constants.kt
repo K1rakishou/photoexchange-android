@@ -1,6 +1,8 @@
 package com.kirakishou.photoexchange.helper
 
 import com.kirakishou.fixmypc.photoexchange.BuildConfig
+import com.kirakishou.photoexchange.helper.extension.hours
+import com.kirakishou.photoexchange.helper.extension.mb
 import java.util.concurrent.TimeUnit
 
 /**
@@ -25,4 +27,8 @@ object Constants {
 
   //TODO: change in production
   val BLACKLISTED_EARLIER_THAN_TIME_DELTA = TimeUnit.MINUTES.toMillis(1)
+
+  val MAX_CACHE_SIZE = 50.mb()
+  val OLD_PHOTO_TIME_THRESHOLD = 1.hours()
+  val FILES_TO_DELETE_AT_A_TIME = 7
 }
