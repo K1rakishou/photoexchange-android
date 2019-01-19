@@ -269,10 +269,7 @@ open class UploadedPhotosFragmentViewModel(
       } catch (error: Throwable) {
         Timber.tag(TAG).e(error)
 
-        val message = "Error has occurred while trying to cancel photo uploading. " +
-          "\nError message: ${error.message ?: "Unknown error message"}"
-        intercom.tell<PhotosActivity>()
-          .to(PhotosActivityEvent.ShowToast(message))
+        showErrorToast("Error has occurred while trying to cancel photo uploading.", error)
         return@launch
       }
 
@@ -290,26 +287,41 @@ open class UploadedPhotosFragmentViewModel(
 
   private fun loadQueuedUpPhotosInternal() {
     withState { state ->
+      if (state.takenPhotosRequest is Loading) {
+        return@withState
+      }
+
       launch {
+        val loadingState = Loading<List<TakenPhoto>>()
+        setState { copy(takenPhotosRequest = loadingState) }
+
         val request = try {
           Success(takenPhotosRepository.loadNotUploadedPhotos())
         } catch (error: Throwable) {
-          //TODO: show an error here instead of switching to uploaded photos?
           Fail<List<TakenPhoto>>(error)
         }
 
-        val notUploadedPhotos = (request() ?: emptyList())
-        if (notUploadedPhotos.isEmpty() && state.takenPhotos.isEmpty()) {
+        val notUploadedPhotos = request() ?: emptyList()
+        if (notUploadedPhotos.isEmpty() && state.takenPhotos.isEmpty() && request is Success) {
           loadUploadedPhotos(false)
           return@launch
         }
 
-        val newTakenPhotos = state.takenPhotos.filterDuplicatesWith(notUploadedPhotos) { takenPhoto ->
-          takenPhoto.id
+        val newTakenPhotos = state.takenPhotos
+          .filterDuplicatesWith(notUploadedPhotos) { takenPhoto ->
+            takenPhoto.id
+          }
+
+        setState {
+          copy(
+            takenPhotos = newTakenPhotos,
+            takenPhotosRequest = request
+          )
         }
 
-        setState { copy(takenPhotos = newTakenPhotos) }
-        startUploadingService()
+        if (notUploadedPhotos.isNotEmpty()) {
+          startUploadingService()
+        }
       }
     }
   }
@@ -441,9 +453,7 @@ open class UploadedPhotosFragmentViewModel(
           }
 
           setState { copy(takenPhotos = updateResult.update) }
-
-          intercom.tell<PhotosActivity>()
-            .to(PhotosActivityEvent.ShowToast("Failed to upload photo, error message: ${event.error.message}"))
+          showErrorToast("Failed to upload photo", event.error)
         }
       }
       is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoCanceled -> {
@@ -499,6 +509,14 @@ open class UploadedPhotosFragmentViewModel(
   private fun startUploadingService() {
     Timber.tag(TAG).d("startUploadingService called!")
     intercom.tell<PhotosActivity>().to(PhotosActivityEvent.StartUploadingService)
+  }
+
+  private fun showErrorToast(message: String, error: Throwable) {
+    intercom.tell<PhotosActivity>().to(
+      PhotosActivityEvent.ShowToast(
+        "$message\nError message: ${error.message ?: "Unknown error message"}"
+      )
+    )
   }
 
   /**

@@ -10,6 +10,7 @@ import com.kirakishou.photoexchange.mvrx.model.photo.*
 
 data class UploadedPhotosFragmentState(
   val takenPhotos: List<TakenPhoto> = emptyList(),
+  val takenPhotosRequest: Async<List<TakenPhoto>> = Uninitialized,
 
   val isEndReached: Boolean = false,
   val uploadedPhotos: List<UploadedPhoto> = emptyList(),

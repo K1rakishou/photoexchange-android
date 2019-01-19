@@ -55,8 +55,9 @@ class UploadedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Uploaded
     viewModel.uploadedPhotosFragmentViewModel.selectSubscribe(
       this,
       UploadedPhotosFragmentState::takenPhotos,
+      UploadedPhotosFragmentState::takenPhotosRequest,
       UploadedPhotosFragmentState::uploadedPhotos,
-      UploadedPhotosFragmentState::uploadedPhotosRequest) { _, _, _ ->
+      UploadedPhotosFragmentState::uploadedPhotosRequest) { _, _, _, _ ->
       recyclerView.requestModelBuild()
     }
 

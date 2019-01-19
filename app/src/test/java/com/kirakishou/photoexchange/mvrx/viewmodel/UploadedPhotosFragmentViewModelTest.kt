@@ -1,5 +1,6 @@
 package com.kirakishou.photoexchange.mvrx.viewmodel
 
+import com.airbnb.mvrx.Fail
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.MockDispatchers
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
@@ -14,9 +15,11 @@ import com.kirakishou.photoexchange.usecases.GetFreshPhotosUseCase
 import com.kirakishou.photoexchange.usecases.GetUploadedPhotosUseCase
 import com.nhaarman.mockitokotlin2.*
 import junit.framework.Assert.assertEquals
+import junit.framework.Assert.assertTrue
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
+import java.io.IOException
 
 class UploadedPhotosFragmentViewModelTest {
   private val intercom: PhotosActivityViewModelIntercom = spy(PhotosActivityViewModelIntercom())
@@ -79,6 +82,20 @@ class UploadedPhotosFragmentViewModelTest {
       assertEquals("123", takenPhotos.first().photoName)
 
       verify(intercom, times(1)).tell<PhotosActivity>().to(PhotosActivityEvent.StartUploadingService)
+    }
+  }
+
+  @Test
+  fun `should show error in recycler view when failed to load taken photos`() {
+    runBlocking {
+      doAnswer { throw IOException("BAM") }.`when`(takenPhotosRepository).loadNotUploadedPhotos()
+
+      viewModel.loadQueuedUpPhotos()
+      val state = viewModel.testGetState()
+
+      assertTrue(state.takenPhotosRequest is Fail<List<TakenPhoto>>)
+
+      verify(intercom, never()).tell<PhotosActivity>().to(PhotosActivityEvent.StartUploadingService)
     }
   }
 }
