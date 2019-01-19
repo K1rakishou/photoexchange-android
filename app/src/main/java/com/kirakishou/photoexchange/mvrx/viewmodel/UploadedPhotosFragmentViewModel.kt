@@ -48,7 +48,7 @@ open class UploadedPhotosFragmentViewModel(
   private val getFreshPhotosUseCase: GetFreshPhotosUseCase,
   private val cancelPhotoUploadingUseCase: CancelPhotoUploadingUseCase,
   private val dispatchersProvider: DispatchersProvider
-) : BaseMvRxViewModel<UploadedPhotosFragmentState>(
+) : MyBaseMvRxViewModel<UploadedPhotosFragmentState>(
   initialState,
   BuildConfig.DEBUG
 ), CoroutineScope {
@@ -119,76 +119,72 @@ open class UploadedPhotosFragmentViewModel(
     launch { viewModelActor.send(ActorAction.CheckFreshPhotos) }
   }
 
-  //TODO: change all inner launch to runBlocking
-
-  private fun checkFreshPhotosInternal() {
-    withState { state ->
+  private suspend fun checkFreshPhotosInternal() {
+    suspendWithState { state ->
       //do not run the request if there are queued up photos
       if (state.takenPhotos.isNotEmpty()) {
-        return@withState
+        return@suspendWithState
       }
 
       //do not run the request if we are in the failed state
       if (state.uploadedPhotosRequest is Fail) {
-        return@withState
+        return@suspendWithState
       }
 
       //do not run the request if it is already running
       if (state.checkForFreshPhotosRequest is Loading) {
-        return@withState
+        return@suspendWithState
       }
 
-      launch {
-        val firstUploadedOn = state.uploadedPhotos
-          .firstOrNull()
-          ?.uploadedOn
+      val firstUploadedOn = state.uploadedPhotos
+        .firstOrNull()
+        ?.uploadedOn
 
-        if (firstUploadedOn == null) {
-          //no photos
-          return@launch
-        }
+      if (firstUploadedOn == null) {
+        //no photos
+        return@suspendWithState
+      }
 
-        val loadingState = Loading<Unit>()
-        setState { copy(checkForFreshPhotosRequest = loadingState) }
+      val loadingState = Loading<Unit>()
+      setState { copy(checkForFreshPhotosRequest = loadingState) }
 
-        val freshPhotosRequest = try {
-          Success(getFreshPhotosUseCase.getFreshUploadedPhotos(false, firstUploadedOn))
-        } catch (error: Throwable) {
-          Timber.tag(TAG).e(error, "Error while trying to check fresh uploaded photos")
-          setState { copy(checkForFreshPhotosRequest = Uninitialized) }
-          return@launch
-        }
+      val freshPhotosRequest = try {
+        Success(getFreshPhotosUseCase.getFreshUploadedPhotos(false, firstUploadedOn))
+      } catch (error: Throwable) {
+        Timber.tag(TAG).e(error, "Error while trying to check fresh uploaded photos")
+        setState { copy(checkForFreshPhotosRequest = Uninitialized) }
+        return@suspendWithState
+      }
 
-        val freshPhotos = freshPhotosRequest() ?: emptyList()
-        if (freshPhotos.isEmpty()) {
-          setState { copy(checkForFreshPhotosRequest = Uninitialized) }
-          return@launch
-        }
+      val freshPhotos = freshPhotosRequest() ?: emptyList()
+      if (freshPhotos.isEmpty()) {
+        setState { copy(checkForFreshPhotosRequest = Uninitialized) }
+        return@suspendWithState
+      }
 
-        val newPhotosCount = freshPhotos.count { it.uploadedOn > firstUploadedOn }
+      val newPhotosCount = freshPhotos.count { it.uploadedOn > firstUploadedOn }
 
-        //if there are any fresh photos - show snackbar
-        if (newPhotosCount > 0) {
-          intercom.tell<PhotosActivity>().to(PhotosActivityEvent.OnNewUploadedPhotos(newPhotosCount))
-        }
+      //if there are any fresh photos - show snackbar
+      if (newPhotosCount > 0) {
+        intercom.tell<PhotosActivity>().to(PhotosActivityEvent.OnNewUploadedPhotos(newPhotosCount))
+      }
 
-        val newUploadedPhotos = state.uploadedPhotos
-          .filterDuplicatesWith(freshPhotos) { it.photoName }
-          .map { galleryPhoto -> galleryPhoto.copy(photoSize = photoSize) }
-          .sortedByDescending { it.uploadedOn }
+      val newUploadedPhotos = state.uploadedPhotos
+        .filterDuplicatesWith(freshPhotos) { it.photoName }
+        .map { galleryPhoto -> galleryPhoto.copy(photoSize = photoSize) }
+        .sortedByDescending { it.uploadedOn }
 
-        setState {
-          copy(
-            uploadedPhotos = newUploadedPhotos,
-            checkForFreshPhotosRequest = Uninitialized
-          )
-        }
+      setState {
+        copy(
+          uploadedPhotos = newUploadedPhotos,
+          checkForFreshPhotosRequest = Uninitialized
+        )
       }
     }
   }
 
-  private fun swapPhotoAndMapInternal(uploadedPhotoName: String) {
-    withState { state ->
+  private suspend fun swapPhotoAndMapInternal(uploadedPhotoName: String) {
+    suspendWithState { state ->
       val updateResult = state.swapPhotoAndMap(uploadedPhotoName)
 
       when (updateResult) {
@@ -210,48 +206,46 @@ open class UploadedPhotosFragmentViewModel(
   // FIXME: make faster (use hashSet/Map for filtering already added photos)
   // This function is called every time a new page of received photos is loaded and
   // it is a pretty slow function
-  private fun onNewPhotoReceivedInternal(newReceivedPhotos: List<NewReceivedPhoto>) {
-    withState { state ->
-      launch {
-        val updatedPhotos = state.uploadedPhotos.toMutableList()
+  private suspend fun onNewPhotoReceivedInternal(newReceivedPhotos: List<NewReceivedPhoto>) {
+    suspendWithState { state ->
+      val updatedPhotos = state.uploadedPhotos.toMutableList()
 
-        for (newReceivedPhoto in newReceivedPhotos) {
-          val photoIndex = updatedPhotos.indexOfFirst { uploadedPhoto ->
-            uploadedPhoto.photoName == newReceivedPhoto.uploadedPhotoName
-          }
-
-          if (photoIndex == -1) {
-            continue
-          }
-
-          if (updatedPhotos[photoIndex].receiverInfo != null) {
-            //photo already has receiver info
-            continue
-          }
-
-          val receiverInfo = UploadedPhoto.ReceiverInfo(
-            newReceivedPhoto.receivedPhotoName,
-            LonLat(
-              newReceivedPhoto.lon,
-              newReceivedPhoto.lat
-            )
-          )
-
-          val updatedPhoto = updatedPhotos[photoIndex].copy(
-            receiverInfo = receiverInfo
-          )
-
-          updatedPhotos.removeAt(photoIndex)
-          updatedPhotos.add(photoIndex, updatedPhoto)
+      for (newReceivedPhoto in newReceivedPhotos) {
+        val photoIndex = updatedPhotos.indexOfFirst { uploadedPhoto ->
+          uploadedPhoto.photoName == newReceivedPhoto.uploadedPhotoName
         }
 
-        setState { copy(uploadedPhotos = updatedPhotos) }
+        if (photoIndex == -1) {
+          continue
+        }
+
+        if (updatedPhotos[photoIndex].receiverInfo != null) {
+          //photo already has receiver info
+          continue
+        }
+
+        val receiverInfo = UploadedPhoto.ReceiverInfo(
+          newReceivedPhoto.receivedPhotoName,
+          LonLat(
+            newReceivedPhoto.lon,
+            newReceivedPhoto.lat
+          )
+        )
+
+        val updatedPhoto = updatedPhotos[photoIndex].copy(
+          receiverInfo = receiverInfo
+        )
+
+        updatedPhotos.removeAt(photoIndex)
+        updatedPhotos.add(photoIndex, updatedPhoto)
       }
+
+      setState { copy(uploadedPhotos = updatedPhotos) }
     }
   }
 
-  private fun resetStateInternal(clearCache: Boolean) {
-    launch {
+  private suspend fun resetStateInternal(clearCache: Boolean) {
+    suspendWithState { _ ->
       if (clearCache) {
         uploadedPhotosRepository.deleteAll()
       }
@@ -264,149 +258,143 @@ open class UploadedPhotosFragmentViewModel(
     }
   }
 
-  private fun cancelPhotoUploadingInternal(photoId: Long) {
-    withState { state ->
-      launch {
-        try {
-          cancelPhotoUploadingUseCase.cancelPhotoUploading(photoId)
-        } catch (error: Throwable) {
-          Timber.tag(TAG).e(error)
+  private suspend fun cancelPhotoUploadingInternal(photoId: Long) {
+    suspendWithState { state ->
+      try {
+        cancelPhotoUploadingUseCase.cancelPhotoUploading(photoId)
+      } catch (error: Throwable) {
+        Timber.tag(TAG).e(error)
 
-          showErrorToast("Error has occurred while trying to cancel photo uploading.", error)
-          return@launch
-        }
-
-        intercom.tell<PhotosActivity>()
-          .to(PhotosActivityEvent.CancelPhotoUploading(photoId))
-
-        val newPhotos = state.takenPhotos.toMutableList()
-        newPhotos.removeAll { it.id == photoId }
-
-        setState { copy(takenPhotos = newPhotos) }
+        showErrorToast("Error has occurred while trying to cancel photo uploading.", error)
+        return@suspendWithState
       }
+
+      intercom.tell<PhotosActivity>()
+        .to(PhotosActivityEvent.CancelPhotoUploading(photoId))
+
+      val newPhotos = state.takenPhotos.toMutableList()
+      newPhotos.removeAll { it.id == photoId }
+
+      setState { copy(takenPhotos = newPhotos) }
     }
   }
 
-  private fun loadQueuedUpPhotosInternal() {
-    withState { state ->
+  private suspend fun loadQueuedUpPhotosInternal() {
+    suspendWithState { state ->
       if (state.takenPhotosRequest is Loading) {
-        return@withState
+        return@suspendWithState
       }
 
-      launch {
-        val loadingState = Loading<List<TakenPhoto>>()
-        setState { copy(takenPhotosRequest = loadingState) }
+      val loadingState = Loading<List<TakenPhoto>>()
+      setState { copy(takenPhotosRequest = loadingState) }
 
-        val request = try {
-          Success(takenPhotosRepository.loadNotUploadedPhotos())
-        } catch (error: Throwable) {
-          Fail<List<TakenPhoto>>(error)
+      val request = try {
+        Success(takenPhotosRepository.loadNotUploadedPhotos())
+      } catch (error: Throwable) {
+        Fail<List<TakenPhoto>>(error)
+      }
+
+      val notUploadedPhotos = request() ?: emptyList()
+      if (notUploadedPhotos.isEmpty() && state.takenPhotos.isEmpty() && request is Success) {
+        loadUploadedPhotos(false)
+        return@suspendWithState
+      }
+
+      val newTakenPhotos = state.takenPhotos
+        .filterDuplicatesWith(notUploadedPhotos) { takenPhoto ->
+          takenPhoto.id
         }
 
-        val notUploadedPhotos = request() ?: emptyList()
-        if (notUploadedPhotos.isEmpty() && state.takenPhotos.isEmpty() && request is Success) {
-          loadUploadedPhotos(false)
-          return@launch
-        }
+      setState {
+        copy(
+          takenPhotos = newTakenPhotos,
+          takenPhotosRequest = request
+        )
+      }
 
-        val newTakenPhotos = state.takenPhotos
-          .filterDuplicatesWith(notUploadedPhotos) { takenPhoto ->
-            takenPhoto.id
-          }
-
-        setState {
-          copy(
-            takenPhotos = newTakenPhotos,
-            takenPhotosRequest = request
-          )
-        }
-
-        if (notUploadedPhotos.isNotEmpty()) {
-          startUploadingService()
-        }
+      if (notUploadedPhotos.isNotEmpty()) {
+        startUploadingService()
       }
     }
   }
 
-  private fun loadUploadedPhotosInternal(forced: Boolean) {
-    withState { state ->
+  private suspend fun loadUploadedPhotosInternal(forced: Boolean) {
+    suspendWithState { state ->
       if (state.uploadedPhotosRequest is Loading) {
-        return@withState
+        return@suspendWithState
       }
 
       //TODO: return when state.isEndReached == true
 
-      launch {
-        //to avoid "Your reducer must be pure!" exceptions
-        val uploadedPhotosRequest = Loading<Paged<UploadedPhoto>>()
-        setState { copy(uploadedPhotosRequest = uploadedPhotosRequest) }
+      //to avoid "Your reducer must be pure!" exceptions
+      val uploadedPhotosRequest = Loading<Paged<UploadedPhoto>>()
+      setState { copy(uploadedPhotosRequest = uploadedPhotosRequest) }
 
-        val firstUploadedOn = state.uploadedPhotos
-          .firstOrNull()
-          ?.uploadedOn
+      val firstUploadedOn = state.uploadedPhotos
+        .firstOrNull()
+        ?.uploadedOn
 
-        val lastUploadedOn = state.uploadedPhotos
-          .lastOrNull()
-          ?.uploadedOn
+      val lastUploadedOn = state.uploadedPhotos
+        .lastOrNull()
+        ?.uploadedOn
 
-        val request = try {
-          val photos = getUploadedPhotosUseCase.loadPageOfPhotos(
-            forced,
-            firstUploadedOn,
-            lastUploadedOn,
-            photosPerPage
-          )
+      val request = try {
+        val photos = getUploadedPhotosUseCase.loadPageOfPhotos(
+          forced,
+          firstUploadedOn,
+          lastUploadedOn,
+          photosPerPage
+        )
 
-          Success(photos)
-        } catch (error: Throwable) {
-          Timber.tag(TAG).e(error)
-          Fail<Paged<UploadedPhoto>>(error)
-        }
+        Success(photos)
+      } catch (error: Throwable) {
+        Timber.tag(TAG).e(error)
+        Fail<Paged<UploadedPhoto>>(error)
+      }
 
-        val newPhotos = (request()?.page ?: emptyList())
-        val newUploadedPhotos = state.uploadedPhotos
-          .filterDuplicatesWith(newPhotos) { it.photoName }
-          .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
-          .sortedByDescending { it.uploadedOn }
+      val newPhotos = (request()?.page ?: emptyList())
+      val newUploadedPhotos = state.uploadedPhotos
+        .filterDuplicatesWith(newPhotos) { it.photoName }
+        .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
+        .sortedByDescending { it.uploadedOn }
 
-        if (newPhotos.isNotEmpty()) {
-          val mapped = newPhotos
-            .filter { uploadedPhoto -> uploadedPhoto.receiverInfo != null }
-            .map { uploadedPhoto ->
-              uploadedPhoto.receiverInfo!!
+      if (newPhotos.isNotEmpty()) {
+        val mapped = newPhotos
+          .filter { uploadedPhoto -> uploadedPhoto.receiverInfo != null }
+          .map { uploadedPhoto ->
+            uploadedPhoto.receiverInfo!!
 
-              NewReceivedPhoto(
-                uploadedPhoto.photoName,
-                uploadedPhoto.receiverInfo.receiverPhotoName,
-                uploadedPhoto.receiverInfo.receiverLonLat.lon,
-                uploadedPhoto.receiverInfo.receiverLonLat.lat,
-                uploadedPhoto.uploadedOn
-              )
-            }
+            NewReceivedPhoto(
+              uploadedPhoto.photoName,
+              uploadedPhoto.receiverInfo.receiverPhotoName,
+              uploadedPhoto.receiverInfo.receiverLonLat.lon,
+              uploadedPhoto.receiverInfo.receiverLonLat.lat,
+              uploadedPhoto.uploadedOn
+            )
+          }
 
-          intercom.tell<ReceivedPhotosFragment>()
-            .that(ReceivedPhotosFragmentEvent.GeneralEvents.OnNewPhotosReceived(mapped))
-        }
+        intercom.tell<ReceivedPhotosFragment>()
+          .that(ReceivedPhotosFragmentEvent.GeneralEvents.OnNewPhotosReceived(mapped))
+      }
 
-        val isEndReached = request()?.isEnd ?: false
+      val isEndReached = request()?.isEnd ?: false
 
-        setState {
-          copy(
-            isEndReached = isEndReached,
-            uploadedPhotosRequest = request,
-            uploadedPhotos = newUploadedPhotos
-          )
-        }
+      setState {
+        copy(
+          isEndReached = isEndReached,
+          uploadedPhotosRequest = request,
+          uploadedPhotos = newUploadedPhotos
+        )
       }
     }
   }
 
-  fun onUploadingEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
-    when (event) {
-      is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingStart -> {
-        Timber.tag(TAG).d("OnPhotoUploadingStart")
+  suspend fun onUploadingEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
+    suspendWithState { state ->
+      when (event) {
+        is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingStart -> {
+          Timber.tag(TAG).d("OnPhotoUploadingStart")
 
-        withState { state ->
           val updateResult = state.onPhotoUploadingStart(event.photo)
           if (updateResult !is UpdateStateResult.Update) {
             throw IllegalStateException("Not implemented for result ${updateResult::class}")
@@ -414,11 +402,9 @@ open class UploadedPhotosFragmentViewModel(
 
           setState { copy(takenPhotos = updateResult.update) }
         }
-      }
-      is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress -> {
-        Timber.tag(TAG).d("OnPhotoUploadingProgress")
+        is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress -> {
+          Timber.tag(TAG).d("OnPhotoUploadingProgress")
 
-        withState { state ->
           val updateResult = state.onPhotoUploadingProgress(event.photo, event.progress)
           if (updateResult !is UpdateStateResult.Update) {
             throw IllegalStateException("Not implemented for result ${updateResult::class}")
@@ -426,11 +412,9 @@ open class UploadedPhotosFragmentViewModel(
 
           setState { copy(takenPhotos = updateResult.update) }
         }
-      }
-      is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploaded -> {
-        Timber.tag(TAG).d("OnPhotoUploaded")
+        is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploaded -> {
+          Timber.tag(TAG).d("OnPhotoUploaded")
 
-        withState { state ->
           val updateResult = state.onPhotoUploaded(
             event.photo,
             event.newPhotoId,
@@ -446,11 +430,9 @@ open class UploadedPhotosFragmentViewModel(
           val (newTakenPhotos, newUploadedPhotos) = updateResult.update
           setState { copy(takenPhotos = newTakenPhotos, uploadedPhotos = newUploadedPhotos) }
         }
-      }
-      is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUploadPhoto -> {
-        Timber.tag(TAG).d("OnFailedToUploadPhoto")
+        is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUploadPhoto -> {
+          Timber.tag(TAG).d("OnFailedToUploadPhoto")
 
-        withState { state ->
           val updateResult = state.onFailedToUploadPhoto(event.photo)
           if (updateResult !is UpdateStateResult.Update) {
             throw IllegalStateException("Not implemented for result ${updateResult::class}")
@@ -459,38 +441,36 @@ open class UploadedPhotosFragmentViewModel(
           setState { copy(takenPhotos = updateResult.update) }
           showErrorToast("Failed to upload photo", event.error)
         }
-      }
-      is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoCanceled -> {
-        Timber.tag(TAG).d("OnPhotoCanceled")
-        cancelPhotoUploading(event.photo.id)
-      }
-      is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnError -> {
-        Timber.tag(TAG).d("OnError")
+        is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoCanceled -> {
+          Timber.tag(TAG).d("OnPhotoCanceled")
+          cancelPhotoUploading(event.photo.id)
+        }
+        is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnError -> {
+          Timber.tag(TAG).d("OnError")
 
-        withState { state ->
           val newPhotos = state.takenPhotos
             .map { takenPhoto -> QueuedUpPhoto.fromTakenPhoto(takenPhoto) }
 
           setState { copy(takenPhotos = newPhotos) }
         }
-      }
-      is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
-        Timber.tag(TAG).d("OnEnd")
-        startReceivingService()
-      }
-    }.safe
+        is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnEnd -> {
+          Timber.tag(TAG).d("OnEnd")
+          startReceivingService()
+        }
+      }.safe
+    }
   }
 
-  fun onReceiveEvent(event: UploadedPhotosFragmentEvent.ReceivePhotosEvent) {
-    when (event) {
-      is UploadedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotosReceived -> {
-        Timber.tag(TAG).d("OnPhotosReceived")
+  suspend fun onReceiveEvent(event: UploadedPhotosFragmentEvent.ReceivePhotosEvent) {
+    suspendWithState { state ->
+      when (event) {
+        is UploadedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotosReceived -> {
+          Timber.tag(TAG).d("OnPhotosReceived")
 
-        if (event.receivedPhotos.isEmpty()) {
-          return
-        }
+          if (event.receivedPhotos.isEmpty()) {
+            return@suspendWithState
+          }
 
-        withState { state ->
           val updateResult = state.onPhotosReceived(event.receivedPhotos)
           if (updateResult !is UpdateStateResult.Update) {
             throw IllegalStateException("Not implemented for result ${updateResult::class}")
@@ -498,11 +478,11 @@ open class UploadedPhotosFragmentViewModel(
 
           setState { copy(uploadedPhotos = updateResult.update) }
         }
-      }
-      is UploadedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
-        Timber.tag(TAG).d(event.error, "Error while trying to receive photos")
-      }
-    }.safe
+        is UploadedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
+          Timber.tag(TAG).d(event.error, "Error while trying to receive photos")
+        }
+      }.safe
+    }
   }
 
   private fun startReceivingService() {
