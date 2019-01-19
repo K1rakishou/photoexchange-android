@@ -27,6 +27,7 @@ import com.kirakishou.photoexchange.mvrx.viewmodel.state.UpdateStateResult
 import com.kirakishou.photoexchange.mvrx.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.fragment.ReceivedPhotosFragment
+import com.kirakishou.photoexchange.usecases.CancelPhotoUploadingUseCase
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -38,13 +39,14 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-class UploadedPhotosFragmentViewModel(
+open class UploadedPhotosFragmentViewModel(
   initialState: UploadedPhotosFragmentState,
   private val intercom: PhotosActivityViewModelIntercom,
   private val takenPhotosRepository: TakenPhotosRepository,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
   private val getUploadedPhotosUseCase: GetUploadedPhotosUseCase,
   private val getFreshPhotosUseCase: GetFreshPhotosUseCase,
+  private val cancelPhotoUploadingUseCase: CancelPhotoUploadingUseCase,
   private val dispatchersProvider: DispatchersProvider
 ) : BaseMvRxViewModel<UploadedPhotosFragmentState>(
   initialState,
@@ -263,13 +265,7 @@ class UploadedPhotosFragmentViewModel(
   private fun cancelPhotoUploadingInternal(photoId: Long) {
     launch {
       try {
-        if (takenPhotosRepository.findById(photoId) == null) {
-          return@launch
-        }
-
-        if (!takenPhotosRepository.deletePhotoById(photoId)) {
-          throw DatabaseException("Could not delete photo with id ${photoId}")
-        }
+        cancelPhotoUploadingUseCase.cancelPhotoUploading(photoId)
       } catch (error: Throwable) {
         Timber.tag(TAG).e(error)
 
@@ -298,6 +294,7 @@ class UploadedPhotosFragmentViewModel(
         val request = try {
           Success(takenPhotosRepository.loadNotUploadedPhotos())
         } catch (error: Throwable) {
+          //TODO: show an error here instead of switching to uploaded photos?
           Fail<List<TakenPhoto>>(error)
         }
 
@@ -489,10 +486,7 @@ class UploadedPhotosFragmentViewModel(
         }
       }
       is UploadedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
-        Timber.tag(TAG).d("OnFailed")
-
-        event.error.printStackTrace()
-        Timber.tag(TAG).d("Error while trying to receive photos: (${event.error.message})")
+        Timber.tag(TAG).d(event.error, "Error while trying to receive photos")
       }
     }.safe
   }

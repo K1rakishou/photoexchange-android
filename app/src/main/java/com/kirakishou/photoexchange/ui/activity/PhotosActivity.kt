@@ -264,7 +264,14 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
     //TODO: disable Crashlytics if user didn't give us their permission to send crashlogs
 
     //2. Check firebase availability, show no firebase dialog if necessary
-    if (!isFirebaseAvailableOrDialogAlreadyShown()) {
+    val shown = try {
+      isFirebaseAvailableOrDialogAlreadyShown()
+    } catch (error: Throwable) {
+      Timber.tag(TAG).e(error, "Error while trying to check firebase availability")
+      return
+    }
+
+    if (!shown) {
       FirebaseNotAvailableDialog().show(this)
     }
 

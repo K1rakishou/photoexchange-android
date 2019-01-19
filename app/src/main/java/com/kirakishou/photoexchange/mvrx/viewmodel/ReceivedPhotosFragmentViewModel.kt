@@ -33,6 +33,8 @@ import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.channels.consumeEach
 import timber.log.Timber
 import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 open class ReceivedPhotosFragmentViewModel(
   initialState: ReceivedPhotosFragmentState,
@@ -563,6 +565,20 @@ open class ReceivedPhotosFragmentViewModel(
 
     compositeDisposable.clear()
     job.cancelChildren()
+  }
+
+  /**
+   * For tests
+   * */
+
+  fun testSetState(newState: ReceivedPhotosFragmentState) {
+    setState { newState }
+  }
+
+  suspend fun testGetState(): ReceivedPhotosFragmentState {
+    return suspendCoroutine { continuation ->
+      withState { state -> continuation.resume(state) }
+    }
   }
 
   sealed class ActorAction {

@@ -12,7 +12,7 @@ import com.kirakishou.photoexchange.mvrx.model.photo.PhotoAdditionalInfo
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
-class GetPhotoAdditionalInfoUseCase(
+open class GetPhotoAdditionalInfoUseCase(
   private val apiClient: ApiClient,
   private val netUtils: NetUtils,
   private val photoAdditionalInfoRepository: PhotoAdditionalInfoRepository,

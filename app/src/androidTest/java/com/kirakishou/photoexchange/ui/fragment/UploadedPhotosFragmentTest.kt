@@ -30,9 +30,6 @@ import com.kirakishou.photoexchange.helper.intercom.event.UploadedPhotosFragment
 import com.kirakishou.photoexchange.helper.util.FileUtilsImpl
 import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
-import com.kirakishou.photoexchange.usecases.BlacklistPhotoUseCase
-import com.kirakishou.photoexchange.usecases.CheckFirebaseAvailabilityUseCase
-import com.kirakishou.photoexchange.usecases.GetUploadedPhotosUseCase
 import com.kirakishou.photoexchange.mock.FragmentTestingActivity
 import com.kirakishou.photoexchange.mvrx.model.NewReceivedPhoto
 import com.kirakishou.photoexchange.mvrx.model.PhotoState
@@ -44,7 +41,7 @@ import com.kirakishou.photoexchange.mvrx.viewmodel.ReceivedPhotosFragmentViewMod
 import com.kirakishou.photoexchange.mvrx.viewmodel.UploadedPhotosFragmentViewModel
 import com.kirakishou.photoexchange.mvrx.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.epoxy.controller.UploadedPhotosFragmentEpoxyController
-import com.kirakishou.photoexchange.usecases.GetFreshPhotosUseCase
+import com.kirakishou.photoexchange.usecases.*
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.whenever
@@ -80,12 +77,11 @@ class UploadedPhotosFragmentTest {
   lateinit var blackListPhotoUseCase: BlacklistPhotoUseCase
   lateinit var checkFirebaseAvailabilityUseCase: CheckFirebaseAvailabilityUseCase
   lateinit var getFreshPhotosUseCase: GetFreshPhotosUseCase
+  lateinit var cancelPhotoUploadingUseCase: CancelPhotoUploadingUseCase
 
   lateinit var uploadedPhotosFragmentViewModel: UploadedPhotosFragmentViewModel
-
   lateinit var receivedPhotosFragmentViewModel: ReceivedPhotosFragmentViewModel
   lateinit var galleryPhotosViewModel: GalleryFragmentViewModel
-
   lateinit var photosActivityViewModel: PhotosActivityViewModel
 
   @get:Rule
@@ -129,6 +125,7 @@ class UploadedPhotosFragmentTest {
     blackListPhotoUseCase = Mockito.mock(BlacklistPhotoUseCase::class.java)
     checkFirebaseAvailabilityUseCase = Mockito.mock(CheckFirebaseAvailabilityUseCase::class.java)
     getFreshPhotosUseCase = Mockito.mock(GetFreshPhotosUseCase::class.java)
+    cancelPhotoUploadingUseCase = Mockito.mock(CancelPhotoUploadingUseCase::class.java)
 
     uploadedPhotosFragmentViewModel = UploadedPhotosFragmentViewModel(
       UploadedPhotosFragmentState(),
@@ -137,6 +134,7 @@ class UploadedPhotosFragmentTest {
       uploadedPhotosRepository,
       getUploadedPhotosUseCase,
       getFreshPhotosUseCase,
+      cancelPhotoUploadingUseCase,
       dispatchers
     )
 
@@ -532,11 +530,11 @@ class UploadedPhotosFragmentTest {
 
       whenever(getUploadedPhotosUseCase.loadPageOfPhotos(any(), any(), any(), any()))
         .thenReturn(
-          Paged(uploadedPhotos.subList(0, pageSize))/*,
+          Paged(uploadedPhotos.subList(0, pageSize)),
           *uploadedPhotos.drop(pageSize)
             .chunked(pageSize)
             .map { Paged(it, it.size < pageSize) }
-            .toTypedArray()*/
+            .toTypedArray()
         )
 
       doReturn(false).`when`(netUtils).canLoadImages()
