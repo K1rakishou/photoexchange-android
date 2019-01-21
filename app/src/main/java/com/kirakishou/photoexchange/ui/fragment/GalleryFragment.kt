@@ -70,7 +70,7 @@ class GalleryFragment : MyBaseMvRxFragment(), StateEventListener<GalleryFragment
 
     swipeRefreshLayout.setOnRefreshListener {
       swipeRefreshLayout.isRefreshing = false
-      viewModel.galleryFragmentViewModel.resetState(true)
+      viewModel.galleryFragmentViewModel.resetState()
     }
 
     viewModel.galleryFragmentViewModel.loadGalleryPhotos(false)

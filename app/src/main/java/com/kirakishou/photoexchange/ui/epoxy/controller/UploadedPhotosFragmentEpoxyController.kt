@@ -74,7 +74,7 @@ class UploadedPhotosFragmentEpoxyController(
           text(context.getString(R.string.end_of_list_reached_text))
           callback { _ ->
             Timber.tag(TAG).d("Reloading")
-            viewModel.resetState(false)
+            viewModel.resetState()
           }
         }
       } else {
@@ -91,7 +91,7 @@ class UploadedPhotosFragmentEpoxyController(
           text(context.getString(R.string.end_of_list_reached_text))
           callback { _ ->
             Timber.tag(TAG).d("Reloading")
-            viewModel.resetState(false)
+            viewModel.resetState()
           }
         }
       }
@@ -123,7 +123,7 @@ class UploadedPhotosFragmentEpoxyController(
             text(context.getString(R.string.unknown_error_while_trying_to_load_photos_text))
             callback { _ ->
               Timber.tag(TAG).d("Reloading")
-              viewModel.resetState(true)
+              viewModel.resetState()
             }
           }
         }
@@ -201,7 +201,7 @@ class UploadedPhotosFragmentEpoxyController(
           text(context.getString(R.string.unknown_error_while_trying_to_load_photos_text))
           callback { _ ->
             Timber.tag(TAG).d("Reloading")
-            viewModel.resetState(true)
+            viewModel.resetState()
           }
         }
       }
