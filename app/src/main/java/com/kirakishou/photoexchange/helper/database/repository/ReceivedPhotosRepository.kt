@@ -36,7 +36,7 @@ open class ReceivedPhotosRepository(
     return receivedPhotosLocalSource.contains(uploadedPhotoName)
   }
 
-  suspend fun getPage(lastUploadedOn: Long, count: Int): List<ReceivedPhoto> {
+  suspend fun getPage(lastUploadedOn: Long?, count: Int): List<ReceivedPhoto> {
     return receivedPhotosLocalSource.getPage(lastUploadedOn, count)
   }
 
