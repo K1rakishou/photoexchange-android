@@ -27,6 +27,10 @@ open class GetPhotoAdditionalInfoUseCase(
     photoNameSelectorFunc: (T) -> String,
     copyFunc: (T, PhotoAdditionalInfo) -> T
   ): List<T> {
+    if (galleryPhotos.isEmpty()) {
+      return emptyList()
+    }
+
     return withContext(coroutineContext) {
       val userId = settingsRepository.getUserUuid()
 

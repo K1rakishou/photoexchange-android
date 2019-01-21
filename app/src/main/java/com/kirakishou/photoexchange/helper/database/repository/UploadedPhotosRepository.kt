@@ -26,8 +26,8 @@ open class UploadedPhotosRepository(
     return uploadedPhotosLocalSource.contains(photoName)
   }
 
-  suspend fun getPage(time: Long, count: Int): List<UploadedPhoto> {
-    return uploadedPhotosLocalSource.getPage(time, count)
+  suspend fun getPage(lastUploadedOn: Long?, count: Int): List<UploadedPhoto> {
+    return uploadedPhotosLocalSource.getPage(lastUploadedOn, count)
   }
 
   suspend fun findByPhotoName(uploadedPhotoName: String): UploadedPhoto? {
