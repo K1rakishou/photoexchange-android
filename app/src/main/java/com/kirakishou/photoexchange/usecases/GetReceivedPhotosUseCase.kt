@@ -119,6 +119,7 @@ open class GetReceivedPhotosUseCase(
       Timber.tag(TAG).d("Found ${oldPhotos.size} old received photos")
 
       for (photo in oldPhotos) {
+        //delete both uploaded and received photos
         uploadedPhotosRepository.deleteByPhotoName(photo.uploadedPhotoName)
         receivedPhotosRepository.deleteByPhotoName(photo.receivedPhotoName)
       }
