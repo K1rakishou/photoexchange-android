@@ -50,6 +50,7 @@ open class GetFreshPhotosUseCase(
       .map { responseData -> UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhoto(responseData) }
   }
 
+  //TODO: should also load additional photo info
   @Throws(AttemptToAccessInternetWithMeteredNetworkException::class, EmptyUserUuidException::class)
   suspend fun getFreshReceivedPhotos(forced: Boolean, firstUploadedOn: Long): List<ReceivedPhoto> {
     val userUuid = settingsRepository.getUserUuid()
@@ -70,6 +71,7 @@ open class GetFreshPhotosUseCase(
       .map { responseData -> ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhoto(responseData) }
   }
 
+  //TODO: should also load additional photo info
   @Throws(AttemptToAccessInternetWithMeteredNetworkException::class)
   suspend fun getFreshGalleryPhotos(forced: Boolean, firstUploadedOn: Long): List<GalleryPhoto> {
     if (forced) {

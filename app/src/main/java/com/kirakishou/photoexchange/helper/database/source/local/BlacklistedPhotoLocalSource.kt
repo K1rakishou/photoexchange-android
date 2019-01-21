@@ -27,9 +27,9 @@ open class BlacklistedPhotoLocalSource(
 
   fun deleteOld() {
     val now = timeUtils.getTimeFast()
-    val deletedCount = blacklistedPhotoDao.deleteOlderThan(now - blacklistedEarlierThanTimeDelta)
+    blacklistedPhotoDao.deleteOlderThan(now - blacklistedEarlierThanTimeDelta)
 
-    Timber.tag(TAG).d("deleted $deletedCount blacklisted photos")
+    Timber.tag(TAG).d("deleteOld called")
   }
 
 }

@@ -39,9 +39,9 @@ open class GalleryPhotoLocalSource(
 
   open fun deleteOldPhotos() {
     val now = timeUtils.getTimeFast()
-    val deletedCount = galleryPhotoDao.deleteOlderThan(now - insertedEarlierThanTimeDelta)
+    galleryPhotoDao.deleteOlderThan(now - insertedEarlierThanTimeDelta)
 
-    Timber.tag(TAG).d("deleted $deletedCount gallery photos")
+    Timber.tag(TAG).d("deleteOld called")
   }
 
   open fun deleteAll() {

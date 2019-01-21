@@ -82,8 +82,6 @@ open class GetPhotoAdditionalInfoUseCase(
     userId: String,
     photoNameList: List<String>
   ): List<PhotoAdditionalInfo>? {
-    photoAdditionalInfoRepository.deleteOld()
-
     if (userId.isEmpty()) {
       return null
     }
@@ -108,6 +106,8 @@ open class GetPhotoAdditionalInfoUseCase(
       Timber.tag(TAG).d("Nothing was found on the server")
       return emptyList()
     }
+
+    photoAdditionalInfoRepository.deleteOld()
 
     if (!photoAdditionalInfoRepository.saveMany(additionalInfoList)) {
       throw DatabaseException("Could not cache additional photo info in the database")
