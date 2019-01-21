@@ -15,18 +15,20 @@ import com.kirakishou.photoexchange.mvrx.model.photo.UploadingPhoto
 import com.kirakishou.photoexchange.mvrx.viewmodel.UploadedPhotosFragmentViewModel
 import com.kirakishou.photoexchange.mvrx.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.epoxy.row.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.lang.ref.WeakReference
 
 class UploadedPhotosFragmentEpoxyController(
   private val imageLoader: ImageLoader
 ) : BaseEpoxyController() {
   private val TAG = "UploadedPhotosFragmentEpoxyController"
 
+  fun cancelPendingImageLoadingRequests() {
+    imageLoader.cancelAll()
+  }
+
   fun rebuild(
     context: Context,
-    coroutineScope: CoroutineScope,
     controller: AsyncEpoxyController,
     viewModel: UploadedPhotosFragmentViewModel
   ) {
@@ -38,7 +40,6 @@ class UploadedPhotosFragmentEpoxyController(
 
         if (state.takenPhotosRequest !is Fail) {
           buildUploadedPhotos(
-            coroutineScope,
             context,
             state,
             viewModel,
@@ -50,7 +51,6 @@ class UploadedPhotosFragmentEpoxyController(
   }
 
   private fun AsyncEpoxyController.buildUploadedPhotos(
-    coroutineScope: CoroutineScope,
     context: Context,
     state: UploadedPhotosFragmentState,
     viewModel: UploadedPhotosFragmentViewModel,
@@ -63,7 +63,7 @@ class UploadedPhotosFragmentEpoxyController(
           photo(photo)
           callback { model, _, _, _ -> viewModel.swapPhotoAndMap(model.photo().photoName) }
           onBind { model, view, _ ->
-            loadPhotoOrImage(coroutineScope, model.photo(), view.photoView, view.staticMapView)
+            loadPhotoOrImage(model.photo(), view.photoView, view.staticMapView)
           }
         }
       }
@@ -209,17 +209,14 @@ class UploadedPhotosFragmentEpoxyController(
   }
 
   private fun loadPhotoOrImage(
-    coroutineScope: CoroutineScope,
     photo: UploadedPhoto,
     photoView: ImageView,
     mapView: ImageView
   ) {
-    coroutineScope.launch {
-      if (photo.showPhoto) {
-        imageLoader.loadPhotoFromNetInto(photo.photoName, photoView)
-      } else {
-        imageLoader.loadStaticMapImageFromNetInto(photo.photoName, mapView)
-      }
+    if (photo.showPhoto) {
+      imageLoader.loadPhotoFromNetInto(photo.photoName, WeakReference(photoView))
+    } else {
+      imageLoader.loadStaticMapImageFromNetInto(photo.photoName, WeakReference(mapView))
     }
   }
 }

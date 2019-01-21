@@ -21,6 +21,7 @@ open class GetPhotoAdditionalInfoUseCase(
 ) : BaseUseCase(dispatchersProvider) {
   private val TAG = "GetPhotoAdditionalInfoUseCase"
 
+  //FIXME: sometime this method does not send the name of the last photo in the list thus losing photoadditionalinfo
   suspend fun <T> appendAdditionalPhotoInfo(
     galleryPhotos: List<T>,
     photoNameSelectorFunc: (T) -> String,

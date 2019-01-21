@@ -83,10 +83,15 @@ class UploadedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Uploaded
     checkFreshPhotos()
   }
 
+  override fun onStop() {
+    super.onStop()
+
+    controller.cancelPendingImageLoadingRequests()
+  }
+
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
     controller.rebuild(
       requireContext(),
-      this@UploadedPhotosFragment,
       this,
       viewModel.uploadedPhotosFragmentViewModel
     )
