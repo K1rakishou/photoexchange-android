@@ -460,7 +460,9 @@ open class ReceivedPhotosFragmentViewModel(
         return@withState
       }
 
-      //TODO: return when state.isEndReached == true
+      if (state.isEndReached) {
+        return@withState
+      }
 
       launch {
         //to avoid "Your reducer must be pure!" exceptions
