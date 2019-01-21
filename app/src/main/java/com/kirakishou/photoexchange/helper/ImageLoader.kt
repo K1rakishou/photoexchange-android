@@ -17,10 +17,7 @@ import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.mvrx.model.PhotoSize
 import com.kirakishou.photoexchange.ui.widget.TextDrawable
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelChildren
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.io.File
 import java.lang.ref.WeakReference
 import javax.inject.Inject
@@ -41,6 +38,7 @@ open class ImageLoader
   private val TAG = "ImageLoader"
 
   private val job = Job()
+  //TODO: move strings to resources
   private val noUnmeteredNetworkAvailableText = "No unmetered network available."
   private val couldNotLoadPhotoText = "Error. Could not load photo."
   private val textColor = "#505050"
@@ -58,7 +56,7 @@ open class ImageLoader
   }
 
   override val coroutineContext: CoroutineContext
-    get() = job + dispatchers.NETWORK()
+    get() = job + dispatchers.UI()
 
   fun cancelAll() {
     job.cancelChildren()
