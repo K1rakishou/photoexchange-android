@@ -68,12 +68,12 @@ open class GetPhotoAdditionalInfoUseCase(
         return@withContext null
       }
 
-      val result = getPhotoAdditionalInfos(userId, photoNameList)
-      if (result == null) {
-        return@withContext null
+      return@withContext try {
+        getPhotoAdditionalInfos(userId, photoNameList)
+      } catch (error: Throwable) {
+        Timber.tag(TAG).e(error)
+        null
       }
-
-      return@withContext result
     }
   }
 
