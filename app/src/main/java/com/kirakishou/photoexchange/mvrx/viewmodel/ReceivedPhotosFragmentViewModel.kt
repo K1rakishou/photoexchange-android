@@ -46,7 +46,7 @@ open class ReceivedPhotosFragmentViewModel(
   private val getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
   private val getFreshPhotosUseCase: GetFreshPhotosUseCase,
   private val dispatchersProvider: DispatchersProvider
-) : BaseMvRxViewModel<ReceivedPhotosFragmentState>(
+) : MyBaseMvRxViewModel<ReceivedPhotosFragmentState>(
   initialState,
   BuildConfig.DEBUG
 ), CoroutineScope {
@@ -129,14 +129,8 @@ open class ReceivedPhotosFragmentViewModel(
   }
 
   //called when user favourites photo from GalleryFragment
-  fun onPhotoFavourited(
-    photoName: String,
-    isFavourited: Boolean,
-    favouritesCount: Long
-  ) {
-    launch {
-      viewModelActor.send(ActorAction.OnPhotoFavourited(photoName, isFavourited, favouritesCount))
-    }
+  fun onPhotoFavourited(photoName: String, isFavourited: Boolean, favouritesCount: Long) {
+    launch { viewModelActor.send(ActorAction.OnPhotoFavourited(photoName, isFavourited, favouritesCount)) }
   }
 
   //check whether we have received a new photo by someone
@@ -144,98 +138,86 @@ open class ReceivedPhotosFragmentViewModel(
     launch { viewModelActor.send(ActorAction.CheckFreshPhotos) }
   }
 
-  //TODO: change all inner launch to runBlocking
-
-  private fun checkFreshPhotosInternal() {
-    withState { state ->
+  private suspend fun checkFreshPhotosInternal() {
+    suspendWithState { state ->
       //do not run the request if we are in the failed state
       if (state.receivedPhotosRequest is Fail) {
-        return@withState
+        return@suspendWithState
       }
 
       //do not run the request if it is already running
       if (state.checkForFreshPhotosRequest is Loading) {
-        return@withState
+        return@suspendWithState
       }
 
-      launch {
-        val firstUploadedOn = state.receivedPhotos
-          .firstOrNull()
-          ?.uploadedOn
+      val firstUploadedOn = state.receivedPhotos
+        .firstOrNull()
+        ?.uploadedOn
 
-        if (firstUploadedOn == null) {
-          //no photos
-          return@launch
-        }
+      if (firstUploadedOn == null) {
+        //no photos
+        return@suspendWithState
+      }
 
-        val loadingState = Loading<Unit>()
-        setState { copy(checkForFreshPhotosRequest = loadingState) }
+      val loadingState = Loading<Unit>()
+      setState { copy(checkForFreshPhotosRequest = loadingState) }
 
-        val freshPhotosRequest = try {
-          Success(getFreshPhotosUseCase.getFreshReceivedPhotos(false, firstUploadedOn))
-        } catch (error: Throwable) {
-          Timber.tag(TAG).e(error, "Error while trying to check fresh received photos")
-          setState { copy(checkForFreshPhotosRequest = Uninitialized) }
-          //TODO: notify user about this error?
-          return@launch
-        }
+      val freshPhotosRequest = try {
+        Success(getFreshPhotosUseCase.getFreshReceivedPhotos(false, firstUploadedOn))
+      } catch (error: Throwable) {
+        Timber.tag(TAG).e(error, "Error while trying to check fresh received photos")
+        setState { copy(checkForFreshPhotosRequest = Uninitialized) }
+        //TODO: notify user about this error?
+        return@suspendWithState
+      }
 
-        val freshPhotos = freshPhotosRequest() ?: emptyList()
-        if (freshPhotos.isEmpty()) {
-          setState { copy(checkForFreshPhotosRequest = Uninitialized) }
-          return@launch
-        }
+      val freshPhotos = freshPhotosRequest() ?: emptyList()
+      if (freshPhotos.isEmpty()) {
+        setState { copy(checkForFreshPhotosRequest = Uninitialized) }
+        return@suspendWithState
+      }
 
-        val newPhotosCount = freshPhotos.count { it.uploadedOn > firstUploadedOn }
+      val newPhotosCount = freshPhotos.count { it.uploadedOn > firstUploadedOn }
 
-        //if there are any fresh photos - show snackbar
-        if (newPhotosCount > 0) {
-          intercom.tell<PhotosActivity>().to(PhotosActivityEvent.OnNewReceivedPhotos(newPhotosCount))
-        }
+      //if there are any fresh photos - show snackbar
+      if (newPhotosCount > 0) {
+        intercom.tell<PhotosActivity>().to(PhotosActivityEvent.OnNewReceivedPhotos(newPhotosCount))
+      }
 
-        val newReceivedPhotos = state.receivedPhotos
-          .filterDuplicatesWith(freshPhotos) { it.receivedPhotoName }
-          .map { galleryPhoto -> galleryPhoto.copy(photoSize = photoSize) }
-          .sortedByDescending { it.uploadedOn }
+      val newReceivedPhotos = state.receivedPhotos
+        .filterDuplicatesWith(freshPhotos) { it.receivedPhotoName }
+        .map { galleryPhoto -> galleryPhoto.copy(photoSize = photoSize) }
+        .sortedByDescending { it.uploadedOn }
 
-        setState {
-          copy(
-            receivedPhotos = newReceivedPhotos,
-            checkForFreshPhotosRequest = Uninitialized
-          )
-        }
+      setState {
+        copy(
+          receivedPhotos = newReceivedPhotos,
+          checkForFreshPhotosRequest = Uninitialized
+        )
       }
     }
   }
 
-  private fun onPhotoFavouritedInternal(
-    photoName: String,
-    isFavourited: Boolean,
-    favouritesCount: Long
-  ) {
-    withState { state ->
-      launch {
-        val updateResult = state.onPhotoFavourited(photoName, isFavourited, favouritesCount)
-        if (updateResult is UpdateStateResult.Update) {
-          setState { copy(receivedPhotos = updateResult.update) }
-        }
+  private suspend fun onPhotoFavouritedInternal(photoName: String, isFavourited: Boolean, favouritesCount: Long) {
+    suspendWithState { state ->
+      val updateResult = state.onPhotoFavourited(photoName, isFavourited, favouritesCount)
+      if (updateResult is UpdateStateResult.Update) {
+        setState { copy(receivedPhotos = updateResult.update) }
       }
     }
   }
 
-  private fun onPhotoReportedInternal(photoName: String, isReported: Boolean) {
-    withState { state ->
-      launch {
-        val updateResult = state.onPhotoReported(photoName, isReported)
-        if (updateResult is UpdateStateResult.Update) {
-          setState { copy(receivedPhotos = updateResult.update) }
-        }
+  private suspend fun onPhotoReportedInternal(photoName: String, isReported: Boolean) {
+    suspendWithState { state ->
+      val updateResult = state.onPhotoReported(photoName, isReported)
+      if (updateResult is UpdateStateResult.Update) {
+        setState { copy(receivedPhotos = updateResult.update) }
       }
     }
   }
 
   //TODO: should user be allowed to report his own photos?
-  private fun reportPhotoInternal(photoName: String) {
+  private suspend fun reportPhotoInternal(photoName: String) {
     fun updateIsPhotoReported(state: ReceivedPhotosFragmentState, photoName: String) {
       if (state.reportedPhotos.contains(photoName)) {
         setState { copy(reportedPhotos = state.reportedPhotos - photoName) }
@@ -252,40 +234,38 @@ open class ReceivedPhotosFragmentViewModel(
         .to(PhotosActivityEvent.ShowToast(message))
     }
 
-    withState { state ->
-      launch {
-        updateIsPhotoReported(state, photoName)
+    suspendWithState { state ->
+      updateIsPhotoReported(state, photoName)
 
-        val reportResult = try {
-          reportPhotoUseCase.reportPhoto(photoName)
-        } catch (error: Throwable) {
-          Timber.tag(TAG).e(error)
+      val reportResult = try {
+        reportPhotoUseCase.reportPhoto(photoName)
+      } catch (error: Throwable) {
+        Timber.tag(TAG).e(error)
 
-          onFail(state, photoName, error)
-          return@launch
-        }
+        onFail(state, photoName, error)
+        return@suspendWithState
+      }
 
-        val updateResult = state.reportPhoto(photoName, reportResult)
+      val updateResult = state.reportPhoto(photoName, reportResult)
 
-        //only show delete photo dialog when we reporting a photo and not removing the report
-        if (reportResult) {
-          intercom.tell<PhotosActivity>()
-            .to(PhotosActivityEvent.ShowDeletePhotoDialog(photoName))
-        }
+      //only show delete photo dialog when we reporting a photo and not removing the report
+      if (reportResult) {
+        intercom.tell<PhotosActivity>()
+          .to(PhotosActivityEvent.ShowDeletePhotoDialog(photoName))
+      }
 
-        //notify GalleryFragment that a photo has been reported
-        intercom.tell<GalleryFragment>()
-          .that(GalleryFragmentEvent.GeneralEvents.PhotoReported(photoName, reportResult))
+      //notify GalleryFragment that a photo has been reported
+      intercom.tell<GalleryFragment>()
+        .that(GalleryFragmentEvent.GeneralEvents.PhotoReported(photoName, reportResult))
 
-        if (updateResult is UpdateStateResult.Update) {
-          setState { copy(receivedPhotos = updateResult.update) }
-        }
+      if (updateResult is UpdateStateResult.Update) {
+        setState { copy(receivedPhotos = updateResult.update) }
       }
     }
   }
 
   //TODO: should user be allowed to favourite his own photos?
-  private fun favouritePhotoInternal(photoName: String) {
+  private suspend fun favouritePhotoInternal(photoName: String) {
     fun updateIsPhotoFavourited(state: ReceivedPhotosFragmentState, photoName: String) {
       if (state.favouritedPhotos.contains(photoName)) {
         setState { copy(favouritedPhotos = state.favouritedPhotos - photoName) }
@@ -302,42 +282,40 @@ open class ReceivedPhotosFragmentViewModel(
         .to(PhotosActivityEvent.ShowToast(message))
     }
 
-    withState { state ->
-      launch {
-        updateIsPhotoFavourited(state, photoName)
+    suspendWithState { state ->
+      updateIsPhotoFavourited(state, photoName)
 
-        val favouriteResult = try {
-          favouritePhotoUseCase.favouritePhoto(photoName)
-        } catch (error: Throwable) {
-          Timber.tag(TAG).e(error)
+      val favouriteResult = try {
+        favouritePhotoUseCase.favouritePhoto(photoName)
+      } catch (error: Throwable) {
+        Timber.tag(TAG).e(error)
 
-          onFail(state, photoName, error)
-          return@launch
-        }
+        onFail(state, photoName, error)
+        return@suspendWithState
+      }
 
-        val updateResult = state.favouritePhoto(
-          photoName,
-          favouriteResult.isFavourited,
-          favouriteResult.favouritesCount
+      val updateResult = state.favouritePhoto(
+        photoName,
+        favouriteResult.isFavourited,
+        favouriteResult.favouritesCount
+      )
+
+      //notify GalleryFragment that a photo has been favourited
+      intercom.tell<GalleryFragment>()
+        .that(
+          GalleryFragmentEvent.GeneralEvents.PhotoFavourited(
+            photoName, favouriteResult.isFavourited, favouriteResult.favouritesCount
+          )
         )
 
-        //notify GalleryFragment that a photo has been favourited
-        intercom.tell<GalleryFragment>()
-          .that(
-            GalleryFragmentEvent.GeneralEvents.PhotoFavourited(
-              photoName, favouriteResult.isFavourited, favouriteResult.favouritesCount
-            )
-          )
-
-        if (updateResult is UpdateStateResult.Update) {
-          setState { copy(receivedPhotos = updateResult.update) }
-        }
+      if (updateResult is UpdateStateResult.Update) {
+        setState { copy(receivedPhotos = updateResult.update) }
       }
     }
   }
 
-  private fun removePhotoInternal(photoName: String) {
-    withState { state ->
+  private suspend fun removePhotoInternal(photoName: String) {
+    suspendWithState { state ->
       val updateResult = state.removePhoto(photoName)
       if (updateResult is UpdateStateResult.Update) {
         setState { copy(receivedPhotos = updateResult.update) }
@@ -348,7 +326,7 @@ open class ReceivedPhotosFragmentViewModel(
   // FIXME: make faster (use hashSet/Map for filtering already added photos)
   // This function is called every time a new page of uploaded photos is loaded and
   // it is a pretty slow function
-  private fun onNewPhotoReceivedInternal(newReceivedPhotos: List<NewReceivedPhoto>) {
+  private suspend fun onNewPhotoReceivedInternal(newReceivedPhotos: List<NewReceivedPhoto>) {
 
     suspend fun updateAdditionalPhotoInfo(
       photoNameListToFetchAdditionalInfo: MutableList<String>,
@@ -382,46 +360,48 @@ open class ReceivedPhotosFragmentViewModel(
       }
     }
 
-    withState { state ->
-      launch {
-        val updatedPhotos = state.receivedPhotos.toMutableList()
-        val photoNameListToFetchAdditionalInfo = mutableListOf<String>()
+    suspendWithState { state ->
+      val updatedPhotos = state.receivedPhotos.toMutableList()
+      val photoNameListToFetchAdditionalInfo = mutableListOf<String>()
 
-        for (newReceivedPhoto in newReceivedPhotos) {
-          val photoIndex = updatedPhotos.indexOfFirst { receivedPhoto ->
-            receivedPhoto.receivedPhotoName == newReceivedPhoto.receivedPhotoName
-          }
-
-          if (photoIndex != -1) {
-            continue
-          }
-
-          val newPhoto = ReceivedPhoto(
-            newReceivedPhoto.uploadedPhotoName,
-            newReceivedPhoto.receivedPhotoName,
-            LonLat(
-              newReceivedPhoto.lon,
-              newReceivedPhoto.lat
-            ),
-            newReceivedPhoto.uploadedOn,
-            PhotoAdditionalInfo.empty(newReceivedPhoto.receivedPhotoName),
-            true,
-            photoSize
-          )
-
-          updatedPhotos += newPhoto
-          photoNameListToFetchAdditionalInfo += newReceivedPhoto.receivedPhotoName
+      for (newReceivedPhoto in newReceivedPhotos) {
+        val photoIndex = updatedPhotos.indexOfFirst { receivedPhoto ->
+          receivedPhoto.receivedPhotoName == newReceivedPhoto.receivedPhotoName
         }
 
-        updatedPhotos.sortByDescending { it.uploadedOn }
+        if (photoIndex != -1) {
+          continue
+        }
 
-        setState { copy(receivedPhotos = updatedPhotos) }
+        val newPhoto = ReceivedPhoto(
+          newReceivedPhoto.uploadedPhotoName,
+          newReceivedPhoto.receivedPhotoName,
+          LonLat(
+            newReceivedPhoto.lon,
+            newReceivedPhoto.lat
+          ),
+          newReceivedPhoto.uploadedOn,
+          PhotoAdditionalInfo.empty(newReceivedPhoto.receivedPhotoName),
+          true,
+          photoSize
+        )
+
+        updatedPhotos += newPhoto
+        photoNameListToFetchAdditionalInfo += newReceivedPhoto.receivedPhotoName
       }
+
+      if (photoNameListToFetchAdditionalInfo.isNotEmpty()) {
+        updateAdditionalPhotoInfo(photoNameListToFetchAdditionalInfo, updatedPhotos)
+      }
+
+      updatedPhotos.sortByDescending { it.uploadedOn }
+
+      setState { copy(receivedPhotos = updatedPhotos) }
     }
   }
 
-  private fun swapPhotoAndMapInternal(receivedPhotoName: String) {
-    withState { state ->
+  private suspend fun swapPhotoAndMapInternal(receivedPhotoName: String) {
+    suspendWithState { state ->
       val updateResult = state.swapMapAndPhoto(receivedPhotoName)
 
       when (updateResult) {
@@ -440,9 +420,10 @@ open class ReceivedPhotosFragmentViewModel(
     }
   }
 
-  private fun resetStateInternal(clearCache: Boolean) {
-    launch {
+  private suspend fun resetStateInternal(clearCache: Boolean) {
+    suspendWithState {
       if (clearCache) {
+        //TODO: remove
         receivedPhotosRepository.deleteAll()
       }
 
@@ -455,85 +436,84 @@ open class ReceivedPhotosFragmentViewModel(
   }
 
   private suspend fun loadReceivedPhotosInternal(forced: Boolean) {
-    withState { state ->
+    suspendWithState { state ->
       if (state.receivedPhotosRequest is Loading) {
-        return@withState
+        return@suspendWithState
       }
 
       if (state.isEndReached) {
-        return@withState
+        return@suspendWithState
       }
 
-      launch {
-        //to avoid "Your reducer must be pure!" exceptions
-        val receivedPhotosRequest = Loading<Paged<ReceivedPhoto>>()
-        setState { copy(receivedPhotosRequest = receivedPhotosRequest) }
+      //to avoid "Your reducer must be pure!" exceptions
+      val receivedPhotosRequest = Loading<Paged<ReceivedPhoto>>()
+      setState { copy(receivedPhotosRequest = receivedPhotosRequest) }
 
-        val firstUploadedOn = state.receivedPhotos
-          .firstOrNull()
-          ?.uploadedOn
+      val firstUploadedOn = state.receivedPhotos
+        .firstOrNull()
+        ?.uploadedOn
 
-        val lastUploadedOn = state.receivedPhotos
-          .lastOrNull()
-          ?.uploadedOn
+      val lastUploadedOn = state.receivedPhotos
+        .lastOrNull()
+        ?.uploadedOn
 
-        val request = try {
-          val receivedPhotos = getReceivedPhotosUseCase.loadPageOfPhotos(
-            forced,
-            firstUploadedOn,
-            lastUploadedOn,
-            photosPerPage
-          )
+      val request = try {
+        val receivedPhotos = getReceivedPhotosUseCase.loadPageOfPhotos(
+          forced,
+          firstUploadedOn,
+          lastUploadedOn,
+          photosPerPage
+        )
 
-          intercom.tell<UploadedPhotosFragment>()
-            .to(UploadedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotosReceived(receivedPhotos.page.map { it }))
+        intercom.tell<UploadedPhotosFragment>()
+          .to(UploadedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotosReceived(receivedPhotos.page.map { it }))
 
-          Success(receivedPhotos)
-        } catch (error: Throwable) {
-          Timber.tag(TAG).e(error)
-          Fail<Paged<ReceivedPhoto>>(error)
-        }
+        Success(receivedPhotos)
+      } catch (error: Throwable) {
+        Timber.tag(TAG).e(error)
+        Fail<Paged<ReceivedPhoto>>(error)
+      }
 
-        val newPhotos = (request()?.page ?: emptyList())
-        val newReceivedPhotos = state.receivedPhotos
-          .filterDuplicatesWith(newPhotos) { it.uploadedPhotoName }
-          .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
-          .sortedByDescending { it.uploadedOn }
+      val newPhotos = (request()?.page ?: emptyList())
+      val newReceivedPhotos = state.receivedPhotos
+        .filterDuplicatesWith(newPhotos) { it.uploadedPhotoName }
+        .map { uploadedPhoto -> uploadedPhoto.copy(photoSize = photoSize) }
+        .sortedByDescending { it.uploadedOn }
 
-        if (newPhotos.isNotEmpty()) {
-          val mapped = newPhotos.map { receivedPhoto ->
-            NewReceivedPhoto(
-              receivedPhoto.uploadedPhotoName,
-              receivedPhoto.receivedPhotoName,
-              receivedPhoto.lonLat.lon,
-              receivedPhoto.lonLat.lat,
-              receivedPhoto.uploadedOn
-            )
-          }
-
-          intercom.tell<UploadedPhotosFragment>()
-            .that(UploadedPhotosFragmentEvent.GeneralEvents.OnNewPhotosReceived(mapped))
-        }
-
-        val isEndReached = request()?.isEnd ?: false
-
-        setState {
-          copy(
-            isEndReached = isEndReached,
-            receivedPhotosRequest = request,
-            receivedPhotos = newReceivedPhotos
+      if (newPhotos.isNotEmpty()) {
+        val mapped = newPhotos.map { receivedPhoto ->
+          NewReceivedPhoto(
+            receivedPhoto.uploadedPhotoName,
+            receivedPhoto.receivedPhotoName,
+            receivedPhoto.lonLat.lon,
+            receivedPhoto.lonLat.lat,
+            receivedPhoto.uploadedOn
           )
         }
 
-        startReceivingService()
+        intercom.tell<UploadedPhotosFragment>()
+          .that(UploadedPhotosFragmentEvent.GeneralEvents.OnNewPhotosReceived(mapped))
       }
+
+      val isEndReached = request()?.isEnd ?: false
+
+      setState {
+        copy(
+          isEndReached = isEndReached,
+          receivedPhotosRequest = request,
+          receivedPhotos = newReceivedPhotos
+        )
+      }
+
+      startReceivingService()
     }
   }
 
-  fun onReceivePhotosEvent(event: ReceivedPhotosFragmentEvent.ReceivePhotosEvent) {
-    when (event) {
-      is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived -> {
-        withState { state ->
+  suspend fun onReceivePhotosEvent(event: ReceivedPhotosFragmentEvent.ReceivePhotosEvent) {
+    suspendWithState { state ->
+      when (event) {
+        is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived -> {
+
           val updateResult = state.onPhotosReceived(event.receivedPhotos)
           if (updateResult !is UpdateStateResult.Update) {
             throw IllegalStateException("Not implemented for result ${updateResult::class}")
@@ -549,12 +529,12 @@ open class ReceivedPhotosFragmentViewModel(
             )
           }
         }
-      }
-      is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
-        event.error.printStackTrace()
-        Timber.tag(TAG).d("Error while trying to receive photos: (${event.error.message})")
-      }
-    }.safe
+        is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.OnFailed -> {
+          event.error.printStackTrace()
+          Timber.tag(TAG).d("Error while trying to receive photos: (${event.error.message})")
+        }
+      }.safe
+    }
   }
 
   private fun startReceivingService() {

@@ -247,6 +247,7 @@ open class UploadedPhotosFragmentViewModel(
   private suspend fun resetStateInternal(clearCache: Boolean) {
     suspendWithState { _ ->
       if (clearCache) {
+        //TODO: remove
         uploadedPhotosRepository.deleteAll()
       }
 
