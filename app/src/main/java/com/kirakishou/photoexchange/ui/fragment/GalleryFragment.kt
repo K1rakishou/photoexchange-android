@@ -98,10 +98,15 @@ class GalleryFragment : MyBaseMvRxFragment(), StateEventListener<GalleryFragment
     checkFreshPhotos()
   }
 
+  override fun onStop() {
+    super.onStop()
+
+    controller.cancelPendingImageLoadingRequests()
+  }
+
   override fun buildEpoxyController(): AsyncEpoxyController = simpleController {
     controller.rebuild(
       requireContext(),
-      this@GalleryFragment,
       this,
       viewModel.galleryFragmentViewModel
     )

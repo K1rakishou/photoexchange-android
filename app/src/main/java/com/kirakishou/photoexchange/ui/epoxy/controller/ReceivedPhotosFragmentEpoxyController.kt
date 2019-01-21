@@ -14,18 +14,20 @@ import com.kirakishou.photoexchange.mvrx.viewmodel.ReceivedPhotosFragmentViewMod
 import com.kirakishou.photoexchange.ui.epoxy.row.loadingRow
 import com.kirakishou.photoexchange.ui.epoxy.row.receivedPhotoRow
 import com.kirakishou.photoexchange.ui.epoxy.row.textRow
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.lang.ref.WeakReference
 
 class ReceivedPhotosFragmentEpoxyController(
   private val imageLoader: ImageLoader
 ) : BaseEpoxyController() {
   private val TAG = "ReceivedPhotosFragmentEpoxyController"
 
+  fun cancelPendingImageLoadingRequests() {
+    imageLoader.cancelAll()
+  }
+
   fun rebuild(
     context: Context,
-    coroutineScope: CoroutineScope,
     controller: AsyncEpoxyController,
     viewModel: ReceivedPhotosFragmentViewModel
   ) {
@@ -64,7 +66,7 @@ class ReceivedPhotosFragmentEpoxyController(
                     viewModel.reportPhoto(model.photo().receivedPhotoName)
                   }
                   onBind { model, view, _ ->
-                    loadPhotoOrImage(coroutineScope, model.photo(), view.photoView, view.staticMapView)
+                    loadPhotoOrImage(model.photo(), view.photoView, view.staticMapView)
                   }
                 }
               }
@@ -131,17 +133,14 @@ class ReceivedPhotosFragmentEpoxyController(
   }
 
   private fun loadPhotoOrImage(
-    coroutineScope: CoroutineScope,
     photo: ReceivedPhoto,
     photoView: ImageView,
     mapView: ImageView
   ) {
-    coroutineScope.launch {
-      if (photo.showPhoto) {
-        imageLoader.loadPhotoFromNetInto(photo.receivedPhotoName, photoView)
-      } else {
-        imageLoader.loadStaticMapImageFromNetInto(photo.receivedPhotoName, mapView)
-      }
+    if (photo.showPhoto) {
+      imageLoader.loadPhotoFromNetInto(photo.receivedPhotoName, WeakReference(photoView))
+    } else {
+      imageLoader.loadStaticMapImageFromNetInto(photo.receivedPhotoName, WeakReference(mapView))
     }
   }
 }
