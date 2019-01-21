@@ -82,10 +82,8 @@ open class GetUploadedPhotosUseCase(
   }
 
   private suspend fun getFromCacheInternal(lastUploadedOn: Long?, count: Int): List<UploadedPhoto> {
-    val time = lastUploadedOn ?: timeUtils.getTimePlus26Hours()
-
     //if there is no internet - search only in the database
-    val cachedUploadedPhotos = uploadedPhotosRepository.getPage(time, count)
+    val cachedUploadedPhotos = uploadedPhotosRepository.getPage(lastUploadedOn, count)
     return if (cachedUploadedPhotos.size == count) {
       Timber.tag(TAG).d("Found enough uploaded photos in the database")
       cachedUploadedPhotos

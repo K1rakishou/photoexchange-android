@@ -40,9 +40,13 @@ class ReceivedPhotosLocalSource(
     return receivedPhotosDao.save(receivedPhotoEntity).isSuccess()
   }
 
-  fun saveMany(
-    receivedPhotos: List<ReceivedPhoto>
-  ): Boolean {
+  fun save(receivedPhoto: ReceivedPhoto): Boolean {
+    val time = timeUtils.getTimeFast()
+    val photo = ReceivedPhotosMapper.FromObject.toReceivedPhotoEntity(time, receivedPhoto)
+    return receivedPhotosDao.save(photo).isSuccess()
+  }
+
+  fun saveMany(receivedPhotos: List<ReceivedPhoto>): Boolean {
     val time = timeUtils.getTimeFast()
     val photos = ReceivedPhotosMapper.FromObject.toReceivedPhotoEntities(time, receivedPhotos)
     return receivedPhotosDao.saveMany(photos).size == receivedPhotos.size
@@ -68,10 +72,11 @@ class ReceivedPhotosLocalSource(
     return ReceivedPhotosMapper.FromEntity.toReceivedPhotos(photos)
   }
 
-  fun getPage(lastUploadedOn: Long, count: Int): List<ReceivedPhoto> {
+  fun getPage(lastUploadedOn: Long?, count: Int): List<ReceivedPhoto> {
+    val lastUploadedOnTime = lastUploadedOn ?: timeUtils.getTimePlus26Hours()
     val deletionTime = timeUtils.getTimeFast() - insertedEarlierThanTimeDelta
-    val photos = receivedPhotosDao.getPage(lastUploadedOn, deletionTime, count)
 
+    val photos = receivedPhotosDao.getPage(lastUploadedOnTime, deletionTime, count)
     return ReceivedPhotosMapper.FromEntity.toReceivedPhotos(photos)
   }
 

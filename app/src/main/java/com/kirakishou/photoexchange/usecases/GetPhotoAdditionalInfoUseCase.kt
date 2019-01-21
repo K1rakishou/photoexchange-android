@@ -19,7 +19,6 @@ open class GetPhotoAdditionalInfoUseCase(
   private val settingsRepository: SettingsRepository,
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
-
   private val TAG = "GetPhotoAdditionalInfoUseCase"
 
   suspend fun <T> appendAdditionalPhotoInfo(
@@ -27,6 +26,10 @@ open class GetPhotoAdditionalInfoUseCase(
     photoNameSelectorFunc: (T) -> String,
     copyFunc: (T, PhotoAdditionalInfo) -> T
   ): List<T> {
+    if (galleryPhotos.isEmpty()) {
+      return emptyList()
+    }
+
     return withContext(coroutineContext) {
       val userId = settingsRepository.getUserUuid()
 
@@ -86,6 +89,8 @@ open class GetPhotoAdditionalInfoUseCase(
       return null
     }
 
+    photoAdditionalInfoRepository.deleteOld()
+
     val cachedPhotoInfoList = photoAdditionalInfoRepository.findMany(photoNameList)
     if (!netUtils.canAccessNetwork()) {
       //if there is no wifi and we can't access network without wifi -
@@ -106,8 +111,6 @@ open class GetPhotoAdditionalInfoUseCase(
       Timber.tag(TAG).d("Nothing was found on the server")
       return emptyList()
     }
-
-    photoAdditionalInfoRepository.deleteOld()
 
     if (!photoAdditionalInfoRepository.saveMany(additionalInfoList)) {
       throw DatabaseException("Could not cache additional photo info in the database")

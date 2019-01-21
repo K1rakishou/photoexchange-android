@@ -15,8 +15,8 @@ class GalleryPhotosRepository(
     return galleryPhotoLocalSource.findByPhotoName(photoName)
   }
 
-  suspend fun getPage(time: Long, count: Int): List<GalleryPhoto> {
-    return galleryPhotoLocalSource.getPage(time, count)
+  suspend fun getPage(lastUploadedOn: Long?, count: Int): List<GalleryPhoto> {
+    return galleryPhotoLocalSource.getPage(lastUploadedOn, count)
   }
 
   suspend fun deleteOldPhotos() {

@@ -93,7 +93,9 @@ open class UploadedPhotosLocalSource(
     return UploadedPhotosMapper.FromEntity.ToObject.toUploadedPhotos(entities)
   }
 
-  fun getPage(time: Long, count: Int): List<UploadedPhoto> {
+  fun getPage(lastUploadedOn: Long?, count: Int): List<UploadedPhoto> {
+    val time = lastUploadedOn ?: timeUtils.getTimePlus26Hours()
+
     val photos = uploadedPhotoDao.getPage(time, count)
 
     return UploadedPhotosMapper.FromEntity.ToObject
