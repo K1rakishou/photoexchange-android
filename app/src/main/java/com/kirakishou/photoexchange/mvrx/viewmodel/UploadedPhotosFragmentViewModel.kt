@@ -73,7 +73,7 @@ open class UploadedPhotosFragmentViewModel(
         }
 
         when (action) {
-          is ActorAction.ResetState -> resetStateInternal(action.clearCache)
+          is ActorAction.ResetState -> resetStateInternal()
           is ActorAction.CancelPhotoUploading -> cancelPhotoUploadingInternal(action.photoId)
           ActorAction.LoadQueuedUpPhotos -> loadQueuedUpPhotosInternal()
           is ActorAction.LoadUploadedPhotos -> loadUploadedPhotosInternal(action.forced)
@@ -91,8 +91,8 @@ open class UploadedPhotosFragmentViewModel(
   }
 
   //resets everything to default state
-  fun resetState(clearCache: Boolean) {
-    launch { viewModelActor.send(ActorAction.ResetState(clearCache)) }
+  fun resetState() {
+    launch { viewModelActor.send(ActorAction.ResetState) }
   }
 
   fun cancelPhotoUploading(photoId: Long) {
@@ -244,13 +244,8 @@ open class UploadedPhotosFragmentViewModel(
     }
   }
 
-  private suspend fun resetStateInternal(clearCache: Boolean) {
+  private suspend fun resetStateInternal() {
     suspendWithState { _ ->
-      if (clearCache) {
-        //TODO: remove
-        uploadedPhotosRepository.deleteAll()
-      }
-
       //to avoid "Your reducer must be pure!" exceptions
       val newState = UploadedPhotosFragmentState()
       setState { newState }
@@ -297,6 +292,7 @@ open class UploadedPhotosFragmentViewModel(
 
       val notUploadedPhotos = request() ?: emptyList()
       if (notUploadedPhotos.isEmpty() && state.takenPhotos.isEmpty() && request is Success) {
+        setState { copy(takenPhotosRequest = request) }
         loadUploadedPhotos(false)
         return@suspendWithState
       }
@@ -539,7 +535,7 @@ open class UploadedPhotosFragmentViewModel(
   }
 
   sealed class ActorAction {
-    class ResetState(val clearCache: Boolean) : ActorAction()
+    object ResetState : ActorAction()
     class CancelPhotoUploading(val photoId: Long) : ActorAction()
     object LoadQueuedUpPhotos : ActorAction()
     class LoadUploadedPhotos(val forced: Boolean) : ActorAction()

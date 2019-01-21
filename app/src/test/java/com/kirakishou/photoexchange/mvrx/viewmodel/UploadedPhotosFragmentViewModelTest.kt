@@ -59,7 +59,7 @@ class UploadedPhotosFragmentViewModelTest {
       viewModel.testSetState(state)
       assertEquals(state, viewModel.testGetState())
 
-      viewModel.resetState(false)
+      viewModel.resetState()
       assertEquals(defaultState, viewModel.testGetState())
     }
   }

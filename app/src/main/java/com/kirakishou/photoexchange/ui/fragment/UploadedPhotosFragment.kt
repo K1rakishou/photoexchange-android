@@ -63,7 +63,7 @@ class UploadedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Uploaded
 
     swipeRefreshLayout.setOnRefreshListener {
       swipeRefreshLayout.isRefreshing = false
-      viewModel.uploadedPhotosFragmentViewModel.resetState(true)
+      viewModel.uploadedPhotosFragmentViewModel.resetState()
     }
 
     viewModel.uploadedPhotosFragmentViewModel.loadQueuedUpPhotos()

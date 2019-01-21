@@ -71,7 +71,7 @@ open class ReceivedPhotosFragmentViewModel(
 
         when (action) {
           is ActorAction.LoadReceivedPhotos -> loadReceivedPhotosInternal(action.forced)
-          is ActorAction.ResetState -> resetStateInternal(action.clearCache)
+          is ActorAction.ResetState -> resetStateInternal()
           is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.receivedPhotoName)
           is ActorAction.OnNewPhotosReceived -> onNewPhotoReceivedInternal(action.newReceivedPhotos)
           is ActorAction.RemovePhoto -> removePhotoInternal(action.photoName)
@@ -96,8 +96,8 @@ open class ReceivedPhotosFragmentViewModel(
   }
 
   //resets everything to default state
-  fun resetState(clearCache: Boolean) {
-    launch { viewModelActor.send(ActorAction.ResetState(clearCache)) }
+  fun resetState() {
+    launch { viewModelActor.send(ActorAction.ResetState) }
   }
 
   //switch between map and photo
@@ -420,13 +420,8 @@ open class ReceivedPhotosFragmentViewModel(
     }
   }
 
-  private suspend fun resetStateInternal(clearCache: Boolean) {
+  private suspend fun resetStateInternal() {
     suspendWithState {
-      if (clearCache) {
-        //TODO: remove
-        receivedPhotosRepository.deleteAll()
-      }
-
       //to avoid "Your reducer must be pure!" exceptions
       val newState = ReceivedPhotosFragmentState()
       setState { newState }
@@ -569,7 +564,7 @@ open class ReceivedPhotosFragmentViewModel(
 
   sealed class ActorAction {
     class LoadReceivedPhotos(val forced: Boolean) : ActorAction()
-    class ResetState(val clearCache: Boolean) : ActorAction()
+    object ResetState : ActorAction()
     class SwapPhotoAndMap(val receivedPhotoName: String) : ActorAction()
     class OnNewPhotosReceived(val newReceivedPhotos: List<NewReceivedPhoto>) : ActorAction()
     class RemovePhoto(val photoName: String) : ActorAction()

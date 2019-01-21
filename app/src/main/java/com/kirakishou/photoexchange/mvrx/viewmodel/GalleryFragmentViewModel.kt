@@ -61,7 +61,7 @@ open class GalleryFragmentViewModel(
 
         when (action) {
           is ActorAction.LoadGalleryPhotos -> loadGalleryPhotosInternal(action.forced)
-          is ActorAction.ResetState -> resetStateInternal(action.clearCache)
+          is ActorAction.ResetState -> resetStateInternal()
           is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.galleryPhotoName)
           is ActorAction.FavouritePhoto -> favouritePhotoInternal(action.galleryPhotoName)
           is ActorAction.ReportPhoto -> reportPhotoInternal(action.galleryPhotoName)
@@ -80,8 +80,8 @@ open class GalleryFragmentViewModel(
   }
 
   //resets everything to default state
-  fun resetState(clearCache: Boolean) {
-    launch { viewModelActor.send(ActorAction.ResetState(clearCache)) }
+  fun resetState() {
+    launch { viewModelActor.send(ActorAction.ResetState) }
   }
 
   //load gallery photos page by page
@@ -344,12 +344,8 @@ open class GalleryFragmentViewModel(
     }
   }
 
-  private suspend fun resetStateInternal(clearCache: Boolean) {
+  private suspend fun resetStateInternal() {
     suspendWithState {
-      if (clearCache) {
-        galleryPhotosRepository.deleteAll()
-      }
-
       //to avoid "Your reducer must be pure!" exceptions
       val newState = GalleryFragmentState()
       setState { newState }
@@ -434,7 +430,7 @@ open class GalleryFragmentViewModel(
 
   sealed class ActorAction {
     class LoadGalleryPhotos(val forced: Boolean) : ActorAction()
-    class ResetState(val clearCache: Boolean) : ActorAction()
+    object ResetState : ActorAction()
     class SwapPhotoAndMap(val galleryPhotoName: String) : ActorAction()
     class ReportPhoto(val galleryPhotoName: String) : ActorAction()
     class FavouritePhoto(val galleryPhotoName: String) : ActorAction()

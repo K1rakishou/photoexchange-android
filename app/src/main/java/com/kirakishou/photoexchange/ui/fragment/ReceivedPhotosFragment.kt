@@ -71,7 +71,7 @@ class ReceivedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Received
 
     swipeRefreshLayout.setOnRefreshListener {
       swipeRefreshLayout.isRefreshing = false
-      viewModel.receivedPhotosFragmentViewModel.resetState(true)
+      viewModel.receivedPhotosFragmentViewModel.resetState()
     }
 
     viewModel.receivedPhotosFragmentViewModel.loadReceivedPhotos(false)
