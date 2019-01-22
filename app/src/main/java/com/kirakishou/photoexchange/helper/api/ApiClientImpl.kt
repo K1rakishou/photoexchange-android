@@ -1,6 +1,5 @@
 package com.kirakishou.photoexchange.helper.api
 
-import com.kirakishou.photoexchange.helper.LonLat
 import com.kirakishou.photoexchange.helper.api.request.*
 import com.kirakishou.photoexchange.helper.api.response.FavouritePhotoResponseData
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
@@ -31,9 +30,7 @@ open class ApiClientImpl
 
   override suspend fun uploadPhoto(
     photoFilePath: String,
-    location: LonLat,
     userUuid: String,
-    isPublic: Boolean,
     photo: TakenPhoto,
     channel: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
   ): UploadPhotosUseCase.UploadPhotoResult {
@@ -41,9 +38,7 @@ open class ApiClientImpl
 
     val response = UploadPhotoRequest(
       photoFilePath,
-      location,
       userUuid,
-      isPublic,
       photo,
       channel,
       apiService,

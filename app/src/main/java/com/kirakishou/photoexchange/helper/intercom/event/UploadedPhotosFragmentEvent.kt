@@ -25,8 +25,7 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
     class OnPhotoUploaded(val photo: TakenPhoto,
                           val newPhotoId: Long,
                           val newPhotoName: String,
-                          val uploadedOn: Long,
-                          val currentLocation: LonLat) : PhotoUploadEvent()
+                          val uploadedOn: Long) : PhotoUploadEvent()
     class OnFailedToUploadPhoto(val photo: TakenPhoto,
                                 val error: Throwable) : PhotoUploadEvent()
     class OnPhotoCanceled(val photo: TakenPhoto) : PhotoUploadEvent()

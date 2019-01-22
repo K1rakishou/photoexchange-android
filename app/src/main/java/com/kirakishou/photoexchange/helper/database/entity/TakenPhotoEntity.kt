@@ -54,8 +54,20 @@ class TakenPhotoEntity(
     }
 
     fun create(tempFileId: Long?, isPublic: Boolean, time: Long): TakenPhotoEntity {
-      return TakenPhotoEntity(null, tempFileId, isPublic, null, 0.0, 0.0, PhotoState.PHOTO_TAKEN, time)
+      return TakenPhotoEntity(
+        null,
+        tempFileId,
+        isPublic,
+        null,
+        DEFAULT_LON,
+        DEFAULT_LAT,
+        PhotoState.PHOTO_TAKEN,
+        time
+      )
     }
+
+    const val DEFAULT_LON = 0.0
+    const val DEFAULT_LAT = 0.0
 
     const val TABLE_NAME = "TAKEN_PHOTO"
 

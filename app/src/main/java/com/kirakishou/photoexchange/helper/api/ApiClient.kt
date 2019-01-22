@@ -20,9 +20,7 @@ interface ApiClient {
   @Throws(ApiErrorException::class, ConnectionError::class, AttemptToLoadImagesWithMeteredNetworkException::class)
   suspend fun uploadPhoto(
     photoFilePath: String,
-    location: LonLat,
     userUuid: String,
-    isPublic: Boolean,
     photo: TakenPhoto,
     channel: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
   ): UploadPhotosUseCase.UploadPhotoResult

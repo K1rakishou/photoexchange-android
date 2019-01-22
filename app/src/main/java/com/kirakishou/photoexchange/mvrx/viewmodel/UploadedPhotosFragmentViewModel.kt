@@ -421,7 +421,7 @@ open class UploadedPhotosFragmentViewModel(
             event.newPhotoId,
             event.newPhotoName,
             event.uploadedOn,
-            event.currentLocation
+            event.photo.location
           )
 
           if (updateResult !is UpdateStateResult.Update) {

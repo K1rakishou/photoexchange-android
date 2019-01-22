@@ -633,7 +633,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
           viewModel.intercom.tell<UploadedPhotosFragment>().to(
             UploadedPhotosFragmentEvent.GeneralEvents.ReloadAllPhotos
           )
-          
+
           switchToTab(UPLOADED_PHOTOS_TAB_INDEX)
         }
       }
