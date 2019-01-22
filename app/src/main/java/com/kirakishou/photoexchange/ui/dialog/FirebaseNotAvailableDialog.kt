@@ -2,21 +2,19 @@ package com.kirakishou.photoexchange.ui.dialog
 
 import android.content.Context
 import com.afollestad.materialdialogs.MaterialDialog
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
+import com.kirakishou.fixmypc.photoexchange.R
+import java.lang.ref.WeakReference
 
 class FirebaseNotAvailableDialog {
 
-  suspend fun show(context: Context) {
-    return suspendCoroutine<Unit> { continuation ->
-      MaterialDialog(context)
-        .title(text = "Firebase is not available")
-        .message(text = "It appears that your phone has no Google Play Services installed. That's okay but you won't be able to receive push notifications.")
-        .positiveButton(text = "Ok") {
-          continuation.resume(Unit)
-        }
-        .show()
-    }
+  fun show(context: Context, onPositiveCallback: WeakReference<(() -> Unit)>) {
+    MaterialDialog(context)
+      .title(text = context.getString(R.string.firebase_not_available_dialog_firebase_is_not_available))
+      .message(text = context.getString(R.string.firebase_not_available_dialog_no_google_play_services))
+      .positiveButton(text = context.getString(R.string.firebase_not_available_dialog_ok)) {
+        onPositiveCallback.get()?.invoke()
+      }
+      .show()
   }
 
 }

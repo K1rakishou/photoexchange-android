@@ -11,21 +11,17 @@ import java.lang.ref.WeakReference
 /**
  * Created by kirakishou on 1/26/2018.
  */
-class AppCannotWorkWithoutCameraPermissionDialog(
-  private val coroutineScope: CoroutineScope
-) : AbstractDialog<Unit>() {
-  override suspend fun show(context: Context,
-                    onPositiveCallback: (suspend () -> Unit)?,
-                    onNegativeCallback: (suspend () -> Unit)?) {
-    checkNotNull(onPositiveCallback)
+class AppCannotWorkWithoutCameraPermissionDialog  {
 
+  fun show(context: Context, onPositiveCallback: (() -> Unit)) {
     MaterialDialog(context)
-      .title(text = "Error")
-      .message(text = "This app cannon work without a camera permission")
+      .title(text = context.getString(R.string.app_cannot_work_without_camera_dialog_error))
+      .message(text = context.getString(R.string.app_cannot_work_without_camera_dialog_app_cannot_work_without_camera))
       .cancelable(false)
-      .positiveButton(text = "OK") {
-        coroutineScope.launch { onPositiveCallback.invoke() }
+      .positiveButton(text = context.getString(R.string.app_cannot_work_without_camera_dialog_ok)) {
+        onPositiveCallback.invoke()
       }
       .show()
   }
+
 }

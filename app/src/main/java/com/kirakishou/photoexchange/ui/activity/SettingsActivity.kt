@@ -20,8 +20,8 @@ import com.kirakishou.photoexchange.mvrx.viewmodel.SettingsActivityViewModel
 import com.kirakishou.photoexchange.ui.dialog.EnterOldUserUuidDialog
 import io.reactivex.rxkotlin.plusAssign
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.rx2.await
 import timber.log.Timber
+import java.lang.ref.WeakReference
 import javax.inject.Inject
 
 
@@ -93,27 +93,15 @@ class SettingsActivity : BaseActivity() {
     }
 
     restoreFromOldUserUuidButton.setOnClickListener {
-      launch {
-        val userUuid = EnterOldUserUuidDialog().show(this@SettingsActivity).await()
-        if (userUuid.isBlank()) {
-          return@launch
+      val positiveCallback = WeakReference({ userUuid: String ->
+        if (userUuid.isNotBlank()) {
+          launch { restoreAccount(userUuid) }
         }
 
-        val isOk = try {
-          viewModel.restoreOldAccount(userUuid)
-        } catch (error: Throwable) {
-          val message = error.message ?: "empty error message"
-          onShowToast(getString(R.string.settings_activity_unknown_error, message))
-          return@launch
-        }
+        Unit
+      })
 
-        if (isOk) {
-          onShowToast(getString(R.string.settings_activity_successfully_restored_old_account))
-          finish()
-        } else {
-          onShowToast(getString(R.string.settings_activity_account_does_not_exist))
-        }
-      }
+      EnterOldUserUuidDialog().show(this@SettingsActivity, positiveCallback)
     }
 
     launch {
@@ -123,6 +111,23 @@ class SettingsActivity : BaseActivity() {
       } else {
         userUuidTextView.text = userUuid
       }
+    }
+  }
+
+  private suspend fun restoreAccount(userUuid: String) {
+    val isOk = try {
+      viewModel.restoreOldAccount(userUuid)
+    } catch (error: Throwable) {
+      val message = error.message ?: "empty error message"
+      onShowToast(getString(R.string.settings_activity_unknown_error, message))
+      return
+    }
+
+    if (isOk) {
+      onShowToast(getString(R.string.settings_activity_successfully_restored_old_account))
+      finish()
+    } else {
+      onShowToast(getString(R.string.settings_activity_account_does_not_exist))
     }
   }
 
