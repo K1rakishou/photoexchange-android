@@ -13,6 +13,7 @@ import com.kirakishou.photoexchange.helper.util.NetUtils
 import com.kirakishou.photoexchange.mvrx.model.FavouritePhotoActionResult
 import com.kirakishou.photoexchange.mvrx.model.photo.PhotoAdditionalInfo
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 
 open class FavouritePhotoUseCase(
   private val apiClient: ApiClient,
@@ -42,6 +43,7 @@ open class FavouritePhotoUseCase(
       try {
         favouriteInDatabase(photoName, favouritePhotoResult)
       } catch (error: Throwable) {
+        Timber.tag(TAG).e(error, "Error while trying to favourite photo ($photoName) in database")
         throw DatabaseException(error.message)
       }
 
@@ -59,6 +61,7 @@ open class FavouritePhotoUseCase(
   ) {
     val galleryPhotoEntity = galleryPhotosRepository.findPhotoByPhotoName(photoName)
     if (galleryPhotoEntity == null) {
+      Timber.tag(TAG).d("Could not find photo with name ($photoName)")
       return
     }
 

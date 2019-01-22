@@ -21,19 +21,20 @@ open class GetPhotoAdditionalInfoUseCase(
 ) : BaseUseCase(dispatchersProvider) {
   private val TAG = "GetPhotoAdditionalInfoUseCase"
 
-  //FIXME: sometime this method does not send the name of the last photo in the list thus losing photoadditionalinfo
   suspend fun <T> appendAdditionalPhotoInfo(
     galleryPhotos: List<T>,
     photoNameSelectorFunc: (T) -> String,
     copyFunc: (T, PhotoAdditionalInfo) -> T
   ): List<T> {
     if (galleryPhotos.isEmpty()) {
+      Timber.tag(TAG).d("galleryPhotos is empty")
       return emptyList()
     }
 
     return withContext(coroutineContext) {
       val userUuid = settingsRepository.getUserUuid()
       if (userUuid.isEmpty()) {
+        Timber.tag(TAG).d("userUuid is empty")
         return@withContext galleryPhotos
       }
 
@@ -43,6 +44,7 @@ open class GetPhotoAdditionalInfoUseCase(
       )
 
       if (additionalPhotoInfoList == null) {
+        Timber.tag(TAG).d("getPhotoAdditionalInfos returned null")
         return@withContext galleryPhotos
       }
 
@@ -71,6 +73,7 @@ open class GetPhotoAdditionalInfoUseCase(
     return withContext(coroutineContext) {
       val userUuid = settingsRepository.getUserUuid()
       if (userUuid.isEmpty()) {
+        Timber.tag(TAG).d("userUuid is empty")
         return@withContext null
       }
 
@@ -89,6 +92,7 @@ open class GetPhotoAdditionalInfoUseCase(
     photoNameList: List<String>
   ): List<PhotoAdditionalInfo>? {
     if (userUuid.isEmpty()) {
+      Timber.tag(TAG).d("userUuid is empty")
       return null
     }
 
@@ -96,6 +100,8 @@ open class GetPhotoAdditionalInfoUseCase(
 
     val cachedPhotoInfoList = photoAdditionalInfoRepository.findMany(photoNameList)
     if (!netUtils.canAccessNetwork()) {
+      Timber.tag(TAG).d("Cannot access network")
+
       //if there is no wifi and we can't access network without wifi -
       //use whatever there is in the cache
       return cachedPhotoInfoList
@@ -108,12 +114,13 @@ open class GetPhotoAdditionalInfoUseCase(
 
     val notCachedList = photoAdditionalInfoRepository.findNotCached(photoNameList)
     if (notCachedList.isEmpty()) {
+      Timber.tag(TAG).d("notCachedList is empty")
       return emptyList()
     }
 
     val photoNames = notCachedList.joinToString(separator = Constants.DELIMITER)
     val additionalInfoListResponseData = apiClient.getPhotosAdditionalInfo(userUuid, photoNames)
-    
+
     if (additionalInfoListResponseData.isEmpty()) {
       Timber.tag(TAG).d("Nothing was found on the server")
       return cachedPhotoInfoList

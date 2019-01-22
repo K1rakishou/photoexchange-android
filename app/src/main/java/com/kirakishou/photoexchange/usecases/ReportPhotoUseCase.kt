@@ -9,8 +9,10 @@ import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.helper.exception.EmptyUserUuidException
 import com.kirakishou.photoexchange.helper.exception.NetworkAccessDisabledInSettings
 import com.kirakishou.photoexchange.helper.util.NetUtils
+import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvrx.model.photo.PhotoAdditionalInfo
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.lang.Exception
 
 open class ReportPhotoUseCase(
@@ -55,6 +57,7 @@ open class ReportPhotoUseCase(
   private suspend fun reportInDatabase(photoName: String, isReported: Boolean) {
     val galleryPhotoEntity = galleryPhotosRepository.findPhotoByPhotoName(photoName)
     if (galleryPhotoEntity == null) {
+      Timber.tag(TAG).d("Could not find photo with name ($photoName)")
       return
     }
 

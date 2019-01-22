@@ -64,16 +64,12 @@ open class UploadPhotosUseCase(
           )
         }
 
-        val result = try {
-          apiClient.uploadPhoto(
-            photoFile.absolutePath,
-            userUuid,
-            photo,
-            channel
-          )
-        } catch (error: ApiErrorException) {
-          throw ApiErrorException(error.errorCode)
-        }
+        val result = apiClient.uploadPhoto(
+          photoFile.absolutePath,
+          userUuid,
+          photo,
+          channel
+        )
 
         updatePhotoAsUploaded(
           photo,
