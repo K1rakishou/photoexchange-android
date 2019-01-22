@@ -83,14 +83,13 @@ open class ReceivePhotosServicePresenter(
   }
 
   private suspend fun formatRequestString(uploadedPhotos: List<UploadedPhoto>): FindPhotosData? {
-    val photoNames = uploadedPhotos.joinToString(Constants.DELIMITER) { it.photoName }
     val userUuid = settingsRepository.getUserUuid()
-
     if (userUuid.isEmpty()) {
       Timber.tag(TAG).d("UserUuid is empty")
       return null
     }
 
+    val photoNames = uploadedPhotos.joinToString(Constants.DELIMITER) { it.photoName }
     return FindPhotosData(userUuid, photoNames)
   }
 

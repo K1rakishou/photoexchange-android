@@ -67,7 +67,6 @@ class UseCaseProviderModule {
   fun provideGetGalleryPhotosUseCase(apiClient: ApiClient,
                                      timeUtils: TimeUtils,
                                      pagedApiUtils: PagedApiUtils,
-                                     getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
                                      getFreshPhotosUseCase: GetFreshPhotosUseCase,
                                      galleryPhotosRepository: GalleryPhotosRepository,
                                      blacklistedPhotoRepository: BlacklistedPhotoRepository,
@@ -77,7 +76,6 @@ class UseCaseProviderModule {
       apiClient,
       timeUtils,
       pagedApiUtils,
-      getPhotoAdditionalInfoUseCase,
       getFreshPhotosUseCase,
       galleryPhotosRepository,
       blacklistedPhotoRepository,
@@ -162,7 +160,6 @@ class UseCaseProviderModule {
                                       apiClient: ApiClient,
                                       timeUtils: TimeUtils,
                                       pagedApiUtils: PagedApiUtils,
-                                      getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
                                       getFreshPhotosUseCase: GetFreshPhotosUseCase,
                                       uploadedPhotosRepository: UploadedPhotosRepository,
                                       receivedPhotosRepository: ReceivedPhotosRepository,
@@ -174,7 +171,6 @@ class UseCaseProviderModule {
       apiClient,
       timeUtils,
       pagedApiUtils,
-      getPhotoAdditionalInfoUseCase,
       getFreshPhotosUseCase,
       uploadedPhotosRepository,
       receivedPhotosRepository,
@@ -311,11 +307,13 @@ class UseCaseProviderModule {
   fun provideGetFreshPhotosUseCase(apiClient: ApiClient,
                                    timeUtils: TimeUtils,
                                    settingsRepository: SettingsRepository,
+                                   getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
                                    dispatchersProvider: DispatchersProvider): GetFreshPhotosUseCase {
     return GetFreshPhotosUseCase(
       apiClient,
       timeUtils,
       settingsRepository,
+      getPhotoAdditionalInfoUseCase,
       dispatchersProvider
     )
   }

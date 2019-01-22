@@ -62,13 +62,13 @@ open class UpdateFirebaseTokenUseCase(
       throw DatabaseException("Could not update new firebase firebase token")
     }
 
-    val userId = settingsRepository.getUserUuid()
-    if (userId.isEmpty()) {
-      throw DatabaseException("Cannot update firebase because userId is empty!")
+    val userUuid = settingsRepository.getUserUuid()
+    if (userUuid.isEmpty()) {
+      throw DatabaseException("Cannot update firebase because userUuid is empty!")
     }
 
     try {
-      apiClient.updateFirebaseToken(userId, freshToken)
+      apiClient.updateFirebaseToken(userUuid, freshToken)
     } catch (error: ApiErrorException) {
       Timber.tag(TAG).e(error)
 
