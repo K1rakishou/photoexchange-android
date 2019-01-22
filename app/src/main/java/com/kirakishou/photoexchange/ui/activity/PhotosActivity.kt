@@ -146,7 +146,6 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   override fun onActivityCreate(savedInstanceState: Bundle?, intent: Intent) {
     viewState = PhotosActivityViewState().also { it.loadFromBundle(savedInstanceState) }
 
-
     initRx()
     onNewIntent(intent)
     initViews()
@@ -237,7 +236,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       })
   }
 
-  private suspend fun showGpsRationaleDialog() {
+  private fun showGpsRationaleDialog() {
     val positiveCallback = WeakReference({
       launch { checkPermissions() }
       Unit
@@ -282,32 +281,39 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
     if (!shown) {
       val positiveCallback = WeakReference({
-        launch {
-          //3. Check permissions, show dialogs if necessary
-          when (val result = checkPermissions()) {
-            PermissionRequestResult.NotGranted,
-            PermissionRequestResult.Granted -> {
-              val granted = result == PermissionRequestResult.Granted
-
-              viewModel.updateGpsPermissionGranted(granted)
-              startTakenPhotoActivity()
-            }
-            PermissionRequestResult.ShowRationaleForCamera -> {
-              showCameraRationaleDialog()
-            }
-            PermissionRequestResult.ShowRationaleAppCannotWorkWithoutCamera -> {
-              showAppCannotWorkWithoutCameraPermissionDialog()
-            }
-            PermissionRequestResult.ShowRationaleForGps -> {
-              showGpsRationaleDialog()
-            }
-          }
-        }
-
+        checkPermissions()
         Unit
       })
 
       FirebaseNotAvailableDialog().show(this, positiveCallback)
+    } else {
+      checkPermissions()
+    }
+  }
+
+  private fun checkPermissions() {
+    launch {
+      //3. Check permissions, show dialogs if necessary
+      when (val result = requestPermissions()) {
+        PermissionRequestResult.NotGranted,
+        PermissionRequestResult.Granted -> {
+          val granted = result == PermissionRequestResult.Granted
+
+          viewModel.updateGpsPermissionGranted(granted)
+          startTakenPhotoActivity()
+        }
+        PermissionRequestResult.ShowRationaleForCamera -> {
+          showCameraRationaleDialog()
+        }
+        PermissionRequestResult.ShowRationaleAppCannotWorkWithoutCamera -> {
+          showAppCannotWorkWithoutCameraPermissionDialog()
+        }
+        PermissionRequestResult.ShowRationaleForGps -> {
+          showGpsRationaleDialog()
+        }
+      }
+
+      Unit
     }
   }
 
@@ -317,7 +323,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   //request permissions for camera and location
-  private suspend fun checkPermissions(): PermissionRequestResult {
+  private suspend fun requestPermissions(): PermissionRequestResult {
     val requestedPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION)
 
     return suspendCoroutine { continuation ->
@@ -448,32 +454,10 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   override suspend fun onStateEvent(event: PhotosActivityEvent) {
     when (event) {
       is PhotosActivityEvent.StartUploadingService -> {
-        val canUploadPhotosResult = viewModel.checkCanUploadPhotos()
-        when (canUploadPhotosResult) {
-          PhotosActivityViewModel.CanUploadPhotoResult.HasQueuedUpPhotos -> {
-            bindUploadingService()
-          }
-          PhotosActivityViewModel.CanUploadPhotoResult.PhotoUploadingDisabled -> {
-            onShowToast(getString(R.string.photos_activity_cannot_upload_photo_disabled))
-          }
-          PhotosActivityViewModel.CanUploadPhotoResult.HasNoQueuedUpPhotos -> {
-            //do nothing
-          }
-        }
+        tryToStartUploadService()
       }
       is PhotosActivityEvent.StartReceivingService -> {
-        val canReceivedPhotosResult = viewModel.checkCanReceivePhotos()
-        when (canReceivedPhotosResult) {
-          PhotosActivityViewModel.CanReceivePhotoResult.HasMoreUploadedPhotosThanReceived -> {
-            bindReceivingService()
-          }
-          PhotosActivityViewModel.CanReceivePhotoResult.NetworkAccessDisabled -> {
-            onShowToast(getString(R.string.photos_activity_cannot_check_for_received_photos_disabled))
-          }
-          PhotosActivityViewModel.CanReceivePhotoResult.HasLessOrEqualUploadedPhotosThanReceived -> {
-            //do nothing
-          }
-        }
+        tryToStartReceiveService()
       }
       is PhotosActivityEvent.ScrollEvent -> {
         if (event.isScrollingDown) {
@@ -491,6 +475,36 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       is PhotosActivityEvent.OnNewUploadedPhotos -> showNewUploadedPhotosSnackbar(event.count)
       is PhotosActivityEvent.ShowDeletePhotoDialog -> showDeletePhotoDialog(event.photoName)
     }.safe
+  }
+
+  private suspend fun tryToStartUploadService() {
+    val canUploadPhotosResult = viewModel.checkCanUploadPhotos()
+    when (canUploadPhotosResult) {
+      PhotosActivityViewModel.CanUploadPhotoResult.HasQueuedUpPhotos -> {
+        bindUploadingService()
+      }
+      PhotosActivityViewModel.CanUploadPhotoResult.PhotoUploadingDisabled -> {
+        onShowToast(getString(R.string.photos_activity_cannot_upload_photo_disabled))
+      }
+      PhotosActivityViewModel.CanUploadPhotoResult.HasNoQueuedUpPhotos -> {
+        //do nothing
+      }
+    }
+  }
+
+  private suspend fun tryToStartReceiveService() {
+    val canReceivedPhotosResult = viewModel.checkCanReceivePhotos()
+    when (canReceivedPhotosResult) {
+      PhotosActivityViewModel.CanReceivePhotoResult.HasMoreUploadedPhotosThanReceived -> {
+        bindReceivingService()
+      }
+      PhotosActivityViewModel.CanReceivePhotoResult.NetworkAccessDisabled -> {
+        onShowToast(getString(R.string.photos_activity_cannot_check_for_received_photos_disabled))
+      }
+      PhotosActivityViewModel.CanReceivePhotoResult.HasLessOrEqualUploadedPhotosThanReceived -> {
+        //do nothing
+      }
+    }
   }
 
   override fun onUploadPhotosEvent(event: UploadedPhotosFragmentEvent.PhotoUploadEvent) {
