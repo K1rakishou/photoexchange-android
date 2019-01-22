@@ -107,9 +107,13 @@ open class GetPhotoAdditionalInfoUseCase(
     }
 
     val notCachedList = photoAdditionalInfoRepository.findNotCached(photoNameList)
-    val photoNames = notCachedList.joinToString(separator = Constants.DELIMITER)
+    if (notCachedList.isEmpty()) {
+      return emptyList()
+    }
 
+    val photoNames = notCachedList.joinToString(separator = Constants.DELIMITER)
     val additionalInfoList = apiClient.getPhotosAdditionalInfo(userUuid, photoNames)
+
     if (additionalInfoList.isEmpty()) {
       Timber.tag(TAG).d("Nothing was found on the server")
       return emptyList()
