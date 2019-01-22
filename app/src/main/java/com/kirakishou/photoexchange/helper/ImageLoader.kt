@@ -11,6 +11,7 @@ import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
+import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.di.module.GlideApp
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
@@ -38,9 +39,8 @@ open class ImageLoader
   private val TAG = "ImageLoader"
 
   private val job = Job()
-  //TODO: move strings to resources
-  private val noUnmeteredNetworkAvailableText = "No unmetered network available."
-  private val couldNotLoadPhotoText = "Error. Could not load photo."
+  private val noUnmeteredNetworkAvailableText by lazy { context.getString(R.string.image_loader_no_unmetered_network_available) }
+  private val couldNotLoadPhotoText by lazy { context.getString(R.string.image_loader_count_not_load_photo) }
   private val textColor = "#505050"
 
   private val photoSize by lazy {

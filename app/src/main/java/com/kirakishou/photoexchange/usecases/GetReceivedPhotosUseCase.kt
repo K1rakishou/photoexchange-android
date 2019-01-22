@@ -19,7 +19,6 @@ open class GetReceivedPhotosUseCase(
   private val apiClient: ApiClient,
   private val timeUtils: TimeUtils,
   private val pagedApiUtils: PagedApiUtils,
-  private val getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
   private val getFreshPhotosUseCase: GetFreshPhotosUseCase,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
   private val receivedPhotosRepository: ReceivedPhotosRepository,
@@ -36,28 +35,20 @@ open class GetReceivedPhotosUseCase(
     count: Int
   ): Paged<ReceivedPhoto> {
     return withContext(coroutineContext) {
-      Timber.tag(TAG).d("loadFreshPhotos called")
+      Timber.tag(TAG).d("loadPageOfPhotos called")
 
       val userUuid = settingsRepository.getUserUuid()
       if (userUuid.isEmpty()) {
         throw EmptyUserUuidException()
       }
 
-      val receivedPhotosPage = getPageOfReceivedPhotos(
+      return@withContext getPageOfReceivedPhotos(
         forced,
         firstUploadedOn,
         lastUploadedOn,
         userUuid,
         count
       )
-
-      val receivedPhotosWithInfo = getPhotoAdditionalInfoUseCase.appendAdditionalPhotoInfo(
-        receivedPhotosPage.page,
-        { receivedPhoto -> receivedPhoto.receivedPhotoName },
-        { receivedPhoto, photoAdditionalInfo -> receivedPhoto.copy(photoAdditionalInfo = photoAdditionalInfo) }
-      )
-
-      return@withContext Paged(receivedPhotosWithInfo, receivedPhotosPage.isEnd)
     }
   }
 

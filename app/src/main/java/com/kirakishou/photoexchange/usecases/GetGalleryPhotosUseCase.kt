@@ -7,6 +7,7 @@ import com.kirakishou.photoexchange.helper.database.mapper.GalleryPhotosMapper
 import com.kirakishou.photoexchange.helper.database.repository.BlacklistedPhotoRepository
 import com.kirakishou.photoexchange.helper.database.repository.GalleryPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
+import com.kirakishou.photoexchange.helper.exception.EmptyUserUuidException
 import com.kirakishou.photoexchange.helper.util.PagedApiUtils
 import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvrx.model.photo.GalleryPhoto
@@ -17,7 +18,6 @@ open class GetGalleryPhotosUseCase(
   private val apiClient: ApiClient,
   private val timeUtils: TimeUtils,
   private val pagedApiUtils: PagedApiUtils,
-  private val getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
   private val getFreshPhotosUseCase: GetFreshPhotosUseCase,
   private val galleryPhotosRepository: GalleryPhotosRepository,
   private val blacklistedPhotoRepository: BlacklistedPhotoRepository,
@@ -36,22 +36,17 @@ open class GetGalleryPhotosUseCase(
       Timber.tag(TAG).d("loadPageOfPhotos called")
 
       val userUuid = settingsRepository.getUserUuid()
+      if (userUuid.isEmpty()) {
+        throw EmptyUserUuidException()
+      }
 
-      val galleryPhotosPage = getPageOfGalleryPhotos(
+      return@withContext getPageOfGalleryPhotos(
         forced,
         firstUploadedOn,
         lastUploadedOn,
         userUuid,
         count
       )
-
-      val galleryPhotoWithInfo = getPhotoAdditionalInfoUseCase.appendAdditionalPhotoInfo(
-        galleryPhotosPage.page,
-        { galleryPhoto -> galleryPhoto.photoName },
-        { galleryPhoto, photoAdditionalInfo -> galleryPhoto.copy(photoAdditionalInfo = photoAdditionalInfo) }
-      )
-
-      return@withContext Paged(galleryPhotoWithInfo, galleryPhotosPage.isEnd)
     }
   }
 

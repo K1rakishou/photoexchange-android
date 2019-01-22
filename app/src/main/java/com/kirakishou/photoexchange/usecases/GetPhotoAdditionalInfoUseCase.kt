@@ -32,10 +32,13 @@ open class GetPhotoAdditionalInfoUseCase(
     }
 
     return withContext(coroutineContext) {
-      val userId = settingsRepository.getUserUuid()
+      val userUuid = settingsRepository.getUserUuid()
+      if (userUuid.isEmpty()) {
+        return@withContext galleryPhotos
+      }
 
       val additionalPhotoInfoList = getPhotoAdditionalInfos(
-        userId,
+        userUuid,
         galleryPhotos.map { photoNameSelectorFunc(it) }
       )
 
@@ -52,7 +55,7 @@ open class GetPhotoAdditionalInfoUseCase(
           .firstOrNull { it.photoName == photoName }
 
         val info = (photoAdditionalInfo ?: PhotoAdditionalInfo.empty(photoName))
-          .copy(hasUserUuid = userId.isNotEmpty())
+          .copy(hasUserUuid = userUuid.isNotEmpty())
 
         resultList += copyFunc(galleryPhoto, info)
       }
@@ -66,14 +69,13 @@ open class GetPhotoAdditionalInfoUseCase(
     photoNameList: List<String>
   ): List<PhotoAdditionalInfo>? {
     return withContext(coroutineContext) {
-      val userId = settingsRepository.getUserUuid()
-
-      if (userId.isEmpty()) {
+      val userUuid = settingsRepository.getUserUuid()
+      if (userUuid.isEmpty()) {
         return@withContext null
       }
 
       return@withContext try {
-        getPhotoAdditionalInfos(userId, photoNameList)
+        getPhotoAdditionalInfos(userUuid, photoNameList)
       } catch (error: Throwable) {
         Timber.tag(TAG).e(error)
         null
@@ -83,10 +85,10 @@ open class GetPhotoAdditionalInfoUseCase(
 
   //returns null when userId is empty
   private suspend fun getPhotoAdditionalInfos(
-    userId: String,
+    userUuid: String,
     photoNameList: List<String>
   ): List<PhotoAdditionalInfo>? {
-    if (userId.isEmpty()) {
+    if (userUuid.isEmpty()) {
       return null
     }
 
@@ -107,7 +109,7 @@ open class GetPhotoAdditionalInfoUseCase(
     val notCachedList = photoAdditionalInfoRepository.findNotCached(photoNameList)
     val photoNames = notCachedList.joinToString(separator = Constants.DELIMITER)
 
-    val additionalInfoList = apiClient.getPhotosAdditionalInfo(userId, photoNames)
+    val additionalInfoList = apiClient.getPhotosAdditionalInfo(userUuid, photoNames)
     if (additionalInfoList.isEmpty()) {
       Timber.tag(TAG).d("Nothing was found on the server")
       return emptyList()

@@ -18,6 +18,7 @@ open class GetFreshPhotosUseCase(
   private val apiClient: ApiClient,
   private val timeUtils: TimeUtils,
   private val settingsRepository: SettingsRepository,
+  private val getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
   dispatchersProvider: DispatchersProvider
 ) : BaseUseCase(dispatchersProvider) {
   private val TAG = "GetFreshPhotosUseCase"
@@ -50,7 +51,6 @@ open class GetFreshPhotosUseCase(
       .map { responseData -> UploadedPhotosMapper.FromResponse.ToObject.toUploadedPhoto(responseData) }
   }
 
-  //TODO: should also load additional photo info
   @Throws(AttemptToAccessInternetWithMeteredNetworkException::class, EmptyUserUuidException::class)
   suspend fun getFreshReceivedPhotos(forced: Boolean, firstUploadedOn: Long): List<ReceivedPhoto> {
     val userUuid = settingsRepository.getUserUuid()
@@ -67,11 +67,16 @@ open class GetFreshPhotosUseCase(
       return emptyList()
     }
 
-    return apiClient.getPageOfReceivedPhotos(userUuid, timeUtils.getTimeFast(), freshPhotosCount)
+    val receivedPhotos = apiClient.getPageOfReceivedPhotos(userUuid, timeUtils.getTimeFast(), freshPhotosCount)
       .map { responseData -> ReceivedPhotosMapper.FromResponse.ReceivedPhotos.toReceivedPhoto(responseData) }
+
+    return getPhotoAdditionalInfoUseCase.appendAdditionalPhotoInfo(
+      receivedPhotos,
+      { receivedPhoto -> receivedPhoto.receivedPhotoName },
+      { receivedPhoto, photoAdditionalInfo -> receivedPhoto.copy(photoAdditionalInfo = photoAdditionalInfo) }
+    )
   }
 
-  //TODO: should also load additional photo info
   @Throws(AttemptToAccessInternetWithMeteredNetworkException::class)
   suspend fun getFreshGalleryPhotos(forced: Boolean, firstUploadedOn: Long): List<GalleryPhoto> {
     if (forced) {
@@ -83,8 +88,14 @@ open class GetFreshPhotosUseCase(
       return emptyList()
     }
 
-    return apiClient.getPageOfGalleryPhotos(timeUtils.getTimeFast(), freshPhotosCount)
+    val galleryPhotos = apiClient.getPageOfGalleryPhotos(timeUtils.getTimeFast(), freshPhotosCount)
       .map { responseData -> GalleryPhotosMapper.FromResponse.ToObject.toGalleryPhoto(responseData) }
+
+    return getPhotoAdditionalInfoUseCase.appendAdditionalPhotoInfo(
+      galleryPhotos,
+      { galleryPhoto -> galleryPhoto.photoName },
+      { galleryPhoto, photoAdditionalInfo -> galleryPhoto.copy(photoAdditionalInfo = photoAdditionalInfo) }
+    )
   }
 
   @Synchronized
