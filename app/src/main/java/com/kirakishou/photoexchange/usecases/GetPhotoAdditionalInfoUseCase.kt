@@ -112,18 +112,22 @@ open class GetPhotoAdditionalInfoUseCase(
     }
 
     val photoNames = notCachedList.joinToString(separator = Constants.DELIMITER)
-    val additionalInfoList = apiClient.getPhotosAdditionalInfo(userUuid, photoNames)
-
-    if (additionalInfoList.isEmpty()) {
+    val additionalInfoListResponseData = apiClient.getPhotosAdditionalInfo(userUuid, photoNames)
+    
+    if (additionalInfoListResponseData.isEmpty()) {
       Timber.tag(TAG).d("Nothing was found on the server")
-      return emptyList()
+      return cachedPhotoInfoList
     }
 
-    if (!photoAdditionalInfoRepository.saveMany(additionalInfoList)) {
+    if (!photoAdditionalInfoRepository.saveMany(additionalInfoListResponseData)) {
       throw DatabaseException("Could not cache additional photo info in the database")
     }
 
-    return PhotoAdditionalInfoMapper.FromResponse.toPhotoAdditionalInfoList(additionalInfoList)
+    val freshAdditionalPhotoInfoList = PhotoAdditionalInfoMapper.FromResponse.toPhotoAdditionalInfoList(
+      additionalInfoListResponseData
+    )
+
+    return freshAdditionalPhotoInfoList + cachedPhotoInfoList
   }
 
 }
