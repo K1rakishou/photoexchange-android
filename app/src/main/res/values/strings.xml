@@ -2,6 +2,10 @@
     <string name="app_name">PhotoExchange</string>
     <string name="default_notification_channel_id">1</string>
 
+    <!--image loader-->
+    <string name="image_loader_no_unmetered_network_available">No unmetered network available.</string>
+    <string name="image_loader_count_not_load_photo">Error. Could not load photo.</string>
+
     <!--epoxy controller-->
     <string name="the_gallery_is_empty_text">The gallery is empty</string>
     <string name="end_of_list_reached_text">End of the list reached.\nClick here to reload</string>
