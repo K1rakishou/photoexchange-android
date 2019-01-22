@@ -19,7 +19,7 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
   }
 
   sealed class PhotoUploadEvent : UploadedPhotosFragmentEvent() {
-    class OnPhotoUploadingStart(val photo: TakenPhoto) : PhotoUploadEvent()
+    class OnPhotoUploadingStart() : PhotoUploadEvent()
     class OnPhotoUploadingProgress(val photo: TakenPhoto, val progress: Int) : PhotoUploadEvent()
     class OnPhotoUploaded(val photo: TakenPhoto,
                           val newPhotoId: Long,

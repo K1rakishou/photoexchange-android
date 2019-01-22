@@ -112,6 +112,8 @@ open class UploadPhotoServicePresenter(
 
     var hasErrors = false
 
+    eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingStart())
+
     for (photo in queuedUpPhotos) {
       Timber.tag(TAG).d("Uploading photo with id: ${photo.id} and name ${photo.photoName}")
 
@@ -125,9 +127,6 @@ open class UploadPhotoServicePresenter(
 
         continue
       }
-
-      //send event on every photo
-      eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingStart(photo))
 
       try {
         val result = uploadPhotosUseCase.uploadPhoto(photo, currentLocation, userUuid, eventsActor)

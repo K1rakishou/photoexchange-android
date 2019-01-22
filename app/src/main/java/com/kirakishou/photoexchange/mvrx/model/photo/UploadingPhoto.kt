@@ -35,7 +35,7 @@ class UploadingPhoto(
   }
 
   companion object {
-    fun fromMyPhoto(takenPhoto: TakenPhoto, progress: Int): UploadingPhoto {
+    fun fromTakenPhoto(takenPhoto: TakenPhoto, progress: Int): UploadingPhoto {
       return UploadingPhoto(
         takenPhoto.id,
         takenPhoto.isPublic,
