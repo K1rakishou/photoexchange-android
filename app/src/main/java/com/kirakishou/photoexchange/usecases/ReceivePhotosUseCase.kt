@@ -72,7 +72,7 @@ open class ReceivePhotosUseCase(
       try {
         updatePhotoReceiverInfo(receivedPhoto)
       } catch (error: Throwable) {
-        Timber.tag(TAG).e(error)
+        Timber.tag(TAG).e(error, "Error while trying to update receiver info")
         throw error
       }
 

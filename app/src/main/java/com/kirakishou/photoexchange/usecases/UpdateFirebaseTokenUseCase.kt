@@ -29,6 +29,7 @@ open class UpdateFirebaseTokenUseCase(
       //both tokens must be not empty, new token must be equal to regular token
       //otherwise we need to update token
       if (newToken.isNotEmpty() && regularToken.isNotEmpty() && newToken == regularToken) {
+        Timber.tag(TAG).d("Token is OK")
         return@withContext
       }
 
@@ -45,6 +46,7 @@ open class UpdateFirebaseTokenUseCase(
     val freshToken = try {
       firebaseRemoteSource.getTokenAsync()
     } catch (error: Throwable) {
+      Timber.tag(TAG).e(error, "Error while trying to get firebase token")
       throw FirebaseException(error.message)
     }
 
@@ -70,9 +72,9 @@ open class UpdateFirebaseTokenUseCase(
     try {
       apiClient.updateFirebaseToken(userUuid, freshToken)
     } catch (error: ApiErrorException) {
-      Timber.tag(TAG).e(error)
+      Timber.tag(TAG).e(error, "Error while trying to update firebase token")
 
-      //reset both tokens when unknown error occurred
+      //reset both tokens when unknown error occurres
       if (!settingsRepository.saveFirebaseToken(null)) {
         throw DatabaseException("Could not reset firebase token")
       }

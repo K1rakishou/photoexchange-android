@@ -16,7 +16,7 @@ import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingServiceCallback
-import com.kirakishou.photoexchange.usecases.GetCurrentLocationUseCase
+import com.kirakishou.photoexchange.usecases.UpdateNotUploadedPhotosWithCurrentLocation
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import kotlinx.coroutines.CoroutineScope
@@ -37,7 +37,7 @@ class UploadPhotoService : Service(), CoroutineScope {
   lateinit var presenter: UploadPhotoServicePresenter
 
   @Inject
-  lateinit var getCurrentLocationUseCase: GetCurrentLocationUseCase
+  lateinit var updateNotUploadedPhotosWithCurrentLocation: UpdateNotUploadedPhotosWithCurrentLocation
 
   @Inject
   lateinit var dispatchersProvider: DispatchersProvider
@@ -90,15 +90,15 @@ class UploadPhotoService : Service(), CoroutineScope {
     requireNotNull(callback.get())
 
     launch {
-      val location = try {
-        getCurrentLocationUseCase.getCurrentLocation()
+      try {
+        updateNotUploadedPhotosWithCurrentLocation.updatePhotos()
       } catch (error: Throwable) {
         Timber.tag(TAG).e(error, "Could not get current location")
         stopService()
         return@launch
       }
 
-      presenter.uploadPhotos(location)
+      presenter.uploadPhotos()
     }
   }
 

@@ -39,22 +39,6 @@ data class UploadedPhotosFragmentState(
     return UpdateStateResult.Update(updatedPhotos)
   }
 
-  fun onPhotoUploadingStart(photo: TakenPhoto): UpdateStateResult<List<TakenPhoto>> {
-    val photoIndex = takenPhotos
-      .indexOfFirst { it.id == photo.id && it.photoState == PhotoState.PHOTO_QUEUED_UP }
-
-    val updatedPhotos = takenPhotos.toMutableList()
-
-    if (photoIndex != -1) {
-      updatedPhotos.removeAt(photoIndex)
-      updatedPhotos.add(photoIndex, UploadingPhoto.fromMyPhoto(photo, 0))
-    } else {
-      updatedPhotos.add(0, UploadingPhoto.fromMyPhoto(photo, 0))
-    }
-
-    return UpdateStateResult.Update(updatedPhotos)
-  }
-
   fun onPhotoUploadingProgress(photo: TakenPhoto, progress: Int): UpdateStateResult<List<TakenPhoto>> {
     val photoIndex = takenPhotos.indexOfFirst { takenPhoto ->
       takenPhoto.id == photo.id && takenPhoto.photoState == PhotoState.PHOTO_UPLOADING
@@ -64,9 +48,9 @@ data class UploadedPhotosFragmentState(
 
     if (photoIndex != -1) {
       updatedPhotos.removeAt(photoIndex)
-      updatedPhotos.add(photoIndex, UploadingPhoto.fromMyPhoto(photo, progress))
+      updatedPhotos.add(photoIndex, UploadingPhoto.fromTakenPhoto(photo, progress))
     } else {
-      updatedPhotos.add(0, UploadingPhoto.fromMyPhoto(photo, progress))
+      updatedPhotos.add(0, UploadingPhoto.fromTakenPhoto(photo, progress))
     }
 
     return UpdateStateResult.Update(updatedPhotos)

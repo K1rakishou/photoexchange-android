@@ -12,6 +12,8 @@ import com.kirakishou.photoexchange.helper.util.TimeUtils
 import com.kirakishou.photoexchange.mvrx.model.photo.GalleryPhoto
 import com.kirakishou.photoexchange.mvrx.model.photo.ReceivedPhoto
 import com.kirakishou.photoexchange.mvrx.model.photo.UploadedPhoto
+import org.joda.time.DateTime
+import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
 open class GetFreshPhotosUseCase(
@@ -39,11 +41,13 @@ open class GetFreshPhotosUseCase(
     }
 
     if (forced) {
+      Timber.tag(TAG).d("Resetting timer")
       resetTimer(PhotoType.Uploaded)
     }
 
     val freshPhotosCount = getFreshPhotosCount(PhotoType.Uploaded, userUuid, firstUploadedOn)
     if (freshPhotosCount == 0) {
+      Timber.tag(TAG).d("No fresh photos")
       return emptyList()
     }
 
@@ -59,11 +63,13 @@ open class GetFreshPhotosUseCase(
     }
 
     if (forced) {
+      Timber.tag(TAG).d("Resetting timer")
       resetTimer(PhotoType.Received)
     }
 
     val freshPhotosCount = getFreshPhotosCount(PhotoType.Received, userUuid, firstUploadedOn)
     if (freshPhotosCount == 0) {
+      Timber.tag(TAG).d("No fresh photos")
       return emptyList()
     }
 
@@ -80,11 +86,13 @@ open class GetFreshPhotosUseCase(
   @Throws(AttemptToAccessInternetWithMeteredNetworkException::class)
   suspend fun getFreshGalleryPhotos(forced: Boolean, firstUploadedOn: Long): List<GalleryPhoto> {
     if (forced) {
+      Timber.tag(TAG).d("Resetting timer")
       resetTimer(PhotoType.Gallery)
     }
 
     val freshPhotosCount = getFreshPhotosCount(PhotoType.Gallery, null, firstUploadedOn)
     if (freshPhotosCount == 0) {
+      Timber.tag(TAG).d("No fresh photos")
       return emptyList()
     }
 
@@ -106,6 +114,10 @@ open class GetFreshPhotosUseCase(
   private suspend fun getFreshPhotosCount(photoType: PhotoType, userUuid: String?, firstUploadedOn: Long): Int {
     val shouldMakeRequest = synchronized(GetGalleryPhotosUseCase::class) {
       val now = timeUtils.getTimeFast()
+
+      Timber.tag(TAG).d("currentTime = (${DateTime(now)}), " +
+                          "lastTimeCheck = (${DateTime(lastTimeFreshPhotosCheckMap[photoType]!!)}), " +
+                          "delta = (${now - lastTimeFreshPhotosCheckMap[photoType]!!})")
 
       /**
        * if [timeBetweenFreshPhotosCheck] time has passed since we last checked fresh photos count - check again

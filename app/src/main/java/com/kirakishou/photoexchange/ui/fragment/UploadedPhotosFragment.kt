@@ -125,6 +125,7 @@ class UploadedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Uploaded
         viewModel.uploadedPhotosFragmentViewModel.onNewPhotosReceived(event.newReceivedPhotos)
       }
       UploadedPhotosFragmentEvent.GeneralEvents.OnTabSelected -> checkFreshPhotos()
+      UploadedPhotosFragmentEvent.GeneralEvents.ReloadAllPhotos -> viewModel.uploadedPhotosFragmentViewModel.resetState()
     }.safe
   }
 

@@ -42,7 +42,7 @@ open class UploadPhotoServicePresenter(
   private val job = Job()
   private val resultEventsSubject = PublishSubject.create<UploadPhotoEvent>().toSerialized()
 
-  private val uploadingActor: SendChannel<LonLat>
+  private val uploadingActor: SendChannel<Unit>
   private val eventsActor: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
   private val photosToCancel = hashSetOf<Long>()
 
@@ -57,9 +57,9 @@ open class UploadPhotoServicePresenter(
     }
 
     uploadingActor = actor(capacity = Channel.RENDEZVOUS) {
-      consumeEach { location ->
+      consumeEach {
         try {
-          startUploading(location)
+          startUploading()
         } finally {
           sendEvent(UploadPhotoEvent.StopService)
         }
@@ -67,7 +67,7 @@ open class UploadPhotoServicePresenter(
     }
   }
 
-  private suspend fun startUploading(location: LonLat) {
+  private suspend fun startUploading() {
     Timber.tag(TAG).d("startUploading called")
     updateServiceNotification(NotificationType.Uploading)
 
@@ -85,7 +85,7 @@ open class UploadPhotoServicePresenter(
         updateFirebaseTokenUseCase.updateFirebaseTokenIfNecessary()
       }
 
-      val hasErrors = doUploading(userUuid, location)
+      val hasErrors = doUploading(userUuid)
       if (!hasErrors) {
         updateServiceNotification(NotificationType.Success("All photos has been successfully uploaded"))
       } else {
@@ -101,7 +101,7 @@ open class UploadPhotoServicePresenter(
     }
   }
 
-  private suspend fun doUploading(userUuid: String, currentLocation: LonLat): Boolean {
+  private suspend fun doUploading(userUuid: String): Boolean {
     val queuedUpPhotos = takenPhotosRepository.findAllByState(PhotoState.PHOTO_QUEUED_UP)
     if (queuedUpPhotos.isEmpty()) {
       //should not really happen, since we make a check before starting the service
@@ -111,6 +111,8 @@ open class UploadPhotoServicePresenter(
     }
 
     var hasErrors = false
+
+    eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingStart())
 
     for (photo in queuedUpPhotos) {
       Timber.tag(TAG).d("Uploading photo with id: ${photo.id} and name ${photo.photoName}")
@@ -126,26 +128,33 @@ open class UploadPhotoServicePresenter(
         continue
       }
 
-      //send event on every photo
-      eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingStart(photo))
-
       try {
-        val result = uploadPhotosUseCase.uploadPhoto(photo, currentLocation, userUuid, eventsActor)
-        eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploaded(
-          photo,
-          result.photoId,
-          result.photoName,
-          result.uploadedOn,
-          currentLocation)
+        val result = uploadPhotosUseCase.uploadPhoto(photo, userUuid, eventsActor)
+
+        eventsActor.send(
+          UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploaded(
+            photo,
+            result.photoId,
+            result.photoName,
+            result.uploadedOn
+          )
         )
 
         Timber.tag(TAG).d("Successfully uploaded photo with id: ${photo.id} and name ${photo.photoName}")
       } catch (error: Exception) {
-        Timber.tag(TAG).e(error, "Failed to upload photo  with id: ${photo.id} and name ${photo.photoName}")
+        Timber.tag(TAG).e(
+          error,
+          "Failed to upload photo  with id: ${photo.id} and name ${photo.photoName}"
+        )
 
         hasErrors = true
         takenPhotosRepository.updatePhotoState(photo.id, PhotoState.PHOTO_QUEUED_UP)
-        eventsActor.send(UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUploadPhoto(photo, error))
+        eventsActor.send(
+          UploadedPhotosFragmentEvent.PhotoUploadEvent.OnFailedToUploadPhoto(
+            photo,
+            error
+          )
+        )
       }
     }
 
@@ -197,10 +206,10 @@ open class UploadPhotoServicePresenter(
     return resultEventsSubject
   }
 
-  fun uploadPhotos(location: LonLat) {
+  fun uploadPhotos() {
     Timber.tag(TAG).d("uploadPhotos called")
 
-    if (!uploadingActor.offer(location)) {
+    if (!uploadingActor.offer(Unit)) {
       Timber.tag(TAG).d("uploadingActor is busy")
     }
   }

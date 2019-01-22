@@ -128,7 +128,7 @@ dependencies {
     implementation 'com.afollestad.material-dialogs:input:2.0.0-beta5'
     implementation 'com.google.code.gson:gson:2.8.5'
     implementation 'androidx.core:core-ktx:1.0.1'
-    implementation 'org.osmdroid:osmdroid-android:6.0.2'
+    implementation 'net.danlew:android.joda:2.10.1.1'
     implementation 'com.github.K1rakishou:photoexchange-common:1e0fbb114d'
 
     debugImplementation 'com.squareup.leakcanary:leakcanary-android:1.6.2'

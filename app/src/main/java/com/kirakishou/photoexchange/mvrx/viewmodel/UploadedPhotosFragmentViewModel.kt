@@ -9,7 +9,6 @@ import com.kirakishou.photoexchange.helper.Paged
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.database.repository.TakenPhotosRepository
 import com.kirakishou.photoexchange.helper.database.repository.UploadedPhotosRepository
-import com.kirakishou.photoexchange.helper.exception.DatabaseException
 import com.kirakishou.photoexchange.helper.extension.filterDuplicatesWith
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.PhotosActivityViewModelIntercom
@@ -23,6 +22,7 @@ import com.kirakishou.photoexchange.mvrx.model.PhotoSize
 import com.kirakishou.photoexchange.mvrx.model.photo.QueuedUpPhoto
 import com.kirakishou.photoexchange.mvrx.model.photo.TakenPhoto
 import com.kirakishou.photoexchange.mvrx.model.photo.UploadedPhoto
+import com.kirakishou.photoexchange.mvrx.model.photo.UploadingPhoto
 import com.kirakishou.photoexchange.mvrx.viewmodel.state.UpdateStateResult
 import com.kirakishou.photoexchange.mvrx.viewmodel.state.UploadedPhotosFragmentState
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
@@ -398,12 +398,10 @@ open class UploadedPhotosFragmentViewModel(
         is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingStart -> {
           Timber.tag(TAG).d("OnPhotoUploadingStart")
 
-          val updateResult = state.onPhotoUploadingStart(event.photo)
-          if (updateResult !is UpdateStateResult.Update) {
-            throw IllegalStateException("Not implemented for result ${updateResult::class}")
-          }
+          val newPhotos = state.takenPhotos
+            .map { takenPhoto -> UploadingPhoto.fromTakenPhoto(takenPhoto, 0) }
 
-          setState { copy(takenPhotos = updateResult.update) }
+          setState { copy(takenPhotos = newPhotos) }
         }
         is UploadedPhotosFragmentEvent.PhotoUploadEvent.OnPhotoUploadingProgress -> {
           Timber.tag(TAG).d("OnPhotoUploadingProgress")
@@ -423,7 +421,7 @@ open class UploadedPhotosFragmentViewModel(
             event.newPhotoId,
             event.newPhotoName,
             event.uploadedOn,
-            event.currentLocation
+            event.photo.location
           )
 
           if (updateResult !is UpdateStateResult.Update) {

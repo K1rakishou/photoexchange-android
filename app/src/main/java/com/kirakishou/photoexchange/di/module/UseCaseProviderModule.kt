@@ -242,8 +242,8 @@ class UseCaseProviderModule {
                                        database: MyDatabase,
                                        takenPhotosRepository: TakenPhotosRepository,
                                        settingsRepository: SettingsRepository,
-                                       dispatchersProvider: DispatchersProvider): GetCurrentLocationUseCase {
-    return GetCurrentLocationUseCase(
+                                       dispatchersProvider: DispatchersProvider): UpdateNotUploadedPhotosWithCurrentLocation {
+    return UpdateNotUploadedPhotosWithCurrentLocation(
       context,
       database,
       takenPhotosRepository,

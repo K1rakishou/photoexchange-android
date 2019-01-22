@@ -34,7 +34,6 @@ open class UploadPhotosUseCase(
 
   suspend fun uploadPhoto(
     photo: TakenPhoto,
-    location: LonLat,
     userUuid: String,
     channel: SendChannel<UploadedPhotosFragmentEvent.PhotoUploadEvent>
   ): UploadPhotosUseCase.UploadPhotoResult {
@@ -65,24 +64,17 @@ open class UploadPhotosUseCase(
           )
         }
 
-        val result = try {
-          apiClient.uploadPhoto(
-            photoFile.absolutePath,
-            location,
-            userUuid,
-            photo.isPublic,
-            photo,
-            channel
-          )
-        } catch (error: ApiErrorException) {
-          throw ApiErrorException(error.errorCode)
-        }
+        val result = apiClient.uploadPhoto(
+          photoFile.absolutePath,
+          userUuid,
+          photo,
+          channel
+        )
 
         updatePhotoAsUploaded(
           photo,
           result.photoId,
           result.photoName,
-          location,
           result.uploadedOn
         )
 
@@ -97,7 +89,6 @@ open class UploadPhotosUseCase(
     photo: TakenPhoto,
     photoId: Long,
     photoName: String,
-    location: LonLat,
     uploadedOn: Long
   ) {
     return database.transactional {
@@ -107,8 +98,8 @@ open class UploadPhotosUseCase(
       if (!uploadedPhotosRepository.save(
           photoId,
           photoName,
-          location.lon,
-          location.lat,
+          photo.location.lon,
+          photo.location.lat,
           uploadedOn,
           timeUtils.getTimeFast())) {
         throw DatabaseException("Could not save new uploaded photo with id: ($photoId), name: ($photoName), uploadedOn: ($uploadedOn)")
