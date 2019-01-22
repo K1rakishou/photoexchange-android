@@ -630,7 +630,10 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
         if (resultCode == Activity.RESULT_OK) {
           Timber.tag(TAG).d("Uploading photo")
 
-          viewModel.intercom.tell<PhotosActivity>().to(PhotosActivityEvent.StartUploadingService)
+          viewModel.intercom.tell<UploadedPhotosFragment>().to(
+            UploadedPhotosFragmentEvent.GeneralEvents.ReloadAllPhotos
+          )
+          
           switchToTab(UPLOADED_PHOTOS_TAB_INDEX)
         }
       }

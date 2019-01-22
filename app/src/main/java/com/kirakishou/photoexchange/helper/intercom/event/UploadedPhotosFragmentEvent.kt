@@ -10,6 +10,7 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
   sealed class GeneralEvents : UploadedPhotosFragmentEvent() {
     class OnNewPhotosReceived(val newReceivedPhotos: List<NewReceivedPhoto>) : GeneralEvents()
     object OnTabSelected : GeneralEvents()
+    object ReloadAllPhotos : GeneralEvents()
     class ScrollToTop : GeneralEvents()
   }
 
@@ -19,7 +20,7 @@ sealed class UploadedPhotosFragmentEvent : BaseEvent {
   }
 
   sealed class PhotoUploadEvent : UploadedPhotosFragmentEvent() {
-    class OnPhotoUploadingStart() : PhotoUploadEvent()
+    class OnPhotoUploadingStart : PhotoUploadEvent()
     class OnPhotoUploadingProgress(val photo: TakenPhoto, val progress: Int) : PhotoUploadEvent()
     class OnPhotoUploaded(val photo: TakenPhoto,
                           val newPhotoId: Long,
