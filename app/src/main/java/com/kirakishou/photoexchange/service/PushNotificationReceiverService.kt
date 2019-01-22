@@ -10,22 +10,19 @@ import android.os.Bundle
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
+import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.database.repository.SettingsRepository
-import com.kirakishou.photoexchange.usecases.StorePhotoFromPushNotificationUseCase
 import com.kirakishou.photoexchange.mvrx.model.NewReceivedPhoto
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
+import com.kirakishou.photoexchange.usecases.StorePhotoFromPushNotificationUseCase
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
-import java.lang.Exception
 import javax.inject.Inject
 
 
 class PushNotificationReceiverService : FirebaseMessagingService() {
   private val TAG = "PushNotificationReceiverService"
-  private val CHANNEL_ID by lazy { getString(R.string.default_notification_channel_id) }
-  private val CHANNED_NAME = "name"
 
   @Inject
   lateinit var settingsRepository: SettingsRepository
@@ -160,7 +157,7 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
       PendingIntent.FLAG_ONE_SHOT
     )
 
-    val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
+    val notificationBuilder = NotificationCompat.Builder(this, Constants.CHANNEL_ID)
       .setSmallIcon(android.R.drawable.stat_sys_download_done)
       .setContentTitle("You got a new photo from someone")
       .setAutoCancel(true)
@@ -170,8 +167,8 @@ class PushNotificationReceiverService : FirebaseMessagingService() {
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       val channel = NotificationChannel(
-        CHANNEL_ID,
-        CHANNED_NAME,
+        Constants.CHANNEL_ID,
+        Constants.CHANNEL_NAME,
         NotificationManager.IMPORTANCE_DEFAULT
       )
 

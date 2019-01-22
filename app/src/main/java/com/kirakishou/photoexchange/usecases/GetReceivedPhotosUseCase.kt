@@ -20,6 +20,7 @@ open class GetReceivedPhotosUseCase(
   private val timeUtils: TimeUtils,
   private val pagedApiUtils: PagedApiUtils,
   private val getFreshPhotosUseCase: GetFreshPhotosUseCase,
+  private val getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
   private val uploadedPhotosRepository: UploadedPhotosRepository,
   private val receivedPhotosRepository: ReceivedPhotosRepository,
   private val blacklistedPhotoRepository: BlacklistedPhotoRepository,
@@ -42,13 +43,21 @@ open class GetReceivedPhotosUseCase(
         throw EmptyUserUuidException()
       }
 
-      return@withContext getPageOfReceivedPhotos(
+      val receivedPhotosPage = getPageOfReceivedPhotos(
         forced,
         firstUploadedOn,
         lastUploadedOn,
         userUuid,
         count
       )
+
+      val receivedPhotosWithInfo = getPhotoAdditionalInfoUseCase.appendAdditionalPhotoInfo(
+        receivedPhotosPage.page,
+        { receivedPhoto -> receivedPhoto.receivedPhotoName },
+        { receivedPhoto, photoAdditionalInfo -> receivedPhoto.copy(photoAdditionalInfo = photoAdditionalInfo) }
+      )
+
+      return@withContext Paged(receivedPhotosWithInfo, receivedPhotosPage.isEnd)
     }
   }
 

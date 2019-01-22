@@ -19,6 +19,7 @@ open class GetGalleryPhotosUseCase(
   private val timeUtils: TimeUtils,
   private val pagedApiUtils: PagedApiUtils,
   private val getFreshPhotosUseCase: GetFreshPhotosUseCase,
+  private val getPhotoAdditionalInfoUseCase: GetPhotoAdditionalInfoUseCase,
   private val galleryPhotosRepository: GalleryPhotosRepository,
   private val blacklistedPhotoRepository: BlacklistedPhotoRepository,
   private val settingsRepository: SettingsRepository,
@@ -40,13 +41,21 @@ open class GetGalleryPhotosUseCase(
         throw EmptyUserUuidException()
       }
 
-      return@withContext getPageOfGalleryPhotos(
+      val galleryPhotosPage = getPageOfGalleryPhotos(
         forced,
         firstUploadedOn,
         lastUploadedOn,
         userUuid,
         count
       )
+
+      val galleryPhotosWithInfo = getPhotoAdditionalInfoUseCase.appendAdditionalPhotoInfo(
+        galleryPhotosPage.page,
+        { galleryPhoto -> galleryPhoto.photoName },
+        { galleryPhoto, photoAdditionalInfo -> galleryPhoto.copy(photoAdditionalInfo = photoAdditionalInfo) }
+      )
+
+      return@withContext Paged(galleryPhotosWithInfo, galleryPhotosPage.isEnd)
     }
   }
 

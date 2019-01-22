@@ -53,6 +53,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.lang.IllegalStateException
+import java.lang.ref.WeakReference
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.coroutines.resume
@@ -237,25 +238,33 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   private suspend fun showGpsRationaleDialog() {
-    GpsRationaleDialog(this).show(this, {
-      checkPermissions()
-    }, {
+    val positiveCallback = WeakReference({
+      launch { checkPermissions() }
+      Unit
+    })
+    val negativeCallback = WeakReference({
       startTakenPhotoActivity()
     })
+
+    GpsRationaleDialog().show(this, positiveCallback, negativeCallback)
   }
 
-  private suspend fun showAppCannotWorkWithoutCameraPermissionDialog() {
-    AppCannotWorkWithoutCameraPermissionDialog(this).show(this) {
+  private fun showAppCannotWorkWithoutCameraPermissionDialog() {
+    AppCannotWorkWithoutCameraPermissionDialog().show(this) {
       finish()
     }
   }
 
   private suspend fun showCameraRationaleDialog() {
-    CameraRationaleDialog(this).show(this, {
-      checkPermissions()
-    }, {
+    val positiveCallback = WeakReference({
+      launch { prepareToTakePhoto() }
+      Unit
+    })
+    val negativeCallback = WeakReference({
       finish()
     })
+
+    CameraRationaleDialog().show(this, positiveCallback, negativeCallback)
   }
 
   private suspend fun prepareToTakePhoto() {
@@ -272,27 +281,33 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
     }
 
     if (!shown) {
-      FirebaseNotAvailableDialog().show(this)
-    }
+      val positiveCallback = WeakReference({
+        launch {
+          //3. Check permissions, show dialogs if necessary
+          when (val result = checkPermissions()) {
+            PermissionRequestResult.NotGranted,
+            PermissionRequestResult.Granted -> {
+              val granted = result == PermissionRequestResult.Granted
 
-    //3. Check permissions, show dialogs if necessary
-    when (val result = checkPermissions()) {
-      PermissionRequestResult.NotGranted,
-      PermissionRequestResult.Granted -> {
-        val granted = result == PermissionRequestResult.Granted
+              viewModel.updateGpsPermissionGranted(granted)
+              startTakenPhotoActivity()
+            }
+            PermissionRequestResult.ShowRationaleForCamera -> {
+              showCameraRationaleDialog()
+            }
+            PermissionRequestResult.ShowRationaleAppCannotWorkWithoutCamera -> {
+              showAppCannotWorkWithoutCameraPermissionDialog()
+            }
+            PermissionRequestResult.ShowRationaleForGps -> {
+              showGpsRationaleDialog()
+            }
+          }
+        }
 
-        viewModel.updateGpsPermissionGranted(granted)
-        startTakenPhotoActivity()
-      }
-      PermissionRequestResult.ShowRationaleForCamera -> {
-        showCameraRationaleDialog()
-      }
-      PermissionRequestResult.ShowRationaleAppCannotWorkWithoutCamera -> {
-        showAppCannotWorkWithoutCameraPermissionDialog()
-      }
-      PermissionRequestResult.ShowRationaleForGps -> {
-        showGpsRationaleDialog()
-      }
+        Unit
+      })
+
+      FirebaseNotAvailableDialog().show(this, positiveCallback)
     }
   }
 

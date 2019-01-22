@@ -8,15 +8,15 @@ import android.os.Build
 import android.os.IBinder
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
-import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.service.UploadPhotoServiceModule
+import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.concurrency.coroutines.DispatchersProvider
 import com.kirakishou.photoexchange.helper.extension.safe
-import com.kirakishou.photoexchange.usecases.GetCurrentLocationUseCase
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
 import com.kirakishou.photoexchange.ui.activity.PhotosActivity
 import com.kirakishou.photoexchange.ui.callback.PhotoUploadingServiceCallback
+import com.kirakishou.photoexchange.usecases.GetCurrentLocationUseCase
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.plusAssign
 import kotlinx.coroutines.CoroutineScope
@@ -50,8 +50,6 @@ class UploadPhotoService : Service(), CoroutineScope {
 
   private var callback = WeakReference<PhotoUploadingServiceCallback>(null)
   private val NOTIFICATION_ID = 1
-  private val CHANNEL_ID by lazy { getString(R.string.default_notification_channel_id) }
-  private val CHANNED_NAME = "name"
 
   lateinit var job: Job
 
@@ -160,7 +158,7 @@ class UploadPhotoService : Service(), CoroutineScope {
     if (AndroidUtils.isOreoOrHigher()) {
       createNotificationChannelIfNotExists()
 
-      return NotificationCompat.Builder(this, CHANNEL_ID)
+      return NotificationCompat.Builder(this, Constants.CHANNEL_ID)
         .setContentTitle("Error")
         .setContentText(message)
         .setSmallIcon(android.R.drawable.stat_notify_error)
@@ -169,7 +167,7 @@ class UploadPhotoService : Service(), CoroutineScope {
         .setAutoCancel(true)
         .build()
     } else {
-      return NotificationCompat.Builder(this, CHANNEL_ID)
+      return NotificationCompat.Builder(this, Constants.CHANNEL_ID)
         .setContentTitle("Error")
         .setContentText(message)
         .setSmallIcon(android.R.drawable.stat_notify_error)
@@ -184,7 +182,7 @@ class UploadPhotoService : Service(), CoroutineScope {
     if (AndroidUtils.isOreoOrHigher()) {
       createNotificationChannelIfNotExists()
 
-      return NotificationCompat.Builder(this, CHANNEL_ID)
+      return NotificationCompat.Builder(this, Constants.CHANNEL_ID)
         .setContentTitle("Done")
         .setContentText(message)
         .setSmallIcon(android.R.drawable.stat_sys_upload_done)
@@ -208,7 +206,7 @@ class UploadPhotoService : Service(), CoroutineScope {
     if (AndroidUtils.isOreoOrHigher()) {
       createNotificationChannelIfNotExists()
 
-      return NotificationCompat.Builder(this, CHANNEL_ID)
+      return NotificationCompat.Builder(this, Constants.CHANNEL_ID)
         .setContentTitle("Please wait")
         .setContentText("Uploading photo...")
         .setSmallIcon(android.R.drawable.stat_sys_upload)
@@ -234,7 +232,7 @@ class UploadPhotoService : Service(), CoroutineScope {
     if (AndroidUtils.isOreoOrHigher()) {
       createNotificationChannelIfNotExists()
 
-      return NotificationCompat.Builder(this, CHANNEL_ID)
+      return NotificationCompat.Builder(this, Constants.CHANNEL_ID)
         .setContentTitle("Please wait")
         .setContentText("Uploading photo...")
         .setWhen(System.currentTimeMillis())
@@ -256,10 +254,10 @@ class UploadPhotoService : Service(), CoroutineScope {
 
   @RequiresApi(Build.VERSION_CODES.O)
   private fun createNotificationChannelIfNotExists() {
-    if (getNotificationManager().getNotificationChannel(CHANNEL_ID) == null) {
+    if (getNotificationManager().getNotificationChannel(Constants.CHANNEL_ID) == null) {
       val notificationChannel = NotificationChannel(
-        CHANNEL_ID,
-        CHANNED_NAME,
+        Constants.CHANNEL_ID,
+        Constants.CHANNEL_NAME,
         NotificationManager.IMPORTANCE_LOW
       )
 

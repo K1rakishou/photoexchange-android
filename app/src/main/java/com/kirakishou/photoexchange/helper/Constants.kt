@@ -31,4 +31,7 @@ object Constants {
   val MAX_CACHE_SIZE = 50.mb()
   val OLD_PHOTO_TIME_THRESHOLD = 1.hours()
   val FILES_TO_DELETE_AT_A_TIME = 7
+
+  val CHANNEL_ID = "1"
+  val CHANNEL_NAME = "my_channel"
 }

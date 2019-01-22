@@ -11,25 +11,20 @@ import java.lang.ref.WeakReference
 /**
  * Created by kirakishou on 1/26/2018.
  */
-class CameraRationaleDialog(
-  private val coroutineScope: CoroutineScope
-) : AbstractDialog<Unit>() {
-  override suspend fun show(context: Context,
-                    onPositiveCallback: (suspend () -> Unit)?,
-                    onNegativeCallback: (suspend () -> Unit)?) {
-    checkNotNull(onPositiveCallback)
-    checkNotNull(onNegativeCallback)
+class CameraRationaleDialog {
 
+  fun show(context: Context, onPositiveCallback: WeakReference<(() -> Unit)>, onNegativeCallback: WeakReference<(() -> Unit)>) {
     MaterialDialog(context)
-      .title(text = "Why do we need camera permission?")
-      .message(text = "We need camera permission so you can take a photo that will be sent to someone else. This app cannot work without the camera permission")
+      .title(text = context.getString(R.string.camera_rationale_dialog_why_do_we_need_camera_permission))
+      .message(text = context.getString(R.string.camera_rationale_dialog_rationale_description))
       .cancelable(false)
-      .negativeButton(text = "Close app") {
-        coroutineScope.launch { onNegativeCallback.invoke() }
+      .negativeButton(text = context.getString(R.string.camera_rationale_dialog_close_app)) {
+        onNegativeCallback.get()?.invoke()
       }
-      .positiveButton(text = "Allow") {
-        coroutineScope.launch { onPositiveCallback.invoke() }
+      .positiveButton(text = context.getString(R.string.camera_rationale_dialog_allow)) {
+        onPositiveCallback.get()?.invoke()
       }
       .show()
   }
+
 }

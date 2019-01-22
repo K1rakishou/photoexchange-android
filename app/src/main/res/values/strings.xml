@@ -1,6 +1,33 @@
 <resources>
     <string name="app_name">PhotoExchange</string>
-    <string name="default_notification_channel_id">1</string>
+
+    <!--dialogs-->
+    <string name="app_cannot_work_without_camera_dialog_error">Error</string>
+    <string name="app_cannot_work_without_camera_dialog_ok">OK</string>
+    <string name="app_cannot_work_without_camera_dialog_app_cannot_work_without_camera">This app cannon work without a camera permission</string>
+    <string name="camera_is_not_available_dialog_camera_is_not_available">Camera is not available</string>
+    <string name="camera_is_not_available_dialog_app_cannot_work_without_camera">It looks like your device does not support camera. This app cannot work without a camera.</string>
+    <string name="camera_is_not_available_dialog_ok">OK</string>
+    <string name="camera_rationale_dialog_why_do_we_need_camera_permission">Why do we need camera permission?</string>
+    <string name="camera_rationale_dialog_rationale_description">We need camera permission so you can take a photo that will be sent to someone else. This app cannot work without the camera permission</string>
+    <string name="camera_rationale_dialog_close_app">Close app</string>
+    <string name="camera_rationale_dialog_allow">Allow</string>
+    <string name="delete_photo_confirmation_dialog_confirmation_required">Confirmation required</string>
+    <string name="delete_photo_confirmation_dialog_would_you_like_to_delete_photo">Would you like to delete this photo as well?</string>
+    <string name="delete_photo_confirmation_dialog_do_not_delete">Do not delete</string>
+    <string name="delete_photo_confirmation_dialog_delete">Delete</string>
+    <string name="enter_old_user_uuid_dialog_user_uuid_is_required">User uuid is required</string>
+    <string name="enter_old_user_uuid_dialog_please_enter_old_user_uuid">Please enter old user uuid to restore an account. This action will remove all your current photos</string>
+    <string name="enter_old_user_uuid_dialog_user_uuid_placeholder">1234567890abcdef@photoexchange.io</string>
+    <string name="enter_old_user_uuid_dialog_cancel">Cancel</string>
+    <string name="enter_old_user_uuid_dialog_restore">Restore</string>
+    <string name="firebase_not_available_dialog_firebase_is_not_available">Firebase is not available</string>
+    <string name="firebase_not_available_dialog_no_google_play_services">It appears that your phone has no Google Play Services installed. That\'s okay but you won\'t be able to receive push notifications.</string>
+    <string name="firebase_not_available_dialog_ok">OK</string>
+    <string name="gps_rationale_dialog_why_do_we_need_gps_permission">Why do we need gps permission?</string>
+    <string name="gps_rationale_dialog_rationale_description">We need gps permission so other people can see where the photo was taken from. This is not a required permission so you can disable it. Other people won\'t be able to see where your photos were taken.</string>
+    <string name="gps_rationale_dialog_rationale_do_not_allow">Do not allow</string>
+    <string name="gps_rationale_dialog_rationale_allow">Allow</string>
 
     <!--image loader-->
     <string name="image_loader_no_unmetered_network_available">No unmetered network available.</string>

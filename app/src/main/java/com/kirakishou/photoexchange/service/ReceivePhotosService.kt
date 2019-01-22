@@ -8,9 +8,9 @@ import android.os.Build
 import android.os.IBinder
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
-import com.kirakishou.fixmypc.photoexchange.R
 import com.kirakishou.photoexchange.PhotoExchangeApplication
 import com.kirakishou.photoexchange.di.module.service.ReceivePhotosServiceModule
+import com.kirakishou.photoexchange.helper.Constants
 import com.kirakishou.photoexchange.helper.extension.safe
 import com.kirakishou.photoexchange.helper.intercom.event.ReceivedPhotosFragmentEvent
 import com.kirakishou.photoexchange.helper.util.AndroidUtils
@@ -33,8 +33,6 @@ class ReceivePhotosService : Service() {
   private val binder = ReceivePhotosBinder()
   private var callback = WeakReference<ReceivePhotosServiceCallback>(null)
   private val NOTIFICATION_ID = 2
-  private val CHANNEL_ID by lazy { getString(R.string.default_notification_channel_id) }
-  private val CHANNED_NAME = "name"
 
   override fun onCreate() {
     super.onCreate()
@@ -126,7 +124,7 @@ class ReceivePhotosService : Service() {
     if (AndroidUtils.isOreoOrHigher()) {
       createNotificationChannelIfNotExists()
 
-      return NotificationCompat.Builder(this, CHANNEL_ID)
+      return NotificationCompat.Builder(this, Constants.CHANNEL_ID)
         .setContentTitle("Error")
         .setContentText("Could not receive a photo")
         .setSmallIcon(android.R.drawable.stat_notify_error)
@@ -135,7 +133,7 @@ class ReceivePhotosService : Service() {
         .setAutoCancel(true)
         .build()
     } else {
-      return NotificationCompat.Builder(this, CHANNEL_ID)
+      return NotificationCompat.Builder(this, Constants.CHANNEL_ID)
         .setContentTitle("Error")
         .setContentText("Could not receive a  photo")
         .setSmallIcon(android.R.drawable.stat_notify_error)
@@ -150,7 +148,7 @@ class ReceivePhotosService : Service() {
     if (AndroidUtils.isOreoOrHigher()) {
       createNotificationChannelIfNotExists()
 
-      return NotificationCompat.Builder(this, CHANNEL_ID)
+      return NotificationCompat.Builder(this, Constants.CHANNEL_ID)
         .setContentTitle("Done")
         .setContentText("Photo has been found!")
         .setSmallIcon(android.R.drawable.stat_sys_download_done)
@@ -174,7 +172,7 @@ class ReceivePhotosService : Service() {
     if (AndroidUtils.isOreoOrHigher()) {
       createNotificationChannelIfNotExists()
 
-      return NotificationCompat.Builder(this, CHANNEL_ID)
+      return NotificationCompat.Builder(this, Constants.CHANNEL_ID)
         .setContentTitle("Please wait")
         .setContentText("Looking for photo answer...")
         .setSmallIcon(android.R.drawable.stat_sys_download)
@@ -200,7 +198,7 @@ class ReceivePhotosService : Service() {
     if (AndroidUtils.isOreoOrHigher()) {
       createNotificationChannelIfNotExists()
 
-      return NotificationCompat.Builder(this, CHANNEL_ID)
+      return NotificationCompat.Builder(this, Constants.CHANNEL_ID)
         .setContentTitle("Please wait")
         .setContentText("Looking for photo answer...")
         .setWhen(System.currentTimeMillis())
@@ -222,10 +220,10 @@ class ReceivePhotosService : Service() {
 
   @RequiresApi(Build.VERSION_CODES.O)
   private fun createNotificationChannelIfNotExists() {
-    if (getNotificationManager().getNotificationChannel(CHANNEL_ID) == null) {
+    if (getNotificationManager().getNotificationChannel(Constants.CHANNEL_ID) == null) {
       val notificationChannel = NotificationChannel(
-        CHANNEL_ID,
-        CHANNED_NAME,
+        Constants.CHANNEL_ID,
+        Constants.CHANNEL_NAME,
         NotificationManager.IMPORTANCE_LOW
       )
 
