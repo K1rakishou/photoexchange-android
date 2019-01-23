@@ -350,7 +350,7 @@ open class GalleryFragmentViewModel(
       val newState = GalleryFragmentState()
       setState { newState }
 
-      viewModelActor.send(ActorAction.LoadGalleryPhotos(false))
+      viewModelActor.send(ActorAction.LoadGalleryPhotos(true))
     }
   }
 

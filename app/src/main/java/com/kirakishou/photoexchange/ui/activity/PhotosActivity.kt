@@ -51,6 +51,7 @@ import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.subjects.PublishSubject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import java.lang.IllegalStateException
 import java.lang.ref.WeakReference
@@ -94,6 +95,7 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   private val FRAGMENT_SWITCH_ANIMATION_DELAY_MS = 250L
   private val SWITCH_FRAGMENT_DELAY = 250L
   private val NOTIFICATION_CANCEL_DELAY_MS = 25L
+  private val serviceStartEventDebounceTimeSeconds = 10L
 
   private val UPLOADED_PHOTOS_TAB_INDEX = 0
   private val RECEIVED_PHOTOS_TAB_INDEX = 1
@@ -133,7 +135,9 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
         //the notification has been shown
         delay(NOTIFICATION_CANCEL_DELAY_MS)
 
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = getSystemService(
+          Context.NOTIFICATION_SERVICE
+        ) as NotificationManager
         notificationManager.cancel(PushNotificationReceiverService.NOTIFICATION_ID)
 
         onNewPhotoNotification(newReceivedPhoto)
@@ -230,10 +234,24 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
         }
       })
 
-    compositeDisposable += viewModel.intercom.photosActivityEvents.listen()
-      .subscribe({ event ->
+    viewModel.intercom.photosActivityEvents.listen().publish().apply {
+      compositeDisposable += filter { event -> event is PhotosActivityEvent.StartUploadingService }
+        .debounce(serviceStartEventDebounceTimeSeconds, TimeUnit.SECONDS)
+        .subscribe({ tryToStartUploadService() })
+
+      compositeDisposable += filter { event -> event is PhotosActivityEvent.StartReceivingService }
+        .debounce(serviceStartEventDebounceTimeSeconds, TimeUnit.SECONDS)
+        .subscribe({ tryToStartReceiveService() })
+
+      compositeDisposable += filter { event ->
+        event !is PhotosActivityEvent.StartUploadingService &&
+          event !is PhotosActivityEvent.StartReceivingService
+      }.subscribe({ event ->
         launch { onStateEvent(event) }
       })
+
+      compositeDisposable += connect()
+    }
   }
 
   private fun showGpsRationaleDialog() {
@@ -324,7 +342,10 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
   //request permissions for camera and location
   private suspend fun requestPermissions(): PermissionRequestResult {
-    val requestedPermissions = arrayOf(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION)
+    val requestedPermissions = arrayOf(
+      Manifest.permission.CAMERA,
+      Manifest.permission.ACCESS_FINE_LOCATION
+    )
 
     return suspendCoroutine { continuation ->
       permissionManager.askForPermission(this, requestedPermissions) { permissions, grantResults ->
@@ -339,13 +360,19 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
         val gpsIndex = permissions.indexOf(Manifest.permission.ACCESS_FINE_LOCATION)
         if (gpsIndex == -1) {
           continuation.resumeWithException(
-            RuntimeException("Couldn't find Manifest.permission.ACCESS_FINE_LOCATION in result permissions")
+            RuntimeException(
+              "Couldn't find Manifest.permission.ACCESS_FINE_LOCATION in result permissions"
+            )
           )
           return@askForPermission
         }
 
         if (grantResults[cameraIndex] == PackageManager.PERMISSION_DENIED) {
-          if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
+          if (ActivityCompat.shouldShowRequestPermissionRationale(
+              this,
+              Manifest.permission.CAMERA
+            )
+          ) {
             continuation.resume(PermissionRequestResult.ShowRationaleForCamera)
           } else {
             Timber.tag(TAG).d("Could not obtain camera permission")
@@ -357,7 +384,11 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
           if (grantResults[gpsIndex] == PackageManager.PERMISSION_DENIED) {
             granted = false
 
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+              )
+            ) {
               continuation.resume(PermissionRequestResult.ShowRationaleForGps)
               return@askForPermission
             }
@@ -388,9 +419,15 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
   private fun initTabs() {
     tabLayout.removeAllTabs()
-    tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.photos_activity_tab_title_uploaded_photos)))
-    tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.photos_activity_tab_title_received_photos)))
-    tabLayout.addTab(tabLayout.newTab().setText(getString(R.string.photos_activity_tab_title_gallery)))
+    tabLayout.addTab(
+      tabLayout.newTab().setText(getString(R.string.photos_activity_tab_title_uploaded_photos))
+    )
+    tabLayout.addTab(
+      tabLayout.newTab().setText(getString(R.string.photos_activity_tab_title_received_photos))
+    )
+    tabLayout.addTab(
+      tabLayout.newTab().setText(getString(R.string.photos_activity_tab_title_gallery))
+    )
     tabLayout.tabGravity = TabLayout.GRAVITY_FILL
 
     viewPager.adapter = adapter
@@ -431,7 +468,12 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   private fun createMenu() {
     val popupMenu = PopupMenu(this, menuButton)
     popupMenu.setOnMenuItemClickListener(this)
-    popupMenu.menu.add(1, R.id.settings_item, 1, resources.getString(R.string.photos_activity_settings_menu_item_text))
+    popupMenu.menu.add(
+      1,
+      R.id.settings_item,
+      1,
+      resources.getString(R.string.photos_activity_settings_menu_item_text)
+    )
     popupMenu.show()
   }
 
@@ -453,12 +495,6 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
 
   override suspend fun onStateEvent(event: PhotosActivityEvent) {
     when (event) {
-      is PhotosActivityEvent.StartUploadingService -> {
-        tryToStartUploadService()
-      }
-      is PhotosActivityEvent.StartReceivingService -> {
-        tryToStartReceiveService()
-      }
       is PhotosActivityEvent.ScrollEvent -> {
         if (event.isScrollingDown) {
           takePhotoButton.hide()
@@ -474,35 +510,44 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
       is PhotosActivityEvent.OnNewReceivedPhotos -> showNewReceivedPhotosSnackbar(event.count)
       is PhotosActivityEvent.OnNewUploadedPhotos -> showNewUploadedPhotosSnackbar(event.count)
       is PhotosActivityEvent.ShowDeletePhotoDialog -> showDeletePhotoDialog(event.photoName)
+      PhotosActivityEvent.StartUploadingService,
+      PhotosActivityEvent.StartReceivingService -> {
+        //these two events are already handled at this point
+        throw RuntimeException("Got an event that is not supposed to be here")
+      }
     }.safe
   }
 
-  private suspend fun tryToStartUploadService() {
-    val canUploadPhotosResult = viewModel.checkCanUploadPhotos()
-    when (canUploadPhotosResult) {
-      PhotosActivityViewModel.CanUploadPhotoResult.HasQueuedUpPhotos -> {
-        bindUploadingService()
-      }
-      PhotosActivityViewModel.CanUploadPhotoResult.PhotoUploadingDisabled -> {
-        onShowToast(getString(R.string.photos_activity_cannot_upload_photo_disabled))
-      }
-      PhotosActivityViewModel.CanUploadPhotoResult.HasNoQueuedUpPhotos -> {
-        //do nothing
+  private fun tryToStartUploadService() {
+    runBlocking {
+      val canUploadPhotosResult = viewModel.checkCanUploadPhotos()
+      when (canUploadPhotosResult) {
+        PhotosActivityViewModel.CanUploadPhotoResult.HasQueuedUpPhotos -> {
+          bindUploadingService()
+        }
+        PhotosActivityViewModel.CanUploadPhotoResult.PhotoUploadingDisabled -> {
+          onShowToast(getString(R.string.photos_activity_cannot_upload_photo_disabled))
+        }
+        PhotosActivityViewModel.CanUploadPhotoResult.HasNoQueuedUpPhotos -> {
+          //do nothing
+        }
       }
     }
   }
 
-  private suspend fun tryToStartReceiveService() {
-    val canReceivedPhotosResult = viewModel.checkCanReceivePhotos()
-    when (canReceivedPhotosResult) {
-      PhotosActivityViewModel.CanReceivePhotoResult.HasMoreUploadedPhotosThanReceived -> {
-        bindReceivingService()
-      }
-      PhotosActivityViewModel.CanReceivePhotoResult.NetworkAccessDisabled -> {
-        onShowToast(getString(R.string.photos_activity_cannot_check_for_received_photos_disabled))
-      }
-      PhotosActivityViewModel.CanReceivePhotoResult.HasLessOrEqualUploadedPhotosThanReceived -> {
-        //do nothing
+  private fun tryToStartReceiveService() {
+    runBlocking {
+      val canReceivedPhotosResult = viewModel.checkCanReceivePhotos()
+      when (canReceivedPhotosResult) {
+        PhotosActivityViewModel.CanReceivePhotoResult.HasMoreUploadedPhotosThanReceived -> {
+          bindReceivingService()
+        }
+        PhotosActivityViewModel.CanReceivePhotoResult.NetworkAccessDisabled -> {
+          onShowToast(getString(R.string.photos_activity_cannot_check_for_received_photos_disabled))
+        }
+        PhotosActivityViewModel.CanReceivePhotoResult.HasLessOrEqualUploadedPhotosThanReceived -> {
+          //do nothing
+        }
       }
     }
   }
@@ -515,7 +560,9 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
     when (event) {
       is ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived -> {
         viewModel.intercom.tell<UploadedPhotosFragment>()
-          .that(UploadedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotosReceived(event.receivedPhotos))
+          .that(
+            UploadedPhotosFragmentEvent.ReceivePhotosEvent.OnPhotosReceived(event.receivedPhotos)
+          )
         viewModel.intercom.tell<ReceivedPhotosFragment>()
           .that(ReceivedPhotosFragmentEvent.ReceivePhotosEvent.PhotosReceived(event.receivedPhotos))
 
@@ -531,7 +578,11 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   private fun showNewPhotoHasBeenReceivedSnackbar() {
-    Snackbar.make(rootLayout, getString(R.string.photos_activity_photo_has_been_received_snackbar_text), Snackbar.LENGTH_LONG)
+    Snackbar.make(
+      rootLayout,
+      getString(R.string.photos_activity_photo_has_been_received_snackbar_text),
+      Snackbar.LENGTH_LONG
+    )
       .setAction(getString(R.string.photos_activity_show_snackbar_action_text), {
         launch {
           switchToTab(RECEIVED_PHOTOS_TAB_INDEX)
@@ -545,7 +596,11 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   private fun showNewGalleryPhotosSnackbar(count: Int) {
-    Snackbar.make(rootLayout, getString(R.string.photos_activity_new_gallery_photos, count), Snackbar.LENGTH_LONG)
+    Snackbar.make(
+      rootLayout,
+      getString(R.string.photos_activity_new_gallery_photos, count),
+      Snackbar.LENGTH_LONG
+    )
       .setAction(getString(R.string.photos_activity_show_snackbar_action_text), {
         launch {
           switchToTab(GALLERY_PHOTOS_TAB_INDEX)
@@ -559,7 +614,11 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   private fun showNewReceivedPhotosSnackbar(count: Int) {
-    Snackbar.make(rootLayout, getString(R.string.photos_activity_new_received_photos, count), Snackbar.LENGTH_LONG)
+    Snackbar.make(
+      rootLayout,
+      getString(R.string.photos_activity_new_received_photos, count),
+      Snackbar.LENGTH_LONG
+    )
       .setAction(getString(R.string.photos_activity_show_snackbar_action_text), {
         launch {
           switchToTab(RECEIVED_PHOTOS_TAB_INDEX)
@@ -573,7 +632,11 @@ class PhotosActivity : BaseActivity(), PhotoUploadingServiceCallback, ReceivePho
   }
 
   private fun showNewUploadedPhotosSnackbar(count: Int) {
-    Snackbar.make(rootLayout, getString(R.string.photos_activity_new_uploaded_photos, count), Snackbar.LENGTH_LONG)
+    Snackbar.make(
+      rootLayout,
+      getString(R.string.photos_activity_new_uploaded_photos, count),
+      Snackbar.LENGTH_LONG
+    )
       .setAction(getString(R.string.photos_activity_show_snackbar_action_text), {
         launch {
           switchToTab(UPLOADED_PHOTOS_TAB_INDEX)

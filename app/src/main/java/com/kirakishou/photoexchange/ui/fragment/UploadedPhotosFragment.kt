@@ -66,7 +66,7 @@ class UploadedPhotosFragment : MyBaseMvRxFragment(), StateEventListener<Uploaded
       viewModel.uploadedPhotosFragmentViewModel.resetState()
     }
 
-    viewModel.uploadedPhotosFragmentViewModel.loadQueuedUpPhotos()
+    viewModel.uploadedPhotosFragmentViewModel.loadQueuedUpPhotos(false)
   }
 
   private fun initRx() {
