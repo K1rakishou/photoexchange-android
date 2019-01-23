@@ -75,7 +75,7 @@ open class UploadedPhotosFragmentViewModel(
         when (action) {
           is ActorAction.ResetState -> resetStateInternal()
           is ActorAction.CancelPhotoUploading -> cancelPhotoUploadingInternal(action.photoId)
-          ActorAction.LoadQueuedUpPhotos -> loadQueuedUpPhotosInternal()
+          is ActorAction.LoadQueuedUpPhotos -> loadQueuedUpPhotosInternal(action.forced)
           is ActorAction.LoadUploadedPhotos -> loadUploadedPhotosInternal(action.forced)
           is ActorAction.OnNewPhotosReceived -> onNewPhotoReceivedInternal(action.newReceivedPhotos)
           is ActorAction.SwapPhotoAndMap -> swapPhotoAndMapInternal(action.photoName)
@@ -86,8 +86,8 @@ open class UploadedPhotosFragmentViewModel(
   }
 
   //loads all photos taken by user that has not been uploaded to the server yet
-  fun loadQueuedUpPhotos() {
-    launch { viewModelActor.send(ActorAction.LoadQueuedUpPhotos) }
+  fun loadQueuedUpPhotos(forced: Boolean) {
+    launch { viewModelActor.send(ActorAction.LoadQueuedUpPhotos(forced)) }
   }
 
   //resets everything to default state
@@ -250,7 +250,7 @@ open class UploadedPhotosFragmentViewModel(
       val newState = UploadedPhotosFragmentState()
       setState { newState }
 
-      loadQueuedUpPhotos()
+      loadQueuedUpPhotos(true)
     }
   }
 
@@ -275,7 +275,7 @@ open class UploadedPhotosFragmentViewModel(
     }
   }
 
-  private suspend fun loadQueuedUpPhotosInternal() {
+  private suspend fun loadQueuedUpPhotosInternal(forced: Boolean) {
     suspendWithState { state ->
       if (state.takenPhotosRequest is Loading) {
         return@suspendWithState
@@ -293,7 +293,7 @@ open class UploadedPhotosFragmentViewModel(
       val notUploadedPhotos = request() ?: emptyList()
       if (notUploadedPhotos.isEmpty() && state.takenPhotos.isEmpty() && request is Success) {
         setState { copy(takenPhotosRequest = request) }
-        loadUploadedPhotos(false)
+        loadUploadedPhotos(forced)
         return@suspendWithState
       }
 
@@ -535,7 +535,7 @@ open class UploadedPhotosFragmentViewModel(
   sealed class ActorAction {
     object ResetState : ActorAction()
     class CancelPhotoUploading(val photoId: Long) : ActorAction()
-    object LoadQueuedUpPhotos : ActorAction()
+    class LoadQueuedUpPhotos(val forced: Boolean) : ActorAction()
     class LoadUploadedPhotos(val forced: Boolean) : ActorAction()
     class OnNewPhotosReceived(val newReceivedPhotos: List<NewReceivedPhoto>) : ActorAction()
     class SwapPhotoAndMap(val photoName: String) : ActorAction()

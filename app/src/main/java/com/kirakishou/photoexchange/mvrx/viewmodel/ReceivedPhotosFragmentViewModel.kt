@@ -426,7 +426,7 @@ open class ReceivedPhotosFragmentViewModel(
       val newState = ReceivedPhotosFragmentState()
       setState { newState }
 
-      viewModelActor.send(ActorAction.LoadReceivedPhotos(false))
+      viewModelActor.send(ActorAction.LoadReceivedPhotos(true))
     }
   }
 
